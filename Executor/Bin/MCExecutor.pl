@@ -1,4 +1,4 @@
-# Executor.pm - 
+# Executor.pl - This is the main script to run microCluster Executor server.
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,63 +23,25 @@
 
 =head1 NAME
 
-Executor - Executor object
+MCExecutor - MCExecutor Server
 
-=head1 SYNOPSIS
+=head1 SYNOPSIS	    
 
-    use Executor;
-    
-    # Creates executor
-    my $executor = Executor->new();
-    
-    # Create object
-    $executor->newobject($type : String, %ObjectDefinition);
-
+	$ ./MCExecutor
 
 =head1 DESCRIPTION
 
-Executor is the main object use to create execution objects
+Executor is the main script to run microCluster Executor server.
 
 =head1 METHODS
 
 =cut
-package Pdoc::Config;
 
-use strict;
-use warnings;
-use Carp qw(cluck confess);
-use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
 
-my $log = get_logger("executor");
 
-$VERSION = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-=head2 new
 
-    my $config = Pdoc::Config->new();
-
-Pdoc::Config::new creates a new configuration object.
-
-=cut
-
-sub new {
-	$log->warn("New Enter");
-    my $class = shift;
-    my $self = {};
-    
-    bless $self, $class;
-        
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-Pdoc::Config::_init is a private method used to define internal parameters.
-
-=cut
+1;
 
 __END__
 
