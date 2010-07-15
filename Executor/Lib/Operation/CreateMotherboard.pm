@@ -1,4 +1,4 @@
-# Executor.pm - 
+# CreateMotherboard.pm - 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,32 +23,28 @@
 
 =head1 NAME
 
-Executor - Executor object
+Operation::CreateMotherboard - Operation class implementing Motherboard creation operation
 
 =head1 SYNOPSIS
 
-    use Executor;
-    
-    # Creates executor
-    my $executor = Executor->new();
-    
-    # Create object
-    $executor->newobject($type : String, %ObjectDefinition);
-
+This Object represent an operation.
+It allows to implement Motherboard creation operation
 
 =head1 DESCRIPTION
 
-Executor is the main object use to create execution objects
+Component is an abstract class of operation objects
 
 =head1 METHODS
 
 =cut
-package Executor;
+package Operation::CreateMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
+use lib "../";
+use Operation;
 
 my $log = get_logger("executor");
 
@@ -56,9 +52,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $executor = Executor->new();
+    my comp = Operation::CreateMotherboard->new();
 
-Executor::new creates a new executor object.
+Operation->new creates a new CreateMotheboard operation.
 
 =cut
 
@@ -66,12 +62,10 @@ sub new {
     my $class = shift;
     my $self = {};
 
-	$log->warn("New Object Executor");    
+	$log->warn("New Object Operation");    
     bless $self, $class;
         
     $self->_init();
-    
-    # PLus tard rajouter autre chose
     
     return $self;
 }
@@ -84,22 +78,10 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-	die "Error d'init";
+
 	return;
 }
 
-=head2 getObj
-
-Executor::getObj is a public method used to get object from its type.
-
-=cut
-
-sub getObj {
-	my $self = shift;
-    my %args = @_;
-    
-}
-__END__
 
 =head1 AUTHOR
 
