@@ -1,4 +1,4 @@
-# Executor.pm - 
+# Executor.pm - Object class of Executor server
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -71,8 +71,7 @@ sub new {
         
     $self->_init();
     
-    # PLus tard rajouter autre chose
-    
+    # Plus tard rajouter autre chose
     return $self;
 }
 
@@ -88,17 +87,41 @@ sub _init {
 	return;
 }
 
-=head2 getObj
+=head2 run
 
-Executor::getObj is a public method used to get object from its type.
+Executor->run() run the executor server.
 
 =cut
 
-sub getObj {
+sub run {
 	my $self = shift;
-    my %args = @_;
-    
+	my $adm = Administrator->new();
+   	while (1) {
+   		my $opdata = $adm->getNextOperation();
+   		my $op = $self->_newObj((data => $opdata));
+   		if ($op){
+   			$op->prepare();
+   			$op->execute();
+   			$op->finish();
+   		}
+   		else {
+   			sleep 20;
+   		}
+   	} 
 }
+
+=head2 _newObj
+
+Executor->_newObj($objdata) instanciates a new object from objectdata.
+
+=cut
+
+sub _newObj {
+	my $self = shift;
+	my %args = @_;
+	
+}
+
 __END__
 
 =head1 AUTHOR

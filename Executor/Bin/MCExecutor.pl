@@ -1,4 +1,4 @@
-# Executor.pl - This is the main script to run microCluster Executor server.
+# MCExecutor.pl - This is the main script to run microCluster Executor server.
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -52,11 +52,11 @@ my $log = get_logger("executor");
 
 try	{
 	my $exec = Executor->new();
-	print "After Executor instanciation";
+	$exec->run();
 }
 catch Error::Simple with {
 	my $ex = shift;
-	#die "Catch error in Executor instanciation";
+	die "Catch error in Executor instanciation";
 };
 print "After try catch MCExecutor";
 
