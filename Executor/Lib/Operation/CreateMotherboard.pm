@@ -1,4 +1,4 @@
-# Executor.pl - This is the main script to run microCluster Executor server.
+# CreateMotherboard.pm - 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,46 +23,65 @@
 
 =head1 NAME
 
-MCExecutor - MCExecutor Server
+Operation::CreateMotherboard - Operation class implementing Motherboard creation operation
 
-=head1 SYNOPSIS	    
+=head1 SYNOPSIS
 
-	$ ./MCExecutor
+This Object represent an operation.
+It allows to implement Motherboard creation operation
 
 =head1 DESCRIPTION
 
-Executor is the main script to run microCluster Executor server.
+Component is an abstract class of operation objects
 
 =head1 METHODS
 
 =cut
-
+package Operation::CreateMotherboard;
 
 use strict;
 use warnings;
-use lib "../Lib";
-use Executor;
 use Log::Log4perl "get_logger";
-use Error qw(:try);
+use vars qw(@ISA $VERSION);
+use lib "../";
+use Operation;
 
-
-
-Log::Log4perl->init('../Conf/log.conf');
 my $log = get_logger("executor");
 
-try	{
-	my $exec = Executor->new();
-	print "After Executor instanciation";
+$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+=head2 new
+
+    my comp = Operation::CreateMotherboard->new();
+
+Operation->new creates a new CreateMotheboard operation.
+
+=cut
+
+sub new {
+    my $class = shift;
+    my $self = {};
+
+	$log->warn("New Object Operation");    
+    bless $self, $class;
+        
+    $self->_init();
+    
+    return $self;
 }
-catch Error::Simple with {
-	my $ex = shift;
-	#die "Catch error in Executor instanciation";
-};
-print "After try catch MCExecutor";
 
+=head2 _init
 
+Executor::_init is a private method used to define internal parameters.
 
-__END__
+=cut
+
+sub _init {
+	my $self = shift;
+
+	return;
+}
+
 
 =head1 AUTHOR
 
