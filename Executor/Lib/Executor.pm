@@ -43,31 +43,30 @@ Executor is the main object use to create execution objects
 =head1 METHODS
 
 =cut
-package Pdoc::Config;
+package Executor;
 
 use strict;
 use warnings;
-use Carp qw(cluck confess);
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
 my $log = get_logger("executor");
 
-$VERSION = do { my @r = (q$Revision: 1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my $config = Pdoc::Config->new();
+    my $executor = Executor->new();
 
-Pdoc::Config::new creates a new configuration object.
+Executor::new creates a new executor object.
 
 =cut
 
 sub new {
-	$log->warn("New Enter");
     my $class = shift;
     my $self = {};
-    
+
+	$log->warn("New Object Executor");    
     bless $self, $class;
         
     $self->_init();
@@ -77,10 +76,27 @@ sub new {
 
 =head2 _init
 
-Pdoc::Config::_init is a private method used to define internal parameters.
+Executor::_init is a private method used to define internal parameters.
 
 =cut
 
+sub _init {
+	my $self = shift;
+	die "Error d'init";
+	return;
+}
+
+=head2 getObj
+
+Executor::getObj is a public method used to get object from its type.
+
+=cut
+
+sub getObj {
+	my $self = shift;
+    my %args = @_;
+    
+}
 __END__
 
 =head1 AUTHOR
