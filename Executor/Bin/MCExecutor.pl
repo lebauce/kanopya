@@ -1,4 +1,4 @@
-# Executor.pl - This is the main script to run microCluster Executor server.
+# MCExecutor.pl - This is the main script to run microCluster Executor server.
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.

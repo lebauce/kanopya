@@ -1,4 +1,4 @@
-# CreateMotherboard.pm - 
+# CreateMotherboard.pm - Operation class implementing Motherboard creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -52,9 +52,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my comp = Operation::CreateMotherboard->new();
+    my $op = Operation::AddMotherboard->new();
 
-Operation->new creates a new CreateMotheboard operation.
+Operation::AddMotherboard->new creates a new AddMotheboard operation.
 
 =cut
 
@@ -62,8 +62,6 @@ sub new {
     my $class = shift;
     my $self = {};
     my $adm = new Administrator->new();
-    
-    
     
 	$log->warn("New Object Operation");    
     bless $self, $class;
@@ -75,7 +73,7 @@ sub new {
 
 =head2 _init
 
-Executor::_init is a private method used to define internal parameters.
+	$op->_init() is a private method used to define internal parameters.
 
 =cut
 
@@ -85,6 +83,18 @@ sub _init {
 	return;
 }
 
+=head2 prepare
+
+	$op->prepare();
+
+=cut
+
+sub prepare {
+	my $self = shift;
+	my $adm = Administrator->new();
+}
+
+__END__
 
 =head1 AUTHOR
 

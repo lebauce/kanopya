@@ -1,4 +1,4 @@
-# Executor.pm - 
+# Executor.pm - Object class of Executor server
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -83,7 +83,6 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-	$self->{adm} = Administrator->new();
 	die "Error d'init";
 	return;
 }
@@ -96,9 +95,10 @@ Executor->run() run the executor server.
 
 sub run {
 	my $self = shift;
+	my $adm = Administrator->new();
    	while (1) {
-   		my $opdata = $self->{adm}->getNextOperation();
-   		my $op = $self->_newObj($opdata->getType(), $opdata);
+   		my $opdata = $adm->getNextOperation();
+   		my $op = $self->_newObj((data => $opdata));
    		if ($op){
    			$op->prepare();
    			$op->execute();
@@ -110,7 +110,7 @@ sub run {
    	} 
 }
 
-=head2 newObj
+=head2 _newObj
 
 Executor->_newObj($objdata) instanciates a new object from objectdata.
 
@@ -118,6 +118,7 @@ Executor->_newObj($objdata) instanciates a new object from objectdata.
 
 sub _newObj {
 	my $self = shift;
+	my %args = @_;
 	
 }
 

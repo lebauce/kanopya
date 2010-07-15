@@ -1,4 +1,4 @@
-# Component.pm - 
+# Component.pm - Abstract class of Components object
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
