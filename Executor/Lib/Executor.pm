@@ -71,8 +71,7 @@ sub new {
         
     $self->_init();
     
-    # PLus tard rajouter autre chose
-    
+    # Plus tard rajouter autre chose
     return $self;
 }
 
@@ -84,21 +83,44 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
+	$self->{adm} = Administrator->new();
 	die "Error d'init";
 	return;
 }
 
-=head2 getObj
+=head2 run
 
-Executor::getObj is a public method used to get object from its type.
+Executor->run() run the executor server.
 
 =cut
 
-sub getObj {
+sub run {
 	my $self = shift;
-    my %args = @_;
-    
+   	while (1) {
+   		my $opdata = $self->{adm}->getNextOperation();
+   		my $op = $self->_newObj($opdata->getType(), $opdata);
+   		if ($op){
+   			$op->prepare();
+   			$op->execute();
+   			$op->finish();
+   		}
+   		else {
+   			sleep 20;
+   		}
+   	} 
 }
+
+=head2 newObj
+
+Executor->_newObj($objdata) instanciates a new object from objectdata.
+
+=cut
+
+sub _newObj {
+	my $self = shift;
+	
+}
+
 __END__
 
 =head1 AUTHOR

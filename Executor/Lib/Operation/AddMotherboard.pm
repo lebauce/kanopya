@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Operation::CreateMotherboard - Operation class implementing Motherboard creation operation
+Operation::AddMotherboard - Operation class implementing Motherboard creation operation
 
 =head1 SYNOPSIS
 
@@ -37,14 +37,14 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package Operation::CreateMotherboard;
+package Operation::AddMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib "../";
-use Operation;
+use base "Operation";
 
 my $log = get_logger("executor");
 
@@ -61,7 +61,10 @@ Operation->new creates a new CreateMotheboard operation.
 sub new {
     my $class = shift;
     my $self = {};
-
+    my $adm = new Administrator->new();
+    
+    
+    
 	$log->warn("New Object Operation");    
     bless $self, $class;
         

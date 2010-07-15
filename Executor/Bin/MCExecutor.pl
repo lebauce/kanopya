@@ -52,11 +52,11 @@ my $log = get_logger("executor");
 
 try	{
 	my $exec = Executor->new();
-	print "After Executor instanciation";
+	$exec->run();
 }
 catch Error::Simple with {
 	my $ex = shift;
-	#die "Catch error in Executor instanciation";
+	die "Catch error in Executor instanciation";
 };
 print "After try catch MCExecutor";
 
