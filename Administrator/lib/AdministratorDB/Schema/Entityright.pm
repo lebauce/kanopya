@@ -1,0 +1,36 @@
+package AdministratorDB::Schema::Entityright;
+
+use strict;
+use warnings;
+
+use base 'DBIx::Class';
+
+__PACKAGE__->load_components("Core");
+__PACKAGE__->table("entityright");
+__PACKAGE__->add_columns(
+  "entityright_id",
+  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  "entityright_entity_id",
+  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  "entityright_consumer_id",
+  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  "entityright_access",
+  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
+  "entityright_read",
+  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
+  "entityright_write",
+  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
+  "entityright_exec",
+  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
+  "entityright_admin",
+  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
+);
+__PACKAGE__->set_primary_key("entityright_id");
+
+
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-14 20:51:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7r+BRUp6rGkpEBURNR+JhQ
+
+
+# You can replace this text with custom content, and it will be preserved on regeneration
+1;
