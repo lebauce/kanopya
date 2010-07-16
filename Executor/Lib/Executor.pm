@@ -124,7 +124,13 @@ sub _newObj {
 	my $self = shift;
 	my %args = @_;
 	my $dataclass = ref($args{data});
-	
+    my $class = $dataclass;
+    $class =~s/Data//g;
+    my $location = $class;
+    $location =~s/\:\:/\//g;
+    require $location;
+
+    return $class->new( );
 }
 
 1;
