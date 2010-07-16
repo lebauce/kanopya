@@ -49,6 +49,8 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
+use lib "../../Administrator/Lib";
+use Administrator;
 
 my $log = get_logger("executor");
 
@@ -95,7 +97,9 @@ Executor->run() run the executor server.
 
 sub run {
 	my $self = shift;
-	my $adm = Administrator->new();
+	$log->warn("Before New Administrator");
+	my $adm = Administrator->new(login => "thom", password => "pass");
+	$log->warn("After New Administrator"); 
    	while (1) {
    		my $opdata = $adm->getNextOperation();
    		my $op = $self->_newObj((data => $opdata));
@@ -119,8 +123,11 @@ Executor->_newObj($objdata) instanciates a new object from objectdata.
 sub _newObj {
 	my $self = shift;
 	my %args = @_;
-	$args{data}->isa();
+	my $dataclass = ref($args{data});
+	
 }
+
+1;
 
 __END__
 
