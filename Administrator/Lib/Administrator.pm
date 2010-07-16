@@ -150,22 +150,13 @@ sub _newObj {
 	my $self = shift;
     my ($type) = @_;
 
-	print "=======> $type\n";
-
     my $requested_type = "$type" . "Data";
     my $location = $requested_type;
     $location =~ s/::/\//;     
     $location = "EntityData/$location.pm";
-    
-    print "## $location\n";
-    
     my $obj_class = "EntityData::$requested_type";
-    
-    print "   # require $location\n";
-    
     require $location;   
 
-	print "   # new\n";
     return $obj_class->new( );
 }
 
@@ -190,7 +181,7 @@ sub newObj {
     my ($type, $params) = @_;
 
 	my $new_obj = $self->_newObj( $type );
-	my $obj_data = $self->newData( $type, $params );
+	my $obj_data = $self->_newData( $type, $params );
 	$new_obj->setData( $obj_data );
 
     return $new_obj;

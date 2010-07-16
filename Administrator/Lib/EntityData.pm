@@ -68,8 +68,12 @@ sub delete {
 	# check rights
 
 	#$self->{_data}->delete( { cascade_delete => 1 } );
+	$self->_onDelete();
 	$self->{_data}->delete( );
 }
+
+# override to specific treatment (ex: cascade delete)
+sub _onDelete {}
 
 # destructor
     
