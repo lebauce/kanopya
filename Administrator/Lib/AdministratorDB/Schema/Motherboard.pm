@@ -26,10 +26,15 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
 );
 __PACKAGE__->set_primary_key("motherboard_id");
+__PACKAGE__->has_many(
+  "motherboard_entities",
+  "AdministratorDB::Schema::MotherboardEntity",
+  { "foreign.motherboard_id" => "self.motherboard_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-14 20:51:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HYbZ5sWGPVdY4wBZdo+XwA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ow6jsW08yu3Vf83M6SwtYg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
