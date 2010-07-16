@@ -17,7 +17,7 @@ sub new {
 	
 	my $login = $args{login};
 	my $password = $args{password};
-	 
+
 	# ici on va chercher la conf pour se connecter à la base 
 	my $dbi = 'dbi:mysql:administrator:10.0.0.1:3306';
 	my $user = 'root';
@@ -80,13 +80,37 @@ sub _newData {
 	my ( $class_name, $obj_params )  = @_;	
 	$obj_params = {} if !$obj_params;	
 	
+	print "===> ", $self, "  $class_name   $obj_params";
+	
 	my $new_obj = $self->{db}->resultset( _mapName( $class_name ) )->new( $obj_params );
 	
 	return $new_obj;
 }
 
-sub getObj {
+# instanciate concrete entity data
+sub _newObj {
+	my $self = shift;
+    my ($type) = @_;
 
+    my $requested_type = "$type" . "Data";    
+    my $location = "EntityData/$requested_type.pm";
+    my $opclass = "EntityData::$requested_type";
+    
+    require $location;   
+
+    return $opclass->new( );
+}
+
+sub getObj {
+	my $self = shift;
+    my ($type, $id) = @_;
+
+	my $new_obj = $self->_newObj( $type );
+	my $obj_data = $self->_getData( $type, $id );
+	
+	$new_obj->setData( $obj_data );
+
+    return $new_obj;
 }
 
 sub getObjs {}
