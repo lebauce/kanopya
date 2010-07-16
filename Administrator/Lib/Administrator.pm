@@ -1,6 +1,8 @@
 package Administrator;
 
+
 use strict;
+use lib "./lib";
 use AdministratorDB::Schema;
 use Data::Dumper;
 
