@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::MotherboardtemplateEntity;
+package AdministratorDB::Schema::DistributionEntity;
 
 use strict;
 use warnings;
@@ -6,19 +6,14 @@ use warnings;
 use base 'DBIx::Class';
 
 __PACKAGE__->load_components("Core");
-__PACKAGE__->table("motherboardtemplate_entity");
+__PACKAGE__->table("distribution_entity");
 __PACKAGE__->add_columns(
   "entity_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "motherboardtemplate_id",
+  "distribution_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
-__PACKAGE__->set_primary_key("entity_id", "motherboardtemplate_id");
-__PACKAGE__->belongs_to(
-  "motherboardtemplate_id",
-  "AdministratorDB::Schema::Motherboardtemplate",
-  { "motherboardtemplate_id" => "motherboardtemplate_id" },
-);
+__PACKAGE__->set_primary_key("entity_id", "distribution_id");
 __PACKAGE__->belongs_to(
   "entity_id",
   "AdministratorDB::Schema::Entity",
@@ -27,7 +22,7 @@ __PACKAGE__->belongs_to(
 
 
 # Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wjxGb5F4Z3BTWAbYnVgLeQ
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eAY7pwHWEfOVPPVzUIWC4w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

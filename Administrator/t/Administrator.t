@@ -1,5 +1,7 @@
 use lib "../Lib";
 
+use Test::More 'no_plan';
+
 use Administrator;
 
 my $adm = Administrator->new( login =>'thom', password => 'pass' );

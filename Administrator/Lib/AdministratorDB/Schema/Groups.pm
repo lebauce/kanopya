@@ -19,10 +19,20 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("group_id");
 __PACKAGE__->add_unique_constraint("group_name", ["group_name"]);
+__PACKAGE__->has_many(
+  "entity_groups",
+  "AdministratorDB::Schema::EntityGroups",
+  { "foreign.group_id" => "self.group_id" },
+);
+__PACKAGE__->has_many(
+  "group_entities",
+  "AdministratorDB::Schema::GroupEntity",
+  { "foreign.group_id" => "self.group_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-14 20:51:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rUA91bryH2MTNWRGD8sc4w
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Jb0kHlscz9/96CtbphO1fA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
