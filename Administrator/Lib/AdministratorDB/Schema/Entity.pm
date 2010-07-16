@@ -14,10 +14,70 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => 0, is_nullable => 1, size => 1 },
 );
 __PACKAGE__->set_primary_key("entity_id");
+__PACKAGE__->has_many(
+  "cluster_entities",
+  "AdministratorDB::Schema::ClusterEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "distribution_entities",
+  "AdministratorDB::Schema::DistributionEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "entity_groups",
+  "AdministratorDB::Schema::EntityGroups",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "entityright_entityright_consumer_ids",
+  "AdministratorDB::Schema::Entityright",
+  { "foreign.entityright_consumer_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "entityright_entityright_entity_ids",
+  "AdministratorDB::Schema::Entityright",
+  { "foreign.entityright_entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "group_entities",
+  "AdministratorDB::Schema::GroupEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "kernel_entities",
+  "AdministratorDB::Schema::KernelEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "motherboard_entities",
+  "AdministratorDB::Schema::MotherboardEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "motherboardtemplate_entities",
+  "AdministratorDB::Schema::MotherboardtemplateEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "processortemplate_entities",
+  "AdministratorDB::Schema::ProcessortemplateEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "systemimage_entities",
+  "AdministratorDB::Schema::SystemimageEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "user_entities",
+  "AdministratorDB::Schema::UserEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-14 20:51:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:IVxJE+Ju4IwJAhqBLtM8lA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/Og9vScFu+bugqDDiPz07w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -32,14 +32,8 @@ __PACKAGE__->has_many(
 );
 
 
-#sub new {
-	
-#	print "====================> NEW !!!";
-
-#}
-
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-14 20:51:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iztEMu/xr2x4zWO8s8F1xA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e7qjRGDCWN4wIl3xnWCY5Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

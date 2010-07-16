@@ -148,35 +148,24 @@ sub _newData {
 # instanciate concrete entity data
 sub _newObj {
 	my $self = shift;
-    my ($type) = @_;
-
-	print "=======> $type\n";
+    my ($type, $data) = @_;
 
     my $requested_type = "$type" . "Data";
     my $location = $requested_type;
     $location =~ s/::/\//;     
     $location = "EntityData/$location.pm";
-    
-    print "## $location\n";
-    
     my $obj_class = "EntityData::$requested_type";
-    
-    print "   # require $location\n";
-    
     require $location;   
 
-	print "   # new\n";
-    return $obj_class->new( );
+    return $obj_class->new( data => $data );
 }
 
 sub getObj {
 	my $self = shift;
     my ($type, $id) = @_;
 
-	my $new_obj = $self->_newObj( $type );
 	my $obj_data = $self->_getData( $type, $id );
-	
-	$new_obj->setData( $obj_data );
+	my $new_obj = $self->_newObj( $type, $obj_data );
 
     return $new_obj;
 }
@@ -189,10 +178,9 @@ sub newObj {
 	my $self = shift;
     my ($type, $params) = @_;
 
-	my $new_obj = $self->_newObj( $type );
-	my $obj_data = $self->newData( $type, $params );
-	$new_obj->setData( $obj_data );
-
+	my $obj_data = $self->_newData( $type, $params );
+	my $new_obj = $self->_newObj( $type, $obj_data );
+	
     return $new_obj;
 }
 
@@ -200,11 +188,12 @@ sub saveObj {}
 
 sub getNextOp {
 	my $self = shift;
+	
 	my $all_ops = $self->_getAllData( 'OperationQueue' );
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
 	my $op_type = $op_data->type;
-	my $op = $self->_newObj( "OperationData::$op_type" );
-	$op->setData( $op_data );
+	my $op = $self->_newObj( "OperationData::$op_type", $op_data );
+	
 	return $op;
 }
 

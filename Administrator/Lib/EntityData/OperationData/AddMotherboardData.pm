@@ -60,12 +60,11 @@ Operation::AddMotherboard->new creates a new AddMotheboard operation.
 
 sub new {
     my $class = shift;
-    my $self = {};
-    #my $adm = new Administrator->new();
+    my %args = @_;
+
+    my $self = $class->SUPER::new( %args );
     
-	$log->warn("New Object Operation");    
-    bless $self, $class;
-        
+    $log->warn("New Object Operation");
     $self->_init();
     
     return $self;
