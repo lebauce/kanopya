@@ -46,10 +46,15 @@ Administrator is the main object use to create administrator objects
 
 package Administrator;
 
-
 use strict;
+use warnings;
+use Log::Log4perl "get_logger";
 use AdministratorDB::Schema;
 use Data::Dumper;
+
+my $log = get_logger("administrator");
+
+#$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 ###########################################
 # new (login, password)
@@ -174,7 +179,8 @@ sub saveObj {}
 =cut
 
 sub getNextOperation {
-	
+	my $self = shift;
+	return $self->getObj("Operation", 12);
 }
 
 1;
