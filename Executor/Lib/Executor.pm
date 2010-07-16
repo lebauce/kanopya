@@ -83,7 +83,7 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-	die "Error d'init";
+#	die "Error d'init";
 	return;
 }
 
@@ -119,7 +119,7 @@ Executor->_newObj($objdata) instanciates a new object from objectdata.
 sub _newObj {
 	my $self = shift;
 	my %args = @_;
-	
+	$args{data}->isa();
 }
 
 __END__
