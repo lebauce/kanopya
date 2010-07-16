@@ -61,10 +61,14 @@ my $log = get_logger("administrator");
 # 
 # object constructor
 
+my $oneinstance;
+
 
 sub new {
 	my $class = shift;
 	my %args = @_;
+	
+	if(defined $oneinstance) { return $oneinstance; }
 	
 	my $login = $args{login};
 	my $password = $args{password};
@@ -90,6 +94,7 @@ sub new {
 	}
 	
 	bless $self, $class;
+	$oneinstance = $self;
 	return $self;
 }
 
