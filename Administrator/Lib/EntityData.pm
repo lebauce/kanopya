@@ -8,11 +8,10 @@ use warnings;
 
 sub new {
     my $class = shift;
-    my ($args) = @_;
-
-	# not tested! use setData() or test it
+    my %args = @_;
+    
     my $self = { 
-        _data => $args->{data}
+        _data => $args{data}
     };
     bless $self, $class;
 
@@ -20,12 +19,12 @@ sub new {
 }
 
 
-sub setData {
-	my $self = shift;
-    my ($data) = @_;
-
-	$self->{_data} =  $data;
-}
+#sub setData {
+#	my $self = shift;
+#    my ($data) = @_;
+#
+#	$self->{_data} =  $data;
+#}
 
 sub setValue {
 	my $self = shift;
