@@ -140,8 +140,6 @@ sub _newData {
 	my ( $class_name, $obj_params )  = @_;	
 	$obj_params = {} if !$obj_params;	
 	
-	print "===> ", $self, "  $class_name   $obj_params";
-	
 	my $new_obj = $self->{db}->resultset( _mapName( $class_name ) )->new( $obj_params );
 	
 	return $new_obj;
@@ -152,13 +150,23 @@ sub _newObj {
 	my $self = shift;
     my ($type) = @_;
 
-    my $requested_type = "$type" . "Data";    
-    my $location = "EntityData/$requested_type.pm";
-    my $opclass = "EntityData::$requested_type";
+	print "=======> $type\n";
+
+    my $requested_type = "$type" . "Data";
+    my $location = $requested_type;
+    $location =~ s/::/\//;     
+    $location = "EntityData/$location.pm";
+    
+    print "## $location\n";
+    
+    my $obj_class = "EntityData::$requested_type";
+    
+    print "   # require $location\n";
     
     require $location;   
 
-    return $opclass->new( );
+	print "   # new\n";
+    return $obj_class->new( );
 }
 
 sub getObj {
@@ -194,7 +202,9 @@ sub getOp {
 	my $self = shift;
 	my $all_ops = $self->_getAllData( 'OperationQueue' );
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
-	my $op = $self->_newObj( $op_data->type );
+	my $op_type = $op_data->type;
+	my $op = $self->_newObj( "OperationData::$op_type" );
+	print "  ### Set data !!!!\n";
 	$op->setData( $op_data );
 }
 
