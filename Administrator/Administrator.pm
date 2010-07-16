@@ -43,8 +43,52 @@ sub new {
 	return $self;
 }
 
+# private
 
-sub getObj {}
+
+# permet de faire le lien entre les classes qui n'ont pas le meme noms que la table en bd
+# pas beau trouver autre chose
+sub _mapName {
+	my %ClassTableMapping = (
+		"Operation" => "OperationQueue" );
+	
+	my ($class_name) = @_;
+	my $table_name = $ClassTableMapping{ $class_name };
+	return $table_name ? $table_name : $class_name; 	
+}
+
+# get dbix class
+sub _getData {
+	my $self = shift;
+	my ( $class_name, $id ) = @_;
+
+	return $self->{db}->resultset( _mapName( $class_name ) )->find( $id );
+}
+
+# create dbix class and add row in db
+sub _addData {
+	my $self = shift;
+	my ( $class_name, $obj_params )  = @_;	
+	$obj_params = {} if !$obj_params;
+	
+	my $new_obj = $self->{db}->resultset( _mapName( $class_name ) )->create( $obj_params );
+	return $new_obj;	
+}
+
+# create dbix class
+sub _newData {
+	my $self = shift;
+	my ( $class_name, $obj_params )  = @_;	
+	$obj_params = {} if !$obj_params;	
+	
+	my $new_obj = $self->{db}->resultset( _mapName( $class_name ) )->new( $obj_params );
+	
+	return $new_obj;
+}
+
+sub getObj {
+
+}
 
 sub getObjs {}
 
