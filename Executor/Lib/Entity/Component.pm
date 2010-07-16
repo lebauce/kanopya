@@ -36,12 +36,15 @@ Component is an abstract class of component objects
 =head1 METHODS
 
 =cut
-package Component;
+package Entity::Component;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
+
+use lib "../";
+use Entity;
 
 my $log = get_logger("executor");
 
@@ -57,12 +60,8 @@ Component::new creates a new component object.
 
 sub new {
     my $class = shift;
-    my $self = {};
-
-	$log->warn("New Object Component");    
-    bless $self, $class;
-        
-    $self->_init();
+    my $self = $class->SUPER->new();
+	$self->_init();
     
     return $self;
 }
@@ -79,6 +78,9 @@ sub _init {
 	return;
 }
 
+1;
+
+__END__
 
 =head1 AUTHOR
 

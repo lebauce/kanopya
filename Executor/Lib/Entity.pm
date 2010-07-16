@@ -1,4 +1,4 @@
-# Motherboard.pm - 
+# Entity.pm - Entity is the highest general execution object
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,26 +23,20 @@
 
 =head1 NAME
 
-Motherboard - Motherboard object with methods on motherboarddata object
+Entity - Entity is the highest general execution object
 
 =head1 SYNOPSIS
-
-    use Motherboard;
-    
-    # Instanciate new Motherboard
-    my $mb = Motherboard->new();
-    
 
 
 
 =head1 DESCRIPTION
 
-Motherboard is the main object use to create motherboard objects
+Entity is the highest general execution object
 
 =head1 METHODS
 
 =cut
-package Motherboard;
+package Entity;
 
 use strict;
 use warnings;
@@ -55,34 +49,25 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $mb = Motherboard->new();
+    my $mb = Entity->new();
 
-Executor::new creates a new executor object.
+Entity>new($data : hash EntityData) creates a new entity execution object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = {};
-
-	$log->warn("New Object Executor");    
+    my %args = @_;
+    
+    my $self = { 
+        _entity_data => $args{data}
+    };
     bless $self, $class;
-        
+
     return $self;
 }
 
-=head2 _init
-
-Executor::_init is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-	my $self = shift;
-	die "Error d'init";
-	return;
-}
-
+1;
 
 __END__
 

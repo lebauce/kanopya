@@ -8,8 +8,9 @@ use base "EntityData";
 
 sub new {
     my $class = shift;
-    
-    my $self = $class->SUPER::new(@_);
+    my %args = @_;
+
+    my $self = $class->SUPER::new( %args );
     return $self;
 }
 

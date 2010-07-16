@@ -1,4 +1,4 @@
-# AddMotherboardData.pm - Operation class implementing Motherboard creation operation
+# AddMotherboard.pm - Operation class implementing Motherboard creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -37,16 +37,16 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EntityData::OperationData::AddMotherboardData;
+package Entity::Operation::AddMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib "../";
-use base "EntityData::OperationData";
+use lib "../..";
+use base "Entity::Operation";
 
-my $log = get_logger("administrator");
+my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -60,11 +60,12 @@ Operation::AddMotherboard->new creates a new AddMotheboard operation.
 
 sub new {
     my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new( %args );
+    my $self = {};
+    my $adm = new Administrator->new();
     
-    $log->warn("New Object Operation");
+	$log->warn("New Object Operation");    
+    bless $self, $class;
+        
     $self->_init();
     
     return $self;
