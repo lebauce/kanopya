@@ -1,4 +1,4 @@
-# Operation.pm - 
+# Motherboard.pm - 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,46 +23,46 @@
 
 =head1 NAME
 
-Operation - Abstract class of operation object
+Motherboard - Motherboard object with methods on motherboarddata object
 
 =head1 SYNOPSIS
 
-
+    use Entity::Motherboard;
+    
+    # Instanciate new Motherboard
+    my $mb = Entity::Motherboard->new();
 
 =head1 DESCRIPTION
 
-Component is an abstract class of operation objects
+Motherboard is the main object use to create motherboard objects
 
 =head1 METHODS
 
 =cut
-package Operation;
+package Entity::Motherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-
+use lib qw(..);
+use base "Entity";
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my comp = Operation->new();
+    my $mb = Entity::Motherboard->new();
 
-Operation->new creates a new operation object.
+Entity::Motherboard->new() creates a new Motherboard object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = {};
-
-	$log->warn("New Object Operation");    
-    bless $self, $class;
-        
-    $self->_init();
+    my $self = $class->SUPER->new();
+	$self->_init();
     
     return $self;
 }
@@ -75,10 +75,12 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-
 	return;
 }
 
+1;
+
+__END__
 
 =head1 AUTHOR
 
