@@ -110,6 +110,15 @@ sub _getData {
 	return $self->{db}->resultset( _mapName( $class_name ) )->find( $id );
 }
 
+# get all dbix class of the table
+# return a resultset
+sub _getAllData {
+	my $self = shift;
+	my ( $class_name ) = @_;
+
+	return $self->{db}->resultset( _mapName( $class_name ) );
+}
+
 # create dbix class and add row in db
 sub _addData {
 	my $self = shift;
@@ -163,9 +172,26 @@ sub getObjs {}
 
 sub getAllObjs {}
 
-sub newObj {}
+sub newObj {
+	my $self = shift;
+    my ($type, $params) = @_;
+
+	my $new_obj = $self->_newObj( $type );
+	my $obj_data = $self->newData( $type, $params );
+	$new_obj->setData( $obj_data );
+
+    return $new_obj;
+}
 
 sub saveObj {}
+
+sub getOp {
+	my $self = shift;
+	my $all_ops = $self->_getAllData( 'OperationQueue' );
+	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
+	my $op = $self->_newObj( $op_data->type );
+	$op->setData( $op_data );
+}
 
 =head2 getNextOperation
 
