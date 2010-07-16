@@ -198,14 +198,14 @@ sub newObj {
 
 sub saveObj {}
 
-sub getOp {
+sub getNextOp {
 	my $self = shift;
 	my $all_ops = $self->_getAllData( 'OperationQueue' );
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
 	my $op_type = $op_data->type;
 	my $op = $self->_newObj( "OperationData::$op_type" );
-	print "  ### Set data !!!!\n";
 	$op->setData( $op_data );
+	return $op;
 }
 
 =head2 getNextOperation
