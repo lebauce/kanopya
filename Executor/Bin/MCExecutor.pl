@@ -52,7 +52,7 @@ my $log = get_logger("executor");
 
 try	{
 	my $exec = Executor->new();
-#	$exec->run();
+	$exec->run();
 
 }
 catch Error::Simple with {
