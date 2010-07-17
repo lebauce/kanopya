@@ -78,24 +78,20 @@ sub new {
 	my $pass = 'Hedera@123';
 	my %opts = ();
 	
+	$log->info("instanciating AdministratorDB::Schema");
 	my $schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
 	if( ! $schema ) { die "Unable to connect to the database : "; }
-	
-	use EntityRights;
 		
+	use EntityRights;
+	$log->info("instanciating EntityRights");
+	my $rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
+	if( ! $rightschecker ) { die "Unable to instanciate EntityRights "; }
+	
 	my $self = {
 		db => $schema,
-		_rightschecker => EntityRights->new( schema => $schema ), 
+		_rightschecker => $rightschecker, 
 	};
 		
-	# on recup l'identite de l'utilisateur
-	$self->{user} = $self->{db}->resultset('User')->find( { user_login => $login } );
-	
-	if(! $self->{user} || $self->{user}->user_password ne $password) {
-		warn "incorrect login/password pair";
-		return undef;
-	}
-	
 	bless $self, $class;
 	$oneinstance = $self;
 	return $self;
