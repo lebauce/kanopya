@@ -63,8 +63,6 @@ sub new {
     my %args = @_;
 
     my $self = $class->SUPER::new( %args );
-    
-    $log->warn("New Object Operation");
     $self->_init();
     
     return $self;

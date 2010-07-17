@@ -276,18 +276,20 @@ sub newOp {
 	my %args = @_;
 	#TODO Enlever "thom" et remplace par $self->{_rightchecker}->{_user}
 	my $rank = $self->_get_lastRank() + 1;
+
 	my $op_data = $self->_newData( table => 'Operation', row => { 	type => $args{type},
 																	execution_rank => $rank,
 																	owner => "thom",
 																	priority => $args{priority}});
 	my $op = $self->_newObj( type => "OperationData::".$args{type}, data => $op_data);
+
 	$op->save;
 	$op->addParams($args{params});
 	return $op;
 }
 
 sub _get_lastRank{
-	return 1;
+	return 0;
 }
 
 sub saveObj {}
@@ -307,8 +309,10 @@ sub getNextOp {
 	die "No more operation in queue!" if ( !$op_data );
 	
 	my $op_type = $op_data->type;
+
 	my $op = $self->_newObj( type => "OperationData::$op_type", data => $op_data );
-	
+	$log->warn("Data Class is : Operation::$op_type");
+
 	return $op;
 }
 
@@ -320,8 +324,17 @@ sub getNextOp {
 
 sub getNextOperation {
 	my $self = shift;
-	return $self->getObj("Operation", 12);
+	return $self->getObj("Operation", 1);
 }
+
+sub changeUser {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{user_id} or ! defined $args{user_id}) { die "Administrator->changeUser need a user_id named argument!"; }
+	my $nextuser = $self->getObj("User", $args{user_id});
+	$self->{_rightschecker}->{_userbackup} = $self->{_rightschecker}->{_user};
+	$self->{_rightschecker}->{_user} = $nextuser;
+} 
 
 1;
 

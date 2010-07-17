@@ -1,4 +1,4 @@
-# Component.pm - Abstract class of Components object
+# EOperation.pm - 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Component - Abstract class of component object
+EOperation - Abstract class of EOperation object
 
 =head1 SYNOPSIS
 
@@ -31,36 +31,37 @@ Component - Abstract class of component object
 
 =head1 DESCRIPTION
 
-Component is an abstract class of component objects
+Component is an abstract class of EOperation objects
 
 =head1 METHODS
 
 =cut
-package Entity::Component;
+package EEntity::EOperation;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-
-use lib "../";
-use Entity;
-
+use lib "..";
+use base "EEntity";
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my comp = Component->new();
+    my comp = EEntity::EOperation->new();
 
-Component::new creates a new component object.
+EEntity::EOperation->new creates a new operation object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER->new();
+    my %args = @_;
+
+	$log->warn("Class is : $class");
+    my $self = $class->SUPER::new(%args);
 	$self->_init();
     
     return $self;
@@ -74,10 +75,21 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-
+	
 	return;
 }
 
+=head2 prepare
+
+	$op->prepare();
+
+=cut
+
+sub prepare {
+	my $self = shift;
+	$self->{userid} = $self->_getentity()->getUser();
+	Administrator::new()->change_user($self->{userid});
+}
 1;
 
 __END__

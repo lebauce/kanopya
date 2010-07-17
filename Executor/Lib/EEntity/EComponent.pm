@@ -1,4 +1,4 @@
-# AddMotherboard.pm - Operation class implementing Motherboard creation operation
+# EComponent.pm - Abstract class of EComponents object
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,28 +23,28 @@
 
 =head1 NAME
 
-Operation::AddMotherboard - Operation class implementing Motherboard creation operation
+EComponent - Abstract class of component object
 
 =head1 SYNOPSIS
 
-This Object represent an operation.
-It allows to implement Motherboard creation operation
+
 
 =head1 DESCRIPTION
 
-Component is an abstract class of operation objects
+EComponent is an abstract class of component objects
 
 =head1 METHODS
 
 =cut
-package Entity::Operation::AddMotherboard;
+package Entity::EComponent;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib "../..";
-use base "Entity::Operation";
+
+use lib "../";
+use EEntity;
 
 my $log = get_logger("executor");
 
@@ -52,27 +52,23 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::AddMotherboard->new();
+    my comp = EComponent->new();
 
-Operation::AddMotherboard->new creates a new AddMotheboard operation.
+EComponent::new creates a new component object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = {};
-    
-	$log->warn("New Object Operation");    
-    bless $self, $class;
-        
-    $self->_init();
+    my $self = $class->SUPER->new();
+	$self->_init();
     
     return $self;
 }
 
 =head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
+EComponent::_init is a private method used to define internal parameters.
 
 =cut
 
@@ -82,17 +78,7 @@ sub _init {
 	return;
 }
 
-=head2 prepare
-
-	$op->prepare();
-
-=cut
-
-sub prepare {
-	my $self = shift;
-	my $adm = Administrator->new(login => "thom", password => "pass");
-	
-}
+1;
 
 __END__
 

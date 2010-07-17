@@ -12,8 +12,8 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "type",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 64 },
-  "owner",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 64 },
+  "user_id",
+  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "priority",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
   "creation_date",
@@ -30,10 +30,15 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::OperationParameter",
   { "foreign.operation_id" => "self.operation_id" },
 );
+__PACKAGE__->belongs_to(
+  "user_id",
+  "AdministratorDB::Schema::User",
+  { user_id => "user_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e7qjRGDCWN4wIl3xnWCY5Q
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-17 21:21:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oX0Hrf+7OCNolZdYGmZNmQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

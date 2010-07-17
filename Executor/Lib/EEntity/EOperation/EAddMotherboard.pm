@@ -1,4 +1,4 @@
-# Motherboard.pm - 
+# EAddMotherboard.pm - Operation class implementing Motherboard creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,62 +23,79 @@
 
 =head1 NAME
 
-Motherboard - Motherboard object with methods on motherboarddata object
+EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
 
 =head1 SYNOPSIS
 
-    use Entity::Motherboard;
-    
-    # Instanciate new Motherboard
-    my $mb = Entity::Motherboard->new();
+This Object represent an operation.
+It allows to implement Motherboard creation operation
 
 =head1 DESCRIPTION
 
-Motherboard is the main object use to create motherboard objects
+Component is an abstract class of operation objects
 
 =head1 METHODS
 
 =cut
-package Entity::Motherboard;
+package EEntity::EOperation::EAddMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(..);
-use base "Entity";
+use lib "../..";
+use base "EEntity::EOperation";
+
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my $mb = Entity::Motherboard->new();
+    my $op = EEntity::EOperation::EAddMotherboard->new();
 
-Entity::Motherboard->new() creates a new Motherboard object.
+EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER->new();
-	$self->_init();
+    my %args = @_;
+    
+    $log->warn("Class is : $class");
+    my $self = $class->SUPER::new(%args);
+    $self->_init();
     
     return $self;
 }
 
 =head2 _init
 
-Executor::_init is a private method used to define internal parameters.
+	$op->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
 	my $self = shift;
+
 	return;
 }
 
-1;
+=head2 prepare
+
+	$op->prepare();
+
+=cut
+
+sub prepare {
+	my $self = shift;
+	$self->SUPER::prepare();
+
+	my $adm = Administrator->new();
+	$self->{node} = $adm->getObj();
+}
+
+
 
 __END__
 

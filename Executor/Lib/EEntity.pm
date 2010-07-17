@@ -1,4 +1,4 @@
-# Operation.pm - 
+# EEntity.pm - Entity is the highest general execution object
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Operation - Abstract class of operation object
+EEntity - EEntity is the highest general execution object
 
 =head1 SYNOPSIS
 
@@ -31,49 +31,44 @@ Operation - Abstract class of operation object
 
 =head1 DESCRIPTION
 
-Component is an abstract class of operation objects
+EEntity is the highest general execution object
 
 =head1 METHODS
 
 =cut
-package Entity::Operation;
+package EEntity;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib "..";
-use base "Entity";
+
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my comp = Operation->new();
+    my $mb = Entity->new();
 
-Operation->new creates a new operation object.
+Entity>new($data : hash EntityData) creates a new entity execution object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER->new();
-	$self->_init();
+    my %args = @_;
     
+   	$log->warn("Class is : $class");
+    my $self = { _entity => $args{data}};
+    bless $self, $class;
+
     return $self;
 }
 
-=head2 _init
-
-Executor::_init is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
+sub _getEntity{
 	my $self = shift;
-
-	return;
+	return $self->{entity};
 }
 
 1;

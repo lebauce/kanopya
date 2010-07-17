@@ -1,4 +1,4 @@
-# Entity.pm - Entity is the highest general execution object
+# EMotherboard.pm - 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,35 +23,39 @@
 
 =head1 NAME
 
-Entity - Entity is the highest general execution object
+EMotherboard - Motherboard object with methods on motherboard object
 
 =head1 SYNOPSIS
 
-
+    use Entity::EMotherboard;
+    
+    # Instanciate new EMotherboard
+    my $mb = Entity::EMotherboard->new();
 
 =head1 DESCRIPTION
 
-Entity is the highest general execution object
+EMotherboard is the main object use to create motherboard objects
 
 =head1 METHODS
 
 =cut
-package Entity;
+package EEntity::EMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-
+use lib qw(..);
+use base "EEntity";
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my $mb = Entity->new();
+    my $mb = EEntity::EMotherboard->new();
 
-Entity>new($data : hash EntityData) creates a new entity execution object.
+EEntity::EMotherboard->new() creates a new Motherboard object.
 
 =cut
 
@@ -59,12 +63,21 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    my $self = { 
-        _entity_data => $args{data}
-    };
-    bless $self, $class;
-
+    my $self = $class->SUPER::new(%args);
+	$self->_init();
+    
     return $self;
+}
+
+=head2 _init
+
+EEntity::EMotherboard->_init() is a private method used to define internal parameters.
+
+=cut
+
+sub _init {
+	my $self = shift;
+	return;
 }
 
 1;

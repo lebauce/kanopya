@@ -41,8 +41,8 @@ __PACKAGE__->set_primary_key("cluster_id");
 __PACKAGE__->add_unique_constraint("cluster_name", ["cluster_name"]);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SMwY7BRG2ysXBS2XbN0BBg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-17 21:21:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rL24zhkmnqHLTcB2tNe7Kw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
