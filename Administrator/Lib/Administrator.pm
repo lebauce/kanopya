@@ -230,6 +230,15 @@ sub getNextOperation {
 	return $self->getObj("Operation", 12);
 }
 
+sub changeUser {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{user_id} or ! defined $args{user_id}) { die "Administrator->changeUser need a user_id named argument!"; }
+	my $nextuser = $self->getObj("User", $args{user_id});
+	$self->{_rightschecker}->{_userbackup} = $self->{_rightschecker}->{_user};
+	$self->{_rightschecker}->{_user} = $nextuser;
+} 
+
 1;
 
 __END__
