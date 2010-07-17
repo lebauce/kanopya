@@ -61,7 +61,6 @@ Operation::AddMotherboard->new creates a new AddMotheboard operation.
 sub new {
     my $class = shift;
     my $self = {};
-    my $adm = new Administrator->new();
     
 	$log->warn("New Object Operation");    
     bless $self, $class;
@@ -91,7 +90,8 @@ sub _init {
 
 sub prepare {
 	my $self = shift;
-	my $adm = Administrator->new();
+	my $adm = Administrator->new(login => "thom", password => "pass");
+	
 }
 
 __END__
