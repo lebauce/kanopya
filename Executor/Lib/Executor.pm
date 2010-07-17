@@ -68,10 +68,9 @@ sub new {
     my $class = shift;
     my $self = {};
 
-	$log->warn("New Object Executor");    
     bless $self, $class;
         
-    $self->_init();
+   $self->_init();
     
     # Plus tard rajouter autre chose
     return $self;
@@ -85,7 +84,7 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-#	die "Error d'init";
+
 	return;
 }
 
@@ -97,6 +96,7 @@ Executor->run() run the executor server.
 
 sub run {
 	my $self = shift;
+	
 	$log->warn("Before New Administrator");
 	my $adm = Administrator->new(login => "thom", password => "pass");
 	$log->warn("After New Administrator"); 
@@ -107,6 +107,33 @@ sub run {
    			$op->prepare();
    			$op->execute();
    			$op->finish();
+   		}
+   		else {
+   			sleep 20;
+   		}
+   	} 
+}
+
+=head2 run
+
+Executor->execnround((run => $nbrun)) run the executor server for only one round.
+
+=cut
+
+sub execnround {
+	my $self = shift;
+	my %args = @_;
+
+	my $adm = Administrator->new(login => "thom", password => "pass");
+
+   	while ($args{run}) {
+   		my $opdata = $adm->getNextOperation();
+   		my $op = $self->_newObj((data => $opdata));
+   		if ($op){
+   			$op->prepare();
+   			$op->execute();
+   			$op->finish();
+   			$args{run}--;
    		}
    		else {
    			sleep 20;

@@ -37,7 +37,7 @@ sub addParams {
 	foreach my $k (keys %$params) {
 			$data->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );
 	}
-	
+	return 0;
 }
 
 # return a hash ref { p1 => v1, p2 => v2, ...}
