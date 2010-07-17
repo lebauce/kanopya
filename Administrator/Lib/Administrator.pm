@@ -197,7 +197,7 @@ sub newOp {
 												execution_rank => $rank,
 												owner => "thom",
 												priority => $args{priority}});
-	my $op = $self->_newObj("OperationData::".$args{type}, $op_data);
+	my $op = $self->_newObj("Operation::".$args{type}, $op_data);
 	$op->save;
 	$op->addParams($args{params});
 	return $op;
@@ -217,8 +217,8 @@ sub getNextOp {
 	die "No more operation in queue!" if ( !$op_data );
 	
 	my $op_type = $op_data->type;
-	my $op = $self->_newObj( "OperationData::$op_type", $op_data );
-	
+	my $op = $self->_newObj( "Operation::$op_type", $op_data );
+	   $log->warn("Data Class is : Operation::$op_type");
 	return $op;
 }
 
@@ -230,7 +230,7 @@ sub getNextOp {
 
 sub getNextOperation {
 	my $self = shift;
-	return $self->getObj("Operation", 12);
+	return $self->getObj("Operation", 1);
 }
 
 1;

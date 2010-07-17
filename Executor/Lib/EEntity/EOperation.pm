@@ -36,14 +36,14 @@ Component is an abstract class of EOperation objects
 =head1 METHODS
 
 =cut
-package Entity::EOperation;
+package EEntity::EOperation;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib "..";
-use base "Entity";
+use base "EEntity";
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
@@ -60,7 +60,8 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    my $self = $class->SUPER->new(%args);
+	$log->warn("Class is : $class");
+    my $self = $class->SUPER::new(%args);
 	$self->_init();
     
     return $self;
@@ -74,10 +75,21 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-
+	
 	return;
 }
 
+=head2 prepare
+
+	$op->prepare();
+
+=cut
+
+sub prepare {
+	my $self = shift;
+	$self->{userid} = $self->_getentity()->getUser();
+	Administrator::new()->change_user($self->{userid});
+}
 1;
 
 __END__

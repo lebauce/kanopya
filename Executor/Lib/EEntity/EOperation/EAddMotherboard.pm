@@ -62,6 +62,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     
+    $log->warn("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -88,9 +89,13 @@ sub _init {
 
 sub prepare {
 	my $self = shift;
-	my $adm = Administrator->new(login => "thom", password => "pass");
-	
+	$self->SUPER::prepare();
+
+	my $adm = Administrator->new();
+	$self->{node} = $adm->getObj();
 }
+
+
 
 __END__
 

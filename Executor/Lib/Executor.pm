@@ -127,7 +127,7 @@ sub execnround {
 	my $adm = Administrator->new(login => "thom", password => "pass");
 
    	while ($args{run}) {
-   		my $opdata = $adm->getNextOperation();
+   		my $opdata = $adm->getNextOp();
    		my $op = $self->_newObj((data => $opdata));
    		if ($op){
    			$op->prepare();
@@ -151,6 +151,7 @@ sub _newObj {
 	my $self = shift;
 	my %args = @_;
 	my $dataclass = ref($args{data});
+
     my $class = $dataclass;
     $class =~s/\:\:/\:\:E/g;
     $class = "E".$class;

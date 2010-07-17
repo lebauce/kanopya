@@ -36,7 +36,7 @@ EEntity is the highest general execution object
 =head1 METHODS
 
 =cut
-package Entity;
+package EEntity;
 
 use strict;
 use warnings;
@@ -59,12 +59,17 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    my $self = { _entity_data => $args{data}};
+   	$log->warn("Class is : $class");
+    my $self = { _entity => $args{data}};
     bless $self, $class;
 
     return $self;
 }
 
+sub _getEntity{
+	my $self = shift;
+	return $self->{entity};
+}
 
 1;
 
