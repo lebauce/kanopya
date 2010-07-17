@@ -111,7 +111,9 @@ sub _mapName {
 	return $table_name ? $table_name : $class_name; 	
 }
 
-=head2 private _getData
+=head2 _getData
+	
+	Private
 	
 	Instanciate dbix class mapped to corresponding raw in DB
 	
@@ -129,7 +131,9 @@ sub _getData {
 	return $self->{db}->resultset( _mapName( $args{table} ) )->find( $args{id} );
 }
 
-=head2 private _getAllData
+=head2 _getAllData
+
+	Private
 
 	Get all dbix class of table
 	
@@ -146,7 +150,9 @@ sub _getAllData {
 }
 
 
-=head2 private _addData
+=head2 _addData
+	
+	Private
 	
 	Instanciate dbix class filled with <params>, add a corresponding row in DB
 	
@@ -167,7 +173,9 @@ sub _addData {
 }
 
 
-=head2 private _newData
+=head2 _newData
+	
+	Private
 	
 	Instanciate dbix class filled with <params>, doesn't add in DB
 	
@@ -189,7 +197,9 @@ sub _newData {
 }
 
 
-=head2 private _newObj
+=head2 _newObj
+	
+	Private
 	
 	Instanciate concrete Entity
 	
