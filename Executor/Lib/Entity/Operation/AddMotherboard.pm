@@ -1,4 +1,4 @@
-# Operation.pm - 
+# AddMotherboard.pm - Operation class implementing Motherboard creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,11 +23,12 @@
 
 =head1 NAME
 
-Operation - Abstract class of operation object
+Operation::AddMotherboard - Operation class implementing Motherboard creation operation
 
 =head1 SYNOPSIS
 
-
+This Object represent an operation.
+It allows to implement Motherboard creation operation
 
 =head1 DESCRIPTION
 
@@ -36,12 +37,14 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package Operation;
+package Entity::Operation::AddMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
+use lib "../..";
+use base "Entity::Operation";
 
 my $log = get_logger("executor");
 
@@ -49,16 +52,16 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my comp = Operation->new();
+    my $op = Operation::AddMotherboard->new();
 
-Operation->new creates a new operation object.
+Operation::AddMotherboard->new creates a new AddMotheboard operation.
 
 =cut
 
 sub new {
     my $class = shift;
     my $self = {};
-
+    
 	$log->warn("New Object Operation");    
     bless $self, $class;
         
@@ -69,7 +72,7 @@ sub new {
 
 =head2 _init
 
-Executor::_init is a private method used to define internal parameters.
+	$op->_init() is a private method used to define internal parameters.
 
 =cut
 
@@ -79,6 +82,19 @@ sub _init {
 	return;
 }
 
+=head2 prepare
+
+	$op->prepare();
+
+=cut
+
+sub prepare {
+	my $self = shift;
+	my $adm = Administrator->new(login => "thom", password => "pass");
+	
+}
+
+__END__
 
 =head1 AUTHOR
 

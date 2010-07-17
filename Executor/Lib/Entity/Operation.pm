@@ -1,4 +1,4 @@
-# Executor.pm - Object class of Executor server
+# Operation.pm - 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,57 +23,44 @@
 
 =head1 NAME
 
-Executor - Executor object
+Operation - Abstract class of operation object
 
 =head1 SYNOPSIS
 
-    use Executor;
-    
-    # Creates executor
-    my $executor = Executor->new();
-    
-    # Create object
-    $executor->newobject($type : String, %ObjectDefinition);
 
 
 =head1 DESCRIPTION
 
-Executor is the main object use to create execution objects
+Component is an abstract class of operation objects
 
 =head1 METHODS
 
 =cut
-package Executor;
+package Entity::Operation;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib "../../Administrator/Lib";
-use Administrator;
-
+use lib "..";
+use base "Entity";
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my $executor = Executor->new();
+    my comp = Operation->new();
 
-Executor::new creates a new executor object.
+Operation->new creates a new operation object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = {};
-
-	$log->warn("New Object Executor");    
-    bless $self, $class;
-        
-    $self->_init();
+    my $self = $class->SUPER->new();
+	$self->_init();
     
-    # Plus tard rajouter autre chose
     return $self;
 }
 
@@ -85,52 +72,8 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-#	die "Error d'init";
+
 	return;
-}
-
-=head2 run
-
-Executor->run() run the executor server.
-
-=cut
-
-sub run {
-	my $self = shift;
-	$log->warn("Before New Administrator");
-	my $adm = Administrator->new(login => "thom", password => "pass");
-	$log->warn("After New Administrator"); 
-   	while (1) {
-   		my $opdata = $adm->getNextOperation();
-   		my $op = $self->_newObj((data => $opdata));
-   		if ($op){
-   			$op->prepare();
-   			$op->execute();
-   			$op->finish();
-   		}
-   		else {
-   			sleep 20;
-   		}
-   	} 
-}
-
-=head2 _newObj
-
-Executor->_newObj($objdata) instanciates a new object from objectdata.
-
-=cut
-
-sub _newObj {
-	my $self = shift;
-	my %args = @_;
-	my $dataclass = ref($args{data});
-    my $class = $dataclass;
-    $class =~s/Data//g;
-    my $location = $class;
-    $location =~s/\:\:/\//g;
-    require $location;
-
-    return $class->new((data => $args{data}));
 }
 
 1;

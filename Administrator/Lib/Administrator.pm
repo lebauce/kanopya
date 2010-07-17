@@ -61,10 +61,13 @@ my $log = get_logger("administrator");
 # 
 # object constructor
 
+my $oneinstance;
 
 sub new {
 	my $class = shift;
 	my %args = @_;
+	
+	if(defined $oneinstance) { return $oneinstance; }
 	
 	my $login = $args{login};
 	my $password = $args{password};
@@ -74,13 +77,17 @@ sub new {
 	my $user = 'root';
 	my $pass = 'Hedera@123';
 	my %opts = ();
+	
+	my $schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
+	if( ! $schema ) { die "Unable to connect to the database : "; }
+	
+	use EntityRights;
 		
 	my $self = {
-		db => AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts),
+		db => $schema,
+		_rightschecker => EntityRights->new( schema => $schema ), 
 	};
-	
-	if( ! $self->{db} ) { die "Unable to connect to the database : "; }
-	
+		
 	# on recup l'identite de l'utilisateur
 	$self->{user} = $self->{db}->resultset('User')->find( { user_login => $login } );
 	
@@ -90,6 +97,7 @@ sub new {
 	}
 	
 	bless $self, $class;
+	$oneinstance = $self;
 	return $self;
 }
 
@@ -157,7 +165,7 @@ sub _newObj {
     my $obj_class = "EntityData::$requested_type";
     require $location;   
 
-    return $obj_class->new( data => $data );
+    return $obj_class->new( data => $data, rightschecker => $self->{_rightschecker} );
 }
 
 sub getObj {
