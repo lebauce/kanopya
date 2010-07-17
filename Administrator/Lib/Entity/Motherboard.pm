@@ -1,8 +1,8 @@
-package EntityData::MotherboardData;
+package Entity::Motherboard;
 
 use strict;
 
-use base "EntityData";
+use base "Entity";
 
 # contructor 
 
