@@ -10,7 +10,8 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    my $self = { 
+    my $self = {
+    	_rightschecker => $args{rightschecker},
         _data => $args{data}
     };
     bless $self, $class;
