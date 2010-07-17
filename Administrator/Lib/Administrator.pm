@@ -111,65 +111,122 @@ sub _mapName {
 	return $table_name ? $table_name : $class_name; 	
 }
 
-# get dbix class
+=head2 private _getData
+	
+	Instanciate dbix class mapped to corresponding raw in DB
+	
+	args: 
+		table: DB table name
+		id: id of required entity in table
+	return: db schema (dbix)
+	
+=cut
+
 sub _getData {
 	my $self = shift;
-	my ( $class_name, $id ) = @_;
+	my %args = @_;
 
-	return $self->{db}->resultset( _mapName( $class_name ) )->find( $id );
+	return $self->{db}->resultset( _mapName( $args{table} ) )->find( $args{id} );
 }
 
-# get all dbix class of the table
-# return a resultset
+=head2 private _getAllData
+
+	Get all dbix class of table
+	
+	args: table
+	return: resultset (dbix)
+	
+=cut
+
 sub _getAllData {
 	my $self = shift;
-	my ( $class_name ) = @_;
+	my %args = @_;
 
-	return $self->{db}->resultset( _mapName( $class_name ) );
+	return $self->{db}->resultset( _mapName( $args{table} ) );
 }
 
-# create dbix class and add row in db
+
+=head2 private _addData
+	
+	Instanciate dbix class filled with <params>, add a corresponding row in DB
+	
+	args: 
+		table: DB table name
+		row: hash ref representing the new row (key mapped on <table> columns)
+	return: db schema (dbix)
+	
+=cut
+
 sub _addData {
 	my $self = shift;
-	my ( $class_name, $obj_params )  = @_;	
-	$obj_params = {} if !$obj_params;
+	my %args  = @_;	
+	#$args{params} = {} if !$args{params};
 	
-	my $new_obj = $self->{db}->resultset( _mapName( $class_name ) )->create( $obj_params );
+	my $new_obj = $self->{db}->resultset( _mapName( $args{table} ) )->create( $args{row} );
 	return $new_obj;	
 }
 
-# create dbix class
+
+=head2 private _newData
+	
+	Instanciate dbix class filled with <params>, doesn't add in DB
+	
+	args: 
+		table: DB table name
+		row: hash ref representing the new row (key mapped on <table> columns)
+	return: db schema (dbix)
+
+=cut
+
 sub _newData {
 	my $self = shift;
-	my ( $class_name, $obj_params )  = @_;	
-	$obj_params = {} if !$obj_params;	
+	my %args  = @_;	
+	#$args{params} = {} if !$args{params};	
 	
-	my $new_obj = $self->{db}->resultset( _mapName( $class_name ) )->new( $obj_params );
+	my $new_obj = $self->{db}->resultset( _mapName( $args{table} ) )->new( $args{row} );
 	
 	return $new_obj;
 }
 
-# instanciate concrete entity data
+
+=head2 private _newObj
+	
+	Instanciate concrete Entity
+	
+	args: 
+		type : concrete entity type
+		data : db schema (dbix)
+	
+=cut
+
 sub _newObj {
 	my $self = shift;
-    my ($type, $data) = @_;
+    my %args = @_;
 
-    my $requested_type = "$type" . "Data";
+    my $requested_type = $args{type};
     my $location = $requested_type;
     $location =~ s/::/\//;     
-    $location = "EntityData/$location.pm";
-    my $obj_class = "EntityData::$requested_type";
+    $location = "Entity/$location.pm";
+    my $obj_class = "Entity::$requested_type";
     require $location;   
 
-    return $obj_class->new( data => $data, rightschecker => $self->{_rightschecker} );
+    return $obj_class->new( data => $args{data}, rightschecker => $self->{_rightschecker} );
 }
+
+=head2 getObj
+	
+	args: type, id
+	Return a new Entity::<type> with data corresponding to <id> (in <type> table)
+	To modify data in DB call save() on returned obj (after modification)
+	
+=cut
 
 sub getObj {
 	my $self = shift;
-    my ($type, $id) = @_;
+    my %args = @_;
 
-	my $obj_data = $self->_getData( $type, $id );
-	my $new_obj = $self->_newObj( $type, $obj_data );
+	my $obj_data = $self->_getData( table => $args{type}, id => $args{id} );
+	my $new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
 
     return $new_obj;
 }
@@ -178,43 +235,69 @@ sub getObjs {}
 
 sub getAllObjs {}
 
+=head2 newObj
+	
+	args: 
+		type: concrete Entity type
+		params: hash ref with key mapped on <type> table column
+		
+	Return a New Entity::<type> with params as data (not add in db)
+	To add data in DB call save() on returned obj
+	 
+=cut
+
 sub newObj {
 	my $self = shift;
-    my ($type, $params) = @_;
+    my %args = @_;
 
-	my $obj_data = $self->_newData( $type, $params );
-	my $new_obj = $self->_newObj( $type, $obj_data );
+	my $obj_data = $self->_newData( table =>  $args{type}, row => $args{params} );
+	
+	my $new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
 	
     return $new_obj;
 }
+
+=head2 new Op
+	
+=cut
 
 sub newOp {
 	my $self = shift;
 	my %args = @_;
 	#TODO Enlever "thom" et remplace par $self->{_rightchecker}->{_user}
 	my $rank = $self->_get_lastRank() + 1;
-	my $op_data =$self->_newData('Operation', { type => $args{type},
-												execution_rank => $rank,
-												owner => "thom",
-												priority => $args{priority}});
-	my $op = $self->_newObj("OperationData::".$args{type}, $op_data);
+	my $op_data = $self->_newData( table => 'Operation', row => { 	type => $args{type},
+																	execution_rank => $rank,
+																	owner => "thom",
+																	priority => $args{priority}});
+	my $op = $self->_newObj( type => "OperationData::".$args{type}, data => $op_data);
 	$op->save;
 	$op->addParams($args{params});
 	return $op;
 }
+
 sub _get_lastRank{
 	return 1;
 }
 
 sub saveObj {}
 
+=head2 getNextOp
+	
+	Returns the concrete Operation with the execution_rank min 
+	
+=cut
+
 sub getNextOp {
 	my $self = shift;
 	
-	my $all_ops = $self->_getAllData( 'OperationQueue' );
+	my $all_ops = $self->_getAllData( table => 'OperationQueue' );
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
+	
+	die "No more operation in queue!" if ( !$op_data );
+	
 	my $op_type = $op_data->type;
-	my $op = $self->_newObj( "OperationData::$op_type", $op_data );
+	my $op = $self->_newObj( type => "OperationData::$op_type", data => $op_data );
 	
 	return $op;
 }
