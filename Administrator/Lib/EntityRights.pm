@@ -44,13 +44,13 @@ use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
-my $log = get_logger("???");
+my $log = get_logger("administrator");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-new (schema => $schema)
+new (schema => $schema, login => $login, password => $password)
 
 simple constructer
 
@@ -60,12 +60,32 @@ sub new {
 	my $class = shift;
 	my %args = @_;
 	if (! exists $args{schema} or ! defined $args{schema}) {  die "EntityRights->new need a schema named argument!"; }
+	if (! exists $args{login} or ! defined $args{login}) {  die "EntityRights->new need a login named argument!"; }
+	if (! exists $args{password} or ! defined $args{password}) {  die "EntityRights->new need a password named argument!"; }
 	
 	my $self = {
 		_schema => $args{schema},
 	};
+		
+	# check user identity
+	$self->{_user} = $self->{_schema}->resultset('User')->find( { user_login => $args{login} } );
+		
+	if(! $self->{_user} || $self->{_user}->user_password ne $args{password} ) {
+		warn "incorrect login/password pair";
+		return undef;
+	}
 	
+	# get user entity_id
+	$self->{_user_entity_id} = $self->{_user}->user_entities->next->get_column('entity_id');
 	
+	# get user groups
+#	my @groups = $self->{_schema}->resultset('EntityGroups')->search({entity_id => $self->{_user_entity_id}});
+#	foreach my $g (@groups) {
+#		print $g->get_column('group_id'), "\n";
+#	}
+		
+		
+		
 	bless $self, $class;
  	return $self;
 }
@@ -80,12 +100,12 @@ Get rights result of association between 2 entityData objetcs
 sub _getRights {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{parentEntityId} or ! defined $args{parentEntityId}) {  die "EntityRights->getRights need a parentEntityId named argument!"; }
-	if (! exists $args{childEntityId} or ! defined $args{childEntityId}) {  die "EntityRights->getRights need a childEntityId named argument!"; }
+	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getRights need a EntityId named argument!"; }
+	if (! exists $args{ConsumerId} or ! defined $args{ConsumerId}) {  die "EntityRights->getRights need a ConsumerId named argument!"; }
 	
 	my $res = $self->{_schema}->resultset('Entityright')->single( {
-		entityright_entity_id =>  $args{parentEntityId},
-		entityright_consumer_id =>  $args{childEntityId} }
+		entityright_entity_id =>  $args{EntityId},
+		entityright_consumer_id =>  $args{ConsumerId} }
 	);
 	if( ! $res ) { die 'EntityRights->getRights : no record found.'; }
 	return $res;
