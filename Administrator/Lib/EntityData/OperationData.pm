@@ -15,11 +15,13 @@ sub new {
 }
 
 # delete related parameters
-sub _onDelete {
+sub delete {
 	my $self = shift;
-	
+
 	my $params_rs = $self->{_data}->operation_parameters;
-	$params_rs->delete;	
+	$params_rs->delete;
+	
+	$self->SUPER::delete( );	
 }
 
 sub addParams {
