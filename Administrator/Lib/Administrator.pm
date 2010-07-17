@@ -188,6 +188,24 @@ sub newObj {
     return $new_obj;
 }
 
+sub newOp {
+	my $self = shift;
+	my %args = @_;
+	#TODO Enlever "thom" et remplace par $self->{_rightchecker}->{_user}
+	my $rank = $self->_get_lastRank() + 1;
+	my $op_data =$self->_newData('Operation', { type => $args{type},
+												execution_rank => $rank,
+												owner => "thom",
+												priority => $args{priority}});
+	my $op = $self->_newObj("OperationData::".$args{type}, $op_data);
+	$op->save;
+	$op->addParams($args{params});
+	return $op;
+}
+sub _get_lastRank{
+	return 1;
+}
+
 sub saveObj {}
 
 sub getNextOp {

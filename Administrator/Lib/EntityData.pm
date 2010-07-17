@@ -51,12 +51,12 @@ sub save {
 
 	if ( $self->{_data}->in_storage ) {
 		# MODIFY existing db obj
-		print "\n##### MODIFY \n";
+		#print "\n##### MODIFY \n";
 		$self->{_data}->update;
 	}
 	else {
 		# CREATE
-		print "\n##### CREATE \n";
+		#print "\n##### CREATE \n";
 		$self->{_data}->insert;
 	}
 		
