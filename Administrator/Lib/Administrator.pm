@@ -199,6 +199,9 @@ sub getNextOp {
 	
 	my $all_ops = $self->_getAllData( 'OperationQueue' );
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
+	
+	die "No more operation in queue!" if ( !$op_data );
+	
 	my $op_type = $op_data->type;
 	my $op = $self->_newObj( "OperationData::$op_type", $op_data );
 	
