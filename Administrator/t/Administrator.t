@@ -10,7 +10,7 @@ my $adm = Administrator->new( login =>'thom', password => 'pass' );
 #
 note( "Test Entity management");
 my $obj = $adm->newObj( "Motherboard", { motherboard_sn => '12345'} );
-	isa_ok( $obj, "EntityData::MotherboardData", '$obj');
+	isa_ok( $obj, "Entity::Motherboard", '$obj');
 	is( $obj->{_data}->in_storage , 0, "new obj doesn't add in DB" ); 
 	is( $obj->getValue( 'motherboard_sn' ), '12345', "get value of new obj" );
 
@@ -24,7 +24,7 @@ $obj->setValue( 'motherboard_sn', '666' ); # change local value but not in db
 
 my $obj_id = $obj->getValue( 'motherboard_id' );
 $obj = $adm->getObj( "Motherboard", $obj_id );
-	isa_ok( $obj, "EntityData::MotherboardData", '$obj');
+	isa_ok( $obj, "Entity::Motherboard", '$obj');
 	is( $obj->{_data}->in_storage , 1, "get obj from DB" );
 	is( $obj->getValue( 'motherboard_sn' ), '54321', "get value after get obj" );
 
@@ -45,7 +45,7 @@ note( "Test Operation" );
 #print $op3->getValue( 'type' ), "    ", $op3->getValue( 'operation_id' );
 
 my $op = $adm->newObj( 'Operation', { type => "TortueOperation", execution_rank => 16 } );
-	isa_ok( $op, "EntityData::OperationData", '$op');
+	isa_ok( $op, "Entity::Operation", '$op');
 	is( $op->{_data}->in_storage , 0, "new op doesn't add in DB" );
 $op->save;
 	is( $op->{_data}->in_storage , 1, "save op in DB" );

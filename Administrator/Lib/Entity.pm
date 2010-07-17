@@ -1,4 +1,4 @@
-package EntityData;
+package Entity;
 
 use strict;
 use warnings;

@@ -154,11 +154,11 @@ sub _newObj {
 	my $self = shift;
     my ($type, $data) = @_;
 
-    my $requested_type = "$type" . "Data";
+    my $requested_type = "$type";
     my $location = $requested_type;
     $location =~ s/::/\//;     
-    $location = "EntityData/$location.pm";
-    my $obj_class = "EntityData::$requested_type";
+    $location = "Entity/$location.pm";
+    my $obj_class = "Entity::$requested_type";
     require $location;   
 
     return $obj_class->new( data => $data, rightschecker => $self->{_rightschecker} );

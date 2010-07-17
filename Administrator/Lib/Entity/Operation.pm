@@ -1,8 +1,8 @@
-package EntityData::OperationData;
+package Entity::Operation;
 
 use strict;
 
-use base "EntityData";
+use base "Entity";
 
 # contructor 
 
