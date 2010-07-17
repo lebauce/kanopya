@@ -207,7 +207,7 @@ sub newOp {
 	return $op;
 }
 sub _get_lastRank{
-	return 1;
+	return 0;
 }
 
 sub saveObj {}

@@ -1,4 +1,4 @@
-# Component.pm - Abstract class of Components object
+# EMotherboard.pm - 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,44 +23,47 @@
 
 =head1 NAME
 
-Component - Abstract class of component object
+EMotherboard - Motherboard object with methods on motherboard object
 
 =head1 SYNOPSIS
 
-
+    use Entity::EMotherboard;
+    
+    # Instanciate new EMotherboard
+    my $mb = Entity::EMotherboard->new();
 
 =head1 DESCRIPTION
 
-Component is an abstract class of component objects
+EMotherboard is the main object use to create motherboard objects
 
 =head1 METHODS
 
 =cut
-package Entity::Component;
+package EEntity::EMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-
-use lib "../";
-use Entity;
-
+use lib qw(..);
+use base "EEntity";
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my comp = Component->new();
+    my $mb = EEntity::EMotherboard->new();
 
-Component::new creates a new component object.
+EEntity::EMotherboard->new() creates a new Motherboard object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER->new();
+    my %args = @_;
+    
+    my $self = $class->SUPER::new(%args);
 	$self->_init();
     
     return $self;
@@ -68,13 +71,12 @@ sub new {
 
 =head2 _init
 
-Executor::_init is a private method used to define internal parameters.
+EEntity::EMotherboard->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
 	my $self = shift;
-
 	return;
 }
 

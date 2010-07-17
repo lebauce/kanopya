@@ -1,4 +1,4 @@
-# Entity.pm - Entity is the highest general execution object
+# EComponent.pm - Abstract class of EComponents object
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Entity - Entity is the highest general execution object
+EComponent - Abstract class of component object
 
 =head1 SYNOPSIS
 
@@ -31,17 +31,20 @@ Entity - Entity is the highest general execution object
 
 =head1 DESCRIPTION
 
-Entity is the highest general execution object
+EComponent is an abstract class of component objects
 
 =head1 METHODS
 
 =cut
-package Entity;
+package Entity::EComponent;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
+
+use lib "../";
+use EEntity;
 
 my $log = get_logger("executor");
 
@@ -49,22 +52,30 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $mb = Entity->new();
+    my comp = EComponent->new();
 
-Entity>new($data : hash EntityData) creates a new entity execution object.
+EComponent::new creates a new component object.
 
 =cut
 
 sub new {
     my $class = shift;
-    my %args = @_;
+    my $self = $class->SUPER->new();
+	$self->_init();
     
-    my $self = { 
-        _entity_data => $args{data}
-    };
-    bless $self, $class;
-
     return $self;
+}
+
+=head2 _init
+
+EComponent::_init is a private method used to define internal parameters.
+
+=cut
+
+sub _init {
+	my $self = shift;
+
+	return;
 }
 
 1;

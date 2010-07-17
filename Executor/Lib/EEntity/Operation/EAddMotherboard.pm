@@ -1,4 +1,4 @@
-# AddMotherboard.pm - Operation class implementing Motherboard creation operation
+# EAddMotherboard.pm - Operation class implementing Motherboard creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Operation::AddMotherboard - Operation class implementing Motherboard creation operation
+EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
 
 =head1 SYNOPSIS
 
@@ -37,14 +37,14 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package Entity::Operation::AddMotherboard;
+package EEntity::EOperation::EAddMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib "../..";
-use base "Entity::Operation";
+use base "EEntity::EOperation";
 
 my $log = get_logger("executor");
 
@@ -52,19 +52,17 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::AddMotherboard->new();
+    my $op = EEntity::EOperation::EAddMotherboard->new();
 
-Operation::AddMotherboard->new creates a new AddMotheboard operation.
+EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
 
 =cut
 
 sub new {
     my $class = shift;
-    my $self = {};
+    my %args = @_;
     
-	$log->warn("New Object Operation");    
-    bless $self, $class;
-        
+    my $self = $class->SUPER::new(%args);
     $self->_init();
     
     return $self;
