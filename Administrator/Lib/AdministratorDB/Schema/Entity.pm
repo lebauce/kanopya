@@ -30,14 +30,14 @@ __PACKAGE__->has_many(
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
-  "entityright_entityright_consumer_ids",
-  "AdministratorDB::Schema::Entityright",
-  { "foreign.entityright_consumer_id" => "self.entity_id" },
-);
-__PACKAGE__->has_many(
   "entityright_entityright_entity_ids",
   "AdministratorDB::Schema::Entityright",
   { "foreign.entityright_entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "entityright_entityright_consumer_ids",
+  "AdministratorDB::Schema::Entityright",
+  { "foreign.entityright_consumer_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
   "group_entities",
@@ -76,8 +76,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-16 15:48:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/Og9vScFu+bugqDDiPz07w
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-17 21:21:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xQST/3TY0qPnaWDlxz36Yw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -47,11 +47,18 @@ sub getParams {
 	my $self = shift;
 	
 	my %params = ();
-	my $params_rs = $self->{_data}->operation_parameters;
+	#my $params_rs = $self->{_data}->operation_parameters;
+	my $params_rs = $self->getValue("operation_parameters");
+	
 	while ( my $param = $params_rs->next ) {
 		$params{ $param->name } = $param->value;
 	}
 	return \%params;
+}
+
+sub getUser {
+	my $self = shift;
+	return $self->getValue(name => "user_id");
 }
 
 # getParamValue( param_name ) : param_value
