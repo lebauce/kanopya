@@ -16,10 +16,15 @@ __PACKAGE__->add_columns(
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 255 },
 );
 __PACKAGE__->set_primary_key("motherboard_id", "key");
+__PACKAGE__->belongs_to(
+  "motherboard_id",
+  "AdministratorDB::Schema::Motherboard",
+  { motherboard_id => "motherboard_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-17 21:21:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Y//1BOQT/GHl51bNLCEF5A
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-18 17:28:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1HLg0pezDSeYZEqZ7U73tQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

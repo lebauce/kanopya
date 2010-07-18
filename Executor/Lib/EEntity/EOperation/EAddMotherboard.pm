@@ -42,6 +42,7 @@ package EEntity::EOperation::EAddMotherboard;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 use vars qw(@ISA $VERSION);
 use lib "../..";
 use base "EEntity::EOperation";
@@ -90,9 +91,11 @@ sub _init {
 sub prepare {
 	my $self = shift;
 	$self->SUPER::prepare();
-
+	$log->warn("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
-#	$self->{node} = $adm->getObj();
+	$log->warn("After administator instanciation, before newObj");
+	$self->{node} = $adm->newObj(type => "Motherboard", params => $self->_getEntity()->getParams());
+	print Dumper $self->{node};
 }
 
 
