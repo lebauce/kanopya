@@ -1,0 +1,34 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+
+<TMPL_IF NAME=EDIT_MODE>
+	<p>
+	<b>Motherboard <TMPL_VAR NAME=MB_ID></b>
+	</p>
+</TMPL_IF>
+
+<form NAME="form" ACTION="/cgi-bin/addMotherboard.pl" METHOD="POST">
+<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=MB_ID> >
+<table BORDER=1>
+<tr>
+	<td>Model</td>
+	<td><input TYPE="text" NAME="model" VALUE=<TMPL_VAR NAME=MODEL> ></td>
+</tr>
+<tr>
+	<td COLSPAN=2>
+	<TMPL_IF NAME=EDIT_MODE>
+		<input TYPE="submit" NAME="submit_modify" VALUE="Modify motherboard">
+	<TMPL_ELSE>
+		<input TYPE="submit" NAME="submit_add" VALUE="Add motherboard">
+	</TMPL_IF>
+	</td>
+</tr>
+</table>
+</form>
+
+
+<p>
+<TMPL_IF NAME=RESULT>
+	Operation result : <TMPL_VAR NAME=RESULT>
+</TMPL_IF>
+
+<TMPL_INCLUDE NAME="footer.tmpl">
