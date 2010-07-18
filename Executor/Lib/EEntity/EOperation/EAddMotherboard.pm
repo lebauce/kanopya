@@ -92,7 +92,7 @@ sub prepare {
 	$self->SUPER::prepare();
 
 	my $adm = Administrator->new();
-	$self->{node} = $adm->getObj();
+#	$self->{node} = $adm->getObj();
 }
 
 

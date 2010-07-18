@@ -58,7 +58,7 @@ sub getParams {
 
 sub getUser {
 	my $self = shift;
-	return self->getValue("user_id");
+	return $self->getValue(name => "user_id");
 }
 
 # getParamValue( param_name ) : param_value

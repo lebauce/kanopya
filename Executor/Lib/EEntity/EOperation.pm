@@ -60,7 +60,6 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-	$log->warn("Class is : $class");
     my $self = $class->SUPER::new(%args);
 	$self->_init();
     
@@ -87,8 +86,14 @@ sub _init {
 
 sub prepare {
 	my $self = shift;
-	$self->{userid} = $self->_getentity()->getUser();
-	Administrator::new()->change_user($self->{userid});
+	
+	my $id = $self->_getEntity();
+	$log->warn("Class is : $id");
+	$self->{userid} = $self->_getEntity()->getUser();
+	$log->warn("Change user by user_id : $self->{userid}");	
+	my $adm = Administrator::new();
+	$adm->changeUser(user_id => $self->{userid});
+	$log->warn("Change user effective : New user is $adm->{_rightschecker}->{_user}");
 }
 1;
 

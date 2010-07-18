@@ -68,7 +68,7 @@ sub new {
 
 sub _getEntity{
 	my $self = shift;
-	return $self->{entity};
+	return $self->{_entity};
 }
 
 1;
