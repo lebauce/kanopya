@@ -1,34 +1,72 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 
-<TMPL_IF NAME=EDIT_MODE>
+
+<div id="contentleft">
 	<p>
-	<b>Motherboard <TMPL_VAR NAME=MB_ID></b>
+	<span class="title">In this zone,</span>
+	links and other buttons gives access to additional fonctionalities
+	about right content zone.
 	</p>
-</TMPL_IF>
+	<p><hr /></p>
+	<a class="button"  href="motherboards.cgi">Motherboards list</a><br />
+	<a class="button"  href="addMotherboard.cgi">Add motherboard</a><br />
+	<p><hr /></p>
+</div>
 
-<form NAME="form" ACTION="/cgi-bin/addMotherboard.pl" METHOD="POST">
-<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=MB_ID> >
-<table BORDER=1>
-<tr>
-	<td>Model</td>
-	<td><input TYPE="text" NAME="model" VALUE=<TMPL_VAR NAME=MODEL> ></td>
-</tr>
-<tr>
-	<td COLSPAN=2>
+
+<div id="contentright">
+	<p>
+	<span class="title">Add motherboard</span>
+	
 	<TMPL_IF NAME=EDIT_MODE>
-		<input TYPE="submit" NAME="submit_modify" VALUE="Modify motherboard">
-	<TMPL_ELSE>
-		<input TYPE="submit" NAME="submit_add" VALUE="Add motherboard">
+		<p>
+		<b>Motherboard <TMPL_VAR NAME=MB_ID></b>
+		</p>
 	</TMPL_IF>
-	</td>
-</tr>
-</table>
-</form>
-
-
-<p>
-<TMPL_IF NAME=RESULT>
-	Operation result : <TMPL_VAR NAME=RESULT>
-</TMPL_IF>
+	
+	<p ALIGN=CENTER>
+		<form NAME="form" ACTION="/cgi-bin/addMotherboard.cgi" METHOD="POST">
+		<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=MB_ID> >
+		<table BORDER=1>
+		<tr>
+			<td>Serial number</td>
+			<td><input TYPE="text" NAME="sn" VALUE=<TMPL_VAR NAME=SN> ></td>
+		</tr>
+		<tr>
+			<td>Template id</td>
+			<td>
+			<select NAME="template_id">
+				<TMPL_LOOP NAME=TEMPLATES>
+					<option><TMPL_VAR NAME=ID></option>
+				</TMPL_LOOP>
+			</select>
+			</td>
+		</tr>
+		<tr>
+			<td>Description</td>
+			<td>
+				<textarea ROWS="3" NAME="desc"> </textarea>
+			</td>
+		</tr>
+		<tr>
+			<td COLSPAN=2>
+			<TMPL_IF NAME=EDIT_MODE>
+				<input TYPE="submit" NAME="submit_modify" VALUE="Modify motherboard">
+			<TMPL_ELSE>
+				<input TYPE="submit" NAME="submit_add" VALUE="Add motherboard">
+			</TMPL_IF>
+			</td>
+		</tr>
+		</table>
+		</form>
+		
+		
+		<br/>
+		<TMPL_IF NAME=RESULT>
+			Operation result : <TMPL_VAR NAME=RESULT>
+		</TMPL_IF>
+	</p>
+	
+</div>
 
 <TMPL_INCLUDE NAME="footer.tmpl">

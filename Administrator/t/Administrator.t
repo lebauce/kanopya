@@ -22,6 +22,10 @@ $obj->setValue( name => 'motherboard_sn' , value => '54321' );
 $obj->save();
 	is( $obj->{_data}->in_storage , 1, "save obj add in DB" );
 
+is( $obj->{_data}->has_column("motherboard_sn") , 1, "###############" );
+
+print "####################### ", $obj->{_priv}, " ##############\n"; 
+
 $obj->setValue( name => 'motherboard_sn', value => '666' ); # change local value but not in db
 	is( $obj->getValue( name => 'motherboard_sn' ), '666', "get value after local change" );
 my $obj_id = $obj->getValue( name => 'motherboard_id' );

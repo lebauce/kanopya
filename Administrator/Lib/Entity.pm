@@ -18,7 +18,7 @@ sub new {
     
     my $self = {
     	_rightschecker => $args{rightschecker},
-        _data => $args{data}
+        _data => $args{data},
     };
     bless $self, $class;
 
