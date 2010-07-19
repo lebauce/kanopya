@@ -166,8 +166,11 @@ sub save {
 	}
 	else {
 		# CREATE
-		#print "\n##### CREATE \n";
-		$self->{_data}->insert;
+		my $newentity = $self->{_data}->insert;
+		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
+			{ user_entities => [ {user_id => $newentity->get_column('user_id')} ] },
+		);
+		$self->{_entity_id} = $row->get_column('entity_id');
 	}
 		
 }
@@ -180,18 +183,17 @@ sub save {
 
 sub delete {
 	my $self = shift;
-		
-	# check rights
-
-	#$self->{_data}->delete( { cascade_delete => 1 } );
-
-	# Delete extended params
+	
+	$self->{_rightschecker}->{_schema}->resultset('Entity')->find( { entity_id => $self->{_entity_id} } )->delete;
+	
+	# Delete extended params (cascade delete)
 	if ( $self->{ext} ) {
 		my $params_rs = $self->{_data}->related_resultset( $self->{ext} );
 		$params_rs->delete;
 	}
+	
+	$self->{_data}->delete;
 
-	$self->{_data}->delete( );
 }
 
 sub _deleteExt {
