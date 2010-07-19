@@ -18,7 +18,7 @@ my @args = ("login",'xebech', "password", 'pass');
 my $adm = new_ok(Administrator => \@args, $admtest);
 
 note("Operation Addition test");
-my $addmotherboard_op = $adm->newOp(type => "AddMotherboard", priority => '100', params => { mac_address => '00:1c:c0:c0:1c:9a', kernel_id => 2});
+my $addmotherboard_op = $adm->newOp(type => "AddMotherboard", priority => '100', params => { mac_address => '00:1c:c0:c0:1c:9a', kernel_id => 2, c_storage_id => 1});
 try {
 	@args = ();
 	my $exec = new_ok("Executor", \@args, $exectest);
