@@ -22,9 +22,11 @@ $obj->setValue( name => 'motherboard_sn' , value => '54321' );
 $obj->save();
 	is( $obj->{_data}->in_storage , 1, "save obj add in DB" );
 
-is( $obj->{_data}->has_column("motherboard_sn") , 1, "###############" );
 
-print "####################### ", $obj->{_priv}, " ##############\n"; 
+$obj->setValues( params => { 'kernel_id' => '42', 'extParam1' => "extValue1" } );
+	is( $obj->getValue( name => 'kernel_id' ), '42', "get value afer setValues" );
+	is( $obj->getValue( name => 'extParam1' ),  "extValue1", "get extended value (transparent)"  );
+
 
 $obj->setValue( name => 'motherboard_sn', value => '666' ); # change local value but not in db
 	is( $obj->getValue( name => 'motherboard_sn' ), '666', "get value after local change" );
@@ -66,3 +68,5 @@ $op->delete();
 $params_rs = $op->{_data}->operation_parameters;
 	is ( $params_rs, 0, "auto delete op params in db when op->delete()");
 
+#my $op = $adm->newObj( type => 'Operation', params => { type => "TortueOperation", user_id => 19, execution_rank => 3000 } );
+#$op->save;
