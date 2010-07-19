@@ -14,6 +14,8 @@ my $adm = Administrator->new( login =>'thom', password => 'pass' );
 # open html template
 my $template = HTML::Template->new(filename => 'templates/motherboards.tmpl');
 
+$template->param(MENU_MOTHERBOARDS => 1);
+
 # get url params (POST or GET)
 my $cgi = new CGI;
 
@@ -28,7 +30,8 @@ my $i = -1;
 
 foreach $mb ( @allMb )
 {
-	push( @loop_data, { 'id' =>  $mb->getValue( name => 'motherboard_id'), 'model' =>  $mb->getValue( name => 'motherboard_sn') } );
+	push( @loop_data, { 'id' =>  $mb->getValue( name => 'motherboard_id'),
+						'sn' =>  $mb->getValue( name => 'motherboard_sn') } );
 	#$MotherboardsById{ $result->[$i]{'id'} } = $result->[$i];
 }
 $template->param(MOTHERBOARDS => \@loop_data);

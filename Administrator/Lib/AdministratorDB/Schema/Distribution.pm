@@ -25,8 +25,8 @@ __PACKAGE__->set_primary_key("distribution_id");
 __PACKAGE__->add_unique_constraint("distribution_name", ["distribution_name"]);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-18 17:28:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Jjq+vHJm4w/Hc04bOujMPw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-19 01:22:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1JE5AA0wEmLzUSKuNx5+nA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

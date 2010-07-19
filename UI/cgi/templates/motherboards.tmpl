@@ -1,39 +1,53 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 
-<form NAME="form" ACTION="/cgi-bin/addMotherboard.pl" METHOD="POST">
-<input TYPE="submit" VALUE="Add">
-</form>
+<div id="contentleft">
+	<p>
+	<span class="title">In this zone,</span>
+	links and other buttons gives access to additional fonctionalities
+	about right content zone.
+	</p>
+	<p><hr /></p>
+		<a class="button"  href="motherboards.cgi">Motherboards list</a><br />
+		<a class="button"  href="addMotherboard.cgi">Add motherboard</a><br />
+	<p><hr /></p>
+</div>
 
-<p ALIGN=CENTER>
-<table BORDER=1 CELLSPACING=2 CELLPADDING=10>
-<caption ALIGN=TOP>Motherboards list</CAPTION>
-	<tr bgcolor="silver">
-		<th ALIGN=CENTER>ID</th>
-		<th ALIGN=CENTER>Model</th>
-	</tr>
-<TMPL_LOOP NAME=MOTHERBOARDS>
-	<tr onmouseover="this.style.backgroundColor='grey';" onmouseout="this.style.backgroundColor='white';">
-    		<td ALIGN=CENTER><a href='getAllMotherboards.pl?select_id=<TMPL_VAR NAME=ID>'><TMPL_VAR NAME=ID></a></td>
-      		<td ALIGN=CENTER><TMPL_VAR NAME=MODEL></td>
-	</tr>
-</TMPL_LOOP>
-</table>
-</p>
+<div id="contentright">
+	<p>
+	<span class="title">Motherboards list</span>
+	
+	<p ALIGN=CENTER>
+		<table BORDER=1 CELLSPACING=2 CELLPADDING=10>
+		<caption ALIGN=TOP>Motherboards list</CAPTION>
+			<tr bgcolor="silver">
+				<th ALIGN=CENTER>ID</th>
+				<th ALIGN=CENTER>Serial number</th>
+			</tr>
+		<TMPL_LOOP NAME=MOTHERBOARDS>
+			<tr onmouseover="this.style.backgroundColor='grey';" onmouseout="this.style.backgroundColor='white';">
+		    		<td ALIGN=CENTER><a href='getAllMotherboards.pl?select_id=<TMPL_VAR NAME=ID>'><TMPL_VAR NAME=ID></a></td>
+		      		<td ALIGN=CENTER><TMPL_VAR NAME=SN></td>
+			</tr>
+		</TMPL_LOOP>
+		</table>
+	</p>
+	
+	<TMPL_IF NAME=SELECTED_MB_ID>
+	<p>
+	<b>Motherboard <TMPL_VAR NAME=SELECTED_MB_ID></b><br/>
+	Model: <TMPL_VAR NAME=SELECTED_MB_MODEL>
+	</p>
+		<form NAME="form" ACTION="/cgi-bin/addMotherboard.pl" METHOD="POST">
+		<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=SELECTED_MB_ID> >
+		<input TYPE="submit" NAME="submit_edit" VALUE="Edit">
+	</form>
+		<form NAME="form" ACTION="/cgi-bin/getAllMotherboards.pl" METHOD="POST">
+		<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=SELECTED_MB_ID> >
+		<input TYPE="submit" NAME="submit_delete" VALUE="Delete">
+	</form>
+	
+	</TMPL_IF>
 
-<TMPL_IF NAME=SELECTED_MB_ID>
-<p>
-<b>Motherboard <TMPL_VAR NAME=SELECTED_MB_ID></b><br/>
-Model: <TMPL_VAR NAME=SELECTED_MB_MODEL>
-</p>
-<form NAME="form" ACTION="/cgi-bin/addMotherboard.pl" METHOD="POST">
-<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=SELECTED_MB_ID> >
-<input TYPE="submit" NAME="submit_edit" VALUE="Edit">
-</form>
-<form NAME="form" ACTION="/cgi-bin/getAllMotherboards.pl" METHOD="POST">
-<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=SELECTED_MB_ID> >
-<input TYPE="submit" NAME="submit_delete" VALUE="Delete">
-</form>
-
-</TMPL_IF>
-
+</div>
+	
 <TMPL_INCLUDE NAME="footer.tmpl">

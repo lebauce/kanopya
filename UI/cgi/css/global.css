@@ -156,7 +156,8 @@ img#logo {
 	color: #EEF2BE;
 	padding: 10px;
 	font-weight: bold;
-	margin: 20px;
+	margin: 10px;
+	display: block; 
 }
 .title { font-size: 1.5em;}
 .bold { font-weight: bolder; } 

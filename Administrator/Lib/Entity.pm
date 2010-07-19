@@ -60,7 +60,7 @@ sub new {
     
     my $self = {
     	_rightschecker => $args{rightschecker},
-        _data => $args{data}
+        _data => $args{data},
     };
     bless $self, $class;
 
@@ -81,27 +81,66 @@ sub setValue {
 	$self->{_data}->set_column( $args{name}, $args{value} );
 }
 
+=head2 setValues
+	
+	args: 
+		params : { p1 => v1, p2 => v2, ... }
+	
+	Set all entity params pX to corresponding value vX
+	Follow 'ext' link to set extended params transparently
+	
+=cut
+
+sub setValues {
+	my $self = shift;
+	my %args = @_;
+
+	my %ext_params;
+	my $params = $args{params};
+	while ( (my $col, my $value) = each %$params ) {
+    	if ( $self->{_data}->has_column( $col ) ) {
+    		$self->{_data}->set_column( $col, $value );	
+    	}
+    	# TODO check if ext param name is a valid name for this entity
+    	elsif ( $self->{ext} ) {
+    		$ext_params{ $col } = $value;
+    		$self->{_data}->create_related( $self->{ext}, { name => $col, value => $value } );
+    	}
+    	else {
+    		die "setValues() : No parameter '$col' for ", ref $self;
+    	}
+	}
+	
+}
+
+
 =head2 getValue
 	
 	args: name
 	return value of param 'name'
+	Follow 'ext' link to get extended params transparently
 
 =cut
 
 sub getValue {
 	my $self = shift;
     my %args = @_;
-    my $value;
-
+    my $value = undef;
+    
 	$log->info(ref($self) . " getValue of $args{name}");
 	if ($self->{ext}) {
-		my $resultset = $self->{_data}->related_resultset($self->{ext});
-		$value = $resultset->search ({name => $args{name}});
-		$log->info("Extension table found, value = $value");
+		my $resultset = $self->{_data}->search_related( $self->{ext}, {name => $args{name}} );
+		if ( $resultset->count == 1 ) {
+			$value = $resultset->next->value;
+			$log->info("  found value = $value (in extended table)");
+		}	
 	}
-	if (! $value) {
+	
+	if ( ! $value ) {
 		$value = $self->{_data}->get_column( $args{name} );
+		$log->info("  found value = $value");
 	}
+	
 	return $value;
 }
 
@@ -127,8 +166,11 @@ sub save {
 	}
 	else {
 		# CREATE
-		#print "\n##### CREATE \n";
-		$self->{_data}->insert;
+		my $newentity = $self->{_data}->insert;
+		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
+			{ user_entities => [ {user_id => $newentity->get_column('user_id')} ] },
+		);
+		$self->{_entity_id} = $row->get_column('entity_id');
 	}
 		
 }
@@ -141,14 +183,22 @@ sub save {
 
 sub delete {
 	my $self = shift;
-		
-	# check rights
+	
+	$self->{_rightschecker}->{_schema}->resultset('Entity')->find( { entity_id => $self->{_entity_id} } )->delete;
+	
+	# Delete extended params (cascade delete)
+	if ( $self->{ext} ) {
+		my $params_rs = $self->{_data}->related_resultset( $self->{ext} );
+		$params_rs->delete;
+	}
+	
+	$self->{_data}->delete;
 
-	#$self->{_data}->delete( { cascade_delete => 1 } );
-
-	$self->{_data}->delete( );
 }
 
+sub _deleteExt {
+	
+}
 
 # destructor
     

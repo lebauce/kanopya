@@ -68,23 +68,27 @@ sub new {
 	};
 		
 	# check user identity
-	$self->{_user} = $self->{_schema}->resultset('User')->find( { user_login => $args{login} } );
+	$self->{_user} = $self->{_schema}->resultset('User')->search( 
+		{ user_login => $args{login}, user_password => $args{password} },
+		{ 
+			'+columns' => ['user_entity.entity_id'],
+    		join => ['user_entity'] 
+		}
+	)->single;
 		
-	if(! $self->{_user} || $self->{_user}->user_password ne $args{password} ) {
+	if(! $self->{_user} ) {
 		warn "incorrect login/password pair";
 		return undef;
 	}
 	
-	# get user entity_id
-	$self->{_user_entity_id} = $self->{_user}->user_entities->next->get_column('entity_id');
-	
 	# get user groups
-#	my @groups = $self->{_schema}->resultset('EntityGroups')->search({entity_id => $self->{_user_entity_id}});
-#	foreach my $g (@groups) {
-#		print $g->get_column('group_id'), "\n";
-#	}
+	my $groups = $self->{_schema}->resultset('Groups')->search(
+	{ 'entity_groups.entity_id' => $self->{_user}->get_column('entity_id') },
+	{ 	'+columns' => [ 'group_entities.entity_id' ], 
+		join => [qw/entity_groups group_entities/] }
+	);
 		
-		
+	$self->{_groups} = $groups;	
 		
 	bless $self, $class;
  	return $self;
@@ -93,7 +97,6 @@ sub new {
 =head2 _getRights
 
 Get rights result of association between 2 entityData objetcs
-
 
 =cut
 
@@ -111,9 +114,26 @@ sub _getRights {
 	return $res;
 }
 
+=head2 canGet
+
+Check if a user has rights to retrieve an EntityData object
+
+=cut
+
+sub canGet {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{userEntityId} or ! defined $args{userEntityId}) {  die "EntityRights->getRights need a userEntityId named argument!"; }
+	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getRights need a secondEntityId named argument!"; }
+	
+	my $groupadmin = $self->{_groups}->find({group_name => 'admin'});
+	
+	return;
+}
+
 =head2 canNew
 
-Check if a user can instanciate an EntityData object
+Check if a user has rights to instanciate an EntityData object
 
 =cut
 
@@ -122,6 +142,8 @@ sub canNew {
 	my %args = @_;
 	if (! exists $args{userEntityId} or ! defined $args{userEntityId}) {  die "EntityRights->getRights need a userEntityId named argument!"; }
 	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getRights need a secondEntityId named argument!"; }
+	
+	
 	
 	return;
 }
