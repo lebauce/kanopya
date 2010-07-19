@@ -108,10 +108,12 @@ sub _mapName {
 	
 	my ($class_name) = @_;
 	my $table_name = $ClassTableMapping{ $class_name };
-	return $table_name ? $table_name : $class_name; 	
+	return $table_name ? $table_name : $class_name;
 }
 
-=head2 private _getData
+=head2 _getData
+	
+	Private
 	
 	Instanciate dbix class mapped to corresponding raw in DB
 	
@@ -129,7 +131,9 @@ sub _getData {
 	return $self->{db}->resultset( _mapName( $args{table} ) )->find( $args{id} );
 }
 
-=head2 private _getAllData
+=head2 _getAllData
+
+	Private
 
 	Get all dbix class of table
 	
@@ -146,7 +150,9 @@ sub _getAllData {
 }
 
 
-=head2 private _addData
+=head2 _addData
+	
+	Private
 	
 	Instanciate dbix class filled with <params>, add a corresponding row in DB
 	
@@ -167,7 +173,9 @@ sub _addData {
 }
 
 
-=head2 private _newData
+=head2 _newData
+	
+	Private
 	
 	Instanciate dbix class filled with <params>, doesn't add in DB
 	
@@ -189,7 +197,9 @@ sub _newData {
 }
 
 
-=head2 private _newObj
+=head2 _newObj
+	
+	Private
 	
 	Instanciate concrete Entity
 	
@@ -225,15 +235,35 @@ sub getObj {
 	my $self = shift;
     my %args = @_;
 
+	$log->info( "getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+
 	my $obj_data = $self->_getData( table => $args{type}, id => $args{id} );
-	my $new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
+	my $new_obj;
+	if ( defined $obj_data ) {
+		$new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
+	}
+	else {
+		warn( "Administrator::getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
+		return undef;
+	}
 
     return $new_obj;
 }
 
-sub getObjs {}
 
-sub getAllObjs {}
+sub getAllObjs {
+	my $self = shift;
+    my %args = @_;
+	
+	my @objs = ();
+	my $rs = $self->_getAllData( table => $args{type} );
+	while ( my $raw = $rs->next ) {
+		my $obj = $self->_newObj( type => $args{type}, data => $raw );
+		push @objs, $obj;
+	}    
+    return  @objs;
+}
+
 
 =head2 newObj
 	
@@ -250,9 +280,12 @@ sub newObj {
 	my $self = shift;
     my %args = @_;
 
+	$log->info( "newObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+
 	my $obj_data = $self->_newData( table =>  $args{type}, row => $args{params} );
-	
 	my $new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
+	
+	warn( "Administrator::newObj( .. ) : Object creation failed!" ) if (  not defined $obj_data );
 	
     return $new_obj;
 }

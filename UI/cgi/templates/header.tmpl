@@ -1,0 +1,40 @@
+<html>
+<head>
+<link href="/css/global.css" rel="stylesheet" type="text/css" media="screen" />
+<title>MC Admin</title>
+</head>
+<body text=black link=blue alink=red >
+
+<!--- menu at the top --->
+<p align=center>
+<a href='getAllMotherboards.pl'>Motherboards</a> | <a href='getOperations.pl'>Operations</a>
+</p> 
+
+<div id="container">
+	<div id="header">
+		<img id="logo" src="/images/logo.png" />
+	
+	</div>
+
+	<div id="menu">
+		<div id="mainmenu">
+			<a class="empty">&nbsp;</a>
+			<a class="begin select">Welcome</a>
+			<a href="microcluster.html">Microcluster</a>
+			<a href="configuration.html">Configuration</a>
+			<a class="end" href="help.html">Help</a>
+			<a class="logout" href="index.html"><span class="bold black">User</span> : logout</a>
+			
+		</div>
+		<div id="submenu">
+			<a>&nbsp;</a>
+			<a class="select">Presentation</a>
+		</div>
+	</div>
+
+
+<TMPL_IF NAME=ERROR_OCCURS>
+<p align=center>
+     <span style="color:red"><TMPL_VAR NAME=ERROR_MESS></span>
+</p>
+</TMPL_IF>

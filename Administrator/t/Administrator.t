@@ -1,5 +1,8 @@
 use lib "../Lib";
 
+use Log::Log4perl qw(:easy);
+#Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
+
 use Test::More 'no_plan';
 use Administrator;
 
@@ -21,7 +24,6 @@ $obj->save();
 
 $obj->setValue( name => 'motherboard_sn', value => '666' ); # change local value but not in db
 	is( $obj->getValue( name => 'motherboard_sn' ), '666', "get value after local change" );
-
 my $obj_id = $obj->getValue( name => 'motherboard_id' );
 $obj = $adm->getObj( type => "Motherboard", id => $obj_id );
 	isa_ok( $obj, "Entity::Motherboard", '$obj');
@@ -36,6 +38,8 @@ $obj = $adm->getObj( type => "Motherboard", id => $obj_id );
 $obj->delete();
 	is( $obj->{_data}->in_storage , 0, "delete in DB" );
 
+#$obj = $adm->getObj( type => "Motherboard", id => $obj_id );
+#	ok( !defined $obj, "get unexisting obj return undef" );
 
 #
 #	Test Operation
@@ -44,7 +48,7 @@ note( "Test Operation" );
 #my $op3 = $adm->getNextOp( );
 #print $op3->getValue( 'type' ), "    ", $op3->getValue( 'operation_id' );
 
-my $op = $adm->newObj( type => 'Operation', params => { type => "TortueOperation", execution_rank => 16 } );
+my $op = $adm->newObj( type => 'Operation', params => { type => "TortueOperation", user_id => 19, execution_rank => 18 } );
 	isa_ok( $op, "Entity::Operation", '$op');
 	is( $op->{_data}->in_storage , 0, "new op doesn't add in DB" );
 $op->save;
