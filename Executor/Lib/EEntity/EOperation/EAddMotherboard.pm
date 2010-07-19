@@ -47,6 +47,9 @@ use vars qw(@ISA $VERSION);
 use lib "../..";
 use base "EEntity::EOperation";
 
+use EEntity::EMotherboard;
+use EEntity::ECluster;
+
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
@@ -93,9 +96,14 @@ sub prepare {
 	$self->SUPER::prepare();
 	$log->warn("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
+	my $params = $self->_getEntity()->getParams();
 	$log->warn("After administator instanciation, before newObj");
-	$self->{node} = $adm->newObj(type => "Motherboard", params => $self->_getEntity()->getParams());
-	print Dumper $self->{node};
+	$self->{_objs} = {};
+	my $c_cstorage = EEntity::ECluster->new($adm->getObj(type => "Cluster", id => $params->{c_storage_id}));
+	delete($params->{c_storage_id});
+	$self->{_objs}->{node} = $self->$adm->newObj(type => "Motherboard");
+	$self->{_objs}->{node}->setValues(params => $params);
+	print Dumper $self->{_objs}->{node};
 }
 
 

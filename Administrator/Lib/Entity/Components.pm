@@ -1,9 +1,8 @@
-package Entity::Cluster;
+package Entity::Components;
 
 use strict;
 
 use base "Entity";
-use Entity::Components;
 
 # contructor
 

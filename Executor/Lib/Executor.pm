@@ -49,7 +49,8 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib "../../Administrator/Lib";
+use lib qw(../../Administrator/Lib ../../Common/Lib);
+use General;
 use Administrator;
 
 my $log = get_logger("executor");
@@ -150,14 +151,11 @@ Executor->_newObj($objdata) instanciates a new object from objectdata.
 sub _newObj {
 	my $self = shift;
 	my %args = @_;
-	my $dataclass = ref($args{data});
+	
+	my $class = General::getClassEEntityFromEntity(entity => $args{data});
+	my $location = General::getLocFromClass($class);
 
-    my $class = $dataclass;
-    $class =~s/\:\:/\:\:E/g;
-    $class = "E".$class;
-    my $location = $class;
-    $location =~s/\:\:/\//g;
-    require $location . ".pm";
+    require $location;
 
     return $class->new((data => $args{data}));
 }
