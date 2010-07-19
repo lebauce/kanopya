@@ -61,16 +61,59 @@ sub new {
     my $self = {
     	_rightschecker => $args{rightschecker},
         _data => $args{data},
+        _ext_params => {},
     };
     bless $self, $class;
 
     return $self;
 }
 
+=head2 getAllParams
+
+	return a hash with all (param => value) of our data, including extending params
+
+=cut
+
+sub getAllParams {
+	my $self = shift;
+	
+	# build hash corresponding to class table (with local changes)
+	my %params = $self->{_data}->get_columns;
+	
+	# add extended params from db
+	if ( $self->{_ext} ) {
+		my $ext_params_rs = $self->{_data}->search_related( $self->{_ext} );
+		while ( my $param = $ext_params_rs->next ) {
+			$params{ $param->name } = $param->value;
+		}
+	}
+	
+	# add local extended params (localy changed ext params override ext params load from db)
+	my $local_ext_params = $self->{_ext_params};
+	my %all_params = ( %params, %$local_ext_params );
+
+	return %all_params;	
+}
+
+=head2 asString
+
+	Return a string with the entity class name an all of its data
+
+=cut
+
+sub asString {
+	my $self = shift;
+	
+	my %h = $self->getAllParams;
+	my @s = map { "$_ => $h{$_}, " } keys %h;
+	return ref $self, " ( ",  @s,  " )";
+}
+
 =head2 setValue
 	
 	args: name, value
 	set entity param 'name' to 'value'
+	Follow 'ext' link to set extended params
 	
 =cut
 
@@ -78,7 +121,17 @@ sub setValue {
 	my $self = shift;
 	my %args = @_;
 
-	$self->{_data}->set_column( $args{name}, $args{value} );
+	if ( $self->{_data}->has_column( $args{name} ) ) {
+    		$self->{_data}->set_column( $args{name}, $args{value} );	
+    }
+    elsif ( $self->{_ext} ) {
+    	# TODO check if ext param name is a valid name for this entity
+    	$self->{ _ext_params }{ $args{name} } = $args{value};
+    }
+    else {
+    	warn "setValues() : No parameter named '$args{name}' for ", ref $self;
+    }
+
 }
 
 =head2 setValues
@@ -86,8 +139,7 @@ sub setValue {
 	args: 
 		params : { p1 => v1, p2 => v2, ... }
 	
-	Set all entity params pX to corresponding value vX
-	Follow 'ext' link to set extended params transparently
+	Set all entity params pX to corresponding value vX, including ext params
 	
 =cut
 
@@ -95,20 +147,9 @@ sub setValues {
 	my $self = shift;
 	my %args = @_;
 
-	my %ext_params;
 	my $params = $args{params};
 	while ( (my $col, my $value) = each %$params ) {
-    	if ( $self->{_data}->has_column( $col ) ) {
-    		$self->{_data}->set_column( $col, $value );	
-    	}
-    	# TODO check if ext param name is a valid name for this entity
-    	elsif ( $self->{ext} ) {
-    		$ext_params{ $col } = $value;
-    		$self->{_data}->create_related( $self->{ext}, { name => $col, value => $value } );
-    	}
-    	else {
-    		die "setValues() : No parameter '$col' for ", ref $self;
-    	}
+    	$self->setValue( name  => $col, value => $value );
 	}
 	
 }
@@ -118,7 +159,7 @@ sub setValues {
 	
 	args: name
 	return value of param 'name'
-	Follow 'ext' link to get extended params transparently
+	Follow 'ext' link to get extended params
 
 =cut
 
@@ -128,19 +169,30 @@ sub getValue {
     my $value = undef;
     
 	$log->info(ref($self) . " getValue of $args{name}");
-	if ($self->{ext}) {
-		my $resultset = $self->{_data}->search_related( $self->{ext}, {name => $args{name}} );
-		if ( $resultset->count == 1 ) {
-			$value = $resultset->next->value;
-			$log->info("  found value = $value (in extended table)");
-		}	
-	}
 	
-	if ( ! $value ) {
+	if ( $self->{_data}->has_column( $args{name} ) ) {
 		$value = $self->{_data}->get_column( $args{name} );
 		$log->info("  found value = $value");
 	}
+	else # search extended
+	{
+		# in local hash
+		if ( $self->{_ext_params}{ $args{name} } ) {
+			$value = $self->{_ext_params}{ $args{name} };
+			$log->info("  found value = $value (in ext local)");
+		}
+		# in extented table
+		elsif ($self->{_ext}) {
+			my $resultset = $self->{_data}->search_related( $self->{_ext}, {name => $args{name}} );
+			if ( $resultset->count == 1 ) {
+				$value = $resultset->next->value;
+				$log->info("  found value = $value (in ext table)");
+			}
+		}
+	}
 	
+	warn( "getValue() : No parameter named '$args{name}' for ", ref $self ) if ( ! defined $value );
+		
 	return $value;
 }
 
@@ -163,16 +215,38 @@ sub save {
 		# MODIFY existing db obj
 		#print "\n##### MODIFY \n";
 		$self->{_data}->update;
+		$self->_saveExtendedParams();
 	}
 	else {
 		# CREATE
 		my $newentity = $self->{_data}->insert;
-		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
-			{ user_entities => [ {user_id => $newentity->get_column('user_id')} ] },
-		);
-		$self->{_entity_id} = $row->get_column('entity_id');
+		$self->_saveExtendedParams();
+		#my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
+		#	{ user_entities => [ {user_id => $newentity->get_column('user_id')} ] },
+		#);
+		#$self->{_entity_id} = $row->get_column('entity_id');
 	}
 		
+}
+
+=head2 _saveExtendedParams
+
+	add or update extended params on the related table 'ext'
+	WARN: this will insert _data in DB if it's not already in
+	
+=cut
+
+sub _saveExtendedParams {
+	my $self = shift;
+	my $ext_params = $self->{_ext_params};
+	my $data = $self->{_data};
+	
+	if ( $ext_params )
+	{
+		foreach my $k (keys %$ext_params) {
+			$data->update_or_create_related( $self->{_ext}, { name => $k, value => $ext_params->{$k} } );
+		}
+	}
 }
 
 =head2 delete
@@ -184,21 +258,24 @@ sub save {
 sub delete {
 	my $self = shift;
 	
-	$self->{_rightschecker}->{_schema}->resultset('Entity')->find( { entity_id => $self->{_entity_id} } )->delete;
+	my $entity = $self->{_rightschecker}->{_schema}->resultset('Entity')->find( { entity_id => $self->{_entity_id} } );
+	if ( $entity ) {
+		$entity->delete;
+	}
 	
 	# Delete extended params (cascade delete)
-	if ( $self->{ext} ) {
-		my $params_rs = $self->{_data}->related_resultset( $self->{ext} );
-		$params_rs->delete;
+	if ( $self->{_ext} ) {
+		my $params_rs = $self->{_data}->related_resultset( $self->{_ext} );
+		if ( $params_rs )
+		{
+			$params_rs->delete;	
+		}
 	}
 	
 	$self->{_data}->delete;
 
 }
 
-sub _deleteExt {
-	
-}
 
 # destructor
     

@@ -11,7 +11,7 @@ sub new {
     my %args = @_;
 
     my $self = $class->SUPER::new( %args );
-    $self->{ext} = "motherboarddetails"; 
+    $self->{_ext} = "motherboarddetails"; 
     return $self;
 }
 

@@ -12,6 +12,8 @@ my $adm = Administrator->new( login =>'thom', password => 'pass' );
 #	Test generic obj management
 #
 note( "Test Entity management");
+
+# Obj creation
 my $obj = $adm->newObj( type => "Motherboard", params => { motherboard_sn => '12345'} );
 	isa_ok( $obj, "Entity::Motherboard", '$obj');
 	is( $obj->{_data}->in_storage , 0, "new obj doesn't add in DB" ); 
@@ -19,22 +21,25 @@ my $obj = $adm->newObj( type => "Motherboard", params => { motherboard_sn => '12
 
 $obj->setValue( name => 'motherboard_sn' , value => '54321' );
 	is( $obj->getValue( name => 'motherboard_sn' ), '54321', "get value after modify new obj" );
+
+$obj->setValue( name => 'extParam1', value  => "extValue1" );
+	is( $obj->{_data}->in_storage , 0, "set ext values doesn't add obj in DB" );
+	is( $obj->getValue( name => 'extParam1' ), 'extValue1', "get ext value after modify new obj" );
+	
 $obj->save();
 	is( $obj->{_data}->in_storage , 1, "save obj add in DB" );
-
-
-$obj->setValues( params => { 'kernel_id' => '42', 'extParam1' => "extValue1" } );
-	is( $obj->getValue( name => 'kernel_id' ), '42', "get value afer setValues" );
-	is( $obj->getValue( name => 'extParam1' ),  "extValue1", "get extended value (transparent)"  );
-
 
 $obj->setValue( name => 'motherboard_sn', value => '666' ); # change local value but not in db
 	is( $obj->getValue( name => 'motherboard_sn' ), '666', "get value after local change" );
 my $obj_id = $obj->getValue( name => 'motherboard_id' );
+
+# Obj retrieved from DB
 $obj = $adm->getObj( type => "Motherboard", id => $obj_id );
 	isa_ok( $obj, "Entity::Motherboard", '$obj');
 	is( $obj->{_data}->in_storage , 1, "get obj from DB" );
 	is( $obj->getValue( name => 'motherboard_sn' ), '54321', "get value after get obj" );
+	is( $obj->getValue( name => 'extParam1' ),  "extValue1", "get extended value after get obj"  );
+
 
 $obj->setValue( name => 'motherboard_sn', value => '666' );
 $obj->save();
@@ -44,8 +49,11 @@ $obj = $adm->getObj( type => "Motherboard", id => $obj_id );
 $obj->delete();
 	is( $obj->{_data}->in_storage , 0, "delete in DB" );
 
+# WARN we still can getValue on deleted obj (!) ================> TODO faire un truc pour empecher ça
+	is( $obj->getValue( name => 'motherboard_sn' ), '666', "get value after get obj" );
+	
 #$obj = $adm->getObj( type => "Motherboard", id => $obj_id );
-#	ok( !defined $obj, "get unexisting obj return undef" );
+#	ok( !defined $obj, "get obj with data not in DB return undef" );  # => and warning message is displayed
 
 #
 #	Test Operation

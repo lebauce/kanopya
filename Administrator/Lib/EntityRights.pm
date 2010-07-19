@@ -71,8 +71,8 @@ sub new {
 	$self->{_user} = $self->{_schema}->resultset('User')->search( 
 		{ user_login => $args{login}, user_password => $args{password} },
 		{ 
-			'+columns' => ['user_entity.entity_id'],
-    		join => ['user_entity'] 
+			'+columns' => ['user_entities.entity_id'],
+    		join => ['user_entities'] 
 		}
 	)->single;
 		
