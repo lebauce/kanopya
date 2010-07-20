@@ -5,7 +5,7 @@ use warnings;
 
 use base 'DBIx::Class';
 
-__PACKAGE__->load_components("Core");
+__PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
 __PACKAGE__->table("processortemplate");
 __PACKAGE__->add_columns(
   "processortemplate_id",
@@ -39,8 +39,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-19 16:58:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cQ+7+1H4I8m3jjVI/O6I+A
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wCCpK3FbGikiebTerysVQA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -5,7 +5,7 @@ use warnings;
 
 use base 'DBIx::Class';
 
-__PACKAGE__->load_components("Core");
+__PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
 __PACKAGE__->table("motherboarddetails");
 __PACKAGE__->add_columns(
   "motherboard_id",
@@ -23,8 +23,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-19 16:58:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BGAjV7i+7ZkuDcEbyK9Fhw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:X3A6+tdPtDe9jWuwV9nHPQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

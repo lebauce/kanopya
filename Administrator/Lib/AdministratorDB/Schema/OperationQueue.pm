@@ -5,7 +5,7 @@ use warnings;
 
 use base 'DBIx::Class';
 
-__PACKAGE__->load_components("Core");
+__PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
 __PACKAGE__->table("operation_queue");
 __PACKAGE__->add_columns(
   "operation_id",
@@ -37,8 +37,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-19 16:58:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:w1GIqBav/JZyaDXi1chQlg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+fJkDXrPNdMTWSnbCt0gYQ
 
 
 #

@@ -76,13 +76,14 @@ sub new {
 
 sub getAllParams {
 	my $self = shift;
+	my $data = $self->{_data};
 	
 	# build hash corresponding to class table (with local changes)
-	my %params = $self->{_data}->get_columns;
+	my %params = $data->get_columns;
 	
 	# add extended params from db
-	if ( $self->{_ext} ) {
-		my $ext_params_rs = $self->{_data}->search_related( $self->{_ext} );
+	if ( $data->extended_table ) {
+		my $ext_params_rs = $data->search_related( $data->extended_table );
 		while ( my $param = $ext_params_rs->next ) {
 			$params{ $param->name } = $param->value;
 		}
@@ -120,11 +121,11 @@ sub asString {
 sub setValue {
 	my $self = shift;
 	my %args = @_;
-
-	if ( $self->{_data}->has_column( $args{name} ) ) {
-    		$self->{_data}->set_column( $args{name}, $args{value} );	
+	my $data = $self->{_data};
+	if ( $data->has_column( $args{name} ) ) {
+    		$data->set_column( $args{name}, $args{value} );	
     }
-    elsif ( $self->{_ext} ) {
+    elsif ( $data->extended_table ) {
     	# TODO check if ext param name is a valid name for this entity
     	$self->{ _ext_params }{ $args{name} } = $args{value};
     }
@@ -166,12 +167,13 @@ sub setValues {
 sub getValue {
 	my $self = shift;
     my %args = @_;
+    my $data = $self->{_data};
     my $value = undef;
     
 	$log->info(ref($self) . " getValue of $args{name}");
 	
-	if ( $self->{_data}->has_column( $args{name} ) ) {
-		$value = $self->{_data}->get_column( $args{name} );
+	if ( $data->has_column( $args{name} ) ) {
+		$value = $data->get_column( $args{name} );
 		$log->info("  found value = $value");
 	}
 	else # search extended
@@ -182,8 +184,8 @@ sub getValue {
 			$log->info("  found value = $value (in ext local)");
 		}
 		# in extented table
-		elsif ($self->{_ext}) {
-			my $resultset = $self->{_data}->search_related( $self->{_ext}, {name => $args{name}} );
+		elsif ($data->extended_table) {
+			my $resultset = $data->search_related( $data->extended_table, {name => $args{name}} );
 			if ( $resultset->count == 1 ) {
 				$value = $resultset->next->value;
 				$log->info("  found value = $value (in ext table)");
@@ -208,18 +210,18 @@ sub update {
 
 sub save {
 	my $self = shift;
-
+	my $data = $self->{_data};
 	#TODO check rights
 
-	if ( $self->{_data}->in_storage ) {
+	if ( $data->in_storage ) {
 		# MODIFY existing db obj
 		#print "\n##### MODIFY \n";
-		$self->{_data}->update;
+		$data->update;
 		$self->_saveExtendedParams();
 	}
 	else {
 		# CREATE
-		my $newentity = $self->{_data}->insert;
+		my $newentity = $data->insert;
 		$self->_saveExtendedParams();
 		#my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
 		#	{ user_entities => [ {user_id => $newentity->get_column('user_id')} ] },
@@ -244,7 +246,7 @@ sub _saveExtendedParams {
 	if ( $ext_params )
 	{
 		foreach my $k (keys %$ext_params) {
-			$data->update_or_create_related( $self->{_ext}, { name => $k, value => $ext_params->{$k} } );
+			$data->update_or_create_related( $data->extended_table, { name => $k, value => $ext_params->{$k} } );
 		}
 	}
 }
@@ -257,6 +259,7 @@ sub _saveExtendedParams {
 
 sub delete {
 	my $self = shift;
+	my $data = $self->{_data};
 	
 	my $entity = $self->{_rightschecker}->{_schema}->resultset('Entity')->find( { entity_id => $self->{_entity_id} } );
 	if ( $entity ) {
@@ -264,15 +267,15 @@ sub delete {
 	}
 	
 	# Delete extended params (cascade delete)
-	if ( $self->{_ext} ) {
-		my $params_rs = $self->{_data}->related_resultset( $self->{_ext} );
+	if ( $data->extended_table ) {
+		my $params_rs = $data->related_resultset( $data->extended_table );
 		if ( $params_rs )
 		{
 			$params_rs->delete;	
 		}
 	}
 	
-	$self->{_data}->delete;
+	$data->delete;
 
 }
 

@@ -5,7 +5,7 @@ use warnings;
 
 use base 'DBIx::Class';
 
-__PACKAGE__->load_components("Core");
+__PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
 __PACKAGE__->table("clusterdetails");
 __PACKAGE__->add_columns(
   "cluster_id",
@@ -16,10 +16,15 @@ __PACKAGE__->add_columns(
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 255 },
 );
 __PACKAGE__->set_primary_key("cluster_id", "name");
+__PACKAGE__->belongs_to(
+  "cluster_id",
+  "AdministratorDB::Schema::Cluster",
+  { cluster_id => "cluster_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-19 16:58:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:llHLdZWVwFuuvsjnoJSPxA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CAdkjJF7hIkFZLu/3RDYQg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

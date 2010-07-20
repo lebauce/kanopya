@@ -40,6 +40,11 @@ $obj = $adm->getObj( type => "Motherboard", id => $obj_id );
 	is( $obj->getValue( name => 'motherboard_sn' ), '54321', "get value after get obj" );
 	is( $obj->getValue( name => 'extParam1' ),  "extValue1", "get extended value after get obj"  );
 
+ 
+
+my $data = $obj->{_data};
+print "\n###############   ", $data->extended_table, "   ##########\n";
+#print "\n###################### $obj->{_data}   ###  ", $data->{INC} , "          ", $obj->{_data}->table, " ###########";
 
 $obj->setValue( name => 'motherboard_sn', value => '666' );
 $obj->save();
@@ -65,6 +70,11 @@ note( "Test Operation" );
 my $op = $adm->newObj( type => 'Operation', params => { type => "TortueOperation", user_id => 19, execution_rank => 18 } );
 	isa_ok( $op, "Entity::Operation", '$op');
 	is( $op->{_data}->in_storage , 0, "new op doesn't add in DB" );
+	
+$data = $op->{_data};
+print "\n###############   ", $data->extended_table, "   ##########\n";
+	
+	
 $op->save;
 	is( $op->{_data}->in_storage , 1, "save op in DB" );
 $op->addParams( { param_1 => 'toto', param_2 => 'tutu'} );
