@@ -13,20 +13,21 @@
 </div>
 
 <div id="contentright">
-	<p>
-	<span class="title">Motherboards list</span>
 	
-	<p ALIGN=CENTER>
-		<table BORDER=1 CELLSPACING=2 CELLPADDING=10>
-		<caption ALIGN=TOP>Motherboards list</CAPTION>
-			<tr bgcolor="silver">
+	<p>
+		<table id="horiz-minimal">
+		<!--caption ALIGN=TOP>Motherboards list</CAPTION-->
+			<tr>
 				<th ALIGN=CENTER>ID</th>
 				<th ALIGN=CENTER>Serial number</th>
+				<th ALIGN=CENTER>Active</th>
 			</tr>
 		<TMPL_LOOP NAME=MOTHERBOARDS>
-			<tr onmouseover="this.style.backgroundColor='grey';" onmouseout="this.style.backgroundColor='white';">
-		    		<td ALIGN=CENTER><a href='getAllMotherboards.pl?select_id=<TMPL_VAR NAME=ID>'><TMPL_VAR NAME=ID></a></td>
+			<!--tr onmouseover="this.style.backgroundColor='grey';" onmouseout="this.style.backgroundColor='white';"-->
+			<tr>
+		    		<td ALIGN=CENTER><a href='motherboards.cgi?select_id=<TMPL_VAR NAME=ID>'><TMPL_VAR NAME=ID></a></td>
 		      		<td ALIGN=CENTER><TMPL_VAR NAME=SN></td>
+		      		<td ALIGN=CENTER><TMPL_VAR NAME=IS_ACTIVE></td>
 			</tr>
 		</TMPL_LOOP>
 		</table>
@@ -34,14 +35,23 @@
 	
 	<TMPL_IF NAME=SELECTED_MB_ID>
 	<p>
-	<b>Motherboard <TMPL_VAR NAME=SELECTED_MB_ID></b><br/>
-	Model: <TMPL_VAR NAME=SELECTED_MB_MODEL>
+	<table id="one-column-emphasis">
+		<colgroup><col class="oce-first" /></colgroup>
+		<thread>
+		<tr><th scope="col">Motherboard</th><th cope="col"><TMPL_VAR NAME=SELECTED_MB_ID></th></tr>
+		</thread>
+		<tbody>
+		<tr><td>Serial number</td><td><TMPL_VAR NAME=SELECTED_MB_SN></td></tr>
+		<tr><td>Description</td><td><TMPL_VAR NAME=SELECTED_MB_DESC></td></tr>
+		<tr><td>Active</td><td><TMPL_VAR NAME=SELECTED_MB_ACTIVE></td></tr>
+		</tbody>
+	</table>
 	</p>
-		<form NAME="form" ACTION="/cgi-bin/addMotherboard.pl" METHOD="POST">
+		<form NAME="form" ACTION="/cgi-bin/addMotherboard.cgi" METHOD="POST">
 		<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=SELECTED_MB_ID> >
 		<input TYPE="submit" NAME="submit_edit" VALUE="Edit">
 	</form>
-		<form NAME="form" ACTION="/cgi-bin/getAllMotherboards.pl" METHOD="POST">
+		<form NAME="form" ACTION="/cgi-bin/motherboards.cgi" METHOD="POST">
 		<input TYPE="hidden" NAME="mb_id" VALUE=<TMPL_VAR NAME=SELECTED_MB_ID> >
 		<input TYPE="submit" NAME="submit_delete" VALUE="Delete">
 	</form>

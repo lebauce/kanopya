@@ -17,6 +17,12 @@ use Try::Tiny;
 
 my $adm = Administrator->new( login =>'thom', password => 'pass' );
 
+# Print sql queries
+#BEGIN { $ENV{DBIC_TRACE} = 1 }
+
+
+# TODO: deplacer les tests sur les entity dans Entity.t 
+
 #
 #	Test generic obj management
 #
@@ -40,10 +46,8 @@ try {
 		is( $obj->{_data}->in_storage , 0, "set ext values doesn't add obj in DB" );
 		is( $obj->getValue( name => 'extParam1' ), 'extValue1', "get ext value after modify new obj" );
 		
-	
 	$obj->save();
-	is( $obj->{_data}->in_storage , 1, "save obj add in DB" );
-	
+		is( $obj->{_data}->in_storage , 1, "save obj add in DB" );
 	
 	$obj->setValue( name => 'motherboard_sn', value => '666' ); # change local value but not in db
 		is( $obj->getValue( name => 'motherboard_sn' ), '666', "get value after local change" );
@@ -64,7 +68,7 @@ try {
 	$obj->delete();
 		is( $obj->{_data}->in_storage , 0, "delete in DB" );
 	
-	# WARN we still can getValue on deleted obj (!) ================> TODO faire un truc pour empecher ça
+	# WARN we still can getValue on deleted obj, the data are only deleted in DB ======> TODO: faire un truc pour empecher ça
 		is( $obj->getValue( name => 'motherboard_sn' ), '666', "get value after get obj" );
 		
 	#$obj = $adm->getObj( type => "Motherboard", id => $obj_id );
@@ -102,6 +106,9 @@ try {
 }
 catch {
 	#my $error = shitf;
+	
+	$adm->{db}->txn_rollback;
+	
 	print "##### ERROR\n";
 };
 

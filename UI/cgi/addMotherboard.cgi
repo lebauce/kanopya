@@ -38,7 +38,7 @@ if ( $cgi->param("submit_add") )
 	try {
 		$new_mb = $adm->newObj( type => "Motherboard",
 								params => { 
-											"motherboard_sn" => $cgi->param("model"),
+											"motherboard_sn" => $cgi->param("sn"),
 											"motherboardtemplate_id" => $cgi->param("template_id"),
 											"motherboard_desc" => $cgi->param("desc"),
 											} );

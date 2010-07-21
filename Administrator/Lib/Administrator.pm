@@ -82,6 +82,9 @@ sub new {
 	my $schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
 	if( ! $schema ) { die "Unable to connect to the database : "; }
 		
+	# When debug is set, all sql queries are printed
+	# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
+		
 	use EntityRights;
 	$log->info("instanciating EntityRights");
 	my $rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
