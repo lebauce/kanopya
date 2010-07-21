@@ -31,9 +31,16 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UMFD1S7mIKfd2sRVxOisfw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 17:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:J4RpCPxhZJ0TSo4DE6uGgg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::SystemimageEntity",
+  { "foreign.systemimage_id" => "self.systemimage_id" },
+);
+
 1;

@@ -221,12 +221,18 @@ sub save {
 	}
 	else {
 		# CREATE
-		my $newentity = $data->insert;
+		my $relation = lc(ref $self);
+		$relation =~ s/.*\:\://g;
+		print "la relation: $relation\n";
+		my $newentity = $self->{_data}->insert;
+		$log->debug("new entity inserted.");
+		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
+			{ "${relation}_entities" => [ { "${relation}_id" => $newentity->get_column("${relation}_id")} ] },
+		);
+		$log->debug("new $self inserted with his entity relation.");
+		$self->{_entity_id} = $row->get_column('entity_id');
+		
 		$self->_saveExtendedParams();
-		#my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
-		#	{ user_entities => [ {user_id => $newentity->get_column('user_id')} ] },
-		#);
-		#$self->{_entity_id} = $row->get_column('entity_id');
 	}
 		
 }

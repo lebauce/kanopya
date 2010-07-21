@@ -13,6 +13,7 @@ __PACKAGE__->add_columns(
   "motherboard_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
+__PACKAGE__->set_primary_key("entity_id", "motherboard_id");
 __PACKAGE__->add_unique_constraint("fk_motherboard_entity_2", ["motherboard_id"]);
 __PACKAGE__->add_unique_constraint("fk_motherboard_entity_1", ["entity_id"]);
 __PACKAGE__->belongs_to(
@@ -27,8 +28,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DcHRW38y2Kszpqvo/pFndg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 17:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l260yCjcMVCsyg7uA7BaJQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
