@@ -51,17 +51,28 @@ use warnings;
 use Log::Log4perl "get_logger";
 use AdministratorDB::Schema;
 use Data::Dumper;
+use EntityRights;
+use lib qw(../../Common/Lib);
+use McsExceptions;
 
 my $log = get_logger("administrator");
 
 #$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-###########################################
-# new (login, password)
-# 
-# object constructor
-
 my $oneinstance;
+
+=head2 Administrator::New (%args)
+	
+	Class : Public
+	
+	Desc : Instanciate Administrator object and check user authentication
+	
+	args: 
+		login : String : user login to access to administrator
+		password : String : user's password
+	return: Administrator instance
+	
+=cut
 
 sub new {
 	my $class = shift;
@@ -72,23 +83,37 @@ sub new {
 	my $login = $args{login};
 	my $password = $args{password};
 
-	# ici on va chercher la conf pour se connecter à la base 
+	#TODO Load DB configuration from file 
 	my $dbi = 'dbi:mysql:administrator:10.0.0.1:3306';
 	my $user = 'root';
 	my $pass = 'Hedera@123';
 	my %opts = ();
+	my ($schema, $rightschecker);
+	# Test if connection problem and catch exception
 	
-	$log->info("instanciating AdministratorDB::Schema");
-	my $schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
-	if( ! $schema ) { die "Unable to connect to the database : "; }
+	print "Enter In new\n";
+	eval {
+		$log->info("instanciating AdministratorDB::Schema");
+		$schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
+	};
+	#TODO Understand why no catching exception from db connection but only 
+	if ($@) {
+		if ($@->isa('DBIx::Class::Exception')) {
+			$log->error("Administrator Instanciation : Connection DB Failed");
+			$@->rethrow();}
+   }
 		
 	# When debug is set, all sql queries are printed
 	# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
-		
-	use EntityRights;
-	$log->info("instanciating EntityRights");
-	my $rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
-	if( ! $rightschecker ) { die "Unable to instanciate EntityRights "; }
+	eval {
+		$log->info("instanciating EntityRights");
+		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
+	};
+	if ($@) {
+		#TODO Test exception type when exception are identified in EntityRight
+			$log->error("EntityRights Instanciation : Failed");
+			$@->rethrow();
+   }
 	
 	my $self = {
 		db => $schema,
@@ -114,19 +139,18 @@ sub _mapName {
 	return $table_name ? $table_name : $class_name;
 }
 
-=head2 _getData
+=head2 Administrator::_getData(%args)
 	
-	Private
+	Class : Private
 	
-	Instanciate dbix class mapped to corresponding raw in DB
+	Desc : Instanciate dbix class mapped to corresponding raw in DB
 	
 	args: 
-		table: DB table name
-		id: id of required entity in table
+		table : String : DB table name
+		id: Int : id of required entity in table
 	return: db schema (dbix)
 	
 =cut
-
 sub _getData {
 	my $self = shift;
 	my %args = @_;
@@ -136,11 +160,12 @@ sub _getData {
 
 =head2 _getAllData
 
-	Private
+	Class : Private
 
-	Get all dbix class of table
+	Desc : Get all dbix class of table
 	
-	args: table
+	args:
+		table : String : Table name
 	return: resultset (dbix)
 	
 =cut
@@ -155,13 +180,13 @@ sub _getAllData {
 
 =head2 _addData
 	
-	Private
+	Class : Private
 	
-	Instanciate dbix class filled with <params>, add a corresponding row in DB
+	Desc : Instanciate dbix class filled with <params>, add a corresponding row in DB
 	
 	args: 
-		table: DB table name
-		row: hash ref representing the new row (key mapped on <table> columns)
+		table : String : DB table name
+		row: hash ref : representing the new row (key mapped on <table> columns)
 	return: db schema (dbix)
 	
 =cut
@@ -178,13 +203,13 @@ sub _addData {
 
 =head2 _newData
 	
-	Private
+	Class : Private
 	
-	Instanciate dbix class filled with <params>, doesn't add in DB
+	Desc : Instanciate dbix class filled with <params>, doesn't add in DB
 	
 	args: 
-		table: DB table name
-		row: hash ref representing the new row (key mapped on <table> columns)
+		table : String : DB table name
+		row: hash ref : representing the new row (key mapped on <table> columns)
 	return: db schema (dbix)
 
 =cut
@@ -202,9 +227,9 @@ sub _newData {
 
 =head2 _newObj
 	
-	Private
+	Class : Private
 	
-	Instanciate concrete Entity
+	Desc : Instanciate concrete Entity
 	
 	args: 
 		type : concrete entity type
@@ -227,6 +252,12 @@ sub _newObj {
 }
 
 =head2 getObj
+	
+	Class : Public
+	
+	Desc : This method allows to get entity object. It
+			get _data from table with _getData
+			call _newObj on _data
 	
 	args: type, id
 	Return a new Entity::<type> with data corresponding to <id> (in <type> table)
@@ -253,6 +284,18 @@ sub getObj {
     return $new_obj;
 }
 
+=head2 getAllObjs
+	
+	Class : Public
+	
+	Desc : This method allows to get many entity objects. It
+			get all allowed object from calling _getAllData
+	
+	args: type
+	Return a new Entities::<type> with data corresponding to <id> (in <type> table)
+	To modify data in DB call save() on returned obj (after modification)
+	
+=cut
 
 sub getAllObjs {
 	my $self = shift;
@@ -300,7 +343,7 @@ sub newObj {
 sub newOp {
 	my $self = shift;
 	my %args = @_;
-	#TODO Enlever "thom" et remplace par $self->{_rightchecker}->{_user}
+	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
 	my $user_id = $self->{_rightschecker}->{_user};
 	my $op_data = $self->_newData( table => 'Operation', row => { 	type => $args{type},

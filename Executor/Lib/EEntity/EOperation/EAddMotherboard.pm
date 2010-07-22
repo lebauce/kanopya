@@ -47,9 +47,6 @@ use vars qw(@ISA $VERSION);
 use lib "../..";
 use base "EEntity::EOperation";
 
-use EEntity::EMotherboard;
-use EEntity::ECluster;
-
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };

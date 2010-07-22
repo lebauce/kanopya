@@ -91,6 +91,7 @@ sub getAllParams {
 	
 	# add local extended params (localy changed ext params override ext params load from db)
 	my $local_ext_params = $self->{_ext_params};
+	#TODO Search a clean concatenation method
 	my %all_params = ( %params, %$local_ext_params );
 
 	return %all_params;	

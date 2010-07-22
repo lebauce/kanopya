@@ -3,7 +3,8 @@ package Entity::Cluster;
 use strict;
 
 use base "Entity";
-use Entity::Components;
+use lib qw (..);
+use Entity::Component;
 
 # contructor
 
@@ -15,5 +16,8 @@ sub new {
     return $self;
 }
 
+sub getComponents{
+	
+}
 
 1;
