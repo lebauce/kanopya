@@ -64,6 +64,11 @@ sub new {
         _ext_params => {},
     };
     bless $self, $class;
+    
+    # getting groups where we find this entity (entity already exists)
+	if($self->{_data}->in_storage) {
+		$self->{_groups} = $self->{_rightschecker}->getGroups(EntityId => $self->{_data}->get_column('entity_id'));
+	}
 
     return $self;
 }
@@ -222,12 +227,18 @@ sub save {
 	}
 	else {
 		# CREATE
-		my $newentity = $data->insert;
+		my $relation = lc(ref $self);
+		$relation =~ s/.*\:\://g;
+		print "la relation: $relation\n";
+		my $newentity = $self->{_data}->insert;
+		$log->debug("new entity inserted.");
+		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
+			{ "${relation}_entities" => [ { "${relation}_id" => $newentity->get_column("${relation}_id")} ] },
+		);
+		$log->debug("new $self inserted with his entity relation.");
+		$self->{_entity_id} = $row->get_column('entity_id');
+		
 		$self->_saveExtendedParams();
-		#my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
-		#	{ user_entities => [ {user_id => $newentity->get_column('user_id')} ] },
-		#);
-		#$self->{_entity_id} = $row->get_column('entity_id');
 	}
 		
 }

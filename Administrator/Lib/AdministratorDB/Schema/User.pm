@@ -19,7 +19,7 @@ __PACKAGE__->add_columns(
   "user_lastname",
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 64 },
   "user_email",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 255 },
+  { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 255 },
   "user_creationdate",
   { data_type => "DATE", default_value => undef, is_nullable => 1, size => 10 },
   "user_lastaccess",
@@ -40,8 +40,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("user_id");
 __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
 __PACKAGE__->has_many(
-  "operation_queues",
-  "AdministratorDB::Schema::OperationQueue",
+  "operations",
+  "AdministratorDB::Schema::Operation",
   { "foreign.user_id" => "self.user_id" },
 );
 __PACKAGE__->has_many(
@@ -51,9 +51,16 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ePvLQ8qaf/2xIWExhpxUuQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SE6Z7qDF61kZdFQBe/zuZQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::UserEntity",
+  { "foreign.user_id" => "self.user_id" },
+);
+
 1;

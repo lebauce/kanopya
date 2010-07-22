@@ -30,6 +30,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
 );
 __PACKAGE__->set_primary_key("motherboardtemplate_id");
+__PACKAGE__->add_unique_constraint("motherboard_model_UNIQUE", ["motherboard_model"]);
 __PACKAGE__->has_many(
   "motherboardtemplate_entities",
   "AdministratorDB::Schema::MotherboardtemplateEntity",
@@ -39,9 +40,18 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7YjWFfNnoPH9HxiJfCDcLQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9+cJ2Fb5wVPKyeI7QI+3bQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::MotherboardtemplateEntity",
+  {
+    "foreign.motherboardtemplate_id" => "self.motherboardtemplate_id",
+  },
+);
+
 1;

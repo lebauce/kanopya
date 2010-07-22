@@ -38,10 +38,16 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Xjue6otkyrHMtdlolIV/OQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jhOQrEu0ZHopM+/dgH8IvA
 
-sub extended_table { return "motherboarddetails"; }
 
+# You can replace this text with custom content, and it will be preserved on regeneration
+
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::MotherboardEntity",
+  { "foreign.motherboard_id" => "self.motherboard_id" },
+);
 
 1;

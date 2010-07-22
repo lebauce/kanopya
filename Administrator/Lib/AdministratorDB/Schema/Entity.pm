@@ -35,13 +35,13 @@ __PACKAGE__->has_many(
   { "foreign.entityright_consumer_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
-  "groupings",
-  "AdministratorDB::Schema::Grouping",
+  "groups_entities",
+  "AdministratorDB::Schema::GroupsEntity",
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
-  "groups_entities",
-  "AdministratorDB::Schema::GroupsEntity",
+  "ingroups",
+  "AdministratorDB::Schema::Ingroups",
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
@@ -57,6 +57,16 @@ __PACKAGE__->has_many(
 __PACKAGE__->has_many(
   "motherboardtemplate_entities",
   "AdministratorDB::Schema::MotherboardtemplateEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "operation_entities",
+  "AdministratorDB::Schema::OperationEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
+  "operationtype_entities",
+  "AdministratorDB::Schema::OperationtypeEntity",
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
@@ -76,8 +86,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-20 01:31:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fVLOWm3md0j9Lc8appjZXQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mK5Y4uhrufRQwC6Ofsl/kg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -127,18 +127,6 @@ sub new {
 
 # private
 
-
-# permet de faire le lien entre les classes qui n'ont pas le meme noms que la table en bd
-# pas beau trouver autre chose
-sub _mapName {
-	my %ClassTableMapping = (
-		"Operation" => "OperationQueue" );
-	
-	my ($class_name) = @_;
-	my $table_name = $ClassTableMapping{ $class_name };
-	return $table_name ? $table_name : $class_name;
-}
-
 =head2 Administrator::_getData(%args)
 	
 	Class : Private
@@ -154,8 +142,12 @@ sub _mapName {
 sub _getData {
 	my $self = shift;
 	my %args = @_;
-
-	return $self->{db}->resultset( _mapName( $args{table} ) )->find( $args{id} );
+	my $entitylink = lc($args{table})."_entities";
+	return $self->{db}->resultset( $args{table} )->find(  $args{id}, 
+		{ 	'+columns' => [ "$entitylink.entity_id" ], 
+		join => ["$entitylink"] }
+	);
+	
 }
 
 =head2 _getAllData
@@ -174,7 +166,7 @@ sub _getAllData {
 	my $self = shift;
 	my %args = @_;
 
-	return $self->{db}->resultset( _mapName( $args{table} ) );
+	return $self->{db}->resultset( $args{table} );
 }
 
 
@@ -196,7 +188,7 @@ sub _addData {
 	my %args  = @_;	
 	#$args{params} = {} if !$args{params};
 	
-	my $new_obj = $self->{db}->resultset( _mapName( $args{table} ) )->create( $args{row} );
+	my $new_obj = $self->{db}->resultset($args{table} )->create( $args{row} );
 	return $new_obj;	
 }
 
@@ -219,7 +211,7 @@ sub _newData {
 	my %args  = @_;	
 	#$args{params} = {} if !$args{params};	
 	
-	my $new_obj = $self->{db}->resultset( _mapName( $args{table} ) )->new( $args{row} );
+	my $new_obj = $self->{db}->resultset(  $args{table} )->new( $args{row} );
 	
 	return $new_obj;
 }

@@ -83,15 +83,34 @@ sub new {
 	
 	# get user groups
 	my $groups = $self->{_schema}->resultset('Groups')->search(
-	{ 'entity_groups.entity_id' => $self->{_user}->get_column('entity_id') },
-	{ 	'+columns' => [ 'group_entities.entity_id' ], 
-		join => [qw/entity_groups group_entities/] }
+	{ 'ingroups.entity_id' => $self->{_user}->get_column('entity_id') },
+	{ 	'+columns' => [ 'groups_entities.entity_id' ], 
+		join => [qw/ingroups groups_entities/] }
 	);
 		
 	$self->{_groups} = $groups;	
 		
 	bless $self, $class;
  	return $self;
+}
+
+=head2 getGroups
+
+return groups resultset containing entity with entity_id
+
+=cut
+
+sub getGroups {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getGroups need a EntityId named argument!"; }
+	
+	my $groups = $self->{_schema}->resultset('Groups')->search(
+	{ 'ingroups.entity_id' => $args{EntityId} },
+	{ 	'+columns' => [ 'groups_entities.entity_id' ], 
+		join => [qw/ingroups groups_entities/] }
+	);
+	return $groups;
 }
 
 =head2 _getRights
