@@ -64,6 +64,11 @@ sub new {
         _ext_params => {},
     };
     bless $self, $class;
+    
+    # getting groups where we find this entity (entity already exists)
+	if($self->{_data}->in_storage) {
+		$self->{_groups} = $self->{_rightschecker}->getGroups(EntityId => $self->{_data}->get_column('entity_id'));
+	}
 
     return $self;
 }
