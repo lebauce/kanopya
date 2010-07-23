@@ -67,10 +67,32 @@ sub new {
     
     # getting groups where we find this entity (entity already exists)
 	if($self->{_data}->in_storage) {
-		$self->{_groups} = $self->{_rightschecker}->getGroups(EntityId => $self->{_data}->get_column('entity_id'));
+		$self->{_groups} = $self->getGroups;
 	}
 
     return $self;
+}
+
+=head2 getGroups
+
+return groups resultset where this entity appears (only on an already saved entity)
+
+=cut
+
+sub getGroups {
+	my $self = shift;
+	if( not $self->{_data}->in_storage ) { return undef; } 
+	my $mastergroup = ref $self;
+	$mastergroup =~ s/.*\:\://g;
+	my $groups = $self->{_rightschecker}->{_schema}->resultset('Groups')->search({
+		-or => [
+			'ingroups.entity_id' => $self->{_data}->get_column('entity_id'),
+			'groups_name' => $mastergroup ]},
+			
+		{ 	'+columns' => [ 'groups_entities.entity_id' ], 
+			join => [qw/ingroups groups_entities/] }
+	);
+	return $groups;
 }
 
 =head2 getAllParams

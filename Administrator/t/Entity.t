@@ -10,19 +10,23 @@ use Administrator;
 
 my $adm = Administrator->new( login =>'tortue', password => 'pass' );
 
-while(my $g = $adm->{_rightschecker}->{_groups}->next) {
-	print $g->groups_name, "\n";
-};
+my @users = $adm->getAllObjs(type => 'User');
 
-my $proctemplate = $adm->getObj(type => 'Processortemplate', id => 19);
-
-print $proctemplate->getValue(name => 'processor_brand'), "\n";
-print $proctemplate->getValue(name => 'processor_model'), "\n";
-print $proctemplate->getValue(name => 'processor_FSB'), "\n";
-print $proctemplate->getValue(name => 'processor_max_consumption'), "\n";
+my @targetgroups = ();
 
 
+while (my $g = $users[0]->{_groups}->next) {
+	my @groups = $adm->{db}->resultset('Entityright')->search(
+		{ entityright_consumer_id => $g->get_column('entity_id') },
+		
+	);
+	push @targetgroups, @groups;
+	
+} 
+
+foreach my $i (@targetgroups) {
+	print $i->get_column('entityright_entity_id');
+}	
 
 
 
-#is( "test", "test", "test");

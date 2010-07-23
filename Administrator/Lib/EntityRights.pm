@@ -94,24 +94,7 @@ sub new {
  	return $self;
 }
 
-=head2 getGroups
 
-return groups resultset containing entity with entity_id
-
-=cut
-
-sub getGroups {
-	my $self = shift;
-	my %args = @_;
-	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getGroups need a EntityId named argument!"; }
-	
-	my $groups = $self->{_schema}->resultset('Groups')->search(
-	{ 'ingroups.entity_id' => $args{EntityId} },
-	{ 	'+columns' => [ 'groups_entities.entity_id' ], 
-		join => [qw/ingroups groups_entities/] }
-	);
-	return $groups;
-}
 
 =head2 _getRights
 
@@ -145,7 +128,8 @@ sub canGet {
 	if (! exists $args{userEntityId} or ! defined $args{userEntityId}) {  die "EntityRights->getRights need a userEntityId named argument!"; }
 	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getRights need a secondEntityId named argument!"; }
 	
-	my $groupadmin = $self->{_groups}->find({group_name => 'admin'});
+	my $groupadmin = $self->{_groups}->find({groups_name => 'admin'});
+	if($groupadmin) { print "I'm an administrator, i can do everything!\n"; }
 	
 	return;
 }

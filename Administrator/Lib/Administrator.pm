@@ -140,8 +140,12 @@ sub _getData {
 sub _getAllData {
 	my $self = shift;
 	my %args = @_;
-
-	return $self->{db}->resultset( $args{table} );
+	my $entitylink = lc($args{table})."_entities";
+	return $self->{db}->resultset( $args{table} )->search(
+		undef, 
+		{ 	'+columns' => [ "$entitylink.entity_id" ], 
+		join => ["$entitylink"] }	
+	);
 }
 
 
