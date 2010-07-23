@@ -102,7 +102,7 @@ sub run {
 	my $adm = Administrator->new(login => "thom", password => "pass");
 	$log->warn("After New Administrator"); 
    	while (1) {
-   		my $opdata = $adm->getNextOperation();
+   		my $opdata = $adm->getNextOp();
    		my $op = $self->_newObj((data => $opdata));
    		if ($op){
    			$op->prepare();
@@ -115,7 +115,7 @@ sub run {
    	} 
 }
 
-=head2 run
+=head2 execnrun
 
 Executor->execnround((run => $nbrun)) run the executor server for only one round.
 
@@ -129,10 +129,13 @@ sub execnround {
 
    	while ($args{run}) {
    		my $opdata = $adm->getNextOp();
+   		$log->warn("Get Next Operation, its type is ".ref($opdata));
    		my $op = $self->_newObj((data => $opdata));
    		if ($op){
    			$op->prepare();
+   			$log->warn("Preparation finish");
    			$op->execute();
+   			$log->warn("Execution finish");
    			$op->finish();
    			$args{run}--;
    		}
@@ -152,9 +155,12 @@ sub _newObj {
 	my $self = shift;
 	my %args = @_;
 	
-	my $class = General::getClassEEntityFromEntity(entity => $args{data});
-	my $location = General::getLocFromClass($class);
-
+	my $data = $args{data};
+	my $class = General::getClassEEntityFromEntity(entity => $data);
+	$log->debug("GetClassEEntityFromEntity return $class"); 
+	my $location = General::getLocFromClass(entityclass => $class);
+	$log->debug("General::getLocFromClass return $location"); 
+	
     require $location;
 
     return $class->new((data => $args{data}));

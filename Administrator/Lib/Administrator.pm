@@ -51,17 +51,28 @@ use warnings;
 use Log::Log4perl "get_logger";
 use AdministratorDB::Schema;
 use Data::Dumper;
+use EntityRights;
+use lib qw(../../Common/Lib);
+use McsExceptions;
 
 my $log = get_logger("administrator");
 
 #$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-###########################################
-# new (login, password)
-# 
-# object constructor
-
 my $oneinstance;
+
+=head2 Administrator::New (%args)
+	
+	Class : Public
+	
+	Desc : Instanciate Administrator object and check user authentication
+	
+	args: 
+		login : String : user login to access to administrator
+		password : String : user's password
+	return: Administrator instance
+	
+=cut
 
 sub new {
 	my $class = shift;
@@ -72,23 +83,32 @@ sub new {
 	my $login = $args{login};
 	my $password = $args{password};
 
-	# ici on va chercher la conf pour se connecter à la base 
+	#TODO Load DB configuration from file 
 	my $dbi = 'dbi:mysql:administrator:10.0.0.1:3306';
 	my $user = 'root';
 	my $pass = 'Hedera@123';
 	my %opts = ();
+	my ($schema, $rightschecker);
+	# Test if connection problem and catch exception
 	
-	$log->info("instanciating AdministratorDB::Schema");
-	my $schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
-	if( ! $schema ) { die "Unable to connect to the database : "; }
-		
+	print "Enter In new\n";
+	eval {
+		$log->info("instanciating AdministratorDB::Schema");
+		$schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
+
+	#TODO Understand why no catching exception from db connection but only 
+	
 	# When debug is set, all sql queries are printed
 	# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
-		
-	use EntityRights;
-	$log->info("instanciating EntityRights");
-	my $rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
-	if( ! $rightschecker ) { die "Unable to instanciate EntityRights "; }
+
+		$log->info("instanciating EntityRights");
+		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
+	};
+	if ($@) {
+		#TODO Test exception type when exception are identified in EntityRight
+			$log->error("Administrator Instanciation Exception");
+			$@->rethrow();
+	}
 	
 	my $self = {
 		db => $schema,
@@ -102,19 +122,18 @@ sub new {
 
 # private
 
-=head2 _getData
+=head2 Administrator::_getData(%args)
 	
-	Private
+	Class : Private
 	
-	Instanciate dbix class mapped to corresponding raw in DB
+	Desc : Instanciate dbix class mapped to corresponding raw in DB
 	
 	args: 
-		table: DB table name
-		id: id of required entity in table
+		table : String : DB table name
+		id: Int : id of required entity in table
 	return: db schema (dbix)
 	
 =cut
-
 sub _getData {
 	my $self = shift;
 	my %args = @_;
@@ -128,11 +147,12 @@ sub _getData {
 
 =head2 _getAllData
 
-	Private
+	Class : Private
 
-	Get all dbix class of table
+	Desc : Get all dbix class of table
 	
-	args: table
+	args:
+		table : String : Table name
 	return: resultset (dbix)
 	
 =cut
@@ -140,24 +160,27 @@ sub _getData {
 sub _getAllData {
 	my $self = shift;
 	my %args = @_;
+
+	if (! exists $args{table} or ! defined $args{table}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
+
+
 	my $entitylink = lc($args{table})."_entities";
-	return $self->{db}->resultset( $args{table} )->search(
-		undef, 
-		{ 	'+columns' => [ "$entitylink.entity_id" ], 
-		join => ["$entitylink"] }	
-	);
+	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
+		join => ["$entitylink"]});
+
 }
 
 
 =head2 _addData
 	
-	Private
+	Class : Private
 	
-	Instanciate dbix class filled with <params>, add a corresponding row in DB
+	Desc : Instanciate dbix class filled with <params>, add a corresponding row in DB
 	
 	args: 
-		table: DB table name
-		row: hash ref representing the new row (key mapped on <table> columns)
+		table : String : DB table name
+		row: hash ref : representing the new row (key mapped on <table> columns)
 	return: db schema (dbix)
 	
 =cut
@@ -167,6 +190,11 @@ sub _addData {
 	my %args  = @_;	
 	#$args{params} = {} if !$args{params};
 	
+	if ((! exists $args{table} or ! defined $args{table}) ||
+		(! exists $args{row} or ! defined $args{row})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_allData need a table and row named argument!"); }
+	
+	
 	my $new_obj = $self->{db}->resultset($args{table} )->create( $args{row} );
 	return $new_obj;	
 }
@@ -174,13 +202,13 @@ sub _addData {
 
 =head2 _newData
 	
-	Private
+	Class : Private
 	
-	Instanciate dbix class filled with <params>, doesn't add in DB
+	Desc : Instanciate dbix class filled with <params>, doesn't add in DB
 	
 	args: 
-		table: DB table name
-		row: hash ref representing the new row (key mapped on <table> columns)
+		table : String : DB table name
+		row: hash ref : representing the new row (key mapped on <table> columns)
 	return: db schema (dbix)
 
 =cut
@@ -189,6 +217,11 @@ sub _newData {
 	my $self = shift;
 	my %args  = @_;	
 	#$args{params} = {} if !$args{params};	
+
+	if ((! exists $args{table} or ! defined $args{table}) ||
+		(! exists $args{row} or ! defined $args{row})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_newData need a table and row named argument!"); }
+
 	
 	my $new_obj = $self->{db}->resultset(  $args{table} )->new( $args{row} );
 	
@@ -198,9 +231,9 @@ sub _newData {
 
 =head2 _newObj
 	
-	Private
+	Class : Private
 	
-	Instanciate concrete Entity
+	Desc : Instanciate concrete Entity
 	
 	args: 
 		type : concrete entity type
@@ -211,6 +244,11 @@ sub _newData {
 sub _newObj {
 	my $self = shift;
     my %args = @_;
+
+	if ((! exists $args{data} or ! defined $args{data}) ||
+		(! exists $args{type} or ! defined $args{type})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_newObj need a data and type named argument!"); }
+
 
     my $requested_type = $args{type};
     my $location = $requested_type;
@@ -224,6 +262,12 @@ sub _newObj {
 
 =head2 getObj
 	
+	Class : Public
+	
+	Desc : This method allows to get entity object. It
+			get _data from table with _getData
+			call _newObj on _data
+	
 	args: type, id
 	Return a new Entity::<type> with data corresponding to <id> (in <type> table)
 	To modify data in DB call save() on returned obj (after modification)
@@ -234,25 +278,46 @@ sub getObj {
 	my $self = shift;
     my %args = @_;
 
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{id} or ! defined $args{id})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type and an id named argument!"); }
+
 	$log->info( "getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 
+	$log->info( "_getData with table = $args{type} and id = $args{id}");
 	my $obj_data = $self->_getData( table => $args{type}, id => $args{id} );
 	my $new_obj;
 	if ( defined $obj_data ) {
+		$log->info( "_newObj with type = $args{type} and data of " . ref($obj_data));
 		$new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
 	}
 	else {
 		warn( "Administrator::getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
 		return undef;
 	}
-
+	$log->info( "Return newObj of " . ref($new_obj));
     return $new_obj;
 }
 
+=head2 getAllObjs
+	
+	Class : Public
+	
+	Desc : This method allows to get many entity objects. It
+			get all allowed object from calling _getAllData
+	
+	args: type
+	Return a new Entities::<type> with data corresponding to <id> (in <type> table)
+	To modify data in DB call save() on returned obj (after modification)
+	
+=cut
 
 sub getAllObjs {
 	my $self = shift;
     my %args = @_;
+	
+	if (! exists $args{type}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
 	
 	my @objs = ();
 	my $rs = $self->_getAllData( table => $args{type} );
@@ -279,7 +344,12 @@ sub newObj {
 	my $self = shift;
     my %args = @_;
 
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{params} or ! defined $args{params})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newObj need params and type named argument!"); }
+
 	$log->info( "newObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+
 
 	my $obj_data = $self->_newData( table =>  $args{type}, row => $args{params} );
 	my $new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
@@ -296,7 +366,12 @@ sub newObj {
 sub newOp {
 	my $self = shift;
 	my %args = @_;
-	#TODO Enlever "thom" et remplace par $self->{_rightchecker}->{_user}
+	
+		if ((! exists $args{priority} or ! defined $args{priority}) ||
+			(! exists $args{type} or ! defined $args{type}) ||
+			(! exists $args{params} or ! defined $args{params})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newOp need a priority, params and type named argument!"); }
+	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
 	my $user_id = $self->{_rightschecker}->{_user};
 	my $op_data = $self->_newData( table => 'Operation', row => { 	type => $args{type},
@@ -304,9 +379,30 @@ sub newOp {
 																	user_id => $user_id,
 																	priority => $args{priority}});
 	my $op = $self->_newObj(type => "Operation::". $args{type}, data => $op_data) ;
-	$op->save;
+	$self->_saveOp(op => $op);
 	$op->addParams($args{params});
 	return $op;
+}
+
+=head2 saveOp
+	
+=cut
+
+sub _saveOp {
+	my $self = shift;
+	my %args = @_;
+	
+	throw Mcs::Exception::Internal(error => "Try to save object not operation") if (
+													(!exists $args{op})||
+													(! $args{op}->isa('Entity::Operation')));
+
+	my $newentity = $args{op}->{_data}->insert;
+	$log->debug("new Operation inserted.");
+	my $row = $args{op}->{_rightschecker}->{_schema}->resultset('Entity')->create(
+		{ "operation_entities" => [ { "operation_id" => $newentity->get_column("operation_id")} ] },
+	);
+	$log->debug("new operation $args{op} inserted with his entity relation.");
+	$args{op}->{_entity_id} = $row->get_column('entity_id');
 }
 
 sub _get_lastRank{
@@ -324,10 +420,10 @@ sub saveObj {}
 sub getNextOp {
 	my $self = shift;
 	
-	my $all_ops = $self->_getAllData( table => 'OperationQueue' );
+	my $all_ops = $self->_getAllData( table => 'Operation' );
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
 	
-	die "No more operation in queue!" if ( !$op_data );
+	throw Mcs::Exception::Internal(error => "No more operation in queue!") if ( !$op_data );
 	
 	my $op_type = $op_data->type;
 
@@ -351,7 +447,8 @@ sub getNextOperation {
 sub changeUser {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{user_id} or ! defined $args{user_id}) { die "Administrator->changeUser need a user_id named argument!"; }
+	if (! exists $args{user_id} or ! defined $args{user_id}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->changeUser need a user_id named argument!"); }
 	my $nextuser = $self->getObj(type => "User",id => $args{user_id});
 	$self->{_rightschecker}->{_userbackup} = $self->{_rightschecker}->{_user};
 	$self->{_rightschecker}->{_user} = $nextuser;

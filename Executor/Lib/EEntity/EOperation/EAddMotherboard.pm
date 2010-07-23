@@ -44,11 +44,9 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use vars qw(@ISA $VERSION);
-use lib "../..";
 use base "EEntity::EOperation";
-
-use EEntity::EMotherboard;
-use EEntity::ECluster;
+use lib qw(../.. ../../../../Common/Lib);
+use McsExceptions;
 
 my $log = get_logger("executor");
 
@@ -94,16 +92,26 @@ sub _init {
 sub prepare {
 	my $self = shift;
 	$self->SUPER::prepare();
+
 	$log->warn("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
 	my $params = $self->_getEntity()->getParams();
+
 	$log->warn("After administator instanciation, before newObj");
 	$self->{_objs} = {};
-	my $c_cstorage = EEntity::ECluster->new($adm->getObj(type => "Cluster", id => $params->{c_storage_id}));
+
+	$log->warn("adm->getObj of Cluster with id : $params->{c_storage_id}");
+	my $c_cstorage = $adm->getObj(type => "Cluster", id => $params->{c_storage_id});
+	# Delete c_storage_id to have a ref on hash with motherboard parms
 	delete($params->{c_storage_id});
-	$self->{_objs}->{node} = $self->$adm->newObj(type => "Motherboard");
-	$self->{_objs}->{node}->setValues(params => $params);
-	print Dumper $self->{_objs}->{node};
+
+	$log->warn("adm->newObj of Motherboard");
+	$self->{_objs}->{motherboard} = $adm->newObj(type => "Motherboard");
+	$log->warn("New motherboard $self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+	
+	$log->warn("adm->setValues of params " . Dumper $params);
+	$self->{_objs}->{motherboard}->setValues(params => $params);
+	print Dumper $self->{_objs}->{motherboard};
 }
 
 

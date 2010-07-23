@@ -1,9 +1,9 @@
 package Entity::Operation;
 
 use strict;
-
+use lib qw(../../../Common/Lib);
 use base "Entity";
-
+use McsExceptions;
 # contructor 
 
 sub new {
@@ -33,7 +33,7 @@ sub addParams {
 	# we don't want this behaviour
 	# TODO comprendre comment marche le new_related (et ensuite accéder aux related data, ajouter dans la base, cascade_update...)
 	if ( ! $self->{_data}->in_storage ) {
-		die "Error: Please save your Operation before call addParams";
+		throw Mcs::Exception::Internal(error => "Error: Please save your Operation before call addParams");
 	}
 	
 	foreach my $k (keys %$params) {

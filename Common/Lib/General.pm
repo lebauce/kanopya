@@ -43,12 +43,21 @@ Executor is the main object use to create execution objects
 
 =cut
 package General;
+use lib ".";
+use McsExceptions;
+use Log::Log4perl "get_logger";
+my $log = get_logger("executor");
 
 sub getClassEEntityFromEntity{
 	my %args = @_;
-
-	my $entityclass = ref($args{data});
-
+	my $data = $args{entity};
+	$log->trace("Try to get Eentity class from object". ref($data));
+	$log->trace("Exist args_data " . exists($args{entity}) ."and isa ".$data->isa('Entity'));
+	throw Mcs::Exception::Internal(error => "Try to get Eentity class from object not entity : ". ref($args{entity})) if (
+													(! exists($args{entity})) or
+													(! $data->isa('Entity')));
+	my $entityclass = ref($args{entity});
+	$log->debug("new operation inserted with his entity relation.");
     my $class = $entityclass;
 	
     $class =~s/\:\:/\:\:E/g;
@@ -62,9 +71,10 @@ sub getClassEEntityFromEntity{
 #TODO Tester si les regexp fonctionne en simulant le use.
 sub getLocFromClass{
 	my %args = @_;
-
-	my $entityloc = $args{entityclass};
-    $location =~s/\:\:/\//g;
+	my $data = $args{entityclass};
+	$log->warn("Try to get Location from class $data");
+	my $location = $args{entityclass};
+    $location =~ s/\:\:/\//g;
     return $location . ".pm";
 }
 
