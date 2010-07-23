@@ -95,25 +95,20 @@ sub new {
 	eval {
 		$log->info("instanciating AdministratorDB::Schema");
 		$schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
-	};
+
 	#TODO Understand why no catching exception from db connection but only 
-	if ($@) {
-		if ($@->isa('DBIx::Class::Exception')) {
-			$log->error("Administrator Instanciation : Connection DB Failed");
-			$@->rethrow();}
-   }
-		
+	
 	# When debug is set, all sql queries are printed
 	# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
-	eval {
+
 		$log->info("instanciating EntityRights");
 		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
 	};
 	if ($@) {
 		#TODO Test exception type when exception are identified in EntityRight
-			$log->error("EntityRights Instanciation : Failed");
+			$log->error("Administrator Instanciation Exception");
 			$@->rethrow();
-   }
+	}
 	
 	my $self = {
 		db => $schema,
@@ -166,7 +161,13 @@ sub _getAllData {
 	my $self = shift;
 	my %args = @_;
 
-	return $self->{db}->resultset( $args{table} );
+	if (! exists $args{table} or ! defined $args{table}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
+
+
+	my $entitylink = lc($args{table})."_entities";
+	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
+		join => ["$entitylink"]});
 }
 
 
@@ -187,6 +188,11 @@ sub _addData {
 	my $self = shift;
 	my %args  = @_;	
 	#$args{params} = {} if !$args{params};
+	
+	if ((! exists $args{table} or ! defined $args{table}) ||
+		(! exists $args{row} or ! defined $args{row})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_allData need a table and row named argument!"); }
+	
 	
 	my $new_obj = $self->{db}->resultset($args{table} )->create( $args{row} );
 	return $new_obj;	
@@ -210,6 +216,11 @@ sub _newData {
 	my $self = shift;
 	my %args  = @_;	
 	#$args{params} = {} if !$args{params};	
+
+	if ((! exists $args{table} or ! defined $args{table}) ||
+		(! exists $args{row} or ! defined $args{row})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_newData need a table and row named argument!"); }
+
 	
 	my $new_obj = $self->{db}->resultset(  $args{table} )->new( $args{row} );
 	
@@ -232,6 +243,11 @@ sub _newData {
 sub _newObj {
 	my $self = shift;
     my %args = @_;
+
+	if ((! exists $args{data} or ! defined $args{data}) ||
+		(! exists $args{type} or ! defined $args{type})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_newObj need a data and type named argument!"); }
+
 
     my $requested_type = $args{type};
     my $location = $requested_type;
@@ -261,18 +277,24 @@ sub getObj {
 	my $self = shift;
     my %args = @_;
 
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{id} or ! defined $args{id})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type and an id named argument!"); }
+
 	$log->info( "getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 
+	$log->info( "_getData with table = $args{type} and id = $args{id}");
 	my $obj_data = $self->_getData( table => $args{type}, id => $args{id} );
 	my $new_obj;
 	if ( defined $obj_data ) {
+		$log->info( "_newObj with type = $args{type} and data of " . ref($obj_data));
 		$new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
 	}
 	else {
 		warn( "Administrator::getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
 		return undef;
 	}
-
+	$log->info( "Return newObj of " . ref($new_obj));
     return $new_obj;
 }
 
@@ -292,6 +314,9 @@ sub getObj {
 sub getAllObjs {
 	my $self = shift;
     my %args = @_;
+	
+	if (! exists $args{type}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
 	
 	my @objs = ();
 	my $rs = $self->_getAllData( table => $args{type} );
@@ -318,7 +343,12 @@ sub newObj {
 	my $self = shift;
     my %args = @_;
 
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{params} or ! defined $args{params})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newObj need params and type named argument!"); }
+
 	$log->info( "newObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+
 
 	my $obj_data = $self->_newData( table =>  $args{type}, row => $args{params} );
 	my $new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
@@ -335,6 +365,11 @@ sub newObj {
 sub newOp {
 	my $self = shift;
 	my %args = @_;
+	
+		if ((! exists $args{priority} or ! defined $args{priority}) ||
+			(! exists $args{type} or ! defined $args{type}) ||
+			(! exists $args{params} or ! defined $args{params})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newOp need a priority, params and type named argument!"); }
 	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
 	my $user_id = $self->{_rightschecker}->{_user};
@@ -343,9 +378,30 @@ sub newOp {
 																	user_id => $user_id,
 																	priority => $args{priority}});
 	my $op = $self->_newObj(type => "Operation::". $args{type}, data => $op_data) ;
-	$op->save;
+	$self->_saveOp(op => $op);
 	$op->addParams($args{params});
 	return $op;
+}
+
+=head2 saveOp
+	
+=cut
+
+sub _saveOp {
+	my $self = shift;
+	my %args = @_;
+	
+	throw Mcs::Exception::Internal(error => "Try to save object not operation") if (
+													(!exists $args{op})||
+													(! $args{op}->isa('Entity::Operation')));
+
+	my $newentity = $args{op}->{_data}->insert;
+	$log->debug("new Operation inserted.");
+	my $row = $args{op}->{_rightschecker}->{_schema}->resultset('Entity')->create(
+		{ "operation_entities" => [ { "operation_id" => $newentity->get_column("operation_id")} ] },
+	);
+	$log->debug("new operation $args{op} inserted with his entity relation.");
+	$args{op}->{_entity_id} = $row->get_column('entity_id');
 }
 
 sub _get_lastRank{
@@ -363,10 +419,10 @@ sub saveObj {}
 sub getNextOp {
 	my $self = shift;
 	
-	my $all_ops = $self->_getAllData( table => 'OperationQueue' );
+	my $all_ops = $self->_getAllData( table => 'Operation' );
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
 	
-	die "No more operation in queue!" if ( !$op_data );
+	throw Mcs::Exception::Internal(error => "No more operation in queue!") if ( !$op_data );
 	
 	my $op_type = $op_data->type;
 
@@ -390,7 +446,8 @@ sub getNextOperation {
 sub changeUser {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{user_id} or ! defined $args{user_id}) { die "Administrator->changeUser need a user_id named argument!"; }
+	if (! exists $args{user_id} or ! defined $args{user_id}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->changeUser need a user_id named argument!"); }
 	my $nextuser = $self->getObj(type => "User",id => $args{user_id});
 	$self->{_rightschecker}->{_userbackup} = $self->{_rightschecker}->{_user};
 	$self->{_rightschecker}->{_user} = $nextuser;

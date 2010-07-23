@@ -59,6 +59,10 @@ sub new {
     my $class = shift;
     my %args = @_;
     
+    if ((! exists $args{data} or ! defined $args{data})) { 
+		throw Mcs::Exception::Internal(error => "Entity->new ($class) need a data named argument!"); }
+    
+    
    	$log->warn("Class is : $class");
     my $self = { _entity => $args{data}};
     bless $self, $class;

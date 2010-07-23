@@ -19,11 +19,11 @@ use Exception::Class (
     }
     );
 
-$SIG{__DIE__} = \&handle_die;
+#$SIG{__DIE__} = \&handle_die;
 
 sub handle_die {
 	my $err = shift;
-	print "In Handler de die\n";
-	print Dumper $err;
+	warn("Caught error: ", $err);
+	exit(55);
 }
 1;

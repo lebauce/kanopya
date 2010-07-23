@@ -43,6 +43,8 @@ package Entity;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
+use lib qw(../../Common/Lib);
+use McsExceptions;
 
 my $log = get_logger("administrator");
 
@@ -58,6 +60,11 @@ sub new {
     my $class = shift;
     my %args = @_;
     
+    if ((! exists $args{data} or ! defined $args{data}) ||
+		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
+		throw Mcs::Exception::Internal(error => "Entity->new need a data and rightschecker named argument!"); }
+    $log->warn("Data : $args{data} and $args{rightschecker}");
+    
     my $self = {
     	_rightschecker => $args{rightschecker},
         _data => $args{data},
@@ -69,7 +76,7 @@ sub new {
 	if($self->{_data}->in_storage) {
 		$self->{_groups} = $self->{_rightschecker}->getGroups(EntityId => $self->{_data}->get_column('entity_id'));
 	}
-
+	$log->warn("new return $self");
     return $self;
 }
 
