@@ -6,6 +6,19 @@ use base "Entity";
 use McsExceptions;
 # contructor 
 
+=head2 new
+	
+	Class : Public
+	
+	Desc : This method instanciate Entity::Operation.
+	
+	Args :
+		rightschecker : Rightschecker : Object use to check write and update entity_id
+		data : DBIx class: object data
+	Return : Entity::Operation, this class could not be instanciated !!
+	
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -14,7 +27,14 @@ sub new {
     return $self;
 }
 
-# delete related parameters
+=head2 delete
+	
+	Class : Public
+	
+	Desc : This method delete Entity::Operation and its parameters
+	
+=cut
+
 sub delete {
 	my $self = shift;
 
@@ -23,6 +43,17 @@ sub delete {
 	
 	$self->SUPER::delete( );	
 }
+
+=head2 addParams
+	
+	Class : Public
+	
+	Desc : This method Add params to operation, operation has to be saved before 
+	
+	Args :
+		params : hashref : Operation parameters
+	
+=cut
 
 sub addParams {
 	my $self = shift;
@@ -42,7 +73,16 @@ sub addParams {
 	return 0;
 }
 
-# return a hash ref { p1 => v1, p2 => v2, ...}
+=head2 getParams
+	
+	Class : Public
+	
+	Desc : This method return hashref on operation params.
+	
+	Return : hashref : Operation parameters { p1 => v1, p2 => v2, ...}
+	
+=cut
+
 sub getParams {
 	my $self = shift;
 	
@@ -56,18 +96,44 @@ sub getParams {
 	return \%params;
 }
 
+=head2 getUser
+	
+	Class : Public
+	
+	Desc : This method return user_id of operation owner
+	
+	Return : int : operation owner user_id
+	
+=cut
+
 sub getUser {
 	my $self = shift;
-	return $self->getValue(name => "user_id");
+	return $self->getAttr(name => "user_id");
 }
 
-# getParamValue( param_name ) : param_value
+=head2 getParamValue
+	
+	Class : Public
+	
+	Desc : This method return value of a specific param 
+	
+	Args :
+		param_name : String : Param search in operation
+	
+	Return : Param_value $ : value of searched param
+=cut
+
 sub getParamValue {
 	my $self = shift;
-	my ($param_name) = @_;
+	my %args = @_;
+
+	if (! exists $args{param_name} or ! defined $args{param_name}) {
+		throw Mcs::Exception::Internal(error => "Error: Please save your Operation before call addParams");
+	}
+
 	my $params_rs = $self->{_data}->operation_parameters;
 	
-	my $param = $params_rs->search( { name => $param_name } )->next;
+	my $param = $params_rs->search( { name => $args{param_name} } )->next;
 	return $param->value;
 }
 

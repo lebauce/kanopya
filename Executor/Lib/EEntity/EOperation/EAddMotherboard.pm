@@ -106,12 +106,12 @@ sub prepare {
 	delete($params->{c_storage_id});
 
 	$log->warn("adm->newObj of Motherboard");
-	$self->{_objs}->{motherboard} = $adm->newObj(type => "Motherboard");
+	$self->{_objs}->{motherboard} = $adm->newObj(type => "Motherboard", params => {});
 	$log->warn("New motherboard $self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
-	$log->warn("adm->setValues of params " . Dumper $params);
-	$self->{_objs}->{motherboard}->setValues(params => $params);
-	print Dumper $self->{_objs}->{motherboard};
+	$log->warn("adm->setAttrs of params " . Dumper $params);
+	$self->{_objs}->{motherboard}->setAttrs(attrs => $params);
+#	print Dumper $self->{_objs}->{motherboard};
 }
 
 

@@ -95,6 +95,14 @@ sub prepare {
 	$adm->changeUser(user_id => $self->{userid});
 	$log->warn("Change user effective : New user is $adm->{_rightschecker}->{_user}");
 }
+
+sub execute {
+	
+}
+
+sub finish {
+	
+}
 1;
 
 __END__

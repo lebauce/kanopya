@@ -6,6 +6,11 @@ use base "Entity";
 
 # contructor 
 
+sub getStruct{
+	my $struct = {};
+	return $struct;
+}
+
 sub new {
     my $class = shift;
     my %args = @_;

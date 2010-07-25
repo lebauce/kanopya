@@ -16,10 +16,10 @@ while(my $g = $adm->{_rightschecker}->{_groups}->next) {
 
 my $proctemplate = $adm->getObj(type => 'Processortemplate', id => 19);
 
-print $proctemplate->getValue(name => 'processor_brand'), "\n";
-print $proctemplate->getValue(name => 'processor_model'), "\n";
-print $proctemplate->getValue(name => 'processor_FSB'), "\n";
-print $proctemplate->getValue(name => 'processor_max_consumption'), "\n";
+print $proctemplate->getAttr(name => 'processor_brand'), "\n";
+print $proctemplate->getAttr(name => 'processor_model'), "\n";
+print $proctemplate->getAttr(name => 'processor_FSB'), "\n";
+print $proctemplate->getAttr(name => 'processor_max_consumption'), "\n";
 
 
 

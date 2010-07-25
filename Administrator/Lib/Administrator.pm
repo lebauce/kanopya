@@ -93,21 +93,24 @@ sub new {
 	
 	print "Enter In new\n";
 	eval {
-		$log->info("instanciating AdministratorDB::Schema");
+		$log->debug("instanciating AdministratorDB::Schema");
 		$schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
-
+		print "adm->new : login $login, password $password\n";
 	#TODO Understand why no catching exception from db connection but only 
 	
 	# When debug is set, all sql queries are printed
 	# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
 
-		$log->info("instanciating EntityRights");
+		$log->debug("instanciating EntityRights");
 		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
 	};
 	if ($@) {
+#	print Dumper $@;
 		#TODO Test exception type when exception are identified in EntityRight
-			$log->error("Administrator Instanciation Exception");
-			$@->rethrow();
+		die $@;
+		$log->error("Administrator->new : Error connecting Database");
+		$@->rethrow();
+		throw Mcs::Exception::DB(error => "Administrator->new : Database connection failed"); 
 	}
 	
 	my $self = {
@@ -267,9 +270,11 @@ sub _newObj {
 			get _data from table with _getData
 			call _newObj on _data
 	
-	args: type, id
-	Return a new Entity::<type> with data corresponding to <id> (in <type> table)
-	To modify data in DB call save() on returned obj (after modification)
+	args: 
+		type : String : Object Type
+		id : int : Object id
+	Return : a new Entity::<type> with data corresponding to <id> (in <type> table)
+	Comment : To modify data in DB call save() on returned obj (after modification)
 	
 =cut
 
@@ -281,20 +286,21 @@ sub getObj {
 		(! exists $args{id} or ! defined $args{id})) { 
 		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type and an id named argument!"); }
 
-	$log->info( "getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->debug( "getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 
-	$log->info( "_getData with table = $args{type} and id = $args{id}");
+	$log->debug( "_getData with table = $args{type} and id = $args{id}");
 	my $obj_data = $self->_getData( table => $args{type}, id => $args{id} );
 	my $new_obj;
 	if ( defined $obj_data ) {
-		$log->info( "_newObj with type = $args{type} and data of " . ref($obj_data));
+		$log->debug( "_newObj with type = $args{type} and data of " . ref($obj_data));
 		$new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
 	}
 	else {
-		warn( "Administrator::getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
-		return undef;
+		$log->warn( "Administrator::getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
+		throw Mcs::Exception::Internal(error => "Administrator::get Obj : Object not found");
+		#return undef;
 	}
-	$log->info( "Return newObj of " . ref($new_obj));
+	$log->debug( "Return newObj of " . ref($new_obj));
     return $new_obj;
 }
 
@@ -305,8 +311,9 @@ sub getObj {
 	Desc : This method allows to get many entity objects. It
 			get all allowed object from calling _getAllData
 	
-	args: type
-	Return a new Entities::<type> with data corresponding to <id> (in <type> table)
+	args: 
+		type : String : Objects type
+	Return new Entities::<type> with data corresponding to <id> (in <type> table)
 	To modify data in DB call save() on returned obj (after modification)
 	
 =cut
@@ -330,6 +337,10 @@ sub getAllObjs {
 
 =head2 newObj
 	
+	Class : Public
+	
+	Desc : This method allows to instanciate entity object from hash table
+			It Calls _newData and _newObj
 	args: 
 		type: concrete Entity type
 		params: hash ref with key mapped on <type> table column
@@ -360,6 +371,18 @@ sub newObj {
 
 =head2 new Op
 	
+	Class : Public
+	
+	Desc : This method allows to instanciate entity object from hash table
+			It Calls _newData and _newObj
+	args : 
+		type : concrete Entity::Operation type (Real Operation type (AddMotherboard, MigrateNode, ...))
+		params : hash ref with key mapped on <type> table column
+		priority : Operation priority (<1000)
+		
+	Return a New Entity::Operation::type with data from hash (params)
+	This Operation is immediatly saved
+	
 =cut
 
 sub newOp {
@@ -383,8 +406,15 @@ sub newOp {
 	return $op;
 }
 
-=head2 saveOp
+=head2 _saveOp
+
+	Class : Private
 	
+	Desc : Save operation and its entity id in database
+	args : 
+		op : Entity::Operation::OperationType : 
+			concrete Entity::Operation type (Real Operation type (AddMotherboard, MigrateNode, ...))
+
 =cut
 
 sub _saveOp {
@@ -404,14 +434,24 @@ sub _saveOp {
 	$args{op}->{_entity_id} = $row->get_column('entity_id');
 }
 
+=head2 _getLastRank
+
+	Class : Private
+	
+	Desc : This method return last operation number
+
+=cut
+
 sub _get_lastRank{
 	return 0;
 }
 
-sub saveObj {}
-
 =head2 getNextOp
 	
+	Class : Public
+	
+	Desc : This method return next operation to execute
+
 	Returns the concrete Operation with the execution_rank min 
 	
 =cut
@@ -432,16 +472,16 @@ sub getNextOp {
 	return $op;
 }
 
-=head2 getNextOperation
-
-	adm->getNextOperation() : Operationdata send the next operation.
-
+=head2 getNextOp
+	
+	Class : Public
+	
+	Desc : This method change user in context administrator.
+	
+	Args :
+		user_id : Int : User Id which will be the new user
+	
 =cut
-
-sub getNextOperation {
-	my $self = shift;
-	return $self->getObj("Operation", 1);
-}
 
 sub changeUser {
 	my $self = shift;

@@ -50,9 +50,15 @@ my $log = get_logger("administrator");
 
 
 =head2 new
-
-	Constructor
-	args: data, rightschecker
+	
+	Class : Public
+	
+	Desc : This method instanciate Entity.
+	
+	Args :
+		rightschecker : Rightschecker : Object use to check write and update entity_id
+		data : DBIx class: object data
+	Return : Entity, this class could not be instanciated !!
 	
 =cut
 
@@ -80,33 +86,33 @@ sub new {
     return $self;
 }
 
-=head2 getAllParams
+=head2 getAllAttrs
 
-	return a hash with all (param => value) of our data, including extending params
+	return a hash with all (param => value) of our data, including extending Attrs
 
 =cut
 
-sub getAllParams {
+sub getAllAttrs {
 	my $self = shift;
 	my $data = $self->{_data};
 	
 	# build hash corresponding to class table (with local changes)
-	my %params = $data->get_columns;
+	my %attrs = $data->get_columns;
 	
-	# add extended params from db
+	# add extended Attrs from db
 	if ( $data->extended_table ) {
-		my $ext_params_rs = $data->search_related( $data->extended_table );
-		while ( my $param = $ext_params_rs->next ) {
-			$params{ $param->name } = $param->value;
+		my $ext_attrs_rs = $data->search_related( $data->extended_table );
+		while ( my $param = $ext_attrs_rs->next ) {
+			$attrs{ $param->name } = $param->value;
 		}
 	}
 	
-	# add local extended params (localy changed ext params override ext params load from db)
-	my $local_ext_params = $self->{_ext_params};
+	# add local extended Attrs (localy changed ext Attrs override ext Attrs load from db)
+	my $local_ext_attrs = $self->{_ext_attrs};
 	#TODO Search a clean concatenation method
-	my %all_params = ( %params, %$local_ext_params );
+	my %all_attrs = ( %attrs, %$local_ext_attrs );
 
-	return %all_params;	
+	return %all_attrs;	
 }
 
 =head2 asString
@@ -118,7 +124,7 @@ sub getAllParams {
 sub asString {
 	my $self = shift;
 	
-	my %h = $self->getAllParams;
+	my %h = $self->getAllAttrs;
 	my @s = map { "$_ => $h{$_}, " } keys %h;
 	return ref $self, " ( ",  @s,  " )";
 }
@@ -131,59 +137,73 @@ sub asString {
 	
 =cut
 
-sub setValue {
+sub setAttr {
 	my $self = shift;
 	my %args = @_;
 	my $data = $self->{_data};
+
+    if ((! exists $args{name} or ! defined $args{name}) ||
+		(! exists $args{value} or ! defined $args{value})) { 
+		throw Mcs::Exception::Internal(error => "Entity->setAttr need a name and value named argument!"); }
+
 	if ( $data->has_column( $args{name} ) ) {
     		$data->set_column( $args{name}, $args{value} );	
     }
+    
     elsif ( $data->extended_table ) {
     	# TODO check if ext param name is a valid name for this entity
-    	$self->{ _ext_params }{ $args{name} } = $args{value};
+    	$self->{ _ext_attrs }{ $args{name} } = $args{value};
     }
     else {
-    	warn "setValues() : No parameter named '$args{name}' for ", ref $self;
+    	warn "setAttrs() : No parameter named '$args{name}' for ", ref $self;
     }
 
 }
 
-=head2 setValues
+=head2 setAttrs
 	
 	args: 
-		params : { p1 => v1, p2 => v2, ... }
+		Attrs : { p1 => v1, p2 => v2, ... }
 	
-	Set all entity params pX to corresponding value vX, including ext params
+	Set all entity Attrs pX to corresponding value vX, including ext Attrs
 	
 =cut
 
-sub setValues {
+sub setAttrs {
 	my $self = shift;
 	my %args = @_;
 
-	my $params = $args{params};
-	while ( (my $col, my $value) = each %$params ) {
-    	$self->setValue( name  => $col, value => $value );
+	if (! exists $args{attrs} or ! defined $args{attrs}) { 
+		throw Mcs::Exception::Internal(error => "Entity->setAttrs need an attrs hash named argument!"); }
+
+
+	my $attrs = $args{attrs};
+	while ( (my $col, my $value) = each %$attrs ) {
+    	$self->setAttr( name  => $col, value => $value );
 	}
 	
 }
 
 
-=head2 getValue
+=head2 getAttr
 	
 	args: name
-	return value of param 'name'
-	Follow 'ext' link to get extended params
+	return value of attr 'name'
+	Follow 'ext' link to get extended Attrs
 
 =cut
 
-sub getValue {
+sub getAttr {
 	my $self = shift;
     my %args = @_;
     my $data = $self->{_data};
     my $value = undef;
     
-	$log->info(ref($self) . " getValue of $args{name}");
+	if (! exists $args{name} or ! defined $args{name}) { 
+		throw Mcs::Exception::Internal(error => "Entity->setAttrs need an attrs hash named argument!"); }
+
+
+	$log->info(ref($self) . " getAttr of $args{name}");
 	
 	if ( $data->has_column( $args{name} ) ) {
 		$value = $data->get_column( $args{name} );
@@ -192,8 +212,8 @@ sub getValue {
 	else # search extended
 	{
 		# in local hash
-		if ( $self->{_ext_params}{ $args{name} } ) {
-			$value = $self->{_ext_params}{ $args{name} };
+		if ( $self->{_ext_attrs}{ $args{name} } ) {
+			$value = $self->{_ext_attrs}{ $args{name} };
 			$log->info("  found value = $value (in ext local)");
 		}
 		# in extented table
@@ -211,8 +231,6 @@ sub getValue {
 	return $value;
 }
 
-sub update {
-}
 
 =head2 save
 	
@@ -230,7 +248,7 @@ sub save {
 		# MODIFY existing db obj
 		#print "\n##### MODIFY \n";
 		$data->update;
-		$self->_saveExtendedParams();
+		$self->_saveExtendedAttrs();
 	}
 	else {
 		# CREATE
@@ -245,34 +263,37 @@ sub save {
 		$log->debug("new $self inserted with his entity relation.");
 		$self->{_entity_id} = $row->get_column('entity_id');
 		
-		$self->_saveExtendedParams();
+		$self->_saveExtendedAttrs();
 	}
 		
 }
 
-=head2 _saveExtendedParams
+=head2 _saveExtendedAttrs
 
-	add or update extended params on the related table 'ext'
+	add or update extended Attrs on the related table 'ext'
 	WARN: this will insert _data in DB if it's not already in
 	
 =cut
 
-sub _saveExtendedParams {
+sub _saveExtendedAttrs {
 	my $self = shift;
-	my $ext_params = $self->{_ext_params};
+	my $ext_Attrs = $self->{_ext_attrs};
 	my $data = $self->{_data};
 	
-	if ( $ext_params )
+	if ( $ext_Attrs )
 	{
-		foreach my $k (keys %$ext_params) {
-			$data->update_or_create_related( $data->extended_table, { name => $k, value => $ext_params->{$k} } );
+		foreach my $k (keys %$ext_Attrs) {
+			$data->update_or_create_related( $data->extended_table, { name => $k, value => $ext_Attrs->{$k} } );
 		}
 	}
 }
 
-=head2 delete
 
-	Delete entity data in DB 
+=head2 delete
+	
+	Class : Public
+	
+	Desc : This method delete Entity in DB
 	
 =cut
 
@@ -285,12 +306,12 @@ sub delete {
 		$entity->delete;
 	}
 	
-	# Delete extended params (cascade delete)
+	# Delete extended Attrs (cascade delete)
 	if ( $data->extended_table ) {
-		my $params_rs = $data->related_resultset( $data->extended_table );
-		if ( $params_rs )
+		my $Attrs_rs = $data->related_resultset( $data->extended_table );
+		if ( $Attrs_rs )
 		{
-			$params_rs->delete;	
+			$Attrs_rs->delete;	
 		}
 	}
 	
