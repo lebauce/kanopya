@@ -10,26 +10,18 @@ __PACKAGE__->table("entityright");
 __PACKAGE__->add_columns(
   "entityright_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "entityright_entity_id",
+  "entityright_consumed_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "entityright_consumer_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "entityright_access",
-  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
-  "entityright_read",
-  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
-  "entityright_write",
-  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
-  "entityright_exec",
-  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
-  "entityright_admin",
-  { data_type => "BIT", default_value => undef, is_nullable => 0, size => undef },
+  "entityright_rights",
+  { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
 );
 __PACKAGE__->set_primary_key("entityright_id");
 __PACKAGE__->belongs_to(
-  "entityright_entity_id",
+  "entityright_consumed_id",
   "AdministratorDB::Schema::Entity",
-  { entity_id => "entityright_entity_id" },
+  { entity_id => "entityright_consumed_id" },
 );
 __PACKAGE__->belongs_to(
   "entityright_consumer_id",
@@ -38,8 +30,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Wn3yvAebSNV4wAggIY2fRQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-25 16:35:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7gSi881TPCCzhL/2YNJrWg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

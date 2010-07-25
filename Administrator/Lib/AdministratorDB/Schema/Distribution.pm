@@ -28,10 +28,20 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::DistributionEntity",
   { "foreign.distribution_id" => "self.distribution_id" },
 );
+__PACKAGE__->has_many(
+  "distributionprovides",
+  "AdministratorDB::Schema::Distributionprovides",
+  { "foreign.distribution_id" => "self.distribution_id" },
+);
+__PACKAGE__->has_many(
+  "systemimages",
+  "AdministratorDB::Schema::Systemimage",
+  { "foreign.distribution_id" => "self.distribution_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:f25hgKu/QL8SUJSRIaQbEQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-25 16:35:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DR19EG6qyVfHyli/cyRLKw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

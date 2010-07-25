@@ -25,9 +25,9 @@ __PACKAGE__->has_many(
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
-  "entityright_entityright_entity_ids",
+  "entityright_entityright_consumed_ids",
   "AdministratorDB::Schema::Entityright",
-  { "foreign.entityright_entity_id" => "self.entity_id" },
+  { "foreign.entityright_consumed_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
   "entityright_entityright_consumer_ids",
@@ -86,8 +86,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mK5Y4uhrufRQwC6Ofsl/kg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-25 16:35:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Boeo3JXd2dbZ8Y3fZEJdUw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

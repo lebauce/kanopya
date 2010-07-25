@@ -15,7 +15,7 @@ __PACKAGE__->add_columns(
   "cluster_desc",
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 255 },
   "cluster_type",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 1 },
   "cluster_min_node",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
   "cluster_max_node",
@@ -49,10 +49,15 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Clusterdetails",
   { "foreign.cluster_id" => "self.cluster_id" },
 );
+__PACKAGE__->has_many(
+  "component_instances",
+  "AdministratorDB::Schema::ComponentInstance",
+  { "foreign.cluster_id" => "self.cluster_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-21 19:57:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WzIhTlHdgjBDJ1JXSXhE9w
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-25 16:35:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:smJdFu0ofSZ+v8UATYKGLw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
