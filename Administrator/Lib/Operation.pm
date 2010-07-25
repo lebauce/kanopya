@@ -1,16 +1,21 @@
-package Entity::Operation;
+package Operation;
 
 use strict;
-use lib qw(../../../Common/Lib);
-use base "Entity";
+use warnings;
+use lib qw(../../Common/Lib);
+use Log::Log4perl "get_logger";
+
 use McsExceptions;
+
+my $log = get_logger("administrator");
+
 # contructor 
 
 =head2 new
 	
 	Class : Public
 	
-	Desc : This method instanciate Entity::Operation.
+	Desc : This method instanciate Operation.
 	
 	Args :
 		rightschecker : Rightschecker : Object use to check write and update entity_id
@@ -22,8 +27,24 @@ use McsExceptions;
 sub new {
     my $class = shift;
     my %args = @_;
-
-    my $self = $class->SUPER::new( %args );
+    
+    if ((! exists $args{data} or ! defined $args{data}) ||
+		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
+		throw Mcs::Exception::Internal(error => "Entity->new need a data and rightschecker named argument!"); }
+    $log->warn("Data : $args{data} and $args{rightschecker}");
+    
+    my $self = {
+    	_rightschecker => $args{rightschecker},
+        _data => $args{data},
+        _ext_params => {},
+    };
+    bless $self, $class;
+    
+    # getting groups where we find this entity (entity already exists)
+	if($self->{_data}->in_storage) {
+		$self->{_groups} = $self->getGroups;
+	}
+	$log->warn("new return $self");
     return $self;
 }
 
@@ -135,6 +156,31 @@ sub getParamValue {
 	
 	my $param = $params_rs->search( { name => $args{param_name} } )->next;
 	return $param->value;
+}
+
+=head2 save
+
+	Class : Public
+	
+	Desc : Save operation and its params
+	args : 
+		op : Entity::Operation::OperationType : 
+			concrete Entity::Operation type (Real Operation type (AddMotherboard, MigrateNode, ...))
+
+=cut
+
+sub save{
+	my $self = shift;
+	my %args = @_;
+	
+	throw Mcs::Exception::Internal(error => "Try to save object not operation") if (
+													(!exists $args{op})||
+													(! $args{op}->isa('Entity::Operation')));
+
+	my $newentity = $self->{_data}->insert;
+	$log->debug("new Operation inserted.");
+
+	$log->debug("new operation $args{op} inserted with his entity relation.");
 }
 
 1;

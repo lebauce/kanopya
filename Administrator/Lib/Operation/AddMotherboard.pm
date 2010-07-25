@@ -37,14 +37,14 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package Entity::Operation::AddMotherboard;
+package Operation::AddMotherboard;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib "../";
-use base "Entity::Operation";
+use base "Operation";
 
 my $log = get_logger("administrator");
 

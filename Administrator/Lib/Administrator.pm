@@ -54,6 +54,8 @@ use Data::Dumper;
 use EntityRights;
 use lib qw(../../Common/Lib);
 use McsExceptions;
+use General;
+use Entity;
 
 my $log = get_logger("administrator");
 
@@ -175,34 +177,6 @@ sub _getAllData {
 }
 
 
-=head2 _addData
-	
-	Class : Private
-	
-	Desc : Instanciate dbix class filled with <params>, add a corresponding row in DB
-	
-	args: 
-		table : String : DB table name
-		row: hash ref : representing the new row (key mapped on <table> columns)
-	return: db schema (dbix)
-	
-=cut
-
-sub _addData {
-	my $self = shift;
-	my %args  = @_;	
-	#$args{params} = {} if !$args{params};
-	
-	if ((! exists $args{table} or ! defined $args{table}) ||
-		(! exists $args{row} or ! defined $args{row})) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_allData need a table and row named argument!"); }
-	
-	
-	my $new_obj = $self->{db}->resultset($args{table} )->create( $args{row} );
-	return $new_obj;	
-}
-
-
 =head2 _newData
 	
 	Class : Private
@@ -232,38 +206,33 @@ sub _newData {
 }
 
 
-=head2 _newObj
+=head2 _getEntityClass
 	
 	Class : Private
 	
-	Desc : Instanciate concrete Entity
+	Desc : Make good require during an Entity Instanciation
 	
 	args: 
-		type : concrete entity type
-		data : db schema (dbix)
-	
+		type : concrete entity type	
+	return: Entity class
 =cut
 
-sub _newObj {
+sub _getEntityClass{
 	my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{type} or ! defined $args{type})) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_newObj need a data and type named argument!"); }
+	if ((! exists $args{type} or ! defined $args{type}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_requireEntity a type named argument!"); }
 
+	my $entity_class = General::getEntityFromType(%args);
+    my $location = General::getLocFromClass(entityclass => $entity_class);
 
-    my $requested_type = $args{type};
-    my $location = $requested_type;
-    $location =~ s/::/\//;     
-    $location = "Entity/$location.pm";
-    my $obj_class = "Entity::$requested_type";
-    require $location;   
-
-    return $obj_class->new( data => $args{data}, rightschecker => $self->{_rightschecker} );
+    require $location;
+    
+	return $entity_class;
 }
 
-=head2 getObj
+=head2 getEntity
 	
 	Class : Public
 	
@@ -279,7 +248,7 @@ sub _newObj {
 	
 =cut
 
-sub getObj {
+sub getEntity {
 	my $self = shift;
     my %args = @_;
 
@@ -294,18 +263,16 @@ sub getObj {
 	my $new_obj;
 	if ( defined $obj_data ) {
 		$log->debug( "_newObj with type = $args{type} and data of " . ref($obj_data));
-		$new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
+		return $self->_newObj( type => $args{type}, data => $obj_data );
 	}
 	else {
 		$log->warn( "Administrator::getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
 		throw Mcs::Exception::Internal(error => "Administrator::get Obj : Object not found");
 		#return undef;
 	}
-	$log->debug( "Return newObj of " . ref($new_obj));
-    return $new_obj;
 }
 
-=head2 getAllObjs
+=head2 getEntities
 	
 	Class : Public
 	
@@ -319,7 +286,7 @@ sub getObj {
 	
 =cut
 
-sub getAllObjs {
+sub getEntities {
 	my $self = shift;
     my %args = @_;
 	
@@ -336,7 +303,7 @@ sub getAllObjs {
 }
 
 
-=head2 newObj
+=head2 newEntity
 	
 	Class : Public
 	
@@ -351,7 +318,7 @@ sub getAllObjs {
 	 
 =cut
 
-sub newObj {
+sub newEntity {
 	my $self = shift;
     my %args = @_;
 
@@ -361,12 +328,24 @@ sub newObj {
 
 	$log->info( "newObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 
-
-	my $obj_data = $self->_newData( table =>  $args{type}, row => $args{params} );
-	my $new_obj = $self->_newObj( type => $args{type}, data => $obj_data );
+	# We get class and require Entity::$entity_class
+	my $entity_class = _getEntityClass(type => $args{type});
+	
+	# We check entity attributes and separate them in two categories :
+	#	- ext_attrs
+	#	- global_attrs
+	my $attrs = $entity_class::checkAttrs(attr => $args{params});
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $entity_data = $self->_newData( table =>  $args{type}, row => $attrs->{global_attrs} );
 	
 	warn( "Administrator::newObj( .. ) : Object creation failed!" ) if (  not defined $obj_data );
 	
+	# We instanciate entity with DBIx data and rightchecker
+	my $new_obj = $entity_class->new( data => $entity_data, rightschecker => $self->{_rightschecker} );
+
+	# We add extended params to entity
+		
     return $new_obj;
 }
 
@@ -390,10 +369,10 @@ sub newOp {
 	my $self = shift;
 	my %args = @_;
 	
-		if ((! exists $args{priority} or ! defined $args{priority}) ||
-			(! exists $args{type} or ! defined $args{type}) ||
-			(! exists $args{params} or ! defined $args{params})) { 
-		throw Mcs::Exception::Internal(error => "Administrator->newOp need a priority, params and type named argument!"); }
+	if ((! exists $args{priority} or ! defined $args{priority}) ||
+		(! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{params} or ! defined $args{params})) { 
+			throw Mcs::Exception::Internal(error => "Administrator->newOp need a priority, params and type named argument!"); }
 	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
 	my $user_id = $self->{_rightschecker}->{_user};
@@ -401,39 +380,19 @@ sub newOp {
 																	execution_rank => $rank,
 																	user_id => $user_id,
 																	priority => $args{priority}});
-	my $op = $self->_newObj(type => "Operation::". $args{type}, data => $op_data) ;
-	$self->_saveOp(op => $op);
-	$op->addParams($args{params});
+
+	my $subclass = $args{type};
+	eval {
+		require "Operation::$subclass";
+	};
+	if ($@) {
+		throw Mcs::Exception::Internal(error => "Administrator->newOp : Operation type does not exist!");}
+
+	my $op = "Operation::$subclass"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => $args{params});
+	$op->save();
 	return $op;
 }
 
-=head2 _saveOp
-
-	Class : Private
-	
-	Desc : Save operation and its entity id in database
-	args : 
-		op : Entity::Operation::OperationType : 
-			concrete Entity::Operation type (Real Operation type (AddMotherboard, MigrateNode, ...))
-
-=cut
-
-sub _saveOp {
-	my $self = shift;
-	my %args = @_;
-	
-	throw Mcs::Exception::Internal(error => "Try to save object not operation") if (
-													(!exists $args{op})||
-													(! $args{op}->isa('Entity::Operation')));
-
-	my $newentity = $args{op}->{_data}->insert;
-	$log->debug("new Operation inserted.");
-	my $row = $args{op}->{_rightschecker}->{_schema}->resultset('Entity')->create(
-		{ "operation_entities" => [ { "operation_id" => $newentity->get_column("operation_id")} ] },
-	);
-	$log->debug("new operation $args{op} inserted with his entity relation.");
-	$args{op}->{_entity_id} = $row->get_column('entity_id');
-}
 
 =head2 _getLastRank
 

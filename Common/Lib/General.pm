@@ -78,4 +78,15 @@ sub getLocFromClass{
     return $location . ".pm";
 }
 
+sub getClassEntityFromType{
+    my %args = @_;
+    
+    if (! exists $args{type} or ! defined $args{type}) { 
+		throw Mcs::Exception::Internal(error => "getClassEntityFromType need a  type named argument!"); }
+    
+    my $requested_type = $args{type};
+    my $obj_class = "Entity::$requested_type";
+    return $obj_class;
+}
+
 1;
