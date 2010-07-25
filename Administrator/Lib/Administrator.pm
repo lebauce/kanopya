@@ -390,7 +390,7 @@ sub newOp {
 
 	my $op = "Operation::$subclass"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => $args{params});
 	$op->save();
-	return $op;
+	# We do not return the operation to user.
 }
 
 
@@ -419,15 +419,29 @@ sub _get_lastRank{
 sub getNextOp {
 	my $self = shift;
 	
+	# Get all operation
 	my $all_ops = $self->_getAllData( table => 'Operation' );
+	# Choose the next operation to be trated
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
-	
+	# if no other operation to be treated, send an exception
 	throw Mcs::Exception::Internal(error => "No more operation in queue!") if ( !$op_data );
-	
+	# Get the operation type
 	my $op_type = $op_data->type;
+	
+	# Get Operation parameters
+	my $params_rs = $op_data->operation_parameters;
+#	my $params_rs = $self->getValue(name => "operation_parameters");
+	while ( my $param = $params_rs->next ) {
+		$params{ $param->name } = $param->value;
+	}
+	
+	eval {
+		require "Operation::$subclass";
+	};
+	if ($@) {
+		throw Mcs::Exception::Internal(error => "Administrator->newOp : Operation type does not exist!");}
 
-	my $op = $self->_newObj( type => "Operation::$op_type", data => $op_data );
-	$log->warn("Data Class is : Operation::$op_type");
+	my $op = "Operation::$subclass"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => \%params);
 
 	return $op;
 }

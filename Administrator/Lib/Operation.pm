@@ -1,3 +1,41 @@
+# Operation.pm - Operation class, this is an abstract class
+
+# Copyright (C) 2009, 2010, 2011, 2012, 2013
+#   Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to the
+# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA 02110-1301 USA.
+
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+# Created 14 july 2010
+
+=head1 NAME
+
+Operation.pm - Operation class, this is an abstract class
+
+=head1 SYNOPSIS
+
+This Object represent an operation.
+
+=head1 DESCRIPTION
+
+
+=head1 METHODS
+
+=cut
+
 package Operation;
 
 use strict;
@@ -9,8 +47,6 @@ use McsExceptions;
 
 my $log = get_logger("administrator");
 
-# contructor 
-
 =head2 new
 	
 	Class : Public
@@ -20,7 +56,8 @@ my $log = get_logger("administrator");
 	Args :
 		rightschecker : Rightschecker : Object use to check write and update entity_id
 		data : DBIx class: object data
-	Return : Entity::Operation, this class could not be instanciated !!
+		params : hashref : Operation parameters
+	Return : Operation, this class could not be instanciated !!
 	
 =cut
 
@@ -29,133 +66,87 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		throw Mcs::Exception::Internal(error => "Entity->new need a data and rightschecker named argument!"); }
-    $log->warn("Data : $args{data} and $args{rightschecker}");
+		(! exists $args{rightschecker} or ! defined $args{rightschecker})||
+		(! exists $args{params} or ! defined $args{params})) { 
+		throw Mcs::Exception::Internal(error => "Entity->new need a data, params and rightschecker named argument!"); }
     
+    # Here Check if users can execution this operation (We have the rightschecker)
+
     my $self = {
-    	_rightschecker => $args{rightschecker},
-        _data => $args{data},
-        _ext_params => {},
+		_rightschecker => $args{rightschecker},
+        _dbix => $args{data},
+        _params => $args{params},
     };
     bless $self, $class;
-    
-    # getting groups where we find this entity (entity already exists)
-	if($self->{_data}->in_storage) {
-		$self->{_groups} = $self->getGroups;
-	}
-	$log->warn("new return $self");
     return $self;
 }
 
-=head2 delete
+=head2 cancel
 	
 	Class : Public
 	
-	Desc : This method delete Entity::Operation and its parameters
+	Desc : This method delete Operation and its parameters
 	
 =cut
 
-sub delete {
+sub cancel {
 	my $self = shift;
 
-	my $params_rs = $self->{_data}->operation_parameters;
+	my $params_rs = $self->{_dbix}->operation_parameters;
 	$params_rs->delete;
-	
-	$self->SUPER::delete( );	
+	$self->{_dbix}->delete();
 }
 
-=head2 addParams
+=head2 getAttr
 	
 	Class : Public
 	
-	Desc : This method Add params to operation, operation has to be saved before 
+	Desc : This method return operation Attr specified in args
 	
-	Args :
-		params : hashref : Operation parameters
+	args :
+		attr_name : String : Attribute name
+	
+	Return : String : Parameter specified
 	
 =cut
 
-sub addParams {
+sub getAttr {
 	my $self = shift;
-	my ($params) = @_;	
-	my $data = $self->{_data};
+    my %args = @_;
+	my $value;
+
+	if (! exists $args{attr_name} or ! defined $args{attr_name}) { 
+		throw Mcs::Exception::Internal(error => "Operation->getAttr need an attr named argument!"); }
+
+	$log->info(ref($self) . " getAttr of $args{attr_name}");
 	
-	# create_related will automatically insert _data in db
-	# we don't want this behaviour
-	# TODO comprendre comment marche le new_related (et ensuite accéder aux related data, ajouter dans la base, cascade_update...)
-	if ( ! $self->{_data}->in_storage ) {
-		throw Mcs::Exception::Internal(error => "Error: Please save your Operation before call addParams");
+	if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
+		$value = $self->{_dbix}->get_column( $args{attr_name} );
+		$log->info("  found value = $value");
 	}
-	
-	foreach my $k (keys %$params) {
-			$data->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );
+	else{
+		throw Mcs::Exception::Internal(error => "Operation->getAttr : Wrong value asked!");
 	}
-	return 0;
 }
 
 =head2 getParams
 	
 	Class : Public
 	
-	Desc : This method return hashref on operation params.
+	Desc : This method returns all params 
 	
-	Return : hashref : Operation parameters { p1 => v1, p2 => v2, ...}
-	
+	Return : hashref : all parameters of operation
 =cut
 
 sub getParams {
 	my $self = shift;
-	
-	my %params = ();
-	my $params_rs = $self->{_data}->operation_parameters;
-#	my $params_rs = $self->getValue(name => "operation_parameters");
-	
-	while ( my $param = $params_rs->next ) {
-		$params{ $param->name } = $param->value;
+	my %params;
+
+	my $params_rs = $self->{_dbix}->operation_parameters;
+	while (my $param = $params_rs->next){
+		$params{$param->name} = $param->value;
 	}
 	return \%params;
-}
-
-=head2 getUser
-	
-	Class : Public
-	
-	Desc : This method return user_id of operation owner
-	
-	Return : int : operation owner user_id
-	
-=cut
-
-sub getUser {
-	my $self = shift;
-	return $self->getAttr(name => "user_id");
-}
-
-=head2 getParamValue
-	
-	Class : Public
-	
-	Desc : This method return value of a specific param 
-	
-	Args :
-		param_name : String : Param search in operation
-	
-	Return : Param_value $ : value of searched param
-=cut
-
-sub getParamValue {
-	my $self = shift;
-	my %args = @_;
-
-	if (! exists $args{param_name} or ! defined $args{param_name}) {
-		throw Mcs::Exception::Internal(error => "Error: Please save your Operation before call addParams");
-	}
-
-	my $params_rs = $self->{_data}->operation_parameters;
-	
-	my $param = $params_rs->search( { name => $args{param_name} } )->next;
-	return $param->value;
 }
 
 =head2 save
@@ -178,9 +169,14 @@ sub save{
 													(! $args{op}->isa('Entity::Operation')));
 
 	my $newentity = $self->{_data}->insert;
+	my $params = $self->{_params};
 	$log->debug("new Operation inserted.");
 
+	foreach my $k (keys %$params) {
+		$self->{_data}->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );}
 	$log->debug("new operation $args{op} inserted with his entity relation.");
 }
+
+
 
 1;
