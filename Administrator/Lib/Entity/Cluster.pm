@@ -52,6 +52,8 @@ my $struct = {cluster_name		=> {pattern			=> 'm//s',
 =cut
 
 sub checkAttrs {
+	# Remove class
+	shift;
 	my %args = @_;
 	my (%global_attrs, %ext_attrs, $attr);
 
