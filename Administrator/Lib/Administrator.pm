@@ -49,10 +49,10 @@ package Administrator;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use AdministratorDB::Schema;
 use Data::Dumper;
+use lib qw(. ../../Common/Lib);
+use AdministratorDB::Schema;
 use EntityRights;
-use lib qw(../../Common/Lib);
 use McsExceptions;
 use General;
 use Entity;
@@ -80,7 +80,13 @@ sub new {
 	my $class = shift;
 	my %args = @_;
 	
+	# If Administrator exists return its already existing instance
 	if(defined $oneinstance) { return $oneinstance; }
+	
+	# Check named arguments
+	if ((! exists $args{login} or ! defined $args{login})||
+		(! exists $args{password} or ! defined $args{password})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
 	
 	my $login = $args{login};
 	my $password = $args{password};
@@ -91,28 +97,22 @@ sub new {
 	my $pass = 'Hedera@123';
 	my %opts = ();
 	my ($schema, $rightschecker);
-	# Test if connection problem and catch exception
 	
-	print "Enter In new\n";
+	# Catch exception from DB connection
 	eval {
 		$log->debug("instanciating AdministratorDB::Schema");
 		$schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
 		print "adm->new : login $login, password $password\n";
-	#TODO Understand why no catching exception from db connection but only 
-	
-	# When debug is set, all sql queries are printed
-	# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
+
+		# When debug is set, all sql queries are printed
+		# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
 
 		$log->debug("instanciating EntityRights");
 		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
 	};
 	if ($@) {
-#	print Dumper $@;
-		#TODO Test exception type when exception are identified in EntityRight
-		die $@;
 		$log->error("Administrator->new : Error connecting Database");
-		$@->rethrow();
-		throw Mcs::Exception::DB(error => "Administrator->new : Database connection failed"); 
+		die $@;
 	}
 	
 	my $self = {
@@ -121,116 +121,11 @@ sub new {
 	};
 		
 	bless $self, $class;
+	# Add singleton
 	$oneinstance = $self;
 	return $self;
 }
 
-# private
-
-=head2 Administrator::_getData(%args)
-	
-	Class : Private
-	
-	Desc : Instanciate dbix class mapped to corresponding raw in DB
-	
-	args: 
-		table : String : DB table name
-		id: Int : id of required entity in table
-	return: db schema (dbix)
-	
-=cut
-sub _getData {
-	my $self = shift;
-	my %args = @_;
-	my $entitylink = lc($args{table})."_entities";
-	return $self->{db}->resultset( $args{table} )->find(  $args{id}, 
-		{ 	'+columns' => [ "$entitylink.entity_id" ], 
-		join => ["$entitylink"] }
-	);
-	
-}
-
-=head2 _getAllData
-
-	Class : Private
-
-	Desc : Get all dbix class of table
-	
-	args:
-		table : String : Table name
-	return: resultset (dbix)
-	
-=cut
-
-sub _getAllData {
-	my $self = shift;
-	my %args = @_;
-
-	if (! exists $args{table} or ! defined $args{table}) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
-
-
-	my $entitylink = lc($args{table})."_entities";
-	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
-		join => ["$entitylink"]});
-
-}
-
-
-=head2 _newData
-	
-	Class : Private
-	
-	Desc : Instanciate dbix class filled with <params>, doesn't add in DB
-	
-	args: 
-		table : String : DB table name
-		row: hash ref : representing the new row (key mapped on <table> columns)
-	return: db schema (dbix)
-
-=cut
-
-sub _newData {
-	my $self = shift;
-	my %args  = @_;	
-	#$args{params} = {} if !$args{params};	
-
-	if ((! exists $args{table} or ! defined $args{table}) ||
-		(! exists $args{row} or ! defined $args{row})) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_newData need a table and row named argument!"); }
-
-	
-	my $new_obj = $self->{db}->resultset(  $args{table} )->new( $args{row} );
-	
-	return $new_obj;
-}
-
-
-=head2 _getEntityClass
-	
-	Class : Private
-	
-	Desc : Make good require during an Entity Instanciation
-	
-	args: 
-		type : concrete entity type	
-	return: Entity class
-=cut
-
-sub _getEntityClass{
-	my $self = shift;
-    my %args = @_;
-
-	if ((! exists $args{type} or ! defined $args{type}) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_requireEntity a type named argument!"); }
-
-	my $entity_class = General::getEntityFromType(%args);
-    my $location = General::getLocFromClass(entityclass => $entity_class);
-
-    require $location;
-    
-	return $entity_class;
-}
 
 =head2 getEntity
 	
@@ -254,21 +149,23 @@ sub getEntity {
 
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{id} or ! defined $args{id})) { 
-		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type and an id named argument!"); }
+		throw Mcs::Exception::Internal(error => "Administrator->_getEntity need a type and an id named argument!"); }
 
-	$log->debug( "getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->debug( "getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 
-	$log->debug( "_getData with table = $args{type} and id = $args{id}");
-	my $obj_data = $self->_getData( table => $args{type}, id => $args{id} );
+	$log->debug( "_getEntity with table = $args{type} and id = $args{id}");
+	my $entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
 	my $new_obj;
-	if ( defined $obj_data ) {
-		$log->debug( "_newObj with type = $args{type} and data of " . ref($obj_data));
-		return $self->_newObj( type => $args{type}, data => $obj_data );
+	
+	# Test if Dbix is get
+	if ( defined $entity_dbix ) {
+		$log->debug( "getEntity with type = $args{type} and data of " . ref($entity_dbix));
+		my $entity_class = _getEntityClass(type => $args{type});
+		return $entity_class->new( type => $args{type}, data => $entity_dbix );
 	}
 	else {
-		$log->warn( "Administrator::getObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
-		throw Mcs::Exception::Internal(error => "Administrator::get Obj : Object not found");
-		#return undef;
+		$log->warn( "Administrator::getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
+		throw Mcs::Exception::Internal(error => "Administrator::getEntity : Object not found");
 	}
 }
 
@@ -294,9 +191,10 @@ sub getEntities {
 		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
 	
 	my @objs = ();
-	my $rs = $self->_getAllData( table => $args{type} );
+	my $rs = $self->_getAllDbix( table => $args{type} );
+	my $entity_class = _getEntityClass(type => $args{type});
 	while ( my $raw = $rs->next ) {
-		my $obj = $self->_newObj( type => $args{type}, data => $raw );
+		my $obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );
 		push @objs, $obj;
 	}    
     return  @objs;
@@ -334,18 +232,19 @@ sub newEntity {
 	# We check entity attributes and separate them in two categories :
 	#	- ext_attrs
 	#	- global_attrs
-	my $attrs = $entity_class::checkAttrs(attr => $args{params});
+	
+	my $attrs = $entity_class->checkAttrs(attr => $args{params});
 	
 	# We create a new DBIx containing new entity (only global attrs)
-	my $entity_data = $self->_newData( table =>  $args{type}, row => $attrs->{global_attrs} );
+	my $entity_data = $self->_newDbix( table =>  $args{type}, row => $attrs->{global_attrs} );
 	
-	warn( "Administrator::newObj( .. ) : Object creation failed!" ) if (  not defined $obj_data );
+	warn( "Administrator::newEntity( .. ) : Object creation failed!" ) if (  not defined $entity_data );
 	
 	# We instanciate entity with DBIx data and rightchecker
 	my $new_obj = $entity_class->new( data => $entity_data, rightschecker => $self->{_rightschecker} );
 
 	# We add extended params to entity
-		
+	
     return $new_obj;
 }
 
@@ -376,7 +275,7 @@ sub newOp {
 	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
 	my $user_id = $self->{_rightschecker}->{_user};
-	my $op_data = $self->_newData( table => 'Operation', row => { 	type => $args{type},
+	my $op_data = $self->_newDbix( table => 'Operation', row => { 	type => $args{type},
 																	execution_rank => $rank,
 																	user_id => $user_id,
 																	priority => $args{priority}});
@@ -430,18 +329,19 @@ sub getNextOp {
 	
 	# Get Operation parameters
 	my $params_rs = $op_data->operation_parameters;
-#	my $params_rs = $self->getValue(name => "operation_parameters");
+	my %params;
 	while ( my $param = $params_rs->next ) {
 		$params{ $param->name } = $param->value;
 	}
-	
+	# Try to load Operation::$op_type
 	eval {
-		require "Operation::$subclass";
+		require "Operation::$op_type";
 	};
 	if ($@) {
 		throw Mcs::Exception::Internal(error => "Administrator->newOp : Operation type does not exist!");}
 
-	my $op = "Operation::$subclass"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => \%params);
+	# Operation instanciation
+	my $op = "Operation::$op_type"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => \%params);
 
 	return $op;
 }
@@ -462,10 +362,113 @@ sub changeUser {
 	my %args = @_;
 	if (! exists $args{user_id} or ! defined $args{user_id}) { 
 		throw Mcs::Exception::Internal(error => "Administrator->changeUser need a user_id named argument!"); }
-	my $nextuser = $self->getObj(type => "User",id => $args{user_id});
+	my $nextuser = $self->getEntity(type => "User",id => $args{user_id});
 	$self->{_rightschecker}->{_userbackup} = $self->{_rightschecker}->{_user};
 	$self->{_rightschecker}->{_user} = $nextuser;
 } 
+
+
+=head2 Administrator::_getDbix(%args)
+	
+	Class : Private
+	
+	Desc : Instanciate dbix class mapped to corresponding raw in DB
+	
+	args: 
+		table : String : DB table name
+		id: Int : id of required entity in table
+	return: db schema (dbix)
+	
+=cut
+sub _getDbix {
+	my $self = shift;
+	my %args = @_;
+	my $entitylink = lc($args{table})."_entities";
+	return $self->{db}->resultset( $args{table} )->find(  $args{id}, 
+		{ 	'+columns' => [ "$entitylink.entity_id" ], 
+		join => ["$entitylink"] }
+	);
+	
+}
+
+=head2 _getAllDbix
+
+	Class : Private
+
+	Desc : Get all dbix class of table
+	
+	args:
+		table : String : Table name
+	return: resultset (dbix)
+	
+=cut
+
+sub _getAllDbix {
+	my $self = shift;
+	my %args = @_;
+
+	if (! exists $args{table} or ! defined $args{table}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
+
+	my $entitylink = lc($args{table})."_entities";
+	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
+		join => ["$entitylink"]});
+}
+
+
+=head2 _newDbix
+	
+	Class : Private
+	
+	Desc : Instanciate dbix class filled with <params>, doesn't add in DB
+	
+	args: 
+		table : String : DB table name
+		row: hash ref : representing the new row (key mapped on <table> columns)
+	return: db schema (dbix)
+
+=cut
+
+sub _newDbix {
+	my $self = shift;
+	my %args  = @_;	
+	#$args{params} = {} if !$args{params};	
+
+	if ((! exists $args{table} or ! defined $args{table}) ||
+		(! exists $args{row} or ! defined $args{row})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_newData need a table and row named argument!"); }
+
+	my $new_obj = $self->{db}->resultset(  $args{table} )->new( $args{row} );
+	return $new_obj;
+}
+
+
+=head2 _getEntityClass
+	
+	Class : Private
+	
+	Desc : Make good require during an Entity Instanciation
+	
+	args: 
+		type : concrete entity type	
+	return: Entity class
+=cut
+
+sub _getEntityClass{
+	my $self = shift;
+    my %args = @_;
+
+	if (! exists $args{type} or ! defined $args{type}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_requireEntity a type named argument!"); }
+
+	my $entity_class = General::getEntityFromType(%args);
+    my $location = General::getLocFromClass(entityclass => $entity_class);
+
+    require $location;
+    
+	return $entity_class;
+}
+
 
 1;
 
