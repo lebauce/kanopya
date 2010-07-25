@@ -86,7 +86,7 @@ sub new {
 	# Check named arguments
 	if ((! exists $args{login} or ! defined $args{login})||
 		(! exists $args{password} or ! defined $args{password})) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
+		throw Mcs::Exception::Internal(error => "Administrator->need a login and password named argument!"); }
 	
 	my $login = $args{login};
 	my $password = $args{password};
@@ -150,18 +150,25 @@ sub getEntity {
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{id} or ! defined $args{id})) { 
 		throw Mcs::Exception::Internal(error => "Administrator->_getEntity need a type and an id named argument!"); }
-
 	$log->debug( "getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
-
-	$log->debug( "_getEntity with table = $args{type} and id = $args{id}");
+	
+	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
 	my $entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
-	my $new_obj;
 	
 	# Test if Dbix is get
 	if ( defined $entity_dbix ) {
-		$log->debug( "getEntity with type = $args{type} and data of " . ref($entity_dbix));
-		my $entity_class = _getEntityClass(type => $args{type});
-		return $entity_class->new( type => $args{type}, data => $entity_dbix );
+		$log->debug( "_getEntityClass with type = $args{type}");
+		my $entity_class = $self->_getEntityClass(type => $args{type});
+		my $extension = $entity_class->extension();
+		if ($extension){
+			my %attrs;
+			my $ext_attrs_rs = $entity_dbix->search_related( $extension );
+			while ( my $param = $ext_attrs_rs->next ) {
+				$attrs{ $param->name } = $param->value;}
+			return $entity_class->new( type => $args{type}, data => $entity_dbix, ext_attrs => \%attrs);
+		}
+		else {
+			return $entity_class->new( type => $args{type}, data => $entity_dbix );}
 	}
 	else {
 		$log->warn( "Administrator::getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
@@ -192,11 +199,20 @@ sub getEntities {
 	
 	my @objs = ();
 	my $rs = $self->_getAllDbix( table => $args{type} );
-	my $entity_class = _getEntityClass(type => $args{type});
+	my $entity_class = $self->_getEntityClass(type => $args{type});
+	my $extension = $entity_class->extension();
 	while ( my $raw = $rs->next ) {
-		my $obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );
+		my $obj;
+		if ($extension){
+			my %attrs;
+			my $ext_attrs_rs = $raw->search_related( $extension );
+			while ( my $param = $ext_attrs_rs->next ) {
+				$attrs{ $param->name } = $param->value;}
+			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
+		else {
+			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
 		push @objs, $obj;
-	}    
+	}
     return  @objs;
 }
 
@@ -227,7 +243,7 @@ sub newEntity {
 	$log->info( "newObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 
 	# We get class and require Entity::$entity_class
-	my $entity_class = _getEntityClass(type => $args{type});
+	my $entity_class = $self->_getEntityClass(type => $args{type});
 	
 	# We check entity attributes and separate them in two categories :
 	#	- ext_attrs
@@ -236,16 +252,20 @@ sub newEntity {
 	my $attrs = $entity_class->checkAttrs(attr => $args{params});
 	
 	# We create a new DBIx containing new entity (only global attrs)
-	my $entity_data = $self->_newDbix( table =>  $args{type}, row => $attrs->{global_attrs} );
+	my $entity_data = $self->_newDbix( table =>  $args{type}, row => $attrs->{global} );
 	
 	warn( "Administrator::newEntity( .. ) : Object creation failed!" ) if (  not defined $entity_data );
 	
 	# We instanciate entity with DBIx data and rightchecker
-	my $new_obj = $entity_class->new( data => $entity_data, rightschecker => $self->{_rightschecker} );
-
-	# We add extended params to entity
+	my $new_entity;
+	if ($entity_class->extension()) {
+		$new_entity = $entity_class->new( data => $entity_data, rightschecker => $self->{_rightschecker}, ext_attrs => $attrs->{extended});
+	}
+	else {
+		$new_entity = $entity_class->new( data => $entity_data, rightschecker => $self->{_rightschecker});
+	}
 	
-    return $new_obj;
+    return $new_entity;
 }
 
 =head2 new Op
@@ -383,6 +403,11 @@ sub changeUser {
 sub _getDbix {
 	my $self = shift;
 	my %args = @_;
+	
+	if ((! exists $args{table} or ! defined $args{table}) ||
+		(! exists $args{id} or ! defined $args{id})) { 
+			throw Mcs::Exception::Internal(error => "Administrator->_getDbix need a table and id named argument!"); }
+
 	my $entitylink = lc($args{table})."_entities";
 	return $self->{db}->resultset( $args{table} )->find(  $args{id}, 
 		{ 	'+columns' => [ "$entitylink.entity_id" ], 

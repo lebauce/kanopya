@@ -50,4 +50,9 @@ __PACKAGE__->has_one(
   { "foreign.motherboard_id" => "self.motherboard_id" },
 );
 
+__PACKAGE__->has_many(
+  "motherboardext",
+  "AdministratorDB::Schema::Motherboarddetails",
+  { "foreign.motherboard_id" => "self.motherboard_id" },
+);
 1;
