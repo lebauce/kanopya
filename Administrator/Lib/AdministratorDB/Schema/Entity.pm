@@ -91,4 +91,61 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+
+__PACKAGE__->has_one(
+  "clusterlink",
+  "AdministratorDB::Schema::ClusterEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "distributionlink",
+  "AdministratorDB::Schema::DistributionEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "groupslink",
+  "AdministratorDB::Schema::GroupsEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "kernellink",
+  "AdministratorDB::Schema::KernelEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "motherboardlink",
+  "AdministratorDB::Schema::MotherboardEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "motherboardtemplatelink",
+  "AdministratorDB::Schema::MotherboardtemplateEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "operationlink",
+  "AdministratorDB::Schema::OperationEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "operationtypelink",
+  "AdministratorDB::Schema::OperationtypeEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "processortemplatelink",
+  "AdministratorDB::Schema::ProcessortemplateEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "systemimagelink",
+  "AdministratorDB::Schema::SystemimageEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_one(
+  "userlink",
+  "AdministratorDB::Schema::UserEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+
 1;

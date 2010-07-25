@@ -171,6 +171,7 @@ sub _getAllData {
 	my $entitylink = lc($args{table})."_entities";
 	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
 		join => ["$entitylink"]});
+
 }
 
 
