@@ -42,6 +42,9 @@ package EntityRights;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
+use lib qw(../../Common/Lib);
+use McsExceptions;
+
 use vars qw(@ISA $VERSION);
 
 my $log = get_logger("administrator");
@@ -94,63 +97,180 @@ sub new {
  	return $self;
 }
 
+=head2 getRights
 
-
-=head2 _getRights
-
-Get rights result of association between 2 entityData objetcs
+	Class : Public
+	
+	Desc : return an integer specifying rights between a consumer entity object and a consumed entity object
+	
+	args :
+		consumer : Entity object : the consumer object
+		consumed : Entity object : the consumed object
+	return : integer
 
 =cut
 
-sub _getRights {
+sub getRights {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getRights need a EntityId named argument!"; }
-	if (! exists $args{ConsumerId} or ! defined $args{ConsumerId}) {  die "EntityRights->getRights need a ConsumerId named argument!"; }
+	if (! exists $args{consumer} or ! defined $args{consumer}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumer named argument!"); }
+	    
+	if(! exists $args{consumed} or ! defined $args{consumed}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumed named argument!"); }
+	    	
+	my $consumer_ids = $self->_getEntityIds( entity => $args{consumer} );
+	my $consumed_ids = $self->_getEntityIds( entity => $args{consumed} );
 	
-	my $res = $self->{_schema}->resultset('Entityright')->single( {
-		entityright_entity_id =>  $args{EntityId},
-		entityright_consumer_id =>  $args{ConsumerId} }
+	my $row = $self->{_schema}->resultset('Entityright')->search(
+		{
+			entityright_consumer_id => $consumer_ids,
+			entityright_consumed_id => $consumed_ids,
+		},
+		{ select => [
+			'entityright_consumer_id',
+			'entityright_consumed_id',
+			{ max => 'entity_rights' }
+			],
+			as => [ qw/consumer_id consumed_id rights/ ],
+		}
+	)->single;
+	if($row) { return $self->_rightsConversion($row->rights); };
+	return '';
+	
+}
+
+=head2 setRights
+
+	Class : Public
+	
+	Desc : add/update/delete a row to the entityright table, specifying rights between two entity
+	
+	args :
+		consumer : Entity object : the consumer object
+		consumed : Entity object : the consumed object
+		rights   : string
+	
+=cut
+
+sub setRights {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{consumer} or ! defined $args{consumer}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumer named argument!"); }
+	    
+	if(! exists $args{consumed} or ! defined $args{consumed}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumed named argument!"); }
+	
+	if(! exists $args{rights} or ! defined $args{rights}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a rights named argument!"); }
+	
+	# we retrieve the rights row if exists
+	my $row = $self->{_schema}->resultset('Entityright')->search(
+		{
+			entityright_consumer_id => $args{consumer}->entityright_consumer_id->get_column('entity_id'),
+			entityright_consumed_id => $args{consumed}->entityright_consumed_id->get_column('entity_id')
+		},
+	)->single;
+	
+	
+	if($args{rigths} eq 0 or $args{rigths} eq '') {
+		# no right so we remove the row 
+		$row->delete;
+		
+	} else {
+		
+	}
+	
+	
+	$self->_rightsConversion;
+}
+
+=head2 _getEntityIds
+
+	Class : Private
+	
+	Desc : return an array reference containing entity id and its groups entity ids
+	
+	args :
+		entity : Entity object : the entity object
+	return : array reference of integers 
+
+=cut
+
+sub _getEntityIds {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{entity} or ! defined $args{entity}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->_getEntityIds: need an entity named argument!"); }
+
+	my $ids = [];
+	# get the entity_id value and add it to the arrayref
+	my $entity_id = $args{entity}->entitylink->get_column('entity_id');
+	push @$ids, $entity_id;
+	
+	# retrieve entity_id of groups containing this entity object
+	my @groups = $self->{_schema}->resultset('Groups')->search( 
+		{ 'ingroups.entity_id' => $entity_id },
+		{ 
+			columns => [], 									# use no columns from Groups table
+			'+columns' => [ 'groups_entities.entity_id' ], 	# but add the entity_id column from groups_entity related table
+			join => [qw/ingroups groups_entities/]
+		}
 	);
-	if( ! $res ) { die 'EntityRights->getRights : no record found.'; }
-	return $res;
+	# add entity_id groups to the arrayref
+	foreach my $g (@groups) { push @$ids, $g->get_column('entity_id'); }
+	return $ids;
 }
 
-=head2 canGet
+=head2 _righsConversion
 
-Check if a user has rights to retrieve an EntityData object
+	Class : Private
+	
+	Desc : depending of the passed argument type (integer or string), return the corresponding rwx integer/string.
+	Example: called with
+			'x' return 1 (execution)
+			'w' return 2 (write)
+			'r' return 4 (read)  
+			'rw' return 6 (read/write)
+			'rwx' return 7 (read/write/execution)
+			1 return 'x'
+			2 return 'w'
+			3 return 'wx'
+			4 return 'r'
+			5 return 'rx'
+			6 return 'rw'
+			7 return 'rwx'
+	args :
+		rights : integer/string 
+	return : integer/string 
 
 =cut
 
-sub canGet {
+sub _rightsConversion {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{userEntityId} or ! defined $args{userEntityId}) {  die "EntityRights->getRights need a userEntityId named argument!"; }
-	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getRights need a secondEntityId named argument!"; }
+	if (! exists $args{rights} or ! defined $args{rights}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->_rightsToString: need a rights named argument!"); }
 	
-	my $groupadmin = $self->{_groups}->find({groups_name => 'admin'});
-	if($groupadmin) { print "I'm an administrator, i can do everything!\n"; }
-	
-	return;
+	# TODO find 
+	return 'x' if($args{rights} eq 1);
+	return 'w' if($args{rights} eq 2);
+	return 'wx' if($args{rights} eq 3);
+	return 'r' if($args{rights} eq 4);
+	return 'rx' if($args{rights} eq 5);
+	return 'rw' if($args{rights} eq 6);
+	return 'rwx' if($args{rights} eq 7);
+	return 1 if($args{rights} eq 'x');
+	return 2 if($args{rights} eq 'w');
+	return 3 if($args{rights} eq 'wx');
+	return 4 if($args{rights} eq 'r');
+	return 5 if($args{rights} eq 'rx');
+	return 6 if($args{rights} eq 'rw');
+	return 7 if($args{rights} eq 'rwx');
+		
+	throw Mcs::Exception::Internal(error => "EntityRights->_rightsConversion: bad rights named argument!"); 
 }
-
-=head2 canNew
-
-Check if a user has rights to instanciate an EntityData object
-
-=cut
-
-sub canNew {
-	my $self = shift;
-	my %args = @_;
-	if (! exists $args{userEntityId} or ! defined $args{userEntityId}) {  die "EntityRights->getRights need a userEntityId named argument!"; }
-	if (! exists $args{EntityId} or ! defined $args{EntityId}) {  die "EntityRights->getRights need a secondEntityId named argument!"; }
-	
-	
-	
-	return;
-}
-
 
 
 =head1 AUTHOR
