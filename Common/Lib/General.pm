@@ -54,8 +54,7 @@ sub getClassEEntityFromEntity{
 	$log->trace("Try to get Eentity class from object". ref($data));
 	$log->trace("Exist args_data " . exists($args{entity}) ."and isa ".$data->isa('Entity'));
 	throw Mcs::Exception::Internal(error => "Try to get Eentity class from object not entity : ". ref($args{entity})) if (
-													(! exists($args{entity})) or
-													(! $data->isa('Entity')));
+													(! exists($args{entity})));
 	my $entityclass = ref($args{entity});
 	$log->debug("new operation inserted with his entity relation.");
     my $class = $entityclass;
@@ -63,9 +62,6 @@ sub getClassEEntityFromEntity{
     $class =~s/\:\:/\:\:E/g;
     $class = "E".$class;
     return $class;
-    my $location = $class;
-    $location =~s/\:\:/\//g;
-    require $location . ".pm";
 }
 
 #TODO Tester si les regexp fonctionne en simulant le use.
