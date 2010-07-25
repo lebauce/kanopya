@@ -33,8 +33,6 @@ EntityRights
 
 Provide permissions management methods
 
-=head1 METHODS
-
 =cut
 
 package EntityRights;
@@ -51,11 +49,19 @@ my $log = get_logger("administrator");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
+# TODO get out user identification
+
 =head2 new
 
-new (schema => $schema, login => $login, password => $password)
-
-simple constructer
+	Class : Public
+	
+	Desc : constructor method
+	
+	args:
+		schema : AdministratorDB::Schema object : DBIx database schema
+		login : string : user login
+		password : string : user password
+	return: EntityRights
 
 =cut
 
@@ -83,15 +89,6 @@ sub new {
 		warn "incorrect login/password pair";
 		return undef;
 	}
-	
-	# get user groups
-	my $groups = $self->{_schema}->resultset('Groups')->search(
-	{ 'ingroups.entity_id' => $self->{_user}->get_column('entity_id') },
-	{ 	'+columns' => [ 'groups_entities.entity_id' ], 
-		join => [qw/ingroups groups_entities/] }
-	);
-		
-	$self->{_groups} = $groups;	
 		
 	bless $self, $class;
  	return $self;
