@@ -72,19 +72,26 @@ sub new {
     $log->warn("Data : $args{data} and $args{rightschecker}");
     
     my $self = {
-    	_rightschecker => $args{rightschecker},
-        _data => $args{data},
-        _ext_params => {},
+    	_rightschecker	=> $args{rightschecker},
+        _dbix			=> $args{data},
+        _ext_attrs		=> {},
+        extension		=> undef,
     };
     bless $self, $class;
     
     # getting groups where we find this entity (entity already exists)
-	if($self->{_data}->in_storage) {
+	if($self->{_dbix}->in_storage) {
 		$self->{_groups} = $self->getGroups;
 	}
 	$log->warn("new return $self");
     return $self;
 }
+
+# Default, no extension
+sub extension {
+	return undef;
+}
+
 
 =head2 getGroups
 
@@ -94,12 +101,12 @@ return groups resultset where this entity appears (only on an already saved enti
 
 sub getGroups {
 	my $self = shift;
-	if( not $self->{_data}->in_storage ) { return undef; } 
+	if( not $self->{_dbix}->in_storage ) { return undef; } 
 	my $mastergroup = ref $self;
 	$mastergroup =~ s/.*\:\://g;
 	my $groups = $self->{_rightschecker}->{_schema}->resultset('Groups')->search({
 		-or => [
-			'ingroups.entity_id' => $self->{_data}->get_column('entity_id'),
+			'ingroups.entity_id' => $self->{_dbix}->get_column('entity_id'),
 			'groups_name' => $mastergroup ]},
 			
 		{ 	'+columns' => [ 'groups_entities.entity_id' ], 
@@ -116,16 +123,17 @@ sub getGroups {
 
 sub getAllAttrs {
 	my $self = shift;
-	my $data = $self->{_data};
+	my $data = $self->{_dbix};
 	
 	# build hash corresponding to class table (with local changes)
 	my %attrs = $data->get_columns;
 	
 	# add extended Attrs from db
-	if ( $data->extended_table ) {
-		my $ext_attrs_rs = $data->search_related( $data->extended_table );
+	if (defined $self->{extension} ) {
+		my $ext_attrs_rs = $data->search_related( $self->{extension} );
 		while ( my $param = $ext_attrs_rs->next ) {
 			$attrs{ $param->name } = $param->value;
+			$self->{_ext_attrs}->{ $param->name } = $param->value;
 		}
 	}
 	
@@ -162,7 +170,7 @@ sub asString {
 sub setAttr {
 	my $self = shift;
 	my %args = @_;
-	my $data = $self->{_data};
+	my $data = $self->{_dbix};
 
     if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
@@ -218,7 +226,7 @@ sub setAttrs {
 sub getAttr {
 	my $self = shift;
     my %args = @_;
-    my $data = $self->{_data};
+    my $data = $self->{_dbix};
     my $value = undef;
     
 	if (! exists $args{name} or ! defined $args{name}) { 
@@ -263,7 +271,7 @@ sub getAttr {
 
 sub save {
 	my $self = shift;
-	my $data = $self->{_data};
+	my $data = $self->{_dbix};
 	#TODO check rights
 
 	if ( $data->in_storage ) {

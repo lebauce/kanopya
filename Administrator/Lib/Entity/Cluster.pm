@@ -37,9 +37,11 @@ my $struct = {cluster_name		=> {pattern			=> 'm//s',
 									is_mandatory	=> 1,
 									is_extended 	=> 0},
 			  kernel_id			=> {pattern 		=> 'm//s',
-									is_mandatory	=> 1,
+									is_mandatory	=> 0,
 									is_extended 	=> 0}
 			};
+
+
 
 =head2 checkAttr
 	
@@ -91,6 +93,10 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+	if ((! exists $args{data} or ! defined $args{data}) ||
+		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
+		throw Mcs::Exception::Internal(error => "Entity->new need a data and rightschecker named argument!"); }
+	
 	$log->info("Cluster Instanciation");
     my $self = $class->SUPER::new( %args );
     return $self;
