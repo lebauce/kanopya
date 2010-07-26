@@ -61,7 +61,7 @@ sub checkAttrs {
 	my (%global_attrs, %ext_attrs, $attr);
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
-		throw Mcs::Exception::Internal(error => "Entity::Cluster->checkAttrs need an data hash and class named argument!"); }	
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->checkAttrs need an data hash and class named argument!"); }	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
@@ -75,13 +75,13 @@ sub checkAttrs {
 			}
 		}
 		else {
-			throw Mcs::Exception::Internal(error => "Entity::Cluster->checkAttrs detect a wrong attr $attr !");
+			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->checkAttrs detect a wrong attr $attr !");
 		}
 	}
 	foreach $attr (keys(%$struct)) {
 		if (($struct->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
-				throw Mcs::Exception::Internal(error => "Entity::Cluster->checkAttrs detect a missing attribute $attr !");
+				throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->checkAttrs detect a missing attribute $attr !");
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -104,9 +104,9 @@ sub checkAttr{
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
-		throw Mcs::Exception::Internal(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
 	if (!exists $struct->{$args{name}}){
-		throw Mcs::Exception::Internal::WrongAttr(error => "Entity::Motherboard->checkAttr invalid name"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid name"); }
 	# Here check attr value
 }
 
@@ -118,7 +118,7 @@ sub new {
 
 	if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		throw Mcs::Exception::Internal(error => "Entity->new need a data and rightschecker named argument!"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity->new need a data and rightschecker named argument!"); }
 	
 	$log->info("Cluster Instanciation");
     my $self = $class->SUPER::new( %args );
@@ -126,6 +126,22 @@ sub new {
 }
 
 sub getComponents{
+	my $self = shift;
+    my %args = @_;
+
+	if ((! exists $args{administrator} or ! defined $args{administrator}) ||
+		(! exists $args{category} or ! defined $args{category})) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->getComponent need a category and administrator named argument!"); }
+	
+	my $comp_instance_rs = $self->{_dbix}->search_related( "component_instances", {});
+	my %comps_inst_row;
+	while ( my $comp_instance_row = $comp_instance_rs->next ) {
+		my $comp_type_row = $comp_instance_row->search_related( "component_type_id");
+		if (($args{category} eq "all")||($args{category} eq $comp_type_row->get_column('category'))){
+			$comps_inst_row{$comp_instance_row->get_column('component_instance_id')}->{instance} = $comp_instance_row;
+			$comps_inst_row{$comp_instance_row->get_column('component_instance_id')}->{type} =$comp_type_row;
+		}
+	}
 	
 }
 

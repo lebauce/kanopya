@@ -52,7 +52,7 @@ sub checkAttrs {
 	my (%global_attrs, %ext_attrs, $attr);
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
-		throw Mcs::Exception::Internal(error => "Entity::Motherboard->checkAttrs need an data hash and class named argument!"); }	
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs need an data hash and class named argument!"); }	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
@@ -67,13 +67,13 @@ sub checkAttrs {
 			}
 		}
 		else {
-			throw Mcs::Exception::Internal(error => "Entity::Motherboard->checkAttrs detect a wrong attr $attr !");
+			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs detect a wrong attr $attr !");
 		}
 	}
 	foreach $attr (keys(%$struct)) {
 		if (($struct->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
-				throw Mcs::Exception::Internal(error => "Entity::Motherboard->checkAttrs detect a missing attribute $attr !");
+				throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs detect a missing attribute $attr !");
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -96,9 +96,9 @@ sub checkAttr{
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
-		throw Mcs::Exception::Internal(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
 	if (!exists $struct->{$args{name}}){
-		throw Mcs::Exception::Internal::WrongAttr(error => "Entity::Motherboard->checkAttr invalid name"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid name"); }
 	# Here check attr value
 }
 
@@ -113,7 +113,7 @@ sub new {
     if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker}) ||
 		(! exists $args{ext_attrs} or ! defined $args{ext_attrs})) { 
-		throw Mcs::Exception::Internal(error => "Entity::Motherboard->new need a data, ext_attrs and rightschecker named argument!"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->new need a data, ext_attrs and rightschecker named argument!"); }
 
 	my $ext_attrs = $args{ext_attrs};
 	delete $args{ext_attrs};
