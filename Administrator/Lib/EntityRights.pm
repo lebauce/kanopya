@@ -42,6 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use lib qw(../../Common/Lib);
 use McsExceptions;
+use Data::Dumper;
 
 use vars qw(@ISA $VERSION);
 
@@ -98,12 +99,13 @@ sub new {
 
 	Class : Public
 	
-	Desc : return an integer specifying rights between a consumer entity object and a consumed entity object
+	Desc : return true if the right between a consumer entity object and a consumed entity object exists
 	
 	args :
 		consumer : Entity object : the consumer object
 		consumed : Entity object : the consumed object
-	return : integer
+		right : character (r/w/x)
+	return : bool (integer 0/1)
 
 =cut
 
@@ -115,9 +117,14 @@ sub getRights {
 	    
 	if(! exists $args{consumed} or ! defined $args{consumed}) { 
 		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumed named argument!"); }
+		
+	if(! exists $args{right} or ! defined $args{right}) { 
+		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a right named argument!"); }
 	    	
 	my $consumer_ids = $self->_getEntityIds( entity => $args{consumer} );
+	$log->debug("consumer ids found: ".Dumper $consumer_ids);
 	my $consumed_ids = $self->_getEntityIds( entity => $args{consumed} );
+	$log->debug("consumed ids found: ".Dumper $consumed_ids);
 	
 	my $row = $self->{_schema}->resultset('Entityright')->search(
 		{
@@ -127,12 +134,13 @@ sub getRights {
 		{ select => [
 			'entityright_consumer_id',
 			'entityright_consumed_id',
-			{ max => 'entity_rights' }
-			],
-			as => [ qw/consumer_id consumed_id rights/ ],
+			'entityright_rights' ],
+			order_by => { -desc => ['entityright_rights']},
 		}
-	)->single;
-	if($row) { return $self->_rightsConversion($row->rights); };
+	)->first;
+	if($row) { 
+		$log->debug("Upper rights found: ".$row->entityright_rights);
+		return $self->_rightsConversion(rights => $row->entityright_rights); };
 	return '';
 	
 }
@@ -162,25 +170,36 @@ sub setRights {
 	if(! exists $args{rights} or ! defined $args{rights}) { 
 		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a rights named argument!"); }
 	
+	# TODO verify rights format
+	
 	# we retrieve the rights row if exists
 	my $row = $self->{_schema}->resultset('Entityright')->search(
 		{
-			entityright_consumer_id => $args{consumer}->entityright_consumer_id->get_column('entity_id'),
-			entityright_consumed_id => $args{consumed}->entityright_consumed_id->get_column('entity_id')
+			entityright_consumer_id => $args{consumer}->{_dbix}->entitylink->get_column('entity_id'),
+			entityright_consumed_id => $args{consumed}->{_dbix}->entitylink->get_column('entity_id')
 		},
 	)->single;
 	
-	
-	if($args{rigths} eq 0 or $args{rigths} eq '') {
+	if($args{rights} eq 0 or $args{rights} eq '') {
 		# no right so we remove the row 
 		$row->delete;
 		
 	} else {
-		
+		# row exists so we update it
+		if(defined $row) {
+			$row->entityright_rights( $self->_rightsConversion(rights => $args{rights}) );
+			$row->update;
+			
+		} else {
+		# row does not exist so we create it
+			$row = $self->{_schema}->resultset('Entityright')->new({
+				entityright_consumer_id => $args{consumer}->{_dbix}->entitylink->get_column('entity_id'),
+				entityright_consumed_id => $args{consumed}->{_dbix}->entitylink->get_column('entity_id'),
+				entityright_rights => $self->_rightsConversion(rights => $args{rights})
+			});
+			$row->insert;
+		}	
 	}
-	
-	
-	$self->_rightsConversion;
 }
 
 =head2 _getEntityIds
@@ -203,7 +222,7 @@ sub _getEntityIds {
 
 	my $ids = [];
 	# get the entity_id value and add it to the arrayref
-	my $entity_id = $args{entity}->entitylink->get_column('entity_id');
+	my $entity_id = $args{entity}->{_dbix}->entitylink->get_column('entity_id');
 	push @$ids, $entity_id;
 	
 	# retrieve entity_id of groups containing this entity object
@@ -227,15 +246,17 @@ sub _getEntityIds {
 	Desc : depending of the passed argument type (integer or string), return the corresponding rwx integer/string.
 	Example: called with
 			'x' return 1 (execution)
-			'w' return 2 (write)
-			'r' return 4 (read)  
+			'r' return 2 (write)
+			'rx' return 3 (read/execution)
+			'w' return 4 (read)  
+			'wx' return 5 (write/execution)
 			'rw' return 6 (read/write)
 			'rwx' return 7 (read/write/execution)
 			1 return 'x'
-			2 return 'w'
-			3 return 'wx'
-			4 return 'r'
-			5 return 'rx'
+			2 return 'r'
+			3 return 'rx'
+			4 return 'w'
+			5 return 'wx'
 			6 return 'rw'
 			7 return 'rwx'
 	args :
@@ -250,23 +271,24 @@ sub _rightsConversion {
 	if (! exists $args{rights} or ! defined $args{rights}) { 
 		throw Mcs::Exception::Internal(error => "EntityRights->_rightsToString: need a rights named argument!"); }
 	
-	# TODO find 
+	# TODO find a best solution
 	return 'x' if($args{rights} eq 1);
-	return 'w' if($args{rights} eq 2);
-	return 'wx' if($args{rights} eq 3);
-	return 'r' if($args{rights} eq 4);
-	return 'rx' if($args{rights} eq 5);
+	return 'r' if($args{rights} eq 2);
+	return 'rx' if($args{rights} eq 3);
+	return 'w' if($args{rights} eq 4);
+	return 'wx' if($args{rights} eq 5);
 	return 'rw' if($args{rights} eq 6);
 	return 'rwx' if($args{rights} eq 7);
 	return 1 if($args{rights} eq 'x');
-	return 2 if($args{rights} eq 'w');
-	return 3 if($args{rights} eq 'wx');
-	return 4 if($args{rights} eq 'r');
-	return 5 if($args{rights} eq 'rx');
+	return 2 if($args{rights} eq 'r');
+	return 3 if($args{rights} eq 'rx');
+	return 4 if($args{rights} eq 'w');
+	return 5 if($args{rights} eq 'wx');
 	return 6 if($args{rights} eq 'rw');
 	return 7 if($args{rights} eq 'rwx');
 		
-	throw Mcs::Exception::Internal(error => "EntityRights->_rightsConversion: bad rights named argument!"); 
+	throw Mcs::Exception::Internal(error => 
+		"EntityRights->_rightsConversion: bad rights named argument (possible values are 0, 1, 2, 3, 4, 5, 6, 7, '', 'r', 'w', 'x', 'rw', 'rx', 'wx', 'rwx')"); 
 }
 
 
