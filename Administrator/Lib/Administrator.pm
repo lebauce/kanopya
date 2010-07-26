@@ -111,8 +111,9 @@ sub new {
 		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
 	};
 	if ($@) {
-		$log->error("Administrator->new : Error connecting Database");
-		die $@;
+		my $error = $@;
+		$log->error("Administrator->new : Error connecting Database $error");
+		throw Mcs::Exception::DB(error => "$error"); 
 	}
 	
 	my $self = {
