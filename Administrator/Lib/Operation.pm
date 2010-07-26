@@ -162,19 +162,14 @@ sub getParams {
 
 sub save{
 	my $self = shift;
-	my %args = @_;
-	
-	throw Mcs::Exception::Internal(error => "Try to save object not operation") if (
-													(!exists $args{op})||
-													(! $args{op}->isa('Entity::Operation')));
 
-	my $newentity = $self->{_data}->insert;
+	my $newentity = $self->{_dbix}->insert;
 	my $params = $self->{_params};
 	$log->debug("new Operation inserted.");
 
 	foreach my $k (keys %$params) {
-		$self->{_data}->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );}
-	$log->debug("new operation $args{op} inserted with his entity relation.");
+		$self->{_dbix}->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );}
+	$log->debug("new operation $self inserted with his entity relation.");
 }
 
 

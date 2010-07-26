@@ -115,34 +115,26 @@ sub getGroups {
 	return $groups;
 }
 
-=head2 getAllAttrs
+=head2 getAttrs
 
 	return a hash with all (param => value) of our data, including extending Attrs
 
 =cut
 
-sub getAllAttrs {
+sub getAttrs {
 	my $self = shift;
 	my $data = $self->{_dbix};
 	
 	# build hash corresponding to class table (with local changes)
 	my %attrs = $data->get_columns;
 	
+	my $ext = $self->{_ext_attrs};
 	# add extended Attrs from db
-	if (defined $self->{extension} ) {
-		my $ext_attrs_rs = $data->search_related( $self->{extension} );
-		while ( my $param = $ext_attrs_rs->next ) {
-			$attrs{ $param->name } = $param->value;
-			$self->{_ext_attrs}->{ $param->name } = $param->value;
+	foreach my $k (keys %$ext){
+		$attrs{$k} = $ext->{$k};
 		}
-	}
 	
-	# add local extended Attrs (localy changed ext Attrs override ext Attrs load from db)
-	my $local_ext_attrs = $self->{_ext_attrs};
-	#TODO Search a clean concatenation method
-	my %all_attrs = ( %attrs, %$local_ext_attrs );
-
-	return %all_attrs;	
+	return %attrs;	
 }
 
 =head2 asString
@@ -176,11 +168,15 @@ sub setAttr {
 		(! exists $args{value} or ! defined $args{value})) { 
 		throw Mcs::Exception::Internal(error => "Entity->setAttr need a name and value named argument!"); }
 
+	eval {
+		$self->checkAttr(%args);};
+	if ($@){
+		throw Mcs::Exception::Internal(error => "Entity->setAttr wrong attr name ($args{name}) or value ($args{value})!"); }
+		
 	if ( $data->has_column( $args{name} ) ) {
     		$data->set_column( $args{name}, $args{value} );	
     }
-    
-    elsif ( $data->extended_table ) {
+    elsif ( $self->extension() ) {
     	# TODO check if ext param name is a valid name for this entity
     	$self->{ _ext_attrs }{ $args{name} } = $args{value};
     }
@@ -239,25 +235,13 @@ sub getAttr {
 		$value = $data->get_column( $args{name} );
 		$log->info("  found value = $value");
 	}
-	else # search extended
-	{
-		# in local hash
-		if ( $self->{_ext_attrs}{ $args{name} } ) {
+	elsif ( exists $self->{_ext_attrs}{ $args{name} } ) {
 			$value = $self->{_ext_attrs}{ $args{name} };
 			$log->info("  found value = $value (in ext local)");
 		}
-		# in extented table
-		elsif ($data->extended_table) {
-			my $resultset = $data->search_related( $data->extended_table, {name => $args{name}} );
-			if ( $resultset->count == 1 ) {
-				$value = $resultset->next->value;
-				$log->info("  found value = $value (in ext table)");
+		else {
+			throw Mcs::Exception::Internal(error => "Entity->setAttr no attr name $args{name}!");
 			}
-		}
-	}
-	
-	warn( "getValue() : No parameter named '$args{name}' for ", ref $self ) if ( ! defined $value );
-		
 	return $value;
 }
 
@@ -285,7 +269,7 @@ sub save {
 		my $relation = lc(ref $self);
 		$relation =~ s/.*\:\://g;
 		print "la relation: $relation\n";
-		my $newentity = $self->{_data}->insert;
+		my $newentity = $self->{_dbix}->insert;
 		$log->debug("new entity inserted.");
 		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
 			{ "${relation}_entities" => [ { "${relation}_id" => $newentity->get_column("${relation}_id")} ] },
@@ -301,19 +285,19 @@ sub save {
 =head2 _saveExtendedAttrs
 
 	add or update extended Attrs on the related table 'ext'
-	WARN: this will insert _data in DB if it's not already in
+	WARN: this will insert _dbix in DB if it's not already in
 	
 =cut
 
 sub _saveExtendedAttrs {
 	my $self = shift;
-	my $ext_Attrs = $self->{_ext_attrs};
-	my $data = $self->{_data};
+	my $ext_attrs = $self->{_ext_attrs};
+	my $data = $self->{_dbix};
 	
-	if ( $ext_Attrs )
+	if ( $ext_attrs )
 	{
-		foreach my $k (keys %$ext_Attrs) {
-			$data->update_or_create_related( $data->extended_table, { name => $k, value => $ext_Attrs->{$k} } );
+		foreach my $k (keys %$ext_attrs) {
+			$data->update_or_create_related( $self->extension(), { name => $k, value => $ext_attrs->{$k} } );
 		}
 	}
 }
@@ -329,7 +313,7 @@ sub _saveExtendedAttrs {
 
 sub delete {
 	my $self = shift;
-	my $data = $self->{_data};
+	my $data = $self->{_dbix};
 	
 	my $entity = $self->{_rightschecker}->{_schema}->resultset('Entity')->find( { entity_id => $self->{_entity_id} } );
 	if ( $entity ) {
@@ -337,8 +321,9 @@ sub delete {
 	}
 	
 	# Delete extended Attrs (cascade delete)
-	if ( $data->extended_table ) {
-		my $Attrs_rs = $data->related_resultset( $data->extended_table );
+	my $extension = $self->extension();
+	if ($extension) {
+		my $Attrs_rs = $data->related_resultset( $extension );
 		if ( $Attrs_rs )
 		{
 			$Attrs_rs->delete;	

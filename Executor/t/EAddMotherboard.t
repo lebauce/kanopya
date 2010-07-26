@@ -21,16 +21,18 @@ my %args = (login =>'xebech', password => 'pass');
 
 my $addmotherboard_op;
 
-
+my $adm = Administrator->new( %args);
 eval {
-	my $adm = Administrator->new( %args);
+	$adm->{db}->txn_begin;
+	
 	note("Operation Addition test");
-	$addmotherboard_op = $adm->newOp(type => "AddMotherboard", priority => '100', params => { mac_address => '00:1c:c0:c0:1c:9a', kernel_id => 2, c_storage_id => 1});
+	$addmotherboard_op = $adm->newOp(type => "AddMotherboard", priority => '100', params => { mac_address => '00:1c:c0:c0:1c:9a', kernel_id => 2, c_storage_id => 1, motherboard_sn => "Test sn"});
 	@args = ();
 	my $exec = new_ok("Executor", \@args, $exectest);
 	$exec->execnround(run => 1);
 note("Operation Execution is finish");
-	$addmotherboard_op->delete();
+	$addmotherboard_op->cancel();
+	$adm->{db}->txn_rollback;
 };
 if ($@){
 	print "Exception catch, its type is : " . ref($@);
@@ -39,8 +41,7 @@ if ($@){
    	{
 		print "Mcs Exception\n";
    }
-   $addmotherboard_op->delete();
-}
+	$adm->{db}->txn_rollback;}
 
 
 #pass($exectest);

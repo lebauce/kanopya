@@ -160,19 +160,21 @@ sub getEntity {
 		$log->debug( "_getEntityClass with type = $args{type}");
 		my $entity_class = $self->_getEntityClass(type => $args{type});
 		my $extension = $entity_class->extension();
+
 		if ($extension){
+			$log->debug("GetEntity with extension");
 			my %attrs;
 			my $ext_attrs_rs = $entity_dbix->search_related( $extension );
 			while ( my $param = $ext_attrs_rs->next ) {
 				$attrs{ $param->name } = $param->value;}
-			return $entity_class->new( type => $args{type}, data => $entity_dbix, ext_attrs => \%attrs);
+			return $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix, ext_attrs => \%attrs);
 		}
 		else {
-			return $entity_class->new( type => $args{type}, data => $entity_dbix );}
+			return $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix );}
 	}
 	else {
 		$log->warn( "Administrator::getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ") : Object not found!");
-		throw Mcs::Exception::Internal(error => "Administrator::getEntity : Object not found");
+		throw Mcs::Exception::Internal(error => "Administrator::getEntity : Object not found with type ($args{type}) and id ($args{id})");
 	}
 }
 
@@ -238,9 +240,9 @@ sub newEntity {
 
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{params} or ! defined $args{params})) { 
-		throw Mcs::Exception::Internal(error => "Administrator->newObj need params and type named argument!"); }
+		throw Mcs::Exception::Internal(error => "Administrator->newEntity need params and type named argument!"); }
 
-	$log->info( "newObj( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->info( "newEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 
 	# We get class and require Entity::$entity_class
 	my $entity_class = $self->_getEntityClass(type => $args{type});
@@ -248,8 +250,7 @@ sub newEntity {
 	# We check entity attributes and separate them in two categories :
 	#	- ext_attrs
 	#	- global_attrs
-	
-	my $attrs = $entity_class->checkAttrs(attr => $args{params});
+	my $attrs = $entity_class->checkAttrs(attrs => $args{params});
 	
 	# We create a new DBIx containing new entity (only global attrs)
 	my $entity_data = $self->_newDbix( table =>  $args{type}, row => $attrs->{global} );
@@ -294,7 +295,10 @@ sub newOp {
 			throw Mcs::Exception::Internal(error => "Administrator->newOp need a priority, params and type named argument!"); }
 	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
-	my $user_id = $self->{_rightschecker}->{_user};
+	#TODO Put the good user in operation
+#	my $user_id = $self->{_rightschecker}->{_user};
+	my $user_id = 16;
+	$log->error("User id in _rightschecker is $user_id");
 	my $op_data = $self->_newDbix( table => 'Operation', row => { 	type => $args{type},
 																	execution_rank => $rank,
 																	user_id => $user_id,
@@ -302,10 +306,10 @@ sub newOp {
 
 	my $subclass = $args{type};
 	eval {
-		require "Operation::$subclass";
+		require "Operation/$subclass.pm";
 	};
 	if ($@) {
-		throw Mcs::Exception::Internal(error => "Administrator->newOp : Operation type does not exist!");}
+		throw Mcs::Exception::Internal(error => "Administrator->newOp : Operation type ($args{type}) does not exist when require Operation::$subclass.pm");}
 
 	my $op = "Operation::$subclass"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => $args{params});
 	$op->save();
@@ -339,7 +343,7 @@ sub getNextOp {
 	my $self = shift;
 	
 	# Get all operation
-	my $all_ops = $self->_getAllData( table => 'Operation' );
+	my $all_ops = $self->_getAllDbix( table => 'Operation' );
 	# Choose the next operation to be trated
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
 	# if no other operation to be treated, send an exception
@@ -353,16 +357,17 @@ sub getNextOp {
 	while ( my $param = $params_rs->next ) {
 		$params{ $param->name } = $param->value;
 	}
+	$log->debug("Parameters get <%params>");
 	# Try to load Operation::$op_type
 	eval {
-		require "Operation::$op_type";
+		require "Operation/$op_type.pm";
 	};
 	if ($@) {
 		throw Mcs::Exception::Internal(error => "Administrator->newOp : Operation type does not exist!");}
 
 	# Operation instanciation
 	my $op = "Operation::$op_type"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => \%params);
-
+	$log->debug("Operation instanciate " . ref($op) . " and will be returned");
 	return $op;
 }
 
@@ -486,7 +491,7 @@ sub _getEntityClass{
 	if (! exists $args{type} or ! defined $args{type}) { 
 		throw Mcs::Exception::Internal(error => "Administrator->_requireEntity a type named argument!"); }
 
-	my $entity_class = General::getEntityFromType(%args);
+	my $entity_class = General::getClassEntityFromType(%args);
     my $location = General::getLocFromClass(entityclass => $entity_class);
 
     require $location;

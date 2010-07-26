@@ -36,17 +36,22 @@ Component is an abstract class of EOperation objects
 =head1 METHODS
 
 =cut
-package EEntity::EOperation;
+package EOperation;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib "..";
-use base "EEntity";
+
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+sub _getOperation{
+	my $self = shift;
+	return $self->{_operation};
+}
 
 =head2 new
 
@@ -59,16 +64,22 @@ EEntity::EOperation->new creates a new operation object.
 sub new {
     my $class = shift;
     my %args = @_;
-
-    my $self = $class->SUPER::new(%args);
-	$self->_init();
     
+    if ((! exists $args{data} or ! defined $args{data})) { 
+		throw Mcs::Exception::Internal(error => "EOperation->new ($class) need a data named argument!"); }
+    
+    
+   	$log->warn("Class is : $class");
+    my $self = { _operation => $args{data}};
+    bless $self, $class;
+	$self->_init();
+
     return $self;
 }
 
 =head2 _init
 
-Executor::_init is a private method used to define internal parameters.
+Eoperation::_init is a private method used to define internal parameters.
 
 =cut
 
@@ -87,12 +98,12 @@ sub _init {
 sub prepare {
 	my $self = shift;
 	
-	my $id = $self->_getEntity();
+	my $id = $self->_getOperation();
 	$log->warn("Class is : $id");
-	$self->{userid} = $self->_getEntity()->getUser();
+	$self->{userid} = $self->_getOperation()->getAttr(attr_name => "user_id");
 	$log->warn("Change user by user_id : $self->{userid}");	
 	my $adm = Administrator::new();
-	$adm->changeUser(user_id => $self->{userid});
+	#$adm->changeUser(user_id => $self->{userid});
 	$log->warn("Change user effective : New user is $adm->{_rightschecker}->{_user}");
 }
 
