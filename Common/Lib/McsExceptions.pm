@@ -21,7 +21,7 @@ use Exception::Class (
 	isa => 'Mcs::Exception::Internal',
 	description => 'Wrong Value',
     },
-    Mcs::Exception::Internal::WrongAttr => {
+    Mcs::Exception::Internal::IncorrectParam => {
 	isa => 'Mcs::Exception::Internal',
 	description => 'Wrong attribute or parameter',
     }

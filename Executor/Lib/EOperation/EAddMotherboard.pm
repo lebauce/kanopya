@@ -100,15 +100,19 @@ sub prepare {
 	$log->warn("After administator instanciation, before newObj");
 	$self->{_objs} = {};
 
+	# Get Storage Cluster
 	$log->warn("adm->getObj of Cluster with id : $params->{c_storage_id}");
 	my $c_cstorage = $adm->getEntity(type => "Cluster", id => $params->{c_storage_id});
 	# Delete c_storage_id to have a ref on hash with motherboard parms
 	delete($params->{c_storage_id});
 
+	# Instanciate new Motherboard Entity
 	$log->warn("adm->newObj of Motherboard");
 	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);
 	$log->warn("New motherboard $self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
+	# Instanciate Cluster Storage component.
+	$c_cstorage->getComponents(search_field => {category=>"storage"}, administrator => $adm);
 #	print Dumper $self->{_objs}->{motherboard};
 }
 
