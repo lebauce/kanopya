@@ -1,7 +1,8 @@
 package Entity::User;
 
 use strict;
-
+use lib qw (.. ../../../Common/Lib);
+use McsExceptions;
 use base "Entity";
 
 # contructor 

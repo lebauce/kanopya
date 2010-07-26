@@ -16,6 +16,14 @@ use Exception::Class (
     Mcs::Exception::Internal => {
 	isa => 'Mcs::Exception',
 	description => 'MicroCluster System Internal exception',
+    },
+    Mcs::Exception::Internal::WrongValue => {
+	isa => 'Mcs::Exception::Internal',
+	description => 'Wrong Value',
+    },
+    Mcs::Exception::Internal::WrongAttr => {
+	isa => 'Mcs::Exception::Internal',
+	description => 'Wrong attribute or parameter',
     }
     );
 
