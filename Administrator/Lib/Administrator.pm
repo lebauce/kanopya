@@ -112,8 +112,8 @@ sub new {
 	};
 	if ($@) {
 		my $error = $@;
-		$log->error("Administrator->new : Error connecting Database");
-		throw Mcs::Exception::DB(error => "$error");
+		$log->error("Administrator->new : Error connecting Database $error");
+		throw Mcs::Exception::DB(error => "$error"); 
 	}
 	
 	my $self = {

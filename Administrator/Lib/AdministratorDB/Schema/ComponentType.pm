@@ -24,6 +24,13 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
     size => 45,
   },
+  "category",
+  {
+    data_type => "VARCHAR",
+    default_value => undef,
+    is_nullable => 0,
+    size => 45,
+  },
 );
 __PACKAGE__->set_primary_key("component_type_id");
 __PACKAGE__->has_many(
@@ -43,8 +50,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-25 16:35:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2Bi5nWsf4EEf38UkgYzdzA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-26 09:55:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4b718uvgny5ZlxTtQfBvEA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
