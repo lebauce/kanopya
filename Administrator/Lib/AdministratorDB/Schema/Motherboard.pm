@@ -10,7 +10,7 @@ __PACKAGE__->table("motherboard");
 __PACKAGE__->add_columns(
   "motherboard_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "motherboardtemplate_id",
+  "motherboard_model_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "processortemplate_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
@@ -38,8 +38,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-26 09:55:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5Q8Zad98u4Twi4LWNaqBrQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:h7XZeLwkqWa3MvGzvujU+Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

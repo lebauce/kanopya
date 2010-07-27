@@ -24,13 +24,13 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("distribution_id");
 __PACKAGE__->add_unique_constraint("distribution_name", ["distribution_name"]);
 __PACKAGE__->has_many(
-  "distribution_entities",
-  "AdministratorDB::Schema::DistributionEntity",
+  "component_provideds",
+  "AdministratorDB::Schema::ComponentProvided",
   { "foreign.distribution_id" => "self.distribution_id" },
 );
 __PACKAGE__->has_many(
-  "distributionprovides",
-  "AdministratorDB::Schema::Distributionprovides",
+  "distribution_entities",
+  "AdministratorDB::Schema::DistributionEntity",
   { "foreign.distribution_id" => "self.distribution_id" },
 );
 __PACKAGE__->has_many(
@@ -40,8 +40,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-26 09:55:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EvgBUeUgSSj4RNy4m5rxaQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+Xq2kkUWtsks3nWgbbfv+g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

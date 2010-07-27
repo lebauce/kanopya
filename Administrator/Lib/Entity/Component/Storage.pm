@@ -1,8 +1,8 @@
-package Entity::Component;
+package Entity::Component::Storage;
 
 use strict;
 
-use base "Entity";
+use base "Entity::Component";
 
 
 # contructor

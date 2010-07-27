@@ -12,16 +12,21 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "cluster_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "component_type_id",
+  "component_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "component_template_id",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
 );
 __PACKAGE__->set_primary_key("component_instance_id");
+__PACKAGE__->has_many(
+  "apache2s",
+  "AdministratorDB::Schema::Apache2",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
 __PACKAGE__->belongs_to(
-  "component_type_id",
-  "AdministratorDB::Schema::ComponentType",
-  { component_type_id => "component_type_id" },
+  "component_id",
+  "AdministratorDB::Schema::Component",
+  { component_id => "component_id" },
 );
 __PACKAGE__->belongs_to(
   "cluster_id",
@@ -33,11 +38,27 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::ComponentTemplate",
   { "component_template_id" => "component_template_id" },
 );
+__PACKAGE__->has_many(
+  "component_instance_entities",
+  "AdministratorDB::Schema::ComponentInstanceEntity",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
+__PACKAGE__->has_many(
+  "lvm2s",
+  "AdministratorDB::Schema::Lvm2",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-26 09:55:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JDZsE7+3kv9spC/fHFUiaA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:E/iL4thHvhDR/BXnwYW4QQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::ComponentInstanceEntity",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
+
 1;

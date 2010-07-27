@@ -1,8 +1,8 @@
-package Entity::Components::Storage;
+package Entity::Component::Storage::Lvm2;
 
 use strict;
 
-use base "Entity::Components";
+use base "Entity::Component::Storage";
 
 
 # contructor

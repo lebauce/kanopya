@@ -7,6 +7,7 @@ use lib qw (.. ../../../Common/Lib);
 use McsExceptions;
 use Entity::Component;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("administrator");
 
@@ -17,7 +18,7 @@ my $struct = {cluster_name		=> {pattern			=> 'm//s',
 									is_mandatory	=> 0,
 									is_extended 	=> 0},
 			  cluster_type		=> {pattern			=> 'm//s',
-									is_mandatory	=> 1,
+									is_mandatory	=> 0,
 									is_extended		=> 0},
 			  cluster_min_node	=> {pattern 		=> 'm//s',
 									is_mandatory	=> 1,
@@ -28,9 +29,18 @@ my $struct = {cluster_name		=> {pattern			=> 'm//s',
 			  cluster_priority	=> {pattern 		=> 'm//s',
 									is_mandatory	=> 1,
 									is_extended 	=> 0},
-			  cluster_net_id	=> {pattern 		=> 'm//s',
-									is_mandatory	=> 1,
-									is_extended 	=> 0},
+			  cluster_public_ip			=> {pattern 		=> 'm//s',
+											is_mandatory	=> 1,
+											is_extended 	=> 0},
+			  cluster_public_mask		=> {pattern 		=> 'm//s',
+											is_mandatory	=> 1,
+											is_extended 	=> 0},
+			  cluster_public_gateway	=> {pattern 		=> 'm//s',
+											is_mandatory	=> 1,
+											is_extended 	=> 0},
+			  cluster_public_network	=> {pattern 		=> 'm//s',
+											is_mandatory	=> 1,
+											is_extended 	=> 0},
 			  cluster_active	=> {pattern			=> 'm//s',
 									is_mandatory	=> 1,
 									is_extended		=> 0},
@@ -133,16 +143,26 @@ sub getComponents{
 		(! exists $args{category} or ! defined $args{category})) { 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->getComponent need a category and administrator named argument!"); }
 	
-	my $comp_instance_rs = $self->{_dbix}->search_related( "component_instances", {});
-	my %comps_inst_row;
+	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
+											{ '+columns' => [ "component_id.component_name", 
+															  "component_id.component_category",
+															  "component_id.component_version"], 
+													join => ["component_id"]});
+	
+	my %comps;
+	$log->debug("Category is $args{category} and adm ". ref($args{administrator}));
 	while ( my $comp_instance_row = $comp_instance_rs->next ) {
-		my $comp_type_row = $comp_instance_row->search_related( "component_type_id");
-		if (($args{category} eq "all")||($args{category} eq $comp_type_row->get_column('category'))){
-			$comps_inst_row{$comp_instance_row->get_column('component_instance_id')}->{instance} = $comp_instance_row;
-			$comps_inst_row{$comp_instance_row->get_column('component_instance_id')}->{type} =$comp_type_row;
+		$log->debug("One component instance found with " . ref($comp_instance_row));
+		
+		if (($args{category} eq "all")||
+			($args{category} eq $comp_instance_row->get_column('component_category'))){
+			$comps{$comp_instance_row->get_column('component_instance_id')} = $args{administrator}->getEntity (
+							class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .$comp_instance_row->get_column('component_name') . $comp_instance_row->get_column('component_version'),
+							id => $comp_instance_row->get_column('component_instance_id'),
+							type => "ComponentInstance");
 		}
 	}
-	
+	return \%comps;
 }
 
 1;
