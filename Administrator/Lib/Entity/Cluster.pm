@@ -152,10 +152,9 @@ sub getComponents{
 	my %comps;
 	$log->debug("Category is $args{category} and adm ". ref($args{administrator}));
 	while ( my $comp_instance_row = $comp_instance_rs->next ) {
-		$log->debug("One component instance found with " . ref($comp_instance_row));
-		
 		if (($args{category} eq "all")||
 			($args{category} eq $comp_instance_row->get_column('component_category'))){
+			$log->debug("One component instance found with " . ref($comp_instance_row));
 			$comps{$comp_instance_row->get_column('component_instance_id')} = $args{administrator}->getEntity (
 							class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .$comp_instance_row->get_column('component_name') . $comp_instance_row->get_column('component_version'),
 							id => $comp_instance_row->get_column('component_instance_id'),

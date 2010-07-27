@@ -30,7 +30,7 @@ eval {
 	@args = ();
 	my $exec = new_ok("Executor", \@args, $exectest);
 	$exec->execnround(run => 1);
-note("Operation Execution is finish");
+	note("Operation Execution is finish");
 	my $addmotherboard_op = $adm->getNextOp();
 	$addmotherboard_op->cancel();
 	$adm->{db}->txn_rollback;
