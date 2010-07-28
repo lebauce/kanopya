@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::ComponentTemplate;
+package AdministratorDB::Schema::Component;
 
 use strict;
 use warnings;
@@ -6,18 +6,25 @@ use warnings;
 use base 'DBIx::Class';
 
 __PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
-__PACKAGE__->table("component_template");
+__PACKAGE__->table("component");
 __PACKAGE__->add_columns(
-  "component_template_id",
+  "component_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "component_template_name",
+  "component_name",
   {
     data_type => "VARCHAR",
     default_value => undef,
     is_nullable => 0,
     size => 45,
   },
-  "component_template_directory",
+  "component_version",
+  {
+    data_type => "VARCHAR",
+    default_value => undef,
+    is_nullable => 0,
+    size => 45,
+  },
+  "component_category",
   {
     data_type => "VARCHAR",
     default_value => undef,
@@ -25,21 +32,26 @@ __PACKAGE__->add_columns(
     size => 45,
   },
 );
-__PACKAGE__->set_primary_key("component_template_id");
+__PACKAGE__->set_primary_key("component_id");
+__PACKAGE__->has_many(
+  "component_installeds",
+  "AdministratorDB::Schema::ComponentInstalled",
+  { "foreign.component_id" => "self.component_id" },
+);
 __PACKAGE__->has_many(
   "component_instances",
   "AdministratorDB::Schema::ComponentInstance",
-  { "foreign.component_template_id" => "self.component_template_id" },
+  { "foreign.component_id" => "self.component_id" },
 );
 __PACKAGE__->has_many(
-  "component_template_attrs",
-  "AdministratorDB::Schema::ComponentTemplateAttr",
-  { "foreign.template_component_id" => "self.component_template_id" },
+  "component_provideds",
+  "AdministratorDB::Schema::ComponentProvided",
+  { "foreign.component_id" => "self.component_id" },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KkF4SkJWTp0JSQR89IZLCw
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:aevumvDI+mpQEyVUXF1g3Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

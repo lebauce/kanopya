@@ -25,9 +25,9 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("systemimage_id");
 __PACKAGE__->has_many(
-  "component_type_is_installeds",
-  "AdministratorDB::Schema::ComponentTypeIsInstalled",
-  { "foreign.system_image_id" => "self.systemimage_id" },
+  "component_installeds",
+  "AdministratorDB::Schema::ComponentInstalled",
+  { "foreign.systemimage_id" => "self.systemimage_id" },
 );
 __PACKAGE__->belongs_to(
   "distribution_id",
@@ -41,8 +41,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-26 09:55:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hFA1yeXTYvkm2H7yhSDZxg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QUjD43VoQ4+rgBqVZwpLtw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

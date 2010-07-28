@@ -1,8 +1,8 @@
-package Entity::Components::Storage::Lvm;
+package Entity::Component::Webserver::Apache2;
 
 use strict;
 
-use base "Entity::Components::Storage";
+use base "Entity::Component::Webserver";
 
 
 # contructor

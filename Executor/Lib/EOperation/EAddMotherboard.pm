@@ -112,7 +112,7 @@ sub prepare {
 	$log->warn("New motherboard $self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	# Instanciate Cluster Storage component.
-	$c_cstorage->getComponents(search_field => {category=>"storage"}, administrator => $adm);
+	$c_cstorage->getComponents(category=>"storage", administrator => $adm);
 #	print Dumper $self->{_objs}->{motherboard};
 }
 

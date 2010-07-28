@@ -139,6 +139,7 @@ sub new {
 	args: 
 		type : String : Object Type
 		id : int : Object id
+		class_path : String : This is an optionnal parameter which allow to instanciate class_path with other DB tables
 	Return : a new Entity::<type> with data corresponding to <id> (in <type> table)
 	Comment : To modify data in DB call save() on returned obj (after modification)
 	
@@ -147,6 +148,10 @@ sub new {
 sub getEntity {
 	my $self = shift;
     my %args = @_;
+    
+    # entity_dbix will contain resultset row integrated into Entity
+    # entity_class is Entity Class
+    my ($entity_dbix, $entity_class);
 
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{id} or ! defined $args{id})) { 
@@ -154,14 +159,18 @@ sub getEntity {
 	$log->debug( "getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 	
 	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
-	my $entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
+	 $entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
 	
 	# Test if Dbix is get
 	if ( defined $entity_dbix ) {
 		$log->debug( "_getEntityClass with type = $args{type}");
-		my $entity_class = $self->_getEntityClass(type => $args{type});
-		my $extension = $entity_class->extension();
+		if (! exists $args{class_path} or ! defined $args{class_path}){
+			 $entity_class = $self->_getEntityClass(type => $args{type});}
+		else {
+			$entity_class = $self->_getEntityClass(type => $args{type}, class_path => $args{class_path});}
 
+		# Extension Entity Management
+		my $extension = $entity_class->extension();
 		if ($extension){
 			$log->debug("GetEntity with extension");
 			my %attrs;
@@ -414,10 +423,10 @@ sub _getDbix {
 		(! exists $args{id} or ! defined $args{id})) { 
 			throw Mcs::Exception::Internal(error => "Administrator->_getDbix need a table and id named argument!"); }
 
-	my $entitylink = lc($args{table})."_entities";
+#	my $entitylink = lc($args{table})."_entities";
 	return $self->{db}->resultset( $args{table} )->find(  $args{id}, 
-		{ 	'+columns' => [ "$entitylink.entity_id" ], 
-		join => ["$entitylink"] }
+		{ 	'+columns' => [ "entitylink.entity_id" ], 
+		join => ["entitylink"] }
 	);
 	
 }
@@ -488,15 +497,22 @@ sub _newDbix {
 sub _getEntityClass{
 	my $self = shift;
     my %args = @_;
+	my $entity_class;
 
 	if (! exists $args{type} or ! defined $args{type}) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_requireEntity a type named argument!"); }
+		throw Mcs::Exception::Internal(error => "Administrator->_getEntityClass a type named argument!"); }
 
-	my $entity_class = General::getClassEntityFromType(%args);
+	if (defined $args{class_path} && exists $args{class_path}){
+		$entity_class = $args{class_path}}
+	else {
+		$entity_class = General::getClassEntityFromType(%args);}
     my $location = General::getLocFromClass(entityclass => $entity_class);
-
-    require $location;
-    
+	$log->debug("$entity_class at Location $location");
+	eval {
+	    require $location;};
+    if ($@){
+    	throw Mcs::Exception::Internal(error => "Administrator->_getEntityClass type or class_path invalid!");
+    }
 	return $entity_class;
 }
 

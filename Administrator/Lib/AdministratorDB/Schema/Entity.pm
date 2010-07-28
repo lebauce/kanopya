@@ -20,6 +20,11 @@ __PACKAGE__->has_many(
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
+  "component_instance_entities",
+  "AdministratorDB::Schema::ComponentInstanceEntity",
+  { "foreign.entity_id" => "self.entity_id" },
+);
+__PACKAGE__->has_many(
   "distribution_entities",
   "AdministratorDB::Schema::DistributionEntity",
   { "foreign.entity_id" => "self.entity_id" },
@@ -55,8 +60,8 @@ __PACKAGE__->has_many(
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
-  "motherboardtemplate_entities",
-  "AdministratorDB::Schema::MotherboardtemplateEntity",
+  "motherboard_model_entities",
+  "AdministratorDB::Schema::MotherboardModelEntity",
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
@@ -70,8 +75,8 @@ __PACKAGE__->has_many(
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
-  "processortemplate_entities",
-  "AdministratorDB::Schema::ProcessortemplateEntity",
+  "processor_model_entities",
+  "AdministratorDB::Schema::ProcessorModelEntity",
   { "foreign.entity_id" => "self.entity_id" },
 );
 __PACKAGE__->has_many(
@@ -86,8 +91,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-26 09:55:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Lprp0ScWcuHRQEyg5GLYjg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nEiLikg7u7Q+2spaWNB2hw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
