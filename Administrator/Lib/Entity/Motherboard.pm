@@ -28,9 +28,9 @@ my $struct = {motherboardtemplate_id	=> {pattern			=> 'm//s',
 			  motherboard_active		=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  mac_address				=> {pattern 		=> 'm//s',
-											is_mandatory	=> 0,
-											is_extended 	=> 1}
+			  motherboard_mac_address	=> {pattern 		=> 'm//s',
+											is_mandatory	=> 1,
+											is_extended 	=> 0}
 			};
 
 

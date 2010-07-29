@@ -37,11 +37,11 @@ eval {
 	#################################################################################################################################
 	
 	# Obj creation
-	my $obj = $adm->newEntity( type => "Motherboard", params => { motherboard_sn => '12345', mac_address => "00:11:22:33:44:55"} );
+
+	my $obj = $adm->newEntity( type => "Motherboard", params => { motherboard_sn => '12345', motherboard_mac_address => "00:11:22:33:44:55"} );
 		isa_ok( $obj, "Entity::Motherboard", '$obj');
 		is( $obj->{_dbix}->in_storage , 0, "new obj doesn't add in DB" ); 
 		is( $obj->getAttr( name => 'motherboard_sn' ), '12345', "get value of new obj" );
-	
 
 	$obj->setAttr( name => 'motherboard_sn' , value => '54321' );
 		is( $obj->getAttr( name => 'motherboard_sn' ), '54321', "get value after modify new obj" );
@@ -65,7 +65,7 @@ eval {
 		isa_ok( $obj, "Entity::Motherboard", '$obj');
 		is( $obj->{_dbix}->in_storage , 1, "get obj from DB" );
 		is( $obj->getAttr( name => 'motherboard_sn' ), '54321', "get value after get obj" );
-		is( $obj->getAttr( name => 'mac_address' ),  "00:11:22:33:44:55", "get extended value after get obj"  );
+		is( $obj->getAttr( name => 'motherboard_mac_address' ),  "00:11:22:33:44:55", "get extended value after get obj"  );
 
 	$obj->setAttr( name => 'motherboard_sn', value => '666' );
 	$obj->save();
@@ -102,10 +102,10 @@ eval {
 	$adm->{db}->txn_rollback;
 };
 if($@) {
-	#my $error = shitf;
+	my $error = shift;
 	
 	$adm->{db}->txn_rollback;
 	
-	print Dumper $@;
+	print Dumper $error;
 };
 
