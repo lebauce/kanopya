@@ -42,7 +42,6 @@ eval {
 		isa_ok( $obj, "Entity::Motherboard", '$obj');
 		is( $obj->{_dbix}->in_storage , 0, "new obj doesn't add in DB" ); 
 		is( $obj->getAttr( name => 'motherboard_sn' ), '12345', "get value of new obj" );
-	print "problem\n";
 
 	$obj->setAttr( name => 'motherboard_sn' , value => '54321' );
 		is( $obj->getAttr( name => 'motherboard_sn' ), '54321', "get value after modify new obj" );
