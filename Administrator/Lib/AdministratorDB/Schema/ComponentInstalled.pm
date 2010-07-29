@@ -15,19 +15,19 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("component_id", "systemimage_id");
 __PACKAGE__->belongs_to(
-  "systemimage_id",
-  "AdministratorDB::Schema::Systemimage",
-  { systemimage_id => "systemimage_id" },
-);
-__PACKAGE__->belongs_to(
   "component_id",
   "AdministratorDB::Schema::Component",
   { component_id => "component_id" },
 );
+__PACKAGE__->belongs_to(
+  "systemimage_id",
+  "AdministratorDB::Schema::Systemimage",
+  { systemimage_id => "systemimage_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:L4HYM4A9LRW7MFblyHcchw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-29 13:51:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Pdeilkn1W0G/B/OwYBN67Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

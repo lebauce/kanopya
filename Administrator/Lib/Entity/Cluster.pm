@@ -135,6 +135,17 @@ sub new {
     return $self;
 }
 
+=head2 getComponents
+	
+	Desc : This function get components used in a cluster. This function allows to select
+			category of components or all of them.
+	args: 
+		administrator : Administrator : Administrator object to instanciate all components
+		category : String : Component category
+	return : a hashref of components, it is indexed on component_instance_id
+
+=cut
+
 sub getComponents{
 	my $self = shift;
     my %args = @_;

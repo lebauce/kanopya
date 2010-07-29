@@ -105,9 +105,16 @@ sub run {
    		my $opdata = $adm->getNextOp();
    		my $op = $self->_newObj((data => $opdata));
    		if ($op){
-   			$op->prepare();
-   			$op->execute();
-   			$op->finish();
+   			eval {
+   				$op->prepare();
+   				$op->execute();
+   				$op->finish();
+   			};
+			if ($@) {
+   				my $error = shift;
+   				$op->cancel();
+   				$log->error("Error during execution : $@");
+   			}
    		}
    		else {
    			sleep 20;
@@ -132,11 +139,20 @@ sub execnround {
    		$log->warn("Get Next Operation, its type is ".ref($opdata));
    		my $op = $self->_newObj((data => $opdata));
    		if ($op){
-   			$op->prepare();
-   			$log->warn("Preparation finish");
-   			$op->execute();
-   			$log->warn("Execution finish");
-   			$op->finish();
+   			eval {
+   				$log->debug("Operation preparation");
+   				$op->prepare();
+   				$log->debug("Operation execution");
+   				$op->execute();
+   				$log->debug("Operation finishing");
+   				$op->finish();
+   				$log->debug("Operation finished");
+   			};
+			if ($@) {
+   				my $error = shift;
+   				$op->cancel();
+   				$log->error("Error during execution : $@");
+   			}
    			$args{run}--;
    		}
    		else {

@@ -26,7 +26,7 @@ eval {
 	$adm->{db}->txn_begin;
 	
 	note("Operation Addition test");
-	$adm->newOp(type => "AddMotherboard", priority => '100', params => { mac_address => '00:1c:c0:c0:1c:9a', kernel_id => 2, c_storage_id => 1, motherboard_sn => "Test sn"});
+	$adm->newOp(type => "AddMotherboard", priority => '100', params => { motherboard_mac_address => '00:1c:c0:c0:1c:9a', kernel_id => 2, c_storage_id => 1, motherboard_sn => "Test sn"});
 	@args = ();
 	my $exec = new_ok("Executor", \@args, $exectest);
 	$exec->execnround(run => 1);

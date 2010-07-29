@@ -15,19 +15,19 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("entity_id", "motherboard_model_id");
 __PACKAGE__->belongs_to(
-  "motherboard_model_id",
-  "AdministratorDB::Schema::MotherboardModel",
-  { motherboard_model_id => "motherboard_model_id" },
-);
-__PACKAGE__->belongs_to(
   "entity_id",
   "AdministratorDB::Schema::Entity",
   { entity_id => "entity_id" },
 );
+__PACKAGE__->belongs_to(
+  "motherboard_model_id",
+  "AdministratorDB::Schema::MotherboardModel",
+  { motherboard_model_id => "motherboard_model_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-27 13:14:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d1+B9/1bBtjaXnUSBMgx8w
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-29 13:51:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:q1sB1QifZW4WM9ju85cJAQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

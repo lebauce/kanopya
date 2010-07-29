@@ -112,10 +112,14 @@ sub prepare {
 	$log->warn("New motherboard $self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	# Instanciate Cluster Storage component.
-	my $components = $c_cstorage->getComponents(category=>"Storage", administrator => $adm);
+	$self->{_objs}->{storage_components} = $c_cstorage->getComponents(category=>"Storage", administrator => $adm);
+	$self->{_objs}->{export_components} = $c_cstorage->getComponents(category=>"Export", administrator => $adm);
 }
 
-
+sub execute{
+	# Set initiatorName
+	
+}
 
 __END__
 

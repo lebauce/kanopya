@@ -105,6 +105,7 @@ sub prepare {
 	my $adm = Administrator::new();
 	#$adm->changeUser(user_id => $self->{userid});
 	$log->warn("Change user effective : New user is $adm->{_rightschecker}->{_user}");
+	$adm->{db}->txn_begin;
 }
 
 sub execute {
@@ -112,7 +113,13 @@ sub execute {
 }
 
 sub finish {
-	
+	my $adm = Administrator::new();
+	$adm->{db}->txn_commit;
+}
+
+sub cancel {
+	my $adm = Administrator::new();
+	$adm->{db}->txn_rollback;	
 }
 1;
 
