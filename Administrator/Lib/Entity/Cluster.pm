@@ -159,7 +159,7 @@ sub getComponents{
 															  "component_id.component_category",
 															  "component_id.component_version"], 
 													join => ["component_id"]});
-	
+		
 	my %comps;
 	$log->debug("Category is $args{category} and adm ". ref($args{administrator}));
 	while ( my $comp_instance_row = $comp_instance_rs->next ) {
@@ -173,6 +173,48 @@ sub getComponents{
 		}
 	}
 	return \%comps;
+}
+
+=head2 getComponent
+	
+	Desc : This function get component used in a cluster. This function allows to select
+			a particular component with its name and version.
+	args: 
+		administrator : Administrator : Administrator object to instanciate all components
+		name : String : Component name
+		version : String : Component version
+	return : a component instance
+
+=cut
+
+sub getComponent{
+	my $self = shift;
+    my %args = @_;
+
+	if ((! exists $args{administrator} or ! defined $args{administrator}) ||
+		(! exists $args{name} or ! defined $args{name}) ||
+		(! exists $args{version} or ! defined $args{version})) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->getComponent needs a name, version and administrator named argument!"); }
+	
+	my $hash = {'component_id.component_name' => $args{name}, 'component_id.component_version' => $args{version}};
+	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
+											{ '+columns' => [ "component_id.component_name",
+															  "component_id.component_version",
+															  "component_id.component_category"], 
+													join => ["component_id"]});
+		
+	my %comps;
+	$log->debug("name is $args{name}, version is $args{version} and adm ". ref($args{administrator}));
+	while ( my $comp_instance_row = $comp_instance_rs->next ) {
+		$log->debug("Component instance found with " . ref($comp_instance_row));
+			return $args{administrator}->getEntity (
+							class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
+										  $comp_instance_row->get_column('component_name') . 
+										  $comp_instance_row->get_column('component_version'),
+							id => $comp_instance_row->get_column('component_instance_id'),
+							type => "ComponentInstance");
+	}
+	throw Mcs::Exception::Internal::WrongValue(error => "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})");
 }
 
 1;

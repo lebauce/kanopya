@@ -1,8 +1,8 @@
-package Entity::Component::Storage;
+package EEntity::EComponent::EWebserver::EApache2;
 
 use strict;
-use Data::Dumper;
-use base "Entity::Component";
+
+use base "EEntity::EComponent::EWebserver";
 
 
 # contructor
@@ -11,7 +11,6 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-print Dumper $class;
     my $self = $class->SUPER::new( %args );
     return $self;
 }

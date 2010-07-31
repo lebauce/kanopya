@@ -36,7 +36,7 @@ EComponent is an abstract class of component objects
 =head1 METHODS
 
 =cut
-package Entity::EComponent;
+package EEntity::EComponent;
 
 use strict;
 use warnings;
@@ -44,7 +44,7 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
 use lib "../";
-use EEntity;
+use base "EEntity";
 
 my $log = get_logger("executor");
 
@@ -60,7 +60,9 @@ EComponent::new creates a new component object.
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER->new();
+    my %args = @_;
+    
+    my $self = $class->SUPER::new(%args);
 	$self->_init();
     
     return $self;

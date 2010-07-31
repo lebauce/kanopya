@@ -1,8 +1,8 @@
-package Entity::Component::Storage;
+package EEntity::EComponent::EExport;
 
 use strict;
-use Data::Dumper;
-use base "Entity::Component";
+
+use base "EEntity::EComponent";
 
 
 # contructor
@@ -11,7 +11,6 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-print Dumper $class;
     my $self = $class->SUPER::new( %args );
     return $self;
 }

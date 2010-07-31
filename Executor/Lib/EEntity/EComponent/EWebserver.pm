@@ -1,8 +1,8 @@
-package Entity::Component::Export::Iscsitarget;
+package EEntity::EComponent::EWebserver;
 
 use strict;
 
-use base "Entity::Component::Export";
+use base "EEntity::EComponent";
 
 
 # contructor

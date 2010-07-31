@@ -1,4 +1,4 @@
-# EEntity.pm - Entity is the highest general execution object
+# EEntityFactory.pm - Module which instanciate EEntity
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,65 +23,53 @@
 
 =head1 NAME
 
-EEntity - EEntity is the highest general execution object
+EEntityFactory - Module which instanciate EEntity
 
 =head1 SYNOPSIS
 
-
+    use EEntityFactory;
+    
+    # Creates an EEntity
+    my $eentity = EEntityFactory::newEEntity();
 
 =head1 DESCRIPTION
 
-EEntity is the highest general execution object
 
 =head1 METHODS
 
 =cut
-package EEntity;
+package EContext;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
+use lib qw(../../Administrator/Lib ../../Common/Lib);
+
+use McsExceptions;
 
 my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-=head2 new
+my $contexts ={};
 
-    my $mb = Entity->new();
+=head2 newContext
 
-Entity>new($data : hash EntityData) creates a new entity execution object.
+EEntityFactory::newContext(ip) instanciates a new object Context
 
 =cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    if ((! exists $args{data} or ! defined $args{data})) { 
-		throw Mcs::Exception::Internal(error => "EEntity->new ($class) need a data named argument!"); }
-    
-    
-   	$log->warn("Class is : $class");
-    my $self = { _entity => $args{data}};
-    bless $self, $class;
-
-    return $self;
-}
-
-sub _getEntity{
+sub newContext {
 	my $self = shift;
-	return $self->{_entity};
+	my %args = @_;
+	
+	if (! exists $args{ip} or ! defined $args{ip}) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "EContext->newContext need a ip named argument!"); }
+	if (exists $contexts->{$args{ip}} and defined $contexts->{$args{ip}}) {
+		return $contexts->{$args{ip}};
+	}
+	#TODO Check if ip is good format
+	#TODO Test if ip is local or remote
+	#TODO Create Context::Local or Context::
 }
 
-1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

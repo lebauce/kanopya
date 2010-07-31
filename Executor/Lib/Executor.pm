@@ -51,7 +51,11 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(../../Administrator/Lib ../../Common/Lib);
 use General;
+use McsExceptions;
 use Administrator;
+use XML::Simple;
+use Data::Dumper;
+use EEntityFactory;
 
 my $log = get_logger("executor");
 
@@ -85,7 +89,15 @@ Executor::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-
+	
+	$self->{config} = XMLin("../Conf/executor.conf");
+	if ((! exists $self->{config}->{user}->{name} ||
+		 ! defined exists $self->{config}->{user}->{name}) &&
+		(! exists $self->{config}->{user}->{password} ||
+		 ! defined exists $self->{config}->{user}->{password})){ 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
+	my $adm = Administrator->new(login => $self->{config}->{user}->{name},
+								 password => $self->{config}->{user}->{password});
 	return;
 }
 
@@ -99,14 +111,14 @@ sub run {
 	my $self = shift;
 	
 	$log->warn("Before New Administrator");
-	my $adm = Administrator->new(login => "thom", password => "pass");
+	my $adm = Administrator->new();
 	$log->warn("After New Administrator"); 
    	while (1) {
    		my $opdata = $adm->getNextOp();
-   		my $op = $self->_newObj((data => $opdata));
+   		my $op = EEntityFactory::newEEntity((data => $opdata));
    		if ($op){
    			eval {
-   				$op->prepare();
+   				$op->prepare($self->{config}->{cluster});
    				$op->execute();
    				$op->finish();
    			};
@@ -132,16 +144,16 @@ sub execnround {
 	my $self = shift;
 	my %args = @_;
 
-	my $adm = Administrator->new(login => "thom", password => "pass");
+	my $adm = Administrator->new();
 
    	while ($args{run}) {
    		my $opdata = $adm->getNextOp();
    		$log->warn("Get Next Operation, its type is ".ref($opdata));
-   		my $op = $self->_newObj((data => $opdata));
+   		my $op = EEntityFactory::newEEntity((data => $opdata));
    		if ($op){
    			eval {
    				$log->debug("Operation preparation");
-   				$op->prepare();
+   				$op->prepare(internal_cluster => $self->{config}->{cluster});
    				$log->debug("Operation execution");
    				$op->execute();
    				$log->debug("Operation finishing");
@@ -149,9 +161,11 @@ sub execnround {
    				$log->debug("Operation finished");
    			};
 			if ($@) {
-   				my $error = shift;
+   				my $error = $@;
    				$op->cancel();
-   				$log->error("Error during execution : $@");
+   				$log->error("Error during execution : $error");
+   				print Dumper $error;
+   				$error->rethrow();
    			}
    			$args{run}--;
    		}
@@ -161,26 +175,9 @@ sub execnround {
    	} 
 }
 
-=head2 _newObj
 
-Executor->_newObj($objdata) instanciates a new object from objectdata.
 
-=cut
 
-sub _newObj {
-	my $self = shift;
-	my %args = @_;
-	
-	my $data = $args{data};
-	my $class = General::getClassEEntityFromEntity(entity => $data);
-	$log->debug("GetClassEEntityFromEntity return $class"); 
-	my $location = General::getLocFromClass(entityclass => $class);
-	$log->debug("General::getLocFromClass return $location"); 
-	
-    require $location;
-
-    return $class->new((data => $args{data}));
-}
 
 1;
 

@@ -423,12 +423,17 @@ sub _getDbix {
 		(! exists $args{id} or ! defined $args{id})) { 
 			throw Mcs::Exception::Internal(error => "Administrator->_getDbix need a table and id named argument!"); }
 
+	my $dbix;
 #	my $entitylink = lc($args{table})."_entities";
-	return $self->{db}->resultset( $args{table} )->find(  $args{id}, 
-		{ 	'+columns' => [ "entitylink.entity_id" ], 
-		join => ["entitylink"] }
-	);
-	
+	eval {
+		$dbix = $self->{db}->resultset( $args{table} )->find(  $args{id}, 
+										{ 	'+columns' => [ "entitylink.entity_id" ], 
+										join => ["entitylink"] });};
+	if ($@) {
+		my $error = $@;
+		throw Mcs::Exception::Internal(error => "Administrator->_getDbix error " . $error);
+	}
+	return $dbix;
 }
 
 =head2 _getAllDbix

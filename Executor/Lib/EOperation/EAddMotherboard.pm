@@ -91,34 +91,48 @@ sub _init {
 
 sub prepare {
 	my $self = shift;
+	my $args = @_;
 	$self->SUPER::prepare();
 
-	$log->warn("After Eoperation prepare and before get Administrator singleton");
+		$log->warn("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
+#	my $exec = Executor->new();
 	my $params = $self->_getOperation()->getParams();
 
-	$log->warn("After administator instanciation, before newObj");
 	$self->{_objs} = {};
 
 	# Get Storage Cluster
-	$log->warn("adm->getObj of Cluster with id : $params->{c_storage_id}");
-	my $c_cstorage = $adm->getEntity(type => "Cluster", id => $params->{c_storage_id});
-	# Delete c_storage_id to have a ref on hash with motherboard parms
-	delete($params->{c_storage_id});
+	$log->debug("Get Nas internal cluster");
+#	my $c_cstorage = $exec->getInternalCluster(clustertype => "nas");
+	$self->{internal_cluster} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
 
 	# Instanciate new Motherboard Entity
-	$log->warn("adm->newObj of Motherboard");
+	$log->warn("adm->newEntity of Motherboard");
 	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);
-	$log->warn("New motherboard $self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+	$log->warn("New motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	# Instanciate Cluster Storage component.
-	$self->{_objs}->{storage_components} = $c_cstorage->getComponents(category=>"Storage", administrator => $adm);
-	$self->{_objs}->{export_components} = $c_cstorage->getComponents(category=>"Export", administrator => $adm);
+	my $tmp = $c_cstorage->getComponent(name=>"Lvm",
+									   version => "2",
+									   administrator => $adm);
+	print "Value return by getcomponent ". ref($tmp);
+	$self->{_objs}->{component_storage} = EEntityFactory::newEEntity(data => $tmp);
+	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
+
+	$self->{_objs}->{component_export} = EEntityFactory::newEEntity(data => $c_cstorage->getComponent(name=>"Iscsitarget",
+																					  version=> "1",
+																					  administrator => $adm));
+	$log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));
 }
 
 sub execute{
+	my $self = shift;
+	$self->SUPER::execute();
+
 	# Set initiatorName
-	
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
+										   value => $self->{_objs}->{component_export}->generateInitiatorname(id => $self->{_objs}->{motherboard}));
+
 }
 
 __END__

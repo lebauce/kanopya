@@ -85,7 +85,7 @@ Eoperation::_init is a private method used to define internal parameters.
 
 sub _init {
 	my $self = shift;
-	
+	$self->{internal_cluster} = {};
 	return;
 }
 
@@ -102,7 +102,7 @@ sub prepare {
 	$log->warn("Class is : $id");
 	$self->{userid} = $self->_getOperation()->getAttr(attr_name => "user_id");
 	$log->warn("Change user by user_id : $self->{userid}");	
-	my $adm = Administrator::new();
+	my $adm = Administrator->new();
 	#$adm->changeUser(user_id => $self->{userid});
 	$log->warn("Change user effective : New user is $adm->{_rightschecker}->{_user}");
 	$adm->{db}->txn_begin;
@@ -113,7 +113,7 @@ sub execute {
 }
 
 sub finish {
-	my $adm = Administrator::new();
+	my $adm = Administrator->new();
 	$adm->{db}->txn_commit;
 }
 

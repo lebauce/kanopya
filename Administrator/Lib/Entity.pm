@@ -151,9 +151,11 @@ sub asString {
 	return ref $self, " ( ",  @s,  " )";
 }
 
-=head2 setValue
+=head2 setAttr
 	
-	args: name, value
+	args: 
+		name : String : Field name
+		value : String : Value
 	set entity param 'name' to 'value'
 	Follow 'ext' link to set extended params
 	

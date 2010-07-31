@@ -30,6 +30,9 @@ my $struct = {motherboardtemplate_id	=> {pattern			=> 'm//s',
 											is_extended 	=> 0},
 			  motherboard_mac_address	=> {pattern 		=> 'm//s',
 											is_mandatory	=> 1,
+											is_extended 	=> 0},
+			  motherboard_initiatorname	=> {pattern 		=> 'm//s',
+											is_mandatory	=> 0,
 											is_extended 	=> 0}
 			};
 
