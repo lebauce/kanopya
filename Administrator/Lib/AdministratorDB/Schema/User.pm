@@ -40,6 +40,11 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("user_id");
 __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
 __PACKAGE__->has_many(
+  "messages",
+  "AdministratorDB::Schema::Message",
+  { "foreign.user_id" => "self.user_id" },
+);
+__PACKAGE__->has_many(
   "operations",
   "AdministratorDB::Schema::Operation",
   { "foreign.user_id" => "self.user_id" },
@@ -51,8 +56,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-07-29 13:54:58
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wX6pl0tj31r72XWLNr6sZQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-01 03:07:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DQPA9a5A3n+8SVOcZ8JVvg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

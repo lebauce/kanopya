@@ -59,11 +59,11 @@ EEntityFactory::newEEntity($objdata) instanciates a new object EEntity from Enti
 =cut
 
 sub newEEntity {
-	my $self = shift;
+#	my $self = shift;
 	my %args = @_;
 	
 	if (! exists $args{data} or ! defined $args{data}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Executor->_newEEntity need a data named argument!"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "EntityFactory->newEEntity need a data named argument!"); }
 	my $data = $args{data};
 	my $class = General::getClassEEntityFromEntity(entity => $data);
 	$log->debug("GetClassEEntityFromEntity return $class"); 

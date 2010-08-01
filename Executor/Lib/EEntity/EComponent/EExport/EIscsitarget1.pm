@@ -21,6 +21,6 @@ sub generateInitiatorname{
 
 	if ((! exists $args{id} or ! defined $args{id})) { 
 		throw Mcs::Exception::Internal(error => "EEntity::EStorage::EIscsitarget1->generateInitiatorname need an id named argument to generate initiatorname!"); }
-	
+	return "test";
 }
 1;

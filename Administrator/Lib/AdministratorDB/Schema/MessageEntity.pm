@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::ComponentInstalled;
+package AdministratorDB::Schema::MessageEntity;
 
 use strict;
 use warnings;
@@ -6,28 +6,28 @@ use warnings;
 use base 'DBIx::Class';
 
 __PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
-__PACKAGE__->table("component_installed");
+__PACKAGE__->table("message_entity");
 __PACKAGE__->add_columns(
-  "component_id",
+  "entity_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "systemimage_id",
+  "message_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
-__PACKAGE__->set_primary_key("component_id", "systemimage_id");
+__PACKAGE__->set_primary_key("entity_id", "message_id");
 __PACKAGE__->belongs_to(
-  "component_id",
-  "AdministratorDB::Schema::Component",
-  { component_id => "component_id" },
+  "entity_id",
+  "AdministratorDB::Schema::Entity",
+  { entity_id => "entity_id" },
 );
 __PACKAGE__->belongs_to(
-  "systemimage_id",
-  "AdministratorDB::Schema::Systemimage",
-  { systemimage_id => "systemimage_id" },
+  "message_id",
+  "AdministratorDB::Schema::Message",
+  { message_id => "message_id" },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-01 03:07:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K1inBWHufd6dsklr/fm9uQ
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ft0hxLGNPwjHKlqg0flA6g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

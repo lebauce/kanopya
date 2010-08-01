@@ -43,7 +43,8 @@ if ($@){
    	{
 		print "Mcs Exception\n";
    }
-	$adm->{db}->txn_rollback;}
+	$adm->{db}->txn_rollback;
+}
 
 
 #pass($exectest);

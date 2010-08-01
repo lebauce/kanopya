@@ -91,10 +91,13 @@ sub _init {
 
 sub prepare {
 	my $self = shift;
-	my $args = @_;
+	my %args = @_;
 	$self->SUPER::prepare();
 
-		$log->warn("After Eoperation prepare and before get Administrator singleton");
+
+	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddMotherboard->prepare need an internal_cluster named argument!"); }
+	$log->warn("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
 #	my $exec = Executor->new();
 	my $params = $self->_getOperation()->getParams();
@@ -104,7 +107,7 @@ sub prepare {
 	# Get Storage Cluster
 	$log->debug("Get Nas internal cluster");
 #	my $c_cstorage = $exec->getInternalCluster(clustertype => "nas");
-	$self->{internal_cluster} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
 
 	# Instanciate new Motherboard Entity
 	$log->warn("adm->newEntity of Motherboard");
@@ -112,14 +115,14 @@ sub prepare {
 	$log->warn("New motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	# Instanciate Cluster Storage component.
-	my $tmp = $c_cstorage->getComponent(name=>"Lvm",
-									   version => "2",
-									   administrator => $adm);
+	my $tmp = $self->{nas}->getComponent(name=>"Lvm",
+										 version => "2",
+										 administrator => $adm);
 	print "Value return by getcomponent ". ref($tmp);
 	$self->{_objs}->{component_storage} = EEntityFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 
-	$self->{_objs}->{component_export} = EEntityFactory::newEEntity(data => $c_cstorage->getComponent(name=>"Iscsitarget",
+	$self->{_objs}->{component_export} = EEntityFactory::newEEntity(data => $self->{nas}->getComponent(name=>"Iscsitarget",
 																					  version=> "1",
 																					  administrator => $adm));
 	$log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));
@@ -128,11 +131,26 @@ sub prepare {
 sub execute{
 	my $self = shift;
 	$self->SUPER::execute();
+	my $adm = Administrator->new();
 
 	# Set initiatorName
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
 										   value => $self->{_objs}->{component_export}->generateInitiatorname(id => $self->{_objs}->{motherboard}));
-
+	#TODO voir si ou met on les fonctions getInternalIP et getHostname
+	# Set internal ip
+	#TODO getInternalip et getHostname pourrait etre dans le EMotherboard ??
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip",
+										   value => $adm->getFreeInternalIP());
+	# Set Hostname
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
+										   value => $self->{_objs}->{motherboard}->generateHostname());
+	#TODO On aurait pu faire une méthode dans le EMotherboard permettant de créer son etc (rassemble les appelles de creation)
+	#TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
+	$self->{_objs}->{component_storage}->createDisk(name => $self->{_objs}->{motherboard}->getEtcName(),
+													size => "52M",
+													filesystem => "ext3");
+	# AddMotherboard finish, just save the Entity in DB
+	$self->{_objs}->{motherboard}->save();
 }
 
 __END__

@@ -31,6 +31,12 @@ my $struct = {motherboardtemplate_id	=> {pattern			=> 'm//s',
 			  motherboard_mac_address	=> {pattern 		=> 'm//s',
 											is_mandatory	=> 1,
 											is_extended 	=> 0},
+			  motherboard_internal_ip	=> {pattern 		=> 'm//s',
+											is_mandatory	=> 0,
+											is_extended 	=> 0},
+			  motherboard_hostname		=> {pattern 		=> 'm//s',
+											is_mandatory	=> 0,
+											is_extended 	=> 0},
 			  motherboard_initiatorname	=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
 											is_extended 	=> 0}
@@ -126,5 +132,16 @@ sub new {
     return $self;
 }
 
+sub getEtcName {
+	my $self = shift;
+	#TODO getEtcName
+	my $mac = $self->getAttr(name => "motherboard_mac_address");
+	$mac =~ "s/\:/_/g;";
+	return "etc_". $mac;
+}
 
+sub generateHostname{
+#TODO generateHostname
+	return "node002";
+}
 1;
