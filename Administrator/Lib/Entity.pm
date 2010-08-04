@@ -336,6 +336,15 @@ sub delete {
 
 }
 
+
+sub activate {
+	my $self = shift;
+
+}
+
+sub deactivate{
+	
+}
 # destructor
     
 sub DESTROY {}

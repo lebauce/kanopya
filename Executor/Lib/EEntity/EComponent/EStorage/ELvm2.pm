@@ -25,11 +25,11 @@ sub createDisk{
 		throw Mcs::Exception::Internal::IncorrectParam(error => "ELvm2->createDisk need a name, size and filesystem named argument!"); }
 	#TODO Get main vg could be in entity object or EEntity
 	my $vg = $self->_getEntity()->getMainVg();
-	$self->createLv(lvm2_vg_id =>$vg, lvm2_lv_name => $args{name},
+	$self->lvCreate(lvm2_vg_id =>$vg, lvm2_lv_name => $args{name},
 					lvm2_lv_filesystem =>$args{filesystem}, lvm2_lv_size => $args{size});
 }
 
-sub createLv{
+sub lvCreate{
 	my $self = shift;
 	my %args = @_;
 	
@@ -40,7 +40,7 @@ sub createLv{
 		throw Mcs::Exception::Internal::IncorrectParam(error => "ELvm2->createLV need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!"); }
 
 	#TODO Real creation of LV
-	$self->_getEntity()->createLv(%args);
+	$self->_getEntity()->lvCreate(%args);
 	
 }
 1;

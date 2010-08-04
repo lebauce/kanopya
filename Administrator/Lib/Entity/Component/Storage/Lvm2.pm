@@ -21,7 +21,7 @@ sub getMainVg{
 	return "1";
 }
 
-sub createLv{
+sub lvCreate{
 	my $self = shift;
 	my %args = @_;
 	
