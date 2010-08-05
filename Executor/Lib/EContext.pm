@@ -52,24 +52,33 @@ my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-my $contexts ={};
-
 =head2 newContext
 
-EEntityFactory::newContext(ip) instanciates a new object Context
+EEntityFactory::newContext(ip_source, ip_destination) instanciates a new object Context
 
 =cut
-sub newContext {
+sub new {
 	my $self = shift;
 	my %args = @_;
 	
-	if (! exists $args{ip} or ! defined $args{ip}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EContext->newContext need a ip named argument!"); }
-	if (exists $contexts->{$args{ip}} and defined $contexts->{$args{ip}}) {
-		return $contexts->{$args{ip}};
+	if ((! exists $args{ip_source} or ! defined $args{ip_source}) ||
+		(! exists $args{ip_destination} or ! defined $args{ip_destination}))
+	{ 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "EContext->new need ip_source and ip_destination named argument!"); }
+	
+	#TODO Check if ips is good format
+	#Create EContext::Local or EContext::SSH
+	if($args{ip_source} eq $args{ip_destination}) {
+		# EContext::Local
+		$log->debug("ip_source & ip_destination are the same, using EContext::Local");
+		use EContext::Local;
+		return EContext::Local->new();
+	} else {
+		# EContext::SSH
+		use EContext::SSH;
+		my $ssh = EContext::SSH->new(ip => $args{ip_destination});
+		return $ssh;
 	}
-	#TODO Check if ip is good format
-	#TODO Test if ip is local or remote
-	#TODO Create Context::Local or Context::
 }
 
+1;

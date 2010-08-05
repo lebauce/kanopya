@@ -13,6 +13,10 @@ use Exception::Class (
 	isa => 'Mcs::Exception',
 	description => 'MicroCluster System Database exception',
     },
+    Mcs::Exception::Network => {
+	isa => 'Mcs::Exception',
+	description => 'MicroCluster SSH communication exception',
+    },
     Mcs::Exception::Internal => {
 	isa => 'Mcs::Exception',
 	description => 'MicroCluster System Internal exception',
