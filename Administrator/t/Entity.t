@@ -10,7 +10,7 @@ use Administrator;
 
 my $adm = Administrator->new( login =>'tortue', password => 'pass' );
 
-my @users = $adm->getAllObjs(type => 'User');
+my @users = $adm->getEntities(type => 'User');
 
 my @targetgroups = ();
 

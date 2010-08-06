@@ -1,4 +1,4 @@
-# EEntityFactory.pm - Module which instanciate EEntity
+# EContext.pm - Abstract Class for EContext Classes 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,53 +23,25 @@
 
 =head1 NAME
 
-EEntityFactory - Module which instanciate EEntity
-
-=head1 SYNOPSIS
-
-    use EEntityFactory;
-    
-    # Creates an EEntity
-    my $eentity = EEntityFactory::newEEntity();
-
-=head1 DESCRIPTION
-
-
-=head1 METHODS
+EContext : Abstract class for EContext Classes
 
 =cut
+
 package EContext;
 
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(../../Administrator/Lib ../../Common/Lib);
-
-use McsExceptions;
-
-my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-my $contexts ={};
+=head2 execute
 
-=head2 newContext
-
-EEntityFactory::newContext(ip) instanciates a new object Context
+execute(command => $command)
+This method must be implemented in the child classes
 
 =cut
-sub newContext {
-	my $self = shift;
-	my %args = @_;
-	
-	if (! exists $args{ip} or ! defined $args{ip}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EContext->newContext need a ip named argument!"); }
-	if (exists $contexts->{$args{ip}} and defined $contexts->{$args{ip}}) {
-		return $contexts->{$args{ip}};
-	}
-	#TODO Check if ip is good format
-	#TODO Test if ip is local or remote
-	#TODO Create Context::Local or Context::
-}
+sub execute {}
 
+
+1;

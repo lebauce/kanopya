@@ -328,6 +328,19 @@ sub delete {
 
 }
 
+
+sub activate {
+	my $self = shift;
+	if (defined $self->ATTR_DEF->{active}) {
+		$self->setAttr(name => 'active', value => 1);}
+	else {
+		throw Mcs::Exception::Internal(error => "Entity->activate Entity ". ref($self) . " unable to activate !");
+	}
+}
+
+sub deactivate{
+	
+}
 # destructor
     
 sub DESTROY {}
