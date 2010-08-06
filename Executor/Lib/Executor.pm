@@ -55,7 +55,7 @@ use McsExceptions;
 use Administrator;
 use XML::Simple;
 use Data::Dumper;
-use EEntityFactory;
+use EFactory;
 
 my $log = get_logger("executor");
 
@@ -115,7 +115,7 @@ sub run {
 	$log->warn("After New Administrator"); 
    	while (1) {
    		my $opdata = $adm->getNextOp();
-   		my $op = EEntityFactory::newEEntity(data => $opdata);
+   		my $op = EFactory::newEEntity(data => $opdata);
    		if ($op){
    			eval {
    				$op->prepare($self->{config}->{cluster});
@@ -149,7 +149,7 @@ sub execnround {
    	while ($args{run}) {
    		my $opdata = $adm->getNextOp();
    		$log->warn("Get Next Operation, its type is ".ref($opdata));
-   		my $op = EEntityFactory::newEEntity(data => $opdata);
+   		my $op = EFactory::newEEntity(data => $opdata);
    		if ($op){
    			eval {
    				$log->debug("Operation preparation");

@@ -1,4 +1,4 @@
-# Local.pm - EContext for local execution using system buitin function
+# Local.pm - EContext::Local for local execution using system buitin function
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -49,6 +49,14 @@ my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
+=head2 $localcontext
+
+$localcontext use to make this class a singleton
+
+=cut
+
+my $localcontext;
+
 =head2 new
 
     
@@ -56,9 +64,14 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 sub new {
     my $class = shift;
-    my %args = @_;
+    # do not reinstanciate local context, reuse 
+    if(defined $localcontext) {
+    	$log->debug("EContext::Local instance already exists, return it");
+    	return $localcontext;
+    }
     my $self = {};
     bless $self, $class;
+    $localcontext = $self;
 	return $self;
 }
 
@@ -69,7 +82,7 @@ execute ( command )
 	args:
 		command : string: command to execute
 	return:
-		result ref hash containing stdout, stderr and exit code of execution
+		result ref hash containing resulting stdout and stderr  
 	
 	WARNING: in your command, don't use stderr redirection ( 2> )
     
@@ -83,6 +96,7 @@ sub execute {
 			error => "EContext::Local->execute need a command named argument!"); 
 	}
 	
+	# command must no contain stderr redirection !
 	if($args{command} =~ m/2>/) {
 		throw Mcs::Exception::Internal::IncorrectParam(
 			error => "EContext::Local->execute : command must not contain stderr redirection (2>)!"); 
@@ -97,6 +111,15 @@ sub execute {
 	return $result;	
 }
 
+=head2 DESTROY
+
+	destructor : remove stored instance    
+    
+=cut
+
+sub DESTROY {
+	$localcontext = undef;
+}
 
 1;
 

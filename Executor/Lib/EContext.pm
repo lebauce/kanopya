@@ -1,4 +1,4 @@
-# EEntityFactory.pm - Module which instanciate EEntity
+# EContext.pm - Abstract Class for EContext Classes 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,62 +23,25 @@
 
 =head1 NAME
 
-EEntityFactory - Module which instanciate EEntity
-
-=head1 SYNOPSIS
-
-    use EEntityFactory;
-    
-    # Creates an EEntity
-    my $eentity = EEntityFactory::newEEntity();
-
-=head1 DESCRIPTION
-
-
-=head1 METHODS
+EContext : Abstract class for EContext Classes
 
 =cut
+
 package EContext;
 
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(../../Administrator/Lib ../../Common/Lib);
-
-use McsExceptions;
-
-my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-=head2 newContext
+=head2 execute
 
-EEntityFactory::newContext(ip_source, ip_destination) instanciates a new object Context
+execute(command => $command)
+This method must be implemented in the child classes
 
 =cut
-sub new {
-	my $self = shift;
-	my %args = @_;
-	
-	if ((! exists $args{ip_source} or ! defined $args{ip_source}) ||
-		(! exists $args{ip_destination} or ! defined $args{ip_destination}))
-	{ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EContext->new need ip_source and ip_destination named argument!"); }
-	
-	#TODO Check if ips is good format
-	#Create EContext::Local or EContext::SSH
-	if($args{ip_source} eq $args{ip_destination}) {
-		# EContext::Local
-		$log->debug("ip_source & ip_destination are the same, using EContext::Local");
-		use EContext::Local;
-		return EContext::Local->new();
-	} else {
-		# EContext::SSH
-		use EContext::SSH;
-		my $ssh = EContext::SSH->new(ip => $args{ip_destination});
-		return $ssh;
-	}
-}
+sub execute {}
+
 
 1;

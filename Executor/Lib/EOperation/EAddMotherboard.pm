@@ -119,10 +119,10 @@ sub prepare {
 										 version => "2",
 										 administrator => $adm);
 	print "Value return by getcomponent ". ref($tmp);
-	$self->{_objs}->{component_storage} = EEntityFactory::newEEntity(data => $tmp);
+	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 
-	$self->{_objs}->{component_export} = EEntityFactory::newEEntity(data => $self->{nas}->getComponent(name=>"Iscsitarget",
+	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->getComponent(name=>"Iscsitarget",
 																					  version=> "1",
 																					  administrator => $adm));
 	$log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));

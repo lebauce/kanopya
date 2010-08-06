@@ -1,4 +1,4 @@
-# EEntityFactory.pm - Module which instanciate EEntity
+# EFactory.pm - Module which instanciate EEntity and EContext
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,14 +23,17 @@
 
 =head1 NAME
 
-EEntityFactory - Module which instanciate EEntity
+EFactory - Module which instanciate EEntity and EContext
 
 =head1 SYNOPSIS
 
-    use EEntityFactory;
+    use EFactory;
     
     # Creates an EEntity
-    my $eentity = EEntityFactory::newEEntity();
+    my $eentity = EFactory::newEEntity();
+    
+    # Create an EContext
+    my $econtext = EFactory::newEContext
 
 =head1 DESCRIPTION
 
@@ -38,7 +41,7 @@ EEntityFactory - Module which instanciate EEntity
 =head1 METHODS
 
 =cut
-package EEntityFactory;
+package EFactory;
 
 use strict;
 use warnings;
@@ -54,7 +57,7 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 newEEntity
 
-EEntityFactory::newEEntity($objdata) instanciates a new object EEntity from Entity.
+EFactory::newEEntity($objdata) instanciates a new object EEntity from Entity.
 
 =cut
 
@@ -74,6 +77,35 @@ sub newEEntity {
 
     return $class->new(data => $args{data});
 }
+
+=head2 newEContext
+
+EFactory::newEContext(ip_source, ip_destination) instanciates a new object EContext.
+
+=cut
+
+sub newEContext {
+	my %args = @_;
+	if ((! exists $args{ip_source} or ! defined $args{ip_source}) ||
+		(! exists $args{ip_destination} or ! defined $args{ip_destination}))
+	{ 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "EFactory::newEContext need ip_source and ip_destination named argument!"); }
+	
+	#TODO Check if ips is good format
+	#Create EContext::Local or EContext::SSH
+	if($args{ip_source} eq $args{ip_destination}) {
+		# EContext::Local
+		$log->debug("ip_source & ip_destination are the same, using EContext::Local");
+		use EContext::Local;
+		return EContext::Local->new();
+	} else {
+		# EContext::SSH
+		use EContext::SSH;
+		my $ssh = EContext::SSH->new(ip => $args{ip_destination});
+		return $ssh;
+	}
+}
+
 1;
 
 __END__

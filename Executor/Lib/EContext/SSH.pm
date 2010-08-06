@@ -55,22 +55,27 @@ my $log = get_logger("executor");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-=head2 new
+=head $sshcontexts
 
-    
+store EContext::SSH instances to avoid many ssh connections on the same host 
+
 =cut
 
-# to keep instances and retrieve them without reinstanciate an object
-my $connections = {};
-sub connections { return $connections; }
+my $sshcontexts = {};
 
+=head2 new
+
+constructor
+    
+=cut
 
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    if(exists $connections->{$args{ip}}) {
-    	return $connections->{$args{ip}};
+    # do not reinstanciate existing ssh context, reuse 
+    if(exists $sshcontexts->{$args{ip}}) {
+    	$log->debug("EContext::SSH instance for $args{ip} already exists, return it");
+    	return $sshcontexts->{$args{ip}};
     }
     
     my $self = {
@@ -95,7 +100,8 @@ sub new {
 	#if($@) {	
 	#	throw Mcs::Exception::Network(error => "EContext::SSH->new : $@"); 
 	#}
-	bless $self, $class;	
+	bless $self, $class;
+	$sshcontexts->{$args{ip}} = $self;	
 	return $self;
 }
 
@@ -107,6 +113,7 @@ sub new {
 
 sub _init {
 	my $self = shift;
+	$log->debug("Initialise ssh connection to $self->{ip}");
 	my $m  = GRID::Machine->new(
 		host => "root\@$self->{ip}",	# host to contact
 		prefix => '/tmp/perl5lib',				# directory on remote host to install perl code
@@ -117,7 +124,6 @@ sub _init {
 		sendstdout => 1							# ?
 	);
 	$self->{machine} = $m;
-	$connections->{$self->{ip}} = $self;
 }
 
 
@@ -171,12 +177,13 @@ sub execute {
 
 =head2 DESTROY
 
+	destructor : remove stored instance    
+    
 =cut
 
 sub DESTROY {
 	my $self = shift;
-	$log->debug("Removing instance from catalog");
-	delete $connections->{$self->{ip}}
+	delete $sshcontexts->{$self->{ip}};
 }
 
 1;
