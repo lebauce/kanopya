@@ -20,8 +20,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("node_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-01 03:07:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:USjNPRvdEgXI1wJOjkBICw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-06 17:28:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kQJ/XV1lyVXBu8apetpWEQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

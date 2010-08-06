@@ -71,7 +71,7 @@ eval {
 	$obj->save();
 	$obj = $adm->getEntity( type => "Motherboard", id => $obj_id );
 		is( $obj->getAttr( name => 'motherboard_sn' ), '666', "get value after modify obj" );
-		
+	$obj->activate();
 	$obj->delete();
 		is( $obj->{_dbix}->in_storage , 0, "delete in DB" );
 	
