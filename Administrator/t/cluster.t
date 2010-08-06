@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
 
-
-use lib qw(../Lib ../../Common/Lib);
+use FindBin qw($Bin);
+use lib "$Bin/../Lib", "$Bin/../../Common/Lib";
+#use lib qw(../Lib ../../Common/Lib);
 
 use McsExceptions;
 

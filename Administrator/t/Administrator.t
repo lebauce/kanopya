@@ -1,12 +1,7 @@
 #!/usr/bin/perl -w
-# $Bin is full path to this file directory
-# we can now call this script from everywhere
-# warn: not secure
-# TODO: il y a surement mieux à faire pour gérer les path
-#use FindBin qw($Bin);
-#use lib "$Bin/../Lib";
 
-use lib qw(../Lib ../../Common/Lib);
+use FindBin qw($Bin);
+use lib "$Bin/../Lib", "$Bin/../../Common/Lib";
 
 use McsExceptions;
 
@@ -102,10 +97,10 @@ eval {
 	$adm->{db}->txn_rollback;
 };
 if($@) {
-	my $error = shift;
+	my $error = $@;
 	
 	$adm->{db}->txn_rollback;
 	
-	print Dumper $error;
+	$error->rethrow(); # we wan't fail test if exception
 };
 

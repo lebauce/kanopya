@@ -1,9 +1,9 @@
 use FindBin qw($Bin);
-use lib "$Bin/../Lib";
+use lib "$Bin/../Lib", "$Bin/../../Common/Lib";
 use Data::Dumper;
 
 use Log::Log4perl;;
-Log::Log4perl->init("../Conf/log.conf");
+Log::Log4perl->init("$Bin/../Conf/log.conf");
 
 use Test::More 'no_plan';
 use Administrator;
