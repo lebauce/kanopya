@@ -1,11 +1,8 @@
 #!/usr/bin/perl -w
-# $Bin is full path to this file directory
-# we can now call this script from everywhere
-# warn: not secure
-# TODO: il y a surement mieux à faire pour gérer les path
-#use FindBin qw($Bin);
-#use lib "$Bin/../Lib";
-use lib qw(../Lib); # same as above
+
+use FindBin qw($Bin);
+use lib "$Bin/../Lib";
+
 use Log::Log4perl qw(:easy);
 Log::Log4perl->init('../Conf/log.conf');
 

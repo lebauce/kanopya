@@ -28,14 +28,14 @@ my $cgi = new CGI;
 if ( $cgi->param("submit_delete") )
 {
 	my $mb_id = $cgi->param("mb_id");
-	my $mb = $adm->getObj( type => "Motherboard", id => $mb_id );
+	my $mb = $adm->getEntity( type => "Motherboard", id => $mb_id );
 	$mb->delete();
 }
 
 
 ######### Display all MB list ###################
 
-my @allMb = $adm->getAllObjs( type => "Motherboard" );
+my @allMb = $adm->getEntities( type => "Motherboard" );
 
 # build loop data for html template and build hash for better motherboard access ( with 'id' as key) 
 my @loop_data = ();
@@ -47,12 +47,12 @@ my $selected_mb;
 
 foreach $mb ( @allMb )
 {
-	my $mb_id = $mb->getValue( name => 'motherboard_id');
+	my $mb_id = $mb->getAttr( name => 'motherboard_id');
 	push( @loop_data, { 'id' =>  $mb_id,
-						'sn' =>  $mb->getValue( name => 'motherboard_sn'),
-						'is_active' =>  $mb->getValue( name => 'motherboard_active'),
+						'sn' =>  $mb->getAttr( name => 'motherboard_sn'),
+						'is_active' =>  $mb->getAttr( name => 'motherboard_active'),
 						} );
-	if ( $selected_mb_id == $mb_id ) {
+	if ( $selected_mb_id && $selected_mb_id == $mb_id ) {
 		$selected_mb = $mb;
 	}
 }
@@ -64,25 +64,14 @@ $template->param(MOTHERBOARDS => \@loop_data);
 # if a motherboard is selected then we set info
 if ( $selected_mb )
 {
-	my %mb_params = $selected_mb->getAllParams();
+	my %mb_params = $selected_mb->getAttrs();
 	$template->param(SELECTED_MB_ID => $mb_params{'motherboard_id'} );
 	$template->param(SELECTED_MB_SN => $mb_params{'motherboard_sn'});
-	$template->param(SELECTED_MB_DESC => $mb_params{'motherboard_dec'});
+	$template->param(SELECTED_MB_MAC => $mb_params{'motherboard_mac_address'});
+	$template->param(SELECTED_MB_DESC => $mb_params{'motherboard_desc'});
 	$template->param(SELECTED_MB_ACTIVE => $mb_params{'motherboard_active'});
 	
-		#my $i = -1;
-		#while ( ref $result->[++$i] )
-		#{
-		#	if ( $mb_id == $result->[$i]{'id'} )
-		#	{
-		#		# we found the selected mb
-		#		$template->param(SELECTED_MB_ID => $result->[$i]{'id'});
-		#		$template->param(SELECTED_MB_MODEL => $result->[$i]{'model'});
-		#	}
-		#}
-
-
-	}
+}
 
 
 ################################################################

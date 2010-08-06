@@ -7,7 +7,7 @@ use base "Entity";
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 
-use constant ATTR_DEF => {motherboardtemplate_id	=> {pattern			=> 'm//s',
+use constant ATTR_DEF => {motherboard_model_id	=> {pattern			=> 'm//s',
 											is_mandatory	=> 0,
 											is_extended		=> 0},
 			  processortemplate_id		=> {pattern			=> 'm//m',
@@ -108,8 +108,10 @@ sub checkAttr{
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
+
 	if (!exists $attr_def->{$args{name}}){
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid name"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'"); }
+
 	# Here check attr value
 }
 
