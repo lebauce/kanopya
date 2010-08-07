@@ -46,16 +46,19 @@ Administrator is the main object use to create administrator objects
 
 package Administrator;
 
+
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use lib qw(. ../../Common/Lib);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+#use lib qw(. ../../Common/Lib);
 use AdministratorDB::Schema;
 use EntityRights;
 use McsExceptions;
 use General;
 use Entity;
+use XML::Simple;
 
 my $log = get_logger("administrator");
 
@@ -90,19 +93,22 @@ sub new {
 	
 	my $login = $args{login};
 	my $password = $args{password};
-
-	#TODO Load DB configuration from file 
-	my $dbi = 'dbi:mysql:administrator:10.0.0.1:3306';
-	my $user = 'root';
-	my $pass = 'Hedera@123';
+	
 	my %opts = ();
 	my ($schema, $rightschecker);
+	my $self = {};
 	
+	bless $self, $class;
+	# Load Administrator config
+	# Add singleton
 	# Catch exception from DB connection
 	eval {
+		my $dbi = $self->loadConf();
 		$log->debug("instanciating AdministratorDB::Schema");
-		$schema = AdministratorDB::Schema->connect($dbi, $user, $pass, \%opts);
-		print "adm->new : login $login, password $password\n";
+		$log->debug("dbi : $dbi, use : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}");
+#		print "dbi : $dbi, use : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}\n";
+		$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
+#		print "adm->new : login $login, password $password with dbi : $dbi\n";
 
 		# When debug is set, all sql queries are printed
 		# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
@@ -116,17 +122,36 @@ sub new {
 		throw Mcs::Exception::DB(error => "$error"); 
 	}
 	
-	my $self = {
-		db => $schema,
-		_rightschecker => $rightschecker, 
-	};
-		
-	bless $self, $class;
-	# Add singleton
+	$self->{db} = $schema;
+	$self->{_rightschecker} = $rightschecker;		
 	$oneinstance = $self;
 	return $self;
 }
 
+sub loadConf {
+	my $self = shift;
+	$self->{config} = XMLin("/workspace/mcs/Administrator/Conf/administrator.conf");
+	if (! exists $self->{config}->{dbconf}->{name} ||
+		! defined exists $self->{config}->{dbconf}->{name} ||
+		! exists $self->{config}->{dbconf}->{password} ||
+		! defined exists $self->{config}->{dbconf}->{password} ||
+		! exists $self->{config}->{dbconf}->{type} ||
+		! defined exists $self->{config}->{dbconf}->{type} ||
+		! exists $self->{config}->{dbconf}->{host} ||
+		! defined exists $self->{config}->{dbconf}->{host} ||
+		! exists $self->{config}->{dbconf}->{user} ||
+		! defined exists $self->{config}->{dbconf}->{user} ||
+		! exists $self->{config}->{dbconf}->{port} ||
+		! defined exists $self->{config}->{dbconf}->{port})
+		{
+			throw Mcs::Exception::Internal::IncorrectParam(error => "Administrator->new need db definition in config file!");
+		}
+
+	return "dbi:" . $self->{config}->{dbconf}->{type} .
+			":" . $self->{config}->{dbconf}->{name} .
+			":" . $self->{config}->{dbconf}->{host} .
+			":" . $self->{config}->{dbconf}->{port};
+}
 
 =head2 getEntity
 	
@@ -336,7 +361,17 @@ sub newOp {
 =cut
 
 sub _get_lastRank{
-	return 0;
+	my $self = shift;
+	my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->single;
+	if (! $row) {
+		$log->debug("No previous operation in queue");
+		return 0;
+	}
+	else {
+		my $last_in_db = $row->get_column('execution_rank');
+		$log->debug("Previous operation in queue is $last_in_db");
+		return $last_in_db;	
+	}
 }
 
 =head2 getNextOp
@@ -525,6 +560,7 @@ sub getFreeInternalIP{
 	#TODO getFreeInternalIP
 	return "10.0.0.2";
 }
+
 1;
 
 __END__

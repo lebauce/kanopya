@@ -17,7 +17,13 @@
 <div id="contentright">
 	<p>
 	<span class="title">Add motherboard</span>
-	
+		
+	<p>
+	<TMPL_IF NAME=RESULT>
+		Operation result : <TMPL_VAR NAME=RESULT>
+	</TMPL_IF>
+	</p>
+		
 	<TMPL_IF NAME=EDIT_MODE>
 		<p>
 		<b>Motherboard <TMPL_VAR NAME=MB_ID></b>
@@ -31,6 +37,10 @@
 		<tr>
 			<td>Serial number</td>
 			<td><input TYPE="text" NAME="sn" VALUE=<TMPL_VAR NAME=SN> ></td>
+		</tr>
+		<tr>
+			<td>MAC address</td>
+			<td><input TYPE="text" NAME="mac_address" VALUE=<TMPL_VAR NAME=MAC> ></td>
 		</tr>
 		<tr>
 			<td>Template id</td>
@@ -60,11 +70,6 @@
 		</table>
 		</form>
 		
-		
-		<br/>
-		<TMPL_IF NAME=RESULT>
-			Operation result : <TMPL_VAR NAME=RESULT>
-		</TMPL_IF>
 	</p>
 	
 </div>

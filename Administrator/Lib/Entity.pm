@@ -43,7 +43,7 @@ package Entity;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use lib qw(../../Common/Lib);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 
 my $log = get_logger("administrator");
@@ -170,10 +170,7 @@ sub setAttr {
 		(! exists $args{value} or ! defined $args{value})) { 
 		throw Mcs::Exception::Internal(error => "Entity->setAttr need a name and value named argument!"); }
 
-	eval {
-		$self->checkAttr(%args);};
-	if ($@){
-		throw Mcs::Exception::Internal(error => "Entity->setAttr wrong attr name ($args{name}) or value ($args{value})!"); }
+	$self->checkAttr(%args);
 		
 	if ( $data->has_column( $args{name} ) ) {
     		$data->set_column( $args{name}, $args{value} );	
@@ -317,11 +314,6 @@ sub delete {
 	my $self = shift;
 	my $data = $self->{_dbix};
 	
-	my $entity = $self->{_rightschecker}->{_schema}->resultset('Entity')->find( { entity_id => $self->{_entity_id} } );
-	if ( $entity ) {
-		$entity->delete;
-	}
-	
 	# Delete extended Attrs (cascade delete)
 	my $extension = $self->extension();
 	if ($extension) {
@@ -339,7 +331,13 @@ sub delete {
 
 sub activate {
 	my $self = shift;
-
+	#TODO A reflechir ne vaut il pas mieux de faire un update sur le champs active sinon pb avec le save qui prendra en compte les autres champs modifiés 
+	if (defined $self->ATTR_DEF->{active}) {
+		$self->setAttr(name => 'active', value => 1);
+		$log->debug("Entity::Activate : Entity is activated");}
+	else {
+		throw Mcs::Exception::Internal(error => "Entity->activate Entity ". ref($self) . " unable to activate !");
+	}
 }
 
 sub deactivate{

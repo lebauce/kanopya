@@ -24,6 +24,8 @@ my $cgi = new CGI;
 ################################################################
 
 # fill form choices (select)
+
+# TODO retrieve templates ids from db 
 my @template_ids = ( {id => '32'}, {id => '42'}, {id => '6666'} );
 $template->param(TEMPLATES => \@template_ids);
 
@@ -32,27 +34,27 @@ $template->param(TEMPLATES => \@template_ids);
 # then we treat the form (depending on mode Add or Modify)
 if ( $cgi->param("submit_add") )
 {
-	#my $model = $cgi->param("model");
-
+	my $add_res = 0;
 	my $new_mb;
-	try {
-		$new_mb = $adm->newObj( type => "Motherboard",
-								params => { 
+	eval {
+		$new_mb = $adm->newEntity( 	type => "Motherboard",
+									params => { 
 											"motherboard_sn" => $cgi->param("sn"),
-											"motherboardtemplate_id" => $cgi->param("template_id"),
+											"motherboard_model_id" => $cgi->param("template_id"),
 											"motherboard_desc" => $cgi->param("desc"),
+											"motherboard_mac_address" => $cgi->param("mac_address"),
 											} );
 		$new_mb->save();
-	}
-	catch Error with {
-		my $ex = shift;
+	};
+	if ($@) {
+		my $ex = $@;
 		$template->param(ERROR_OCCURS => 1);
-		$template->param(ERROR_MESS => $ex);
+		$template->param(ERROR_MESS => "$ex");
+		$add_res = 1;
 	};
 	
-	if ( !undef $new_mb ) {
-		$template->param(RESULT => "Add ok!");
-	}
+	$template->param(RESULT => "Add " . ( $add_res ? "failed" : "ok!" ));
+		
 }
 elsif ( $cgi->param("submit_modify") )
 {

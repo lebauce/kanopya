@@ -10,8 +10,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("administrator");
-
-my $struct = {cluster_name		=> {pattern			=> 'm//s',
+use constant ATTR_DEF => {cluster_name		=> {pattern			=> 'm//s',
 									is_mandatory	=> 1,
 									is_extended		=> 0},
 			  cluster_desc		=> {pattern			=> 'm//m',
@@ -41,7 +40,7 @@ my $struct = {cluster_name		=> {pattern			=> 'm//s',
 			  cluster_public_network	=> {pattern 		=> 'm//s',
 											is_mandatory	=> 1,
 											is_extended 	=> 0},
-			  cluster_active	=> {pattern			=> 'm//s',
+			  active	=> {pattern			=> 'm//s',
 									is_mandatory	=> 1,
 									is_extended		=> 0},
 			  systemimage_id	=> {pattern 		=> 'm//s',
@@ -69,6 +68,7 @@ sub checkAttrs {
 	shift;
 	my %args = @_;
 	my (%global_attrs, %ext_attrs, $attr);
+	my $struct = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->checkAttrs need an data hash and class named argument!"); }	
@@ -111,7 +111,8 @@ sub checkAttrs {
 sub checkAttr{
 	my $self = shift;
 	my %args = @_;
-
+	my $struct = ATTR_DEF;
+	
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }

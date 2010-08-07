@@ -1,13 +1,13 @@
 package Entity::Motherboard;
 
 use strict;
-use lib qw (.. ../../../Common/Lib);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 
-my $struct = {motherboardtemplate_id	=> {pattern			=> 'm//s',
+use constant ATTR_DEF => {motherboard_model_id	=> {pattern			=> 'm//s',
 											is_mandatory	=> 0,
 											is_extended		=> 0},
 			  processortemplate_id		=> {pattern			=> 'm//m',
@@ -25,7 +25,7 @@ my $struct = {motherboardtemplate_id	=> {pattern			=> 'm//s',
 			  motherboard_desc			=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_active		=> {pattern 		=> 'm//s',
+			  active		=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
 			  motherboard_mac_address	=> {pattern 		=> 'm//s',
@@ -59,28 +59,29 @@ sub checkAttrs {
 	shift;
 	my %args = @_;
 	my (%global_attrs, %ext_attrs, $attr);
+	my $attr_def = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs need an data hash and class named argument!"); }	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
-		if (exists $struct->{$attr}){
+		if (exists $attr_def->{$attr}){
 			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
 			#TODO Check param with regexp in pattern field of struct
-			if ($struct->{$attr}->{is_extended}){
+			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
 			}
 			else {
 				$global_attrs{$attr} = $attrs->{$attr};
 			}
 		}
-		else {
+		else {attr_def
 			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs detect a wrong attr $attr !");
 		}
 	}
-	foreach $attr (keys(%$struct)) {
-		if (($struct->{$attr}->{is_mandatory}) &&
+	foreach $attr (keys(%$attr_def)) {
+		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs detect a missing attribute $attr !");
 			}
@@ -102,12 +103,15 @@ sub checkAttrs {
 sub checkAttr{
 	my $self = shift;
 	my %args = @_;
+	my $attr_def = ATTR_DEF;
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
-	if (!exists $struct->{$args{name}}){
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid name"); }
+
+	if (!exists $attr_def->{$args{name}}){
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'"); }
+
 	# Here check attr value
 }
 
