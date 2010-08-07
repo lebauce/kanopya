@@ -1,10 +1,8 @@
 #!/usr/bin/perl -w
 
-use FindBin qw($Bin);
-use lib "$Bin/../Lib", "$Bin/../../Common/Lib";
-
-use McsExceptions;
-
+#use FindBin qw($Bin);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+#use lib "$Bin/../Lib", "$Bin/../../Common/Lib";
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'ERROR', file=>'STDOUT', layout=>'%F %L %p %m%n'});
@@ -12,6 +10,7 @@ Log::Log4perl->easy_init({level=>'ERROR', file=>'STDOUT', layout=>'%F %L %p %m%n
 use Test::More 'no_plan';
 use Administrator;
 use Data::Dumper;
+use McsExceptions;
 
 my $adm = Administrator->new( login =>'thom', password => 'pass' );
 
@@ -33,7 +32,7 @@ eval {
 	
 	# Obj creation
 
-	my $obj = $adm->newEntity( type => "Motherboard", params => { motherboard_sn => '12345', motherboard_mac_address => "00:11:22:33:44:55"} );
+	my $obj = $adm->newEntity( type => "Motherboard", params => { motherboard_sn => '12345', motherboard_mac_address => "00:11:22:33:44:55", active => 0} );
 		isa_ok( $obj, "Entity::Motherboard", '$obj');
 		is( $obj->{_dbix}->in_storage , 0, "new obj doesn't add in DB" ); 
 		is( $obj->getAttr( name => 'motherboard_sn' ), '12345', "get value of new obj" );
@@ -66,13 +65,20 @@ eval {
 	$obj->save();
 	$obj = $adm->getEntity( type => "Motherboard", id => $obj_id );
 		is( $obj->getAttr( name => 'motherboard_sn' ), '666', "get value after modify obj" );
+
+	note( "Test Entity activate");
+	is( $obj->getAttr( name => 'active' ), '0', "get active value" );
+#	print "" .  $obj->getAttr( name => 'active') . "\n";
 	$obj->activate();
+	is( $obj->getAttr( name => 'active' ), '1', "get active value after activate" );
+#	print "" .  $obj->getAttr( name => 'active') . "\n";
+
 	$obj->delete();
 		is( $obj->{_dbix}->in_storage , 0, "delete in DB" );
 	
 	# WARN we still can getAttr on deleted obj, the data are only deleted in DB ======> TODO: faire un truc pour empecher ça
 		is( $obj->getAttr( name => 'motherboard_sn' ), '666', "get value after get obj" );
-		
+	
 	#$obj = $adm->getObj( type => "Motherboard", id => $obj_id );
 	#	ok( !defined $obj, "get obj with data not in DB return undef" );  # => and warning message is displayed
 	
@@ -100,7 +106,8 @@ if($@) {
 	my $error = $@;
 	
 	$adm->{db}->txn_rollback;
-	
-	$error->rethrow(); # we wan't fail test if exception
+	print "$error";
+	exit 233;
+#	$error->rethrow(); # we wan't fail test if exception
 };
 

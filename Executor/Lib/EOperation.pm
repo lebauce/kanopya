@@ -113,7 +113,9 @@ sub execute {
 }
 
 sub finish {
+	my $self = shift;
 	my $adm = Administrator->new();
+	$self->{_operation}->cancel();
 	$adm->{db}->txn_commit;
 }
 

@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(../../Administrator/Lib ../../Common/Lib);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
 use General;
 use McsExceptions;
 use Administrator;

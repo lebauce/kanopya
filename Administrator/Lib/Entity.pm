@@ -43,7 +43,7 @@ package Entity;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use lib qw(../../Common/Lib);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 
 my $log = get_logger("administrator");
@@ -331,8 +331,10 @@ sub delete {
 
 sub activate {
 	my $self = shift;
+	#TODO A reflechir ne vaut il pas mieux de faire un update sur le champs active sinon pb avec le save qui prendra en compte les autres champs modifiés 
 	if (defined $self->ATTR_DEF->{active}) {
-		$self->setAttr(name => 'active', value => 1);}
+		$self->setAttr(name => 'active', value => 1);
+		$log->debug("Entity::Activate : Entity is activated");}
 	else {
 		throw Mcs::Exception::Internal(error => "Entity->activate Entity ". ref($self) . " unable to activate !");
 	}

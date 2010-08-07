@@ -1,7 +1,7 @@
 package Entity::Motherboard;
 
 use strict;
-use lib qw (.. ../../../Common/Lib);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
 use Log::Log4perl "get_logger";

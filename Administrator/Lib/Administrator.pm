@@ -51,7 +51,8 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use lib qw(. ../../Common/Lib);
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+#use lib qw(. ../../Common/Lib);
 use AdministratorDB::Schema;
 use EntityRights;
 use McsExceptions;
@@ -105,9 +106,9 @@ sub new {
 		my $dbi = $self->loadConf();
 		$log->debug("instanciating AdministratorDB::Schema");
 		$log->debug("dbi : $dbi, use : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}");
-		print "dbi : $dbi, use : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}\n";
+#		print "dbi : $dbi, use : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}\n";
 		$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
-		print "adm->new : login $login, password $password with dbi : $dbi\n";
+#		print "adm->new : login $login, password $password with dbi : $dbi\n";
 
 		# When debug is set, all sql queries are printed
 		# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
@@ -129,7 +130,7 @@ sub new {
 
 sub loadConf {
 	my $self = shift;
-	$self->{config} = XMLin("../Conf/administrator.conf");
+	$self->{config} = XMLin("/workspace/mcs/Administrator/Conf/administrator.conf");
 	if (! exists $self->{config}->{dbconf}->{name} ||
 		! defined exists $self->{config}->{dbconf}->{name} ||
 		! exists $self->{config}->{dbconf}->{password} ||
@@ -360,7 +361,17 @@ sub newOp {
 =cut
 
 sub _get_lastRank{
-	return 0;
+	my $self = shift;
+	my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->single;
+	if (! $row) {
+		$log->debug("No previous operation in queue");
+		return 0;
+	}
+	else {
+		my $last_in_db = $row->get_column('execution_rank');
+		$log->debug("Previous operation in queue is $last_in_db");
+		return $last_in_db;	
+	}
 }
 
 =head2 getNextOp
