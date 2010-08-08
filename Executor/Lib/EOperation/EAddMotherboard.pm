@@ -45,8 +45,9 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use vars qw(@ISA $VERSION);
 use base "EOperation";
-use lib qw(.. ../../../Common/Lib);
+use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
+use EContext;
 
 my $log = get_logger("executor");
 
@@ -94,26 +95,40 @@ sub prepare {
 	my %args = @_;
 	$self->SUPER::prepare();
 
-
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddMotherboard->prepare need an internal_cluster named argument!"); }
 	$log->warn("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
-#	my $exec = Executor->new();
 	my $params = $self->_getOperation()->getParams();
 
 	$self->{_objs} = {};
+	$self->{nas} = {};
+	$self->{executor} = {};
 
-	# Get Storage Cluster
-	$log->debug("Get Nas internal cluster");
-#	my $c_cstorage = $exec->getInternalCluster(clustertype => "nas");
-	$self->{nas} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	## Instanciate Clusters
+	# Instanciate nas Cluster 
+	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	# Instanciate executor Cluster
+	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+
+	## Get Internal IP
+	# Get Internal Ip address of Master node of cluster Executor
+	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
+	# Get Internal Ip address of Master node of cluster nas
+	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+	
+	
+	## Instanciate context 
+	# Get context for nas
+	$self->{nas}->{econtext} = EContext->new(ip_source => $exec_ip, ip_dest => $nas_ip);
+
 
 	# Instanciate new Motherboard Entity
 	$log->warn("adm->newEntity of Motherboard");
 	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);
 	$log->warn("New motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
+	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->getComponent(name=>"Lvm",
 										 version => "2",
@@ -121,7 +136,7 @@ sub prepare {
 	print "Value return by getcomponent ". ref($tmp);
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
-
+	# Instanciate Cluster Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->getComponent(name=>"Iscsitarget",
 																					  version=> "1",
 																					  administrator => $adm));

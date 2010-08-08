@@ -333,7 +333,7 @@ sub newOp {
 	#TODO Put the good user in operation
 #	my $user_id = $self->{_rightschecker}->{_user};
 	my $user_id = 16;
-	$log->error("User id in _rightschecker is $user_id");
+	$log->debug("User id in _rightschecker is $user_id");
 	my $op_data = $self->_newDbix( table => 'Operation', row => { 	type => $args{type},
 																	execution_rank => $rank,
 																	user_id => $user_id,

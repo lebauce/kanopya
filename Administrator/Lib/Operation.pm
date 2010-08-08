@@ -127,6 +127,7 @@ sub getAttr {
 	else{
 		throw Mcs::Exception::Internal(error => "Operation->getAttr : Wrong value asked!");
 	}
+	return $value;
 }
 
 =head2 getParams

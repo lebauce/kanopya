@@ -12,7 +12,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "motherboard_model_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "processortemplate_id",
+  "processormodel_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "kernel_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
@@ -44,10 +44,15 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Motherboarddetails",
   { "foreign.motherboard_id" => "self.motherboard_id" },
 );
+__PACKAGE__->has_many(
+  "nodes",
+  "AdministratorDB::Schema::Node",
+  { "foreign.motherboard_id" => "self.motherboard_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-06 17:28:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nSVASXkjkf8CMdJBKlsR3Q
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-08 12:34:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sOEzBFXoNvAosWYioZGb5g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -9,7 +9,7 @@ use lib '../Lib';
         components => '+AdministratorDB::EntityBase',
         #additional_base_classes => '+AdministratorDB::EntityBase',
       },
-      [ 'dbi:mysql:administrator:10.0.0.1:3306', 'root', 'Hedera@123',
+      [ 'dbi:mysql:administrator:localhost:3306', 'root', 'Hedera@123',
          { loader_class => 'MyLoader' } # optionally
       ],
   );

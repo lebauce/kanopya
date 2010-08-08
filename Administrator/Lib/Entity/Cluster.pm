@@ -218,4 +218,14 @@ sub getComponent{
 	throw Mcs::Exception::Internal::WrongValue(error => "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})");
 }
 
+#TODO soit on fait un getMasterNode et on retourne le node mais du coup il faut l'admin
+sub getMasterNodeIp{
+	my $self = shift;
+	#TODO Test if cluster is active, return undef if not found ?
+	my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
+	my $node_ip = $node_instance_rs->motherboard_id->get_column('motherboard_internal_ip');
+	$log->debug("Master node found and its ip is $node_ip");
+	return $node_ip
+}
+
 1;
