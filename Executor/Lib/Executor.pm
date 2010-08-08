@@ -165,7 +165,6 @@ sub execnround {
    				$op->cancel();
    				$log->error("Error during execution : $error");
    				print Dumper $error;
-   				$error->rethrow();
    			}
    			$args{run}--;
    		}

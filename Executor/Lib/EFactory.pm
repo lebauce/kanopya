@@ -85,11 +85,12 @@ EFactory::newEContext(ip_source, ip_destination) instanciates a new object ECont
 =cut
 
 sub newEContext {
+	shift;
 	my %args = @_;
 	if ((! exists $args{ip_source} or ! defined $args{ip_source}) ||
 		(! exists $args{ip_destination} or ! defined $args{ip_destination}))
 	{ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EFactory::newEContext need ip_source and ip_destination named argument!"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "EFactory::newEContext need ip_source and ip_destination named argument! ($args{ip_destination} - $args{ip_source})"); }
 	
 	#TODO Check if ips is good format
 	#Create EContext::Local or EContext::SSH

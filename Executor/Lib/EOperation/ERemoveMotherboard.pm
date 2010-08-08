@@ -1,4 +1,4 @@
-# EAddMotherboard.pm - Operation class implementing Motherboard creation operation
+# ERemoveMotherboard.pm - Operation class implementing Motherboard creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EAddMotherboard;
+package EOperation::ERemoveMotherboard;
 
 use strict;
 use warnings;
@@ -55,9 +55,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = EEntity::EOperation::EAddMotherboard->new();
+    my $op = EEntity::EOperation::ERemoveMotherboard->new();
 
-EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
+EEntity::Operation::ERemoveMotherboard->new creates a new RemoveMotheboard operation.
 
 =cut
 
@@ -95,8 +95,8 @@ sub prepare {
 	my %args = @_;
 	$self->SUPER::prepare();
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddMotherboard->prepare need an internal_cluster named argument!"); }
+	if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "ERemoveMotherboard->prepare need an internal_cluster named argument!"); }
 	$log->warn("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
@@ -125,8 +125,8 @@ sub prepare {
 
 	# Instanciate new Motherboard Entity
 	$log->warn("adm->newEntity of Motherboard");
-	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);
-	$log->warn("New motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{node_id});
+	$log->warn("Get motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
 	# Instanciate Cluster Storage component.
@@ -136,11 +136,6 @@ sub prepare {
 	print "Value return by getcomponent ". ref($tmp);
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
-	# Instanciate Cluster Export component.
-	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1",
-																					  administrator => $adm));
-	$log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));
 }
 
 sub execute{
@@ -148,25 +143,11 @@ sub execute{
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
 
-	# Set initiatorName
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
-										   value => $self->{_objs}->{component_export}->generateInitiatorname(id => $self->{_objs}->{motherboard}));
-	#TODO voir si ou met on les fonctions getInternalIP et getHostname
-	# Set internal ip
-	#TODO getInternalip et getHostname pourrait etre dans le EMotherboard ??
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip",
-										   value => $adm->getFreeInternalIP());
-	# Set Hostname
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
-										   value => $self->{_objs}->{motherboard}->generateHostname());
 	#TODO On aurait pu faire une méthode dans le EMotherboard permettant de créer son etc (rassemble les appelles de creation)
 	#TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
-	$self->{_objs}->{component_storage}->createDisk(name => $self->{_objs}->{motherboard}->getEtcName(),
-													size => "52M",
-													filesystem => "ext3",
-													econtext => $self->{nas}->{econtext});
+	$self->{_objs}->{component_storage}->removeDisk(name => $self->{_objs}->{motherboard}->getEtcName(), econtext => $self->{nas}->{econtext});
 	# AddMotherboard finish, just save the Entity in DB
-	$self->{_objs}->{motherboard}->save();
+	$self->{_objs}->{motherboard}->delete();
 }
 
 __END__

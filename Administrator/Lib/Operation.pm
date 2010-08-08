@@ -68,7 +68,7 @@ sub new {
     if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})||
 		(! exists $args{params} or ! defined $args{params})) { 
-		throw Mcs::Exception::Internal(error => "Entity->new need a data, params and rightschecker named argument!"); }
+		throw Mcs::Exception::Internal(error => "Operation->new need a data, params and rightschecker named argument!"); }
     
     # Here Check if users can execution this operation (We have the rightschecker)
 

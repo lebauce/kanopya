@@ -140,7 +140,7 @@ sub getEtcName {
 	my $self = shift;
 	#TODO getEtcName
 	my $mac = $self->getAttr(name => "motherboard_mac_address");
-	$mac =~ "s/\:/_/g;";
+	$mac =~ s/\:/\_/mg;
 	return "etc_". $mac;
 }
 

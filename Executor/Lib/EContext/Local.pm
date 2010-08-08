@@ -41,7 +41,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
-use lib "../", "../../../Common/Lib";
+use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use base "EContext";
 use McsExceptions;
 
@@ -104,7 +104,9 @@ sub execute {
 		
 	my $result = {};
 	my $command = $args{command};
-	my $stdout = `$command 2>/tmp/EContext.stderr`;
+	$log->debug("Command execute is : <$command>");
+	$ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
+	my $stdout = `$command 2> /tmp/EContext.stderr`;
 	$result->{exitcode} = $?;
 	$result->{stdout} = $stdout;
 	$result->{stderr} = `cat /tmp/EContext.stderr`;

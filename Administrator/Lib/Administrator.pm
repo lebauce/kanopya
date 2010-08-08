@@ -402,7 +402,7 @@ sub getNextOp {
 	while ( my $param = $params_rs->next ) {
 		$params{ $param->name } = $param->value;
 	}
-	$log->debug("Parameters get <%params>");
+	$log->debug("Parameters get <" . %params . ">");
 	# Try to load Operation::$op_type
 	eval {
 		require "Operation/$op_type.pm";
