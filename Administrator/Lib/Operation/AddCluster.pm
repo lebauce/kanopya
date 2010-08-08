@@ -1,4 +1,4 @@
-# AddMotherboard.pm - Operation class implementing Motherboard creation operation
+# AddCluster.pm - Operation class implementing Cluster creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package Operation::AddMotherboard;
+package Operation::AddCluster;
 
 use strict;
 use warnings;
