@@ -4,7 +4,7 @@ use McsExceptions;
 use Log::Log4perl qw(:easy);
 use Data::Dumper;
 
-Log::Log4perl->easy_init({level=>'ERROR', file=>'STDOUT', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
 
 # a simple class to test rollback calls
 {
@@ -36,17 +36,20 @@ use_ok(ERollback);
 my $obj = myobj->new();
 
 # create ERollback object and add a rollback
+
+my $rb = ERollback->new();
+isa_ok($rb, "ERollback", '$rb');
+
 my $f1 = $obj->can('f1');
 my $p1 = [$obj, 'one string'];
-my $rb = ERollback->new(function => $f1, parameters => $p1);
-
-isa_ok($rb, "ERollback", '$rb');
+$rb->add(function => $f1, parameters => $p1);
 is($rb->{function}, $f1, 'Storing function in ERollback object');
 is($rb->{parameters}, $p1, 'Storing parameters in ERollback object');
 
 my $f2 = $obj->can('f2');
 my $p2 = [$obj, 'another string'];
 $rb->add(function => $f2, parameters => $p2);
+
 isa_ok($rb->{next_item}, "ERollback", '$rb->{next_item}');
 isa_ok($rb->{next_item}->{prev_item}, "ERollback", '$rb->{next_item}->{prev_item}');
 is($rb->{next_item}->{function}, $f2, 'Storing function in ERollback {next_item} object');

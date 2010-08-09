@@ -51,14 +51,10 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 sub new {
 	my $class = shift;
 	my %args = @_;
-	if((! exists $args{function} or ! defined $args{function}) or
-	   (! exists $args{parameters} or ! defined $args{parameters})) {
-		throw Mcs::Exception::Internal(error => "ERollback->new need function and parameters named arguments");   	
-	}
-	
+		
 	my $self = {
-		function => $args{function},
-        parameters => $args{parameters},
+		function => undef,
+        parameters => undef,
         next_item => undef,
         prev_item => undef,
     };
@@ -79,10 +75,17 @@ sub add {
 	   (! exists $args{parameters} or ! defined $args{parameters})) {
 		throw Mcs::Exception::Internal(error => "ERollback->add need function and parameters named arguments");   	
 	}
-
-    my $last = $self->_last;
-    $last->{next_item} = ERollback->new(%args);
-    $last->{next_item}->{prev_item} = $last;
+    
+    if(not defined $self->{function}) {
+    	$self->{function} = $args{function};
+    	$self->{parameters} = $args{parameters};
+    } else {
+    	my $last = $self->_last;
+        $last->{next_item} = ERollback->new();
+        $last->{next_item}->{function} = $args{function};
+        $last->{next_item}->{parameters} = $args{parameters};
+    	$last->{next_item}->{prev_item} = $last;
+    }
 }
 
 =head2 _last
