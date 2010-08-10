@@ -51,6 +51,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use NetAddr::IP;
 use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 #use lib qw(. ../../Common/Lib);
 use AdministratorDB::Schema;
@@ -131,6 +132,16 @@ sub new {
 sub loadConf {
 	my $self = shift;
 	$self->{config} = XMLin("/workspace/mcs/Administrator/Conf/administrator.conf");
+	if (! exists $self->{config}->{internalnetwork}->{ip} ||
+		! defined $self->{config}->{internalnetwork}->{ip} ||
+		! exists $self->{config}->{internalnetwork}->{mask} ||
+		! defined $self->{config}->{internalnetwork}->{mask} ||
+		! exists $self->{config}->{internalnetwork}->{gateway} ||
+		! defined $self->{config}->{internalnetwork}->{gateway})
+		{
+			throw Mcs::Exception::Internal::IncorrectParam(error => "Administrator->new need internalnetwork definition in config file!");
+		}
+	
 	if (! exists $self->{config}->{dbconf}->{name} ||
 		! defined exists $self->{config}->{dbconf}->{name} ||
 		! exists $self->{config}->{dbconf}->{password} ||
@@ -556,9 +567,61 @@ sub _getEntityClass{
 	return $entity_class;
 }
 
+=head2 getFreeInternalIP
+
+return the first unused ip address in the internal network
+
+=cut
+
 sub getFreeInternalIP{
-	#TODO getFreeInternalIP
-	return "10.0.0.2";
+	my $self = shift;
+	# retrieve internal network from config
+	my $network = new NetAddr::IP(
+		$self->{config}->{internalnetwork}->{ip},
+		$self->{config}->{internalnetwork}->{mask},
+	);
+	
+	my ($i, $row, $freeip) = 0;
+	
+	# try to find a matching motherboard of each ip of our network	
+	while ($freeip = $network->nth($i)) {
+		$row = $self->{db}->resultset('Motherboard')->find({ motherboard_internal_ip => $freeip->addr });
+		
+		# if no record is found for this ip address, it is free so we return it
+		if(not defined $row) { return $freeip->addr; }
+		
+		$log->debug($freeip->addr." is already used");
+		$i++;
+	}
+	if(not defined $freeip) {
+		throw Mcs::Exception::Network(
+			error => "Administrator->getFreeInternalIP : all internal ip addresses seems to be used !")
+	}
+}
+
+=head2 newPublicIP
+
+add a new public ip address
+
+=cut
+
+sub newPublicIP {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{ip_address} or ! defined $args{ip_address} || 
+		! exists $args{ip_mask} or ! defined $args{ip_mask})
+	{ 
+		throw Mcs::Exception::Internal(error => "Administrator->newPublicIP need ip_address and ip_mask named argument!"); }
+
+	my $pubip = new NetAddr::IP($args{ip_address}, $args{ip_mask});
+	if(not defined $pubip) { 
+		throw Mcs::Exception::Internal(error => "Administrator->newPublicIP : wrong value for ip_address/ip_mask!")}; 
+
+	$self->{db}->resultset('Publicip')->search({
+		ip_address => $args{ip_address}, 
+		ip_mask => $args{ip_mask}}	
+	)->single;
+	
 }
 
 1;
