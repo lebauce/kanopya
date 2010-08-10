@@ -160,18 +160,21 @@ sub execute {
 		
 	my $result = {};
 	my $command = $args{command};
-	$log->debug("command: $command");
+	$log->debug("Command execute is : <$command>");
 	my $r = $self->{machine}->system($command);
 	if(not $r->ok) {
 		throw Mcs::Exception::Network(error => "EContext::SSH->execute RPC failed");
 	}
-	$log->debug("STDOUT: ".$r->stdout);
-	$log->debug("STDERR: ".$r->stderr);
-		
 	$result->{stdout} = $r->stdout;
 	chomp($result->{stdout});
 	$result->{stderr} = $r->stderr;
 	chomp($result->{stderr});
+	$log->debug("Command stdout is : '$result->{stdout}'");
+	$log->debug("Command stderr is : '$result->{stderr}'");
+	if($result->{stderr}) {
+		throw Mcs::Exception::Execution(
+			error => "EContext::Local->execute : got stderr: $result->{stderr}");
+	}
 	return $result;	
 }
 

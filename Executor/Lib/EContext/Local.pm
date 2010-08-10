@@ -23,12 +23,15 @@
 
 =head1 NAME
 
+EContext::Local  
 
 =head1 SYNOPSIS
 
 
 
 =head1 DESCRIPTION
+
+EContext::Local offers execute method via system builtin function
 
 =head1 METHODS
 
@@ -58,6 +61,7 @@ $localcontext use to make this class a singleton
 my $localcontext;
 
 =head2 new
+
 
     
 =cut
@@ -107,9 +111,14 @@ sub execute {
 	$log->debug("Command execute is : <$command>");
 	$ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
 	my $stdout = `$command 2> /tmp/EContext.stderr`;
-	$result->{exitcode} = $?;
 	$result->{stdout} = $stdout;
 	$result->{stderr} = `cat /tmp/EContext.stderr`;
+	$log->debug("Command stdout is : '$result->{stdout}'");
+	$log->debug("Command stderr is : '$result->{stderr}'");
+	if($result->{stderr}) {
+		throw Mcs::Exception::Execution(
+			error => "EContext::Local->execute : got stderr: $result->{stderr}");
+	}
 	return $result;	
 }
 

@@ -38,7 +38,7 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 =head2 execute
 
 execute(command => $command)
-This method must be implemented in the child classes
+This method must be implemented in child classes
 
 =cut
 sub execute {}

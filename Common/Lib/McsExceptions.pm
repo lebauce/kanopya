@@ -28,7 +28,12 @@ use Exception::Class (
     Mcs::Exception::Internal::IncorrectParam => {
 	isa => 'Mcs::Exception::Internal',
 	description => 'Wrong attribute or parameter',
+    },
+    Mcs::Exception::Execution => {
+	isa => 'Mcs::Exception',
+	description => 'Command execution failed',
     }
+    
     );
 
 #$SIG{__DIE__} = \&handle_die;
