@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::ClusterEntity;
+package AdministratorDB::Schema::Route;
 
 use strict;
 use warnings;
@@ -6,28 +6,27 @@ use warnings;
 use base 'DBIx::Class';
 
 __PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
-__PACKAGE__->table("cluster_entity");
+__PACKAGE__->table("route");
 __PACKAGE__->add_columns(
-  "entity_id",
+  "route_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "cluster_id",
+  "publicip_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  "ip_destination",
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 1 },
+  "gateway",
+  { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 1 },
 );
-__PACKAGE__->set_primary_key("entity_id", "cluster_id");
+__PACKAGE__->set_primary_key("route_id");
 __PACKAGE__->belongs_to(
-  "entity_id",
-  "AdministratorDB::Schema::Entity",
-  { entity_id => "entity_id" },
-);
-__PACKAGE__->belongs_to(
-  "cluster_id",
-  "AdministratorDB::Schema::Cluster",
-  { cluster_id => "cluster_id" },
+  "publicip_id",
+  "AdministratorDB::Schema::Publicip",
+  { publicip_id => "publicip_id" },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-10 16:28:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5hbmFE4DjgunfE1OhUN3ug
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2HG/KV/z+aDzY8GUdPIp5A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

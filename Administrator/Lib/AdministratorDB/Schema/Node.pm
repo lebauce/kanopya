@@ -19,19 +19,19 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("node_id");
 __PACKAGE__->belongs_to(
-  "motherboard_id",
-  "AdministratorDB::Schema::Motherboard",
-  { motherboard_id => "motherboard_id" },
-);
-__PACKAGE__->belongs_to(
   "cluster_id",
   "AdministratorDB::Schema::Cluster",
   { cluster_id => "cluster_id" },
 );
+__PACKAGE__->belongs_to(
+  "motherboard_id",
+  "AdministratorDB::Schema::Motherboard",
+  { motherboard_id => "motherboard_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-08 19:33:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XwjICK+PIgevTNAIkU4TeA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-10 16:28:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PwA2vvWI6VirX7Rc9G/5uA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

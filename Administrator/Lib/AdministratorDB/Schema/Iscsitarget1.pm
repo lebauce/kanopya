@@ -28,8 +28,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("component_instance_id", "iscsitarget1_id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-08 19:33:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:H2MZ/YQIXdb59bt8LNG7gg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-10 16:28:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mH0eE9Jr1VcEXvKVHVmq2w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
