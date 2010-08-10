@@ -18,21 +18,15 @@ my $hostnametocontact = 'node001'; # expected result of hostname command on $hos
 
 use_ok(EFactory);
 
-note("\nExceptions Test");
+note("\nInstanciation Exceptions Test");
 eval { my $context = EFactory::newEContext(); };
-if($@) {
-	is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@");
-}
+if($@) { is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@"); }
 
 eval { my $context = EFactory::newEContext(ip_source => undef); };
-if($@) {
-	is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@");
-}
+if($@) { is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@"); }
 
 eval { my $context = EFactory::newEContext(ip_destination => undef); };
-if($@) {
-	is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@");
-}
+if($@) { is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@"); }
 
 note("\nEContext::Local Instanciation");
 my $context1 = EFactory::newEContext(ip_source => '123.123.123.123', ip_destination => '123.123.123.123'); 
@@ -42,6 +36,10 @@ my $context2 = EFactory::newEContext(ip_source => '13.13.13.13', ip_destination 
 isa_ok( $context2, "EContext::Local", '$context2');
 
 is($context2, $context1, '$context1 and $context2 are same instance');
+
+note("\nEContext::Local failed execution Exception");
+eval { my $result = $context1->execute(command => "badcommandbadcommand"); };
+if($@) { is ($@->isa('Mcs::Exception::Execution'), 1, "get Mcs Exception: $@"); }
 
 
 note("\nEContext::SSH Instanciation");
@@ -58,15 +56,12 @@ eval {
 	my $result1 = $context3->execute(command => 'hostname');
 	is($result1->{stdout}, $hostnametocontact, "STDOUT of hostname command for $hosttocontact is $hostnametocontact");
 	is($result1->{stderr}, '', "no STDERR for hostname command");
-		
-	my $result2 = $context4->execute(command => 'cat unexistantfile');
-	is($result2->{stdout}, '', 'no STDOUT for command: cat unexistantfile');
-	is($result2->{stderr}, 'cat: unexistantfile: No such file or directory', 'STDERR is cat: unexistantfile: No such file or directory');
 };
+if($@) { print $@, "\n"; }
 
-if($@) {
-	print $@, "\n";
-}
+note("\nEContext::SSH failed execution Exception");
+eval { my $result = $context3->execute(command => "badcommandbadcommand"); };
+if($@) { is ($@->isa('Mcs::Exception::Execution'), 1, "get Mcs Exception: $@"); }
 
 
 
