@@ -1,4 +1,4 @@
-# EAddCluster.pm - Operation class implementing Cluster creation operation
+# ERemoveCluster.pm - Operation class implementing Cluster remove operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EAddCluster;
+package EOperation::ERemoveCluster;
 
 use strict;
 use warnings;
@@ -55,9 +55,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = EEntity::EOperation::EAddMotherboard->new();
+    my $op = EEntity::EOperation::ERemoveMotherboard->new();
 
-EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
+EEntity::Operation::ERemoveMotherboard->new creates a new RemoveMotheboard operation.
 
 =cut
 
@@ -95,18 +95,22 @@ sub prepare {
 	my %args = @_;
 	$self->SUPER::prepare();
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddCluster->prepare need an internal_cluster named argument!"); }
+	if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "ERemoveCluster->prepare need an internal_cluster named argument!"); }
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
 	$self->{_objs} = {};
+
+	## Instanciate context 
+	# Get context for nas
 	$self->{econtext} = EFactory->newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
-	# Instanciate new Cluster Entity
+
+	# Instanciate Cluster Entity
 	$log->warn("adm->newEntity of Cluster");
-	$self->{_objs}->{cluster} = $adm->newEntity(type => "Cluster", params => $params);
-	$log->debug("New cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
+	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
+	$log->warn("Get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 	
 }
 
@@ -115,12 +119,11 @@ sub execute{
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
 
-# Create cluster directory
-	$self->{econtext}->execute("mkdir /clusters/" . $self->{_objs}->{cluster}->getAttr("cluster_name"));
-	$log->debug("Execution : mkdir /clusters/" . $self->{_objs}->{cluster}->getAttr("cluster_name"));
+# Remove cluster directory
+	$self->{econtext}->execute("rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr("cluster_name"));
+	$log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr("cluster_name"));
 
-# Save the new cluster in db
-	$self->{_objs}->{cluster}->save();
+	$self->{_objs}->{motherboard}->delete();
 }
 
 __END__
