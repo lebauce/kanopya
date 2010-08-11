@@ -62,9 +62,11 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+	if (! exists $args{params} or ! defined $args{params}){
+		throw Mcs::Exception::Internal(error => "Operation->AddMotherboard need params to be checked!"); }
     my $self = $class->SUPER::new( %args );
     $self->_init();
-    
+    Entity::Motherboard::checkAttrs($args{params});
     return $self;
 }
 
@@ -76,7 +78,6 @@ sub new {
 
 sub _init {
 	my $self = shift;
-
 	return;
 }
 

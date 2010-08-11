@@ -64,7 +64,9 @@ sub new {
 
     my $self = $class->SUPER::new( %args );
     $self->_init();
-    
+ 
+ #TODO Here check params and rights!
+     Entity::Cluster::checkAttrs($args{params});   
     return $self;
 }
 
