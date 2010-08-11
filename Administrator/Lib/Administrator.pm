@@ -602,7 +602,11 @@ sub getFreeInternalIP{
 =head2 newPublicIP
 
 add a new public ip address
-
+	args: 
+		ip_address
+		ip_mask
+	optional args:
+		gateway
 =cut
 
 sub newPublicIP {
@@ -611,17 +615,203 @@ sub newPublicIP {
 	if (! exists $args{ip_address} or ! defined $args{ip_address} || 
 		! exists $args{ip_mask} or ! defined $args{ip_mask})
 	{ 
-		throw Mcs::Exception::Internal(error => "Administrator->newPublicIP need ip_address and ip_mask named argument!"); }
-
+		throw Mcs::Exception::Internal(
+			error => "Administrator->newPublicIP need ip_address and ip_mask named argument!"); }
+	# ip format valid ?
 	my $pubip = new NetAddr::IP($args{ip_address}, $args{ip_mask});
 	if(not defined $pubip) { 
 		throw Mcs::Exception::Internal(error => "Administrator->newPublicIP : wrong value for ip_address/ip_mask!")}; 
-
-	$self->{db}->resultset('Publicip')->search({
-		ip_address => $args{ip_address}, 
-		ip_mask => $args{ip_mask}}	
-	)->single;
 	
+	my $gateway;
+	if(exists $args{gateway} and defined $args{gateway}) {
+		$gateway = new NetAddr::IP($args{gateway});
+		if(not defined $gateway) {
+			throw Mcs::Exception::Internal(error => "Administrator->newPublicIP : wrong value for gateway!");
+		}
+	}
+	
+	# try to save public ip
+	eval {
+		my $row = {ip_address => $pubip->addr, ip_mask => $pubip->mask};
+		if($gateway) { $row->{gateway} = $gateway->addr; }
+		$self->{db}->resultset('Publicip')->create($row);
+	};
+	if($@) { throw Mcs::Exception::DB(error => "Administrator->newPublicIP: $@"); }
+	$log->debug("new public ip created");
+}
+
+=head2 addRoute
+
+add new route to a public ip given its id
+
+=cut
+
+sub addRoute {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
+		! exists $args{ip_destination} or ! defined $args{ip_destination} || 
+		! exists $args{gateway} or ! defined $args{gateway})
+	{ 
+		throw Mcs::Exception::Internal(
+			error => "Administrator->addRoute need publicip_id, ip_destination and gateway named argument!");}
+	# check valid ip_destination and gateway format
+	my $destinationip = new NetAddr::IP($args{ip_destination});
+	if(not defined $destinationip) {
+		throw Mcs::Exception::Internal(error => "Administrator->addRoute : wrong value for ip_destination!");}
+	
+	my $gateway = new NetAddr::IP($args{gateway});
+	if(not defined $gateway) {
+		throw Mcs::Exception::Internal(error => "Administrator->addRoute : wrong value for gateway!");}
+	
+	# try to create route
+	eval {
+		my $row = {ip_destination => $destinationip->addr, publicip_id => $args{publicip_id}};
+		if($gateway) { $row->{gateway} = $gateway->addr; }
+		$self->{db}->resultset('Route')->create($row);
+	};
+	if($@) { throw Mcs::Exception::DB(error => "Administrator->addRoute: $@");}
+	$log->debug("new route added to public ip");
+}
+
+=head2 getPublicIPs
+
+Get list of public ip addresses 
+	return: array ref
+
+=cut
+
+sub getPublicIPs {
+	my $self = shift;
+	my $pubips = $self->{db}->resultset('Publicip')->search;
+	my $pubiparray = [];
+	while(my $ips = $pubips->next) {
+		push @$pubiparray, {
+			publicip_id => $ips->get_column('publicip_id'),
+			cluster_id => $ips->get_column('cluster_id'),
+			ip_address => $ips->get_column('ip_address'),
+			ip_mask => $ips->get_column('ip_mask'),
+			gateway =>$ips->get_column('gateway') 
+		};
+	}
+	return $pubiparray;
+}
+
+=head2 getPublicIPs
+
+Get list of unused public ip addresses 
+	return: array ref
+
+=cut
+
+sub getFreePublicIPs {
+	my $self = shift;
+	my $pubips = $self->{db}->resultset('Publicip')->search({ cluster_id => undef });
+	my $pubiparray = [];
+	while(my $ips = $pubips->next) {
+		push @$pubiparray, {
+			publicip_id => $ips->get_column('publicip_id'),
+			cluster_id => $ips->get_column('cluster_id'),
+			ip_address => $ips->get_column('ip_address'),
+			ip_mask => $ips->get_column('ip_mask'),
+			gateway =>$ips->get_column('gateway') 
+		};
+	}
+	return $pubiparray;
+}
+
+=head2 delPublicIP
+
+delete an unused public ip and its routes
+
+=cut
+
+sub delPublicIP {
+	my $self = shift;
+	my %args = @_;
+	# arguments checking
+	if (! exists $args{publicip_id} or ! defined $args{publicip_id}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->delPublicIP need a publicip_id named argument!"); }
+	
+	# getting the row	
+	my $row = $self->{db}->resultset('Publicip')->find( $args{publicip_id} );
+	if(! defined $row) {
+		throw Mcs::Exception::DB(error => "Administrator->delPublicIP : publicip_id $args{publicip_id} not found!"); }
+	
+	# verify that it is not used by a cluster
+	if(defined ($row->get_column('cluster_id'))) {
+		throw Mcs::Exception::DB(error => "Administrator->delPublicIP : publicip_id $args{publicip_id} is used by a cluster!"); }
+	
+	# related routes are automatically deleted due to foreign key 
+	$row->delete;
+	$log->debug("Public ip ($args{publicip_id}) deleted with its routes");
+}
+
+=head2 setClusterPublicIP
+
+associate public ip and cluster
+	args:	publicip_id, cluster_id 
+	
+
+=cut
+
+sub setClusterPublicIP {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
+		! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->setClusterPublicIP need publicip_id and cluster_id named argument!"); }
+	my $row = $self->{db}->resultset('Publicip')->find($args{publicip_id});
+	# getting public ip row
+	if(! defined $row) {
+		throw Mcs::Exception::DB(error => "Administrator->setClusterPublicIP : publicip_id $args{publicip_id} not found!"); }
+	# try to set cluster_id to this ip
+	eval {
+		$row->set_column('cluster_id', $args{cluster_id});
+		$row->update;
+	};
+	if($@) { throw Mcs::Exception::DB(error => "Administrator->setClusterPublicIP : $@"); }
+	$log->debug("Public ip $args{publicip_id} set to cluster $args{cluster_id}");
+}
+
+=head delRoute
+
+delRoute delete a route given its id
+
+=cut
+
+sub delRoute {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{route_id} or ! defined $args{route_id}) {
+		throw Mcs::Exception::Internal(error => "Administrator->delRoute need a route_id named argument!"); }
+	
+	my $row = $self->{db}->resultset('Route')->find($args{route_id});
+	if(not defined $row) {
+		throw Mcs::Exception::DB(error => "Administrator->delRoute : route_id $args{route_id} not found!"); }
+	$row->delete;
+	$log->debug("route ($args{route_id}) successfully deleted");	
+}
+
+=head getRoutes
+
+return list of registered routes
+
+=cut
+
+sub getRoutes {
+	my $self = shift;
+	my $routes = $self->{db}->resultset('Route');
+	my $routearray = [];
+	while(my $r = $routes->next) {
+		push @$routearray, {
+			route_id => $r->get_column('route_id'),
+			publicip_id => $r->get_column('publicip_id'),
+			ip_destination => $r->get_column('ip_destination'),
+			gateway =>$r->get_column('gateway') 
+		};
+	}
+	return $routearray;
 }
 
 1;
