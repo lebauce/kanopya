@@ -634,7 +634,8 @@ sub newPublicIP {
 	eval {
 		my $row = {ip_address => $pubip->addr, ip_mask => $pubip->mask};
 		if($gateway) { $row->{gateway} = $gateway->addr; }
-		$self->{db}->resultset('Publicip')->create($row);
+		my $res = $self->{db}->resultset('Publicip')->create($row);
+		return $res->publicip_id;
 	};
 	if($@) { throw Mcs::Exception::DB(error => "Administrator->newPublicIP: $@"); }
 	$log->debug("new public ip created");

@@ -1,4 +1,4 @@
- 	use Data::Dumper;
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
 use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
@@ -23,11 +23,25 @@ my $addmotherboard_op;
 
 my $adm = Administrator->new( %args);
 eval {
-#	$adm->{db}->txn_begin;
+	$adm->{db}->txn_begin;
 	
+	$adm->newOp(type => "AddMotherboard", 
+				priority => '100',
+				params => { motherboard_mac_address => '00:1c:c0:c0:1c:9a', 
+							kernel_id => 2, 
+							motherboard_sn => "Test sn"});
+	my $pub_net =$adm->newPublicIP(ip_address => '192.168.0.1', ip_mask => '255.255.255.0');
 	note("Operation Addition test");
-	$adm->newOp(type => "AddMotherboard", priority => '100', params => { motherboard_mac_address => '00:1c:c0:c0:1c:9a', kernel_id => 2, motherboard_sn => "Test sn"});
-	$adm->newOp(type => "AddMotherboard", priority => '200', params => { motherboard_mac_address => '00:1c:c1:c1:c1:c1', kernel_id => 1, motherboard_sn => "Test2 sn"});
+	$adm->newOp(type		=> "AddCluster",
+				priority	=> '100',
+				params		=> {cluster_name => 'test', 
+								cluster_desc => 'test cluster',
+								cluster_min_node		=> 1,
+								cluster_max_node		=> 1,
+								cluster_priority		=> 500,
+								cluster_publicip_id		=> $pub_net,
+								systemimage_id			=> 1,
+								kernel_id				=> 1});
 	@args = ();
 	note ("Execution begin");
 	my $exec = new_ok("Executor", \@args, $exectest);
@@ -43,7 +57,7 @@ eval {
 		
 	}
 
-#	$adm->{db}->txn_rollback;
+	$adm->{db}->txn_rollback;
 };
 if ($@){
 	print "Exception catch, its type is : " . ref($@);
@@ -52,7 +66,7 @@ if ($@){
    	{
 		print "Mcs Exception\n";
    }
-#	$adm->{db}->txn_rollback;
+	$adm->{db}->txn_rollback;
 }
 
 

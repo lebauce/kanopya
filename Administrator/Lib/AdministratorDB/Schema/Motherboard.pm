@@ -12,7 +12,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "motherboard_model_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "processormodel_id",
+  "processor_model_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "kernel_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
@@ -32,9 +32,31 @@ __PACKAGE__->add_columns(
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 15 },
   "motherboard_hostname",
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 32 },
+  "etc_device_id",
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
 );
 __PACKAGE__->set_primary_key("motherboard_id");
 __PACKAGE__->add_unique_constraint("motherboard_internal_ip_UNIQUE", ["motherboard_internal_ip"]);
+__PACKAGE__->belongs_to(
+  "motherboard_model_id",
+  "AdministratorDB::Schema::MotherboardModel",
+  { motherboard_model_id => "motherboard_model_id" },
+);
+__PACKAGE__->belongs_to(
+  "processor_model_id",
+  "AdministratorDB::Schema::ProcessorModel",
+  { processor_model_id => "processor_model_id" },
+);
+__PACKAGE__->belongs_to(
+  "kernel_id",
+  "AdministratorDB::Schema::Kernel",
+  { kernel_id => "kernel_id" },
+);
+__PACKAGE__->belongs_to(
+  "etc_device_id",
+  "AdministratorDB::Schema::Lvm2Lv",
+  { lvm2_lv_id => "etc_device_id" },
+);
 __PACKAGE__->has_many(
   "motherboard_entities",
   "AdministratorDB::Schema::MotherboardEntity",
@@ -52,8 +74,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-11 14:17:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:o1CAVdjcNrcMxGmDzWkKIg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2K5MpbohFt6rC8wqgUOpbQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

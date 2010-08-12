@@ -33,14 +33,19 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("processor_model_id");
 __PACKAGE__->has_many(
+  "motherboards",
+  "AdministratorDB::Schema::Motherboard",
+  { "foreign.processor_model_id" => "self.processor_model_id" },
+);
+__PACKAGE__->has_many(
   "processor_model_entities",
   "AdministratorDB::Schema::ProcessorModelEntity",
   { "foreign.processor_model_id" => "self.processor_model_id" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-11 14:17:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KoV53zn3IMjb2gIBI+77eA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FPwbXvxSyDoE9GuG8GNs1w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

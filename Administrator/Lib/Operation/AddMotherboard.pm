@@ -45,6 +45,9 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
+use Entity::Motherboard;
+
+
 
 my $log = get_logger("administrator");
 
@@ -66,7 +69,7 @@ sub new {
 		throw Mcs::Exception::Internal(error => "Operation->AddMotherboard need params to be checked!"); }
     my $self = $class->SUPER::new( %args );
     $self->_init();
-    Entity::Motherboard::checkAttrs($args{params});
+    Entity::Motherboard->checkAttrs(attrs => $args{params});
     return $self;
 }
 

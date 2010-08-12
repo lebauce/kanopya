@@ -32,14 +32,19 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("motherboard_model_id");
 __PACKAGE__->add_unique_constraint("motherboard_model_UNIQUE", ["motherboard_model_name"]);
 __PACKAGE__->has_many(
+  "motherboards",
+  "AdministratorDB::Schema::Motherboard",
+  { "foreign.motherboard_model_id" => "self.motherboard_model_id" },
+);
+__PACKAGE__->has_many(
   "motherboard_model_entities",
   "AdministratorDB::Schema::MotherboardModelEntity",
   { "foreign.motherboard_model_id" => "self.motherboard_model_id" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-11 14:17:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EPqojsZ9epjkqVhYrT1z8Q
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W3OZ6QM4n0DIFI45kAcgnA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

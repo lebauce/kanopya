@@ -27,10 +27,15 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Lvm2Vg",
   { lvm2_vg_id => "lvm2_vg_id" },
 );
+__PACKAGE__->has_many(
+  "motherboards",
+  "AdministratorDB::Schema::Motherboard",
+  { "foreign.etc_device_id" => "self.lvm2_lv_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-11 14:17:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ClzoB6MbYWegTRyMgXeYGw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JuTrB5pToP7G496ovKZLDg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -22,14 +22,6 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
   "cluster_priority",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
-  "cluster_public_ip",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 15 },
-  "cluster_public_mask",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 15 },
-  "cluster_public_network",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 15 },
-  "cluster_public_gateway",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 15 },
   "active",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
   "systemimage_id",
@@ -66,8 +58,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-11 14:17:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e1DtAfpfy5rWZgN9HzQg6Q
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x3BBHOZFgiNIyZYwD1furA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
