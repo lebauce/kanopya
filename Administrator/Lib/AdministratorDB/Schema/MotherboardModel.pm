@@ -26,7 +26,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
   "motherboard_ram_max",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
-  "processortemplate_id",
+  "processor_model_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
 );
 __PACKAGE__->set_primary_key("motherboard_model_id");
@@ -36,6 +36,11 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Motherboard",
   { "foreign.motherboard_model_id" => "self.motherboard_model_id" },
 );
+__PACKAGE__->belongs_to(
+  "processor_model_id",
+  "AdministratorDB::Schema::ProcessorModel",
+  { processor_model_id => "processor_model_id" },
+);
 __PACKAGE__->has_many(
   "motherboard_model_entities",
   "AdministratorDB::Schema::MotherboardModelEntity",
@@ -43,8 +48,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W3OZ6QM4n0DIFI45kAcgnA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 14:38:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yL4z8JJkSUyzZQUpRCB7Xg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

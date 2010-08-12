@@ -32,13 +32,24 @@ eval {
 	
 	# Obj creation
 
-	my $obj = $adm->newEntity( type => "Motherboard", params => { motherboard_sn => '12345', motherboard_mac_address => "00:11:22:33:44:55", active => 0} );
+	my $obj = $adm->newEntity(
+		type => "Motherboard", 
+		params => { 
+			motherboard_model_id => 1,
+			processor_model_id => 1, # motherboard model has an integrated processor
+			kernel_id => 1,
+			motherboard_serial_number => '12345', 
+			motherboard_mac_address => "00:11:22:33:44:55",
+			motherboard_slot_position => 1,
+			active => 0}
+		);
+		
 		isa_ok( $obj, "Entity::Motherboard", '$obj');
 		is( $obj->{_dbix}->in_storage , 0, "new obj doesn't add in DB" ); 
-		is( $obj->getAttr( name => 'motherboard_sn' ), '12345', "get value of new obj" );
+		is( $obj->getAttr( name => 'motherboard_serial_number' ), '12345', "get value of new obj" );
 
-	$obj->setAttr( name => 'motherboard_sn' , value => '54321' );
-		is( $obj->getAttr( name => 'motherboard_sn' ), '54321', "get value after modify new obj" );
+	$obj->setAttr( name => 'motherboard_serial_number' , value => '54321' );
+		is( $obj->getAttr( name => 'motherboard_serial_number' ), '54321', "get value after modify new obj" );
 	
 	eval {
 	$obj->setAttr( name => 'extParam1', value  => "extValue1" );};
@@ -50,21 +61,21 @@ eval {
 	$obj->save();
 		is( $obj->{_dbix}->in_storage , 1, "save obj add in DB" );
 
-	$obj->setAttr( name => 'motherboard_sn', value => '666' ); # change local value but not in db
-		is( $obj->getAttr( name => 'motherboard_sn' ), '666', "get value after local change" );
+	$obj->setAttr( name => 'motherboard_serial_number', value => '666' ); # change local value but not in db
+		is( $obj->getAttr( name => 'motherboard_serial_number' ), '666', "get value after local change" );
 	my $obj_id = $obj->getAttr( name => 'motherboard_id' );
 	
 	# Obj retrieved from DB
 	$obj = $adm->getEntity( type => "Motherboard", id => $obj_id );
 		isa_ok( $obj, "Entity::Motherboard", '$obj');
 		is( $obj->{_dbix}->in_storage , 1, "get obj from DB" );
-		is( $obj->getAttr( name => 'motherboard_sn' ), '54321', "get value after get obj" );
+		is( $obj->getAttr( name => 'motherboard_serial_number' ), '54321', "get value after get obj" );
 		is( $obj->getAttr( name => 'motherboard_mac_address' ),  "00:11:22:33:44:55", "get extended value after get obj"  );
 
-	$obj->setAttr( name => 'motherboard_sn', value => '666' );
+	$obj->setAttr( name => 'motherboard_serial_number', value => '666' );
 	$obj->save();
 	$obj = $adm->getEntity( type => "Motherboard", id => $obj_id );
-		is( $obj->getAttr( name => 'motherboard_sn' ), '666', "get value after modify obj" );
+		is( $obj->getAttr( name => 'motherboard_serial_number' ), '666', "get value after modify obj" );
 
 	note( "Test Entity activate");
 	is( $obj->getAttr( name => 'active' ), '0', "get active value" );
@@ -77,7 +88,7 @@ eval {
 		is( $obj->{_dbix}->in_storage , 0, "delete in DB" );
 	
 	# WARN we still can getAttr on deleted obj, the data are only deleted in DB ======> TODO: faire un truc pour empecher ça
-		is( $obj->getAttr( name => 'motherboard_sn' ), '666', "get value after get obj" );
+		is( $obj->getAttr( name => 'motherboard_serial_number' ), '666', "get value after get obj" );
 	
 	#$obj = $adm->getObj( type => "Motherboard", id => $obj_id );
 	#	ok( !defined $obj, "get obj with data not in DB return undef" );  # => and warning message is displayed
@@ -89,7 +100,13 @@ eval {
 	#my $op3 = $adm->getNextOp( );
 	#print $op3->getValue( 'type' ), "    ", $op3->getValue( 'operation_id' );
 	
-	$adm->newOp( type => 'AddMotherboard', params => { cluster_id => 1, motherboard_sn => "pouet", mac_address => "truc"}, priority => 500);
+	$adm->newOp(type => 'AddMotherboard', 
+				priority => 500,
+				params => { 
+					motherboard_serial_number => "pouet", 
+					motherboard_mac_address => "truc",
+					motherboard_model_id => 1
+				});
 	my $op = $adm->getNextOp();
 		isa_ok( $op, "Operation", '$op');
 		is( $op->{_dbix}->in_storage , 1, "save op in DB" );

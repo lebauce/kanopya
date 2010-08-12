@@ -16,7 +16,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "kernel_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "motherboard_sn",
+  "motherboard_serial_number",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 64 },
   "motherboard_slot_position",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
@@ -74,8 +74,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2K5MpbohFt6rC8wqgUOpbQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 14:38:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:81LZSy/lY3TsxCGZ5D2lMg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

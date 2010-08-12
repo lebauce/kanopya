@@ -4,20 +4,22 @@ use strict;
 use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
+use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 
-use constant ATTR_DEF => {motherboard_model_id	=> {pattern			=> 'm//s',
-											is_mandatory	=> 0,
+use constant ATTR_DEF => {
+	motherboard_model_id	=>	{pattern			=> 'm//s',
+											is_mandatory	=> 1,
 											is_extended		=> 0},
-			  processortemplate_id		=> {pattern			=> 'm//m',
-											is_mandatory	=> 0,
+			  processor_model_id		=> {pattern			=> 'm//m',
+											is_mandatory	=> 1,
 											is_extended 	=> 0},
 			  kernel_id					=> {pattern			=> 'm//s',
-											is_mandatory	=> 0,
+											is_mandatory	=> 1,
 											is_extended		=> 0},
-			  motherboard_sn			=> {pattern 		=> 'm//s',
+			  motherboard_serial_number	=> {pattern 		=> 'm//s',
 											is_mandatory	=> 1,
 											is_extended 	=> 0},
 			  motherboard_slot_position	=> {pattern 		=> 'm//s',
@@ -64,7 +66,7 @@ sub checkAttrs {
 	my %args = @_;
 	my (%global_attrs, %ext_attrs, $attr);
 	my $attr_def = ATTR_DEF;
-
+	#print Dumper $attr_def;
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs need an attrs hash named argument!"); }	
 
@@ -80,7 +82,7 @@ sub checkAttrs {
 				$global_attrs{$attr} = $attrs->{$attr};
 			}
 		}
-		else {attr_def
+		else {
 			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs detect a wrong attr $attr !");
 		}
 	}

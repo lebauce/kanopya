@@ -29,7 +29,7 @@ eval {
 				priority => '100',
 				params => { motherboard_mac_address => '00:1c:c0:c0:1c:9a', 
 							kernel_id => 2, 
-							motherboard_sn => "Test sn"});
+							motherboard_serial_number => "Test sn"});
 	my $pub_net =$adm->newPublicIP(ip_address => '192.168.0.1', ip_mask => '255.255.255.0');
 	note("Operation Addition test");
 	$adm->newOp(type		=> "AddCluster",

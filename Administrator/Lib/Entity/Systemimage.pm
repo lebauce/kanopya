@@ -1,22 +1,25 @@
 package Entity::Systemimage;
 
 use strict;
-use lib qw (.. ../../../Common/Lib);
+use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 
-my $struct = {systemimage_name			=> {pattern			=> 'm//s',
-											is_mandatory	=> 1,
-											is_extended		=> 0},
-			  systemimage_desc			=> {pattern			=> 'm//m',
-											is_mandatory	=> 1,
-											is_extended 	=> 0},
-			  distribution_id			=> {pattern			=> 'm//s',
-											is_mandatory	=> 1,
-											is_extended		=> 0},
-			};
+use constant ATTR_DEF => {
+	systemimage_name => { pattern => 'm//s',
+						  is_mandatory => 1,
+						  is_extended => 0 },
+	
+	systemimage_desc => { pattern => 'm//m',
+						  is_mandatory => 1,
+						  is_extended => 0 },
+	
+	distribution_id => { pattern => 'm//s',
+						 is_mandatory => 1,
+						 is_extended => 0 },
+};
 
 
 
@@ -35,16 +38,17 @@ sub checkAttrs {
 	shift;
 	my %args = @_;
 	my (%global_attrs, %ext_attrs, $attr);
+	my $attr_def = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs need an data hash and class named argument!"); }	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
-		if (exists $struct->{$attr}){
+		if (exists $attr_def->{$attr}){
 			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
 			#TODO Check param with regexp in pattern field of struct
-			if ($struct->{$attr}->{is_extended}){
+			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
 			}
 			else {
@@ -55,13 +59,13 @@ sub checkAttrs {
 			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs detect a wrong attr $attr !");
 		}
 	}
-	foreach $attr (keys(%$struct)) {
-		if (($struct->{$attr}->{is_mandatory}) &&
+	foreach $attr (keys(%$attr_def)) {
+		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs detect a missing attribute $attr !");
 			}
 	}
-	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
+	#TODO Check if distribution id exist and are correct.
 	return {global => \%global_attrs, extended => \%ext_attrs};
 }
 
@@ -75,14 +79,15 @@ sub checkAttrs {
 
 =cut
 
-sub checkAttr{
+sub checkAttr {
 	my $self = shift;
 	my %args = @_;
+	my $attr_def = ATTR_DEF;
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttr need a name and value named argument!"); }
-	if (!exists $struct->{$args{name}}){
+	if (!exists $attr_def->{$args{name}}){
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttr invalid name"); }
 	# Here check attr value
 }
@@ -98,8 +103,7 @@ sub new {
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->new need a data and rightschecker named argument!"); }
 	
     my $self = $class->SUPER::new( %args );
-	
-    return $self;
+	return $self;
 }
 
 

@@ -1,4 +1,4 @@
-CREATE DATABASE  IF NOT EXISTS `administrator` /*!40100 DEFAULT CHARACTER SET latin1 */;
+CREATE DATABASE  IF NOT EXISTS `administrator` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `administrator`;
 -- MySQL dump 10.13  Distrib 5.1.41, for debian-linux-gnu (x86_64)
 --
@@ -30,7 +30,7 @@ CREATE TABLE `kernel` (
   `kernel_version` char(32) NOT NULL,
   `kernel_desc` char(255) DEFAULT NULL,
   PRIMARY KEY (`kernel_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -58,7 +58,7 @@ CREATE TABLE `distribution_entity` (
   UNIQUE KEY `fk_distribution_entity_2` (`distribution_id`),
   CONSTRAINT `fk_distribution_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_distribution_entity_2` FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -90,7 +90,7 @@ CREATE TABLE `processor_model` (
   `processor_64bits` int(1) unsigned NOT NULL,
   `processor_CPU_flags` char(255) DEFAULT NULL,
   PRIMARY KEY (`processor_model_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -115,7 +115,7 @@ CREATE TABLE `motherboard` (
   `motherboard_model_id` int(8) unsigned NOT NULL,
   `processor_model_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
-  `motherboard_SN` char(64) NOT NULL,
+  `motherboard_serial_number` char(64) NOT NULL,
   `motherboard_slot_position` int(1) unsigned NOT NULL,
   `motherboard_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
@@ -134,7 +134,7 @@ CREATE TABLE `motherboard` (
   CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -162,7 +162,7 @@ CREATE TABLE `component_provided` (
   KEY `fk_component_provided_2` (`distribution_id`),
   CONSTRAINT `fk_component_provided_1` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_provided_2` FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -189,7 +189,7 @@ CREATE TABLE `clusterdetails` (
   PRIMARY KEY (`cluster_id`,`name`),
   KEY `fk_clusterdetails_1` (`cluster_id`),
   CONSTRAINT `fk_clusterdetails_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -245,7 +245,7 @@ CREATE TABLE `cluster` (
   `kernel_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY `cluster_name` (`cluster_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -275,10 +275,12 @@ CREATE TABLE `motherboard_model` (
   `motherboard_iface_num` int(1) unsigned NOT NULL,
   `motherboard_RAM_slot_num` int(1) unsigned NOT NULL,
   `motherboard_RAM_max` int(1) unsigned NOT NULL,
-  `processortemplate_id` int(8) unsigned DEFAULT NULL,
+  `processor_model_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`motherboard_model_id`),
-  UNIQUE KEY `motherboard_model_UNIQUE` (`motherboard_model_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+  UNIQUE KEY `motherboard_model_UNIQUE` (`motherboard_model_name`),
+  KEY `fk_motherboard_model_1` (`processor_model_id`),
+  CONSTRAINT `fk_motherboard_model_1` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -303,7 +305,7 @@ CREATE TABLE `operationtype` (
   `operationtype_name` char(64) DEFAULT NULL,
   PRIMARY KEY (`operationtype_id`),
   UNIQUE KEY `operationtype_name_UNIQUE` (`operationtype_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -331,7 +333,7 @@ CREATE TABLE `motherboard_entity` (
   UNIQUE KEY `fk_motherboard_entity_2` (`motherboard_id`),
   CONSTRAINT `fk_motherboard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_entity_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -362,7 +364,7 @@ CREATE TABLE `systemimage` (
   PRIMARY KEY (`systemimage_id`),
   KEY `fk_systemimage_1` (`distribution_id`),
   CONSTRAINT `fk_systemimage_1` FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -424,7 +426,7 @@ CREATE TABLE `component_instance` (
   CONSTRAINT `fk_component_instance_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_2` FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -451,7 +453,7 @@ CREATE TABLE `openiscsi2` (
   `openiscsi2_server` char(32) NOT NULL,
   `openiscsi2_port` int(4) DEFAULT NULL,
   PRIMARY KEY (`openiscsi2_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -478,7 +480,7 @@ CREATE TABLE `component_template_attr` (
   PRIMARY KEY (`template_component_id`),
   KEY `fk_component_template_attr_1` (`template_component_id`),
   CONSTRAINT `fk_component_template_attr_1` FOREIGN KEY (`template_component_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -505,7 +507,7 @@ CREATE TABLE `component_instance_entity` (
   KEY `fk_component_instance_entity_2` (`component_instance_id`),
   CONSTRAINT `fk_component_instance_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_entity_2` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -533,7 +535,7 @@ CREATE TABLE `component_installed` (
   KEY `fk_component_installed_2` (`systemimage_id`),
   CONSTRAINT `fk_component_installed_1` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_installed_2` FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -565,7 +567,7 @@ CREATE TABLE `operation` (
   UNIQUE KEY `execution_rank_UNIQUE` (`execution_rank`),
   KEY `fk_operation_queue_1` (`user_id`),
   CONSTRAINT `fk_operation_queue_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -595,7 +597,7 @@ CREATE TABLE `iscsitarget1_lun` (
   PRIMARY KEY (`iscsitarget1_lun_id`),
   KEY `fk_iscsitarget1_lun_1` (`iscsitarget1_target_id`),
   CONSTRAINT `fk_iscsitarget1_lun_1` FOREIGN KEY (`iscsitarget1_target_id`) REFERENCES `iscsitarget1_target` (`iscsitarget1_target_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -622,7 +624,7 @@ CREATE TABLE `operation_entity` (
   UNIQUE KEY `fk_operation_entity_2` (`operation_id`),
   CONSTRAINT `fk_operation_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_operation_entity_2` FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -647,7 +649,7 @@ CREATE TABLE `apache2` (
   PRIMARY KEY (`component_instance_id`),
   KEY `fk_apache2_1` (`component_instance_id`),
   CONSTRAINT `fk_apache2_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -675,7 +677,7 @@ CREATE TABLE `publicip` (
   PRIMARY KEY (`publicip_id`),
   KEY `fk_network_1` (`cluster_id`),
   CONSTRAINT `fk_network_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE SET NULL ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -706,7 +708,7 @@ CREATE TABLE `node` (
   KEY `fk_node_2` (`motherboard_id`),
   CONSTRAINT `fk_node_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_node_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -734,7 +736,7 @@ CREATE TABLE `cluster_entity` (
   KEY `fk_cluster_entity_2` (`cluster_id`),
   CONSTRAINT `fk_cluster_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_cluster_entity_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -760,7 +762,7 @@ CREATE TABLE `component` (
   `component_version` varchar(45) NOT NULL,
   `component_category` varchar(45) NOT NULL,
   PRIMARY KEY (`component_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -788,7 +790,7 @@ CREATE TABLE `groups_entity` (
   UNIQUE KEY `fk_groups_entity_2` (`groups_id`),
   CONSTRAINT `fk_groups_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_groups_entity_2` FOREIGN KEY (`groups_id`) REFERENCES `groups` (`groups_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -815,7 +817,7 @@ CREATE TABLE `iscsitarget1_target` (
   `mountpoint` char(64) DEFAULT NULL,
   `mount_option` char(32) DEFAULT NULL,
   PRIMARY KEY (`iscsitarget1_target_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -842,7 +844,7 @@ CREATE TABLE `ingroups` (
   KEY `fk_grouping_2` (`groups_id`),
   CONSTRAINT `fk_grouping_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_grouping_2` FOREIGN KEY (`groups_id`) REFERENCES `groups` (`groups_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -870,7 +872,7 @@ CREATE TABLE `operation_parameter` (
   PRIMARY KEY (`operation_param_id`),
   KEY `fk_operation_parameter_1` (`operation_id`),
   CONSTRAINT `fk_operation_parameter_1` FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -879,7 +881,7 @@ CREATE TABLE `operation_parameter` (
 
 LOCK TABLES `operation_parameter` WRITE;
 /*!40000 ALTER TABLE `operation_parameter` DISABLE KEYS */;
-INSERT INTO `operation_parameter` VALUES (49,'motherboard_sn','Test sn',17),(50,'kernel_id','2',17),(51,'motherboard_mac_address','00:1c:c0:c0:1c:9a',17),(52,'motherboard_sn','Test2 sn',18),(53,'kernel_id','1',18),(54,'motherboard_mac_address','00:1c:c1:c1:c1:c1',18);
+INSERT INTO `operation_parameter` VALUES (49,'motherboard_serial_number','Test sn',17),(50,'kernel_id','2',17),(51,'motherboard_mac_address','00:1c:c0:c0:1c:9a',17),(52,'motherboard_serial_number','Test2 sn',18),(53,'kernel_id','1',18),(54,'motherboard_mac_address','00:1c:c1:c1:c1:c1',18);
 /*!40000 ALTER TABLE `operation_parameter` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -902,7 +904,7 @@ CREATE TABLE `user` (
   `user_desc` char(255) DEFAULT 'Note concerning this user',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `user_login` (`user_login`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -929,7 +931,7 @@ CREATE TABLE `groups` (
   `groups_system` int(1) unsigned NOT NULL,
   PRIMARY KEY (`groups_id`),
   UNIQUE KEY `groups_name` (`groups_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -956,7 +958,7 @@ CREATE TABLE `motherboarddetails` (
   PRIMARY KEY (`motherboard_id`,`name`),
   KEY `fk_motherboarddetails_1` (`motherboard_id`),
   CONSTRAINT `fk_motherboarddetails_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -983,7 +985,7 @@ CREATE TABLE `motherboard_model_entity` (
   KEY `fk_motherboard_model_entity_2` (`motherboard_model_id`),
   CONSTRAINT `fk_motherboard_model_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_model_entity_2` FOREIGN KEY (`motherboard_model_id`) REFERENCES `motherboard_model` (`motherboard_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1011,7 +1013,7 @@ CREATE TABLE `processor_model_entity` (
   KEY `fk_processor_model_entity_2` (`processor_model_id`),
   CONSTRAINT `fk_processor_model_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_processor_model_entity_2` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1038,7 +1040,7 @@ CREATE TABLE `lvm2_pv` (
   PRIMARY KEY (`lvm2_pv_id`),
   KEY `fk_lvm2_pv_1` (`lvm2_vg_id`),
   CONSTRAINT `fk_lvm2_pv_1` FOREIGN KEY (`lvm2_vg_id`) REFERENCES `lvm2_vg` (`lvm2_vg_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1063,7 +1065,7 @@ CREATE TABLE `component_template` (
   `component_template_name` varchar(45) NOT NULL,
   `component_template_directory` varchar(45) NOT NULL,
   PRIMARY KEY (`component_template_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1091,7 +1093,7 @@ CREATE TABLE `route` (
   PRIMARY KEY (`route_id`),
   KEY `fk_route_1` (`publicip_id`),
   CONSTRAINT `fk_route_1` FOREIGN KEY (`publicip_id`) REFERENCES `publicip` (`publicip_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1118,7 +1120,7 @@ CREATE TABLE `operationtype_entity` (
   KEY `fk_operationtype_entity_2` (`operationtype_id`),
   CONSTRAINT `fk_operationtype_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_operationtype_entity_2` FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1202,7 +1204,7 @@ CREATE TABLE `kernel_entity` (
   UNIQUE KEY `fk_kernel_entity_2` (`kernel_id`),
   CONSTRAINT `fk_kernel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_kernel_entity_2` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1230,7 +1232,7 @@ CREATE TABLE `systemimage_entity` (
   UNIQUE KEY `fk_systemimage_entity_2` (`systemimage_id`),
   CONSTRAINT `fk_systemimage_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_systemimage_entity_2` FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1259,7 +1261,7 @@ CREATE TABLE `distribution` (
   `root_device_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`distribution_id`),
   UNIQUE KEY `distribution_name` (`distribution_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1289,7 +1291,7 @@ CREATE TABLE `lvm2_lv` (
   PRIMARY KEY (`lvm2_lv_id`),
   KEY `fk_lvm2_lv_1` (`lvm2_vg_id`),
   CONSTRAINT `fk_lvm2_lv_1` FOREIGN KEY (`lvm2_vg_id`) REFERENCES `lvm2_vg` (`lvm2_vg_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1317,7 +1319,7 @@ CREATE TABLE `lvm2_vg` (
   PRIMARY KEY (`lvm2_vg_id`),
   KEY `fk_lvm2_vg_1` (`component_instance_id`),
   CONSTRAINT `fk_lvm2_vg_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1345,7 +1347,7 @@ CREATE TABLE `user_entity` (
   UNIQUE KEY `fk_user_entity_2` (`user_id`),
   CONSTRAINT `fk_user_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_user_entity_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

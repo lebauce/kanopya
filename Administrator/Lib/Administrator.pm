@@ -373,7 +373,7 @@ sub newOp {
 
 sub _get_lastRank{
 	my $self = shift;
-	my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->single;
+	my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->first;
 	if (! $row) {
 		$log->debug("No previous operation in queue");
 		return 0;

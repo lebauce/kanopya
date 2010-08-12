@@ -115,10 +115,10 @@ sub execute {
 	$result->{stderr} = `cat /tmp/EContext.stderr`;
 	$log->debug("Command stdout is : '$result->{stdout}'");
 	$log->debug("Command stderr is : '$result->{stderr}'");
-	if($result->{stderr}) {
-		throw Mcs::Exception::Execution(
-			error => "EContext::Local->execute : got stderr: $result->{stderr}");
-	}
+	#if($result->{stderr}) {
+		#throw Mcs::Exception::Execution(
+			#error => "EContext::Local->execute : got stderr: $result->{stderr}");
+	#}
 	return $result;	
 }
 
