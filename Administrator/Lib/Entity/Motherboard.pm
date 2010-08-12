@@ -4,6 +4,7 @@ use strict;
 use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 
@@ -39,6 +40,9 @@ use constant ATTR_DEF => {motherboard_model_id	=> {pattern			=> 'm//s',
 											is_extended 	=> 0},
 			  motherboard_initiatorname	=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
+											is_extended 	=> 0},
+			  etc_device_id				=> {pattern 		=> 'm//s',
+											is_mandatory	=> 0,
 											is_extended 	=> 0}
 			};
 
@@ -62,7 +66,7 @@ sub checkAttrs {
 	my $attr_def = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs need an data hash and class named argument!"); }	
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs need an attrs hash named argument!"); }	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {

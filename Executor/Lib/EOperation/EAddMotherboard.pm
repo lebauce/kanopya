@@ -161,10 +161,11 @@ sub execute{
 										   value => $self->{_objs}->{motherboard}->generateHostname());
 	#TODO On aurait pu faire une méthode dans le EMotherboard permettant de créer son etc (rassemble les appelles de creation)
 	#TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
-	$self->{_objs}->{component_storage}->createDisk(name => $self->{_objs}->{motherboard}->getEtcName(),
+	my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $self->{_objs}->{motherboard}->getEtcName(),
 													size => "52M",
 													filesystem => "ext3",
 													econtext => $self->{nas}->{econtext});
+	$self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
 	# AddMotherboard finish, just save the Entity in DB
 	$self->{_objs}->{motherboard}->save();
 }

@@ -55,9 +55,9 @@ sub _getOperation{
 
 =head2 new
 
-    my comp = EEntity::EOperation->new();
+    my comp = EOperation->new();
 
-EEntity::EOperation->new creates a new operation object.
+	EOperation->new creates a new operation object.
 
 =cut
 

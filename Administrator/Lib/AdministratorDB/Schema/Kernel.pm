@@ -23,10 +23,15 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::KernelEntity",
   { "foreign.kernel_id" => "self.kernel_id" },
 );
+__PACKAGE__->has_many(
+  "motherboards",
+  "AdministratorDB::Schema::Motherboard",
+  { "foreign.kernel_id" => "self.kernel_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-11 14:17:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0Uw8TaPlMRJpyr0odI14sg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 12:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/WKNYjsvjUJmlCrwttfGOg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

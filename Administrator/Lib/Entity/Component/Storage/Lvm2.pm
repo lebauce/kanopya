@@ -36,7 +36,8 @@ sub lvCreate{
 # ICI Recuperer le bon vg et ensuite suivre le lien lv et new dedans
 	$log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_lv_size is $args{lvm2_lv_size}, lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, lvm2_vg_id is $args{lvm2_vg_id}");
 	my $lv_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs;
-	$lv_rs->create(\%args);
+	my $res = $lv_rs->create(\%args);
+	return $res->lvm2_lv_id;
 }
 
 sub lvRemove{
