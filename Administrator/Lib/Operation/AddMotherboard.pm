@@ -46,7 +46,7 @@ use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Motherboard;
-
+use Data::Dumper;
 
 
 my $log = get_logger("administrator");
@@ -69,6 +69,7 @@ sub new {
 		throw Mcs::Exception::Internal(error => "Operation->AddMotherboard need params to be checked!"); }
     my $self = $class->SUPER::new( %args );
     $self->_init();
+    print Dumper $args{params};
     Entity::Motherboard->checkAttrs(attrs => $args{params});
     return $self;
 }

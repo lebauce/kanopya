@@ -224,6 +224,60 @@ sub getEntity {
 	}
 }
 
+=head2 getEntity
+	
+	Class : Public
+	
+	Desc : This method allows to get entity object. It
+			get _data from table with _getData
+			call _newObj on _data
+	
+	args: 
+		type : String : Object Type
+		id : int : Object id
+		class_path : String : This is an optionnal parameter which allow to instanciate class_path with other DB tables
+	Return : a new Entity::<type> with data corresponding to <id> (in <type> table)
+	Comment : To modify data in DB call save() on returned obj (after modification)
+	
+=cut
+
+sub getEntitiesFromHash {
+	my $self = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{hash} or ! defined $args{hash})) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_getEntityFromHash need a type and a hash named argument!"); }
+	$log->debug( "getEntityFromHash( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	
+	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
+	$rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
+	
+	$log->debug( "_getEntityClass with type = $args{type}");
+	if (! exists $args{class_path} or ! defined $args{class_path}){
+		 $entity_class = $self->_getEntityClass(type => $args{type});}
+	else {
+		$entity_class = $self->_getEntityClass(type => $args{type}, class_path => $args{class_path});}
+
+	my $extension = $entity_class->extension();
+
+	while ( my $raw = $rs->next ) {
+		my $obj;
+		if ($extension){
+			my %attrs;
+			my $ext_attrs_rs = $raw->search_related( $extension );
+			while ( my $param = $ext_attrs_rs->next ) {
+				$attrs{ $param->name } = $param->value;}
+			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
+		else {
+			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
+		push @objs, $obj;
+	}
+	
+}
+
 =head2 getEntities
 	
 	Class : Public
@@ -473,6 +527,40 @@ sub _getDbix {
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
 		$dbix = $self->{db}->resultset( $args{table} )->find(  $args{id}, 
+										{ 	'+columns' => [ "entitylink.entity_id" ], 
+										join => ["entitylink"] });};
+	if ($@) {
+		my $error = $@;
+		throw Mcs::Exception::Internal(error => "Administrator->_getDbix error " . $error);
+	}
+	return $dbix;
+}
+
+=head2 Administrator::_getDbixFromHash(%args)
+	
+	Class : Private
+	
+	Desc : Instanciate dbix class mapped to corresponding raw in DB
+	
+	args: 
+		table : String : DB table name
+		hash: Hash ref : hash of constraints to find entity
+	return: db schema (dbix)
+	
+=cut
+
+sub _getDbixFromHash {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{table} or ! defined $args{table}) ||
+		(! exists $args{hash} or ! defined $args{hash})) { 
+			throw Mcs::Exception::Internal(error => "Administrator->_getDbixFromHash need a table and hash named argument!"); }
+
+	my $dbix;
+#	my $entitylink = lc($args{table})."_entities";
+	eval {
+		$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
 										{ 	'+columns' => [ "entitylink.entity_id" ], 
 										join => ["entitylink"] });};
 	if ($@) {
