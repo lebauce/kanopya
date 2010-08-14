@@ -223,25 +223,21 @@ sub getEntity {
 		throw Mcs::Exception::Internal(error => "Administrator::getEntity : Object not found with type ($args{type}) and id ($args{id})");
 	}
 }
-
-=head2 getEntity
+=head2 getEntities
 	
 	Class : Public
 	
-	Desc : This method allows to get entity object. It
-			get _data from table with _getData
-			call _newObj on _data
+	Desc : This method allows to get many entity objects. It
+			get allowed object corresponding to where clause in hash param
 	
 	args: 
-		type : String : Object Type
-		id : int : Object id
-		class_path : String : This is an optionnal parameter which allow to instanciate class_path with other DB tables
-	Return : a new Entity::<type> with data corresponding to <id> (in <type> table)
-	Comment : To modify data in DB call save() on returned obj (after modification)
+		type : String : Objects type
+		hash : hashref : this hash describe field and constraint for search
+	Return Entities hash 
 	
 =cut
 
-sub getEntitiesFromHash {
+sub getEntities {
 	my $self = shift;
     my %args = @_;
 	my @objs = ();
@@ -275,48 +271,35 @@ sub getEntitiesFromHash {
 			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
 		push @objs, $obj;
 	}
-	
+	return  @objs;
 }
 
-=head2 getEntities
-	
-	Class : Public
-	
-	Desc : This method allows to get many entity objects. It
-			get all allowed object from calling _getAllData
-	
-	args: 
-		type : String : Objects type
-	Return new Entities::<type> with data corresponding to <id> (in <type> table)
-	To modify data in DB call save() on returned obj (after modification)
-	
-=cut
 
-sub getEntities {
-	my $self = shift;
-    my %args = @_;
-	
-	if (! exists $args{type}) { 
-		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
-	
-	my @objs = ();
-	my $rs = $self->_getAllDbix( table => $args{type} );
-	my $entity_class = $self->_getEntityClass(type => $args{type});
-	my $extension = $entity_class->extension();
-	while ( my $raw = $rs->next ) {
-		my $obj;
-		if ($extension){
-			my %attrs;
-			my $ext_attrs_rs = $raw->search_related( $extension );
-			while ( my $param = $ext_attrs_rs->next ) {
-				$attrs{ $param->name } = $param->value;}
-			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
-		else {
-			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
-		push @objs, $obj;
-	}
-    return  @objs;
-}
+#sub getEntities {
+#	my $self = shift;
+#    my %args = @_;
+#	
+#	if (! exists $args{type}) { 
+#		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
+#	
+#	my @objs = ();
+#	my $rs = $self->_getAllDbix( table => $args{type} );
+#	my $entity_class = $self->_getEntityClass(type => $args{type});
+#	my $extension = $entity_class->extension();
+#	while ( my $raw = $rs->next ) {
+#		my $obj;
+#		if ($extension){
+#			my %attrs;
+#			my $ext_attrs_rs = $raw->search_related( $extension );
+#			while ( my $param = $ext_attrs_rs->next ) {
+#				$attrs{ $param->name } = $param->value;}
+#			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
+#		else {
+#			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
+#		push @objs, $obj;
+#	}
+#    return  @objs;
+#}
 
 
 =head2 newEntity
@@ -453,7 +436,8 @@ sub getNextOp {
 	my $self = shift;
 	
 	# Get all operation
-	my $all_ops = $self->_getAllDbix( table => 'Operation' );
+	my $all_ops = $self->_getDbixFromHash( table => 'Operation', hash => {});
+	$log->debug("Get Operation $all_ops");
 	# Choose the next operation to be trated
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
 	# if no other operation to be treated, send an exception
@@ -560,9 +544,23 @@ sub _getDbixFromHash {
 	my $dbix;
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
-		$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
+		$log->debug("Search obj with the following hash $args{hash}");
+		print Dumper $args{hash};
+		my $hash = $args{hash};
+		if (keys(%$hash)){
+			$log->debug("Hash has keys and value : %$hash");
+			$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
 										{ 	'+columns' => [ "entitylink.entity_id" ], 
-										join => ["entitylink"] });};
+										join => ["entitylink"] });			
+		}
+		else {
+			$log->debug("Hash is empty : %$hash");
+			$dbix = $self->{db}->resultset( $args{table} )->search( undef,
+										{ 	'+columns' => [ "entitylink.entity_id" ], 
+										join => ["entitylink"] });
+			
+		}
+	};
 	if ($@) {
 		my $error = $@;
 		throw Mcs::Exception::Internal(error => "Administrator->_getDbix error " . $error);
@@ -570,29 +568,29 @@ sub _getDbixFromHash {
 	return $dbix;
 }
 
-=head2 _getAllDbix
-
-	Class : Private
-
-	Desc : Get all dbix class of table
-	
-	args:
-		table : String : Table name
-	return: resultset (dbix)
-	
-=cut
-
-sub _getAllDbix {
-	my $self = shift;
-	my %args = @_;
-
-	if (! exists $args{table} or ! defined $args{table}) { 
-		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
-
-	my $entitylink = lc($args{table})."_entities";
-	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
-		join => ["$entitylink"]});
-}
+#=head2 _getAllDbix
+#
+#	Class : Private
+#
+#	Desc : Get all dbix class of table
+#	
+#	args:
+#		table : String : Table name
+#	return: resultset (dbix)
+#	
+#=cut
+#
+#sub _getAllDbix {
+#	my $self = shift;
+#	my %args = @_;
+#
+#	if (! exists $args{table} or ! defined $args{table}) { 
+#		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
+#
+#	my $entitylink = lc($args{table})."_entities";
+#	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
+#		join => ["$entitylink"]});
+#}
 
 
 =head2 _newDbix
