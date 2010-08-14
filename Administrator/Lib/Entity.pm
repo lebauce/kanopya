@@ -225,7 +225,7 @@ sub getAttr {
     my $value = undef;
     
 	if (! exists $args{name} or ! defined $args{name}) { 
-		throw Mcs::Exception::Internal(error => "Entity->setAttrs need an attrs hash named argument!"); }
+		throw Mcs::Exception::Internal(error => "Entity->getAttrs need a name named argument!"); }
 
 
 	$log->info(ref($self) . " getAttr of $args{name}");
@@ -239,7 +239,7 @@ sub getAttr {
 			$log->info("  found value = $value (in ext local)");
 		}
 		else {
-			throw Mcs::Exception::Internal(error => "Entity->setAttr no attr name $args{name}!");
+			throw Mcs::Exception::Internal(error => "Entity->getAttr no attr name $args{name}!");
 			}
 	return $value;
 }

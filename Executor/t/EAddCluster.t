@@ -26,33 +26,30 @@ eval {
 #	$adm->{db}->txn_begin;
 	
 #	note("Operation Addition test");
-#	my $pub_net =$adm->newPublicIP(ip_address => '192.168.0.1', ip_mask => '255.255.255.0');
-#	$adm->newOp(type		=> "AddCluster",
-#				priority	=> '100',
-#				params		=> {cluster_name => 'test', 
-#								cluster_desc => 'test cluster 1',
-#								cluster_min_node		=> 1,
-#								cluster_max_node		=> 1,
-#								cluster_priority		=> 500,
-#								cluster_publicip_id		=> $pub_net,
-#								systemimage_id			=> 1,
-#								kernel_id				=> 1,
-#								active					=> 0});
-#	$pub_net =$adm->newPublicIP(ip_address => '192.168.0.2', ip_mask => '255.255.255.0');
-#	$adm->newOp(type		=> "AddCluster",
-#				priority	=> '100',
-#				params		=> {cluster_name => 'test2', 
-#								cluster_desc => 'test cluster 2',
-#								cluster_min_node		=> 1,
-#								cluster_max_node		=> 1,
-#								cluster_priority		=> 500,
-#								cluster_publicip_id		=> $pub_net,
-#								systemimage_id			=> 1,
-#								kernel_id				=> 1,
-#								active					=> 0});
-#	
-#		
-	BEGIN { $ENV{DBIC_TRACE} = 1 }
+
+	$adm->newOp(type		=> "AddCluster",
+				priority	=> '100',
+				params		=> {cluster_name => 'test', 
+								cluster_desc => 'test cluster 1',
+								cluster_min_node		=> 1,
+								cluster_max_node		=> 1,
+								cluster_priority		=> 500,
+								systemimage_id			=> 1,
+								kernel_id				=> 1,
+								active					=> 0});
+	$adm->newOp(type		=> "AddCluster",
+				priority	=> '100',
+				params		=> {cluster_name => 'test2', 
+								cluster_desc => 'test cluster 2',
+								cluster_min_node		=> 1,
+								cluster_max_node		=> 1,
+								cluster_priority		=> 500,
+								systemimage_id			=> 1,
+								kernel_id				=> 1,
+								active					=> 0});
+	
+		
+	#BEGIN { $ENV{DBIC_TRACE} = 1 }
 	@args = ();
 	note ("Execution begin");
 	my $exec = new_ok("Executor", \@args, $exectest);
@@ -60,7 +57,19 @@ eval {
 	note("Operation Execution is finish");
 
 	my @entities = $adm->getEntities(type => 'Cluster', hash=> {cluster_name => 'test', cluster_desc => 'test cluster 1'});
+	my $clustid = $entities[0]->getAttr(name => 'cluster_id');
+	$adm->newOp(type		=> "RemoveCluster",
+			priority	=> '100',
+			params		=> {cluster_id => $clustid});
 	# Here Test number of entity returned
+
+	@entities = $adm->getEntities(type => 'Cluster', hash=> {cluster_name => 'test2', cluster_desc => 'test cluster 2'});
+	$clustid = $entities[0]->getAttr(name => 'cluster_id');
+	$adm->newOp(type		=> "RemoveCluster",
+			priority	=> '100',
+			params		=> {cluster_id => $clustid});
+
+	$exec->execnround(run => 2);
 
 	eval {
 		my $addmotherboard_op = $adm->getNextOp();

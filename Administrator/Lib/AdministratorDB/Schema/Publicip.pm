@@ -11,11 +11,11 @@ __PACKAGE__->add_columns(
   "publicip_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "ip_address",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 1 },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 15 },
   "ip_mask",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 1 },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 15 },
   "gateway",
-  { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 1 },
+  { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 15 },
   "cluster_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
 );
@@ -32,8 +32,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-12 14:38:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0mJqsk915kXKg2m3GMVHCA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Xh+z5i76fpUv7DUaEYyKTw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

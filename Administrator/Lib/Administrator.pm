@@ -243,12 +243,13 @@ sub getEntities {
 	my @objs = ();
     my ($rs, $entity_class);
 
+#TODO FAire du like et pas du where!!
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{hash} or ! defined $args{hash})) { 
 		throw Mcs::Exception::Internal(error => "Administrator->_getEntityFromHash need a type and a hash named argument!"); }
 	$log->debug( "getEntityFromHash( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 	
-	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
+	$log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
 	$rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
 	
 	$log->debug( "_getEntityClass with type = $args{type}");
@@ -542,22 +543,24 @@ sub _getDbixFromHash {
 			throw Mcs::Exception::Internal(error => "Administrator->_getDbixFromHash need a table and hash named argument!"); }
 
 	my $dbix;
+	my $entitylink = lc($args{table})."_entities";
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
-		$log->debug("Search obj with the following hash $args{hash}");
+		$log->debug("Search obj with the following hash $args{hash} in the following table : $args{table}");
 		print Dumper $args{hash};
 		my $hash = $args{hash};
 		if (keys(%$hash)){
-			$log->debug("Hash has keys and value : %$hash");
+			$log->debug("Hash has keys and value : %$hash when search in $args{table}");
 			$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-										{ 	'+columns' => [ "entitylink.entity_id" ], 
-										join => ["entitylink"] });			
+										{ 	'+columns' => [ "$entitylink.entity_id" ], 
+										join => ["$entitylink"] });			
 		}
 		else {
-			$log->debug("Hash is empty : %$hash");
+			$log->debug("hash is empty : %$hash when search in $args{table}");
 			$dbix = $self->{db}->resultset( $args{table} )->search( undef,
-										{ 	'+columns' => [ "entitylink.entity_id" ], 
-										join => ["entitylink"] });
+										{ 	'+columns' => [ "$entitylink.entity_id" ], 
+										join => ["$entitylink"] });
+
 			
 		}
 	};
@@ -568,29 +571,29 @@ sub _getDbixFromHash {
 	return $dbix;
 }
 
-#=head2 _getAllDbix
-#
-#	Class : Private
-#
-#	Desc : Get all dbix class of table
-#	
-#	args:
-#		table : String : Table name
-#	return: resultset (dbix)
-#	
-#=cut
-#
-#sub _getAllDbix {
-#	my $self = shift;
-#	my %args = @_;
-#
-#	if (! exists $args{table} or ! defined $args{table}) { 
-#		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
-#
-#	my $entitylink = lc($args{table})."_entities";
-#	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
-#		join => ["$entitylink"]});
-#}
+=head2 _getAllDbix
+
+	Class : Private
+
+	Desc : Get all dbix class of table
+	
+	args:
+		table : String : Table name
+	return: resultset (dbix)
+	
+=cut
+
+sub _getAllDbix {
+	my $self = shift;
+	my %args = @_;
+
+	if (! exists $args{table} or ! defined $args{table}) { 
+		throw Mcs::Exception::Internal(error => "Administrator->_getAllData need a table named argument!"); }
+
+	my $entitylink = lc($args{table})."_entities";
+	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
+		join => ["$entitylink"]});
+}
 
 
 =head2 _newDbix
@@ -715,16 +718,18 @@ sub newPublicIP {
 			throw Mcs::Exception::Internal(error => "Administrator->newPublicIP : wrong value for gateway!");
 		}
 	}
-	
+
+	my $res;	
 	# try to save public ip
 	eval {
 		my $row = {ip_address => $pubip->addr, ip_mask => $pubip->mask};
 		if($gateway) { $row->{gateway} = $gateway->addr; }
-		my $res = $self->{db}->resultset('Publicip')->create($row);
-		return $res->publicip_id;
+		$res = $self->{db}->resultset('Publicip')->create($row);
+		$log->debug("Public ip create and return ". $res->get_column("publicip_id"));
 	};
 	if($@) { throw Mcs::Exception::DB(error => "Administrator->newPublicIP: $@"); }
 	$log->debug("new public ip created");
+	return $res->get_column("publicip_id");
 }
 
 =head2 addRoute
