@@ -83,10 +83,8 @@ eval {
 	note("Get the second cluster");
 	@entities = $adm->getEntities(type => 'Cluster', hash=> {cluster_name => 'test2', cluster_desc => 'test cluster 2'});
 	$clustid = $entities[0]->getAttr(name => 'cluster_id');
-	$adm->newOp(type		=> "RemoveCluster",
-			priority	=> '100',
-			params		=> {cluster_id => $clustid});
-	BEGIN { $ENV{DBIC_TRACE} = 1 }
+
+	#BEGIN { $ENV{DBIC_TRACE} = 1 }
 	$exec->execnround(run => 2);
 
 	eval {

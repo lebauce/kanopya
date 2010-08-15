@@ -78,8 +78,8 @@ sub lvRemove{
 		throw Mcs::Exception::Internal::IncorrectParam(error => "ELvm2->removeLV need a lvm2_lv_name, lvm2_vg_id, econtext and lvm2_vg_name named argument!"); }
 
 	$log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
-	$log->debug("lvremove /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
-	my $ret = $args{econtext}->execute(command => "lvremove /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
+	$log->debug("lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
+	my $ret = $args{econtext}->execute(command => "lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
 	delete $args{econtext};
 	delete $args{lvm2_vg_name};
 	#TODO Real creation of LV

@@ -96,20 +96,20 @@ eval {
 	#
 	#	Test Operation
 	#
-	note( "Test Operation" );
-	#my $op3 = $adm->getNextOp( );
-	#print $op3->getValue( 'type' ), "    ", $op3->getValue( 'operation_id' );
-	
-	$adm->newOp(type => 'AddMotherboard', 
-				priority => 500,
-				params => { 
-					motherboard_serial_number => "pouet", 
-					motherboard_mac_address => "truc",
-					motherboard_model_id => 1
-				});
-	my $op = $adm->getNextOp();
-		isa_ok( $op, "Operation", '$op');
-		is( $op->{_dbix}->in_storage , 1, "save op in DB" );
+#	note( "Test Operation" );
+#	#my $op3 = $adm->getNextOp( );
+#	#print $op3->getValue( 'type' ), "    ", $op3->getValue( 'operation_id' );
+#	
+#	$adm->newOp(type => 'AddMotherboard', 
+#				priority => 500,
+#				params => { 
+#					motherboard_serial_number => "pouet", 
+#					motherboard_mac_address => "truc",
+#					motherboard_model_id => 1
+#				});
+#	my $op = $adm->getNextOp();
+#		isa_ok( $op, "Operation", '$op');
+#		is( $op->{_dbix}->in_storage , 1, "save op in DB" );
 	
 	
 	#my $op = $adm->newObj( type => 'Operation', params => { type => "TortueOperation", user_id => 19, execution_rank => 3000 } );

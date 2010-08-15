@@ -906,6 +906,32 @@ sub getRoutes {
 	return $routearray;
 }
 
+
+sub createNode{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
+		(! exists $args{motherboard_id} or ! defined $args{motherboard_id}) ||
+		(! exists $args{master_node} or ! defined $args{master_node})){
+		throw Mcs::Exception::Internal(error => "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!"); }
+	$self->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
+											motherboard_id =>$args{motherboard_id},
+											master_node => $args{master_node}});
+}
+sub removeNode{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
+		(! exists $args{motherboard_id} or ! defined $args{motherboard_id})){
+		throw Mcs::Exception::Internal(error => "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!"); }
+	#TODO Reflechir si on fait le delete sur le node_id ou sur la combo motherboard_id and cluster_id
+	my $row = $self->{db}->resultset('Node')->search(\%args)->first;
+	if(not defined $row) {
+		throw Mcs::Exception::DB(error => "Administrator->removeNode : node representing motherboard $args{motherboard_id} and cluster $args{cluster_id} not found!"); }
+	$row->delete;
+}
 1;
 
 __END__

@@ -25,8 +25,7 @@ my $adm = Administrator->new( %args);
 eval {
 #	$adm->{db}->txn_begin;
 	
-	note("Operation Addition test");
-	
+	note("Add Motherboard");	
 	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
 		motherboard_mac_address => '00:1c:c0:c0:1c:9a', 
 		kernel_id => 1, 
@@ -46,6 +45,21 @@ eval {
 	my $exec = new_ok("Executor", \@args, $exectest);
 	$exec->execnround(run => 2);
 	note("Operation Execution is finish");
+	
+	note("Get The motherboard");
+	@entities = $adm->getEntities(type => 'Motherboard', hash=> {motherboard_mac_address => '00:1c:c0:c0:1c:9a'});
+	my $motherboard1 = $entities[0];
+	@entities = $adm->getEntities(type => 'Motherboard', hash=> {motherboard_mac_address => '00:1c:c1:c1:c1:c1'});
+	my $motherboard2 = $entities[0];
+
+	note("Remove Motherboard");	
+	$adm->newOp(type => "RemoveMotherboard", priority => '100', params => { node_id => $motherboard1->getAttr(name=>'motherboard_id')});
+	$adm->newOp(type => "RemoveMotherboard", priority => '200', params => { node_id => $motherboard2->getAttr(name=>'motherboard_id')});
+	
+	note ("Execution begin");
+	$exec->execnround(run => 2);
+	note("Operation Execution is finish");
+
 	eval {
 		my $addmotherboard_op = $adm->getNextOp();
 	};
