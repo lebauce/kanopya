@@ -553,7 +553,7 @@ sub _getDbixFromHash {
 			$log->debug("Hash has keys and value : %$hash when search in $args{table}");
 			$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
 										{ 	'+columns' => [ "$entitylink.entity_id" ], 
-										join => ["$entitylink"] });			
+										join => ["$entitylink"] });
 		}
 		else {
 			$log->debug("hash is empty : %$hash when search in $args{table}");

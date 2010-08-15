@@ -313,17 +313,25 @@ sub _saveExtendedAttrs {
 sub delete {
 	my $self = shift;
 	my $data = $self->{_dbix};
+
+	my $relation = lc(ref $self);
+	$relation =~ s/.*\:\://g;
+	$log->warn("Delete Entity which type is " . ref($self));
 	
+	my $entity_rs = $data->related_resultset( $relation . "_entities" );
+	$log->debug("First Deletion of entity link : " . $relation . "_entities");
+	# J'essaie de supprimer dans la table entity
+	my $real_entity_rs = $entity_rs->related_resultset("entity_id");
+	$real_entity_rs->delete;
+	$log->debug("Delete extension");
 	# Delete extended Attrs (cascade delete)
 	my $extension = $self->extension();
 	if ($extension) {
 		my $Attrs_rs = $data->related_resultset( $extension );
-		if ( $Attrs_rs )
-		{
-			$Attrs_rs->delete;	
-		}
+		if ( $Attrs_rs ) {
+			$Attrs_rs->delete;}
 	}
-	
+	$log->debug("Finally delete the dbix itself");
 	$data->delete;
 
 }
