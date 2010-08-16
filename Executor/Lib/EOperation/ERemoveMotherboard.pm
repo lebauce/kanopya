@@ -120,7 +120,7 @@ sub prepare {
 	
 	## Instanciate context 
 	# Get context for nas
-	$self->{nas}->{econtext} = EFactory->newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
+	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
 
 	# Instanciate new Motherboard Entity

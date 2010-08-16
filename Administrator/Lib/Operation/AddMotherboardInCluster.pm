@@ -1,4 +1,4 @@
-# EAddCluster.pm - Operation class implementing Cluster creation operation
+# AddMotherboardInCluster.pm - Operation class implementing Cluster creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+Operation::AddMotherboardInCluster - Operation class implementing Motherboard migration to a cluster
 
 =head1 SYNOPSIS
 
@@ -37,38 +37,44 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EAddCluster;
+package Operation::AddMotherboardInCluster;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
-use EFactory;
+use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+use base "Operation";
+use Entity::Cluster;
+use Entity::Motherboard;
 
-my $log = get_logger("executor");
+my $log = get_logger("administrator");
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my $op = EEntity::EOperation::EAddMotherboard->new();
+    my $op = Operation::AddMotherboardInCluster->new(%args);
 
-EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
+Operation::AddMotherboardInCluster->new creates a new AddMotheboard operation.
 
 =cut
 
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    $log->warn("Class is : $class");
-    my $self = $class->SUPER::new(%args);
+
+    my $self = $class->SUPER::new( %args );
     $self->_init();
-    
+ 
+	if ((! exists $args{params} or ! defined $args{params})) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Operation->AddMotherboardInCluster need a params named argument!"); }
+	if ((! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) ||
+		(! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id})) { 
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Operation->AddMotherboardInCluster Need a motherboard_id and a cluster_id"); }
+ #TODO Here check cluster and motherboard existance and rights
+
+
     return $self;
 }
 
@@ -92,40 +98,7 @@ sub _init {
 
 sub prepare {
 	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
-
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddCluster->prepare need an internal_cluster named argument!"); }
 	my $adm = Administrator->new();
-	my $params = $self->_getOperation()->getParams();
-
-	$self->{_objs} = {};
-	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-
-	# Instanciate new Cluster Entity
-	$log->warn("adm->newEntity of Cluster");
-	$self->{_objs}->{cluster} = $adm->newEntity(type => "Cluster", params => $params);
-	$log->debug("New cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
-	
-}
-
-sub execute{
-	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
-	my $adm = Administrator->new();
-	$log->debug("After Adm");
-	
-	
-# Create cluster directory
-	my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
-	$self->{econtext}->execute(command => $command);
-	$log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
-
-# Save the new cluster in db
-	$self->{_objs}->{cluster}->save();
 }
 
 __END__

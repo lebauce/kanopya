@@ -223,36 +223,33 @@ sub getEntity {
 		throw Mcs::Exception::Internal(error => "Administrator::getEntity : Object not found with type ($args{type}) and id ($args{id})");
 	}
 }
-
-=head2 getEntity
+=head2 getEntities
 	
 	Class : Public
 	
-	Desc : This method allows to get entity object. It
-			get _data from table with _getData
-			call _newObj on _data
+	Desc : This method allows to get many entity objects. It
+			get allowed object corresponding to where clause in hash param
 	
 	args: 
-		type : String : Object Type
-		id : int : Object id
-		class_path : String : This is an optionnal parameter which allow to instanciate class_path with other DB tables
-	Return : a new Entity::<type> with data corresponding to <id> (in <type> table)
-	Comment : To modify data in DB call save() on returned obj (after modification)
+		type : String : Objects type
+		hash : hashref : this hash describe field and constraint for search
+	Return Entities hash 
 	
 =cut
 
-sub getEntitiesFromHash {
+sub getEntities {
 	my $self = shift;
     my %args = @_;
 	my @objs = ();
     my ($rs, $entity_class);
 
+#TODO FAire du like et pas du where!!
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{hash} or ! defined $args{hash})) { 
 		throw Mcs::Exception::Internal(error => "Administrator->_getEntityFromHash need a type and a hash named argument!"); }
 	$log->debug( "getEntityFromHash( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 	
-	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
+	$log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
 	$rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
 	
 	$log->debug( "_getEntityClass with type = $args{type}");
@@ -275,48 +272,35 @@ sub getEntitiesFromHash {
 			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
 		push @objs, $obj;
 	}
-	
+	return  @objs;
 }
 
-=head2 getEntities
-	
-	Class : Public
-	
-	Desc : This method allows to get many entity objects. It
-			get all allowed object from calling _getAllData
-	
-	args: 
-		type : String : Objects type
-	Return new Entities::<type> with data corresponding to <id> (in <type> table)
-	To modify data in DB call save() on returned obj (after modification)
-	
-=cut
 
-sub getEntities {
-	my $self = shift;
-    my %args = @_;
-	
-	if (! exists $args{type}) { 
-		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
-	
-	my @objs = ();
-	my $rs = $self->_getAllDbix( table => $args{type} );
-	my $entity_class = $self->_getEntityClass(type => $args{type});
-	my $extension = $entity_class->extension();
-	while ( my $raw = $rs->next ) {
-		my $obj;
-		if ($extension){
-			my %attrs;
-			my $ext_attrs_rs = $raw->search_related( $extension );
-			while ( my $param = $ext_attrs_rs->next ) {
-				$attrs{ $param->name } = $param->value;}
-			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
-		else {
-			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
-		push @objs, $obj;
-	}
-    return  @objs;
-}
+#sub getEntities {
+#	my $self = shift;
+#    my %args = @_;
+#	
+#	if (! exists $args{type}) { 
+#		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
+#	
+#	my @objs = ();
+#	my $rs = $self->_getAllDbix( table => $args{type} );
+#	my $entity_class = $self->_getEntityClass(type => $args{type});
+#	my $extension = $entity_class->extension();
+#	while ( my $raw = $rs->next ) {
+#		my $obj;
+#		if ($extension){
+#			my %attrs;
+#			my $ext_attrs_rs = $raw->search_related( $extension );
+#			while ( my $param = $ext_attrs_rs->next ) {
+#				$attrs{ $param->name } = $param->value;}
+#			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
+#		else {
+#			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
+#		push @objs, $obj;
+#	}
+#    return  @objs;
+#}
 
 
 =head2 newEntity
@@ -453,7 +437,8 @@ sub getNextOp {
 	my $self = shift;
 	
 	# Get all operation
-	my $all_ops = $self->_getAllDbix( table => 'Operation' );
+	my $all_ops = $self->_getDbixFromHash( table => 'Operation', hash => {});
+	$log->debug("Get Operation $all_ops");
 	# Choose the next operation to be trated
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
 	# if no other operation to be treated, send an exception
@@ -558,11 +543,27 @@ sub _getDbixFromHash {
 			throw Mcs::Exception::Internal(error => "Administrator->_getDbixFromHash need a table and hash named argument!"); }
 
 	my $dbix;
+	my $entitylink = lc($args{table})."_entities";
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
-		$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-										{ 	'+columns' => [ "entitylink.entity_id" ], 
-										join => ["entitylink"] });};
+		$log->debug("Search obj with the following hash $args{hash} in the following table : $args{table}");
+		print Dumper $args{hash};
+		my $hash = $args{hash};
+		if (keys(%$hash)){
+			$log->debug("Hash has keys and value : %$hash when search in $args{table}");
+			$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
+										{ 	'+columns' => [ "$entitylink.entity_id" ], 
+										join => ["$entitylink"] });
+		}
+		else {
+			$log->debug("hash is empty : %$hash when search in $args{table}");
+			$dbix = $self->{db}->resultset( $args{table} )->search( undef,
+										{ 	'+columns' => [ "$entitylink.entity_id" ], 
+										join => ["$entitylink"] });
+
+			
+		}
+	};
 	if ($@) {
 		my $error = $@;
 		throw Mcs::Exception::Internal(error => "Administrator->_getDbix error " . $error);
@@ -717,16 +718,18 @@ sub newPublicIP {
 			throw Mcs::Exception::Internal(error => "Administrator->newPublicIP : wrong value for gateway!");
 		}
 	}
-	
+
+	my $res;	
 	# try to save public ip
 	eval {
 		my $row = {ip_address => $pubip->addr, ip_mask => $pubip->mask};
 		if($gateway) { $row->{gateway} = $gateway->addr; }
-		my $res = $self->{db}->resultset('Publicip')->create($row);
-		return $res->publicip_id;
+		$res = $self->{db}->resultset('Publicip')->create($row);
+		$log->debug("Public ip create and return ". $res->get_column("publicip_id"));
 	};
 	if($@) { throw Mcs::Exception::DB(error => "Administrator->newPublicIP: $@"); }
 	$log->debug("new public ip created");
+	return $res->get_column("publicip_id");
 }
 
 =head2 addRoute
@@ -903,6 +906,32 @@ sub getRoutes {
 	return $routearray;
 }
 
+
+sub createNode{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
+		(! exists $args{motherboard_id} or ! defined $args{motherboard_id}) ||
+		(! exists $args{master_node} or ! defined $args{master_node})){
+		throw Mcs::Exception::Internal(error => "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!"); }
+	$self->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
+											motherboard_id =>$args{motherboard_id},
+											master_node => $args{master_node}});
+}
+sub removeNode{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
+		(! exists $args{motherboard_id} or ! defined $args{motherboard_id})){
+		throw Mcs::Exception::Internal(error => "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!"); }
+	#TODO Reflechir si on fait le delete sur le node_id ou sur la combo motherboard_id and cluster_id
+	my $row = $self->{db}->resultset('Node')->search(\%args)->first;
+	if(not defined $row) {
+		throw Mcs::Exception::DB(error => "Administrator->removeNode : node representing motherboard $args{motherboard_id} and cluster $args{cluster_id} not found!"); }
+	$row->delete;
+}
 1;
 
 __END__

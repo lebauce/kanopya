@@ -104,7 +104,7 @@ sub prepare {
 
 	## Instanciate context 
 	# Get context for nas
-	$self->{econtext} = EFactory->newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
 
 	# Instanciate Cluster Entity
@@ -120,10 +120,11 @@ sub execute{
 	my $adm = Administrator->new();
 
 # Remove cluster directory
-	$self->{econtext}->execute("rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr("cluster_name"));
-	$log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr("cluster_name"));
+my $command = "rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
+	$self->{econtext}->execute(command => $command);
+	$log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
-	$self->{_objs}->{motherboard}->delete();
+	$self->{_objs}->{cluster}->delete();
 }
 
 __END__

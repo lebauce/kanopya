@@ -45,6 +45,7 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
+use Entity::Cluster;
 
 my $log = get_logger("administrator");
 
@@ -66,7 +67,7 @@ sub new {
     $self->_init();
  
  #TODO Here check params and rights!
-     Entity::Cluster::checkAttrs($args{params});   
+     Entity::Cluster->checkAttrs(attrs => $args{params});   
     return $self;
 }
 

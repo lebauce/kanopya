@@ -1,4 +1,4 @@
-# EAddCluster.pm - Operation class implementing Cluster creation operation
+# ERemoveMotherboardFromCluster.pm - Operation class implementing Cluster creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EAddCluster;
+package EOperation::ERemoveMotherboardFromCluster;
 
 use strict;
 use warnings;
@@ -96,18 +96,24 @@ sub prepare {
 	$self->SUPER::prepare();
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddCluster->prepare need an internal_cluster named argument!"); }
+		throw Mcs::Exception::Internal::IncorrectParam(error => "ERemoveMotherboardInCluster->prepare need an internal_cluster named argument!"); }
+
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
 	$self->{_objs} = {};
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
-	# Instanciate new Cluster Entity
-	$log->warn("adm->newEntity of Cluster");
-	$self->{_objs}->{cluster} = $adm->newEntity(type => "Cluster", params => $params);
-	$log->debug("New cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
-	
+	# Get instance of Cluster Entity
+	$log->warn("Load cluster instance");
+	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
+	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
+
+	# Get instance of Cluster Entity
+	$log->warn("Load Motherboard instance");
+	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
+	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+		
 }
 
 sub execute{
@@ -118,14 +124,9 @@ sub execute{
 	my $adm = Administrator->new();
 	$log->debug("After Adm");
 	
-	
-# Create cluster directory
-	my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
-	$self->{econtext}->execute(command => $command);
-	$log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
-
-# Save the new cluster in db
-	$self->{_objs}->{cluster}->save();
+	#TODO Update export (etc, root, mount_point)
+	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
+					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 }
 
 __END__
