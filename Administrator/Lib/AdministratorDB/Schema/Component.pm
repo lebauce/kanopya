@@ -15,21 +15,21 @@ __PACKAGE__->add_columns(
     data_type => "VARCHAR",
     default_value => undef,
     is_nullable => 0,
-    size => 45,
+    size => 32,
   },
   "component_version",
   {
     data_type => "VARCHAR",
     default_value => undef,
     is_nullable => 0,
-    size => 45,
+    size => 32,
   },
   "component_category",
   {
     data_type => "VARCHAR",
     default_value => undef,
     is_nullable => 0,
-    size => 45,
+    size => 32,
   },
 );
 __PACKAGE__->set_primary_key("component_id");
@@ -50,8 +50,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/RLDUIoCwzVcNjFjyr0KLQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/WXVOE2xAX+EYvGTMIE5sg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

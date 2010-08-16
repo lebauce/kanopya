@@ -30,7 +30,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
 );
 __PACKAGE__->set_primary_key("motherboard_model_id");
-__PACKAGE__->add_unique_constraint("motherboard_model_UNIQUE", ["motherboard_model_name"]);
+__PACKAGE__->add_unique_constraint("motherboard_model_name_UNIQUE", ["motherboard_model_name"]);
 __PACKAGE__->has_many(
   "motherboards",
   "AdministratorDB::Schema::Motherboard",
@@ -48,8 +48,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sRrV9wu2g1htFyu4bQaGjA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ixHO+96dPdxrnFxdk54vSw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

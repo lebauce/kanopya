@@ -37,24 +37,39 @@ sub new {
     return $self;
 }
 
-=head getDevice 
+=head getDevices 
 
-get etc device attributes
-named argument: type (can be 'etc' or 'root') 
-
+get etc and root device attributes for this distribution
 
 =cut
 
-sub getDevice {
+sub getDevices {
 	my $self = shift;
-	my %args = @_;
-	if (! exists $args{type} or ! defined $args{type}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(
-			error => "Entity::Distribution->getDevice need a type named argument!"); 
+	if(! $self->{_dbix}->in_storage) {
+		throw Mcs::Exception(error => "Entity::Distribution->getDevices must be called on an already save instance");
 	}
-	my $device = {};
-	#my $row = $self->{_dbix}->result
-	
+	$log->info("retrieve etc and root devices attributes");
+	my $etcrow = $self->{_dbix}->etc_device_id;
+	my $rootrow = $self->{_dbix}->root_device_id;
+	my $devices = {
+		etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
+				 vg_id => $etcrow->get_column('lvm2_vg_id'),
+				 lvname => $etcrow->get_column('lvm2_lv_name'),
+				 vgname => $etcrow->lvm2_vg_id->get_column('lvm2_vg_name'),
+				 size => $etcrow->get_column('lvm2_lv_size'),
+				 freespace => $etcrow->get_column('lvm2_lv_freespace'),	
+				 filesystem => $etcrow->get_column('lvm2_lv_filesystem')
+				},
+		root => { lv_id => $rootrow->get_column('lvm2_lv_id'), 
+				 vg_id => $rootrow->get_column('lvm2_vg_id'),
+				 lvname => $rootrow->get_column('lvm2_lv_name'),
+				 vgname => $rootrow->lvm2_vg_id->get_column('lvm2_vg_name'),
+				 size => $rootrow->get_column('lvm2_lv_size'),
+				 freespace => $rootrow->get_column('lvm2_lv_freespace'),	
+				 filesystem => $rootrow->get_column('lvm2_lv_filesystem')
+		}
+	};
+	return $devices;
 }
 
 

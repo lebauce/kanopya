@@ -30,6 +30,11 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::User",
   { user_id => "user_id" },
 );
+__PACKAGE__->belongs_to(
+  "type",
+  "AdministratorDB::Schema::Operationtype",
+  { operationtype_name => "type" },
+);
 __PACKAGE__->has_many(
   "operation_entities",
   "AdministratorDB::Schema::OperationEntity",
@@ -42,8 +47,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lWZsOtNGd5+NvpmpmT7/Ag
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:T9Hb7t1ZolozT4OQSIfgZA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

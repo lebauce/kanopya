@@ -49,7 +49,7 @@ sub lvRemove{
 		throw Mcs::Exception::Internal::IncorrectParam(error => "Lvm2->LvRemove need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!"); }
 # ICI Recuperer le bon vg et ensuite suivre le lien lv et new dedans
 	$log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_vg_id is $args{lvm2_vg_id}");
-	my $lv_row = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs->single({lvm2_lv_name => $args{lvm2_lv_name}});
+	my $lv_row = $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->lvm2_lvs->single({lvm2_lv_name => $args{lvm2_lv_name}});
 	$lv_row->delete();
 }
 

@@ -8,6 +8,8 @@ use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspac
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
 
+
+
 my $admtest = "AdminTest";
 my $exectest = "ExecTest";
 
@@ -24,7 +26,7 @@ my $addmotherboard_op;
 my $adm = Administrator->new( %args);
 eval {
 #	$adm->{db}->txn_begin;
-	
+		
 	note("Add Motherboard");	
 	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
 		motherboard_mac_address => '00:1c:c0:c0:1c:9a', 
@@ -39,6 +41,8 @@ eval {
 		motherboard_serial_number => "Test2 sn",
 		motherboard_model_id => 1,
 		processor_model_id => 1});
+	
+	#BEGIN { $ENV{DBIC_TRACE} = 1 }
 	
 	@args = ();
 	note ("Execution begin");

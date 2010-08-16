@@ -1,4 +1,4 @@
-# ECreateSystemimage.pm - Operation class implementing System image creation operation
+# ERemoveSystemimage.pm - Operation class implementing System image deletion operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,12 +23,12 @@
 
 =head1 NAME
 
-EEntity::EOperation::ECreateSystemimage - Operation class implementing System image creation operation
+EOperation::ERemoveSystemimage - Operation class implementing System image deletion operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement System image creation operation
+It allows to implement System image deletion operation
 
 =head1 DESCRIPTION
 
@@ -37,7 +37,7 @@ It allows to implement System image creation operation
 =head1 METHODS
 
 =cut
-package EOperation::ECreateSystemimage;
+package EOperation::ERemoveSystemimage;
 
 use strict;
 use warnings;
@@ -55,9 +55,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = EOperation::ECreateSystemimage->new();
+    my $op = EOperation::ERemoveSystemimage->new();
 
-EOperation::ECreateSystemimage->new creates a new ECreateSystemimage operation.
+EOperation::ERemoveSystemimage->new creates a new ERemoveSystemimage operation.
 
 =cut
 
@@ -65,7 +65,6 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->warn("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -96,8 +95,8 @@ sub prepare {
 	$self->SUPER::prepare();
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "ECreateSystemimage->prepare need an internal_cluster named argument!"); }
-	$log->warn("After Eoperation prepare and before get Administrator singleton");
+		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddSystemimage->prepare need an internal_cluster named argument!"); }
+	
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
@@ -121,27 +120,19 @@ sub prepare {
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
-	# Get distribution from param
-	$self->{_objs}->{distribution} = $adm->getEntity(type => 'Distribution', id => $params->{distribution_id});
-	
 	# Instanciate new Systemimage Entity
 	$log->warn("adm->newEntity of Systemimage");
-	$self->{_objs}->{systemimage} = $adm->newEntity(type => "Systemimage", params => $params);
+	$self->{_objs}->{systemimage} = $adm->getEntity(type => "Systemimage", id => $params->{systemimage_id});
 	$log->warn("New systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 	
-	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
+	## Instanciate Component needed (here LVM on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
 										 version => "2",
 										 administrator => $adm);
-	print "Value return by getcomponent ". ref($tmp);
+	
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
-	# Instanciate Cluster Export component.
-	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1",
-																					  administrator => $adm));
-	$log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));
 }
 
 sub execute{
@@ -149,26 +140,18 @@ sub execute{
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
 		
+	my $devs = $self->{_objs}->{systemimage}->getDevices();
+	my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+	my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+	
+	# creation of etc and root devices based on distribution devices
+	$log->info("etc device deletion for systemimage");
+	$self->{_objs}->{component_storage}->removeDisk(name => $etc_name, econtext => $self->{nas}->{econtext});
 
-	# Set initiatorName
-	#$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
-										   #value => $self->{_objs}->{component_export}->generateInitiatorname(id => $self->{_objs}->{motherboard}));
-	#TODO voir si ou met on les fonctions getInternalIP et getHostname
-	# Set internal ip
-	#TODO getInternalip et getHostname pourrait etre dans le EMotherboard ??
-	#$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip",
-										   #value => $adm->getFreeInternalIP());
-	# Set Hostname
-	#$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
-										   #value => $self->{_objs}->{motherboard}->generateHostname());
-	#TODO On aurait pu faire une méthode dans le EMotherboard permettant de créer son etc (rassemble les appelles de creation)
-	#TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
-	#$self->{_objs}->{component_storage}->createDisk(name => $self->{_objs}->{motherboard}->getEtcName(),
-													#size => "52M",
-													#filesystem => "ext3",
-													#econtext => $self->{nas}->{econtext});
-	# AddMotherboard finish, just save the Entity in DB
-	#$self->{_objs}->{motherboard}->save();
+	$log->info("etc device deletion for systemimage");													
+	$self->{_objs}->{component_storage}->removeDisk(name => $root_name, econtext => $self->{nas}->{econtext});
+		
+	$self->{_objs}->{systemimage}->delete();
 }
 
 1;

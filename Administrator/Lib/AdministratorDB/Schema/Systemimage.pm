@@ -17,13 +17,14 @@ __PACKAGE__->add_columns(
   "distribution_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "etc_device_id",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
   "root_device_id",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "systemimage_active",
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
+  "active",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
 );
 __PACKAGE__->set_primary_key("systemimage_id");
+__PACKAGE__->add_unique_constraint("systemimage_name_UNIQUE", ["systemimage_name"]);
 __PACKAGE__->has_many(
   "component_installeds",
   "AdministratorDB::Schema::ComponentInstalled",
@@ -34,6 +35,16 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Distribution",
   { distribution_id => "distribution_id" },
 );
+__PACKAGE__->belongs_to(
+  "etc_device_id",
+  "AdministratorDB::Schema::Lvm2Lv",
+  { lvm2_lv_id => "etc_device_id" },
+);
+__PACKAGE__->belongs_to(
+  "root_device_id",
+  "AdministratorDB::Schema::Lvm2Lv",
+  { lvm2_lv_id => "root_device_id" },
+);
 __PACKAGE__->has_many(
   "systemimage_entities",
   "AdministratorDB::Schema::SystemimageEntity",
@@ -41,8 +52,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rcPHwkYOvkvlEuSFQ7ehaQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CUyqPEvBLcyyublPt3uHLQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

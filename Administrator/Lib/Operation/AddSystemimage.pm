@@ -1,4 +1,4 @@
-# CreateSystemimage.pm - Operation class implementing System image creation operation
+# AddSystemimage.pm - Operation class implementing System image creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Operation::CreateSystemimage - Operation class implementing  System image creation operation
+Operation::AddSystemimage - Operation class implementing  System image creation operation
 
 =head1 SYNOPSIS
 
@@ -35,7 +35,7 @@ It allows to implement System image creation operation
 =head1 METHODS
 
 =cut
-package Operation::CreateSystemimage;
+package Operation::AddSystemimage;
 
 use strict;
 use warnings;
@@ -50,9 +50,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::CreateSystemimage->new();
+    my $op = Operation::AddSystemimage->new();
 
-Operation::CreateSystemimage->new creates a new CreateSystemimage operation.
+Operation::AddSystemimage->new creates a new CreateSystemimage operation.
 
 =cut
 
@@ -61,7 +61,7 @@ sub new {
     my %args = @_;
 
 	if (! exists $args{params} or ! defined $args{params}){
-		throw Mcs::Exception::Internal(error => "Operation->CreateSystemimage need params to be checked!"); }
+		throw Mcs::Exception::Internal(error => "Operation->AddSystemimage need params to be checked!"); }
     my $self = $class->SUPER::new( %args );
     $self->_init();
     Entity::Systemimage->checkAttrs(attrs => $args{params});

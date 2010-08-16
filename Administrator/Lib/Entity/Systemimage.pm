@@ -19,6 +19,18 @@ use constant ATTR_DEF => {
 	distribution_id => { pattern => 'm//s',
 						 is_mandatory => 1,
 						 is_extended => 0 },
+						 
+	etc_device_id => { pattern => 'm//s',
+						 is_mandatory => 0,
+						 is_extended => 0 },
+	
+	root_device_id => { pattern => 'm//s',
+						 is_mandatory => 0,
+						 is_extended => 0 },		
+						 
+	active => { pattern => 'm//s',
+				is_mandatory => 0,
+				is_extended => 0 },		
 };
 
 
@@ -114,5 +126,39 @@ sub new {
 	return $self;
 }
 
+=head getDevices 
+
+get etc and root device attributes for this systemimage
+
+=cut
+
+sub getDevices {
+	my $self = shift;
+	if(! $self->{_dbix}->in_storage) {
+		throw Mcs::Exception(error => "Entity::Systemimage->getDevices must be called on an already save instance");
+	}
+	$log->info("retrieve etc and root devices attributes");
+	my $etcrow = $self->{_dbix}->etc_device_id;
+	my $rootrow = $self->{_dbix}->root_device_id;
+	my $devices = {
+		etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
+				 vg_id => $etcrow->get_column('lvm2_vg_id'),
+				 lvname => $etcrow->get_column('lvm2_lv_name'),
+				 vgname => $etcrow->lvm2_vg_id->get_column('lvm2_vg_name'),
+				 size => $etcrow->get_column('lvm2_lv_size'),
+				 freespace => $etcrow->get_column('lvm2_lv_freespace'),	
+				 filesystem => $etcrow->get_column('lvm2_lv_filesystem')
+				},
+		root => { lv_id => $rootrow->get_column('lvm2_lv_id'), 
+				 vg_id => $rootrow->get_column('lvm2_vg_id'),
+				 lvname => $rootrow->get_column('lvm2_lv_name'),
+				 vgname => $rootrow->lvm2_vg_id->get_column('lvm2_vg_name'),
+				 size => $rootrow->get_column('lvm2_lv_size'),
+				 freespace => $rootrow->get_column('lvm2_lv_freespace'),	
+				 filesystem => $rootrow->get_column('lvm2_lv_filesystem')
+		}
+	};
+	return $devices;
+}
 
 1;

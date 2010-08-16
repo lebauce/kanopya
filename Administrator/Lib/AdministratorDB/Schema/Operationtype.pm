@@ -16,14 +16,19 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("operationtype_id");
 __PACKAGE__->add_unique_constraint("operationtype_name_UNIQUE", ["operationtype_name"]);
 __PACKAGE__->has_many(
+  "operations",
+  "AdministratorDB::Schema::Operation",
+  { "foreign.type" => "self.operationtype_name" },
+);
+__PACKAGE__->has_many(
   "operationtype_entities",
   "AdministratorDB::Schema::OperationtypeEntity",
   { "foreign.operationtype_id" => "self.operationtype_id" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5uWbV2EfFNIikPwNFVfEeQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Uo5mek1+a0ifw8RnWm7DVQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

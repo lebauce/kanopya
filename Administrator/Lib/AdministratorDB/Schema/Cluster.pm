@@ -25,12 +25,12 @@ __PACKAGE__->add_columns(
   "active",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
   "systemimage_id",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
   "kernel_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
 );
 __PACKAGE__->set_primary_key("cluster_id");
-__PACKAGE__->add_unique_constraint("cluster_name", ["cluster_name"]);
+__PACKAGE__->add_unique_constraint("cluster_name_UNIQUE", ["cluster_name"]);
 __PACKAGE__->has_many(
   "cluster_entities",
   "AdministratorDB::Schema::ClusterEntity",
@@ -58,8 +58,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3by5f/tA3NsZU7WL+thlvg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xy0wG3PCiE+EqFDoCSd/Zw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

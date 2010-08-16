@@ -48,10 +48,15 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Lvm2Vg",
   { "foreign.component_instance_id" => "self.component_instance_id" },
 );
+__PACKAGE__->has_many(
+  "openiscsi2s",
+  "AdministratorDB::Schema::Openiscsi2",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+VLyyz4cMDlrAHpwRwhRtQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Vn0vULFPQX8fisMk6AKXHA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

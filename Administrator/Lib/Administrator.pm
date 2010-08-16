@@ -380,8 +380,8 @@ sub newOp {
 	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
 	#TODO Put the good user in operation
-#	my $user_id = $self->{_rightschecker}->{_user};
-	my $user_id = 16;
+	my $user_id = $self->{_rightschecker}->{_user};
+#	my $user_id = 16;
 	$log->debug("User id in _rightschecker is $user_id");
 	my $op_data = $self->_newDbix( table => 'Operation', row => { 	type => $args{type},
 																	execution_rank => $rank,
@@ -444,7 +444,7 @@ sub getNextOp {
 	# if no other operation to be treated, send an exception
 	throw Mcs::Exception::Internal(error => "No more operation in queue!") if ( !$op_data );
 	# Get the operation type
-	my $op_type = $op_data->type;
+	my $op_type = $op_data->get_column('type');
 	
 	# Get Operation parameters
 	my $params_rs = $op_data->operation_parameters;
@@ -455,6 +455,7 @@ sub getNextOp {
 	$log->debug("Parameters get <" . %params . ">");
 	# Try to load Operation::$op_type
 	eval {
+		$log->debug("op_type: ".$op_type);
 		require "Operation/$op_type.pm";
 	};
 	if ($@) {

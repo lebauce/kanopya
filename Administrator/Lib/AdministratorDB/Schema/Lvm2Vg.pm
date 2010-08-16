@@ -8,9 +8,9 @@ use base 'DBIx::Class';
 __PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
 __PACKAGE__->table("lvm2_vg");
 __PACKAGE__->add_columns(
-  "component_instance_id",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "lvm2_vg_id",
+  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  "component_instance_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "lvm2_vg_name",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
@@ -37,8 +37,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-14 15:31:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Uw/mmr2z2rG0DwaNN8FBRA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:spf7/bG9g/P+sgEyhTiPEw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
