@@ -41,7 +41,7 @@ sub checkAttrs {
 	my $attr_def = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs need an data hash and class named argument!"); }	
+		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs need attrs named argument!"); }	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
@@ -92,7 +92,15 @@ sub checkAttr {
 	# Here check attr value
 }
 
+=head2 new
 
+Desc : This function return new Entity::Systemimage instance
+	args: 
+		data : dbix row data
+		rightschecker : 
+	return : Entity::Systemimage instance
+
+=cut
 
 sub new {
     my $class = shift;

@@ -64,7 +64,7 @@ sub new {
 		throw Mcs::Exception::Internal(error => "Operation->CreateSystemimage need params to be checked!"); }
     my $self = $class->SUPER::new( %args );
     $self->_init();
-    Entity::Systemimage::checkAttrs($args{params});
+    Entity::Systemimage->checkAttrs(attrs => $args{params});
     return $self;
 }
 

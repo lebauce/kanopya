@@ -122,7 +122,7 @@ sub prepare {
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
 	# Get distribution from param
-	$self->{_objs}->{distribution} = $adm->getEntity(type => 'distribution', id => $params->{distribution_id});
+	$self->{_objs}->{distribution} = $adm->getEntity(type => 'Distribution', id => $params->{distribution_id});
 	
 	# Instanciate new Systemimage Entity
 	$log->warn("adm->newEntity of Systemimage");
@@ -148,6 +148,7 @@ sub execute{
 	my $self = shift;
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
+		
 
 	# Set initiatorName
 	#$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
