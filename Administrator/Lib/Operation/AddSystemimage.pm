@@ -61,23 +61,23 @@ sub new {
     my %args = @_;
 
 	if (! exists $args{params} or ! defined $args{params}){
-		throw Mcs::Exception::Internal(error => "Operation->AddSystemimage need params to be checked!"); }
+		throw Mcs::Exception::Internal(error => "Operation::AddSystemimage->new need params to be checked!"); }
+    # Operation parameters checking
+    my $p = $args{params};
+    if (! exists $p->{systemimage_name} or ! defined $p->{systemimage_name}) {
+    	throw Mcs::Exception::Internal(error => "Operation::AddSystemimage need a systemimage_name parameter!"); }
+    if (! exists $p->{distribution_id} or ! defined $p->{distribution_id}) {
+    	throw Mcs::Exception::Internal(error => "Operation::AddSystemimage need a distribution_id parameter!"); }
+    
+    	
+    
     my $self = $class->SUPER::new( %args );
-    $self->_init();
-    Entity::Systemimage->checkAttrs(attrs => $args{params});
+    
+    
     return $self;
 }
 
-=head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-	my $self = shift;
-	return;
-}
 
 =head2 prepare
 

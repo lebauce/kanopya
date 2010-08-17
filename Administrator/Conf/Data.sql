@@ -43,12 +43,13 @@ INSERT INTO `operationtype` VALUES
 (5,'ModifyCluster'),
 (6,'RemoveCluster'),
 (7,'AddSystemimage'),
-(8,'ModifySystemimage'),
-(9,'RemoveSystemimage'),
-(10,'AddMotherboardInCluster'),
-(11,'RemoveMotherboardFromCluster');
-INSERT INTO `entity` VALUES (14),(15),(16),(17),(18),(19),(20),(21),(22), (23), (24);
-INSERT INTO `operationtype_entity` VALUES (14,1), (15,2), (16,3), (17,4), (18,5), (19,6), (20,7), (21,8), (22,9), (23,10), (24,11);
+(8,'CloneSystemimage'),
+(9,'ModifySystemimage'),
+(10,'RemoveSystemimage'),
+(11,'AddMotherboardInCluster'),
+(12,'RemoveMotherboardFromCluster');
+INSERT INTO `entity` VALUES (14),(15),(16),(17),(18),(19),(20),(21),(22), (23), (24), (25);
+INSERT INTO `operationtype_entity` VALUES (14,1), (15,2), (16,3), (17,4), (18,5), (19,6), (20,7), (21,8), (22,9), (23,10), (24,11), (25,12);
 
 
 INSERT INTO `component` VALUES 
@@ -59,31 +60,31 @@ INSERT INTO `component` VALUES
 
 
 INSERT INTO `kernel` VALUES (1,'admin','2.6.32','Admin Kernel');
-INSERT INTO `entity` VALUES (25);
-INSERT INTO `kernel_entity` VALUES (25,1);
+INSERT INTO `entity` VALUES (26);
+INSERT INTO `kernel_entity` VALUES (26,1);
 
 
 INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
-INSERT INTO `entity` VALUES (26);
-INSERT INTO `distribution_entity` VALUES (26,1);
+INSERT INTO `entity` VALUES (27);
+INSERT INTO `distribution_entity` VALUES (27,1);
 
 INSERT INTO `component_provided` VALUES (1,1),(2,1),(3,1), (4,1);
 
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1);
-INSERT INTO `entity` VALUES (27);
-INSERT INTO `cluster_entity` VALUES (27,1);
+INSERT INTO `entity` VALUES (28);
+INSERT INTO `cluster_entity` VALUES (28,1);
 
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
 
 INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','127.0.0.1','node001',NULL);
-INSERT INTO `entity` VALUES (28);
-INSERT INTO `motherboard_entity` VALUES (28,1);
+INSERT INTO `entity` VALUES (29);
+INSERT INTO `motherboard_entity` VALUES (29,1);
 
 INSERT INTO `node` VALUES (1,1,1,1);
 
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL);
-INSERT INTO `entity` VALUES (29), (30), (31) ;
-INSERT INTO `component_instance_entity` VALUES (29,1),(30,2),(31,3);
+INSERT INTO `entity` VALUES (30), (31), (32) ;
+INSERT INTO `component_instance_entity` VALUES (30,1),(31,2),(32,3);
 
 -- main vg storage from only one pv
 INSERT INTO `lvm2_vg` VALUES (1,1,'vg1',65610,134190);
@@ -91,7 +92,7 @@ INSERT INTO `lvm2_pv` VALUES (1,1,'/dev/sda4');
 
 -- distribution device for debian 5
 INSERT INTO `lvm2_lv` VALUES (1,1,'etc_Debian_5.0',52,0,'ext3');
-INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',10240,0,'ext3');
+INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',100,0,'ext3');
 
 
 INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/defaultapache');
@@ -105,8 +106,8 @@ INSERT INTO `ingroups` VALUES (44,131),(35,132),(44,132),(35,133),(44,133),(35,1
 INSERT INTO `user` VALUES 
 (2,'thom','pass','Thomas','MANNI','thomas.manni@hederatech.com','2010-07-22',NULL,''),(3,'xebech','pass','Antoine','CASTAING','antoine.castaing@hederatech.com','2010-07-22',NULL,''),
 (4,'tortue','pass','Sylvain','YVON-PALIOT','sylvain.yvon-paliot@hederatech.com','2010-07-22',NULL,''),(5,'titi','pass','titi','titi','titi@somewhere.com','2010-07-25',NULL,'Note concerning this user'),(6,'tata','pass','tata','tata','tata@somewhere.com','2010-07-25',NULL,'Note concerning this user'),(7,'toto','pass','toto','toto','toto@somewhere.com','2010-07-25',NULL,'Note concerning this user');
-INSERT INTO `entity` VALUES (32), (33), (34), (35), (36), (37);
-INSERT INTO `user_entity` VALUES (32,2),(33,3),(34,4),(35,5),(36,6),(37,7);
+INSERT INTO `entity` VALUES (33), (34), (35), (36), (37), (38);
+INSERT INTO `user_entity` VALUES (33,2),(34,3),(35,4),(36,5),(37,6),(38,7);
 
 SET foreign_key_checks=1;
 
