@@ -25,6 +25,9 @@
 
 ERollback
 
+ERollback is the object used to manage execution rollback list.
+During operation execution, rollback action will be enque. If an error coming, rollback is call
+
 =cut
 
 package ERollback;
