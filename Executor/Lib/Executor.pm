@@ -152,7 +152,7 @@ sub execnround {
    		my $op = EFactory::newEEntity(data => $opdata);
    		if ($op){
    			eval {
-   				$op->prepare(internal_cluster => $self->{config}->{cluster});
+   				$op->prepare(internal_cluster => $self->{config}->{cluster}, internal_net => $self->{config}->{internalnetwork});
    				$log->info("Operation execution");
    				$op->execute();
    				$log->indo("Operation finishing");

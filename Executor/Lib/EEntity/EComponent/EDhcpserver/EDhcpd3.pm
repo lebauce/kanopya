@@ -1,8 +1,8 @@
-package EEntity::EComponent::EExportClient::EOpeniscsi2;
+package EEntity::EComponent::EDhcpserver::EDhcpd3;
 
 use strict;
 
-use base "Entity::Component::EExportClient";
+use base "Entity::Component::EDhcpserver";
 
 
 # contructor

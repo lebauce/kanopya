@@ -76,13 +76,16 @@ sub new {
 =head2 _init
 
 	$op->_init();
-	# This private method is used to define internal parameters.
+	# This private method is used to define some hash in Operation
 
 =cut
 
 sub _init {
 	my $self = shift;
-
+	$self->{nas} = {};
+	$self->{executor} = {};
+	$self->{bootserver} = {};
+	$self->{_objs} = {};
 	return;
 }
 
@@ -106,20 +109,28 @@ sub prepare {
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
-	$self->{nas} = {};
-	$self->{executor} = {};
-	$self->{_objs} = {};
+	## Instanciate Clusters
+	# Instanciate nas Cluster 
+	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	# Instanciate executor Cluster
+	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	# Instanciate bootserver Cluster
+	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{bootserver});
 	
 	## Get Internal IP
 	# Get Internal Ip address of Master node of cluster Executor
 	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
 	# Get Internal Ip address of Master node of cluster nas
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	
+	# Get Internal Ip address of Master node of cluster bootserver
+	my $bootserver_ip = $self->{bootserver}->{obj}->getMasterNodeIp();
 	
 	## Instanciate context 
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
+	# Get context for bootserver
+	$self->{bootserver}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $bootserver_ip);
+	# Get context for executor
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
 	# Get instance of Cluster Entity
@@ -133,18 +144,20 @@ sub prepare {
 	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	## Instanciate Component needed (here LVM, ISCSITARGET, DHCP on nas cluster)
-	# Instanciate Cluster Storage component.
+	# Instanciate Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
 										 version => "2",
 										 administrator => $adm);
-	$log->debug("Value return by getcomponent ". ref($tmp));
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
-	# Instanciate Cluster Export component.
+	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
 																					  version=> "1",
 																					  administrator => $adm));
+	$log->debug("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
+	# Instanciate tftp component.
 	
+	# instanciate dhcpd component.
 }
 
 sub execute{

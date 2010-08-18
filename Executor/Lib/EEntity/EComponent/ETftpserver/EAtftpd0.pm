@@ -1,8 +1,8 @@
-package EEntity::EComponent::EExportClient::EOpeniscsi2;
+package EEntity::EComponent::ETftpserver::EAtftpd0;
 
 use strict;
 
-use base "Entity::Component::EExportClient";
+use base "Entity::Component::ETftpserver";
 
 
 # contructor
