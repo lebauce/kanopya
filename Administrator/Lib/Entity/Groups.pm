@@ -45,6 +45,9 @@ use McsExceptions;
 
 use base "Entity";
 
+my $log = get_logger("administrator");
+my $errmsg;
+
 =head2 new
 
 	Class : Private
@@ -77,8 +80,12 @@ sub new {
 sub addEntity {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{entity} or ! defined $args{entity}) {  die "Entity::Groups->addEntity need an entity named argument!"; }
-	# TODO check rights
+	if (! exists $args{entity} or ! defined $args{entity}) {  
+		$errmsg = "Entity::Groups->addEntity need an entity named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	# TODO entity addition in the group
 }
 
 =head2 removeEntity
@@ -95,10 +102,12 @@ sub addEntity {
 sub removeEntity {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{entity} or ! defined $args{entity}) {  die "Entity::Groups->removeEntity need an entity named argument!"; }
-	# TODO check rights
-	
-
+	if (! exists $args{entity} or ! defined $args{entity}) {  
+		$errmsg = "Entity::Groups->removeEntity need an entity named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	# TODO entity remove from the group
 }
 
 =head2 getEntities
@@ -115,7 +124,12 @@ sub removeEntity {
 sub getEntities {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{administrator} or ! defined $args{administrator}) {  die "Entity::Groups->getEntities need an administrator named argument!"; }
+	if (! exists $args{administrator} or ! defined $args{administrator}) {  
+		$errmsg = "Entity::Groups->getEntities need an administrator named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	# TODO getEntities of a group
 }
 
 

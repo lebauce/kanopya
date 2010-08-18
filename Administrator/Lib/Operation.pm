@@ -46,6 +46,7 @@ use Log::Log4perl "get_logger";
 use McsExceptions;
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 =head2 new
 	
@@ -68,7 +69,10 @@ sub new {
     if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})||
 		(! exists $args{params} or ! defined $args{params})) { 
-		throw Mcs::Exception::Internal(error => "Operation->new need a data, params and rightschecker named argument!"); }
+		$errmsg = "Operation->new need a data, params and rightschecker named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
     
     # Here Check if users can execution this operation (We have the rightschecker)
 
@@ -95,6 +99,7 @@ sub cancel {
 	my $params_rs = $self->{_dbix}->operation_parameters;
 	$params_rs->delete;
 	$self->{_dbix}->delete();
+	$log->info(ref($self)." deleted from database (removed from execution list)");
 }
 
 =head2 getAttr
@@ -116,16 +121,18 @@ sub getAttr {
 	my $value;
 
 	if (! exists $args{attr_name} or ! defined $args{attr_name}) { 
-		throw Mcs::Exception::Internal(error => "Operation->getAttr need an attr named argument!"); }
+		$errmsg = "Operation->getAttr need an attr named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
 
-	$log->info(ref($self) . " getAttr of $args{attr_name}");
-	
 	if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
 		$value = $self->{_dbix}->get_column( $args{attr_name} );
-		$log->info("  found value = $value");
-	}
-	else{
-		throw Mcs::Exception::Internal(error => "Operation->getAttr : Wrong value asked!");
+		$log->debug(ref($self) . " getAttr of $args{attr_name} : $value");
+	} else {
+		$errmsg = "Operation->getAttr : Wrong value asked!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	return $value;
 }
@@ -161,16 +168,15 @@ sub getParams {
 
 =cut
 
-sub save{
+sub save {
 	my $self = shift;
 
 	my $newentity = $self->{_dbix}->insert;
 	my $params = $self->{_params};
-	$log->debug("new Operation inserted.");
-
+	
 	foreach my $k (keys %$params) {
 		$self->{_dbix}->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );}
-	$log->debug("new operation $self inserted with his entity relation.");
+	$log->info(ref($self)." saved to database (added in execution list)");
 }
 
 

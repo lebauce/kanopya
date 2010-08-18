@@ -49,6 +49,7 @@ use Entity::Cluster;
 use Entity::Motherboard;
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -64,18 +65,19 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
     $self->_init();
  
-	if ((! exists $args{params} or ! defined $args{params})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Operation->AddMotherboardInCluster need a params named argument!"); }
 	if ((! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) ||
 		(! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Operation->AddMotherboardInCluster Need a motherboard_id and a cluster_id"); }
- #TODO Here check cluster and motherboard existance and rights
+		$errmsg = "Operation::AddMotherboardInCluster->new : params Need a motherboard_id and a cluster_id";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
-
-    return $self;
+	#TODO Here check cluster and motherboard existance and rights
+	return $self;
 }
 
 =head2 _init

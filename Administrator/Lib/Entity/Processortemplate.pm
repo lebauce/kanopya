@@ -16,7 +16,7 @@ sub new {
 }
 
 sub specific {
-	print "\nje peux faire des trucs specifiques à motherboard!\n";
+	#print "\nje peux faire des trucs specifiques à motherboard!\n";
 }
 
 1;

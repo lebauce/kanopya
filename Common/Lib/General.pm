@@ -47,20 +47,25 @@ use lib ".";
 use McsExceptions;
 use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
+my $errmsg;
 
 sub getClassEEntityFromEntity{
 	my %args = @_;
 	my $data = $args{entity};
-	$log->trace("Try to get Eentity class from object". ref($data));
-	$log->trace("Exist args_data " . exists($args{entity}) ."and isa ".$data->isa('Entity'));
-	throw Mcs::Exception::Internal(error => "Try to get Eentity class from object not entity : ". ref($args{entity})) if (
-													(! exists($args{entity})));
-	my $entityclass = ref($args{entity});
-	$log->debug("new operation inserted with his entity relation.");
-    my $class = $entityclass;
+	$log->debug("Try to get Eentity class from object". ref($data));
+	$log->debug("Exist args_data " . exists($args{entity}) ."and isa ".$data->isa('Entity'));
 	
-    $class =~s/\:\:/\:\:E/g;
+	if(! exists($args{entity})) {
+		$errmsg = "Try to get Eentity class from object not entity : ". ref($args{entity});
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);	
+	}
+		 
+	my $entityclass = ref($args{entity});
+	my $class = $entityclass;
+	$class =~s/\:\:/\:\:E/g;
     $class = "E".$class;
+    $log->debug("$class retrieved from ".ref($args{entity}));
     return $class;
 }
 
@@ -68,9 +73,9 @@ sub getClassEEntityFromEntity{
 sub getLocFromClass{
 	my %args = @_;
 	my $data = $args{entityclass};
-	$log->warn("Try to get Location from class $data");
 	my $location = $args{entityclass};
     $location =~ s/\:\:/\//g;
+    $log->debug("Perl module for class $data : $location.pm");
     return $location . ".pm";
 }
 
@@ -78,7 +83,11 @@ sub getClassEntityFromType{
     my %args = @_;
     
     if (! exists $args{type} or ! defined $args{type}) { 
-		throw Mcs::Exception::Internal(error => "getClassEntityFromType need a  type named argument!"); }
+		$errmsg = "getClassEntityFromType need a  type named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+    }
+		
     
     my $requested_type = $args{type};
     my $obj_class = "Entity::$requested_type";

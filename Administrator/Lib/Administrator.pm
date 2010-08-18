@@ -61,6 +61,7 @@ use Entity;
 use XML::Simple;
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 #$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -83,15 +84,16 @@ sub new {
 	my $class = shift;
 	my %args = @_;
 	
-	$log->info("Administrator instanciation");
-	
 	# If Administrator exists return its already existing instance
-	if(defined $oneinstance) { return $oneinstance; }
+	if(defined $oneinstance) { 
+		$log->info("Administrator instance retrieved");	
+		return $oneinstance;
+	}
 	
 	# Check named arguments
 	if ((! exists $args{login} or ! defined $args{login})||
 		(! exists $args{password} or ! defined $args{password})) { 
-		my $errmsg = "Administrator->need a login and password named argument!";
+		$errmsg = "Administrator->need a login and password named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
@@ -109,7 +111,7 @@ sub new {
 	# Catch exception from DB connection
 	eval {
 		my $dbi = $self->loadConf();
-		$log->debug("dbi : $dbi, use : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}");
+		$log->debug("dbi connection : $dbi, user : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}");
 		$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
 
 		# When debug is set, all sql queries are printed
@@ -126,6 +128,7 @@ sub new {
 	$self->{db} = $schema;
 	$self->{_rightschecker} = $rightschecker;		
 	$oneinstance = $self;
+	$log->info("new Administrator instance");
 	return $self;
 }
 
@@ -143,7 +146,7 @@ sub loadConf {
 		! exists $self->{config}->{internalnetwork}->{gateway} ||
 		! defined $self->{config}->{internalnetwork}->{gateway})
 		{
-			my $errmsg = "Administrator->new need internalnetwork definition in config file!";
+			$errmsg = "Administrator->new need internalnetwork definition in config file!";
 			$log->error($errmsg);
 			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
@@ -161,7 +164,7 @@ sub loadConf {
 		! exists $self->{config}->{dbconf}->{port} ||
 		! defined exists $self->{config}->{dbconf}->{port})
 		{
-			my $errmsg = "Administrator->new need db definition in config file!";
+			$errmsg = "Administrator->new need db definition in config file!";
 			$log->error($errmsg);
 			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
@@ -200,9 +203,10 @@ sub getEntity {
 
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{id} or ! defined $args{id})) { 
-		my $errmsg = "Administrator->_getEntity need a type and an id named argument!";
+		$errmsg = "Administrator->_getEntity need a type and an id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg); }
+		throw Mcs::Exception::Internal(error => $errmsg); 
+	}
 	
 	$log->debug( "getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
 	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
@@ -223,14 +227,18 @@ sub getEntity {
 			my %attrs;
 			my $ext_attrs_rs = $entity_dbix->search_related( $extension );
 			while ( my $param = $ext_attrs_rs->next ) {
-				$attrs{ $param->name } = $param->value;}
-			return $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix, ext_attrs => \%attrs);
+				$attrs{ $param->name } = $param->value;
+			}
+			my $entity = $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix, ext_attrs => \%attrs); 
+			$log->info(ref($entity)." retrieved from database");
+			return $entity;
+		} else {
+			my $entity = $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix );
+			$log->info(ref($entity)." retrieved from database");
+			return $entity;
 		}
-		else {
-			return $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix );}
-	}
-	else {
-		my $errmsg = "Administrator::getEntity( ". map( { "$_ => $args{$_}, " } keys(%args) ). ") : Object not found!"; 
+	} else {
+		$errmsg = "Administrator::getEntity( ". map( { "$_ => $args{$_}, " } keys(%args) ). ") : Object not found!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -259,7 +267,7 @@ sub getEntities {
 #TODO FAire du like et pas du where!!
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{hash} or ! defined $args{hash})) { 
-		my $errmsg = "Administrator->_getEntityFromHash need a type and a hash named argument!";
+		$errmsg = "Administrator->_getEntityFromHash need a type and a hash named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -340,12 +348,12 @@ sub newEntity {
 
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{params} or ! defined $args{params})) { 
-		my $errmsg = "Administrator->newEntity need params and type named argument!";
+		$errmsg = "Administrator->newEntity need params and type named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 
-	$log->debug( "newEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->debug("newEntity(", map( { "$_ => $args{$_}, " } keys(%args)),")");
 
 	# We get class and require Entity::$entity_class
 	my $entity_class = $self->_getEntityClass(type => $args{type});
@@ -366,7 +374,7 @@ sub newEntity {
 	else {
 		$new_entity = $entity_class->new( data => $entity_data, rightschecker => $self->{_rightschecker});
 	}
-	
+	$log->info(ref($new_entity)." instanciated");
     return $new_entity;
 }
 
@@ -393,7 +401,7 @@ sub newOp {
 	if ((! exists $args{priority} or ! defined $args{priority}) ||
 		(! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{params} or ! defined $args{params})) {
-			my $errmsg = "Administrator->newOp need a priority, params and type named argument!";
+			$errmsg = "Administrator->newOp need a priority, params and type named argument!";
 			$log->error($errmsg); 
 			throw Mcs::Exception::Internal(error => $errmsg); 
 	}
@@ -413,7 +421,7 @@ sub newOp {
 		require "Operation/$subclass.pm";
 	};
 	if ($@) {
-		my $errmsg = "Administrator->newOp : Operation type ($args{type}) does not exist when require Operation::$subclass.pm";
+		$errmsg = "Administrator->newOp : Operation type ($args{type}) does not exist when require Operation::$subclass.pm";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -463,7 +471,7 @@ sub getNextOp {
 	$log->debug("Get Operation $all_ops");
 	# Choose the next operation to be trated
 	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
-	# if no other operation to be treated, return undef
+	# if no other operation to Operation::$subclassbe treated, return undef
 	if(! defined $op_data) { 
 		$log->info("No operation left in the queue");
 		return undef;
@@ -484,7 +492,7 @@ sub getNextOp {
 		require "Operation/$op_type.pm";
 	};
 	if ($@) {
-		my $errmsg = "Administrator->newOp : Operation type <$op_type> does not exist!";
+		$errmsg = "Administrator->newOp : Operation type <$op_type> does not exist!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -510,7 +518,7 @@ sub changeUser {
 	my $self = shift;
 	my %args = @_;
 	if (! exists $args{user_id} or ! defined $args{user_id}) { 
-		my $errmsg = "Administrator->changeUser need a user_id named argument!";
+		$errmsg = "Administrator->changeUser need a user_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
@@ -538,7 +546,7 @@ sub _getDbix {
 	
 	if ((! exists $args{table} or ! defined $args{table}) ||
 		(! exists $args{id} or ! defined $args{id})) { 
-			my $errmsg = "Administrator->_getDbix need a table and id named argument!";
+			$errmsg = "Administrator->_getDbix need a table and id named argument!";
 			$log->error($errmsg);
 			throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -550,7 +558,7 @@ sub _getDbix {
 										{ 	'+columns' => [ "entitylink.entity_id" ], 
 										join => ["entitylink"] });};
 	if ($@) {
-		my $errmsg = "Administrator->_getDbix error ".$@;
+		$errmsg = "Administrator->_getDbix error ".$@;
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -576,7 +584,7 @@ sub _getDbixFromHash {
 	
 	if ((! exists $args{table} or ! defined $args{table}) ||
 		(! exists $args{hash} or ! defined $args{hash})) {
-			my $errmsg = "Administrator->_getDbixFromHash need a table and hash named argument!";
+			$errmsg = "Administrator->_getDbixFromHash need a table and hash named argument!";
 			$log->error($errmsg); 
 			throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -586,7 +594,7 @@ sub _getDbixFromHash {
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
 		$log->debug("Search obj with the following hash $args{hash} in the following table : $args{table}");
-		print Dumper $args{hash};
+		$log->debug(Dumper $args{hash});
 		my $hash = $args{hash};
 		if (keys(%$hash)){
 			$log->debug("Hash has keys and value : %$hash when search in $args{table}");
@@ -602,7 +610,7 @@ sub _getDbixFromHash {
 		}
 	};
 	if ($@) {
-		my $errmsg = "Administrator->_getDbix error ".$@;
+		$errmsg = "Administrator->_getDbix error ".$@;
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error =>  $errmsg);
 	}
@@ -626,7 +634,7 @@ sub _getAllDbix {
 	my %args = @_;
 
 	if (! exists $args{table} or ! defined $args{table}) { 
-		my $errmsg = "Administrator->_getAllData need a table named argument!";	
+		$errmsg = "Administrator->_getAllData need a table named argument!";	
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -656,7 +664,7 @@ sub _newDbix {
 
 	if ((! exists $args{table} or ! defined $args{table}) ||
 		(! exists $args{row} or ! defined $args{row})) {
-		my $errmsg = "Administrator->_newData need a table and row named argument!";
+		$errmsg = "Administrator->_newData need a table and row named argument!";
 		$log->error($errmsg);		 
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -682,7 +690,7 @@ sub _getEntityClass{
 	my $entity_class;
 
 	if (! exists $args{type} or ! defined $args{type}) {
-		my $errmsg = "Administrator->_getEntityClass a type named argument!"; 
+		$errmsg = "Administrator->_getEntityClass a type named argument!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -695,7 +703,7 @@ sub _getEntityClass{
 	$log->debug("$entity_class at Location $location");
 	eval { require $location; };
     if ($@){
-    	my $errmsg = "Administrator->_getEntityClass type or class_path invalid!";
+    	$errmsg = "Administrator->_getEntityClass type or class_path invalid!";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
@@ -729,7 +737,7 @@ sub getFreeInternalIP{
 		$i++;
 	}
 	if(not defined $freeip) {
-		my $errmsg = "Administrator->getFreeInternalIP : all internal ip addresses seems to be used !";
+		$errmsg = "Administrator->getFreeInternalIP : all internal ip addresses seems to be used !";
 		$log->error($errmsg);
 		throw Mcs::Exception::Network(error => $errmsg);
 	}
@@ -750,14 +758,14 @@ sub newPublicIP {
 	my %args = @_;
 	if (! exists $args{ip_address} or ! defined $args{ip_address} || 
 		! exists $args{ip_mask} or ! defined $args{ip_mask}) {
-		my $errmsg = "Administrator->newPublicIP need ip_address and ip_mask named argument!";
+		$errmsg = "Administrator->newPublicIP need ip_address and ip_mask named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	# ip format valid ?
 	my $pubip = new NetAddr::IP($args{ip_address}, $args{ip_mask});
 	if(not defined $pubip) { 
-		my $errmsg = "Administrator->newPublicIP : wrong value for ip_address/ip_mask!";
+		$errmsg = "Administrator->newPublicIP : wrong value for ip_address/ip_mask!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	} 
@@ -766,7 +774,7 @@ sub newPublicIP {
 	if(exists $args{gateway} and defined $args{gateway}) {
 		$gateway = new NetAddr::IP($args{gateway});
 		if(not defined $gateway) {
-			my $errmsg = "Administrator->newPublicIP : wrong value for gateway!";
+			$errmsg = "Administrator->newPublicIP : wrong value for gateway!";
 			$log->error($errmsg);
 			throw Mcs::Exception::Internal(error => $errmsg);
 		}
@@ -781,7 +789,7 @@ sub newPublicIP {
 		$log->debug("Public ip create and return ". $res->get_column("publicip_id"));
 	};
 	if($@) { 
-		my $errmsg = "Administrator->newPublicIP: $@";
+		$errmsg = "Administrator->newPublicIP: $@";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg); }
 	$log->debug("new public ip created");
@@ -800,20 +808,20 @@ sub addRoute {
 	if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
 		! exists $args{ip_destination} or ! defined $args{ip_destination} || 
 		! exists $args{gateway} or ! defined $args{gateway}) {
-		my $errmsg = "Administrator->addRoute need publicip_id, ip_destination and gateway named argument!";
+		$errmsg = "Administrator->addRoute need publicip_id, ip_destination and gateway named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	# check valid ip_destination and gateway format
 	my $destinationip = new NetAddr::IP($args{ip_destination});
 	if(not defined $destinationip) {
-		my $errmsg = "Administrator->addRoute : wrong value for ip_destination!";
+		$errmsg = "Administrator->addRoute : wrong value for ip_destination!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);}
 	
 	my $gateway = new NetAddr::IP($args{gateway});
 	if(not defined $gateway) {
-		my $errmsg = "Administrator->addRoute : wrong value for gateway!";
+		$errmsg = "Administrator->addRoute : wrong value for gateway!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -825,7 +833,7 @@ sub addRoute {
 		$self->{db}->resultset('Route')->create($row);
 	};
 	if($@) { 
-		my $errmsg = "Administrator->addRoute: $@";
+		$errmsg = "Administrator->addRoute: $@";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg);
 	}
@@ -889,7 +897,7 @@ sub delPublicIP {
 	my %args = @_;
 	# arguments checking
 	if (! exists $args{publicip_id} or ! defined $args{publicip_id}) { 
-		my $errmsg = "Administrator->delPublicIP need a publicip_id named argument!";
+		$errmsg = "Administrator->delPublicIP need a publicip_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -897,14 +905,14 @@ sub delPublicIP {
 	# getting the row	
 	my $row = $self->{db}->resultset('Publicip')->find( $args{publicip_id} );
 	if(! defined $row) {
-		my $errmsg = "Administrator->delPublicIP : publicip_id $args{publicip_id} not found!";
+		$errmsg = "Administrator->delPublicIP : publicip_id $args{publicip_id} not found!";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg);
 	}
 	
 	# verify that it is not used by a cluster
 	if(defined ($row->get_column('cluster_id'))) {
-		my $errmsg = "Administrator->delPublicIP : publicip_id $args{publicip_id} is used by a cluster!";	
+		$errmsg = "Administrator->delPublicIP : publicip_id $args{publicip_id} is used by a cluster!";	
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg);
 	}
@@ -927,7 +935,7 @@ sub setClusterPublicIP {
 	my %args = @_;
 	if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
 		! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
-		my $errmsg = "Administrator->setClusterPublicIP need publicip_id and cluster_id named argument!";
+		$errmsg = "Administrator->setClusterPublicIP need publicip_id and cluster_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -935,7 +943,7 @@ sub setClusterPublicIP {
 	my $row = $self->{db}->resultset('Publicip')->find($args{publicip_id});
 	# getting public ip row
 	if(! defined $row) {
-		my $errmsg = "Administrator->setClusterPublicIP : publicip_id $args{publicip_id} not found!";
+		$errmsg = "Administrator->setClusterPublicIP : publicip_id $args{publicip_id} not found!";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg);
 	}
@@ -945,7 +953,7 @@ sub setClusterPublicIP {
 		$row->update;
 	};
 	if($@) { 
-		my $errmsg = "Administrator->setClusterPublicIP : $@";
+		$errmsg = "Administrator->setClusterPublicIP : $@";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg);
 	}
@@ -962,14 +970,14 @@ sub delRoute {
 	my $self = shift;
 	my %args = @_;
 	if (! exists $args{route_id} or ! defined $args{route_id}) {
-		my $errmsg = "Administrator->delRoute need a route_id named argument!"; 
+		$errmsg = "Administrator->delRoute need a route_id named argument!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
 	my $row = $self->{db}->resultset('Route')->find($args{route_id});
 	if(not defined $row) {
-		my $errmsg = "Administrator->delRoute : route_id $args{route_id} not found!";
+		$errmsg = "Administrator->delRoute : route_id $args{route_id} not found!";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg);
 	}
@@ -1006,7 +1014,7 @@ sub createNode{
 	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
 		(! exists $args{motherboard_id} or ! defined $args{motherboard_id}) ||
 		(! exists $args{master_node} or ! defined $args{master_node})){
-		my $errmsg = "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!";
+		$errmsg = "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!";
 		$log->error($errmsg);	
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -1021,14 +1029,14 @@ sub removeNode{
 	
 	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
 		(! exists $args{motherboard_id} or ! defined $args{motherboard_id})){
-		my $errmsg = "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!";
+		$errmsg = "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	#TODO Reflechir si on fait le delete sur le node_id ou sur la combo motherboard_id and cluster_id
 	my $row = $self->{db}->resultset('Node')->search(\%args)->first;
 	if(not defined $row) {
-		my $errmsg = "Administrator->removeNode : node representing motherboard $args{motherboard_id} and cluster $args{cluster_id} not found!";
+		$errmsg = "Administrator->removeNode : node representing motherboard $args{motherboard_id} and cluster $args{cluster_id} not found!";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg);
 	}

@@ -8,6 +8,7 @@ use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
+my $errmsg;
 
 use constant ATTR_DEF => {
 	distribution_name => {pattern => //, is_mandatory => 1, is_extended => 0},
@@ -27,7 +28,10 @@ sub new {
 
     if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Distribution->new need a data and rightschecker named argument!"); }
+		$errmsg = "Entity::Distribution->new need a data and rightschecker named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
 	my $ext_attrs = $args{ext_attrs};
 	delete $args{ext_attrs};
@@ -46,9 +50,11 @@ get etc and root device attributes for this distribution
 sub getDevices {
 	my $self = shift;
 	if(! $self->{_dbix}->in_storage) {
-		throw Mcs::Exception(error => "Entity::Distribution->getDevices must be called on an already save instance");
+		$errmsg = "Entity::Distribution->getDevices must be called on an already save instance";
+		$log->error($errmsg);
+		throw Mcs::Exception(error => $errmsg);
 	}
-	$log->info("retrieve etc and root devices attributes");
+	
 	my $etcrow = $self->{_dbix}->etc_device_id;
 	my $rootrow = $self->{_dbix}->root_device_id;
 	my $devices = {
@@ -69,6 +75,7 @@ sub getDevices {
 				 filesystem => $rootrow->get_column('lvm2_lv_filesystem')
 		}
 	};
+	$log->info("Distribution etc and root devices retrieved from database");
 	return $devices;
 }
 

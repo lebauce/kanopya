@@ -45,7 +45,7 @@ use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Systemimage;
 my $log = get_logger("administrator");
-
+my $errmsg;
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
@@ -60,19 +60,22 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-	if (! exists $args{params} or ! defined $args{params}){
-		throw Mcs::Exception::Internal(error => "Operation::AddSystemimage->new need params to be checked!"); }
+	# presence of 'params' named argument is done in parent class
+	my $self = $class->SUPER::new( %args );
+	
     # Operation parameters checking
     my $p = $args{params};
     if (! exists $p->{systemimage_name} or ! defined $p->{systemimage_name}) {
-    	throw Mcs::Exception::Internal(error => "Operation::AddSystemimage need a systemimage_name parameter!"); }
+    	$errmsg = "Operation::AddSystemimage->new : params need a systemimage_name parameter!";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
     if (! exists $p->{distribution_id} or ! defined $p->{distribution_id}) {
-    	throw Mcs::Exception::Internal(error => "Operation::AddSystemimage need a distribution_id parameter!"); }
-    
-    	
-    
-    my $self = $class->SUPER::new( %args );
-    
+    	$errmsg = "Operation::AddSystemimage need a distribution_id parameter!";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+        
     
     return $self;
 }

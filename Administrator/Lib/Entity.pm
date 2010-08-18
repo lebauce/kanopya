@@ -47,6 +47,7 @@ use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 
 =head2 new
@@ -67,15 +68,18 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		throw Mcs::Exception::Internal(error => "Entity->new need a data and rightschecker named argument!"); }
-    $log->warn("Data : $args{data} and $args{rightschecker}");
+		(! exists $args{rightschecker} or ! defined $args{rightschecker})) {
+		$errmsg = "Entity->new need a data and rightschecker named argument!"; 	 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+    $log->debug("Arguments: ".ref($args{data})." and ".ref($args{rightschecker}));
     
     my $self = {
     	_rightschecker	=> $args{rightschecker},
         _dbix			=> $args{data},
         _ext_attrs		=> {},
-        extension		=> undef,
+        extension		=> undef
     };
     bless $self, $class;
     
@@ -83,15 +87,16 @@ sub new {
 	if($self->{_dbix}->in_storage) {
 		$self->{_groups} = $self->getGroups;
 	}
-	$log->warn("new return $self");
-    return $self;
+	return $self;
 }
 
-# Default, no extension
+=head extension
+
+=cut 
+
 sub extension {
 	return undef;
 }
-
 
 =head2 getGroups
 
@@ -130,9 +135,7 @@ sub getAttrs {
 	
 	my $ext = $self->{_ext_attrs};
 	# add extended Attrs from db
-	foreach my $k (keys %$ext){
-		$attrs{$k} = $ext->{$k};
-		}
+	foreach my $k (keys %$ext){ $attrs{$k} = $ext->{$k}; }
 	
 	return %attrs;	
 }
@@ -168,19 +171,20 @@ sub setAttr {
 
     if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
-		throw Mcs::Exception::Internal(error => "Entity->setAttr need a name and value named argument!"); }
-
+		$errmsg = "Entity->setAttr need a name and value named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+		
 	$self->checkAttr(%args);
 		
-	if ( $data->has_column( $args{name} ) ) {
-    		$data->set_column( $args{name}, $args{value} );	
-    }
-    elsif ( $self->extension() ) {
+	if($data->has_column( $args{name})) {
+    	$data->set_column( $args{name}, $args{value} );	
+    } elsif( $self->extension() ) {
     	# TODO check if ext param name is a valid name for this entity
     	$self->{ _ext_attrs }{ $args{name} } = $args{value};
-    }
-    else {
-    	warn "setAttrs() : No parameter named '$args{name}' for ", ref $self;
+    } else {
+    	$log->debug("setAttrs() : No parameter named '$args{name}' for ". ref($self));
     }
 
 }
@@ -199,16 +203,16 @@ sub setAttrs {
 	my %args = @_;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}) { 
-		throw Mcs::Exception::Internal(error => "Entity->setAttrs need an attrs hash named argument!"); }
-
+		$errmsg = "Entity->setAttrs need an attrs hash named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
 
 	my $attrs = $args{attrs};
 	while ( (my $col, my $value) = each %$attrs ) {
     	$self->setAttr( name  => $col, value => $value );
 	}
-	
 }
-
 
 =head2 getAttr
 	
@@ -225,25 +229,24 @@ sub getAttr {
     my $value = undef;
     
 	if (! exists $args{name} or ! defined $args{name}) { 
-		throw Mcs::Exception::Internal(error => "Entity->getAttrs need a name named argument!"); }
+		$errmsg = "Entity->getAttrs need a name named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
 
-
-	$log->info(ref($self) . " getAttr of $args{name}");
-	
 	if ( $data->has_column( $args{name} ) ) {
 		$value = $data->get_column( $args{name} );
-		$log->info("  found value = $value");
+		$log->debug(ref($self) . " getAttr of $args{name} : $value");
+	} elsif ( exists $self->{_ext_attrs}{ $args{name} } ) {
+		$value = $self->{_ext_attrs}{ $args{name} };
+		$log->debug(ref($self) . " getAttr (extended) of $args{name} : $value");
+	} else {
+		$errmsg = "Entity->getAttr no attr name $args{name}!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	elsif ( exists $self->{_ext_attrs}{ $args{name} } ) {
-			$value = $self->{_ext_attrs}{ $args{name} };
-			$log->info("  found value = $value (in ext local)");
-		}
-		else {
-			throw Mcs::Exception::Internal(error => "Entity->getAttr no attr name $args{name}!");
-			}
 	return $value;
 }
-
 
 =head2 save
 	
@@ -259,15 +262,13 @@ sub save {
 
 	if ( $data->in_storage ) {
 		# MODIFY existing db obj
-		#print "\n##### MODIFY \n";
 		$data->update;
 		$self->_saveExtendedAttrs();
-	}
-	else {
+	} else {
 		# CREATE
 		my $relation = lc(ref $self);
 		$relation =~ s/.*\:\://g;
-		print "la relation: $relation\n";
+		$log->debug("la relation: $relation");
 		my $newentity = $self->{_dbix}->insert;
 		$log->debug("new entity inserted.");
 		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
@@ -277,6 +278,7 @@ sub save {
 		$self->{_entity_id} = $row->get_column('entity_id');
 		
 		$self->_saveExtendedAttrs();
+		$log->info(ref($self)." saved to database");
 	}
 		
 }
@@ -293,14 +295,12 @@ sub _saveExtendedAttrs {
 	my $ext_attrs = $self->{_ext_attrs};
 	my $data = $self->{_dbix};
 	
-	if ( $ext_attrs )
-	{
+	if ( $ext_attrs ) {
 		foreach my $k (keys %$ext_attrs) {
 			$data->update_or_create_related( $self->extension(), { name => $k, value => $ext_attrs->{$k} } );
 		}
 	}
 }
-
 
 =head2 delete
 	
@@ -316,7 +316,7 @@ sub delete {
 
 	my $relation = lc(ref $self);
 	$relation =~ s/.*\:\://g;
-	$log->warn("Delete Entity which type is " . ref($self));
+	$log->debug("Delete Entity which type is " . ref($self));
 	
 	my $entity_rs = $data->related_resultset( $relation . "_entities" );
 	$log->debug("First Deletion of entity link : " . $relation . "_entities");
@@ -342,17 +342,17 @@ sub activate {
 	#TODO A reflechir ne vaut il pas mieux de faire un update sur le champs active sinon pb avec le save qui prendra en compte les autres champs modifiés 
 	if (defined $self->ATTR_DEF->{active}) {
 		$self->setAttr(name => 'active', value => 1);
-		$log->debug("Entity::Activate : Entity is activated");}
-	else {
-		throw Mcs::Exception::Internal(error => "Entity->activate Entity ". ref($self) . " unable to activate !");
+		$log->debug("Entity::Activate : Entity is activated");
+	} else {
+		$errmsg = "Entity->activate Entity ". ref($self) . " unable to activate !";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 }
 
-sub deactivate{
-	
-}
+sub deactivate {}
+
 # destructor
-    
 sub DESTROY {}
 
 1;

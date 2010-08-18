@@ -62,6 +62,7 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
     $self->_init();
     

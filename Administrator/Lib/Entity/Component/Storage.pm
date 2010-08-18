@@ -10,8 +10,7 @@ use base "Entity::Component";
 sub new {
     my $class = shift;
     my %args = @_;
-
-print Dumper $class;
+	
     my $self = $class->SUPER::new( %args );
     return $self;
 }

@@ -6,6 +6,7 @@ use McsExceptions;
 use base "Entity";
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
+my $errmsg;
 
 use constant ATTR_DEF => {
 	systemimage_name => { pattern => 'm//s',
@@ -53,7 +54,10 @@ sub checkAttrs {
 	my $attr_def = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs need attrs named argument!"); }	
+		$errmsg = "Entity::Systemimage->checkAttrs need attrs named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
@@ -68,13 +72,17 @@ sub checkAttrs {
 			}
 		}
 		else {
-			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs detect a wrong attr $attr !");
+			$errmsg = "Entity::Systemimage->checkAttrs detect a wrong attr $attr !";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$attr_def)) {
 		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
-				throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttrs detect a missing attribute $attr !");
+				$errmsg = "Entity::Systemimage->checkAttrs detect a missing attribute $attr !";
+				$log->error($errmsg);
+				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if distribution id exist and are correct.
@@ -98,9 +106,15 @@ sub checkAttr {
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttr need a name and value named argument!"); }
+		$errmsg = "Entity::Systemimage->checkAttr need a name and value named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	if (!exists $attr_def->{$args{name}}){
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->checkAttr invalid name"); }
+		$errmsg = "Entity::Systemimage->checkAttr invalid name"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	# Here check attr value
 }
 
@@ -120,7 +134,10 @@ sub new {
 
     if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Systemimage->new need a data and rightschecker named argument!"); }
+		$errmsg = "Entity::Systemimage->new need a data and rightschecker named argument!";
+		$log->error($errmsg);	
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	
     my $self = $class->SUPER::new( %args );
 	return $self;
@@ -135,7 +152,9 @@ get etc and root device attributes for this systemimage
 sub getDevices {
 	my $self = shift;
 	if(! $self->{_dbix}->in_storage) {
-		throw Mcs::Exception(error => "Entity::Systemimage->getDevices must be called on an already save instance");
+		$errmsg = "Entity::Systemimage->getDevices must be called on an already save instance";
+		$log->error($errmsg);
+		throw Mcs::Exception(error => $errmsg);
 	}
 	$log->info("retrieve etc and root devices attributes");
 	my $etcrow = $self->{_dbix}->etc_device_id;
@@ -158,6 +177,7 @@ sub getDevices {
 				 filesystem => $rootrow->get_column('lvm2_lv_filesystem')
 		}
 	};
+	$log->info("Systemimage etc and root devices retrieved from database");
 	return $devices;
 }
 
