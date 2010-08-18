@@ -44,7 +44,9 @@ use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Systemimage;
+
 my $log = get_logger("administrator");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -60,15 +62,16 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-	if (! exists $args{params} or ! defined $args{params}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Operation->RemoveSystemimage need a params named argument!"); }
-	if (! exists $args{params}->{systemimage_id} or ! defined $args{params}->{systemimage_id}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Operation->RemoveSystemimage need a systemimage_id"); }
-	#TODO Here check systemimage existance, active and rights
-
+	# presence of 'params' named argument is done in parent class
 	my $self = $class->SUPER::new( %args );
-    $self->_init();
-    
+	
+	if (! exists $args{params}->{systemimage_id} or ! defined $args{params}->{systemimage_id}) { 
+		$errmsg = "Operation::RemoveSystemimage->new : params need a systemimage_id";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+
+	#TODO Here check systemimage existance, active and rights
     return $self;
 }
 

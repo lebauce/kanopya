@@ -23,12 +23,12 @@
 
 =head1 NAME
 
-Operation::AddMotherboard - Operation class implementing Motherboard creation operation
+Operation::AddCluster - Operation class implementing Cluster creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Cluster creation operation
 
 =head1 DESCRIPTION
 
@@ -48,25 +48,27 @@ use base "Operation";
 use Entity::Cluster;
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my $op = Operation::AddMotherboard->new();
+    my $op = Operation::AddCluster->new();
 
-Operation::AddMotherboard->new creates a new AddMotheboard operation.
+Operation::AddMotherboard->new creates a new AddCluster operation.
 
 =cut
 
 sub new {
     my $class = shift;
     my %args = @_;
-
+	
+	# presence of 'params' named argument is done in parent class 
     my $self = $class->SUPER::new( %args );
     $self->_init();
  
- #TODO Here check params and rights!
+ 	#TODO Here check params and rights!
      Entity::Cluster->checkAttrs(attrs => $args{params});   
     return $self;
 }

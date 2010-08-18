@@ -8,6 +8,7 @@ use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
+my $errmsg;
 
 use constant ATTR_DEF => {
 	motherboard_model_id	=>	{pattern			=> 'm//s',
@@ -68,7 +69,10 @@ sub checkAttrs {
 	my $attr_def = ATTR_DEF;
 	#print Dumper $attr_def;
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs need an attrs hash named argument!"); }	
+		$errmsg = "Entity::Motherboard->checkAttrs need an attrs hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
@@ -83,13 +87,17 @@ sub checkAttrs {
 			}
 		}
 		else {
-			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs detect a wrong attr $attr !");
+			$errmsg = "Entity::Motherboard->checkAttrs detect a wrong attr $attr !";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$attr_def)) {
 		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
-				throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttrs detect a missing attribute $attr !");
+				$errmsg = "Entity::Motherboard->checkAttrs detect a missing attribute $attr !";
+				$log->error($errmsg);
+				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -113,10 +121,17 @@ sub checkAttr{
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
+		$errmsg = "Entity::Motherboard->checkAttr need a name and value named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+		
 
 	if (!exists $attr_def->{$args{name}}){
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'"); }
+		$errmsg = "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'";
+		$log->error($errmsg);	
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
 	# Here check attr value
 }
@@ -132,7 +147,10 @@ sub new {
     if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker}) ||
 		(! exists $args{ext_attrs} or ! defined $args{ext_attrs})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->new need a data, ext_attrs and rightschecker named argument!"); }
+		$errmsg = "Entity::Motherboard->new need a data, ext_attrs and rightschecker named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
 	my $ext_attrs = $args{ext_attrs};
 	delete $args{ext_attrs};

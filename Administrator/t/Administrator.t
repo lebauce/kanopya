@@ -1,11 +1,9 @@
 #!/usr/bin/perl -w
 
-#use FindBin qw($Bin);
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-#use lib "$Bin/../Lib", "$Bin/../../Common/Lib";
+use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'ERROR', file=>'STDOUT', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
 
 use Test::More 'no_plan';
 use Administrator;

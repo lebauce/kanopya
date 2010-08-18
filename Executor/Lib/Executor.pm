@@ -155,7 +155,7 @@ sub execnround {
    				$op->prepare(internal_cluster => $self->{config}->{cluster}, internal_net => $self->{config}->{internalnetwork});
    				$log->info("Operation execution");
    				$op->execute();
-   				$log->indo("Operation finishing");
+   				$log->info("Operation finishing");
    				$op->finish();
    				$log->debug("Operation finished");
    			};

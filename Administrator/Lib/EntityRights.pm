@@ -47,6 +47,7 @@ use Data::Dumper;
 use vars qw(@ISA $VERSION);
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -69,13 +70,15 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 sub new {
 	my $class = shift;
 	my %args = @_;
-	if (! exists $args{schema} or ! defined $args{schema}) {  die "EntityRights->new need a schema named argument!"; }
-	if (! exists $args{login} or ! defined $args{login}) {  die "EntityRights->new need a login named argument!"; }
-	if (! exists $args{password} or ! defined $args{password}) {  die "EntityRights->new need a password named argument!"; }
+	if ((! exists $args{schema} or ! defined $args{schema}) || 
+	(! exists $args{login} or ! defined $args{login}) ||  
+	(! exists $args{password} or ! defined $args{password})) {  
+		$errmsg = "EntityRights->new need a schema, user and password named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
 	
-	my $self = {
-		_schema => $args{schema},
-	};
+	my $self = { _schema => $args{schema} };
 		
 	# check user identity
 	$self->{_user} = $self->{_schema}->resultset('User')->search( 
@@ -87,7 +90,8 @@ sub new {
 	)->single;
 		
 	if(! $self->{_user} ) {
-		warn "incorrect login/password pair";
+		$errmsg = "incorrect login/password pair";
+		$log->info($errmsg);
 		return undef;
 	}
 		
@@ -112,14 +116,14 @@ sub new {
 sub getRights {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{consumer} or ! defined $args{consumer}) { 
-		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumer named argument!"); }
-	    
-	if(! exists $args{consumed} or ! defined $args{consumed}) { 
-		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumed named argument!"); }
-		
-	if(! exists $args{right} or ! defined $args{right}) { 
-		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a right named argument!"); }
+	
+	if((! exists $args{consumer} or ! defined $args{consumer}) ||
+	(! exists $args{consumed} or ! defined $args{consumed}) ||
+	(! exists $args{right} or ! defined $args{right})) { 
+		$errmsg = "EntityRights->getRights need a consumer, consumed and right named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	} 
 	    	
 	my $consumer_ids = $self->_getEntityIds( entity => $args{consumer} );
 	$log->debug("consumer ids found: ".Dumper $consumer_ids);
@@ -161,15 +165,13 @@ sub getRights {
 sub setRights {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{consumer} or ! defined $args{consumer}) { 
-		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumer named argument!"); }
-	    
-	if(! exists $args{consumed} or ! defined $args{consumed}) { 
-		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a consumed named argument!"); }
-	
-	if(! exists $args{rights} or ! defined $args{rights}) { 
-		throw Mcs::Exception::Internal(error => "EntityRights->getRights need a rights named argument!"); }
-	
+	if((! exists $args{consumer} or ! defined $args{consumer}) ||
+	(! exists $args{consumed} or ! defined $args{consumed}) ||
+	(! exists $args{right} or ! defined $args{right})) { 
+		$errmsg = "EntityRights->getRights need a consumer, consumed and right named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	} 
 	# TODO verify rights format
 	
 	# we retrieve the rights row if exists
@@ -218,7 +220,10 @@ sub _getEntityIds {
 	my $self = shift;
 	my %args = @_;
 	if (! exists $args{entity} or ! defined $args{entity}) { 
-		throw Mcs::Exception::Internal(error => "EntityRights->_getEntityIds: need an entity named argument!"); }
+		$errmsg = "EntityRights->_getEntityIds: need an entity named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
 
 	my $ids = [];
 	# get the entity_id value and add it to the arrayref

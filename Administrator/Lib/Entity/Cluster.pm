@@ -10,6 +10,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("administrator");
+my $errmsg;
 use constant ATTR_DEF => {
 			cluster_name			=> {pattern			=> 'm//s',
 										is_mandatory	=> 1,
@@ -59,8 +60,11 @@ sub checkAttrs {
 	my (%global_attrs, %ext_attrs, $attr);
 	my $struct = ATTR_DEF;
 
-	if (! exists $args{attrs} or ! defined $args{attrs}){ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->checkAttrs need an data hash and class named argument!"); }	
+	if (! exists $args{attrs} or ! defined $args{attrs}) { 
+		$errmsg = "Entity::Cluster->checkAttrs need an data hash and class named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}	
 
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
@@ -69,18 +73,20 @@ sub checkAttrs {
 			if ($struct->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
 			}
-			else {
-				$global_attrs{$attr} = $attrs->{$attr};
-			}
+			else { $global_attrs{$attr} = $attrs->{$attr}; }
 		}
 		else {
-			throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->checkAttrs detect a wrong attr $attr !");
+			$errmsg = "Entity::Cluster->checkAttrs detect a wrong attr $attr !";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$struct)) {
 		if (($struct->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
-				throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->checkAttrs detect a missing attribute $attr !");
+				$errmsg = "Entity::Cluster->checkAttrs detect a missing attribute $attr !";
+				$log->error($errmsg);
+				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -104,9 +110,15 @@ sub checkAttr{
 	
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr need a name and value named argument!"); }
+		$errmsg = "Entity::Motherboard->checkAttr need a name and value named argument!";
+		$log->error($errmsg);	
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	if (!exists $struct->{$args{name}}){
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Motherboard->checkAttr invalid name"); }
+		$errmsg = "Entity::Motherboard->checkAttr invalid name";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	# Here check attr value
 }
 
@@ -118,10 +130,12 @@ sub new {
 
 	if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity->new need a data and rightschecker named argument!"); }
+		$errmsg = "Entity->new need a data and rightschecker named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	
-	$log->info("Cluster Instanciation");
-    my $self = $class->SUPER::new( %args );
+	my $self = $class->SUPER::new( %args );
     return $self;
 }
 
@@ -142,7 +156,10 @@ sub getComponents{
 
 	if ((! exists $args{administrator} or ! defined $args{administrator}) ||
 		(! exists $args{category} or ! defined $args{category})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->getComponent need a category and administrator named argument!"); }
+		$errmsg = "Entity::Cluster->getComponent need a category and administrator named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
 											{ '+columns' => [ "component_id.component_name", 
@@ -184,7 +201,10 @@ sub getComponent{
 	if ((! exists $args{administrator} or ! defined $args{administrator}) ||
 		(! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{version} or ! defined $args{version})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Entity::Cluster->getComponent needs a name, version and administrator named argument!"); }
+		$errmsg = "Entity::Cluster->getComponent needs a name, version and administrator named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	
 	my $hash = {'component_id.component_name' => $args{name}, 'component_id.component_version' => $args{version}};
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
@@ -204,7 +224,9 @@ sub getComponent{
 							id => $comp_instance_row->get_column('component_instance_id'),
 							type => "ComponentInstance");
 	}
-	throw Mcs::Exception::Internal::WrongValue(error => "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})");
+	$errmsg = "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})";
+	$log->error($errmsg);
+	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
 }
 
 #TODO soit on fait un getMasterNode et on retourne le node mais du coup il faut l'admin

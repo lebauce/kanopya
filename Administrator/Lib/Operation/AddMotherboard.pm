@@ -50,6 +50,7 @@ use Data::Dumper;
 
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -65,11 +66,10 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-	if (! exists $args{params} or ! defined $args{params}){
-		throw Mcs::Exception::Internal(error => "Operation->AddMotherboard need params to be checked!"); }
+	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
     $self->_init();
-    print Dumper $args{params};
+    $log->debug(Dumper $args{params});
     Entity::Motherboard->checkAttrs(attrs => $args{params});
     return $self;
 }
