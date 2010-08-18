@@ -224,9 +224,10 @@ sub getComponent{
 							id => $comp_instance_row->get_column('component_instance_id'),
 							type => "ComponentInstance");
 	}
-	$errmsg = "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})";
-	$log->error($errmsg);
-	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	# PAS TROUVER NE VEUT PAS DIRE ERREUR.
+#	$errmsg = "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})";
+#	$log->error($errmsg);
+#	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
 }
 
 #TODO soit on fait un getMasterNode et on retourne le node mais du coup il faut l'admin

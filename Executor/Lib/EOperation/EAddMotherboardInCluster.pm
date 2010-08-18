@@ -109,55 +109,84 @@ sub prepare {
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
-	## Instanciate Clusters
+	#### Instanciate Clusters
+	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 
 	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 	# Instanciate executor Cluster
 	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
 	# Instanciate bootserver Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{bootserver});
+	$self->{bootserver}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{bootserver});
+	$log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
 	
-	## Get Internal IP
+	
+	#### Get Internal IP
+	$log->info("Get Internal Cluster IP");
 	# Get Internal Ip address of Master node of cluster Executor
 	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
+	$log->debug("Executor ip is : <$exec_ip>");
 	# Get Internal Ip address of Master node of cluster nas
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+	$log->debug("Nas ip is : <$nas_ip>");
 	# Get Internal Ip address of Master node of cluster bootserver
 	my $bootserver_ip = $self->{bootserver}->{obj}->getMasterNodeIp();
+	$log->debug("Bootserver ip is : <$bootserver_ip>");
 	
-	## Instanciate context 
+	
+	#### Instanciate context 
+	$log->info("Get Internal Cluster context");
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
+	$log->debug("Get econtext for nas with ip ($nas_ip) and ref " . ref($self->{nas}->{econtext}));
 	# Get context for bootserver
 	$self->{bootserver}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $bootserver_ip);
+	$log->debug("Get econtext for bootserver with ip ($bootserver_ip)" . ref($self->{bootserver}->{econtext}));
 	# Get context for executor
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
 
-	# Get instance of Cluster Entity
-	$log->warn("Load cluster instance");
+	#### Get instance of Cluster Entity
+	$log->info("Load cluster instance");
 	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
 	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
+	#### Get cluster components Entities
+	$log->info("Load cluster component instances");
+	$self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(administrator => $adm, category => "all");
+	$log->debug("Load all component from cluster");
+
 	# Get instance of Motherboard Entity
-	$log->warn("Load Motherboard instance");
+	$log->info("Load Motherboard instance");
 	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
 	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
-	## Instanciate Component needed (here LVM, ISCSITARGET, DHCP on nas cluster)
+	## Instanciate Component needed (here LVM, ISCSITARGET, DHCP and TFTPD on nas and bootserver cluster)
 	# Instanciate Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
 										 version => "2",
 										 administrator => $adm);
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
+	$log->info("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
 																					  version=> "1",
 																					  administrator => $adm));
-	$log->debug("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
-	# Instanciate tftp component.
-	
+	$log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
+	# Instanciate tftpd component.
+	$self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Atftpd",
+																					  version=> "0",
+																					  administrator => $adm));
+																					  
+	$log->info("Load tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
 	# instanciate dhcpd component.
+	$self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Dhcpd",
+																					  version=> "3",
+																					  administrator => $adm));
+																					  
+	$log->info("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
+
 }
 
 sub execute{
