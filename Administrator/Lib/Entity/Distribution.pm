@@ -59,20 +59,24 @@ sub getDevices {
 	my $rootrow = $self->{_dbix}->root_device_id;
 	my $devices = {
 		etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
-				 vg_id => $etcrow->get_column('lvm2_vg_id'),
 				 lvname => $etcrow->get_column('lvm2_lv_name'),
+				 lvsize => $etcrow->get_column('lvm2_lv_size'),
+				 lvfreespace => $etcrow->get_column('lvm2_lv_freespace'),	
+				 filesystem => $etcrow->get_column('lvm2_lv_filesystem'),
+				 vg_id => $etcrow->get_column('lvm2_vg_id'),
 				 vgname => $etcrow->lvm2_vg_id->get_column('lvm2_vg_name'),
-				 size => $etcrow->get_column('lvm2_lv_size'),
-				 freespace => $etcrow->get_column('lvm2_lv_freespace'),	
-				 filesystem => $etcrow->get_column('lvm2_lv_filesystem')
+				 vgsize => $etcrow->lvm2_vg_id->get_column('lvm2_vg_size'),
+				 vgfreespace => $etcrow->lvm2_vg_id->get_column('lvm2_vg_freespace'),
 				},
 		root => { lv_id => $rootrow->get_column('lvm2_lv_id'), 
-				 vg_id => $rootrow->get_column('lvm2_vg_id'),
 				 lvname => $rootrow->get_column('lvm2_lv_name'),
+				 lvsize => $rootrow->get_column('lvm2_lv_size'),
+				 lvfreespace => $rootrow->get_column('lvm2_lv_freespace'),	
+				 filesystem => $rootrow->get_column('lvm2_lv_filesystem'),
+				 vg_id => $rootrow->get_column('lvm2_vg_id'),
 				 vgname => $rootrow->lvm2_vg_id->get_column('lvm2_vg_name'),
-				 size => $rootrow->get_column('lvm2_lv_size'),
-				 freespace => $rootrow->get_column('lvm2_lv_freespace'),	
-				 filesystem => $rootrow->get_column('lvm2_lv_filesystem')
+				 vgsize => $rootrow->lvm2_vg_id->get_column('lvm2_vg_size'),
+				 vgfreespace => $rootrow->lvm2_vg_id->get_column('lvm2_vg_freespace'),
 		}
 	};
 	$log->info("Distribution etc and root devices retrieved from database");
