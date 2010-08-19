@@ -39,6 +39,7 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
 my $log = get_logger("executor");
+my $errmsg;
 
 use lib "../../Common/Lib";
 use McsExceptions;
@@ -76,7 +77,9 @@ sub add {
     my %args = @_;
     if((! exists $args{function} or ! defined $args{function}) or
 	   (! exists $args{parameters} or ! defined $args{parameters})) {
-		throw Mcs::Exception::Internal(error => "ERollback->add need function and parameters named arguments");   	
+		$errmsg = "ERollback->add need function and parameters named arguments";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);   	
 	}
     
     if(not defined $self->{function}) {

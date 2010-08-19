@@ -52,6 +52,7 @@ use General;
 use McsExceptions;
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -62,11 +63,13 @@ EFactory::newEEntity($objdata) instanciates a new object EEntity from Entity.
 =cut
 
 sub newEEntity {
-#	my $self = shift;
 	my %args = @_;
 	
 	if (! exists $args{data} or ! defined $args{data}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EntityFactory->newEEntity need a data named argument!"); }
+		$errmsg = "EntityFactory::newEEntity need a data named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	my $data = $args{data};
 	my $class = General::getClassEEntityFromEntity(entity => $data);
 	$log->debug("GetClassEEntityFromEntity return $class"); 
@@ -74,7 +77,7 @@ sub newEEntity {
 	$log->debug("General::getLocFromClass return $location"); 
 	
     require $location;
-
+	$log->info("$class instanciated");
     return $class->new(data => $args{data});
 }
 
@@ -87,9 +90,11 @@ EFactory::newEContext(ip_source, ip_destination) instanciates a new object ECont
 sub newEContext {
 	my %args = @_;
 	if ((! exists $args{ip_source} or ! defined $args{ip_source}) ||
-		(! exists $args{ip_destination} or ! defined $args{ip_destination}))
-	{ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EFactory::newEContext need ip_source and ip_destination named argument!"); }
+		(! exists $args{ip_destination} or ! defined $args{ip_destination})) { 
+		$errmsg = "EFactory::newEContext need ip_source and ip_destination named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	
 	#TODO Check if ips is good format
 	#Create EContext::Local or EContext::SSH

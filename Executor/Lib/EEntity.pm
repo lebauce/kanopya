@@ -44,6 +44,7 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -60,13 +61,14 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data})) { 
-		throw Mcs::Exception::Internal(error => "EEntity->new ($class) need a data named argument!"); }
-    
-    
-   	$log->warn("Class is : $class");
+		$errmsg = "EEntity->new ($class) need a data named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+    }
+        
+   	$log->debug("Class is : $class");
     my $self = { _entity => $args{data}};
     bless $self, $class;
-
     return $self;
 }
 

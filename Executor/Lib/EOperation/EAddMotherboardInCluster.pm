@@ -50,7 +50,7 @@ use McsExceptions;
 use EFactory;
 
 my $log = get_logger("executor");
-
+my $errmsg;
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
@@ -66,7 +66,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->warn("Class is : $class");
+    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -101,7 +101,10 @@ sub prepare {
 	$log->info("Operation preparation");
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddMotherboardInCluster->prepare need an internal_cluster named argument!"); }
+		$errmsg = "EAddMotherboardInCluster->prepare need an internal_cluster named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
@@ -123,15 +126,12 @@ sub prepare {
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
 	# Get instance of Cluster Entity
-	$log->warn("Load cluster instance");
 	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
 	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
 	# Get instance of Motherboard Entity
-	$log->warn("Load Motherboard instance");
 	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
-	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
-	
+		
 	## Instanciate Component needed (here LVM, ISCSITARGET, DHCP on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",

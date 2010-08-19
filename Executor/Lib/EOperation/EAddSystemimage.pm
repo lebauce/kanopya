@@ -50,6 +50,7 @@ use McsExceptions;
 use EFactory;
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -95,7 +96,10 @@ sub prepare {
 	$self->SUPER::prepare();
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddSystemimage->prepare need an internal_cluster named argument!"); }
+		$errmsg = "EAddSystemimage->prepare need an internal_cluster named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
@@ -124,10 +128,8 @@ sub prepare {
 	$self->{_objs}->{distribution} = $adm->getEntity(type => 'Distribution', id => $params->{distribution_id});
 	
 	# Instanciate new Systemimage Entity
-	$log->warn("adm->newEntity of Systemimage");
 	$self->{_objs}->{systemimage} = $adm->newEntity(type => "Systemimage", params => $params);
-	$log->warn("New systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
-	
+		
 	## Instanciate Component needed (here LVM on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
@@ -135,7 +137,7 @@ sub prepare {
 										 administrator => $adm);
 	
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
+	
 }
 
 sub execute {
@@ -150,14 +152,16 @@ sub execute {
 	# creation of etc and root devices based on distribution devices
 	$log->info('etc device creation for new systemimage');
 	my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $etc_name,
-													size => $devs->{etc}->{size},
+													size => $devs->{etc}->{lvsize},
 													filesystem => $devs->{etc}->{filesystem},
 													econtext => $self->{nas}->{econtext});
 	$log->info('etc device creation for new systemimage');													
 	my $root_id = $self->{_objs}->{component_storage}->createDisk(name => $root_name,
-													size => $devs->{root}->{size},
+													size => $devs->{root}->{lvsize},
 													filesystem => $devs->{root}->{filesystem},
 													econtext => $self->{nas}->{econtext});
+	
+	# TODO update vg freespace 
 	
 	# copy of distribution data to systemimage devices												
 	$log->info('etc device fill with distribution data for new systemimage');

@@ -52,6 +52,7 @@ use base "EContext";
 use McsExceptions;
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -74,7 +75,7 @@ sub new {
     my %args = @_;
     # do not reinstanciate existing ssh context, reuse 
     if(exists $sshcontexts->{$args{ip}}) {
-    	$log->debug("EContext::SSH instance for $args{ip} already exists, return it");
+    	$log->info("EContext::SSH instance for $args{ip} retrieved");
     	return $sshcontexts->{$args{ip}};
     }
     
@@ -87,7 +88,9 @@ sub new {
     $p->port_number(22);
     if(not $p->ping($args{ip}, 2)) {
     	$p->close();
-    	throw Mcs::Exception::Network(error => "EContext::SSH->new : can't contact $args{ip} on port 22");	
+    	$errmsg = "EContext::SSH->new : can't contact $args{ip} on port 22";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Network(error => $errmsg);	
     }
     $p->close();
     
@@ -144,13 +147,15 @@ sub execute {
 	my $self = shift;
 	my %args = @_;
 	if(! exists $args{command} or ! defined $args{command}) {
-		throw Mcs::Exception::Internal::IncorrectParam(
-			error => "EContext::Local->execute need a command named argument!"); 
+		$errmsg = "EContext::SSH->execute need a command named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 	
 	if($args{command} =~ m/2>/) {
-		throw Mcs::Exception::Internal::IncorrectParam(
-			error => "EContext::Local->execute : command must not contain stderr redirection (2>)!"); 
+		$errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 		
 	if(not exists $self->{machine}) {
@@ -163,7 +168,9 @@ sub execute {
 	$log->debug("Command execute is : <$command>");
 	my $r = $self->{machine}->system($command);
 	if(not $r->ok) {
-		throw Mcs::Exception::Network(error => "EContext::SSH->execute RPC failed");
+		$errmsg = "EContext::SSH->execute RPC failed";
+		$log->error($errmsg);
+		throw Mcs::Exception::Network(error => $errmsg);
 	}
 	$result->{stdout} = $r->stdout;
 	chomp($result->{stdout});
@@ -172,8 +179,9 @@ sub execute {
 	$log->debug("Command stdout is : '$result->{stdout}'");
 	$log->debug("Command stderr is : '$result->{stderr}'");
 	if($result->{stderr}) {
-		throw Mcs::Exception::Execution(
-			error => "EContext::Local->execute : got stderr: $result->{stderr}");
+		$errmsg = "EContext::SSH->execute : got stderr: $result->{stderr}";
+		$log->error($errmsg);
+		throw Mcs::Exception::Execution(error => $errmsg);
 	}
 	return $result;	
 }

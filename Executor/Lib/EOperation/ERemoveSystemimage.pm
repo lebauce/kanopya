@@ -50,7 +50,7 @@ use McsExceptions;
 use EFactory;
 
 my $log = get_logger("executor");
-
+my $errmsg;
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
@@ -95,7 +95,10 @@ sub prepare {
 	$self->SUPER::prepare();
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddSystemimage->prepare need an internal_cluster named argument!"); }
+		$errmsg = "EAddSystemimage->prepare need an internal_cluster named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
@@ -121,10 +124,8 @@ sub prepare {
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
 	# Instanciate new Systemimage Entity
-	$log->warn("adm->newEntity of Systemimage");
 	$self->{_objs}->{systemimage} = $adm->getEntity(type => "Systemimage", id => $params->{systemimage_id});
-	$log->warn("New systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
-	
+		
 	## Instanciate Component needed (here LVM on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
@@ -132,7 +133,6 @@ sub prepare {
 										 administrator => $adm);
 	
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 }
 
 sub execute{
@@ -150,6 +150,8 @@ sub execute{
 
 	$log->info("etc device deletion for systemimage");													
 	$self->{_objs}->{component_storage}->removeDisk(name => $root_name, econtext => $self->{nas}->{econtext});
+	
+	# TODO update vg freespace
 		
 	$self->{_objs}->{systemimage}->delete();
 }

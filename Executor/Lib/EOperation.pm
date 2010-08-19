@@ -45,6 +45,7 @@ use vars qw(@ISA $VERSION);
 use lib "..";
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -66,10 +67,13 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data})) { 
-		throw Mcs::Exception::Internal(error => "EOperation->new ($class) need a data named argument!"); }
+		$errmsg = "EOperation->new ($class) need a data named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+   	}
     
     
-   	$log->warn("Class is : $class");
+   	$log->debug("Class is : $class");
     my $self = { _operation => $args{data}};
     bless $self, $class;
 	$self->_init();
@@ -99,12 +103,12 @@ sub prepare {
 	my $self = shift;
 	
 	my $id = $self->_getOperation();
-	$log->warn("Class is : $id");
+	$log->debug("Class is : $id");
 	$self->{userid} = $self->_getOperation()->getAttr(attr_name => "user_id");
-	$log->warn("Change user by user_id : $self->{userid}");	
+	$log->debug("Change user by user_id : $self->{userid}");	
 	my $adm = Administrator->new();
 	#$adm->changeUser(user_id => $self->{userid});
-	$log->warn("Change user effective : New user is $adm->{_rightschecker}->{_user}");
+	$log->debug("Change user effective : New user is $adm->{_rightschecker}->{_user}");
 	$adm->{db}->txn_begin;
 }
 
