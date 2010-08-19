@@ -61,9 +61,10 @@ Operation::RemoveSystemimage->new creates a new RemoveSystemimage operation.
 sub new {
     my $class = shift;
     my %args = @_;
-
+    
 	# presence of 'params' named argument is done in parent class
 	my $self = $class->SUPER::new( %args );
+	my $admin = $args{administrator};
 	
 	if (! exists $args{params}->{systemimage_id} or ! defined $args{params}->{systemimage_id}) { 
 		$errmsg = "Operation::RemoveSystemimage->new : params need a systemimage_id";
@@ -71,7 +72,13 @@ sub new {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	#TODO Here check systemimage existance, active and rights
+	# check if systemimage_id exists
+	my $row = $admin->{db}->resultset('Systemimage')->find($args{params}->{systemimage_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::RemoveSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }	
     return $self;
 }
 

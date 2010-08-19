@@ -44,9 +44,11 @@ use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+use Entity::Cluster;
 use base "Operation";
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -64,7 +66,22 @@ sub new {
 
 	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
-    $self->_init();
+    my $admin = $args{administrator};
+   
+	$log->debug("checking presence of cluster_id parameter");
+    if (! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) {
+    	$errmsg = "Operation::RemoveCluster->new : params need a cluster_id parameter!";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+   
+	$log->debug("checking cluster existence with id <$args{params}->{cluster_id}>");
+    my $row = $admin->{db}->resultset('Cluster')->find($args{params}->{cluster_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::RemoveCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }   
     
     return $self;
 }
