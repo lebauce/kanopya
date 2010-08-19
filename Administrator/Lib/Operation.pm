@@ -67,9 +67,9 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})||
+		(! exists $args{administrator} or ! defined $args{administrator})||
 		(! exists $args{params} or ! defined $args{params})) { 
-		$errmsg = "Operation->new need a data, params and rightschecker named argument!"; 
+		$errmsg = "Operation->new need a data, params and administrator named argument!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -77,7 +77,7 @@ sub new {
     # Here Check if users can execution this operation (We have the rightschecker)
 
     my $self = {
-		_rightschecker => $args{rightschecker},
+		_rightschecker => $args{administrator}->{_rightschecker},
         _dbix => $args{data},
         _params => $args{params},
     };
