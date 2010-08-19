@@ -326,6 +326,27 @@ sub getEntities {
 #    return  @objs;
 #}
 
+=head2 countEntities 
+
+	args:
+		type : concrete Entity type
+	
+	Return an integer	
+
+=cut
+
+sub countEntities {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{type} or ! defined $args{type}) { 
+		$errmsg = "Administrator->countEntities need a type named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg); 
+	}
+	my $count = $self->{db}->resultset($args{type})->count;
+	$log->debug("Total number of entities $args{type} : $count");
+	return $count;
+}
 
 =head2 newEntity
 	
@@ -426,7 +447,7 @@ sub newOp {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 
-	my $op = "Operation::$subclass"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => $args{params});
+	my $op = "Operation::$subclass"->new(data => $op_data, administrator => $self, params => $args{params});
 	$op->save();
 	# We do not return the operation to user.
 }
@@ -498,8 +519,8 @@ sub getNextOp {
 	}
 
 	# Operation instanciation
-	my $op = "Operation::$op_type"->new(data => $op_data, rightschecker => $self->{_rightschecker}, params => \%params);
-	$log->debug("Operation instanciate " . ref($op) . " and will be returned");
+	my $op = "Operation::$op_type"->new(data => $op_data, administrator => $self, params => \%params);
+	$log->info(ref($op) . " retrieved from database (next operation from execution list)");
 	return $op;
 }
 
@@ -1042,6 +1063,8 @@ sub removeNode{
 	}
 	$row->delete;
 }
+
+
 1;
 
 __END__
