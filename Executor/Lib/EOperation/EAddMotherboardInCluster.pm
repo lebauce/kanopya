@@ -195,10 +195,43 @@ sub execute{
 	$self->SUPER::execute();
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
-	$log->debug("After Adm");
 	
-	#TODO Clone the cluster etc
-	#TODO Update export (etc, root, mount_point)
+	## Clone system image etc on motherboard etc
+	# Get system image etc
+	my $sysimg_dev = $self->{_objs}->{cluster}->getSystemImage()->getDevices();
+	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
+	# copy of systemimage etc source to motherboard etc device
+	$log->info('Cloning system image etc device to the new node');
+	my $command = "dd if=/dev/$sysimg_dev->{etc}->{vgname}/$sysimg_dev->{etc}->{lvname} of=/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} bs=1M";
+	my $result = $self->{nas}->{econtext}->execute(command => $command);
+	
+	## Update export to allow to motherboard to boot
+	#TODO Update export root and mount_point to add motherboard as allowed to access to this disk
+	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName(),
+																			 type => "etc");
+	my $target_id = $self->{_objs}->{component_export}->addTarget(targetname=>$target_name, mount_point=>"/etc");
+	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id => $target_id,
+												iscsitarget1_lun_number => 0,
+												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
+												iscsitarget1_lun_typeio => "fileio",
+												iscsitarget1_lun_iomode => "wb");
+	$self->{_objs}->{component_export}->reload();
+	
+	## ADD Motherboard in the dhcp
+	my $subnet = $self->{_objs}->{component_dhcpd}->getInternalSubNet();
+	my $motherboard_ip = $adm->getFreeInternalIP();
+	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
+	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
+	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	$self->{_objs}->{component_dhcpd}->addHost(subnet_id		=> $subnet,
+												host_ipaddr		=> $motherboard_ip,
+												host_mac_add	=> $motherboard_mac,
+												host_hostname	=> $motherboard_hostname,
+												host_kernel		=> $motherboard_kernel_id);
+	$self->{_objs}->{component_dhcpd}->reload();
+	
+	#Update Motherboard internal ip
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
 	#TODO Foreach component migrate (node, exec context?)
 	#
 # Create cluster directory

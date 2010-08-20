@@ -23,8 +23,7 @@ my $addmotherboard_op;
 
 my $adm = Administrator->new( %args);
 eval {
-#	$adm->{db}->txn_begin;
-	
+#	BEGIN { $ENV{DBIC_TRACE} = 1 }	
 	note("Create Motherboard");
 	$adm->newOp(type => "AddMotherboard", 
 				priority => '100',
@@ -34,7 +33,7 @@ eval {
 							motherboard_serial_number => "Test sn",
 							motherboard_model_id => 1,
 							processor_model_id => 1});
-#	my $pub_net =$adm->newPublicIP(ip_address => '192.168.0.1', ip_mask => '255.255.255.0');
+
 	note("Create Cluster");
 	$adm->newOp(type		=> "AddCluster",
 				priority	=> '100',

@@ -2,7 +2,7 @@ package EEntity::EComponent::EDhcpserver::EDhcpd3;
 
 use strict;
 
-use base "Entity::Component::EDhcpserver";
+use base "EEntity::EComponent::EDhcpserver";
 
 
 # contructor

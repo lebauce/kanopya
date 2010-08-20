@@ -1,8 +1,8 @@
-package EEntity::EComponent::ETftpserver::EAtftpd0;
+package EEntity::EComponent::EDhcpserver;
 
 use strict;
 
-use base "EEntity::EComponent::ETftpserver";
+use base "EEntity::EComponent";
 
 
 # contructor

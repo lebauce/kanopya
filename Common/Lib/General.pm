@@ -53,7 +53,6 @@ sub getClassEEntityFromEntity{
 	my %args = @_;
 	my $data = $args{entity};
 	$log->debug("Try to get Eentity class from object". ref($data));
-	$log->debug("Exist args_data " . exists($args{entity}) ."and isa ".$data->isa('Entity'));
 	
 	if(! exists($args{entity})) {
 		$errmsg = "Try to get Eentity class from object not entity : ". ref($args{entity});

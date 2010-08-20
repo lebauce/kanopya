@@ -115,8 +115,8 @@ sub run {
 	$log->warn("After New Administrator"); 
    	while (1) {
    		my $opdata = $adm->getNextOp();
-   		my $op = EFactory::newEEntity(data => $opdata);
-   		if ($op){
+   		if ($opdata){
+	   		my $op = EFactory::newEEntity(data => $opdata);
    			eval {
    				$op->prepare($self->{config}->{cluster});
    				$op->execute();
@@ -148,16 +148,16 @@ sub execnround {
 
    	while ($args{run}) {
    		my $opdata = $adm->getNextOp();
-   		$log->warn("Get Next Operation, its type is ".ref($opdata));
-   		my $op = EFactory::newEEntity(data => $opdata);
-   		if ($op){
+   		if ($opdata){
+   				$log->warn("Get Next Operation, its type is ".ref($opdata));
+   				my $op = EFactory::newEEntity(data => $opdata);
    			eval {
    				$op->prepare(internal_cluster => $self->{config}->{cluster}, internal_net => $self->{config}->{internalnetwork});
    				$log->info("Operation execution");
    				$op->execute();
    				$log->info("Operation finishing");
    				$op->finish();
-   				$log->debug("Operation finished");
+   				$log->info("Operation finished");
    			};
 			if ($@) {
    				my $error = $@;

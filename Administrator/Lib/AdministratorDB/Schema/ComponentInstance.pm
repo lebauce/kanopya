@@ -23,6 +23,11 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Apache2",
   { "foreign.component_instance_id" => "self.component_instance_id" },
 );
+__PACKAGE__->has_many(
+  "atftpd0s",
+  "AdministratorDB::Schema::Atftpd0",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
 __PACKAGE__->belongs_to(
   "cluster_id",
   "AdministratorDB::Schema::Cluster",
@@ -44,6 +49,11 @@ __PACKAGE__->has_many(
   { "foreign.component_instance_id" => "self.component_instance_id" },
 );
 __PACKAGE__->has_many(
+  "dhcpd3s",
+  "AdministratorDB::Schema::Dhcpd3",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
+__PACKAGE__->has_many(
   "lvm2_vgs",
   "AdministratorDB::Schema::Lvm2Vg",
   { "foreign.component_instance_id" => "self.component_instance_id" },
@@ -55,8 +65,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-16 15:45:15
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Vn0vULFPQX8fisMk6AKXHA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-20 14:40:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YVlXcKdFewcrVAfh0QFx3A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

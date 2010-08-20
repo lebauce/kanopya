@@ -4,7 +4,7 @@ use strict;
 use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
-use Data::Dumper;
+
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -166,6 +166,34 @@ sub getEtcName {
 	my $mac = $self->getAttr(name => "motherboard_mac_address");
 	$mac =~ s/\:/\_/mg;
 	return "etc_". $mac;
+}
+
+
+=head getEtcDev
+
+get etc attributes used by this motherboard
+
+=cut
+sub getEtcDev {
+	my $self = shift;
+	if(! $self->{_dbix}->in_storage) {
+		$errmsg = "Entity::Motherboard->getEtcDev must be called on an already save instance";
+		$log->error($errmsg);
+		throw Mcs::Exception(error => $errmsg);
+	}
+	$log->info("retrieve etc attributes");
+	my $etcrow = $self->{_dbix}->etc_device_id;
+	my $devices = {
+		etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
+				 vg_id => $etcrow->get_column('lvm2_vg_id'),
+				 lvname => $etcrow->get_column('lvm2_lv_name'),
+				 vgname => $etcrow->lvm2_vg_id->get_column('lvm2_vg_name'),
+				 size => $etcrow->get_column('lvm2_lv_size'),
+				 freespace => $etcrow->get_column('lvm2_lv_freespace'),	
+				 filesystem => $etcrow->get_column('lvm2_lv_filesystem')
+				}	};
+	$log->info("Motherboard etc and root devices retrieved from database");
+	return $devices;
 }
 
 sub generateHostname{
