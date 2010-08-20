@@ -49,6 +49,7 @@ use base "EContext";
 use McsExceptions;
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -70,12 +71,13 @@ sub new {
     my $class = shift;
     # do not reinstanciate local context, reuse 
     if(defined $localcontext) {
-    	$log->debug("EContext::Local instance already exists, return it");
+    	$log->info("EContext::Local instance retrieved");
     	return $localcontext;
     }
     my $self = {};
     bless $self, $class;
     $localcontext = $self;
+	$log->info("new EContext::Local instance");
 	return $self;
 }
 
@@ -96,14 +98,16 @@ sub execute {
 	my $self = shift;
 	my %args = @_;
 	if(! exists $args{command} or ! defined $args{command}) {
-		throw Mcs::Exception::Internal::IncorrectParam(
-			error => "EContext::Local->execute need a command named argument!"); 
+		$errmsg = "EContext::Local->execute need a command named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 	
 	# command must no contain stderr redirection !
 	if($args{command} =~ m/2>/) {
-		throw Mcs::Exception::Internal::IncorrectParam(
-			error => "EContext::Local->execute : command must not contain stderr redirection (2>)!"); 
+		$errmsg = "EContext::Local->execute : command must not contain stderr redirection (2>)!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 		
 	my $result = {};

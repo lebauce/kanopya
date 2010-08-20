@@ -66,10 +66,62 @@ sub new {
 	
 	# presence of 'params' named argument is done in parent class 
     my $self = $class->SUPER::new( %args );
-    $self->_init();
- 
- 	#TODO Here check params and rights!
-     Entity::Cluster->checkAttrs(attrs => $args{params});   
+    my $admin = $args{administrator};
+     
+ 	# check validity of cluster attributes
+    Entity::Cluster->checkAttrs(attrs => $args{params});   
+    
+    # check if systemimage_id exist
+    $log->debug("checking systemimage existence with id <$args{params}->{systemimage_id}>");
+    my $row = $admin->{db}->resultset('Systemimage')->find($args{params}->{systemimage_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::AddCluster->new : systemimage_id $args{params}->{systemimage_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    # if kernel_id present, check if exists
+    $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
+    if(exists $args{params}->{kernel_id}) {
+	    $row = $admin->{db}->resultset('Kernel')->find($args{params}->{kernel_id});
+	    if(! defined $row) {
+	    	$errmsg = "Operation::AddCluster->new : kernel_id $args{params}->{kernel_id} does not exist";
+	    	$log->error($errmsg);
+	    	throw Mcs::Exception::Internal(error => $errmsg);
+    	}
+    }
+    
+    # check if cluster name does not already exist
+    $log->debug("checking unicity  of cluster name <$args{params}->{cluster_name}>");
+    $row = $admin->{db}->resultset('Cluster')->find({cluster_name => $args{params}->{cluster_name}});
+    if(defined $row) {
+    	$errmsg = "Operation::AddCluster->new : cluster_name $args{params}->{cluster_name} already exists";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    # check validity of min_node and max_node
+    $log->debug("checking validity of cluster_min_node <$args{params}->{cluster_min_node}>");
+    $log->debug("checking validity of cluster_max_node <$args{params}->{cluster_max_node}>");
+    my $totalmotherboards = $admin->countEntities(type => 'Motherboard');
+    if(($args{params}->{cluster_min_node} > $totalmotherboards) ||
+       ($args{params}->{cluster_max_node} > $totalmotherboards)) {
+       	$errmsg = qq/Operation::AddCluster->new : 
+       	cluster_min_node ($args{params}->{cluster_min_node}) and 
+       	cluster_max_node ($args{params}->{cluster_max_node}) can't 
+       	exceed total motherboards number ($totalmotherboards)/;
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    if(! $args{params}->{cluster_min_node} > $args{params}->{cluster_max_node}) {
+    	$errmsg = qq/Operation::AddCluster->new : 
+       	cluster_min_node ($args{params}->{cluster_min_node}) must  
+       	be inferior or equal cluster_max_node ($args{params}->{cluster_max_node})/;
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
     return $self;
 }
 

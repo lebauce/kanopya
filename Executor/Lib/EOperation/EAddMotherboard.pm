@@ -50,6 +50,7 @@ use McsExceptions;
 use EFactory;
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -65,7 +66,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->warn("Class is : $class");
+    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -96,8 +97,11 @@ sub prepare {
 	$self->SUPER::prepare();
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddMotherboard->prepare need an internal_cluster named argument!"); }
-	$log->warn("After Eoperation prepare and before get Administrator singleton");
+		$errmsg = "EAddMotherboard->prepare need an internal_cluster named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$log->debug("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
@@ -122,18 +126,15 @@ sub prepare {
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
-
 	# Instanciate new Motherboard Entity
-	$log->warn("adm->newEntity of Motherboard");
 	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);
-	$log->warn("New motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
 										 version => "2",
 										 administrator => $adm);
-	print "Value return by getcomponent ". ref($tmp);
+	$log->debug("Value return by getcomponent ". ref($tmp));
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 	# Instanciate Cluster Export component.

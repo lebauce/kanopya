@@ -5,6 +5,7 @@ use Data::Dumper;
 use base "EEntity::EComponent::EStorage";
 use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
+my $errmsg;
 # contructor
 
 sub new {
@@ -15,7 +16,7 @@ sub new {
     return $self;
 }
 
-sub createDisk{
+sub createDisk {
 	my $self = shift;
 	my %args = @_;
 	
@@ -23,7 +24,10 @@ sub createDisk{
 		(! exists $args{size} or ! defined $args{size}) ||
 		(! exists $args{filesystem} or ! defined $args{filesystem})||
 		(! exists $args{econtext} or ! defined $args{econtext})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "ELvm2->createDisk need a name, size and filesystem named argument!"); }
+		$errmsg = "ELvm2->createDisk need a name, size and filesystem named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	#TODO Get main vg could be in entity object or EEntity
 	my $vg = $self->_getEntity()->getMainVg();
 	return $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
@@ -37,7 +41,10 @@ sub removeDisk{
 	
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{econtext} or ! defined $args{econtext})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "ELvm2->removeDisk need a name and econtext named argument!"); }
+		$errmsg = "ELvm2->removeDisk need a name and econtext named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	#TODO Get main vg could be in entity object or EEntity
 	my $vg = $self->_getEntity()->getMainVg();
 
@@ -55,7 +62,10 @@ sub lvCreate{
 		(! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
 		(! exists $args{econtext} or ! defined $args{econtext}) ||
 		(! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "ELvm2->createLV need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!"); }
+		$errmsg = "ELvm2->createLV need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
 	$log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 	$log->debug("lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}");
@@ -75,7 +85,10 @@ sub lvRemove{
 		(! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
 		(! exists $args{econtext} or ! defined $args{econtext}) ||
 		(! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "ELvm2->removeLV need a lvm2_lv_name, lvm2_vg_id, econtext and lvm2_vg_name named argument!"); }
+		$errmsg = "ELvm2->removeLV need a lvm2_lv_name, lvm2_vg_id, econtext and lvm2_vg_name named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
 	$log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 	$log->debug("lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");

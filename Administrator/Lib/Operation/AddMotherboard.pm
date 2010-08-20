@@ -68,9 +68,46 @@ sub new {
 
 	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
-    $self->_init();
-    $log->debug(Dumper $args{params});
+    my $admin = $args{administrator};
+        
     Entity::Motherboard->checkAttrs(attrs => $args{params});
+    
+    # check if kernel_id exist
+    $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
+    my $row = $admin->{db}->resultset('Kernel')->find($args{params}->{kernel_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::AddMotherboard->new : kernel_id $args{params}->{kernel_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    # check if motherboard_model_id exist
+    $log->debug("checking motherboard model existence with id <$args{params}->{motherboard_model_id}>");
+    $row = $admin->{db}->resultset('MotherboardModel')->find($args{params}->{motherboard_model_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::AddMotherboard->new : motherboard_model_id $args{params}->{motherboard_model_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    # check if processor_model_id exist
+    $log->debug("checking processor model existence with id <$args{params}->{processor_model_id}>");
+    $row = $admin->{db}->resultset('ProcessorModel')->find($args{params}->{processor_model_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::AddMotherboard->new : processor_model_id $args{params}->{processor_model_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    # check mac address unicity
+    $log->debug("checking unicity of mac address <$args{params}->{motherboard_mac_address}>");
+    $row = $admin->{db}->resultset('Motherboard')->find($args{params}->{motherboard_mac_address});
+    if(defined $row) {
+    	$errmsg = "Operation::AddMotherboard->new : motherboard_mac_address $args{params}->{motherboard_mac_address} already exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
     return $self;
 }
 

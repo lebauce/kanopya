@@ -110,12 +110,12 @@ sub checkAttr{
 	
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{value} or ! defined $args{value})) { 
-		$errmsg = "Entity::Motherboard->checkAttr need a name and value named argument!";
+		$errmsg = "Entity::Cluster->checkAttr need a name and value named argument!";
 		$log->error($errmsg);	
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (!exists $struct->{$args{name}}){
-		$errmsg = "Entity::Motherboard->checkAttr invalid name";	
+		$errmsg = "Entity::Cluster->checkAttr invalid name";	
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}

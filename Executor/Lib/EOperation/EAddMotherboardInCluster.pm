@@ -50,7 +50,7 @@ use McsExceptions;
 use EFactory;
 
 my $log = get_logger("executor");
-
+my $errmsg;
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
@@ -66,7 +66,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->warn("Class is : $class");
+    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -104,7 +104,10 @@ sub prepare {
 	$log->info("Operation preparation");
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "EAddMotherboardInCluster->prepare need an internal_cluster named argument!"); }
+		$errmsg = "EAddMotherboardInCluster->prepare need an internal_cluster named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();

@@ -39,6 +39,7 @@ package Operation::AddSystemimage;
 
 use strict;
 use warnings;
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
@@ -59,24 +60,39 @@ Operation::AddSystemimage->new creates a new CreateSystemimage operation.
 sub new {
     my $class = shift;
     my %args = @_;
-
+    
 	# presence of 'params' named argument is done in parent class
 	my $self = $class->SUPER::new( %args );
+	my $admin = $args{administrator};
 	
-    # Operation parameters checking
-    my $p = $args{params};
-    if (! exists $p->{systemimage_name} or ! defined $p->{systemimage_name}) {
-    	$errmsg = "Operation::AddSystemimage->new : params need a systemimage_name parameter!";
-    	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
-    }
-    if (! exists $p->{distribution_id} or ! defined $p->{distribution_id}) {
-    	$errmsg = "Operation::AddSystemimage need a distribution_id parameter!";
-    	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
-    }
+	# check validity of systemimage attributes
+	Entity::Systemimage->checkAttrs(attrs => $args{params});
         
-    
+    # check if systemimage name does not already exist
+    my $row = $admin->{db}->resultset('Systemimage')->find({systemimage_name => $args{params}->{systemimage_name}});
+    if(defined $row) {
+    	$errmsg = "Operation::AddSystemimage->new : systemimage_name $args{params}->{systemimage_name} already exists";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    # check if distribution_id exist
+    $row = $admin->{db}->resultset('Distribution')->find($args{params}->{distribution_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::AddSystemimage->new : distribution_id $args{params}->{distribution_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    # check if vg has enough free space
+    my $distrib = $admin->getEntity(type => 'Distribution', id => $args{params}->{distribution_id});
+    my $devices = $distrib->getDevices;
+    my $neededsize = $devices->{etc}->{lvsize} + $devices->{root}->{lvsize};
+    $log->debug("Size needed for systemimage devices : $neededsize M"); 
+    $log->debug("Freespace left : $devices->{etc}->{vgfreespace} M");
+    if($neededsize > $devices->{etc}->{vgfreespace}) {
+    	$errmsg = "Operation::AddSystemimage->new : not enough freespace on vg $devices->{etc}->{vgname} ($devices->{etc}->{vgfreespace} M left)";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
     return $self;
 }
 

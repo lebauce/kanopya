@@ -47,6 +47,7 @@ use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 
 my $log = get_logger("administrator");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -64,7 +65,22 @@ sub new {
 
 	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
-    $self->_init();
+ 	my $admin = $args{administrator};
+    
+    if (! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id}) { 
+		$errmsg = "Operation::RemoveMotherboard->new : params Need a motherboard_id";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	# check if motherboard_id exist
+    $log->debug("checking motherboard existence with id <$args{params}->{motherboard_id}>");
+    my $row = $admin->{db}->resultset('Motherboard')->find($args{params}->{motherboard_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::RemoveMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
     
     return $self;
 }

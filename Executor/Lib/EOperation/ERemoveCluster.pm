@@ -50,6 +50,7 @@ use McsExceptions;
 use EFactory;
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -65,7 +66,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->warn("Class is : $class");
+    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -96,7 +97,10 @@ sub prepare {
 	$self->SUPER::prepare();
 
 	if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "ERemoveCluster->prepare need an internal_cluster named argument!"); }
+		$errmsg = "ERemoveCluster->prepare need an internal_cluster named argument!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
@@ -106,11 +110,8 @@ sub prepare {
 	# Get context for nas
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
-
 	# Instanciate Cluster Entity
-	$log->warn("adm->newEntity of Cluster");
 	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
-	$log->warn("Get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 	
 }
 

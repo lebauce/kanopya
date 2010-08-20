@@ -67,7 +67,7 @@ sub new {
 
 	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
-    $self->_init();
+    my $admin = $args{administrator};
  
 	if ((! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) ||
 		(! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id})) { 
@@ -76,7 +76,23 @@ sub new {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	#TODO Here check cluster and motherboard existance and rights
+	# check if cluster_id exist
+    $log->debug("checking cluster existence with id <$args{params}->{cluster_id}>");
+    my $row = $admin->{db}->resultset('Cluster')->find($args{params}->{cluster_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::AddMotherboardInCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    # check if motherboard_id exist
+    $log->debug("checking motherboard existence with id <$args{params}->{motherboard_id}>");
+    $row = $admin->{db}->resultset('Motherboard')->find($args{params}->{motherboard_id});
+    if(! defined $row) {
+    	$errmsg = "Operation::AddMotherboardInCluster->new : motherboard_id $args{params}->{motherboard_id} does not exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
 	return $self;
 }
 
