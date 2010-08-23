@@ -507,6 +507,67 @@ CREATE TABLE `lvm2_lv` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for atftpd0
+--
+
+CREATE TABLE `atftpd0` (
+  `atftpd0_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `component_instance_id` int(8) unsigned NOT NULL,
+  `atftpd0_options` char(128) DEFAULT NULL,
+  `atftpd0_use_inetd` char(32) DEFAULT NULL,
+  `atftpd0_logfile` char(128) DEFAULT NULL,
+  `atftpd0_repository` char(64) DEFAULT NULL,
+  PRIMARY KEY (`atftpd0_id`),
+  KEY `fk_atftpd0_1` (`component_instance_id`),
+  CONSTRAINT `fk_atftpd0_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for dhcpd3
+--
+
+CREATE TABLE `dhcpd3` (
+  `dhcpd3_id` int(8) unsigned NOT NULL,
+  `component_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `dhcpd3_domain_name` char(128) DEFAULT NULL,
+  `dhcpd3_domain_server` char(128) DEFAULT NULL,
+  `dhcpd3_servername` char(128) DEFAULT NULL,
+  PRIMARY KEY (`dhcpd3_id`),
+  KEY `fk_dhcpd3_1` (`component_instance_id`),
+  CONSTRAINT `fk_dhcpd3_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for dhcpd3_subnet
+--
+
+CREATE TABLE `dhcpd3_subnet` (
+  `dhcpd3_subnet_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `dhcpd3_id` int(8) unsigned NOT NULL,
+  `dhcpd3_subnet_net` char(40) NOT NULL,
+  `dhcpd3_subnet_mask` char(40) NOT NULL,
+  PRIMARY KEY (`dhcpd3_subnet_id`),
+  KEY `fk_dhcpd3_subnet_1` (`dhcpd3_id`),
+  CONSTRAINT `fk_dhcpd3_subnet_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `dhcpd3` (`dhcpd3_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for dhcpd3_hosts
+--
+
+CREATE TABLE `dhcpd3_hosts` (
+  `dhcpd3_hosts_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `dhcpd3_subnet_id` int(8) unsigned NOT NULL,
+  `dhcpd3_hosts_ipaddr` char(40) NOT NULL,
+  `dhcpd3_hosts_mac_address` char(40) NOT NULL,
+  `dhcpd3_hosts_hostname` char(40) NOT NULL,
+  `dhcpd3_hosts_kernel_version` char(64) NOT NULL,
+  PRIMARY KEY (`dhcpd3_hosts_id`),
+  KEY `fk_dhcpd3_hosts_1` (`dhcpd3_subnet_id`),
+  CONSTRAINT `fk_dhcpd3_hosts_1` FOREIGN KEY (`dhcpd3_subnet_id`) REFERENCES `dhcpd3_subnet` (`dhcpd3_subnet_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Entity tables
 --
 
