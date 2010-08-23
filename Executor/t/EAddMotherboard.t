@@ -57,8 +57,8 @@ eval {
 	my $motherboard2 = $entities[0];
 
 	note("Remove Motherboard");	
-	$adm->newOp(type => "RemoveMotherboard", priority => '100', params => { node_id => $motherboard1->getAttr(name=>'motherboard_id')});
-	$adm->newOp(type => "RemoveMotherboard", priority => '200', params => { node_id => $motherboard2->getAttr(name=>'motherboard_id')});
+	$adm->newOp(type => "RemoveMotherboard", priority => '100', params => { motherboard_id => $motherboard1->getAttr(name=>'motherboard_id')});
+	$adm->newOp(type => "RemoveMotherboard", priority => '200', params => { motherboard_id => $motherboard2->getAttr(name=>'motherboard_id')});
 	
 	note ("Execution begin");
 	$exec->execnround(run => 2);

@@ -127,7 +127,7 @@ sub prepare {
 
 
 	# Instanciate new Motherboard Entity
-	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{node_id});
+	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
 		
 	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
 	# Instanciate Cluster Storage component.
