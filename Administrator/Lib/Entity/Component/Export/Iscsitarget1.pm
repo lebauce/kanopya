@@ -15,5 +15,8 @@ sub new {
     return $self;
 }
 
+sub addTarget {
+	
+}
 
 1;

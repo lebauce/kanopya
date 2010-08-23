@@ -201,7 +201,7 @@ sub execute{
 	
 	## Clone system image etc on motherboard etc
 	# Get system image etc
-	my $sysimg_dev = $self->{_objs}->{cluster}->getSystemImage()->getDevices();
+	my $sysimg_dev = $self->{_objs}->{cluster}->getSystemImage(administrator => $adm)->getDevices();
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
 	# copy of systemimage etc source to motherboard etc device
 	$log->info('Cloning system image etc device to the new node');

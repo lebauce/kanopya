@@ -230,6 +230,18 @@ sub getComponent{
 #	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
 }
 
+sub getSystemImage {
+		my $self = shift;
+    my %args = @_;
+
+	if (! exists $args{administrator} or ! defined $args{administrator}) {
+		$errmsg = "Entity::Cluster->getSystemImage needs an administrator named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $args{administrator}->getEntity(type => 'Systemimage', id => $self->getAttr(name => 'systemimage_id'));
+}
+
 #TODO soit on fait un getMasterNode et on retourne le node mais du coup il faut l'admin
 sub getMasterNodeIp{
 	my $self = shift;

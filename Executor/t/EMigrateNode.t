@@ -84,7 +84,7 @@ eval {
 				params		=> {cluster_id => $cluster->getAttr(name => "cluster_id")});
 	note("Remove Motherboard");
 		$adm->newOp(type => "RemoveMotherboard", priority => '100', 
-					params => { node_id => $motherboard->getAttr(name=>'motherboard_id')});
+					params => { motherboard_id => $motherboard->getAttr(name=>'motherboard_id')});
 	
 	note("Execute motherboard and cluster removing");
 	$exec->execnround(run => 2);
