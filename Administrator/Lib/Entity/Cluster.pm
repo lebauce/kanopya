@@ -252,4 +252,29 @@ sub getMasterNodeIp{
 	return $node_ip
 }
 
+=head2 addComponent
+
+=cut
+
+sub addComponent {
+	my $self = shift;
+	my %args = @_;
+	# check arguments
+	if(! exists $args{component_id} or ! defined $args{component_id}) {
+		$errmsg = "Entity::Cluster->addComponent needs a component_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	#TODO if component_template_id is provided, check if it belongs to component_id provided
+	my $template_id = undef;
+	if(exists $args{component_template_id} and defined $args{component_template_id}) {
+		$template_id = $args{component_template_id};
+	}
+	$self->{_dbix}->component_instances->create({
+		cluster_id => $self->getAttr(name => 'cluster_id'),
+		component_id => $args{component_id},
+		component_template_id => $template_id
+	});
+}
+
 1;

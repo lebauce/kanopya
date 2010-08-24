@@ -63,15 +63,15 @@ eval { $adm->newOp(type => "AddComponentToCluster", priority => '100',
 is(ref $@, 'Mcs::Exception::Internal', ref($@).' thrown when cluster already has this component');
 
 $adm->{db}->txn_rollback;
+
+
+
 	
 #	@args = ();
 #	note ("Execution begin");
 #	my $exec = new_ok("Executor", \@args, $exectest);
 #	$exec->execnround(run => 2);
 #	note("Operation Execution is finish");
-	
-
-
 
 
 #pass($exectest);
