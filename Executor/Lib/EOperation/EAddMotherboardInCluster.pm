@@ -210,8 +210,7 @@ sub execute{
 	
 	## Update export to allow to motherboard to boot
 	#TODO Update export root and mount_point to add motherboard as allowed to access to this disk
-	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName(),
-																			 type => "etc");
+	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName());
 	my $target_id = $self->{_objs}->{component_export}->addTarget(iscsitarget1_target_name=>$target_name,
 																  mountpoint=>"/etc",
 																  mount_option=>"");

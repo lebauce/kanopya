@@ -74,5 +74,52 @@ sub addLun {
 	return $res->get_column('iscsitarget1_lun_id');
 }
 
+sub getTargetIdLike {
+	my $self = shift;
+    my %args = @_;
 
+	if (! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name}) {
+		$errmsg = "Component::Export::Iscsitarget1->getTargetId needs a iscsitarget1_target_name named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $self->{_dbix}->iscsitarget1_targets->search({iscsitarget1_target_name => {-like => $args{iscsitarget1_target_name}}})->first()->get_column('iscsitarget1_target_id');
+}
+
+sub getLunId {
+	my $self = shift;
+    my %args = @_;
+
+	if ((! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id})||
+		(! exists $args{iscsitarget1_lun_device} or ! defined $args{iscsitarget1_lun_device})) {
+		$errmsg = "Component::Export::Iscsitarget1->getLun needs an iscsitarget1_target_id and an iscsitarget1_lun_device named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->first({ iscsitarget1_lun_device=> $args{iscsitarget1_lun_device}})->get_column('iscsitarget1_lun_id');
+	
+}
+
+sub removeLun {
+	my $self = shift;
+	my %args  = @_;
+	if ((! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id})||
+		(! exists $args{iscsitarget1_lun_id} or ! defined $args{iscsitarget1_lun_id})) {
+		$errmsg = "Component::Export::Iscsitarget1->removeLun needs an iscsitarget1_lun_id and an iscsitarget1_target_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->find($args{iscsitarget1_lun_id})->delete();
+}
+
+sub removeTarget{
+	my $self = shift;
+	my %args  = @_;	
+	if (! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) {
+		$errmsg = "Component::Export::Iscsitarget1->removeTarget needs an iscsitarget1_target_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
+}
 1;

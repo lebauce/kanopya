@@ -120,12 +120,16 @@ sub checkAttr{
 	my $attr_def = ATTR_DEF;
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
-		(! exists $args{value} or ! defined $args{value})) { 
+		(! exists $args{value})) { 
 		$errmsg = "Entity::Motherboard->checkAttr need a name and value named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-		
+	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
+		$errmsg = "Entity::Motherboard->checkAttr detect a null value for a mandatory attr ($args{name})";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
 
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'";
@@ -162,10 +166,21 @@ sub new {
 
 sub getEtcName {
 	my $self = shift;
-	#TODO getEtcName
 	my $mac = $self->getAttr(name => "motherboard_mac_address");
 	$mac =~ s/\:/\_/mg;
 	return "etc_". $mac;
+}
+
+=head getMacName
+
+return Mac address with separator : replaced by _
+
+=cut
+sub getMacName {
+	my $self = shift;
+	my $mac = $self->getAttr(name => "motherboard_mac_address");
+	$mac =~ s/\:/\_/mg;
+	return $mac;
 }
 
 
@@ -201,4 +216,9 @@ sub generateHostname{
 	return "node002";
 }
 
+
+sub getClusterId {
+	my $self = shift;
+	return $self->{_dbix}->nodes->first()->cluster_id->get_column('cluster_id');
+}
 1;

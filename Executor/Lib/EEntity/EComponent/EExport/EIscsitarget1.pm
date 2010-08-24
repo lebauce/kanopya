@@ -34,11 +34,10 @@ sub generateTargetname {
 	my $self = shift;
 	my %args  = @_;	
 	
-	if ((! exists $args{name} or ! defined $args{name})||
-		(! exists $args{type} or ! defined $args{type})) { 
+	if ((! exists $args{name} or ! defined $args{name})) { 
 		throw Mcs::Exception::Internal(error => "EEntity::EStorage::EIscsitarget1->generateTargetname need a name and a type named argument to generate initiatorname!"); }
 	my $today = today();
-	my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology.nas:$args{name}"."_".$args{type};
+	my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology.nas:$args{name}";
 	$log->info("TargetName generated is $res");
 	return $res;
 }
@@ -55,6 +54,7 @@ sub addTarget {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+#TODO add the real target addition in the iscitarget server
 	return $self->_getEntity()->addTarget(%args);
 }
 
@@ -70,9 +70,24 @@ sub reload {
 sub addLun {
 	my $self = shift;
 	my %args  = @_;	
-
+#TODO add the real lun addition in the iscitarget server
 	return $self->_getEntity()->addLun(%args);	
 }
+
+sub removeLun {
+	my $self = shift;
+	my %args  = @_;
+	#TODO add the real lun remove in the iscitarget server
+	return $self->_getEntity()->removeLun(%args);	
+}
+
+sub removeTarget{
+	my $self = shift;
+	my %args  = @_;	
+	#TODO add the real target remove in the iscitarget server
+	return $self->_getEntity()->removeTarget(%args);	
+}
+
 sub generateConf{
 	
 }

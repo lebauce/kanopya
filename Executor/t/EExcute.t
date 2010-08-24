@@ -23,6 +23,7 @@ my $op;
 
 my $adm = Administrator->new( %args);
 eval {
+	BEGIN { $ENV{DBIC_TRACE} = 1 }	
 	@args = ();
 
 	note ("Execute the addition");

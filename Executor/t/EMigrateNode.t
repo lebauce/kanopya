@@ -24,33 +24,33 @@ my $addmotherboard_op;
 my $adm = Administrator->new( %args);
 eval {
 #	BEGIN { $ENV{DBIC_TRACE} = 1 }	
-#	note("Create Motherboard");
-#	$adm->newOp(type => "AddMotherboard", 
-#				priority => '100',
-#				params => { 
-#							motherboard_mac_address => '00:1c:c0:c0:1c:9a', 
-#							kernel_id => 1, 
-#							motherboard_serial_number => "Test sn",
-#							motherboard_model_id => 1,
-#							processor_model_id => 1});
-#
-#	note("Create Cluster");
-#	$adm->newOp(type		=> "AddCluster",
-#				priority	=> '100',
-#				params		=> {cluster_name => 'test', 
-#								cluster_desc => 'test cluster',
-#								cluster_min_node		=> 1,
-#								cluster_max_node		=> 1,
-#								cluster_priority		=> 500,
-#								systemimage_id			=> 1,
-#								kernel_id				=> 1,
-#								active					=> 0});
+	note("Create Motherboard");
+	$adm->newOp(type => "AddMotherboard", 
+				priority => '100',
+				params => { 
+							motherboard_mac_address => '00:1c:c0:c0:1c:9a', 
+							kernel_id => 1, 
+							motherboard_serial_number => "Test sn",
+							motherboard_model_id => 1,
+							processor_model_id => 1});
+
+	note("Create Cluster");
+	$adm->newOp(type		=> "AddCluster",
+				priority	=> '100',
+				params		=> {cluster_name => 'test', 
+								cluster_desc => 'test cluster',
+								cluster_min_node		=> 1,
+								cluster_max_node		=> 1,
+								cluster_priority		=> 500,
+								systemimage_id			=> 1,
+								kernel_id				=> 1,
+								active					=> 0});
 	@args = ();
 
 	note ("Execute the addition");
 	my $exec = new_ok("Executor", \@args, $exectest);
-#	$exec->execnround(run => 2);
-#	note("Motherboard and cluster addition is finished");
+	$exec->execnround(run => 2);
+	note("Motherboard and cluster addition is finished");
 	
 	note("Get the Cluster");
 	my @entities = $adm->getEntities(type => 'Cluster', hash=> {cluster_name => 'test', cluster_desc => 'test cluster'});

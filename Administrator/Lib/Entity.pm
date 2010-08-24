@@ -170,7 +170,7 @@ sub setAttr {
 	my $data = $self->{_dbix};
 
     if ((! exists $args{name} or ! defined $args{name}) ||
-		(! exists $args{value} or ! defined $args{value})) { 
+		(! exists $args{value})) { 
 		$errmsg = "Entity->setAttr need a name and value named argument!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
