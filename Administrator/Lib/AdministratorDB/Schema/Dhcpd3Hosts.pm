@@ -23,19 +23,19 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("dhcpd3_hosts_id");
 __PACKAGE__->belongs_to(
-  "kernel_id",
-  "AdministratorDB::Schema::Kernel",
-  { kernel_id => "kernel_id" },
-);
-__PACKAGE__->belongs_to(
   "dhcpd3_subnet_id",
   "AdministratorDB::Schema::Dhcpd3Subnet",
   { dhcpd3_subnet_id => "dhcpd3_subnet_id" },
 );
+__PACKAGE__->belongs_to(
+  "kernel_id",
+  "AdministratorDB::Schema::Kernel",
+  { kernel_id => "kernel_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 00:51:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:z7v1uOQtZAwFB/KjYe1K8g
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 12:00:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g2qvKio3vusg4RXb8GaL9Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

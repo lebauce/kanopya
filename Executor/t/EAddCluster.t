@@ -85,7 +85,7 @@ eval {
 	$clustid = $entities[0]->getAttr(name => 'cluster_id');
 
 	#BEGIN { $ENV{DBIC_TRACE} = 1 }
-	$exec->execnround(run => 2);
+	$exec->execnround(run => 1);
 
 	eval {
 		my $addmotherboard_op = $adm->getNextOp();

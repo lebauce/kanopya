@@ -87,10 +87,10 @@ INSERT INTO `motherboard_entity` VALUES (31,1);
 
 INSERT INTO `node` VALUES (1,1,1,1);
 
-INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/defaultapache');
-INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd');
+INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/defaultapache', 2);
+INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
 
--- initial components for admin cluster
+-- initial components instance for admin cluster: 
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);
 INSERT INTO `entity` VALUES (32),(33),(34),(35),(36) ;
 INSERT INTO `component_instance_entity` VALUES (32,1),(33,2),(34,3),(35,4),(36,5);

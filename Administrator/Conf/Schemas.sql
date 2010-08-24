@@ -382,8 +382,11 @@ CREATE TABLE `component_template` (
   `component_template_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `component_template_name` varchar(45) NOT NULL,
   `component_template_directory` varchar(45) NOT NULL,
+  `component_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`component_template_id`),
-  UNIQUE KEY `component_template_UNIQUE` (`component_template_name`)
+  UNIQUE KEY `component_template_UNIQUE` (`component_template_name`),
+  KEY `fk_component_template_1` (`component_id`),
+  CONSTRAINT `fk_component_template_1` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -527,8 +530,8 @@ CREATE TABLE `atftpd0` (
 --
 
 CREATE TABLE `dhcpd3` (
-  `dhcpd3_id` int(8) unsigned NOT NULL,
-  `component_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `dhcpd3_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `component_instance_id` int(8) unsigned NOT NULL,
   `dhcpd3_domain_name` char(128) DEFAULT NULL,
   `dhcpd3_domain_server` char(128) DEFAULT NULL,
   `dhcpd3_servername` char(128) DEFAULT NULL,
@@ -561,10 +564,12 @@ CREATE TABLE `dhcpd3_hosts` (
   `dhcpd3_hosts_ipaddr` char(40) NOT NULL,
   `dhcpd3_hosts_mac_address` char(40) NOT NULL,
   `dhcpd3_hosts_hostname` char(40) NOT NULL,
-  `dhcpd3_hosts_kernel_version` char(64) NOT NULL,
+  `kernel_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`dhcpd3_hosts_id`),
   KEY `fk_dhcpd3_hosts_1` (`dhcpd3_subnet_id`),
-  CONSTRAINT `fk_dhcpd3_hosts_1` FOREIGN KEY (`dhcpd3_subnet_id`) REFERENCES `dhcpd3_subnet` (`dhcpd3_subnet_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_dhcpd3_hosts_2` (`kernel_id`),
+  CONSTRAINT `fk_dhcpd3_hosts_1` FOREIGN KEY (`dhcpd3_subnet_id`) REFERENCES `dhcpd3_subnet` (`dhcpd3_subnet_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_dhcpd3_hosts_2` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

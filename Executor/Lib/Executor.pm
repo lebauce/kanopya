@@ -166,9 +166,11 @@ sub execnround {
    				print Dumper $error;
    			}
    			$args{run}--;
-   		}
-   		else {
-   			sleep 20;
+   			$log->debug('5 secondes waiting before next round');
+   			sleep 5;
+   		} else {
+   			# no operation in the queue
+   			$args{run} = 0;
    		}
    	} 
 }
