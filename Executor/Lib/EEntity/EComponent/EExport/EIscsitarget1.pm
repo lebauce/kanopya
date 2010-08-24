@@ -40,6 +40,7 @@ sub generateTargetname {
 	my $today = today();
 	my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology.nas:$args{name}"."_".$args{type};
 	$log->info("TargetName generated is $res");
+	return $res;
 }
 
 
@@ -47,10 +48,13 @@ sub addTarget {
 	my $self = shift;
 	my %args  = @_;	
 
-	if ((! exists $args{targetname} or ! defined $args{targetname})||
-		(! exists $args{mount_point} or ! defined $args{mount_point})) { 
-		throw Mcs::Exception::Internal(error => "EEntity::EStorage::EIscsitarget1->addTarget need an targetname and a mount_point named argument to generate initiatorname!"); }
-
+	if ((! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name}) ||
+		(! exists $args{mountpoint} or ! defined $args{mountpoint}) ||
+		(! exists $args{mount_option} or ! defined $args{mount_option})) {
+		$errmsg = "Component::Export::Iscsitarget1->addTarget needs a iscsitarget1_targetname and mountpoint named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 	return $self->_getEntity()->addTarget(%args);
 }
 
@@ -64,6 +68,16 @@ sub reload {
 }
 
 sub addLun {
+	my $self = shift;
+	my %args  = @_;	
+
+	return $self->_getEntity()->addLun(%args);	
+}
+sub generateConf{
 	
 }
+sub restart {
+	
+}
+
 1;

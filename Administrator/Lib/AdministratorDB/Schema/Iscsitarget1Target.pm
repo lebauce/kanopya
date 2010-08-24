@@ -28,10 +28,15 @@ __PACKAGE__->has_many(
     "foreign.iscsitarget1_target_id" => "self.iscsitarget1_target_id",
   },
 );
+__PACKAGE__->belongs_to(
+  "iscsitarget1_target_id",
+  "AdministratorDB::Schema::ComponentInstance",
+  { "component_instance_id" => "iscsitarget1_target_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-20 14:40:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fC4UQQ2Az5lhQOVSz11VEQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 00:51:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gHvHYK0w8flDSnyE1Cni6A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

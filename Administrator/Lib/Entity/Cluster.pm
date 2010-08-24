@@ -230,8 +230,17 @@ sub getComponent{
 #	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
 }
 
+=head2 getSystemImage
+	
+	Desc : This function return the cluster's system image.
+	args: 
+		administrator : Administrator : Administrator object to instanciate all components
+	return : a system image instance
+
+=cut
+
 sub getSystemImage {
-		my $self = shift;
+	my $self = shift;
     my %args = @_;
 
 	if (! exists $args{administrator} or ! defined $args{administrator}) {

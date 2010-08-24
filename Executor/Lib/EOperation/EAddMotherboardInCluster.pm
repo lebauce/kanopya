@@ -212,7 +212,10 @@ sub execute{
 	#TODO Update export root and mount_point to add motherboard as allowed to access to this disk
 	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName(),
 																			 type => "etc");
-	my $target_id = $self->{_objs}->{component_export}->addTarget(targetname=>$target_name, mount_point=>"/etc");
+	my $target_id = $self->{_objs}->{component_export}->addTarget(iscsitarget1_target_name=>$target_name,
+																  mountpoint=>"/etc",
+																  mount_option=>"");
+																  
 	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_number => 0,
 												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
@@ -221,16 +224,16 @@ sub execute{
 	$self->{_objs}->{component_export}->reload();
 	
 	## ADD Motherboard in the dhcp
-	my $subnet = $self->{_objs}->{component_dhcpd}->getInternalSubNet();
+	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_ip = $adm->getFreeInternalIP();
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
 	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
 	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
-	$self->{_objs}->{component_dhcpd}->addHost(subnet_id		=> $subnet,
-												host_ipaddr		=> $motherboard_ip,
-												host_mac_add	=> $motherboard_mac,
-												host_hostname	=> $motherboard_hostname,
-												host_kernel		=> $motherboard_kernel_id);
+	$self->{_objs}->{component_dhcpd}->addHost( dhcpd3_subnet_id		=> $subnet,
+												dhcpd3_hosts_ipaddr	=> $motherboard_ip,
+												dhcpd3_hosts_mac_address	=> $motherboard_mac,
+												dhcpd3_hosts_hostname	=> $motherboard_hostname,
+												kernel_id	=> $motherboard_kernel_id);
 	$self->{_objs}->{component_dhcpd}->reload();
 	
 	#Update Motherboard internal ip

@@ -1,9 +1,12 @@
 package Entity::Component::Storage::Lvm2;
-
 use strict;
 
 use base "Entity::Component::Storage";
 use Log::Log4perl "get_logger";
+use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+use McsExceptions;
+
+
 my $log = get_logger("administrator");
 my $errmsg;
 # contructor
@@ -42,7 +45,7 @@ sub lvCreate{
 	my $lv_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs;
 	my $res = $lv_rs->create(\%args);
 	$log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
-	return $res->lvm2_lv_id;
+	return $res->get_column("lvm2_lv_id");
 }
 
 sub lvRemove{
