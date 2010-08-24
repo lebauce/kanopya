@@ -54,6 +54,13 @@ __PACKAGE__->has_many(
   { "foreign.component_instance_id" => "self.component_instance_id" },
 );
 __PACKAGE__->has_many(
+  "iscsitarget1_targets",
+  "AdministratorDB::Schema::Iscsitarget1Target",
+  {
+    "foreign.iscsitarget1_target_id" => "self.component_instance_id",
+  },
+);
+__PACKAGE__->has_many(
   "lvm2_vgs",
   "AdministratorDB::Schema::Lvm2Vg",
   { "foreign.component_instance_id" => "self.component_instance_id" },
@@ -65,8 +72,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-20 14:40:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YVlXcKdFewcrVAfh0QFx3A
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 00:51:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cAwC2358h1YCqcmECZRPWg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

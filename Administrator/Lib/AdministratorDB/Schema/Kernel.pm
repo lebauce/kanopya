@@ -19,6 +19,11 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("kernel_id");
 __PACKAGE__->has_many(
+  "dhcpd3_hosts",
+  "AdministratorDB::Schema::Dhcpd3Hosts",
+  { "foreign.kernel_id" => "self.kernel_id" },
+);
+__PACKAGE__->has_many(
   "kernel_entities",
   "AdministratorDB::Schema::KernelEntity",
   { "foreign.kernel_id" => "self.kernel_id" },
@@ -30,8 +35,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-20 14:40:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QgLpS2z+UNOcadwGVl8pXg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 00:51:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9rwSpyLqj4Ssvwwx1KuEoQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
