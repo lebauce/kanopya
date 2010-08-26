@@ -433,7 +433,7 @@ CREATE TABLE `iscsitarget1_target` (
   `mountpoint` char(64) DEFAULT NULL,
   `mount_option` char(32) DEFAULT NULL,
   PRIMARY KEY (`iscsitarget1_target_id`),
-  UNIQUE KEY `iscsitarget1_UNIQUE` (`iscsitarget1_target_name`)
+  UNIQUE KEY `iscsitarget1_UNIQUE` (`iscsitarget1_target_name`),
   UNIQUE KEY `fk_iscsitarget1_1` (`component_instance_id`),
   CONSTRAINT `fk_iscsitarget1_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
