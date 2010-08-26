@@ -237,16 +237,68 @@ sub execute{
 	
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
-	#TODO Foreach component migrate (node, exec context?)
-	#
-# Create cluster directory
 
+	#TODO Foreach component migrate (node, exec context?)
+	my $components = $self->{_objs}->{components};
+	foreach my $i (@$components) {
+		$i->migrateNode($self->{_objs}->{motherboard});
+	}
+#	$self->generateBootNodeConf($self->{_objs}->{motherboard});
 	#TODO Create node !
 	#TODO Where will we determine if motherboard is masternode
+#	my @clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
+#	my $masternode;
+#	if (scalar @clust_nodes) {
+#		$masternode = 0;
+#	} else {
+#		$masternode =1;
+#	}
 	$adm->createNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
 					 master_node => 0);
 }
+
+#sub generateBootNodeConf {
+#	my $self = shift;
+#	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
+#	my @pxeconf_lines = (
+#        "#!/bin/sh\n",
+#        "root=/dev/sda\n",
+#        "rootfstype=$sysimg_rootdisk->{fstype}\n",
+#        "etc=/dev/sdb\n",
+#        "etcfstype=$node_dev->{filesystem}\n",
+#        "iscsi_initiator=$self->{initiatorname}\n",
+#        "iscsi_target_name=$sysimg_rootdisk->{target}\n",
+#        "iscsi_target_ip=$sysimg_rootdisk->{ip_address}\n",
+#        "iscsi_target_port=$sysimg_rootdisk->{port}\n",
+#        "iscsi_target_group=\n",
+#        "iscsi_username=\n",
+#        "iscsi_password=\n",
+#        "iscsi_in_username=\n",
+#        "iscsi_in_password=\n",
+#        "etc_iscsi_target_name=$node_etcdisk->{target}\n",
+#        "etc_iscsi_target_ip=$node_etcdisk->{ip_address}\n",
+#        "etc_iscsi_target_port=$node_etcdisk->{port}\n",
+#        "etc_iscsi_target_group=\n",
+#        "etc_iscsi_username=\n",
+#        "etc_iscsi_password=\n",
+#        "etc_iscsi_in_username=\n",
+#        "etc_iscsi_in_password=\n");
+#	    foreach my $hash (@$applications) {
+#        $disk = $hash->{disk};
+#        push @pxeconf_lines, "data_iscsi_target_name=$disk->{target}\n";
+#        push @pxeconf_lines, "data_iscsi_target_ip=$disk->{ip_address}\n";
+#        push @pxeconf_lines, "data_iscsi_target_port=$disk->{port}\n";
+#        push @pxeconf_lines, "data_iscsi_target_group=\n";
+#        push @pxeconf_lines, "data_iscsi_username=\n";
+#        push @pxeconf_lines, "data_iscsi_password=\n";
+#        push @pxeconf_lines, "data_iscsi_in_username=\n";
+#        push @pxeconf_lines, "data_iscsi_in_password=\n";
+#    }
+#
+#    return @pxeconf_lines;
+#	
+#}
 
 __END__
 

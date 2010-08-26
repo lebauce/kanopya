@@ -418,7 +418,7 @@ CREATE TABLE `openiscsi2` (
   `openiscsi2_server` char(32) NOT NULL,
   `openiscsi2_port` int(4) DEFAULT NULL,
   PRIMARY KEY (`openiscsi2_id`),
-  UNIQUE KEY `fk_openiscsi2_1` (`component_instance_id`),
+  KEY `fk_openiscsi2_1` (`component_instance_id`),
   CONSTRAINT `fk_opensicsi2_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -434,8 +434,9 @@ CREATE TABLE `iscsitarget1_target` (
   `mount_option` char(32) DEFAULT NULL,
   PRIMARY KEY (`iscsitarget1_target_id`),
   UNIQUE KEY `iscsitarget1_UNIQUE` (`iscsitarget1_target_name`),
-  KEY `fk_iscsitarget1_target_1` (`component_instance_id`),
-  CONSTRAINT `fk_iscsitarget1_target_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_iscsitarget1_1` (`component_instance_id`),
+  CONSTRAINT `fk_iscsitarget1_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
