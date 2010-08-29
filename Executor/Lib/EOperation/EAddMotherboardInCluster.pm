@@ -48,10 +48,21 @@ use base "EOperation";
 use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use EFactory;
+use String::Random;
+use Template;
 
 my $log = get_logger("executor");
 my $errmsg;
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+my $config = {
+    INCLUDE_PATH => '/templates/internal/',
+    INTERPOLATE  => 1,               # expand "$var" in plain text
+    POST_CHOMP   => 1,               # cleanup whitespace 
+    EVAL_PERL    => 1,               # evaluate Perl code blocks
+    RELATIVE => 1,                   # desactive par defaut
+};
+
 
 =head2 new
 
@@ -211,9 +222,13 @@ sub execute{
 	## Update export to allow to motherboard to boot
 	#TODO Update export root and mount_point to add motherboard as allowed to access to this disk
 	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName());
-	my $target_id = $self->{_objs}->{component_export}->addTarget(iscsitarget1_target_name=>$target_name,
-																  mountpoint=>"/etc",
-																  mount_option=>"");
+
+	# Get etc iscsi target information
+	my $node_etc_export ={iscsitarget1_target_name=>$target_name,
+					 mountpoint=>"/etc",
+					 mount_option=>""};
+
+	my $target_id = $self->{_objs}->{component_export}->addTarget(%$node_etc_export);
 																  
 	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_number => 0,
@@ -221,7 +236,7 @@ sub execute{
 												iscsitarget1_lun_typeio => "fileio",
 												iscsitarget1_lun_iomode => "wb");
 	$self->{_objs}->{component_export}->reload();
-	
+		
 	## ADD Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_ip = $adm->getFreeInternalIP();
@@ -238,67 +253,106 @@ sub execute{
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
 
+	# Mount Motherboard etc to populate it
+	my $mkdir_cmd = "mkdir /tmp/$node_dev->{etc}->{lvname}";
+	$self->{nas}->{econtext}->execute(command => $mkdir_cmd);
+	my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /tmp/$node_dev->{etc}->{lvname}";
+	$self->{nas}->{econtext}->execute(command => $mount_cmd);
+	
 	#TODO Foreach component migrate (node, exec context?)
 	my $components = $self->{_objs}->{components};
-	foreach my $i (@$components) {
-		$i->migrateNode($self->{_objs}->{motherboard});
+	foreach my $i (keys %$components) {
+		$components->{$i}->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/tmp/$node_dev->{etc}->{lvname}");
 	}
-#	$self->generateBootNodeConf($self->{_objs}->{motherboard});
-	#TODO Create node !
-	#TODO Where will we determine if motherboard is masternode
-#	my @clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
-#	my $masternode;
-#	if (scalar @clust_nodes) {
-#		$masternode = 0;
-#	} else {
-#		$masternode =1;
-#	}
+	
+	# Generate Node configuration
+	$self->generateNodeConf(mount_point => "/tmp/$node_dev->{etc}->{lvname}");
+
+	# Umount Motherboard etc to populate it
+	my $umount_cmd = "umount /tmp/$node_dev->{etc}->{lvname}";
+	$self->{nas}->{econtext}->execute(command => $umount_cmd);
+	my $rmdir_cmd = "rmdir /tmp/$node_dev->{etc}->{lvname}";
+	$self->{nas}->{econtext}->execute(command => $rmdir_cmd);
+
+	# Create node instance
+	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
+	my $masternode;
+	if (scalar keys %$clust_nodes) {
+		$masternode = 0;
+	} else {
+		$masternode =1;
+	}
 	$adm->createNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
 					 master_node => 0);
 }
 
-#sub generateBootNodeConf {
-#	my $self = shift;
-#	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
-#	my @pxeconf_lines = (
-#        "#!/bin/sh\n",
-#        "root=/dev/sda\n",
-#        "rootfstype=$sysimg_rootdisk->{fstype}\n",
-#        "etc=/dev/sdb\n",
-#        "etcfstype=$node_dev->{filesystem}\n",
-#        "iscsi_initiator=$self->{initiatorname}\n",
-#        "iscsi_target_name=$sysimg_rootdisk->{target}\n",
-#        "iscsi_target_ip=$sysimg_rootdisk->{ip_address}\n",
-#        "iscsi_target_port=$sysimg_rootdisk->{port}\n",
-#        "iscsi_target_group=\n",
-#        "iscsi_username=\n",
-#        "iscsi_password=\n",
-#        "iscsi_in_username=\n",
-#        "iscsi_in_password=\n",
-#        "etc_iscsi_target_name=$node_etcdisk->{target}\n",
-#        "etc_iscsi_target_ip=$node_etcdisk->{ip_address}\n",
-#        "etc_iscsi_target_port=$node_etcdisk->{port}\n",
-#        "etc_iscsi_target_group=\n",
-#        "etc_iscsi_username=\n",
-#        "etc_iscsi_password=\n",
-#        "etc_iscsi_in_username=\n",
-#        "etc_iscsi_in_password=\n");
-#	    foreach my $hash (@$applications) {
-#        $disk = $hash->{disk};
-#        push @pxeconf_lines, "data_iscsi_target_name=$disk->{target}\n";
-#        push @pxeconf_lines, "data_iscsi_target_ip=$disk->{ip_address}\n";
-#        push @pxeconf_lines, "data_iscsi_target_port=$disk->{port}\n";
-#        push @pxeconf_lines, "data_iscsi_target_group=\n";
-#        push @pxeconf_lines, "data_iscsi_username=\n";
-#        push @pxeconf_lines, "data_iscsi_password=\n";
-#        push @pxeconf_lines, "data_iscsi_in_username=\n";
-#        push @pxeconf_lines, "data_iscsi_in_password=\n";
-#    }
-#
-#    return @pxeconf_lines;
-#	
-#}
+sub generateInitiatorConf {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
+		(! exists $args{initiatorname} or ! defined $args{initiatorname})) { 
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateInitiatorConf need a mount_point and an initiatorname named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$self->{nas}->{econtext}->execute(command=>"echo \"InitiatorName=$args{initiatorname}\" > $args{mount_point}/iscsi/initiatorname.iscsi");
+}
+
+=head getEtcDev
+
+This function generate Node config files :
+- fstab
+- iscsi initiator
+- boot config file
+- mca_halt a pre halt script to umount remote disk
+- Boot configuration file
+
+=cut
+
+sub generateNodeConf {
+	my $self = shift;
+	my %args = @_;
+
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateNodeConf need a mount_point named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $initiatorname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname");
+	$self->generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
+	$self->generateUdevConf();
+	$self->generateFstabConf();
+	$self->generateMcsHalt();
+	$self->generateBootConf(initiatorname => $initiatorname);
+	
+}
+
+sub generateUdevConf{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
+		(! exists $args{initiatorname} or ! defined $args{initiatorname})) { 
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateInitiatorConf need a mount_point and an initiatorname named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+
+	my $tmpfile = new String::Random;
+
+	# create Template object
+	my $template = Template->new($config);
+    my $input = "udev_70-persistent-net.rules.tt";
+	
+
+	#TODO Get ALL network interface !
+	my $interfaces = [{mac_address => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address"), net_interface => "eth0"}];
+	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateUdevConf error when parsing template");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules");	
+}
 
 __END__
 

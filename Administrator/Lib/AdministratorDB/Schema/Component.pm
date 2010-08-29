@@ -48,10 +48,15 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::ComponentProvided",
   { "foreign.component_id" => "self.component_id" },
 );
+__PACKAGE__->has_many(
+  "component_templates",
+  "AdministratorDB::Schema::ComponentTemplate",
+  { "foreign.component_id" => "self.component_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 12:00:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TE9hIBdDvub2f5jgkEIETA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-26 17:52:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Eg0P12BXpjMi6gZ+sZWukA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
