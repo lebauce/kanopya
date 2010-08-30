@@ -44,7 +44,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
+use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use base "EContext";
 use McsExceptions;
 
@@ -81,7 +81,7 @@ sub new {
 	return $self;
 }
 
-=head2 new
+=head2 execute
 
 execute ( command )
 	desc: execute a command in shell
@@ -124,6 +124,46 @@ sub execute {
 			#error => "EContext::Local->execute : got stderr: $result->{stderr}");
 	#}
 	return $result;	
+}
+
+=head2 send
+
+send(src => $srcfullpath, dest => $destfullpath)
+	desc: send a file to a specific directory
+	args:
+		src : string: complete path to the file to send
+		dest : string: complete path to the destination directory/file
+	return:
+		result ref hash containing resulting stdout and stderr  
+    
+=cut
+
+sub send {
+	my $self = shift;
+	my %args = @_;
+	#TODO check to be sure src and dest are full path to files
+	if((! exists $args{src} or ! defined $args{src}) ||
+	   (! exists $args{dest} or ! defined $args{dest})) {
+		$errmsg = "EContext::Local->execute need a src and dest named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+	}
+	if(not -e $args{src}) {
+		$errmsg = "EContext::Local->execute src file $args{src} no found";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongParam(error => $errmsg);
+	}
+	# TODO faire plus de test sur la destination
+	my $result = {};
+	my $command = "mv $args{src} $args{dest}";
+	$log->debug("send Command is : <$command>");
+	$ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
+	my $stdout = `$command 2> /tmp/EContext.stderr`;
+	$result->{stdout} = $stdout;
+	$result->{stderr} = `cat /tmp/EContext.stderr`;
+	$log->debug("Command stdout is : '$result->{stdout}'");
+	$log->debug("Command stderr is : '$result->{stderr}'");
+	return $result;
 }
 
 =head2 DESTROY

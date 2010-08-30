@@ -43,5 +43,11 @@ This method must be implemented in child classes
 =cut
 sub execute {}
 
+=head2 send
 
+send(src => $srcfullpath, dest => $destfullpath)
+This method must be implemented in child classes
+
+=cut
+sub send {}
 1;
