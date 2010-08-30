@@ -1,0 +1,25 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+
+<div id="contentright">
+
+	<p>
+		<table id="graph_table">
+		<!--caption ALIGN=TOP>Monitored hosts</CAPTION-->
+			<tr>
+				<th ALIGN=CENTER>Host</th>
+				<th ALIGN=CENTER>cpu</th>
+				<th ALIGN=CENTER>memory</th>
+			</tr>
+		<TMPL_LOOP NAME=HOSTS_INFO>
+			<tr>
+		    		<td ALIGN=CENTER><TMPL_VAR NAME=HOST_NAME></td>
+		      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_CPU>'/></td>
+		      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_MEM>'/></td>
+			</tr>
+		</TMPL_LOOP>
+		</table>
+	</p>
+	
+</div>
+
+<TMPL_INCLUDE NAME="footer.tmpl">

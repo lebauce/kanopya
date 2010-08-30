@@ -35,7 +35,7 @@ if ( $cgi->param("submit_delete") )
 
 ######### Display all MB list ###################
 
-my @allMb = $adm->getEntities( type => "Motherboard" );
+my @allMb = $adm->getEntities( type => "Motherboard", hash => {} );
 
 # build loop data for html template and build hash for better motherboard access ( with 'id' as key) 
 my @loop_data = ();
@@ -49,8 +49,8 @@ foreach $mb ( @allMb )
 {
 	my $mb_id = $mb->getAttr( name => 'motherboard_id');
 	push( @loop_data, { 'id' =>  $mb_id,
-						'sn' =>  $mb->getAttr( name => 'motherboard_sn'),
-						'is_active' =>  $mb->getAttr( name => 'motherboard_active'),
+						'sn' =>  $mb->getAttr( name => 'motherboard_serial_number'),
+						'is_active' =>  $mb->getAttr( name => 'active'),
 						} );
 	if ( $selected_mb_id && $selected_mb_id == $mb_id ) {
 		$selected_mb = $mb;
@@ -66,10 +66,10 @@ if ( $selected_mb )
 {
 	my %mb_params = $selected_mb->getAttrs();
 	$template->param(SELECTED_MB_ID => $mb_params{'motherboard_id'} );
-	$template->param(SELECTED_MB_SN => $mb_params{'motherboard_sn'});
+	$template->param(SELECTED_MB_SN => $mb_params{'motherboard_serial_number'});
 	$template->param(SELECTED_MB_MAC => $mb_params{'motherboard_mac_address'});
 	$template->param(SELECTED_MB_DESC => $mb_params{'motherboard_desc'});
-	$template->param(SELECTED_MB_ACTIVE => $mb_params{'motherboard_active'});
+	$template->param(SELECTED_MB_ACTIVE => $mb_params{'active'});
 	
 }
 

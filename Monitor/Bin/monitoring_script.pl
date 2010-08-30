@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+use lib "../Lib"; #TODO replace by absolute path
+
 use strict;
 use warnings;
 use Monitor;
@@ -13,7 +15,9 @@ if ( $sub eq "run" ) {
 } elsif ( $sub eq "fetch" ) {
 	$monitor->fetch( rrd_name => shift );
 } elsif ( $sub eq "graph" ) {
-	$monitor->graph( rrd_name => shift );
+	$monitor->makeGraph( );
 } elsif ( $sub eq "get" ) {
-	$monitor->getData( rrd_name => shift, nb => 10, ds_name => shift, percent => 'ok' );
+	$monitor->getData( set_label => shift, nb => 10, ds_name => shift, percent => 'ok' );
+} elsif ( $sub eq "rebuild" ) {
+	$monitor->rebuild( set_label => shift );
 }

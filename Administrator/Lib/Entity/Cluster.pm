@@ -336,4 +336,35 @@ sub addComponent {
 	
 }
 
+=head2 getMotherboards
+	
+	Desc : This function get motherboards executing the cluster.
+	args: 
+		administrator : Administrator : Administrator object to instanciate all components
+	return : a hashref of motherboard, it is indexed on motherboard_id
+
+=cut
+
+sub getMotherboards{
+	my $self = shift;
+    my %args = @_;
+
+	if ((! exists $args{administrator} or ! defined $args{administrator})) { 
+		$errmsg = "Entity::Cluster->getMotherboards need an administrator named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $motherboard_rs = $self->{_dbix}->nodes;
+		
+	my %motherboards;
+	while ( my $node_row = $motherboard_rs->next ) {
+		my $motherboard_row = $node_row->motherboard_id;
+		$log->debug("Nodes found");
+		my $motherboard_id = $motherboard_row->get_column('motherboard_id');
+		$motherboards{$motherboard_id} = $args{administrator}->getEntity (
+						id => $motherboard_id,
+						type => "Motherboard");
+	}
+	return \%motherboards;
+}
 1;

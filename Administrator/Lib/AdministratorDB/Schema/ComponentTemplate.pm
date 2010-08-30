@@ -24,6 +24,8 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
     size => 45,
   },
+  "component_id",
+  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
 __PACKAGE__->set_primary_key("component_template_id");
 __PACKAGE__->add_unique_constraint("component_template_UNIQUE", ["component_template_name"]);
@@ -32,6 +34,11 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::ComponentInstance",
   { "foreign.component_template_id" => "self.component_template_id" },
 );
+__PACKAGE__->belongs_to(
+  "component_id",
+  "AdministratorDB::Schema::Component",
+  { component_id => "component_id" },
+);
 __PACKAGE__->has_many(
   "component_template_attrs",
   "AdministratorDB::Schema::ComponentTemplateAttr",
@@ -39,8 +46,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 12:00:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bnl1+SWG9n4Vn/VeKskn7Q
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-26 17:52:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dGMTzWWxD9kBBF79TCFBQg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
