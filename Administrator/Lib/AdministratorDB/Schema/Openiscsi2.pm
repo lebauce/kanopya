@@ -20,7 +20,6 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 4 },
 );
 __PACKAGE__->set_primary_key("openiscsi2_id");
-__PACKAGE__->add_unique_constraint("fk_openiscsi2_1", ["component_instance_id"]);
 __PACKAGE__->belongs_to(
   "component_instance_id",
   "AdministratorDB::Schema::ComponentInstance",
@@ -28,8 +27,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-24 12:00:19
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ULVpGnbkf/E19FcZifRHnQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-08-26 17:52:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Y49vTwbpxSDLNivROtYN+Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

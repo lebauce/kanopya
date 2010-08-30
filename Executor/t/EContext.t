@@ -41,6 +41,19 @@ note("\nEContext::Local failed execution Exception");
 eval { my $result = $context1->execute(command => "badcommandbadcommand"); };
 if($@) { is ($@->isa('Mcs::Exception::Execution'), 1, "get Mcs Exception: $@"); }
 
+note("\nEContext::Local send method");
+my $srcfile = '/tmp/srcfile';
+my $destfile = '/tmp/destfile';
+$context1->execute(command => "touch $srcfile");
+$context1->send(src => $srcfile, dest => $destfile);
+is( -e $destfile, 1, '$srcfile moved to $destfile with success');
+
+#note("\nEContext::Local send failed ");
+#$badsrcfile = '/tmp/unexistentfile';
+#$baddestfile = '/tmp/destfile';
+#$context1->send(src => $badsrcfile, dest => $baddestfile);
+#is( -e $destfile, 1, '$srcfile moved to $destfile with success');
+
 
 note("\nEContext::SSH Instanciation");
 my $context3 = EFactory::newEContext(ip_source => '123.123.123.123', ip_destination => $hosttocontact); 
@@ -63,7 +76,14 @@ note("\nEContext::SSH failed execution Exception");
 eval { my $result = $context3->execute(command => "badcommandbadcommand"); };
 if($@) { is ($@->isa('Mcs::Exception::Execution'), 1, "get Mcs Exception: $@"); }
 
-
+note("\nEContext::SSH send method");
+# context1 is LOCAL
+# context3 is SSH to $hosttocontact
+$srcfile = '/tmp/srcfile';
+$destfile = '/tmp/destfile';
+$context1->execute(command => "touch $srcfile");
+eval { $context3->send(src => $srcfile, dest => $destfile); };
+if($@) { print $@, "\n"; }
 
 
 
