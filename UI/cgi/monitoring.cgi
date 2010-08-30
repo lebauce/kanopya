@@ -1,39 +1,79 @@
 #!/usr/bin/perl
 
-use lib "../../Monitor/Lib";
+use lib "/workspace/mcs/Monitor/Lib";
 
 use strict;
 use warnings;
 use Monitor;
 use HTML::Template;
-
-my $monitor = Monitor->new();
-
-#$monitor->graph( set_label => "cpu" );
-#$monitor->graph( set_label => "mem" );
-my $graph_infos = $monitor->makeGraph( time_laps => 300);
+use CGI;
 
 # open html template
 my $template = HTML::Template->new(filename => 'templates/monitoring.tmpl');
 
-my @loop_data = ();
+# get url params (POST or GET)
+my $cgi = new CGI;
 
-my @hosts_info = ( 
-					{ host_name => "localhost", graph_cpu => "/graph/graph_cpu_localhost.png", graph_mem => "/graph/graph_mem_localhost.png" },
-					{ host_name => "127.0.0.1", graph_cpu => "/graph/graph_cpu_127.0.0.1.png", graph_mem => "/graph/graph_mem_127.0.0.1.png" },				
-				 ); 
+# instanciate Monitor
+my $monitor = Monitor->new();
+
+
+#my $set_def = { "CPU" => [ "Idle", "User", "Syst"],
+#				"Memory" => [ "Total", "Free" ] };
+
+my $set_def = $monitor->getIndicators();
+
+my $selected_set;
+my @required_indicators;
+if ( $cgi->param("submit_show") )
+{
+	$selected_set = $cgi->param("indicator_set");
+	@required_indicators = $cgi->param("indicator[]");
+}
+
+# BUild indicators set loop data	
+my @set_loop_data = ();			
+while ( my ($set_name, $indicators) = each %$set_def )
+{
+	my @indicators_loop_data = ();
+	for my $indicator (@$indicators) {
+		my $checked = grep { $_ eq $indicator } @required_indicators;
+		push ( @indicators_loop_data, { indicator_name => $indicator,
+										checked =>  $checked > 0 ? "checked" : ""}
+			
+			
+			);
+	}
+	push ( @set_loop_data, { 	set_name => $set_name,
+								selected => $selected_set eq $set_name ? "checked" : "",
+								indicators => \@indicators_loop_data });
+}
+
+$template->param(INDICATORS_SET => \@set_loop_data);
+
+my $graph_type = $cgi->param("graph_type") || "stack";
+$template->param(GRAPH_TYPE_STACK_SELECTION => $graph_type eq "stack" ? "checked" : "");
+$template->param(GRAPH_TYPE_LINE_SELECTION => $graph_type eq "line" ? "checked" : "");
+
+
+my $graph_infos = $monitor->makeGraph( 	time_laps => 300,
+										graph_type => $graph_type,
+										required_set => $selected_set,
+										required_indicators => \@required_indicators);
+
+my @loop_data = ();
 
 my $graph_dir_alias = "/graph";
 
 while ( my ($host, $graph_info) = each %$graph_infos )
 {
 	push( @loop_data, { 'host_name' =>  $host,
-						'graph_cpu' =>  $graph_dir_alias."/".$graph_info->{'cpu'},
-						'graph_mem' =>  $graph_dir_alias."/".$graph_info->{'mem'},
+						'graph_file' =>  $graph_dir_alias."/".$graph_info->{ $selected_set },
 						} );
 }
 $template->param(HOSTS_INFO => \@loop_data);
-#$template->param(HOSTS_INFO => \@hosts_info);
+
+$template->param(SELECTED_SET_NAME => $selected_set);
 
 ################################################################
 

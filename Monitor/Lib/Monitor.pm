@@ -1,13 +1,15 @@
 package Monitor;
 
+use lib "/workspace/mcs/Administrator/Lib";
+
 use strict;
 use warnings;
 use RRDTool::OO;
 use Net::SNMP;
-use String::Random; #temp
 use List::Util qw(sum);
 use threads;
 use XML::Simple;
+use Administrator;
 
 ################################### UTIL ###################################################
 
@@ -88,7 +90,15 @@ sub new {
 sub retrieveHosts {
 	my $self = shift;
 	
-	return ('192.168.0.123', 'localhost', '127.0.0.1');
+	#my $adm = Administrator->new( login =>'thom', password => 'pass' );
+	
+	
+	my @hosts = ('192.168.0.124', 'localhost', '127.0.0.1');
+	
+	#use Data::Dumper;
+	#print Dumper \@hosts;
+	
+	return @hosts;
 }
 
 =head2 createSNMPSession
@@ -320,7 +330,8 @@ sub updateRRD {
 		host: the host name
 		set_label: the name of the set
 		time_laps: the laps in seconds
-		ds_def_list: the list of ds definition (ds config: label, color.. ) to stack on the graph
+		ds_def_list: the list of ds definition (ds config: label, color.. ) to draw on the graph
+		(optional) graph_type: "stack" or "line" (default : "stack")
 	
 	Return : The name of generated graph file
 	
@@ -336,6 +347,7 @@ sub graph {
 	my $rrd_name = $set_name . "_" . $host;
 	my $graph_filename = "graph_$rrd_name.png";
 
+	my $graph_type = $args{graph_type} || "stack";
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = getAsArrayRef( data => $set_def, tag => 'ds');
 
@@ -349,14 +361,13 @@ sub graph {
 						'start', time() - $args{time_laps}
 						);
 
-	my $color = new String::Random;
 	my $first = 1;
 	foreach my $ds (@{ $args{ds_def_list} }) {
 		push @graph_params, (
 								draw   => {
-									type   => $first == 1 ? "area" : "stack",
+									#type   => $first == 1 ? "stack" : "stack",
+									type => $graph_type,
 									dsname => $ds->{label},
-									#color  => $color->randregex('[1F]{6}'),
 									color => $ds->{color} || "FFFFFF",
 									legend => $ds->{label},
 	  							}	
@@ -378,6 +389,9 @@ sub graph {
 	
 	Args :
 		time_laps : int : laps in seconds
+		(optional) graph_type: "stack" or "line"
+		(optional) required_set : string : the name of the set we want graph (else graph all the set)
+		(optional) required_indicators : array ref : names of indicators (ds) we want for the required set.
 	
 	Return : Hash ref containing filenames of all generated graph { host => { set_label => "file.png" } }
 	
@@ -387,28 +401,63 @@ sub makeGraph {
 	my $self = shift;
 	my %args = @_;
 	
-	my $time_laps = $args{time_laps};
+	my $time_laps = $args{time_laps} || 3600;
+	
+	my $required_set = $args{required_set} || "all";
+	my $required_ds = $args{required_indicators} || "all";
 	
 	my %res; #the hash containing filename of all generated graph (host => { set_label => "file.png" })
 	
 	my @hosts = $self->retrieveHosts();
 	foreach my $host (@hosts) {
 		foreach my $set_def ( @{ $self->{_monitored_data} } ) {
-			my $ds_def_list = getAsArrayRef( data => $set_def, tag => 'ds');
-			eval {
-				my $graph_filename = $self->graph( 	host => $host,
-													time_laps => $time_laps,
-													set_label => $set_def->{label},
-													ds_def_list => $ds_def_list );
-				$res{$host}{$set_def->{label}} = $graph_filename;
-			};
-			if ($@) {
-				my $error = $@;
-				#print "$error\n";
+			if ( $required_set eq "all" || $required_set eq $set_def->{label} )
+			{
+				#TODO optimisation: là on rebuild le même array pour chaque host, il faudrait le faire une seule fois
+				my $ds_def_list = getAsArrayRef( data => $set_def, tag => 'ds');
+				my @required_ds_def_list;
+				foreach my $ds_def ( @$ds_def_list ) {
+					push( @required_ds_def_list, $ds_def ) if $required_ds eq "all" || 0 < grep { $ds_def->{label} eq $_ } @$required_ds;
+				}
+	
+				eval {
+					my $graph_filename = $self->graph( 	host => $host,
+														time_laps => $time_laps,
+														set_label => $set_def->{label},
+														ds_def_list => \@required_ds_def_list,
+														graph_type => $args{graph_type} );
+					$res{$host}{$set_def->{label}} = $graph_filename;
+				};
+				if ($@) {
+					my $error = $@;
+					#print "$error\n";
+				}
 			}
 		}
 	}
 	
+	return \%res;
+}
+
+=head2 getIndicators
+	
+	Class : Public
+	
+	Desc : Build the hash associating set_name with the list of indicators (ds) for each set defined in conf 
+	
+	Return : Hash ref { set_name => [ "indicator1", ... ] }
+	
+=cut
+
+sub getIndicators {
+	my $self = shift;
+	my %args = @_;
+	
+	my %res;
+	foreach my $set_def ( @{ $self->{_monitored_data} } ) {
+		my @indicators_name = map { $_->{label} } @{ getAsArrayRef( data => $set_def, tag => 'ds') };
+		$res{ $set_def->{label} } = \@indicators_name;
+	}
 	return \%res;
 }
 
