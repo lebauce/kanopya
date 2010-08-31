@@ -377,7 +377,11 @@ sub newEntity {
 	$log->debug("newEntity(", map( { "$_ => $args{$_}, " } keys(%args)),")");
 
 	# We get class and require Entity::$entity_class
-	my $entity_class = $self->_getEntityClass(type => $args{type});
+	my $entity_class;
+	if (! exists $args{class_path} or ! defined $args{class_path}){
+		$entity_class = $self->_getEntityClass(type => $args{type});
+	} else {
+		$entity_class = $self->_getEntityClass(type => $args{type}, class_path => $args{class_path});}
 	
 	# We check entity attributes and separate them in two categories :
 	#	- ext_attrs

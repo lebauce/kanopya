@@ -1,0 +1,23 @@
+body {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: monospace;
+	font-size: 1em;
+}
+
+#messagelist {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+#messagelist td {
+	border: thin solid black;
+	padding: 5px;
+	text-align: center;
+}
+
+#messagelist td.type { width: 16px; }
+#messagelist td.date { width: 9%; }
+#messagelist td.time { width: 8%; }
+#messagelist td.content { text-align: left; }

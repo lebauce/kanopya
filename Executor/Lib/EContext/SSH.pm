@@ -47,7 +47,7 @@ use GRID::Machine qw/is_operative/;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
-use lib "../", "../../../Common/Lib";
+use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use base "EContext";
 use McsExceptions;
 
@@ -185,6 +185,48 @@ sub execute {
 	}
 	return $result;	
 }
+
+=head2 send
+
+send(src => $srcfullpath, dest => $destfullpath)
+	desc: send a file to a specific directory
+	args:
+		src : string: complete path to the file to send
+		dest : string: complete path to the destination directory/file
+	return:
+		result ref hash containing resulting stdout and stderr  
+    
+=cut
+
+sub send {
+	my $self = shift;
+	my %args = @_;
+	#TODO check to be sure src and dest are full path to files
+	if((! exists $args{src} or ! defined $args{src}) ||
+	   (! exists $args{dest} or ! defined $args{dest})) {
+		$errmsg = "EContext::SSH->execute need a src and dest named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+	}
+	if(not -e $args{src}) {
+		$errmsg = "EContext::SSH->execute src file $args{src} no found";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongParam(error => $errmsg);
+	}
+	
+	if(not exists $self->{machine}) {
+		$log->debug("Initialize ssh connection on $self->{ip}");
+		$self->_init();
+	}
+	my $result = $self->{machine}->put([$args{src}], $args{dest});
+	# return TRUE if success
+	if(not $result) {
+		$errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+	}
+}
+	
 
 =head2 DESTROY
 

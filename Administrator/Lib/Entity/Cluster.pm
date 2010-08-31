@@ -263,27 +263,77 @@ sub getMasterNodeIp{
 
 =head2 addComponent
 
+create a new component instance
+this is the first step of cluster setting
+
 =cut
 
 sub addComponent {
 	my $self = shift;
 	my %args = @_;
 	# check arguments
-	if(! exists $args{component_id} or ! defined $args{component_id}) {
-		$errmsg = "Entity::Cluster->addComponent needs a component_id named argument!";
+	if((! exists $args{administrator} or ! defined $args{administrator}) ||
+	   (! exists $args{component_id} or ! defined $args{component_id})) {
+	   	$errmsg = "Entity::Cluster->addComponent needs administrator and component_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	#TODO if component_template_id is provided, check if it belongs to component_id provided
+
+	my $admin = $args{administrator};
 	my $template_id = undef;
 	if(exists $args{component_template_id} and defined $args{component_template_id}) {
 		$template_id = $args{component_template_id};
 	}
-	$self->{_dbix}->component_instances->create({
-		cluster_id => $self->getAttr(name => 'cluster_id'),
-		component_id => $args{component_id},
-		component_template_id => $template_id
-	});
+	
+	# check if component_id is valid
+	my $row = $admin->{db}->resultset('Component')->find($args{component_id});
+	if(not defined $row) {
+		$errmsg = "Entity::Cluster->addComponent : component_id does not exist";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
+	
+	# check if instance of component_id is not already inserted for  this cluster
+	$row = $admin->{db}->resultset('ComponentInstance')->search(
+		{ component_id => $args{component_id}, 
+		  cluster_id => $self->getAttr(name => 'cluster_id') })->single;
+	if(defined $row) {
+		$errmsg = "Entity::Cluster->addComponent : cluster has already the component with id $args{component_id}";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
+	
+	# check if component_template_id correspond to component_id
+	if(defined $template_id) {
+		my $row = $admin->{db}->resultset('ComponentTemplate')->find($template_id);
+		if(not defined $row) {
+			$errmsg = "Entity::Cluster->addComponent : component_template_id does not exist";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		} elsif($row->get_column('component_id') != $args{component_id}) {
+			$errmsg = "Entity::Cluster->addComponent : component_template_id does not belongs to component specified by component_id";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		}
+	}
+	
+	# insertion of a new component instance can't use administrator->newEntity method
+	# due to components database schema, so we do it by hand
+	# create component instance record 
+	my $componentinstance = $admin->{db}->resultset('ComponentInstance')->new(
+		{	component_id => $args{component_id},
+			cluster_id => $self->getAttr(name => 'cluster_id'),
+			component_template_id => $template_id
+		}
+	);
+	$componentinstance->insert();
+	# create entity and component_instance_entity	
+	my $entity = $admin->{db}->resultset('Entity')->create(
+		{ "component_instance_entities" => [ {"component_instance_id" => $componentinstance->get_column('component_instance_id')} ] }
+	);
+		
+	
+	
 }
 
 =head2 getMotherboards
