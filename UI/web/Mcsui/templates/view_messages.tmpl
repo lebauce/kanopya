@@ -1,0 +1,20 @@
+<html>
+<head>
+<meta http-equiv="refresh" content="50" />
+<link href="/css/messages.css" rel="stylesheet" type="text/css" media="screen" />
+</head>
+<body>
+<table id="messagelist">
+	<TMPL_LOOP NAME="MESSAGES">
+	<tr>
+		<td class="type"><img src="<TMPL_VAR NAME=TYPE>"</td>
+		<td class="date"><TMPL_VAR NAME=DATE></td>
+		<td class="time"><TMPL_VAR NAME=TIME></td>
+		<td class="content"><TMPL_VAR NAME=CONTENT></td>
+	</tr>
+	</TMPL_LOOP>
+</table>
+
+
+</body>
+</html>

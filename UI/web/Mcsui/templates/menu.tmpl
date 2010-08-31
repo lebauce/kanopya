@@ -1,0 +1,30 @@
+<div id="menu">
+	<div id="mainmenu">
+	<TMPL_IF NAME=MENU_SYSTEMSTATUS>	
+		<a class="empty">&nbsp;</a>
+		<a class="begin select" >System Status</a>
+		<a class="" href="/cgi/mcsui.cgi/motherboards">Configuration</a>
+		<a class="end" href="/cgi/mcsui.cgi/clusters/view_clusters">Clusters Management</a>
+		<a class="logout" href="/cgi/mcsui.cgi/"><span class="bold black">User</span> : logout</a>
+	</div>
+	<TMPL_INCLUDE NAME="submenu_systemstatus.tmpl">
+	</TMPL_IF>	
+	<TMPL_IF NAME=MENU_CONFIGURATION>	
+		<a class="empty">&nbsp;</a>
+		<a class="begin" href="/cgi/mcsui.cgi/systemstatus">System Status</a>
+		<a class="select">Configuration</a>
+		<a class="end" href="/cgi/mcsui.cgi/clusters/view_clusters">Clusters Management</a>
+		<a class="logout" href="/cgi/mcsui.cgi/"><span class="bold black">User</span> : logout</a>
+	</div>
+	<TMPL_INCLUDE NAME="submenu_configuration.tmpl">
+	</TMPL_IF>
+	<TMPL_IF NAME=MENU_CLUSTERSMANAGEMENT>	
+		<a class="empty">&nbsp;</a>
+		<a class="begin" href="/cgi/mcsui.cgi/systemstatus">System Status</a>
+		<a class="" href="/cgi/mcsui.cgi/motherboards">Configuration</a>
+		<a class="end select">Clusters Management</a>
+		<a class="logout" href="/cgi/mcsui.cgi/"><span class="bold black">User</span> : logout</a>
+	</div>
+	<TMPL_INCLUDE NAME="submenu_clustersmanagement.tmpl">
+	</TMPL_IF>	
+</div>
