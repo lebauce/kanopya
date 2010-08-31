@@ -58,7 +58,7 @@ INSERT INTO `component` VALUES
 (1,'Lvm','2','Storage'),
 (2,'Apache','2','Webserver'),
 (3,'Iscsitarget','1','Export'),
-(4,'Openiscsi','2','ExportClient'),
+(4,'Openiscsi','2','Exportclient'),
 (5,'Dhcpd','3','Dhcpserver'),
 (6,'Atftpd','0','Tftpserver');
 

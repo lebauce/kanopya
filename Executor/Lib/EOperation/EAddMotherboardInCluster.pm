@@ -258,15 +258,24 @@ sub execute{
 	$self->{nas}->{econtext}->execute(command => $mkdir_cmd);
 	my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /tmp/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mount_cmd);
-	
-	#TODO Foreach component migrate (node, exec context?)
-	my $components = $self->{_objs}->{components};
-	foreach my $i (keys %$components) {
-		$components->{$i}->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/tmp/$node_dev->{etc}->{lvname}");
-	}
+
+	# Get All nodes in cluster
+	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards(administrator => $adm);
 	
 	# Generate Node configuration
-	$self->generateNodeConf(mount_point => "/tmp/$node_dev->{etc}->{lvname}");
+	$self->generateNodeConf(mount_point => "/tmp/$node_dev->{etc}->{lvname}",
+					 		root_dev 	=> $sysimg_dev->{root},
+					 		etc_dev		=> $node_dev->{etc},
+					 		etc_export	=> $node_etc_export,
+					 		nodes		=> $clust_nodes);
+	
+	#TODO  component migrate (node, exec context?)
+	my $components = $self->{_objs}->{components};
+	foreach my $i (keys %$components) {
+		my $tmp = EFactory::newEEntity(data => $components->{$i});
+		$tmp->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/tmp/$node_dev->{etc}->{lvname}");
+	}
+	
 
 	# Umount Motherboard etc to populate it
 	my $umount_cmd = "umount /tmp/$node_dev->{etc}->{lvname}";
@@ -275,7 +284,7 @@ sub execute{
 	$self->{nas}->{econtext}->execute(command => $rmdir_cmd);
 
 	# Create node instance
-	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
+
 	my $masternode;
 	if (scalar keys %$clust_nodes) {
 		$masternode = 0;
@@ -287,18 +296,7 @@ sub execute{
 					 master_node => 0);
 }
 
-sub generateInitiatorConf {
-	my $self = shift;
-	my %args = @_;
-	
-	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
-		(! exists $args{initiatorname} or ! defined $args{initiatorname})) { 
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateInitiatorConf need a mount_point and an initiatorname named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	$self->{nas}->{econtext}->execute(command=>"echo \"InitiatorName=$args{initiatorname}\" > $args{mount_point}/iscsi/initiatorname.iscsi");
-}
+
 
 =head getEtcDev
 
@@ -315,21 +313,40 @@ sub generateNodeConf {
 	my $self = shift;
 	my %args = @_;
 
-	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
+	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
+		(! exists $args{root_dev} or ! defined $args{root_dev}) ||
+		(! exists $args{etc_dev} or ! defined $args{etc_dev}) ||
+		(! exists $args{etc_export} or ! defined $args{etc_export})||
+		(! exists $args{nodes} or ! defined $args{nodes})) { 
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateNodeConf need a mount_point named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $initiatorname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname");
+	$log->info("Generate Initiator Conf");
 	$self->generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
-	$self->generateUdevConf();
-	$self->generateFstabConf();
-	$self->generateMcsHalt();
-	$self->generateBootConf(initiatorname => $initiatorname);
-	
+	$log->info("Generate Udev Conf");
+	$self->generateUdevConf(mount_point=>$args{mount_point});
+	$log->info("Generate Fstab Conf");
+	$self->generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
+	$log->info("Generate Mcs Halt script Conf");
+	$self->generateMcsHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
+	$log->info("Generate Hosts Conf");
+	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
+	$log->info("Generate Network Conf");
+	$self->generateNetConf(mount_point=>$args{mount_point});
+	$log->info("Generate resolv.conf");
+	$self->generateResolvConf(mount_point=>$args{mount_point});
+#TODO generateRouteConf
+	$log->info("Generate Boot Conf");
+	$self->generateBootConf(mount_point=>$args{mount_point},
+							initiatorname => $initiatorname,
+							root_dev => $args{root_dev},
+							etc_dev => $args{etc_dev},
+							etc_export => $args{etc_export});	
 }
 
-sub generateUdevConf{
+sub generateInitiatorConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -339,10 +356,20 @@ sub generateUdevConf{
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+	$self->{nas}->{econtext}->execute(command=>"echo \"InitiatorName=$args{initiatorname}\" > $args{mount_point}/iscsi/initiatorname.iscsi");
+}
+
+sub generateUdevConf{
+	my $self = shift;
+	my %args = @_;
 	
-
-	my $tmpfile = new String::Random;
-
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateUdevConf need a mount_point named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("........");
 	# create Template object
 	my $template = Template->new($config);
     my $input = "udev_70-persistent-net.rules.tt";
@@ -350,10 +377,180 @@ sub generateUdevConf{
 
 	#TODO Get ALL network interface !
 	my $interfaces = [{mac_address => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address"), net_interface => "eth0"}];
-	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateUdevConf error when parsing template");
+	$template->process($input, {interfaces => $interfaces}, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateUdevConf error when parsing template");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules");	
 }
 
+sub generateFstabConf{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})||
+		(! exists $args{root_dev} or ! defined $args{root_dev})||
+		(! exists $args{etc_dev} or ! defined $args{etc_dev})){
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateFstabConf need a mount_point, a root_dev and etc_dev named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $template = Template->new($config);
+	my $tmpfile = $rand->randpattern("........");
+	my $adm = Administrator->new();
+	my $input = "fstab.tt";
+	my $vars = {etc_dev			=> "/dev/sda",
+   	    		etc_fs			=> $args{etc_dev}->{filesystem},
+				etc_options		=> "defaults",
+				root_dev		=> "/dev/sdb",
+				root_fs			=> $args{root_dev}->{filesystem},
+				root_options	=> "ro,noatime,nodiratime",
+   	   };
+   	   
+   	my $components = $self->{_objs}->{components};
+   	$vars->{mounts_iscsi} = [];
+	foreach my $i (keys %$components) {
+		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+				my $iscsi_export = $self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+													 						version => "0",
+																			administrator => $adm);
+				$vars->{mounts_iscsi} = $iscsi_export->getExports();
+   			}
+		}
+	}
+   	$template->process($input, $vars, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateFstabConf error when parsing template");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/fstab");	
+
+}
+
+sub generateMcsHalt{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})||
+		(! exists $args{etc_export} or ! defined $args{etc_export})){
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateMcsHalt need a mount_point, a root_dev and etc_dev named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $template = Template->new($config);
+	my $tmpfile = $rand->randpattern("........");
+	my $tmpfile2 = $rand->randpattern("........");
+	my $input = "McsHalt.tt";
+	my $omitted_file = "mcs_omitted_iscsid";
+	#TODO mettre en parametre le port du iscsi du nas!!
+	my $vars = {etc_target		=> $args{etc_export}->{iscsitarget1_target_name},
+   	    		nas_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
+				nas_port		=> "3260",
+   	   };
+   	$template->process($input, $vars, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateMcsHalt error when parsing template");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
+    $self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_halt $args{mount_point}/rc0.d/S89mcs_halt");
+   	$self->{nas}->{econtext}->send(src => "/templates/internal/$omitted_file", dest => "$args{mount_point}/init.d/mcs_omitted_iscsid");
+   	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_omitted_iscsid $args{mount_point}/rc0.d/S19mcs_omitted_iscsid");
+}
+
+sub generateHosts {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
+		(! exists $args{nodes} or ! defined $args{nodes})) { 
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateHosts need a mount_point and nodes named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("........");
+
+	# create Template object
+	my $template = Template->new($config);
+    my $input = "hosts.tt";
+    my $nodes = $args{nodes};
+    my @nodes_list = ();
+    my $vars = {hostname		=> $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname"),
+   	    		domainname			=> "hedera-technology.com",
+				hosts		=> \@nodes_list,
+   	   };
+	foreach my $i (keys %$nodes) {
+		my $tmp = {hostname 	=> $nodes->{$i}->getAttr(name => 'motherboard_hostname'),
+				   domainname	=> "hedera-technology.com",
+				   ip			=> $nodes->{$i}->getAttr(name => 'motherboard_internal_ip')};
+		push @nodes_list, $tmp;
+	}
+   	$template->process($input, $vars, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateHosts error when parsing template");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/hosts");	
+}
+
+sub generateNetConf {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateNetConf need a mount_point named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("........");
+
+	# create Template object
+	my $template = Template->new($config);
+    my $input = "network_interfaces.tt";
+	#TODO Get ALL network interface !
+	#TODO Manage virtual IP for master node
+	my $interfaces = $self->{_objs}->{cluster}->getPublicIps();
+	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");	
+}
+
+sub generateBootConf {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateBootConf need a mount_point named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("........");
+
+	# create Template object
+	my $template = Template->new($config);
+    my $input = "bootconf.tt";
+	my $adm = Administrator->new();
+	
+	my $root_target_id = $self->{_objs}->{component_export}->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
+	my $vars ={ root_fs			=> $args{root_dev}->{filesystem},
+				etc_fs			=> $args{etc_dev}->{filesystem},
+				initiatorname	=> $args{initiatorname},
+				etc_target		=> $args{etc_export}->{iscsitarget1_target_name},
+   	    		etc_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
+				etc_port		=> "3260",
+				root_target		=> $args{etc_export}->{iscsitarget1_target_name},
+   	    		root_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
+				root_port		=> "3260",
+	};
+	my $components = $self->{_objs}->{components};
+	foreach my $i (keys %$components) {
+		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+				my $iscsi_export = $self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+													 						version => "0",
+																			administrator => $adm);
+				$vars->{iscsi_mount} = 1;
+				$vars->{mounts_iscsi} = $iscsi_export->getExports();
+   			}
+		}
+	}
+	if ( !exists $vars->{iscsi_mount} ||! define $vars->{iscsi_mount}){
+		$vars->{iscsi_mount} = 0;
+	}
+	my @mounts_iscsi = 
+	$template->process($input, $vars, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");
+}
 __END__
 
 =head1 AUTHOR

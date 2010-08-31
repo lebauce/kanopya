@@ -317,4 +317,21 @@ sub getMotherboards{
 	}
 	return \%motherboards;
 }
+
+sub getPublicIps {
+	my $self = shift;
+  
+	my $publicip_rs = $self->{_dbix}->publicips;
+	my $i =0;
+	my @pub_ip =();
+	while ( my $publicip_row = $publicip_rs->next ) {
+		my $publicip = {address => $publicip_row->get_column('ip_address'),
+						netmask => $publicip_row->get_column('ip_mask'),
+						gateway => $publicip_row->get_column('gateway'),
+						name 	=> "eth0:$i"};
+		$i++;
+		push @pub_ip, $publicip;
+	}
+	return \@pub_ip;
+}
 1;
