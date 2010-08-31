@@ -76,6 +76,7 @@ CREATE TABLE `motherboard` (
   `motherboard_internal_ip` char(15) DEFAULT NULL,
   `motherboard_hostname` char(32) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
+  `motherboard_state` char(32) NOT NULL DEFAULT 'down', 
   PRIMARY KEY (`motherboard_id`),
   UNIQUE KEY `motherboard_internal_ip_UNIQUE` (`motherboard_internal_ip`),
   UNIQUE KEY `motherboard_mac_address_UNIQUE` (`motherboard_mac_address`),
@@ -135,6 +136,7 @@ CREATE TABLE `cluster` (
   `active` int(1) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
+  `cluster_state` char(32) NOT NULL DEFAULT 'down', 
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
