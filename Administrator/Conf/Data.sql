@@ -137,6 +137,20 @@ INSERT INTO `user` VALUES
 INSERT INTO `entity` VALUES (38),(39),(40),(41),(42),(43);
 INSERT INTO `user_entity` VALUES (38,2),(39,3),(40,4),(41,5),(42,6),(43,7);
 
+INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,NULL,1);
+INSERT INTO `entity` VALUES (44);
+INSERT INTO `cluster_entity` VALUES (44,2);
+
+INSERT INTO `component_instance` VALUES (6,2,4,NULL);
+INSERT INTO `entity` VALUES (45) ;
+INSERT INTO `component_instance_entity` VALUES (45,6);
+
+INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
+
+INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '127.0.0.1', '3260', '/srv', '', 'ext3');
+
+INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ext3');
+
 SET foreign_key_checks=1;
 
 
