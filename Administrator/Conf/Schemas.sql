@@ -421,6 +421,7 @@ CREATE TABLE `openiscsi2` (
   `openiscsi2_port` int(4) DEFAULT NULL,
   `openiscsi2_mount_point` char(64) DEFAULT NULL,
   `openiscsi2_mount_options` char(64) DEFAULT NULL,
+  `openiscsi2_filesystem` char(32) DEFAULT NULL,
   PRIMARY KEY (`openiscsi2_id`),
   KEY `fk_openiscsi2_1` (`component_instance_id`),
   CONSTRAINT `fk_opensicsi2_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION

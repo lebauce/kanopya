@@ -151,7 +151,7 @@ sub send {
 	if(not -e $args{src}) {
 		$errmsg = "EContext::Local->execute src file $args{src} no found";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongParam(error => $errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	# TODO faire plus de test sur la destination
 	my $result = {};

@@ -1,0 +1,3 @@
+[% FOREACH nameserver=nameservers %]
+nameserver [% nameserver.name %]
+[% END %]

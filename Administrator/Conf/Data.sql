@@ -58,7 +58,7 @@ INSERT INTO `component` VALUES
 (1,'Lvm','2','Storage'),
 (2,'Apache','2','Webserver'),
 (3,'Iscsitarget','1','Export'),
-(4,'Openiscsi','2','ExportClient'),
+(4,'Openiscsi','2','Exportclient'),
 (5,'Dhcpd','3','Dhcpserver'),
 (6,'Atftpd','0','Tftpserver');
 
@@ -116,8 +116,11 @@ INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',100,0,'ext3');
 INSERT INTO `lvm2_lv` VALUES (3,1,'etc_DebianSystemImage',52,0,'ext3');
 INSERT INTO `lvm2_lv` VALUES (4,1,'root_DebianSystemImage',100,0,'ext3');
 
+-- iscsitarget configuration
+INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:root_DebianSystemimage', '/', '');
+
 -- atftp configuration
-INSERT INTO `atftpd0` VALUES (1,6,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
+INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
 
 -- dhcpd configuration
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','10.0.0.0');
