@@ -211,7 +211,7 @@ sub send {
 	if(not -e $args{src}) {
 		$errmsg = "EContext::SSH->execute src file $args{src} no found";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongParam(error => $errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	if(not exists $self->{machine}) {

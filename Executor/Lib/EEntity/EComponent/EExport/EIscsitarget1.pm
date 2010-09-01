@@ -23,12 +23,15 @@ sub generateInitiatorname{
 	my $self = shift;
 	my %args  = @_;	
 
-	if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "EEntity::EStorage::EIscsitarget1->generateInitiatorname need an id named argument to generate initiatorname!"; 
+	if ((! exists $args{hostname} or ! defined $args{hostname})) { 
+		$errmsg = "EEntity::EStorage::EIscsitarget1->generateInitiatorname need an hostname named argument to generate initiatorname!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	return "test";
+	my $today = today();
+	my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology." . $args{hostname};
+	$log->info("InitiatorName generated is $res");
+	return $res;
 }
 sub generateTargetname {
 	my $self = shift;

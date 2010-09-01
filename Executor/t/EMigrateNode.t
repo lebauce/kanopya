@@ -22,8 +22,10 @@ my %args = (login =>'xebech', password => 'pass');
 my $addmotherboard_op;
 
 my $adm = Administrator->new( %args);
+@args = ();
+my $exec = new_ok("Executor", \@args, $exectest);
 eval {
-#	BEGIN { $ENV{DBIC_TRACE} = 1 }	
+	BEGIN { $ENV{DBIC_TRACE} = 1 }	
 	note("Create Motherboard");
 	$adm->newOp(type => "AddMotherboard", 
 				priority => '100',
@@ -45,10 +47,8 @@ eval {
 								systemimage_id			=> 1,
 								kernel_id				=> 1,
 								active					=> 0});
-	@args = ();
 
 	note ("Execute the addition");
-	my $exec = new_ok("Executor", \@args, $exectest);
 	$exec->execnround(run => 2);
 	note("Motherboard and cluster addition is finished");
 	
@@ -88,16 +88,6 @@ eval {
 	
 	note("Execute motherboard and cluster removing");
 	$exec->execnround(run => 2);
-	
-	
-	eval {
-		my $addmotherboard_op = $adm->getNextOp();
-	};
-	if ($@){
-		is ($@->isa('Mcs::Exception::Internal'), 1, "get Mcs Exception No more operation in queue!");
-		
-		my $err = $@;
-	}
 
 };
 if ($@){
@@ -107,6 +97,16 @@ if ($@){
    	{
 		print "Mcs Exception\n";
    }
+}
+else {
+	eval {
+		my $addmotherboard_op = $adm->getNextOp();
+	};
+	if ($@){
+		is ($@->isa('Mcs::Exception::Internal'), 1, "get Mcs Exception No more operation in queue!");
+		
+		my $err = $@;
+	}
 }
 
 

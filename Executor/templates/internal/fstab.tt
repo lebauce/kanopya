@@ -13,8 +13,6 @@ tmpfs		/var/tmp	tmpfs	defaults	    0	    0
 tmpfs		/var/run	tmpfs	defaults	    0	    0
 [% etc_dev %]	/etc		[% etc_fs %]		    [% etc_options %]	0	0
 [% root_dev %]	/		[% root_fs %]		    [% root_options %]	0	0
-[% IF iscsi_mount %]
 [% FOREACH mount=mounts_iscsi %]
 /dev/disk/by-path/ip-[% mount.ip %]:[% mount.port %]-iscsi-[% mount.target %]-lun-0	[% mount.mount_point %] [% mount.fs %] [% mount.options %] 0 0
-[% END %]
 [% END %]

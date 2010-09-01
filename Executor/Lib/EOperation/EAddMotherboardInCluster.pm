@@ -369,7 +369,7 @@ sub generateUdevConf{
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("........");
+	my $tmpfile = $rand->randpattern("ssssssss");
 	# create Template object
 	my $template = Template->new($config);
     my $input = "udev_70-persistent-net.rules.tt";
@@ -377,7 +377,8 @@ sub generateUdevConf{
 
 	#TODO Get ALL network interface !
 	my $interfaces = [{mac_address => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address"), net_interface => "eth0"}];
-	$template->process($input, {interfaces => $interfaces}, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateUdevConf error when parsing template");
+	$log->debug(Dumper($interfaces));
+	$template->process($input, {interfaces => $interfaces}, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules");	
 }
 
@@ -394,7 +395,7 @@ sub generateFstabConf{
 	}
 	my $rand = new String::Random;
 	my $template = Template->new($config);
-	my $tmpfile = $rand->randpattern("........");
+	my $tmpfile = $rand->randpattern("ssssssss");
 	my $adm = Administrator->new();
 	my $input = "fstab.tt";
 	my $vars = {etc_dev			=> "/dev/sda",
@@ -403,6 +404,7 @@ sub generateFstabConf{
 				root_dev		=> "/dev/sdb",
 				root_fs			=> $args{root_dev}->{filesystem},
 				root_options	=> "ro,noatime,nodiratime",
+				
    	   };
    	   
    	my $components = $self->{_objs}->{components};
@@ -417,7 +419,8 @@ sub generateFstabConf{
    			}
 		}
 	}
-   	$template->process($input, $vars, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateFstabConf error when parsing template");
+	$log->debug(Dumper($vars));
+   	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/fstab");	
 
 }
@@ -434,8 +437,8 @@ sub generateMcsHalt{
 	}
 	my $rand = new String::Random;
 	my $template = Template->new($config);
-	my $tmpfile = $rand->randpattern("........");
-	my $tmpfile2 = $rand->randpattern("........");
+	my $tmpfile = $rand->randpattern("ssssssss");
+	my $tmpfile2 = $rand->randpattern("ssssssss");
 	my $input = "McsHalt.tt";
 	my $omitted_file = "mcs_omitted_iscsid";
 	#TODO mettre en parametre le port du iscsi du nas!!
@@ -443,10 +446,12 @@ sub generateMcsHalt{
    	    		nas_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				nas_port		=> "3260",
    	   };
-   	$template->process($input, $vars, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateMcsHalt error when parsing template");
+   	$log->debug(Dumper($vars));
+   	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
     $self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_halt $args{mount_point}/rc0.d/S89mcs_halt");
-   	$self->{nas}->{econtext}->send(src => "/templates/internal/$omitted_file", dest => "$args{mount_point}/init.d/mcs_omitted_iscsid");
+	$self->{nas}->{econtext}->execute(command=> "cp /templates/internal/$omitted_file /tmp/");
+   	$self->{nas}->{econtext}->send(src => "/tmp/$omitted_file", dest => "$args{mount_point}/init.d/mcs_omitted_iscsid");
    	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_omitted_iscsid $args{mount_point}/rc0.d/S19mcs_omitted_iscsid");
 }
 
@@ -461,7 +466,7 @@ sub generateHosts {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("........");
+	my $tmpfile = $rand->randpattern("ssssssss");
 
 	# create Template object
 	my $template = Template->new($config);
@@ -478,7 +483,8 @@ sub generateHosts {
 				   ip			=> $nodes->{$i}->getAttr(name => 'motherboard_internal_ip')};
 		push @nodes_list, $tmp;
 	}
-   	$template->process($input, $vars, "/tmp/".$tmpfile) || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateHosts error when parsing template");
+	$log->debug(Dumper($vars));
+   	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/hosts");	
 }
 
@@ -492,7 +498,7 @@ sub generateNetConf {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("........");
+	my $tmpfile = $rand->randpattern("ssssssss");
 
 	# create Template object
 	my $template = Template->new($config);
@@ -500,7 +506,8 @@ sub generateNetConf {
 	#TODO Get ALL network interface !
 	#TODO Manage virtual IP for master node
 	my $interfaces = $self->{_objs}->{cluster}->getPublicIps();
-	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
+	$log->debug(Dumper($interfaces));
+	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Mcs::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");	
 }
 
@@ -514,14 +521,14 @@ sub generateBootConf {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("........");
+	my $tmpfile = $rand->randpattern("ssssssss");
 
 	# create Template object
 	my $template = Template->new($config);
     my $input = "bootconf.tt";
 	my $adm = Administrator->new();
 	
-	my $root_target_id = $self->{_objs}->{component_export}->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
+	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
 	my $vars ={ root_fs			=> $args{root_dev}->{filesystem},
 				etc_fs			=> $args{etc_dev}->{filesystem},
 				initiatorname	=> $args{initiatorname},
@@ -531,6 +538,7 @@ sub generateBootConf {
 				root_target		=> $args{etc_export}->{iscsitarget1_target_name},
    	    		root_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				root_port		=> "3260",
+				mounts_iscsi		=> []
 	};
 	my $components = $self->{_objs}->{components};
 	foreach my $i (keys %$components) {
@@ -539,17 +547,20 @@ sub generateBootConf {
 				my $iscsi_export = $self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
 													 						version => "0",
 																			administrator => $adm);
-				$vars->{iscsi_mount} = 1;
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
    			}
 		}
 	}
-	if ( !exists $vars->{iscsi_mount} ||! define $vars->{iscsi_mount}){
-		$vars->{iscsi_mount} = 0;
-	}
-	my @mounts_iscsi = 
+
+	$log->debug(Dumper $vars);
 	$template->process($input, $vars, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
-    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");
+    my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
+    my $dest = $tftp_conf->{'repository'}.'/'. $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname") . ".conf";
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
+}
+
+sub generateResolvConf{
+	#TODO GenerateResolvConf, il faut intégrer la gestion domain (dns + domainname)
 }
 __END__
 
