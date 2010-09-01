@@ -20,4 +20,6 @@ if ( $sub eq "run" ) {
 	$monitor->getData( set_label => shift, nb => 10, ds_name => shift, percent => 'ok' );
 } elsif ( $sub eq "rebuild" ) {
 	$monitor->rebuild( set_label => shift );
+} elsif ( $sub eq "test" ) {
+	$monitor->retrieveHosts();
 }
