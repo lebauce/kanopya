@@ -9,21 +9,33 @@ use Net::SNMP;
 use List::Util qw(sum);
 use threads;
 use XML::Simple;
+use Net::Ping;
 use Administrator;
 
 ################################### UTIL ###################################################
 
-#TODO commenter, mettre un exemple, déplacer dans Common
+=head2 getAsArrayRef
+	
+	Class : Public
+	
+	Desc : 	Util for hash loaded from an xml file with xml::simple and list management.
+			<tag> could be mapped with a hash (if only one defined in xml) or an array of hash (if list of <tag>).
+			This sub returns a array ref of <tag> in all cases.
+			
+			WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
+	
+	Args :
+		data : hash ref where one key is <tag> (but value could be hash ref or array ref)
+		tag : string :the name of the tag 
+	
+	Return : Array ref with all hash ref corresponding to tag (in data).
+	
+=cut
 
-# warning: don't use attribute ['name','id','key'] in your xml tag when list context!
-# see @DefKeyAttr in XML::Simple
-
-# return an array ref containing all the elements corresponding to <tag> (in data)
 sub getAsArrayRef {
 	my %args = @_;
 	
 	my $data = $args{data};
-	#my $tag = $args{tag};
 	my $elems = $data->{ $args{tag} };
 	if ( ref $elems eq 'ARRAY' ) {
 		return $elems;
@@ -31,8 +43,25 @@ sub getAsArrayRef {
 	return [$elems];
 }
 
-# return an hash ref containing all the elements corresponding to <tag> (in data)
-# the key is the value of the param key for each elements.
+=head2 getAsHashRef
+	
+	Class : Public
+	
+	Desc : 	Util for hash loaded from an xml file with xml::simple and list management.
+			Map the value of an element of <tag> with the hash correponding to all elements of <tag> (without the key element)
+			for all <tag> in data.
+			
+			WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
+	
+	Args :
+		data : hash ref where one key is <tag> (but value could be hash ref or array ref)
+		tag : string : the name of the tag 
+		key : string : name of a element of <tag> we want as key in the resulting hash
+		
+	Return : The resulting hash ref.
+	
+=cut
+
 sub getAsHashRef {
 	my %args = @_;
 	
@@ -65,13 +94,18 @@ sub new {
 	my $self = {};
 	bless $self, $class;
 
+	# Load conf
 	my $conf = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
-
-	
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp';
 	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp';
 	$self->{_monitored_data} = getAsArrayRef( data => $conf, tag => 'set' );
+	
+	# Get Administrator
+	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+
+	# test (data generator)
+	$self->{_t} = 0;
 	
     return $self;
 }
@@ -82,21 +116,28 @@ sub new {
 	
 	Desc : Retrieve the list of monitored hosts
 	
-	Return : Array of host ip adress
+	Return : Array of host ip address
 	
 =cut
 
-#TODO recuperer vraiment les hosts (en DB ou conf?)
 sub retrieveHosts {
 	my $self = shift;
 	
-	#my $adm = Administrator->new( login =>'thom', password => 'pass' );
+	my $adm = $self->{_admin};
+	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
+	my %hosts_by_cluster;
+	foreach my $cluster (@clusters) {
+		my @mb_ip;
+		foreach my $mb ( values %{ $cluster->getMotherboards( administrator => $adm) } ) {
+			push @mb_ip, $mb->getAttr( name => "motherboard_internal_ip" );
+		}
+		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \@mb_ip;
+	}	
 	
-	
-	my @hosts = ('192.168.0.124', 'localhost', '127.0.0.1');
+	my @hosts = ('192.168.0.123', 'localhost', '127.0.0.1');
 	
 	#use Data::Dumper;
-	#print Dumper \@hosts;
+	#print Dumper \%hosts_by_cluster;
 	
 	return @hosts;
 }
@@ -150,7 +191,26 @@ sub closeSNMPSession {
 	$session->close();
 }
 
-=head2 retrieve data
+#############################
+sub gaussData {
+	my $self = shift;
+	my %args = @_;
+	
+	my $var_map = $args{var_map};
+	
+	my $time = time();
+	print "$time : ";
+	my %values = ();
+	for my $var_name (keys %$var_map) {
+		$values{ $var_name } = sin $self->{_t}; 
+		print " $var_name : ", $values{ $var_name }, ", ";
+	}
+	print "\n";
+	
+	return ($time, \%values);
+}
+
+=head2 retrieveData
 	
 	Class : Public
 	
@@ -533,6 +593,52 @@ sub getData {
 	return @res;
 }
 
+#TODO gérer les hosts starting, stopping, broken, up, down
+sub manageUnreachableHost {
+	my $self = shift;
+	my %args = @_;
+	
+	my $STARTING_MAX_TIME = 300;
+	my $STOPPING_MAX_TIME = 300;
+	
+	my $adm = $self->{_admin};
+	
+	my $host = $args{host};
+	$host = "127.0.0.1"; ############ TEMP #######""
+	
+	eval {
+		my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host } );
+			
+		my $mb = shift @mb_res;
+		my $mb_state = $mb->getAttr( name => "motherboard_state" );
+		my $state = "something";
+		my $state_time = 666;
+		
+		if ( 	$state eq "up"
+			|| 	( $state eq "starting" && $state_time > $STARTING_MAX_TIME )
+			||	( $state eq "stopping" && $state_time > $STOPPING_MAX_TIME ) )
+		{
+			$mb->setAttr( name => "motherboard_state", value => "broken" );
+			$mb->save();
+		} elsif ( $state eq "stopping" ) {
+			# we check if host is really stopped (unpingable)
+			my $p = Net::Ping->new();
+			my $reachable = $p->ping($host);
+			$p->close();
+			if ( not $reachable ) {
+				$mb->setAttr( name => "motherboard_state", value => "down" );
+				$mb->save();
+			}
+		}
+	};
+	if (@_) {
+		my $error = $@;
+		print "===> $error";
+	}
+	
+
+}
+
 =head2 updateHostData
 	
 	Class : Public
@@ -559,6 +665,7 @@ sub updateHostData {
 			
 			# Retrieve the map ref { var_name => snmp_value } corresponding to required var_map
 			my ($time, $update_values) = $self->retrieveData( session => $session, var_map => \%var_map );
+			#my ($time, $update_values) = $self->gaussData( var_map => \%var_map );
 			
 			# Store new values in the corresponding RRD
 			$self->updateRRD( rrd_name => "$set->{label}"."_$host", ds_type => $set->{ds_type}, time => $time, values => $update_values );
@@ -567,6 +674,10 @@ sub updateHostData {
 	if ($@) {
 		my $error = $@;
 		print "===> $error";
+		
+		if ( "$error" =~ "No response" ) {
+			#$self->manageUnreachableHost( host => $host );
+		}
 	}
 	$self->closeSNMPSession(session => $session);
 }
@@ -602,6 +713,7 @@ sub run {
 	
 	while ( 1 ) {
 		$self->update();
+		$self->{_t} += 0.1;
 		sleep( $self->{_time_step} );
 	}
 }
