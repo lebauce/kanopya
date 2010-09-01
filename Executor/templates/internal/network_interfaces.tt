@@ -1,0 +1,15 @@
+auto lo
+iface lo inet loopback
+
+#TODO Mettre l'interface eth0 en generation ?
+auto eth0
+iface eth0 inet dhcp
+
+[% FOREACH interface=interfaces %]
+auto [% interface.name %]
+iface [% interface.name %] inet static
+      address [% interface.address %]
+      netmask [% interface.netmask %]
+      gateway [% interface.gateway %]
+
+[% END %]

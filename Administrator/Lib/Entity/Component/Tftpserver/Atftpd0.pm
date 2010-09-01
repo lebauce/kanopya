@@ -15,5 +15,13 @@ sub new {
     return $self;
 }
 
+sub getConf{
+	my $self = shift;
+	my $conf_raw = $self->{_dbix}->atftpd0s->first();
+	return {options => $conf_raw->get_column('atftpd0_options'),
+			   repository => $conf_raw->get_column('atftpd0_repository'),
+			   use_inetd => $conf_raw->get_column('atftpd0_use_inetd'),
+			   logfile => $conf_raw->get_column('atftpd0_logfile')};
 
+}
 1;

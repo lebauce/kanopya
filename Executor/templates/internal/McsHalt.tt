@@ -1,0 +1,3 @@
+#!/bin/bash
+iscsiadm -m node -T [% etc_target %] -p [% nas_ip %]:[% nas_port %] --logout
+halt -d -f -p

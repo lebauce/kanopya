@@ -1,4 +1,4 @@
-package EEntity::EComponent::EExportClient::EOpeniscsi2;
+package EEntity::EComponent::EExportclient::EOpeniscsi2;
 
 use strict;
 

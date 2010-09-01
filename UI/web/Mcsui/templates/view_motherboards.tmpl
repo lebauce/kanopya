@@ -1,0 +1,40 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<div id="contentleft">
+	<p>
+	<span class="title">Motherboards</span>
+	View, add, edit and remove you microcluster's motherboards. 
+	</p>
+	<p><hr /></p>
+		<a class="button"  href="motherboards/add_motherboard">Add motherboard</a>
+		<a class="button"  href="motherboards/edit_motherboard">Edit motherboard</a>
+		<a class="button"  href="motherboards/remove_motherboard">Remove motherboard</a>
+	<p><hr /></p>
+</div>
+
+<div id="contentright">
+	<table class="listview">
+		<tr><th>position</th><th>model</th><th>active</th></tr>
+		<TMPL_LOOP NAME=MOTHERBOARDS>
+		<tr><td><TMPL_VAR NAME=POSITION></td>
+		<td><TMPL_VAR NAME=MODEL></td>
+		<td><TMPL_VAR NAME=ACTIVE></td></tr>
+		</TMPL_LOOP>
+	</table>
+	<TMPL_LOOP NAME=DETAILS>
+	<table class="listdetails">
+		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td class="label">S/N : </td><td class="content"><TMPL_VAR NAME=SN></td></tr>
+		<tr><td class="label">mac address : </td><td class="content"><TMPL_VAR NAME=MAC></td></tr>
+		<tr><td class="label">CPU : </td><td class="content"><TMPL_VAR NAME=CPU></td></tr>
+		<tr><td class="label">cores number : </td><td class="content"><TMPL_VAR NAME=CORES></td></tr>
+		<tr><td class="label">RAM quantity : </td><td class="content"><TMPL_VAR NAME=RAM> Go</td></tr>
+		<tr><td class="label">consumption : </td><td class="content"><TMPL_VAR NAME=CONSUMPTION> W</td></tr>
+		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td class="label">internal ip : </td><td class="content"><TMPL_VAR NAME=IP></td></tr>
+		<tr><td class="label">default kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
+		<tr><td colspan="2"><hr/></td></tr>
+	</table>
+	</TMPL_LOOP>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
