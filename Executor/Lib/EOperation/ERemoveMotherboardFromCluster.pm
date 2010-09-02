@@ -197,14 +197,17 @@ sub execute{
 	
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
 	
-	my $target_name = '%'. $node_dev->{etc}->{lvname};
-	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => $target_name);
+	my $target_name = $node_dev->{etc}->{lvname};
+	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $target_name);
 
 	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
 
-	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id => $lun_id, iscsitarget1_target_id=>$target_id);
-	$self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id=>$target_id);
+	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id 	=> $lun_id,
+												  iscsitarget1_target_id=>$target_id);
+	$self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id		=>$target_id,
+													 iscsitarget1_target_name 	=> $target_name,
+													 econtext 					=> $self->{nas}->{econtext});
 																  
 	$self->{_objs}->{component_export}->reload();
 	

@@ -35,6 +35,14 @@ eval {
 							motherboard_serial_number => "Test sn",
 							motherboard_model_id => 1,
 							processor_model_id => 1});
+$adm->newOp(type => "AddMotherboard", 
+				priority => '100',
+				params => { 
+							motherboard_mac_address => '00:aa:aa:ac:1c:aa', 
+							kernel_id => 1, 
+							motherboard_serial_number => "Test sn2",
+							motherboard_model_id => 1,
+							processor_model_id => 1});
 
 	note("Create Cluster");
 	$adm->newOp(type		=> "AddCluster",
@@ -49,7 +57,7 @@ eval {
 								active					=> 0});
 
 	note ("Execute the addition");
-	$exec->execnround(run => 2);
+	$exec->execnround(run => 3);
 	note("Motherboard and cluster addition is finished");
 	
 	note("Get the Cluster");
@@ -57,37 +65,28 @@ eval {
 	my $cluster = $entities[0];
 	
 	note("Get the Motherboard");
-	@entities = $adm->getEntities(type => 'Motherboard', hash=> {motherboard_mac_address => '00:1c:c0:c0:1c:9a'});
-	my $motherboard = $entities[0];
+	my @entities2 = $adm->getEntities(type => 'Motherboard', hash=> {motherboard_mac_address => '00:1c:c0:c0:1c:9a'});
+	my $motherboard = $entities2[0];
+
+	note("Get the Motherboard2");
+	my @entities3 = $adm->getEntities(type => 'Motherboard', hash=> {motherboard_mac_address => '00:aa:aa:ac:1c:aa'});
+	my $motherboard2 = $entities3[0];
+
 	
 	note("Create operation to migrate the motherboard into the cluster");
 	$adm->newOp(type		=> "AddMotherboardInCluster",
 				priority	=> '100',
 				params		=> {cluster_id => $cluster->getAttr(name => "cluster_id"), 
 								motherboard_id => $motherboard->getAttr(name => "motherboard_id")});
+	$adm->newOp(type		=> "AddMotherboardInCluster",
+				priority	=> '100',
+				params		=> {cluster_id => $cluster->getAttr(name => "cluster_id"), 
+								motherboard_id => $motherboard2->getAttr(name => "motherboard_id")});
 
 	note("Exec the migration");
-	$exec->execnround(run => 1);
+	$exec->execnround(run => 2);
 	
-#	note("Create operation to remove the motherboard from the cluster");
-#	$adm->newOp(type		=> "RemoveMotherboardFromCluster",
-#				priority	=> '100',
-#				params		=> {cluster_id => $cluster->getAttr(name => "cluster_id"), 
-#								motherboard_id => $motherboard->getAttr(name => "motherboard_id")});
-#	
-#	note("Exec the removing");
-#	$exec->execnround(run => 1);
-#	
-#	note("Remove Cluster");
-#	$adm->newOp(type		=> "RemoveCluster",
-#				priority	=> '100',
-#				params		=> {cluster_id => $cluster->getAttr(name => "cluster_id")});
-#	note("Remove Motherboard");
-#		$adm->newOp(type => "RemoveMotherboard", priority => '100', 
-#					params => { motherboard_id => $motherboard->getAttr(name=>'motherboard_id')});
-#	
-#	note("Execute motherboard and cluster removing");
-#	$exec->execnround(run => 2);
+
 
 };
 if ($@){

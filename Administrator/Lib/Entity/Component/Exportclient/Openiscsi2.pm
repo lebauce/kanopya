@@ -29,7 +29,7 @@ sub getExport {
 		$export->{fs} = $export_row->get_column('openiscsi2_filesystem');
 		push @tab_exports, $export;
 	}
-	return\@tab_exports;
+	return \@tab_exports;
 }
 
 1;
