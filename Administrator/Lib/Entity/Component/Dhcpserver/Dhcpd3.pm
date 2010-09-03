@@ -26,6 +26,41 @@ sub getInternalSubNet{
 	return 1;
 }
 
+# return a data structure to pass to the template processor 
+sub getTemplateData {
+	my $self = shift;
+	my $cluster = $self->{_dbix}->cluster_id;
+	my $dhcpd3 =  $self->{_dbix}->dhcpd3s->first();
+	my $data = {};
+	$data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
+	$data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
+	$data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');;
+	$data->{server_ip} = $cluster->search_related("nodes", { master_node => 1 })->single->motherboard_id->get_column('motherboard_internal_ip');
+	
+	my $subnets = $dhcpd3->dhcpd3_subnets;
+	my @data_subnets = ();
+	while(my $subnet = $subnets->next) {
+		my $hosts = $subnet->dhcpd3_hosts;
+		my @data_hosts = ();
+		while(my $host = $hosts->next) {
+			push @data_hosts, {
+				ip_address => $host->get_column('dhcpd3_hosts_ipaddr'), 
+				mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
+				hostname => $host->get_column('dhcpd3_hosts_hostname'), 
+				kernel_version => $host->kernel_id->get_column('kernel_version')
+			};
+		}
+		push @data_subnets, {
+			net => $subnet->get_column('dhcpd3_subnet_net'),
+			mask => $subnet->get_column('dhcpd3_subnet_mask'),
+			nodes => \@data_hosts
+		};
+	}
+
+	$data->{subnets} = \@data_subnets;
+	return $data;
+}
+
 sub addHost {
 	my $self = shift;
     my %args = @_;
