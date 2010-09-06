@@ -34,6 +34,8 @@ __PACKAGE__->add_columns(
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 32 },
   "etc_device_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
+  "motherboard_state",
+  { data_type => "CHAR", default_value => "down", is_nullable => 0, size => 32 },
 );
 __PACKAGE__->set_primary_key("motherboard_id");
 __PACKAGE__->add_unique_constraint("motherboard_internal_ip_UNIQUE", ["motherboard_internal_ip"]);
@@ -75,8 +77,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-01 00:17:51
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6qRsu6TpEqPXfp0kqqn1sg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-06 18:16:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Srs11sG/aMPdR4mgDAZwog
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
