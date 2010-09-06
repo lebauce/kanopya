@@ -40,27 +40,30 @@ Executor is the main script to run microCluster Executor server.
 
 use strict;
 use warnings;
-use lib "../Lib";
+use lib "/workspace/mcs/Executor/Lib";
 use Executor;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
 
 
-Log::Log4perl->init('../Conf/log.conf');
+Log::Log4perl->init('/workspace/mcs/Executor/Conf/log.conf');
 my $log = get_logger("executor");
+
 
 try	{
 	my $exec = Executor->new();
+	$log->info('Starting main loop');
 	$exec->run();
-
 }
 catch Error::Simple with {
 	my $ex = shift;
-	die "Catch error in Executor instanciation";
+	die "Catch error in Executor instanciation: $ex";
 };
 
-print "After try catch MCExecutor";
+
+
+
 
 
 

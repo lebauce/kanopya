@@ -15,5 +15,14 @@ sub new {
     return $self;
 }
 
+sub getTemplateDirectory {
+	my $self = shift;
+	if( defined $self->{_dbix}->get_column('component_template_id') ) {
+		return $self->{_dbix}->component_template_id->get_column('component_template_directory');
+	} else {
+		return undef;
+	}
+}
+
 
 1;

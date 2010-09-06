@@ -115,6 +115,7 @@ sub execute {
 	$log->debug("Command execute is : <$command>");
 	$ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
 	my $stdout = `$command 2> /tmp/EContext.stderr`;
+	$result->{exitcode} = $?;
 	$result->{stdout} = $stdout;
 	$result->{stderr} = `cat /tmp/EContext.stderr`;
 	$log->debug("Command stdout is : '$result->{stdout}'");

@@ -62,7 +62,7 @@ sub generate {
 	}
 	
 	my $config = {
-    INCLUDE_PATH => $self->_getEntity()->component_template_id->get_column('component_template_directory'),
+    INCLUDE_PATH => $self->_getEntity()->getTemplateDirectory(),
     INTERPOLATE  => 1,               # expand "$var" in plain text
     POST_CHOMP   => 0,               # cleanup whitespace 
     EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -81,9 +81,8 @@ sub generate {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/dhcpd3/dhcpd.conf");	
-		 
-	 
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/dhcp3/dhcpd.conf");	
+		 	 
 }
 
 # Reload conf on edhcp
@@ -98,9 +97,6 @@ sub reload {
 	}
 	my $command = "invoke-rc.d dhcp3-server restart";
 	my $result = $args{econtext}->execute(command => $command);
-	$log->debug($result->{stdout});
-	$log->debug($result->{sterr});
-	
 	return 	undef;
 }
 1;

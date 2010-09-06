@@ -172,6 +172,7 @@ sub execute {
 		$log->error($errmsg);
 		throw Mcs::Exception::Network(error => $errmsg);
 	}
+	$result->{exitcode} = $r->errcode; # TODO URGENT voir le code de grid::machine pour qu'il retourne le errcode
 	$result->{stdout} = $r->stdout;
 	chomp($result->{stdout});
 	$result->{stderr} = $r->stderr;

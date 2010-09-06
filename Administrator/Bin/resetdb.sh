@@ -11,7 +11,7 @@ echo 'LVM logical volumes for default distribution and systemimage must be prese
 echo 'You can create them with:'
 echo
 echo '# lvcreate -L 52M -n etc_Debian_5.0 vg1'
-echo '# lvcreate -L 100M -n root_Debian_5.0 vg1'
+echo '# lvcreate -L 6G -n root_Debian_5.0 vg1'
 echo '# lvcreate -L 52M -n etc_DebianSystemImage vg1'
-echo '# lvcreate -L 100M -n root_DebianSystemImage vg1'
+echo '# lvcreate -L 6G -n root_DebianSystemImage vg1'
 echo

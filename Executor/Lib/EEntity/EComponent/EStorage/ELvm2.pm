@@ -69,10 +69,16 @@ sub lvCreate{
 
 	$log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 	$log->debug("lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}");
-	my $ret = $args{econtext}->execute(command => "lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}");
+	my $command = "lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}";
+	my $ret = $args{econtext}->execute(command => $command);
+	if($ret->{exitcode} != 0) {
+		my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
+		$log->error($errmsg);
+		throw Mcs::Exception::Execution(error => $errmsg);
+	}
 	delete $args{econtext};
 	delete $args{lvm2_vg_name};
-	#TODO Real creation of LV
+	
 	return $self->_getEntity()->lvCreate(%args);
 	
 }

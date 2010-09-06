@@ -131,10 +131,10 @@ INSERT INTO `lvm2_pv` VALUES (1,1,'/dev/sda4');
 
 -- distribution device for Debian 5.0
 INSERT INTO `lvm2_lv` VALUES (1,1,'etc_Debian_5.0',52,0,'ext3');
-INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',100,0,'ext3');
+INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',6144,0,'ext3');
 -- systemimage device for DebianSystemImage
 INSERT INTO `lvm2_lv` VALUES (3,1,'etc_DebianSystemImage',52,0,'ext3');
-INSERT INTO `lvm2_lv` VALUES (4,1,'root_DebianSystemImage',100,0,'ext3');
+INSERT INTO `lvm2_lv` VALUES (4,1,'root_DebianSystemImage',6144,0,'ext3');
 
 -- iscsitarget configuration
 INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:root_DebianSystemimage', '/', '');
@@ -143,7 +143,7 @@ INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology
 INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
 
 -- dhcpd configuration
-INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','10.0.0.0');
+INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'10.0.0.0','255.255.255.0');
 
 
@@ -158,7 +158,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); S
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); SET @eid := @eid +1;
 
-INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,NULL,1, 'down');
+INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,1,1, 'down');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
 
 INSERT INTO `component_instance` VALUES (6,2,4,NULL);

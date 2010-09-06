@@ -49,6 +49,7 @@ use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use EFactory;
 use String::Random;
+use Date::Simple (':all');
 use Template;
 
 my $log = get_logger("executor");
@@ -250,13 +251,17 @@ sub execute{
 												dhcpd3_hosts_mac_address	=> $motherboard_mac,
 												dhcpd3_hosts_hostname	=> $motherboard_hostname,
 												kernel_id	=> $motherboard_kernel_id);
-	$self->{_objs}->{component_dhcpd}->reload();
+	
+	$log->info('generate dhcp configuration file');
+	$self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
+	$log->info('restart dhcp service');
+	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
 	
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
 
 	# Mount Motherboard etc to populate it
-	my $mkdir_cmd = "mkdir /mnt/$node_dev->{etc}->{lvname}";
+	my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mkdir_cmd);
 	my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mount_cmd);
@@ -272,11 +277,11 @@ sub execute{
 					 		nodes		=> $clust_nodes);
 	
 	#TODO  component migrate (node, exec context?)
-	my $components = $self->{_objs}->{components};
-	foreach my $i (keys %$components) {
-		my $tmp = EFactory::newEEntity(data => $components->{$i});
-		$tmp->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/mnt/$node_dev->{etc}->{lvname}");
-	}
+	#my $components = $self->{_objs}->{components};
+	#foreach my $i (keys %$components) {
+		#my $tmp = EFactory::newEEntity(data => $components->{$i});
+		#$tmp->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/mnt/$node_dev->{etc}->{lvname}");
+	#}
 	
 
 	# Umount Motherboard etc to populate it
@@ -297,20 +302,27 @@ sub execute{
 	$adm->createNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
 					 master_node => $masternode);
+
+	# finaly we start the node
+	$self->startNode();
+
 }
 
 
 
-=head getEtcDev
-
-This function generate Node config files :
-- fstab
-- iscsi initiator
-- boot config file
-- mca_halt a pre halt script to umount remote disk
-- Boot configuration file
-
-=cut
+sub startNode {
+	my $self = shift;
+	if(not -e '/usr/sbin/etherwake') {
+		$errmsg = "EOperation::EAddMotherboardInCluster->startNode : /usr/sbin/etherwake not found";
+		$log->error($errmsg);
+		throw Mcs::Exception::Execution(error => $errmsg);
+	}
+	my $command = "/usr/sbin/etherwake ".$self->{_objs}->{motherboard}->getAttr(name => 'motherboard_mac_address');
+	my $result = $self->{econtext}->execute(command => $command);
+	my $state = "starting:".time;
+	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
+	$self->{_objs}->{motherboard}->save();
+}
 
 sub generateNodeConf {
 	my $self = shift;
