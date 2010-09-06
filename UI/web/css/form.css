@@ -1,0 +1,38 @@
+table.form, div.formbuttons {
+	margin-left: auto;
+	margin-right: auto;
+	width: 800px;
+}
+
+table.form caption {
+	padding: 15px;
+	font-size: 1.5em;
+	font-weight: bold;
+	color: #69B033;
+}
+
+
+table.form td { width: 50%; padding-top: 5px}
+table.form select { min-width: 200px;}
+
+table.form td.error { 
+	color: red;
+	text-align: center;
+	padding: 10px;
+}
+
+table.form td.label {
+	font-weight: bold;
+	text-align: right;
+}
+
+div.formbuttons { margin: 20px auto; text-align: center;}
+
+div.formbuttons .button {
+	border: thin outset #000;
+	background-color: #69B033;
+	color:  #EEF2BE;
+	padding: 5px 15px;
+	font-weight: bold;
+	cursor: pointer;
+}

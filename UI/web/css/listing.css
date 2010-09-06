@@ -1,0 +1,29 @@
+table.listview {
+	margin: 20px;
+	border-collapse: collapse;
+	float: left;
+}
+
+table.listview  th { background-color: #DDD; }
+table.listview  tr:hover { background-color: #EEF2BE; cursor: pointer;	}
+table.listview  tr.selected { background-color: #9CE366; cursor:default; }
+
+table.listview th, table.listview td {
+	border: thin solid black;
+	padding: 10px;
+	text-align: center;
+}
+
+table.listdetails {
+	float: left;
+	margin: 20px;
+	clear: right;
+	width: 400px;
+}
+
+table.listdetails td.label {
+	font-weight: bold;
+	text-align: right;
+}
+table.listdetails td.content { padding-left: 3px; }
+table.listdetails hr { margin: 5px 0; }

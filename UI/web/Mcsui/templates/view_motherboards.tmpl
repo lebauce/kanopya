@@ -1,28 +1,29 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<div id="content">
 <div id="contentleft">
-	<p>
-	<span class="title">Motherboards</span>
-	View, add, edit and remove you microcluster's motherboards. 
-	</p>
+	<p>View, add, edit and remove microcluster's motherboards.</p>
 	<p><hr /></p>
-		<a class="button"  href="motherboards/add_motherboard">Add motherboard</a>
-		<a class="button"  href="motherboards/edit_motherboard">Edit motherboard</a>
-		<a class="button"  href="motherboards/remove_motherboard">Remove motherboard</a>
+		<a class="button"  href="/cgi/mcsui.cgi/motherboards/form_addmotherboard">New motherboard</a>
+		<a id="editbutton" class="hidden"  href="">Edit motherboard</a>
+		<a id="removebutton" class="hidden"  href="">Remove motherboard</a>
 	<p><hr /></p>
 </div>
 
 <div id="contentright">
-	<table class="listview">
+	<table id="motherboardlist" class="listview">
 		<tr><th>position</th><th>model</th><th>active</th></tr>
 		<TMPL_LOOP NAME=MOTHERBOARDS>
-		<tr><td><TMPL_VAR NAME=POSITION></td>
+		<tr id="m<TMPL_VAR NAME=ID>" isactive="<TMPL_VAR NAME=ACTIVE>"><td><TMPL_VAR NAME=POSITION></td>
 		<td><TMPL_VAR NAME=MODEL></td>
 		<td><TMPL_VAR NAME=ACTIVE></td></tr>
 		</TMPL_LOOP>
 	</table>
 	<TMPL_LOOP NAME=DETAILS>
-	<table class="listdetails">
+	<table id="t<TMPL_VAR NAME=ID>" class="listdetails hidden">
 		<tr><td colspan="2"><hr/></td></tr>
 		<tr><td class="label">S/N : </td><td class="content"><TMPL_VAR NAME=SN></td></tr>
 		<tr><td class="label">mac address : </td><td class="content"><TMPL_VAR NAME=MAC></td></tr>
@@ -34,7 +35,35 @@
 		<tr><td class="label">internal ip : </td><td class="content"><TMPL_VAR NAME=IP></td></tr>
 		<tr><td class="label">default kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
 		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td colspan="2"><TMPL_VAR NAME=DESC></td></tr>
 	</table>
 	</TMPL_LOOP>
 </div>
+</div>
+<script language="Javascript">
+editbutton = document.getElementById('editbutton');
+removebutton = document.getElementById('removebutton');
+
+function selectme() { 
+	lines = document.getElementById('motherboardlist').getElementsByTagName('tr');
+	for(i=0;i<lines.length;i++) { lines[i].className = ''; }
+	this.classList.add('selected');
+	if(this.getAttribute('isactive') == 'no') {
+		editbutton.className = 'button';
+		removebutton.className = 'button';
+	} else {
+		editbutton.className = 'hidden';
+		removebutton.className = 'hidden';
+	}
+	listdetails = document.getElementsByClassName('listdetails');
+	for(i=0;i<listdetails.length;i++) { listdetails[i].className = 'listdetails hidden'; }
+	document.getElementById('t'+this.id.substring(1)).className = 'listdetails';
+}
+
+motherboardline = document.getElementById('motherboardlist').getElementsByTagName('tr');
+for(i=0;i<motherboardline.length;i++) {
+	motherboardline[i].onclick = selectme;
+}
+
+</script>
 <TMPL_INCLUDE NAME="footer.tmpl">
