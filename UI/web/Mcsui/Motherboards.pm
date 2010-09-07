@@ -20,8 +20,8 @@ sub view_motherboardn : StartRunmode {
 	my $tmp = {};
 	$tmp->{ID} = $n->getAttr(name => 'motherboard_id');
 	$tmp->{POSITION} = $n->getAttr(name => 'motherboard_slot_position');
-	my $model = $self->{'admin'}->getEntity(type => 'Motherboard_model', id => $n->getAttr(name => 'motherboard_model_id'));
-	$tmp->{MODEL} = $model->getAttr(name =>'motherboard_brand')." ".$model->getAttr(name => 'motherboard_model_name');
+	my $emodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $n->getAttr(name => 'motherboardmodel_id'));
+	$tmp->{MODEL} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
 	$tmp->{ACTIVE} = $n->getAttr(name => 'active');
 	push (@$motherboards, $tmp);
     }
@@ -31,15 +31,15 @@ sub view_motherboardn : StartRunmode {
 	$tmp->{ID} = $m->getAttr(name => 'motherboard_id');
 	$tmp->{SN} = $m->getAttr(name => 'motherboard_serial_number');
 	$tmp->{MAC} = $m->getAttr(name => 'motherboard_mac_address');
-	my $processor = $self->{'admin'}->getEntity(type => 'Processor_model', id => $m->getAttr(name => 'processor_model_id'));
-	$tmp->{CPU} = $processor->getAttr(name => 'processor_brand')." ".$processor->getAttr(name => 'processor_model_name');
-	$tmp->{CORES} = $processor->getAttr(name => 'processor_core_num');
-	my $motherboard = $self->{'admin'}->getEntity(type => 'Motherboard_model', id => $m->getAttr(name => 'motherboard_model_id'));
-	$tmp->{RAM} = $motherboard->getAttr(name => 'motherboard_RAM_max');
-	$tmp->{CONSUMPTION} = $motherboard->getAttr(name =>'motherboard_consumption'); 
+	my $eprocessor = $self->{'admin'}->getEntity(type => 'Processormodel', id => $m->getAttr(name => 'processormodel_id'));
+	$tmp->{CPU} = $eprocessor->getAttr(name => 'processormodel_brand')." ".$eprocessor->getAttr(name => 'processormodel_name');
+	$tmp->{CORES} = $eprocessor->getAttr(name => 'processormodel_core_num');
+	my $emotherboard = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
+	$tmp->{RAM} = $emotherboard->getAttr(name => 'motherboardmodel_ram_max');
+	$tmp->{CONSUMPTION} = $emotherboard->getAttr(name =>'motherboardmodel_consumption'); 
 	$tmp->{IP} = $m->getAttr(name => 'motherboard_internal_ip');
-	my $kernel= $self->{'admin'}->getEntity(type => 'Kernel', id => $m->getAttr(name => 'kernel_id'));
-	$tmp->{KERNEL} = $kernel->getAttr(name => 'kernel_version')." ".$kernel->getAttr(name => 'kernel_name'); 
+	my $ekernel= $self->{'admin'}->getEntity(type => 'Kernel', id => $m->getAttr(name => 'kernel_id'));
+	$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version')." ".$ekernel->getAttr(name => 'kernel_name'); 
 	$tmp->{DESC} = $m->getAttr(name => 'motherboard_desc');
         push (@$details, $tmp); 
     }
@@ -67,7 +67,16 @@ sub form_addmotherboard : Runmode {
 	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
 	$tmpl->param($errors) if $errors;
-	
+
+	@emotherboardmodels = $self->{'admin'}->getEntities(type => 'Motherboardmodel', hash => {});
+	my $models = [];
+	foreach my $x (@emotherboardmodels){
+	my $tmp = {};
+	$tmp->{MODEL} = $x->getAttr(name =>'motherboardmodel_brand')." ".$x->getAttr(name => 'motherboardmodel_name');
+	$tmp->{ID} = $x->getAttr( name => 'motherboardmodel_id');
+	push (@$models, $tmp);
+	}
+	$tmpl->param('MODELS' => $models);	
 	$tmpl->param('USERID' => 1234);
 	$output .= $tmpl->output();
 	return $output;
