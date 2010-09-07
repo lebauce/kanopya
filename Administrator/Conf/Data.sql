@@ -34,7 +34,7 @@ INSERT INTO `user` VALUES (1,'executer','executer','executer','executer',NULL,'2
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- motherboard and processor models
-INSERT INTO `processormodel` VALUES (1,'Intel','Atom',2,2,0,2,17,0,0,NULL);
+INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,2,0,2,17,0,0,NULL);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 INSERT INTO `motherboardmodel` VALUES (1,'Intel','DG945GCLF2','945GC',2,42,1,1,2,1);
