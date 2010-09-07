@@ -51,6 +51,11 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-07 14:38:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ef8XwkPLqltEaSlKRAle7g
 
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::MotherboardmodelEntity",
+  { "foreign.motherboardmodel_id" => "self.motherboardmodel_id" },
+);
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;
