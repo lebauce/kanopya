@@ -21,10 +21,9 @@
 	<tr>
 		<td class="label">Motherboard model :</td>
 		<td><select name="motherboard_model">
-			<option value="1">Intel D945GCFL-2</option>
-			<option value="2">ASUS</option>
-			<option value="3">VIA</option>
-			<option value="4">Minix</option>
+		<TMPL_LOOP NAME=MODELS>
+			<option value="<TMPL_VAR NAME=ID"><TMPL_VAR NAME=MODEL></option>
+		</TMPL_LOOP>	
 		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addmotherboardmodel">no found ?</a></td>
 	</tr>
 	<tr>
