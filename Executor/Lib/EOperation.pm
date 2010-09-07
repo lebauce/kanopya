@@ -124,8 +124,10 @@ sub finish {
 }
 
 sub cancel {
-	my $adm = Administrator::new();
-	$adm->{db}->txn_rollback;	
+	my $self = shift;
+	my $adm = Administrator->new();
+	$adm->{db}->txn_rollback;
+	$self->{_operation}->cancel();	
 }
 1;
 

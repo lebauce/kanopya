@@ -1,20 +1,19 @@
 package Entity::Motherboard;
 
 use strict;
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
-
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	motherboard_model_id	=>	{pattern			=> 'm//s',
+	motherboardmodel_id	=>	{pattern			=> 'm//s',
 											is_mandatory	=> 1,
 											is_extended		=> 0},
-			  processor_model_id		=> {pattern			=> 'm//m',
+			  processormodel_id		=> {pattern			=> 'm//m',
 											is_mandatory	=> 1,
 											is_extended 	=> 0},
 			  kernel_id					=> {pattern			=> 'm//s',

@@ -2,14 +2,9 @@ package Mcsui::Login;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
 
-
 sub setup {
 	my $self = shift;
-	$self->tmpl_path('/home/thom/mcsweb/Mcsui/templates');
-	$self->mode_param(
-		path_info => 2,
-		param => 'rm'
-	);
+	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
 sub login : StartRunmode {

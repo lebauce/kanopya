@@ -208,7 +208,7 @@ sub getEntity {
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 	
-	$log->debug( "getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->debug( "getEntity( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
 	$entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
 	
@@ -238,7 +238,7 @@ sub getEntity {
 			return $entity;
 		}
 	} else {
-		$errmsg = "Administrator::getEntity( ". map( { "$_ => $args{$_}, " } keys(%args) ). ") : Object not found!"; 
+		$errmsg = "Administrator::getEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -272,7 +272,7 @@ sub getEntities {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	$log->debug( "getEntityFromHash( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->debug( "getEntityFromHash( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 	$log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
 	$rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
 	
@@ -374,7 +374,7 @@ sub newEntity {
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 
-	$log->debug("newEntity(", map( { "$_ => $args{$_}, " } keys(%args)),")");
+	$log->debug("newEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )).")");
 
 	# We get class and require Entity::$entity_class
 	my $entity_class;
@@ -439,7 +439,10 @@ sub newOp {
 	my $op_data = $self->_newDbix( table => 'Operation', row => { 	type => $args{type},
 																	execution_rank => $rank,
 																	user_id => $user_id,
-																	priority => $args{priority}});
+																	priority => $args{priority},
+																	creation_date => \"CURRENT_DATE()",
+																	creation_time => \"CURRENT_TIME()"
+																	});
 
 	my $subclass = $args{type};
 	eval {
@@ -1068,6 +1071,79 @@ sub removeNode{
 	$row->delete;
 }
 
+########################################
+## methodes for fast usage in web ui ##
+########################################
+
+# add a new message
+sub addMessage {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{content} or ! defined $args{content})){
+		$errmsg = "Administrator->addMessage need a type and content named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	$self->{db}->resultset('Message')->create({
+		user_id => $self->{_rightschecker}->{_user},
+		message_creationdate => \"CURRENT_DATE()",
+		message_creationtime => \"CURRENT_TIME()",
+		message_type => $args{type},
+		message_content => $args{content}
+	});
+	return;
+}
+
+sub getMessages {
+	my $self = shift;
+	my $r = $self->{db}->resultset('Message')->search(undef, { 
+		order_by => { -desc => [qw/message_id/] }
+	});
+	my @arr = ();
+	while (my $row = $r->next) {
+		push @arr, { 
+			'TYPE' => $row->get_column('message_type'), 
+			'DATE' => $row->get_column('message_creationdate'), 
+			'TIME' => $row->get_column('message_creationtime'), 
+			'CONTENT' => $row->get_column('message_content')  
+		};
+	}
+	return @arr;
+}
+
+sub getOperations {
+	my $self = shift;
+	my $Operations = $self->{db}->resultset('Operation')->search(undef, { 
+		order_by => { -desc => [qw/execution_rank creation_date creation_time/] },
+		'+columns' => [ 'user_id.user_login' ],
+		join => [ 'user_id' ]
+	});
+	my $arr = [];
+	my $opparams = [];
+	while (my $op = $Operations->next) {
+		my $Parameters = $self->{db}->resultset('OperationParameter')->search({operation_id=>$op->get_column('operation_id')});
+		
+		while (my $param = $Parameters->next) {
+			push @$opparams, { 
+				'ID' => $op->get_column('operation_id'), 
+				'PARAMNAME' => $param->get_column('name'), 
+				'VAL' => $param->get_column('value')
+			};
+		}
+		push @$arr, { 
+			'ID' => $op->get_column('operation_id'),
+			'TYPE' => $op->get_column('type'), 
+			'FROM' => $op->get_column('user_login'), 
+			'DATE' => $op->get_column('creation_date'), 
+			'TIME' => $op->get_column('creation_time'), 
+			'RANK' => $op->get_column('execution_rank'), 
+			'PRIORITY' => $op->get_column('priority'), 
+		};
+	}
+	return ($arr, $opparams);
+
+}
 
 1;
 

@@ -122,4 +122,22 @@ sub removeTarget{
 	}
 	return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
 }
+
+sub getTarget {
+	my $self = shift;
+	my %args  = @_;	
+	if (! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) {
+		$errmsg = "Component::Export::Iscsitarget1->getTarget needs an iscsitarget1_target_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $target_raw = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
+	my $export ={};
+	$export->{target} = $target_raw->get_column('iscsitarget1_target_name');
+	$export->{mountpoint} = $target_raw->get_column('mountpoint');
+	$export->{mount_option} = $target_raw->get_column('mount_option');
+
+	return $export;
+}
 1;

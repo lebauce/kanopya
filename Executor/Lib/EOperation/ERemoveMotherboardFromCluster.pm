@@ -195,16 +195,22 @@ sub execute{
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
 	
+	# first we halt the node
+	$self->stopNode();
+	
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
 	
-	my $target_name = '%'. $node_dev->{etc}->{lvname};
-	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => $target_name);
+	my $target_name = $node_dev->{etc}->{lvname};
+	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $target_name);
 
 	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
 
-	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id => $lun_id, iscsitarget1_target_id=>$target_id);
-	$self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id=>$target_id);
+	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id 	=> $lun_id,
+												  iscsitarget1_target_id=>$target_id);
+	$self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id		=>$target_id,
+													 iscsitarget1_target_name 	=> $target_name,
+													 econtext 					=> $self->{nas}->{econtext});
 																  
 	$self->{_objs}->{component_export}->reload();
 	
@@ -215,7 +221,10 @@ sub execute{
 															 			   dhcpd3_hosts_mac_address	=> $motherboard_mac);
 	$self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id	=> $subnet,
 												  dhcpd3_hosts_id	=> $hostid);
-	$self->{_objs}->{component_dhcpd}->reload();
+	
+	$self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
+	
+	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
 	
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
@@ -223,6 +232,21 @@ sub execute{
 	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 }
+
+
+sub stopNode {
+	my $self = shift;
+	my $motherboard_econtext = EFactory::newEContext(
+		ip_source => "127.0.0.1", 
+		ip_destination => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_internal_ip')
+	);
+	my $command = 'halt';
+	my $result = $motherboard_econtext->execute(command => $command);
+	my $state = 'stopping:'.time;
+	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
+	$self->{_objs}->{motherboard}->save();
+}
+
 
 __END__
 

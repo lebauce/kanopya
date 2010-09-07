@@ -49,6 +49,7 @@ use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use EFactory;
 use String::Random;
+use Date::Simple (':all');
 use Template;
 
 my $log = get_logger("executor");
@@ -58,7 +59,7 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 my $config = {
     INCLUDE_PATH => '/templates/internal/',
     INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 1,               # cleanup whitespace 
+    POST_CHOMP   => 0,               # cleanup whitespace 
     EVAL_PERL    => 1,               # evaluate Perl code blocks
     RELATIVE => 1,                   # desactive par defaut
 };
@@ -227,14 +228,16 @@ sub execute{
 	my $node_etc_export ={iscsitarget1_target_name=>$target_name,
 					 mountpoint=>"/etc",
 					 mount_option=>""};
-
+	$node_etc_export->{econtext} = $self->{nas}->{econtext};
 	my $target_id = $self->{_objs}->{component_export}->addTarget(%$node_etc_export);
-																  
-	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id => $target_id,
-												iscsitarget1_lun_number => 0,
-												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
-												iscsitarget1_lun_typeio => "fileio",
-												iscsitarget1_lun_iomode => "wb");
+	delete $node_etc_export->{econtext};															  
+	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id	=> $target_id,
+												iscsitarget1_lun_number	=> 0,
+												iscsitarget1_lun_device	=> "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
+												iscsitarget1_lun_typeio	=> "fileio",
+												iscsitarget1_lun_iomode	=> "wb",
+												iscsitarget1_target_name=>$target_name,
+												econtext 				=> $self->{nas}->{econtext});
 	$self->{_objs}->{component_export}->reload();
 		
 	## ADD Motherboard in the dhcp
@@ -248,66 +251,78 @@ sub execute{
 												dhcpd3_hosts_mac_address	=> $motherboard_mac,
 												dhcpd3_hosts_hostname	=> $motherboard_hostname,
 												kernel_id	=> $motherboard_kernel_id);
-	$self->{_objs}->{component_dhcpd}->reload();
+	
+	$log->info('generate dhcp configuration file');
+	$self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
+	$log->info('restart dhcp service');
+	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
 	
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
 
 	# Mount Motherboard etc to populate it
-	my $mkdir_cmd = "mkdir /tmp/$node_dev->{etc}->{lvname}";
+	my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mkdir_cmd);
-	my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /tmp/$node_dev->{etc}->{lvname}";
+	my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mount_cmd);
 
 	# Get All nodes in cluster
 	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards(administrator => $adm);
-	
+	$log->debug("Node in cluster are : ". Dumper($clust_nodes));
 	# Generate Node configuration
-	$self->generateNodeConf(mount_point => "/tmp/$node_dev->{etc}->{lvname}",
+	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},
 					 		etc_dev		=> $node_dev->{etc},
 					 		etc_export	=> $node_etc_export,
 					 		nodes		=> $clust_nodes);
 	
 	#TODO  component migrate (node, exec context?)
-	my $components = $self->{_objs}->{components};
-	foreach my $i (keys %$components) {
-		my $tmp = EFactory::newEEntity(data => $components->{$i});
-		$tmp->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/tmp/$node_dev->{etc}->{lvname}");
-	}
+	#my $components = $self->{_objs}->{components};
+	#foreach my $i (keys %$components) {
+		#my $tmp = EFactory::newEEntity(data => $components->{$i});
+		#$tmp->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/mnt/$node_dev->{etc}->{lvname}");
+	#}
 	
 
 	# Umount Motherboard etc to populate it
-	my $umount_cmd = "umount /tmp/$node_dev->{etc}->{lvname}";
+	my $umount_cmd = "umount /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $umount_cmd);
-	my $rmdir_cmd = "rmdir /tmp/$node_dev->{etc}->{lvname}";
+	my $rmdir_cmd = "rmdir /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $rmdir_cmd);
 
 	# Create node instance
 
 	my $masternode;
-	if (scalar keys %$clust_nodes) {
+	$log->debug("Node Number in cluster is : ".scalar (keys(%$clust_nodes)));
+	if (scalar (keys(%$clust_nodes))) {
 		$masternode = 0;
 	} else {
 		$masternode =1;
 	}
 	$adm->createNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-					 master_node => 0);
+					 master_node => $masternode);
+
+	# finaly we start the node
+	$self->startNode();
+
 }
 
 
 
-=head getEtcDev
-
-This function generate Node config files :
-- fstab
-- iscsi initiator
-- boot config file
-- mca_halt a pre halt script to umount remote disk
-- Boot configuration file
-
-=cut
+sub startNode {
+	my $self = shift;
+	if(not -e '/usr/sbin/etherwake') {
+		$errmsg = "EOperation::EAddMotherboardInCluster->startNode : /usr/sbin/etherwake not found";
+		$log->error($errmsg);
+		throw Mcs::Exception::Execution(error => $errmsg);
+	}
+	my $command = "/usr/sbin/etherwake ".$self->{_objs}->{motherboard}->getAttr(name => 'motherboard_mac_address');
+	my $result = $self->{econtext}->execute(command => $command);
+	my $state = "starting:".time;
+	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
+	$self->{_objs}->{motherboard}->save();
+}
 
 sub generateNodeConf {
 	my $self = shift;
@@ -369,7 +384,7 @@ sub generateUdevConf{
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("ssssssss");
+	my $tmpfile = $rand->randpattern("cccccccc");
 	# create Template object
 	my $template = Template->new($config);
     my $input = "udev_70-persistent-net.rules.tt";
@@ -395,7 +410,7 @@ sub generateFstabConf{
 	}
 	my $rand = new String::Random;
 	my $template = Template->new($config);
-	my $tmpfile = $rand->randpattern("ssssssss");
+	my $tmpfile = $rand->randpattern("cccccccc");
 	my $adm = Administrator->new();
 	my $input = "fstab.tt";
 	my $vars = {etc_dev			=> "/dev/sda",
@@ -437,8 +452,8 @@ sub generateMcsHalt{
 	}
 	my $rand = new String::Random;
 	my $template = Template->new($config);
-	my $tmpfile = $rand->randpattern("ssssssss");
-	my $tmpfile2 = $rand->randpattern("ssssssss");
+	my $tmpfile = $rand->randpattern("cccccccc");
+	my $tmpfile2 = $rand->randpattern("cccccccc");
 	my $input = "McsHalt.tt";
 	my $omitted_file = "mcs_omitted_iscsid";
 	#TODO mettre en parametre le port du iscsi du nas!!
@@ -466,7 +481,7 @@ sub generateHosts {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("ssssssss");
+	my $tmpfile = $rand->randpattern("cccccccc");
 
 	# create Template object
 	my $template = Template->new($config);
@@ -498,7 +513,7 @@ sub generateNetConf {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("ssssssss");
+	my $tmpfile = $rand->randpattern("cccccccc");
 
 	# create Template object
 	my $template = Template->new($config);
@@ -521,7 +536,7 @@ sub generateBootConf {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("ssssssss");
+	my $tmpfile = $rand->randpattern("cccccccc");
 
 	# create Template object
 	my $template = Template->new($config);
@@ -529,13 +544,14 @@ sub generateBootConf {
 	my $adm = Administrator->new();
 	
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
+	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
 	my $vars ={ root_fs			=> $args{root_dev}->{filesystem},
 				etc_fs			=> $args{etc_dev}->{filesystem},
 				initiatorname	=> $args{initiatorname},
 				etc_target		=> $args{etc_export}->{iscsitarget1_target_name},
    	    		etc_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				etc_port		=> "3260",
-				root_target		=> $args{etc_export}->{iscsitarget1_target_name},
+				root_target		=> $root_target->{target},
    	    		root_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				root_port		=> "3260",
 				mounts_iscsi		=> []
@@ -554,6 +570,7 @@ sub generateBootConf {
 
 	$log->debug(Dumper $vars);
 	$template->process($input, $vars, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
+	#TODO problem avec fichier de boot a voir.
     my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
     my $dest = $tftp_conf->{'repository'}.'/'. $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname") . ".conf";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");

@@ -82,19 +82,19 @@ sub new {
     }
     
     # check if motherboard_model_id exist
-    $log->debug("checking motherboard model existence with id <$args{params}->{motherboard_model_id}>");
-    $row = $admin->{db}->resultset('MotherboardModel')->find($args{params}->{motherboard_model_id});
+    $log->debug("checking motherboard model existence with id <$args{params}->{motherboardmodel_id}>");
+    $row = $admin->{db}->resultset('Motherboardmodel')->find($args{params}->{motherboardmodel_id});
     if(! defined $row) {
-    	$errmsg = "Operation::AddMotherboard->new : motherboard_model_id $args{params}->{motherboard_model_id} does not exist";
+    	$errmsg = "Operation::AddMotherboard->new : motherboardmodel_id $args{params}->{motherboardmodel_id} does not exist";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
     # check if processor_model_id exist
-    $log->debug("checking processor model existence with id <$args{params}->{processor_model_id}>");
-    $row = $admin->{db}->resultset('ProcessorModel')->find($args{params}->{processor_model_id});
+    $log->debug("checking processor model existence with id <$args{params}->{processormodel_id}>");
+    $row = $admin->{db}->resultset('Processormodel')->find($args{params}->{processormodel_id});
     if(! defined $row) {
-    	$errmsg = "Operation::AddMotherboard->new : processor_model_id $args{params}->{processor_model_id} does not exist";
+    	$errmsg = "Operation::AddMotherboard->new : processormodel_id $args{params}->{processormodel_id} does not exist";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }

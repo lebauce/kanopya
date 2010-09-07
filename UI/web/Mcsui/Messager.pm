@@ -1,35 +1,24 @@
 package Mcsui::Messager;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
+use Data::Dumper;
 
 sub setup {
 	my $self = shift;
-	$self->mode_param(
-		path_info => 2,
-		param => 'rm'
-	);
+	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
 sub view_messages : StartRunmode {
     my $self = shift;
-    my $query = $self->query();
+ 	my $query = $self->query();
     my $output = '';
     my $userid = $query->param('userid');
-    my $loopparams = [
-		{ 'TYPE' => '/images/info.png', 'DATE' => '31-08-2010', 'TIME' => '12:00:34', 'CONTENT' => 'et blablablabl' },
-		{ 'TYPE' => '/images/error.png', 'DATE' => '31-08-2010', 'TIME' => '12:44:34', 'CONTENT' => 'une erreur' },
-		{ 'TYPE' => '/images/info.png', 'DATE' => '31-08-2010', 'TIME' => '12:00:34', 'CONTENT' => 'et blablablabl' },
-		{ 'TYPE' => '/images/success.png', 'DATE' => '31-08-2010', 'TIME' => '12:44:34', 'CONTENT' => "c est trop dla balle ces messages! <br/>sur plusieurs lignes" },
-		{ 'TYPE' => '/images/info.png', 'DATE' => '31-08-2010', 'TIME' => '12:00:34', 'CONTENT' => 'et blablablabl' },
-		{ 'TYPE' => '/images/error.png', 'DATE' => '31-08-2010', 'TIME' => '12:44:34', 'CONTENT' => 'une erreur' },
-		{ 'TYPE' => '/images/info.png', 'DATE' => '31-08-2010', 'TIME' => '12:00:34', 'CONTENT' => 'et blablablabl' },
-		{ 'TYPE' => '/images/success.png', 'DATE' => '31-08-2010', 'TIME' => '12:44:34', 'CONTENT' => 'ok !' },
-    ];
+    my @loopparams = $self->{'admin'}->getMessages();
     
     my $tmpl = $self->load_tmpl('view_messages.tmpl');
     
     #$tmpl->param(USERID => $userid);
-    $tmpl->param(MESSAGES => $loopparams);
+    $tmpl->param(MESSAGES => \@loopparams);
     
 	$output .= $tmpl->output();
         

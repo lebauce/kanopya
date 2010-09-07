@@ -38,6 +38,9 @@ use constant ATTR_DEF => {
 										is_extended 	=> 0},
 			kernel_id				=> {pattern 		=> 'm//s',
 										is_mandatory	=> 0,
+										is_extended 	=> 0},
+			cluster_state			=> {pattern 		=> 'm//s',
+										is_mandatory	=> 0,
 										is_extended 	=> 0}
 			};
 

@@ -90,7 +90,7 @@ Executor::_init is a private method used to define internal parameters.
 sub _init {
 	my $self = shift;
 	
-	$self->{config} = XMLin("../Conf/executor.conf");
+	$self->{config} = XMLin("/workspace/mcs/Executor/Conf/executor.conf");
 	if ((! exists $self->{config}->{user}->{name} ||
 		 ! defined exists $self->{config}->{user}->{name}) &&
 		(! exists $self->{config}->{user}->{password} ||
@@ -117,15 +117,19 @@ sub run {
    		my $opdata = $adm->getNextOp();
    		if ($opdata){
 	   		my $op = EFactory::newEEntity(data => $opdata);
+   			$log->info("New operation (".ref($op).") retrieve ; execution processing");
+   			$adm->addMessage(type => 'info', content => "Executor begin an operation process (".ref($op).")");
    			eval {
-   				$op->prepare($self->{config}->{cluster});
+   				$op->prepare(internal_cluster => $self->{config}->{cluster});
    				$op->execute();
    				$op->finish();
+   				$adm->addMessage(type => 'success', content => ref($op)." processing finished");
    			};
 			if ($@) {
-   				my $error = shift;
+   				my $error = $@;
    				$op->cancel();
-   				$log->error("Error during execution : $@");
+   				$adm->addMessage(type => 'error', content => ref($op)." abording: $error");
+   				$log->error("Error during execution : $error");
    			}
    		}
    		else {
