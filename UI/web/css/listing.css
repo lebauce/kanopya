@@ -2,23 +2,30 @@ table.listview {
 	margin: 20px;
 	border-collapse: collapse;
 	float: left;
+	background-color: #EEF2BE;
+	
 }
 
 table.listview  th { background-color: #DDD; }
-table.listview  tr:hover { background-color: #EEF2BE; cursor: pointer;	}
+table.listview  tr:hover { background-color: white; cursor: pointer;}
 table.listview  tr.selected { background-color: #9CE366; cursor:default; }
 
+table.listview td { padding: 6px 9px; }
+table.listview th { padding: 10px; }
+
 table.listview th, table.listview td {
-	border: thin solid black;
-	padding: 10px;
+	border-width: 0px 0px 2px 1px ;
+	border-style: solid;
+	border-color: white;
+	
 	text-align: center;
 }
 
 table.listdetails {
 	float: left;
-	margin: 20px;
+	margin: 20px auto;
 	clear: right;
-	width: 400px;
+	min-width: 360px; 
 }
 
 table.listdetails td.label {
