@@ -78,8 +78,8 @@ sub process_addmotherboard : Runmode {
 		motherboard_mac_address => $query->param('mac_address'), 
 		kernel_id => $query->param('kernel'), , 
 		motherboard_serial_number => $query->param('serial_number'), 
-		motherboard_model_id => $query->param('motherboard_model'), 
-		processor_model_id => $query->param('cpu_model'), 
+		motherboardmodel_id => $query->param('motherboard_model'), 
+		processormodel_id => $query->param('cpu_model'), 
 		motherboard_desc => $query->param('desc') });
     };
     if($@) { 
