@@ -208,7 +208,7 @@ sub getEntity {
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 	
-	$log->debug( "getEntity( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->debug( "getEntity( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 	$log->debug( "_getDbix with table = $args{type} and id = $args{id}");
 	$entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
 	
@@ -238,7 +238,7 @@ sub getEntity {
 			return $entity;
 		}
 	} else {
-		$errmsg = "Administrator::getEntity( ". map( { "$_ => $args{$_}, " } keys(%args) ). ") : Object not found!"; 
+		$errmsg = "Administrator::getEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -272,7 +272,7 @@ sub getEntities {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	$log->debug( "getEntityFromHash( ", map( { "$_ => $args{$_}, " } keys(%args) ), ");" );
+	$log->debug( "getEntityFromHash( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 	$log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
 	$rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
 	
@@ -374,7 +374,7 @@ sub newEntity {
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 
-	$log->debug("newEntity(", map( { "$_ => $args{$_}, " } keys(%args)),")");
+	$log->debug("newEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )).")");
 
 	# We get class and require Entity::$entity_class
 	my $entity_class;
