@@ -17,13 +17,12 @@ my $cgi = new CGI;
 # instanciate Monitor
 my $monitor = Monitor->new();
 
-$template->param(AUTO_REFRESH => 1);
+#$template->param(AUTO_REFRESH => 1);
 
-#my $set_def = { "CPU" => [ "Idle", "User", "Syst"],
-#				"Memory" => [ "Total", "Free" ] };
 
 my $set_def = $monitor->getIndicators();
 
+# Retrieve required set and indicators (form data selected by user)
 my $selected_set;
 my @required_indicators;
 if ( $cgi->param("submit_show") )
@@ -35,6 +34,13 @@ else {
 	$selected_set = "net";
 	@required_indicators = @{ $set_def->{ $selected_set } };
 }
+
+my $graph_type = $cgi->param("graph_type") || "line";
+$template->param(GRAPH_TYPE_STACK_SELECTION => $graph_type eq "stack" ? "checked" : "");
+$template->param(GRAPH_TYPE_LINE_SELECTION => $graph_type eq "line" ? "checked" : "");
+
+my $time_laps = $cgi->param("time_laps") || "86400";
+$template->param(GRAPH_TIME_LAPS => $time_laps);
 
 # BUild indicators set loop data	
 my @set_loop_data = ();			
@@ -56,12 +62,8 @@ while ( my ($set_name, $indicators) = each %$set_def )
 
 $template->param(INDICATORS_SET => \@set_loop_data);
 
-my $graph_type = $cgi->param("graph_type") || "line";
-$template->param(GRAPH_TYPE_STACK_SELECTION => $graph_type eq "stack" ? "checked" : "");
-$template->param(GRAPH_TYPE_LINE_SELECTION => $graph_type eq "line" ? "checked" : "");
 
-
-my $graph_infos = $monitor->makeGraph( 	time_laps => 2000,
+my $graph_infos = $monitor->makeGraph( 	time_laps => $time_laps,
 										graph_type => $graph_type,
 										required_set => $selected_set,
 										required_indicators => \@required_indicators);
