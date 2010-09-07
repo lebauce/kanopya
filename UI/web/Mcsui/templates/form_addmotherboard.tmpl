@@ -21,21 +21,25 @@
 	<tr>
 		<td class="label">Motherboard model :</td>
 		<td><select name="motherboard_model">
-		<TMPL_LOOP NAME=MODELS>
-			<option value="<TMPL_VAR NAME=ID"><TMPL_VAR NAME=MODEL></option>
+		<TMPL_LOOP NAME=MOTHERBOARDMODELS>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
 		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addmotherboardmodel">no found ?</a></td>
 	</tr>
 	<tr>
-		<td class="label">CPU model :</td>
+		<td class="label">Processor model :</td>
 		<td><select name="cpu_model">
-			<option value="1">Intel Atom 330</option>
+		<TMPL_LOOP NAME=PROCESSORMODELS>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
 		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addprocessormodel">no found ?</a></td>
 	</tr>
 	<tr>
 		<td class="label">Default kernel :</td>
 		<td><select name="kernel">
-			<option value="1">2.6.32-hedera</option>
+		<TMPL_LOOP NAME=KERNEL>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
 		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_uploadkernel">no found ?</a></td>
 	</tr>
 	<tr>

@@ -9,7 +9,7 @@ sub setup {
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
-sub view_motherboardn : StartRunmode {
+sub view_motherboards : StartRunmode {
     my $self = shift;
     my $output = '';
     my @emotherboards = $self->{'admin'}->getEntities(type => 'Motherboard', hash => {});
@@ -68,15 +68,41 @@ sub form_addmotherboard : Runmode {
 	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
 	$tmpl->param($errors) if $errors;
 
-	@emotherboardmodels = $self->{'admin'}->getEntities(type => 'Motherboardmodel', hash => {});
-	my $models = [];
-	foreach my $x (@emotherboardmodels){
-	my $tmp = {};
-	$tmp->{MODEL} = $x->getAttr(name =>'motherboardmodel_brand')." ".$x->getAttr(name => 'motherboardmodel_name');
-	$tmp->{ID} = $x->getAttr( name => 'motherboardmodel_id');
-	push (@$models, $tmp);
+	my @motherboardmodels = $self->{'admin'}->getEntities(type => 'Motherboardmodel', hash => {});
+	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});
+	my @kernel = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
+	
+	my $mmodels = [];
+	foreach my $x (@motherboardmodels){
+		my $tmp = {
+			ID => $x->getAttr( name => 'motherboardmodel_id'),
+		    NAME => join(' ',$x->getAttr(name =>'motherboardmodel_brand'),$x->getAttr(name => 'motherboardmodel_name')),
+		    #PROCID => $x->getAttr( name => 'processormodel_id'),
+		};
+		push (@$mmodels, $tmp);
 	}
-	$tmpl->param('MODELS' => $models);	
+	
+	my $pmodels = [];
+	foreach my $x (@processormodels){
+		my $tmp = {
+			ID => $x->getAttr( name => 'processormodel_id'),
+		    NAME => join(' ',$x->getAttr(name =>'processormodel_brand'),$x->getAttr(name => 'processormodel_name')),
+		};
+		push (@$pmodels, $tmp);
+	}
+	
+	my $kern = [];
+	foreach my $x (@kernel){
+		my $tmp = {
+			ID => $x->getAttr( name => 'kernel_id'),
+		    NAME => join(' ',$x->getAttr(name =>'kernel_name'),$x->getAttr(name => 'kernel_version')),
+		};
+		push (@$kern, $tmp);
+	}
+	
+	$tmpl->param('MOTHERBOARDMODELS' => $mmodels);
+	$tmpl->param('PROCESSORMODELS' => $pmodels);
+	$tmpl->param('KERNEL' => $kern);
 	$tmpl->param('USERID' => 1234);
 	$output .= $tmpl->output();
 	return $output;

@@ -6,6 +6,8 @@ table.listview {
 	
 }
 
+h2 { color: green; font-size: 1.2em;}
+
 table.listview  th { background-color: #DDD; }
 table.listview  tr:hover { background-color: white; cursor: pointer;}
 table.listview  tr.selected { background-color: #9CE366; cursor:default; }

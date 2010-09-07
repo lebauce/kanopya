@@ -9,6 +9,8 @@ sub setup {
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
+# models listing
+
 sub view_models : StartRunmode {
     my $self = shift;
     my $output = '';
@@ -65,16 +67,84 @@ sub view_models : StartRunmode {
     return $output;	
 }
 
+# processor model 
+
+sub form_addprocessormodel : Runmode {
+    my $self = shift;
+    my $errors = shift;
+    my $output = '';
+    my $tmpl =  $self->load_tmpl('form_addprocessormodel.tmpl');
+    $tmpl->param('TITLE_PAGE' => "Adding a Processor model");
+	$tmpl->param('MENU_CONFIGURATION' => 1);
+	$tmpl->param('SUBMENU_MODELS' => 1);
+	$tmpl->param($errors) if $errors;
+	
+	$tmpl->param('USERID' => 1234);
+	$output .= $tmpl->output();
+	return $output;
+}
+
+sub process_addprocessormodel : Runmode {
+    my $self = shift;
+    use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
+    my ($results, $err_page) = $self->check_rm('form_addprocessormodel', '_addprocessormodel_profile');
+    return $err_page if $err_page;
+    
+    my $query = $self->query();
+    eval {
+		my $procmodel = $self->{admin}->newEntity( type => 'Processormodel', params => {
+			processormodel_brand => $query->param('brand'),
+			processormodel_name => $query->param('name'),
+			processormodel_core_num => $query->param('coresnum'),
+			processormodel_clock_speed => $query->param('clockspeed'),
+			processormodel_fsb => $query->param('fsb'),
+			processormodel_l2_cache => $query->param('l2cache'),
+			processormodel_max_consumption => $query->param('consumption'),
+			processormodel_max_tdp => $query->param('tdp'),
+			processormodel_64bits => $query->param('is64bits'),
+			processormodel_cpu_flags => $query->param('cpuflags'),
+		});
+		$procmodel->save();
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new processor model created'); }
+    $self->forward('view_models');
+}
+
+sub _addprocessormodel_profile {
+	return {
+		required => [ qw(brand name consumption) ],
+		msgs => {
+				any_errors => 'some_errors',
+				prefix => 'err_'
+		},
+	};
+}
+
+# motherboard model
+
 sub form_addmotherboardmodel : Runmode {
     my $self = shift;
     my $errors = shift;
     my $output = '';
     my $tmpl =  $self->load_tmpl('form_addmotherboardmodel.tmpl');
-    $tmpl->param('TITLE_PAGE' => "Adding a Motherboard");
+    $tmpl->param('TITLE_PAGE' => "Adding a Motherboard model");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
+	$tmpl->param('SUBMENU_MODELS' => 1);
 	$tmpl->param($errors) if $errors;
 	
+	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});
+	my $pmodels = [];
+	foreach my $x (@processormodels){
+		my $tmp = {
+			ID => $x->getAttr( name => 'processormodel_id'),
+		    NAME => join(' ',$x->getAttr(name =>'processormodel_brand'),$x->getAttr(name => 'processormodel_name')),
+		};
+		push (@$pmodels, $tmp);
+	}
+	$tmpl->param('PROCMODEL' => $pmodels);
 	$tmpl->param('USERID' => 1234);
 	$output .= $tmpl->output();
 	return $output;
@@ -83,34 +153,41 @@ sub form_addmotherboardmodel : Runmode {
 sub process_addmotherboardmodel : Runmode {
     my $self = shift;
     use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
-    my ($results, $err_page) = $self->check_rm('form_addmotherboard', '_addmotherboard_profile');
+    my ($results, $err_page) = $self->check_rm('form_addmotherboardmodel', '_addmotherboardmodel_profile');
     return $err_page if $err_page;
     
     my $query = $self->query();
     eval {
-    $self->{'admin'}->newOp(type => "AddMotherboard", priority => '100', params => { 
-		motherboard_mac_address => $query->param('mac_address'), 
-		kernel_id => $query->param('kernel'), , 
-		motherboard_serial_number => $query->param('serial_number'), 
-		motherboard_model_id => $query->param('motherboard_model'), 
-		processor_model_id => $query->param('cpu_model'), 
-		motherboard_desc => $query->param('desc') });
+		my $mothmodel = $self->{admin}->newEntity( type => 'Motherboardmodel', params => {
+			motherboardmodel_brand => $query->param('brand'),
+			motherboardmodel_name => $query->param('name'),
+			motherboardmodel_chipset => $query->param('chipset'),
+			motherboardmodel_processor_num => $query->param('procnum'),
+			motherboardmodel_consumption => $query->param('consumption'),
+			motherboardmodel_iface_num => $query->param('ifacenum'),
+			motherboardmodel_ram_slot_num => $query->param('ramslotnum'),
+			motherboardmodel_ram_max => $query->param('rammax'),
+			processormodel_id => $query->param('processorid') ne '0' ? $query->param('processorid') : undef,
+			
+		});
+		$mothmodel->save();
     };
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard operation adding to execution queue'); }
-    $self->forward('view_motherboards');
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard model created'); }
+    $self->forward('view_models');
 }
 
 sub _addmotherboardmodel_profile {
 	return {
-		required => 'mac_address',
+		required => [ qw(brand name consumption) ],
 		msgs => {
 				any_errors => 'some_errors',
 				prefix => 'err_'
 		},
 	};
 }
+
 
 1;
