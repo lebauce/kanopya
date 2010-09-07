@@ -27,9 +27,9 @@ Administrator - Administrator object
 
 =head1 SYNOPSIS
 
-    use Executor;
+    use Administrator;
     
-    # Creates executor
+    # Creates administrator
     my $adm = Administrator->new();
     
     # Get object

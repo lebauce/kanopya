@@ -93,4 +93,65 @@ sub getClassEntityFromType{
     return $obj_class;
 }
 
+=head2 getAsArrayRef
+	
+	Class : Public
+	
+	Desc : 	Util for hash loaded from an xml file with xml::simple and list management.
+			<tag> could be mapped with a hash (if only one defined in xml) or an array of hash (if list of <tag>).
+			This sub returns a array ref of <tag> in all cases.
+			
+			WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
+	
+	Args :
+		data : hash ref where one key is <tag> (but value could be hash ref or array ref)
+		tag : string :the name of the tag 
+	
+	Return : Array ref with all hash ref corresponding to tag (in data).
+	
+=cut
+
+sub getAsArrayRef {
+	my %args = @_;
+	
+	my $data = $args{data};
+	my $elems = $data->{ $args{tag} };
+	if ( ref $elems eq 'ARRAY' ) {
+		return $elems;
+	}
+	return [$elems];
+}
+
+=head2 getAsHashRef
+	
+	Class : Public
+	
+	Desc : 	Util for hash loaded from an xml file with xml::simple and list management.
+			Map the value of an element of <tag> with the hash correponding to all elements of <tag> (without the key element)
+			for all <tag> in data.
+			
+			WARNING: don't use attribute ['name','id','key'] (see @DefKeyAttr in XML::Simple) in your xml tag when list context!
+	
+	Args :
+		data : hash ref where one key is <tag> (but value could be hash ref or array ref)
+		tag : string : the name of the tag 
+		key : string : name of a element of <tag> we want as key in the resulting hash
+		
+	Return : The resulting hash ref.
+	
+=cut
+
+sub getAsHashRef {
+	my %args = @_;
+	
+	my $key = $args{key};
+	my $array = getAsArrayRef( data => $args{data}, tag => $args{tag} );
+	my %res = ();
+	for my $elem (@$array) {
+		my $val = delete $elem->{$key}; 
+		$res{ $val } = $elem; 
+	}
+	return \%res;
+}
+
 1;
