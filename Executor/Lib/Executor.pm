@@ -114,10 +114,10 @@ sub run {
 	my $adm = Administrator->new();
 	$log->warn("After New Administrator"); 
    	while (1) {
-   		$log->info("getting next operation to execute");
    		my $opdata = $adm->getNextOp();
    		if ($opdata){
 	   		my $op = EFactory::newEEntity(data => $opdata);
+   			$log->info("New operation (".ref($op).") retrieve ; execution processing");
    			$adm->addMessage(type => 'info', content => "Executor begin an operation process (".ref($op).")");
    			eval {
    				$op->prepare(internal_cluster => $self->{config}->{cluster});

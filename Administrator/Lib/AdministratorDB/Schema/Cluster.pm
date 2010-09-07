@@ -28,6 +28,8 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
   "kernel_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
+  "cluster_state",
+  { data_type => "CHAR", default_value => "down", is_nullable => 0, size => 32 },
 );
 __PACKAGE__->set_primary_key("cluster_id");
 __PACKAGE__->add_unique_constraint("cluster_name_UNIQUE", ["cluster_name"]);
@@ -58,8 +60,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-01 00:17:51
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S3UFZwYUQMg/nv/l7lmv+A
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-07 14:38:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:IpD0t4cQWGmydYq7YqMi8g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

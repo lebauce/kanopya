@@ -10,9 +10,9 @@ __PACKAGE__->table("motherboard");
 __PACKAGE__->add_columns(
   "motherboard_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "motherboard_model_id",
+  "motherboardmodel_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "processor_model_id",
+  "processormodel_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "kernel_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
@@ -34,19 +34,21 @@ __PACKAGE__->add_columns(
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 32 },
   "etc_device_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
+  "motherboard_state",
+  { data_type => "CHAR", default_value => "down", is_nullable => 0, size => 32 },
 );
 __PACKAGE__->set_primary_key("motherboard_id");
 __PACKAGE__->add_unique_constraint("motherboard_internal_ip_UNIQUE", ["motherboard_internal_ip"]);
 __PACKAGE__->add_unique_constraint("motherboard_mac_address_UNIQUE", ["motherboard_mac_address"]);
 __PACKAGE__->belongs_to(
-  "motherboard_model_id",
-  "AdministratorDB::Schema::MotherboardModel",
-  { motherboard_model_id => "motherboard_model_id" },
+  "motherboardmodel_id",
+  "AdministratorDB::Schema::Motherboardmodel",
+  { motherboardmodel_id => "motherboardmodel_id" },
 );
 __PACKAGE__->belongs_to(
-  "processor_model_id",
-  "AdministratorDB::Schema::ProcessorModel",
-  { processor_model_id => "processor_model_id" },
+  "processormodel_id",
+  "AdministratorDB::Schema::Processormodel",
+  { processormodel_id => "processormodel_id" },
 );
 __PACKAGE__->belongs_to(
   "kernel_id",
@@ -75,8 +77,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-01 00:17:51
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6qRsu6TpEqPXfp0kqqn1sg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-07 14:38:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eV4r0dX1aFA37pbiayH4cQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -1,3 +1,6 @@
+a.simple { margin-left: 10px; color: #69B033; }
+a.simple:hover { text-decoration: underline; }
+
 table.form, div.formbuttons {
 	margin-left: auto;
 	margin-right: auto;

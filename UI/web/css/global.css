@@ -10,6 +10,24 @@ body {
 	margin-left: auto;
 	margin-right: auto;
 	width: 1024px;
+	height: 100%
+}
+
+#ivy1 {
+	position: absolute;
+	top: -10;
+	left: -15;
+	z-index: -1;
+	
+}
+
+iframe { 
+	position: absolute; 
+	top: 90%; 
+	left: 0;
+	width: 1024px; 
+	background-color: white; 
+	
 }
 
 #header, #menu, #content {
@@ -33,13 +51,14 @@ img#logo {
 
 /* menu and submenu */
 
-#mainmenu { margin-top: 10px;}
+#mainmenu { margin-top: 40px;}
 
 #mainmenu, #submenu {
 	border: none;
 	float: left;
 	clear: both;
 	width: 100%; 
+	opacity: 0.9;
 }
 
 #submenu { background-color: #69B033; }

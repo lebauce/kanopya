@@ -18,44 +18,44 @@ CREATE TABLE `kernel` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `processor_model`
+-- Table structure for table `processormodel`
 --
 
-CREATE TABLE `processor_model` (
-  `processor_model_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `processor_brand` char(64) NOT NULL,
-  `processor_model_name` char(32) NOT NULL,
-  `processor_core_num` int(2) unsigned NOT NULL,
-  `processor_clock_speed` int(2) unsigned NOT NULL,
-  `processor_FSB` int(2) unsigned NOT NULL,
-  `processor_L2_cache` int(2) unsigned NOT NULL,
-  `processor_max_consumption` int(2) unsigned NOT NULL,
-  `processor_max_TDP` int(2) unsigned NOT NULL,
-  `processor_64bits` int(1) unsigned NOT NULL,
-  `processor_CPU_flags` char(255) DEFAULT NULL,
-  PRIMARY KEY (`processor_model_id`),
-  UNIQUE KEY `processor_model_UNIQUE` (`processor_model_id`)
+CREATE TABLE `processormodel` (
+  `processormodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `processormodel_brand` char(64) NOT NULL,
+  `processormodel_name` char(32) NOT NULL,
+  `processormodel_core_num` int(2) unsigned NOT NULL,
+  `processormodel_clock_speed` int(2) unsigned NOT NULL,
+  `processormodel_FSB` int(2) unsigned NOT NULL,
+  `processormodel_L2_cache` int(2) unsigned NOT NULL,
+  `processormodel_max_consumption` int(2) unsigned NOT NULL,
+  `processormodel_max_TDP` int(2) unsigned NOT NULL,
+  `processormodel_64bits` int(1) unsigned NOT NULL,
+  `processormodel_CPU_flags` char(255) DEFAULT NULL,
+  PRIMARY KEY (`processormodel_id`),
+  UNIQUE KEY `processormodel_UNIQUE` (`processormodel_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `motherboard_model`
+-- Table structure for table `motherboardmodel`
 --
 
-CREATE TABLE `motherboard_model` (
-  `motherboard_model_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboard_brand` char(64) NOT NULL,
-  `motherboard_model_name` char(32) NOT NULL,
-  `motherboard_chipset` char(64) NOT NULL,
-  `motherboard_processor_num` int(1) unsigned NOT NULL,
-  `motherboard_consumption` int(2) unsigned NOT NULL,
-  `motherboard_iface_num` int(1) unsigned NOT NULL,
-  `motherboard_RAM_slot_num` int(1) unsigned NOT NULL,
-  `motherboard_RAM_max` int(1) unsigned NOT NULL,
-  `processor_model_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`motherboard_model_id`),
-  UNIQUE KEY `motherboard_model_name_UNIQUE` (`motherboard_model_name`),
-  KEY `fk_motherboard_model_1` (`processor_model_id`),
-  CONSTRAINT `fk_motherboard_model_1` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE `motherboardmodel` (
+  `motherboardmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `motherboardmodel_brand` char(64) NOT NULL,
+  `motherboardmodel_name` char(32) NOT NULL,
+  `motherboardmodel_chipset` char(64) NOT NULL,
+  `motherboardmodel_processor_num` int(1) unsigned NOT NULL,
+  `motherboardmodel_consumption` int(2) unsigned NOT NULL,
+  `motherboardmodel_iface_num` int(1) unsigned NOT NULL,
+  `motherboardmodel_RAM_slot_num` int(1) unsigned NOT NULL,
+  `motherboardmodel_RAM_max` int(1) unsigned NOT NULL,
+  `processormodel_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`motherboardmodel_id`),
+  UNIQUE KEY `motherboardmodel_name_UNIQUE` (`motherboardmodel_name`),
+  KEY `fk_motherboardmodel_1` (`processormodel_id`),
+  CONSTRAINT `fk_motherboardmodel_1` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -64,8 +64,8 @@ CREATE TABLE `motherboard_model` (
 
 CREATE TABLE `motherboard` (
   `motherboard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboard_model_id` int(8) unsigned NOT NULL,
-  `processor_model_id` int(8) unsigned NOT NULL,
+  `motherboardmodel_id` int(8) unsigned NOT NULL,
+  `processormodel_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
   `motherboard_serial_number` char(64) NOT NULL,
   `motherboard_slot_position` int(1) unsigned NOT NULL,
@@ -80,12 +80,12 @@ CREATE TABLE `motherboard` (
   PRIMARY KEY (`motherboard_id`),
   UNIQUE KEY `motherboard_internal_ip_UNIQUE` (`motherboard_internal_ip`),
   UNIQUE KEY `motherboard_mac_address_UNIQUE` (`motherboard_mac_address`),
-  KEY `fk_motherboard_1` (`motherboard_model_id`),
-  KEY `fk_motherboard_2` (`processor_model_id`),
+  KEY `fk_motherboard_1` (`motherboardmodel_id`),
+  KEY `fk_motherboard_2` (`processormodel_id`),
   KEY `fk_motherboard_3` (`kernel_id`),
   KEY `fk_motherboard_4` (`etc_device_id`),
-  CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboard_model_id`) REFERENCES `motherboard_model` (`motherboard_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -764,31 +764,31 @@ CREATE TABLE `groups_entity` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `motherboard_model_entity`
+-- Table structure for table `motherboardmodel_entity`
 --
 
-CREATE TABLE `motherboard_model_entity` (
+CREATE TABLE `motherboardmodel_entity` (
   `entity_id` int(8) unsigned NOT NULL,
-  `motherboard_model_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`motherboard_model_id`),
-  UNIQUE KEY `fk_motherboard_model_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_motherboard_model_entity_2` (`motherboard_model_id`),
-  CONSTRAINT `fk_motherboard_model_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_model_entity_2` FOREIGN KEY (`motherboard_model_id`) REFERENCES `motherboard_model` (`motherboard_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  `motherboardmodel_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`motherboardmodel_id`),
+  UNIQUE KEY `fk_motherboardmodel_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_motherboardmodel_entity_2` (`motherboardmodel_id`),
+  CONSTRAINT `fk_motherboardmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_motherboardmodel_entity_2` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `processor_model_entity`
+-- Table structure for table `processormodel_entity`
 --
 
-CREATE TABLE `processor_model_entity` (
+CREATE TABLE `processormodel_entity` (
   `entity_id` int(8) unsigned NOT NULL,
-  `processor_model_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`processor_model_id`),
-  UNIQUE KEY `fk_processor_model_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_processor_model_entity_2` (`processor_model_id`),
-  CONSTRAINT `fk_processor_model_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_processor_model_entity_2` FOREIGN KEY (`processor_model_id`) REFERENCES `processor_model` (`processor_model_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  `processormodel_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`processormodel_id`),
+  UNIQUE KEY `fk_processormodel_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_processormodel_entity_2` (`processormodel_id`),
+  CONSTRAINT `fk_processormodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_processormodel_entity_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

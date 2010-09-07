@@ -34,11 +34,11 @@ INSERT INTO `user` VALUES (1,'executer','executer','executer','executer',NULL,'2
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- motherboard and processor models
-INSERT INTO `processor_model` VALUES (1,'Intel','Atom',2,2,0,2,17,0,0,NULL);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processor_model_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `processormodel` VALUES (1,'Intel','Atom',2,2,0,2,17,0,0,NULL);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
-INSERT INTO `motherboard_model` VALUES (1,'Intel','DG945GCLF2','945GC',2,42,1,1,2,1);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_model_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `motherboardmodel` VALUES (1,'Intel','DG945GCLF2','945GC',2,42,1,1,2,1);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- operation types list
 INSERT INTO `operationtype` VALUES 
@@ -54,10 +54,13 @@ INSERT INTO `operationtype` VALUES
 (10,'CloneSystemimage'),
 (11,'ModifySystemimage'),
 (12,'RemoveSystemimage'),
-(13,'AddMotherboardInCluster'),
-(14,'RemoveMotherboardFromCluster'),
-(15,'AddComponentToCluster'),
-(16,'RemoveComponentFromCluster');
+(13,'ActiveSystemimage'),
+(14,'DeactiveSystemimage'),
+(15,'AddMotherboardInCluster'),
+(16,'RemoveMotherboardFromCluster'),
+(17,'AddComponentToCluster'),
+(18,'RemoveComponentFromCluster');
+
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,3); SET @eid := @eid +1;
@@ -74,6 +77,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,14); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,15); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,16); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,17); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,18); SET @eid := @eid +1;
+
+
 
 -- components list
 INSERT INTO `component` VALUES 
@@ -93,7 +100,7 @@ INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- default systemimage based on default distribution
-INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 1);
+INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components provided by default distribution
@@ -135,9 +142,6 @@ INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',6144,0,'ext3');
 -- systemimage device for DebianSystemImage
 INSERT INTO `lvm2_lv` VALUES (3,1,'etc_DebianSystemImage',52,0,'ext3');
 INSERT INTO `lvm2_lv` VALUES (4,1,'root_DebianSystemImage',6144,0,'ext3');
-
--- iscsitarget configuration
-INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:root_DebianSystemimage', '/', '');
 
 -- atftp configuration
 INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
