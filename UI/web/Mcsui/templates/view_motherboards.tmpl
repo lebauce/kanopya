@@ -29,8 +29,8 @@
 		<tr><td class="label">mac address : </td><td class="content"><TMPL_VAR NAME=MAC></td></tr>
 		<tr><td class="label">CPU : </td><td class="content"><TMPL_VAR NAME=CPU></td></tr>
 		<tr><td class="label">cores number : </td><td class="content"><TMPL_VAR NAME=CORES></td></tr>
-		<tr><td class="label">RAM quantity : </td><td class="content"><TMPL_VAR NAME=RAM> Go</td></tr>
-		<tr><td class="label">consumption : </td><td class="content"><TMPL_VAR NAME=CONSUMPTION> W</td></tr>
+		<tr><td class="label">RAM quantity (GB): </td><td class="content"><TMPL_VAR NAME=RAM></td></tr>
+		<tr><td class="label">consumption (W): </td><td class="content"><TMPL_VAR NAME=CONSUMPTION></td></tr>
 		<tr><td colspan="2"><hr/></td></tr>
 		<tr><td class="label">internal ip : </td><td class="content"><TMPL_VAR NAME=IP></td></tr>
 		<tr><td class="label">default kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
@@ -38,11 +38,26 @@
 		<tr><td colspan="2"><TMPL_VAR NAME=DESC></td></tr>
 	</table>
 	</TMPL_LOOP>
+	<table id="tempty" class="listdetails">
+		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td class="label">S/N : </td><td class="content">d</td></tr>
+		<tr><td class="label">mac address : </td><td class="content"></td></tr>
+		<tr><td class="label">CPU : </td><td class="content"></td></tr>
+		<tr><td class="label">cores number : </td><td class="content"></td></tr>
+		<tr><td class="label">RAM quantity (GB): </td><td class="content"></td></tr>
+		<tr><td class="label">consumption (W): </td><td class="content"></td></tr>
+		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td class="label">internal ip : </td><td class="content"></td></tr>
+		<tr><td class="label">default kernel : </td><td class="content"></td></tr>
+		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td colspan="2"></td></tr>
+	</table>	
 </div>
 </div>
 <script language="Javascript">
 editbutton = document.getElementById('editbutton');
 removebutton = document.getElementById('removebutton');
+tempty = document.getElementById('tempty');
 
 function selectme() { 
 	lines = document.getElementById('motherboardlist').getElementsByTagName('tr');

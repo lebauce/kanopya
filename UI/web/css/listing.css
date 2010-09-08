@@ -34,5 +34,8 @@ table.listdetails td.label {
 	font-weight: bold;
 	text-align: right;
 }
-table.listdetails td.content { padding-left: 3px; }
+table.listdetails td.content { 
+	padding-left: 3px; 
+	min-width: 50% ;
+}
 table.listdetails hr { margin: 5px 0; }

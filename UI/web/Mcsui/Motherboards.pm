@@ -11,6 +11,7 @@ sub setup {
 
 sub view_motherboards : StartRunmode {
     my $self = shift;
+     my $tmpl =  $self->load_tmpl('view_motherboards.tmpl');
     my $output = '';
     my @emotherboards = $self->{'admin'}->getEntities(type => 'Motherboard', hash => {});
     my $motherboards = [];
@@ -44,7 +45,7 @@ sub view_motherboards : StartRunmode {
         push (@$details, $tmp); 
     }
     
-    my $tmpl =  $self->load_tmpl('view_motherboards.tmpl');
+   
     $tmpl->param('TITLE_PAGE' => "Motherboards View");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
@@ -61,8 +62,8 @@ sub view_motherboards : StartRunmode {
 sub form_addmotherboard : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $output = '';
     my $tmpl =  $self->load_tmpl('form_addmotherboard.tmpl');
+    my $output = '';
     $tmpl->param('TITLE_PAGE' => "Adding a Motherboard");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);

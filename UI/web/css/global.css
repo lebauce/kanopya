@@ -15,8 +15,8 @@ body {
 
 #ivy1 {
 	position: absolute;
-	top: -10;
-	left: -15;
+	top: -10px;
+	left: 0;
 	z-index: -1;
 	
 }
@@ -53,16 +53,13 @@ img#logo {
 
 #mainmenu { margin-top: 40px;}
 
-#mainmenu, #submenu {
+#mainmenu {
 	border: none;
 	float: left;
 	clear: both;
 	width: 100%; 
 	opacity: 0.9;
 }
-
-#submenu { background-color: #69B033; }
-
 
 #mainmenu a {
 	border: 1px solid #69B033;
@@ -107,18 +104,25 @@ img#logo {
 	position: relative;
 }
 
+
+#submenu { 
+	background-color: #69B033; 
+	float: left;	
+	width: 100%;
+	opacity: 0.9;
+}
+
 #submenu a {
-	border: none;
-	background-repeat: no-repeat;
-	background-position: 10px;
-	background-color: #69B033;
+	background-color: #69B033; 
+	border-color: white;
+	border-style: solid;
+	border-width: 0 0 0 1px;
+	
+	
 	padding: 10px 10px;
 	color: #fafae9;
 	font-size: 1.1em;
 	float:left;
-	border-collapse: collapse;
-	border-left: none;
-	border-right: none;
 }
 
 #submenu a:hover { text-decoration: underline; }
@@ -134,10 +138,10 @@ img#logo {
 /* middle content */
 
 #content {
+	background-color: transparent;
 	border-style: dotted;
 	border-width: 0 1px;
 	border-color: #69B033;
-	background-color: white;
 	width:1022px;
 	float: left;
 }
@@ -151,24 +155,28 @@ img#logo {
 #contentright {
 	float:left;
 	border: none;
+	opacity: 1;
 }
 
 #contentright hr { color: #69B033; }
 
 #contentleft { 
-	width: 200px;
+	background-color: white;
 	float: left;
+	opacity: 0.85;
 	position: relative;
-	margin-top: 10px;
+	width: 200px;
 }
 
-#contentleft * { margin: 10px 20px; }	
+
 
 #contentleft a {
-	text-decoration: none;
 	color: #69B033;
+	 margin: 10px 20px;
+	text-decoration: none;
+	
 }
-#contentleft hr { margin: 20px; }
+#contentleft hr, p { margin: 10px 20px;}
 #contentleft a.button {
 	border: thin outset #EEF2BE;
 	background-color: #69B033;
