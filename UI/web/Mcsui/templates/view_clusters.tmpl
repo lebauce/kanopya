@@ -1,8 +1,72 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
 <div id="content">
-ici liste des clusters <br/> 
-ici liste des clusters <br/>
-ici liste des clusters <br/>
+<div id="contentleft">
+	<p>
+	<span class="title">Clusters</span><br />
+	View, add, edit and remove you microcluster's Clusters. 
+	</p>
+	<p><hr /></p>
+		<a class="button"  href="/cgi/mcsui.cgi/motherboards/form_addcluster">New cluster</a>
+		<a id="editbutton" class="hidden"  href="">Edit cluster</a>
+		<a id="removebutton" class="hidden"  href="">Remove cluster</a>
+	<p><hr /></p>
 </div>
+<div id="contentright">
+	<table id="clusterlist" class="listview">
+		<tr><th>name</th><th>state</th><th>active</th></tr>
+		<TMPL_LOOP NAME=CLUSTERS>
+		<tr id="m<TMPL_VAR NAME=ID>" isactive="<TMPL_VAR NAME=ACTIVE>">
+		<td><TMPL_VAR NAME=NAME></td>
+		<td><TMPL_VAR NAME=STATE></td>
+		<td><TMPL_VAR NAME=ACTIVE></td></tr>
+		</TMPL_LOOP>
+	</table>
+	<TMPL_LOOP NAME=DETAILS>
+	<table id="t<TMPL_VAR NAME=ID>" class="listdetails hidden">
+		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td class="label">Min node : </td><td class="content"><TMPL_VAR NAME=MIN_NODE></td></tr>
+		<tr><td class="label">Max node : </td><td class="content"><TMPL_VAR NAME=MAX_NODE></td></tr>
+		<tr><td class="label">Kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
+		<tr><td class="label">System image : </td><td class="content"><TMPL_VAR NAME=SYSIMGNAME></td></tr>
+		<tr><td colspan="2"><hr/></td></tr>
+	</table>
+	</TMPL_LOOP>
+	<table id="tempty" class="listdetails">
+		<tr><td colspan="2"><hr/></td></tr>
+		<tr><td class="label">Min node : </td><td class="content"></td></tr>
+		<tr><td class="label">Max node : </td><td class="content"></td></tr>
+		<tr><td class="label">Kernel : </td><td class="content"></td></tr>
+		<tr><td class="label">System image : </td><td class="content"></td></tr>
+		<tr><td colspan="2"><hr/></td></tr>
+	</table>
+</div>
+</div>
+<script language="Javascript">
+editbutton = document.getElementById('editbutton');
+removebutton = document.getElementById('removebutton');
+tempty = document.getElementById('tempty');
+function selectme() { 
+	lines = document.getElementById('clusterlist').getElementsByTagName('tr');
+	for(i=0;i<lines.length;i++) { lines[i].className = ''; }
+	this.classList.add('selected');
+	if(this.getAttribute('isactive') == 'no') {
+		editbutton.className = 'button';
+		removebutton.className = 'button';
+	} else {
+		editbutton.className = 'hidden';
+		removebutton.className = 'hidden';
+	}
+	listdetails = document.getElementsByClassName('listdetails');
+	for(i=0;i<listdetails.length;i++) { listdetails[i].className = 'listdetails hidden'; }
+	document.getElementById('t'+this.id.substring(1)).className = 'listdetails';
+}
+motherboardline = document.getElementById('clusterlist').getElementsByTagName('tr');
+for(i=0;i<motherboardline.length;i++) {
+	motherboardline[i].onclick = selectme;
+}
+</script>
 <TMPL_INCLUDE NAME="footer.tmpl">
