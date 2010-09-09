@@ -51,7 +51,7 @@ my $log = get_logger("executor");
 
 # If already runnign, then exit
 if( Proc::PID::File->running()) {
-    $log->WARN("$0 already running ; don't start another process");
+    $log->warn("$0 already running ; don't start another process");
     exit(1);
 }
 
