@@ -40,27 +40,45 @@ Executor is the main script to run microCluster Executor server.
 
 use strict;
 use warnings;
+use Proc::PID::File;
 use lib "/workspace/mcs/Executor/Lib";
 use Executor;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
-
-
 Log::Log4perl->init('/workspace/mcs/Executor/Conf/log.conf');
 my $log = get_logger("executor");
 
+# If already runnign, then exit
+if( Proc::PID::File->running()) {
+    $log->WARN("$0 already running ; don't start another process");
+    exit(1);
+}
+
+my $running = 1;
+
+sub signalHandler {
+	my $sig = shift;
+	$log->info($sig." recieved : stopping main loop");
+	$condition = 0;
+}
+
+$SIG{TERM} = \&signalHandler;
+	
+$log->info("MCExecutor.pl PID: $$");
 
 try	{
 	my $exec = Executor->new();
-	$log->info('Starting main loop');
-	$exec->run();
+	$log->info("Starting main loop");
+	# enter in the main loop and continue while $$running is true
+	$exec->run(\$running);
 }
 catch Error::Simple with {
 	my $ex = shift;
 	die "Catch error in Executor instanciation: $ex";
 };
 
+$log->info("MCExecutor end.");
 
 
 
