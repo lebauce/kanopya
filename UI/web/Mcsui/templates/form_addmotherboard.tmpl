@@ -10,6 +10,10 @@
 	<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
 	</TMPL_IF>
 	<tr>
+		<td class="label">Position :</td>
+		<td><input type="text" name="active" maxlength="2" size="2"/>
+	</tr>
+	<tr>
 		<td class="label">MAC address :</td>
 		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
 		<span style="color: red"><TMPL_VAR NAME=ERR_MAC_ADDRESS></span></td>

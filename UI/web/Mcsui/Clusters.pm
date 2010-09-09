@@ -53,13 +53,41 @@ sub view_clusters : StartRunmode {
         
     return $output;
 }
+sub form_addcluster : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl =$self->load_tmpl('form_addcluster.tmpl');
+	my $output = '';
+	$tmpl->param('TITLE_PAGE' => "Adding a Cluster");
+	$tmpl->param('MENU_CONFIGURATION' => 1);
+	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
+	$tmpl->param($errors) if $errors;
+	
+	my @ekernels = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
+	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
+	
+	my $kmodels = [];
+	foreach $k (@ekernels) {
+		my $tmp = { ID => $k->getAttr( name => 'kernel_id'),
+			NAME => join (' ',$k->getAttr(name => 'kernel_name'),$k->getAttr(name => 'kernel_version'))
+		};
+		push (@$kmodels, $tmp);	
+	} 
+	my $smodels = [];
+	foreach $s (@esystemimages){
+		my $tmp = { ID => $s->getAttr (name => 'systemimage_id'),
+			NAME => $s->getAttr(name => 'systemimage_name')
+		};
+		push (@$smodels, $tmp);
+	}
 
-sub add_clusters : Runmode {
-    my $self = shift;
-    return 'you are on add_cluster page';
+	$tmpl->param('KERNELS' => $kmodels);
+	$tmpl->param('SYSTEMIMAGES' => $smodels);
+	$output .= $tmpl->output();
+	return $output;
 }
 
-sub remove_cluster : Runmode {
+sub form_removecluster : Runmode {
     my $self = shift;
     return 'you are on remove_cluster page';
 }
