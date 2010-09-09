@@ -138,7 +138,7 @@ sub run {
    			sleep 20;
    		}
    	}
-   	$log->debug("condition become false : $$condition"); 
+   	$log->debug("condition become false : $$running"); 
 }
 
 =head2 execnrun
