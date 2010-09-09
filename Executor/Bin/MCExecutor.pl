@@ -60,7 +60,7 @@ my $running = 1;
 sub signalHandler {
 	my $sig = shift;
 	$log->info($sig." recieved : stopping main loop");
-	$condition = 0;
+	$running = 0;
 }
 
 $SIG{TERM} = \&signalHandler;
