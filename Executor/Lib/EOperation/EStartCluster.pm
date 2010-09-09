@@ -46,8 +46,6 @@ use vars qw(@ISA $VERSION);
 use base "EOperation";
 use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
-use Date::Simple 'time';
-
 
 my $log = get_logger("executor");
 my $errmsg;
