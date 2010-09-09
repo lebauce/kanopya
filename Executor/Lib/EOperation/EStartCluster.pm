@@ -118,7 +118,7 @@ sub execute {
 	$log->info('getting free motherboards');
 	my @free_motherboards = $adm->getEntities(type => 'Motherboard', hash => { active => 1, motherboard_state => 'down'});
 	
-	my $priority = $self->_getOperation()->getAttr(name => 'priority');
+	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
 	
 
 	for(my $i=0 ; $i < $nodes_to_start ; $i++) {

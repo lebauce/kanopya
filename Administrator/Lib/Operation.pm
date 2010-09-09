@@ -121,7 +121,7 @@ sub getAttr {
 	my $value;
 
 	if (! exists $args{attr_name} or ! defined $args{attr_name}) { 
-		$errmsg = "Operation->getAttr need an attr named argument!";
+		$errmsg = "Operation->getAttr need an attr_name named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
