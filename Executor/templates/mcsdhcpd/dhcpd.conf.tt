@@ -24,6 +24,7 @@ if exists dhcp-parameter-request-list {
 host [% node.hostname %] {
 hardware ethernet [% node.mac_address %];
 fixed-address [% node.ip_address %];
+option host-name "[% node.hostname %]";
 option pxelinux.configfile "pxelinux.cfg/[% node.kernel_version %].cfg";
 }
 [% END %]
