@@ -464,9 +464,12 @@ sub generateMcsHalt{
    	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
+    $self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/mcs_halt");
     $self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_halt $args{mount_point}/rc0.d/S89mcs_halt");
+	
 	$self->{nas}->{econtext}->execute(command=> "cp /templates/internal/$omitted_file /tmp/");
    	$self->{nas}->{econtext}->send(src => "/tmp/$omitted_file", dest => "$args{mount_point}/init.d/mcs_omitted_iscsid");
+   	$self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/mcs_omitted_iscsid");
    	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_omitted_iscsid $args{mount_point}/rc0.d/S19mcs_omitted_iscsid");
 }
 

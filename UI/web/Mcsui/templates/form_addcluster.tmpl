@@ -20,15 +20,25 @@
 	</tr>
 	<tr>
 		<td class="label">minimum node number :</td>
-		<td><input type="text" name="active" maxlength="5" size="5"/></td>
+		<td><select name="min_node">
+		<TMPL_LOOP NAME=COUNT>
+			<option value="<TMPL_VAR NAME=CM>"><TMPL_VAR NAME=CM></option>
+		</TMPL_LOOP>	
+		</select></td>
+		<span style="color: red"><TMPL_VAR NAME=ERR_MIN_NODE></span></td>
 	</tr>
 	<tr>
 		<td class="label">maximum node number :</td>
-		<td><input type="text" name="active" maxlength="5" size="5"/></td>
+		<td><select name="max_node">
+		<TMPL_LOOP NAME=COUNT>
+			<option value="<TMPL_VAR NAME=CM>"><TMPL_VAR NAME=CM></option>
+		</TMPL_LOOP>	
+		</select></td>
+		<span style="color: red"><TMPL_VAR NAME=ERR_MAX_NODE></span></td>
 	</tr>
 	<tr>
 		<td class="label">Priority :</td>
-		<td><input type="text" name="active" maxlength="5" size="5"/></td>
+		<td><input type="text" name="priority" maxlength="5" size="5"/></td>
 	</tr>
 	<tr>
 		<td class="label">System image :</td>
@@ -36,7 +46,8 @@
 		<TMPL_LOOP NAME=SYSTEMIMAGES>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
-		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addsystemimage">no found ?</a></td>
+		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addsystemimage">no found ?</a>
+		<span style="color: red"><TMPL_VAR NAME=ERR_SYSTEMIMAGE></span></td>		
 	</tr>
 	<tr>
 		<td class="label">Kernel :</td>
@@ -45,7 +56,8 @@
 		<TMPL_LOOP NAME=KERNELS>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
-		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addkernel">no found ?</a></td>
+		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addkernel">no found ?</a>
+		<span style="color: red"><TMPL_VAR NAME=ERR_KERNEL></span></td>	
 	</tr>
 </table>
 <div class="formbuttons">

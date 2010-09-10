@@ -1,4 +1,4 @@
-# AddCluster.pm - Operation class implementing Cluster start operation
+# StartCluster.pm - Operation class implementing Cluster start operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.

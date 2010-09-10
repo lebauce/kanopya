@@ -1,5 +1,6 @@
 package Mcsui::Clusters;
 use base 'CGI::Application';
+use Log::Log4perl "get_logger";
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
 
@@ -57,16 +58,25 @@ sub view_clusters : StartRunmode {
 sub form_addcluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
+	my $log = get_logger('administrator');
 	my $tmpl =$self->load_tmpl('form_addcluster.tmpl');
 	my $output = '';
 	$tmpl->param('TITLE_PAGE' => "Adding a Cluster");
-	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
+	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('SUBMENU_CLUSTERS' => 1);
 	$tmpl->param($errors) if $errors;
 	
 	my @ekernels = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
 	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
+	my @emotherboards = $self->{'admin'}->getEntities(type => 'Motherboard', hash => {});
 	
+	my $count = scalar @emotherboards;
+	my $c =[];
+	for (my $i=1; $i<=$count; $i++) {
+		my $tmp->{CM}=$i;
+		push(@$c, $tmp);
+		$log->debug('coucou '.$id);
+	}
 	my $kmodels = [];
 	foreach $k (@ekernels) {
 		my $tmp = { ID => $k->getAttr( name => 'kernel_id'),
@@ -81,7 +91,8 @@ sub form_addcluster : Runmode {
 		};
 		push (@$smodels, $tmp);
 	}
-
+	
+	$tmpl->param('COUNT' => $c);
 	$tmpl->param('KERNELS' => $kmodels);
 	$tmpl->param('SYSTEMIMAGES' => $smodels);
 	$output .= $tmpl->output();
@@ -102,8 +113,8 @@ sub process_addcluster : Runmode {
 			cluster_min_node => $query->param('min_node'),
 			cluster_max_node => $query->param('max_node'),
 			cluster_priority => $query->param('priority'),
-                        kernel_id => $query->param('kernel'),
-                        systemimage_id => $query->param('systemimage')
+			kernel_id => $query->param('kernel') ne '0' ? $query->param('kernel') : undef,
+			systemimage_id => $query->param('systemimage')
                 });
         };
         if($@) {
@@ -117,7 +128,7 @@ sub process_addcluster : Runmode {
 
 sub _addcluster_profile {
         return {
-                required =>'cluster_name',
+                required => ['name', 'systemimage', 'kernel', 'min_node', 'max_node'],
                 msgs => {
                                 any_errors => 'some_errors',
                                 prefix => 'err_'

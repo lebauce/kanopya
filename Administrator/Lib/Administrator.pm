@@ -1071,6 +1071,23 @@ sub removeNode{
 	$row->delete;
 }
 
+sub getNodes {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{cluster_id} or ! defined $args{cluster_id}) {
+		$errmsg = "Administrator->getNodes need a cluster_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $nodes = $self->{db}->resultset('Node')->search({ cluster_id => $args{cluster_id}});
+	my $motherboards = [];
+	while (my $n = $nodes->next) {
+		push @$motherboards, $self->getEntity(type => 'Motherboard', id => $n->get_column('motherboard_id'));
+	}
+	return scalar @$motherboards ? @$motherboards : undef;
+}
+
+
 ########################################
 ## methodes for fast usage in web ui ##
 ########################################

@@ -1,0 +1,57 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/form.css);</style>
+
+<div id="content">
+	<form method="POST" action="/cgi/mcsui.cgi/systemimages/process_addsystemimage">
+	<table id="addsystemimage" class="form">
+		<caption>New system image</caption>
+		<TMPL_IF NAME=SOME_ERRORS>
+		<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
+		</TMPL_IF>
+		<tr>
+			<td class="label">Duplicate distribution :</td>
+			<td><input type="radio" name="type" onClick="Duplicate()" checked /></td>
+		</tr>
+		<tr>
+			<td class="label">Clone system image :</td>
+			<td><input type="radio" name="type" onClick="Clone()" /></td>
+		</tr>
+		<tr id="duplicate">
+			<td class="label">Select a  distribution to duplicate :</td>
+			<td><select name="distribution">
+			<TMPL_LOOP NAME=DISTRIBUTION>
+				<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+			</TMPL_LOOP></td>	
+		</tr>
+		<tr id="clone">
+			<td class="label">Select a system image to clone :</td>
+			<td><select name="system_image">
+			<TMPL_LOOP NAME=SYSTEMIMAGE>
+				<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+			</TMPL_LOOP></td>
+		</tr>
+	</table>
+	<div class="formbuttons">
+		<input class="button" type="reset" value="clear" />
+		<a class="button" href="/cgi/mcsui.cgi/systemimages">cancel</a>
+		<input class="button" type="submit" value="add" />
+	</div>
+	</form> 
+</div>
+<script language="Javascript">
+	clone = document.getElementById('clone');
+	duplicate = document.getElementById('duplicate');
+	window.onload = function() {
+		clone.style.visibility="hidden";
+	}
+	function Clone(){
+		clone.style.visibility="visible";
+		duplicate.style.visibility="hidden";
+	}
+	function Duplicate(){
+		clone.style.visibility="hidden";
+		duplicate.style.visibility="visible";
+	}
+</script>
+<TMPL_INCLUDE NAME="footer.tmpl">
