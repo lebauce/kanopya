@@ -1,4 +1,4 @@
-# EDeactiveSystemimage.pm - Operation class implementing systemimage deactivation operation
+# EDeactivateSystemimage.pm - Operation class implementing systemimage deactivation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-EOperation::EDeactiveSystemimage - Operation class implementing systemimage deactivation operation
+EOperation::EDeactivateSystemimage - Operation class implementing systemimage deactivation operation
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EDeactiveSystemimage;
+package EOperation::EDeactivateSystemimage;
 
 use strict;
 use warnings;
@@ -56,10 +56,10 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = EOperation::EDeactiveSystemimage->new();
+    my $op = EOperation::EDeactivateSystemimage->new();
 
-	# Operation::EDeactiveSystemimage->new creates a new DeactiveSystemimage operation.
-	# RETURN : EOperation::EDeactiveSystemimage : Operation deactive systemimage on execution side
+	# Operation::EDeactivateSystemimage->new creates a new DeactivateSystemimage operation.
+	# RETURN : EOperation::EDeactivateSystemimage : Operation deactive systemimage on execution side
 
 =cut
 
@@ -104,7 +104,7 @@ sub prepare {
 	$log->info("Operation preparation");
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EDeactiveSystemimage->prepare need an internal_cluster named argument!";
+		$errmsg = "EDeactivateSystemimage->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}

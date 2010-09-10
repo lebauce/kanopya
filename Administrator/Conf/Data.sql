@@ -45,21 +45,25 @@ INSERT INTO `operationtype` VALUES
 (1,'AddMotherboard'),
 (2,'ModifyMotherboard'),
 (3,'RemoveMotherboard'),
-(4,'AddCluster'),
-(5,'ModifyCluster'),
-(6,'RemoveCluster'),
-(7,'StartCluster'),
-(8,'StopCluster'),
-(9,'AddSystemimage'),
-(10,'CloneSystemimage'),
-(11,'ModifySystemimage'),
-(12,'RemoveSystemimage'),
-(13,'ActiveSystemimage'),
-(14,'DeactiveSystemimage'),
-(15,'AddMotherboardInCluster'),
-(16,'RemoveMotherboardFromCluster'),
-(17,'AddComponentToCluster'),
-(18,'RemoveComponentFromCluster');
+(4,'ActivateMotherboard'),
+(5,'DeactivateMotherboard'),
+(6,'AddCluster'),
+(7,'ModifyCluster'),
+(8,'RemoveCluster'),
+(9,'ActivateCluster'),
+(10,'DeactivateCluster'),
+(11,'StartCluster'),
+(12,'StopCluster'),
+(13,'AddSystemimage'),
+(14,'CloneSystemimage'),
+(15,'ModifySystemimage'),
+(16,'RemoveSystemimage'),
+(17,'ActivateSystemimage'),
+(18,'DeactivateSystemimage'),
+(19,'AddMotherboardInCluster'),
+(20,'RemoveMotherboardFromCluster'),
+(21,'AddComponentToCluster'),
+(22,'RemoveComponentFromCluster');
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,2); SET @eid := @eid +1;
@@ -79,7 +83,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,16); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,17); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,18); SET @eid := @eid +1;
-
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,19); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,20); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,21); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,22); SET @eid := @eid +1;
 
 
 -- components list
@@ -128,7 +135,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1)
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
 
 -- admin motherboard
-INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','127.0.0.1','node001',NULL, 'up');
+INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
