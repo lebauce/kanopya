@@ -1,0 +1,30 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          MCExecutor.pl
+# Required-Start:    $syslog $mysql $ssh
+# Required-Stop: 
+# Default-Start:     2 3 4 5
+# Default-Stop:      6
+# Short-Description: executed by init(8) upon entering runlevel 1 (single).
+### END INIT INFO
+
+PATH=/sbin:/bin
+
+. /lib/lsb/init-functions
+# pid file is managed by the perl script itself (by using Proc::PID::File module)
+PID="/var/run/MCExecutor.pl.pid"
+
+case "$1" in
+  start)
+	/usr/bin/perl -w /workspace/mcs/Executor/Bin/MCExecutor.pl &
+	;;  
+  
+ stop)
+	kill -TERM $(cat $PID)
+	;;
+
+ *)
+	echo "Usage: $0 start|stop" >&2
+	exit 3
+	;;
+esac

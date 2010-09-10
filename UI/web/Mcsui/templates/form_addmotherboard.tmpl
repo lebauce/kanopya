@@ -10,6 +10,10 @@
 	<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
 	</TMPL_IF>
 	<tr>
+		<td class="label">Position :</td>
+		<td><input type="text" name="active" maxlength="2" size="2"/>
+	</tr>
+	<tr>
 		<td class="label">MAC address :</td>
 		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
 		<span style="color: red"><TMPL_VAR NAME=ERR_MAC_ADDRESS></span></td>
@@ -21,22 +25,25 @@
 	<tr>
 		<td class="label">Motherboard model :</td>
 		<td><select name="motherboard_model">
-			<option value="1">Intel D945GCFL-2</option>
-			<option value="2">ASUS</option>
-			<option value="3">VIA</option>
-			<option value="4">Minix</option>
+		<TMPL_LOOP NAME=MOTHERBOARDMODELS>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
 		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addmotherboardmodel">no found ?</a></td>
 	</tr>
 	<tr>
-		<td class="label">CPU model :</td>
+		<td class="label">Processor model :</td>
 		<td><select name="cpu_model">
-			<option value="1">Intel Atom 330</option>
+		<TMPL_LOOP NAME=PROCESSORMODELS>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
 		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addprocessormodel">no found ?</a></td>
 	</tr>
 	<tr>
 		<td class="label">Default kernel :</td>
 		<td><select name="kernel">
-			<option value="1">2.6.32-hedera</option>
+		<TMPL_LOOP NAME=KERNEL>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
 		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_uploadkernel">no found ?</a></td>
 	</tr>
 	<tr>

@@ -6,6 +6,8 @@ table.listview {
 	
 }
 
+h2 { color: green; font-size: 1.2em;}
+
 table.listview  th { background-color: #DDD; }
 table.listview  tr:hover { background-color: white; cursor: pointer;}
 table.listview  tr.selected { background-color: #9CE366; cursor:default; }
@@ -32,5 +34,8 @@ table.listdetails td.label {
 	font-weight: bold;
 	text-align: right;
 }
-table.listdetails td.content { padding-left: 3px; }
+table.listdetails td.content { 
+	padding-left: 3px; 
+	min-width: 50% ;
+}
 table.listdetails hr { margin: 5px 0; }

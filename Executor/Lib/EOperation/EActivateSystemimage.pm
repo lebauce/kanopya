@@ -1,4 +1,4 @@
-# EActiveSystemimage.pm - Operation class implementing Systemimage activation operation
+# EActivateSystemimage.pm - Operation class implementing Systemimage activation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-EOperation::EActiveSystemimage - Operation class implementing systemimage activation operation
+EOperation::EActivateSystemimage - Operation class implementing systemimage activation operation
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EActiveSystemimage;
+package EOperation::EActivateSystemimage;
 
 use strict;
 use warnings;
@@ -56,10 +56,10 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = EOperation::EActiveSystemimage->new();
+    my $op = EOperation::EActivateSystemimage->new();
 
-	# Operation::EActiveSystemimage->new creates a new ActiveSystemimage operation.
-	# RETURN : EOperation::EActiveSystemimage : Operation active systemimage on execution side
+	# Operation::EActivateSystemimage->new creates a new ActivateSystemimage operation.
+	# RETURN : EOperation::EActivateSystemimage : Operation active systemimage on execution side
 
 =cut
 
@@ -104,7 +104,7 @@ sub prepare {
 	$log->info("Operation preparation");
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EActiveSystemimage->prepare need an internal_cluster named argument!";
+		$errmsg = "EActivateSystemimage->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}

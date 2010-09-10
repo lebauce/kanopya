@@ -413,10 +413,10 @@ sub generateFstabConf{
 	my $tmpfile = $rand->randpattern("cccccccc");
 	my $adm = Administrator->new();
 	my $input = "fstab.tt";
-	my $vars = {etc_dev			=> "/dev/sda",
+	my $vars = {etc_dev			=> "/dev/sdb",
    	    		etc_fs			=> $args{etc_dev}->{filesystem},
 				etc_options		=> "defaults",
-				root_dev		=> "/dev/sdb",
+				root_dev		=> "/dev/sda",
 				root_fs			=> $args{root_dev}->{filesystem},
 				root_options	=> "ro,noatime,nodiratime",
 				

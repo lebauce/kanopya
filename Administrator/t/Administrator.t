@@ -33,8 +33,8 @@ eval {
 	my $obj = $adm->newEntity(
 		type => "Motherboard", 
 		params => { 
-			motherboard_model_id => 1,
-			processor_model_id => 1, # motherboard model has an integrated processor
+			motherboardmodel_id => 1,
+			processormodel_id => 1, # motherboard model has an integrated processor
 			kernel_id => 1,
 			motherboard_serial_number => '12345', 
 			motherboard_mac_address => "00:11:22:33:44:55",

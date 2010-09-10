@@ -1,7 +1,7 @@
 package Mcsui::Motherboards;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
-use CGI::Application::Plugin::Forward;
+use CGI::Application::Plugin::Redirect;
 use Data::Dumper;
 
 sub setup {
@@ -11,33 +11,41 @@ sub setup {
 
 sub view_motherboards : StartRunmode {
     my $self = shift;
+     my $tmpl =  $self->load_tmpl('view_motherboards.tmpl');
     my $output = '';
-    my $motherboards = [
-		{ ID => '1','POSITION' => '1', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'},
-		{ID => '2','POSITION' => '2', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'},
-		{ ID => '3','POSITION' => '3', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'}, 
-		{ ID => '4','POSITION' => '4', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'},
-		{ ID => '5','POSITION' => '5', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'no'}, 
-		{ ID => '6','POSITION' => '6', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'},
-		{ ID => '7','POSITION' => '7', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'},
-		{ ID => '8','POSITION' => '8', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'},
-		{ ID => '9','POSITION' => '9', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'yes'},
-		{ ID => '10','POSITION' => '10', 'MODEL' => 'Intel D945GCFL-2', 'ACTIVE' => 'no'}
-    ];
-    my $details = [
-		{ ID => '1', 'SN' => '000-1111-1111-00000N', 'MAC' => '00:00:00:00:00:00', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.1', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description' },
-		{ ID => '2','SN' => '222-2222-2222-00000N', 'MAC' => '00:00:00:00:00:11', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.2', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description'},
-		{ ID => '3','SN' => '333-3333-3333-00000N', 'MAC' => '00:00:00:00:00:22', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.3', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description'},
-		{ ID => '4','SN' => '123-1234-1234-00000N', 'MAC' => '00:00:00:00:00:33', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.4', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description' },
-		{ ID => '5','SN' => '123-1234-1234-00000N', 'MAC' => '00:00:00:00:00:44', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.5', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description' },
-		{ ID => '6','SN' => '123-1234-1234-00000N', 'MAC' => '00:00:00:00:00:55', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.6', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description' },
-		{ ID => '7','SN' => '123-1234-1234-00000N', 'MAC' => '00:00:00:00:00:66', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.7', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description' },
-		{ ID => '8','SN' => '123-1234-1234-00000N', 'MAC' => '00:00:00:00:00:77', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.8', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description' },
-		{ ID => '9','SN' => '123-1234-1234-00000N', 'MAC' => '00:00:00:00:00:88', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.9', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description' },
-		{ ID => '10','SN' => '123-1234-1234-00000N', 'MAC' => '00:00:00:00:00:99', 'CPU' => 'Intel ATOM 330', 'CORES' => '2', 'RAM' => '2', 'CONSUMPTION' => '33', 'IP' => '10.0.0.10', 'KERNEL' => '2.6.32-hedera', DESC => 'optional description optional description optional description optional description optional description optional description optional description optional description optional description ' }
-    ];
+    my @emotherboards = $self->{'admin'}->getEntities(type => 'Motherboard', hash => {});
+    my $motherboards = [];
+    my $details = [];
+
+    foreach my $n (@emotherboards){
+	my $tmp = {};
+	$tmp->{ID} = $n->getAttr(name => 'motherboard_id');
+	$tmp->{POSITION} = $n->getAttr(name => 'motherboard_slot_position');
+	my $emodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $n->getAttr(name => 'motherboardmodel_id'));
+	$tmp->{MODEL} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
+	$tmp->{ACTIVE} = $n->getAttr(name => 'active');
+	push (@$motherboards, $tmp);
+    }
+		
+    foreach my $m (@emotherboards) {
+    	my $tmp = {};
+	$tmp->{ID} = $m->getAttr(name => 'motherboard_id');
+	$tmp->{SN} = $m->getAttr(name => 'motherboard_serial_number');
+	$tmp->{MAC} = $m->getAttr(name => 'motherboard_mac_address');
+	my $eprocessor = $self->{'admin'}->getEntity(type => 'Processormodel', id => $m->getAttr(name => 'processormodel_id'));
+	$tmp->{CPU} = $eprocessor->getAttr(name => 'processormodel_brand')." ".$eprocessor->getAttr(name => 'processormodel_name');
+	$tmp->{CORES} = $eprocessor->getAttr(name => 'processormodel_core_num');
+	my $emotherboard = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
+	$tmp->{RAM} = $emotherboard->getAttr(name => 'motherboardmodel_ram_max');
+	$tmp->{CONSUMPTION} = $emotherboard->getAttr(name =>'motherboardmodel_consumption'); 
+	$tmp->{IP} = $m->getAttr(name => 'motherboard_internal_ip');
+	my $ekernel= $self->{'admin'}->getEntity(type => 'Kernel', id => $m->getAttr(name => 'kernel_id'));
+	$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version')." ".$ekernel->getAttr(name => 'kernel_name'); 
+	$tmp->{DESC} = $m->getAttr(name => 'motherboard_desc');
+        push (@$details, $tmp); 
+    }
     
-    my $tmpl =  $self->load_tmpl('view_motherboards.tmpl');
+   
     $tmpl->param('TITLE_PAGE' => "Motherboards View");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
@@ -54,13 +62,48 @@ sub view_motherboards : StartRunmode {
 sub form_addmotherboard : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $output = '';
     my $tmpl =  $self->load_tmpl('form_addmotherboard.tmpl');
+    my $output = '';
     $tmpl->param('TITLE_PAGE' => "Adding a Motherboard");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
 	$tmpl->param($errors) if $errors;
+
+	my @motherboardmodels = $self->{'admin'}->getEntities(type => 'Motherboardmodel', hash => {});
+	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});
+	my @kernel = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
 	
+	my $mmodels = [];
+	foreach my $x (@motherboardmodels){
+		my $tmp = {
+			ID => $x->getAttr( name => 'motherboardmodel_id'),
+		    NAME => join(' ',$x->getAttr(name =>'motherboardmodel_brand'),$x->getAttr(name => 'motherboardmodel_name')),
+		    #PROCID => $x->getAttr( name => 'processormodel_id'),
+		};
+		push (@$mmodels, $tmp);
+	}
+	
+	my $pmodels = [];
+	foreach my $x (@processormodels){
+		my $tmp = {
+			ID => $x->getAttr( name => 'processormodel_id'),
+		    NAME => join(' ',$x->getAttr(name =>'processormodel_brand'),$x->getAttr(name => 'processormodel_name')),
+		};
+		push (@$pmodels, $tmp);
+	}
+	
+	my $kern = [];
+	foreach my $x (@kernel){
+		my $tmp = {
+			ID => $x->getAttr( name => 'kernel_id'),
+		    NAME => join(' ',$x->getAttr(name =>'kernel_name'),$x->getAttr(name => 'kernel_version')),
+		};
+		push (@$kern, $tmp);
+	}
+	
+	$tmpl->param('MOTHERBOARDMODELS' => $mmodels);
+	$tmpl->param('PROCESSORMODELS' => $pmodels);
+	$tmpl->param('KERNEL' => $kern);
 	$tmpl->param('USERID' => 1234);
 	$output .= $tmpl->output();
 	return $output;
@@ -86,7 +129,7 @@ sub process_addmotherboard : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard operation adding to execution queue'); }
-    $self->forward('view_motherboards');
+    $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
 sub _addmotherboard_profile {

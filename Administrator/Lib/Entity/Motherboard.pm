@@ -45,6 +45,9 @@ use constant ATTR_DEF => {
 											is_extended 	=> 0},
 			  etc_device_id				=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
+											is_extended 	=> 0},
+			motherboard_state				=> {pattern 		=> 'm//s',
+											is_mandatory	=> 0,
 											is_extended 	=> 0}
 			};
 

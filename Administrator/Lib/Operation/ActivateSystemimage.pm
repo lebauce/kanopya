@@ -1,4 +1,4 @@
-# ActiveSystemimage.pm - Operation class implementing Cluster creation operation
+# ActivateSystemimage.pm - Operation class implementing system image activation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Operation::ActiveSystemimage - Operation class implementing Systemimage activation operation
+Operation::ActivateSystemimage - Operation class implementing Systemimage activation operation
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ It allows to implement systemimage activation operation
 =head1 METHODS
 
 =cut
-package Operation::ActiveSystemimage;
+package Operation::ActivateSystemimage;
 
 use strict;
 use warnings;
@@ -54,9 +54,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::ActiveSystemimage->new();
+    my $op = Operation::ActivateSystemimage->new();
 
-Operation::ActiveSystemimage->new creates a new ActiveSystemimage operation.
+Operation::ActivateSystemimage->new creates a new ActivateSystemimage operation.
 
 =cut
 
@@ -72,15 +72,15 @@ sub new {
     $log->debug("checking systemimage existence with id <$args{params}->{systemimage_id}>");
     my $row = $admin->{db}->resultset('Systemimage')->find($args{params}->{systemimage_id});
     if(! defined $row) {
-    	$errmsg = "Operation::ActiveSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
+    	$errmsg = "Operation::ActivateSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
     # check if systemimage is not active
-    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
+    $log->debug("checking systemimage activate value <$args{params}->{systemimage_id}>");
    	if( $row->get_column('active') ) {
-	    	$errmsg = "Operation::ActiveSystemimage->new : systemimage $args{params}->{systemimage_id} is already active";
+	    	$errmsg = "Operation::ActivateSystemimage->new : systemimage $args{params}->{systemimage_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Mcs::Exception::Internal(error => $errmsg);
     }

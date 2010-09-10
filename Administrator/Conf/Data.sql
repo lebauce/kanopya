@@ -34,7 +34,7 @@ INSERT INTO `user` VALUES (1,'executer','executer','executer','executer',NULL,'2
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- motherboard and processor models
-INSERT INTO `processormodel` VALUES (1,'Intel','Atom',2,2,0,2,17,0,0,NULL);
+INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,2,0,2,17,0,0,NULL);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 INSERT INTO `motherboardmodel` VALUES (1,'Intel','DG945GCLF2','945GC',2,42,1,1,2,1);
@@ -45,21 +45,25 @@ INSERT INTO `operationtype` VALUES
 (1,'AddMotherboard'),
 (2,'ModifyMotherboard'),
 (3,'RemoveMotherboard'),
-(4,'AddCluster'),
-(5,'ModifyCluster'),
-(6,'RemoveCluster'),
-(7,'StartCluster'),
-(8,'StopCluster'),
-(9,'AddSystemimage'),
-(10,'CloneSystemimage'),
-(11,'ModifySystemimage'),
-(12,'RemoveSystemimage'),
-(13,'ActiveSystemimage'),
-(14,'DeactiveSystemimage'),
-(15,'AddMotherboardInCluster'),
-(16,'RemoveMotherboardFromCluster'),
-(17,'AddComponentToCluster'),
-(18,'RemoveComponentFromCluster');
+(4,'ActivateMotherboard'),
+(5,'DeactivateMotherboard'),
+(6,'AddCluster'),
+(7,'ModifyCluster'),
+(8,'RemoveCluster'),
+(9,'ActivateCluster'),
+(10,'DeactivateCluster'),
+(11,'StartCluster'),
+(12,'StopCluster'),
+(13,'AddSystemimage'),
+(14,'CloneSystemimage'),
+(15,'ModifySystemimage'),
+(16,'RemoveSystemimage'),
+(17,'ActivateSystemimage'),
+(18,'DeactivateSystemimage'),
+(19,'AddMotherboardInCluster'),
+(20,'RemoveMotherboardFromCluster'),
+(21,'AddComponentToCluster'),
+(22,'RemoveComponentFromCluster');
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,2); SET @eid := @eid +1;
@@ -79,7 +83,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,16); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,17); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,18); SET @eid := @eid +1;
-
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,19); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,20); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,21); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,22); SET @eid := @eid +1;
 
 
 -- components list
@@ -93,7 +100,21 @@ INSERT INTO `component` VALUES
 
 -- default kernel
 INSERT INTO `kernel` VALUES (1,'admin','2.6.32','Admin Kernel');
+INSERT INTO `kernel` VALUES (2,'2.6.26-2-486','2.6.26-2-486','');
+INSERT INTO `kernel` VALUES (3,'2.6.26-2-xen-686','2.6.26-2-xen-686','');
+INSERT INTO `kernel` VALUES (4,'2.6.26-hedera','2.6.26-hedera','');
+INSERT INTO `kernel` VALUES (5,'2.6.30.1-hedera','2.6.30.1-hedera','');
+INSERT INTO `kernel` VALUES (6,'2.6.31-hederatech-minix','2.6.31-hederatech-minix','');
+INSERT INTO `kernel` VALUES (7,'2.6.31-hederatech-via-vb8001','2.6.31-hederatech-via-vb8001','');
+INSERT INTO `kernel` VALUES (8,'2.6.31-hederatech-zotac-ion','2.6.31-hederatech-zotac-ion','');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,2); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,3); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,4); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,5); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,6); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,7); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8); SET @eid := @eid +1;
 
 -- default distribution
 INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
@@ -114,7 +135,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1)
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
 
 -- admin motherboard
-INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','127.0.0.1','node001',NULL, 'up');
+INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
@@ -162,7 +183,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); S
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); SET @eid := @eid +1;
 
-INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,1,1, 'down');
+INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,1,5, 'down');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
 
 INSERT INTO `component_instance` VALUES (6,2,4,NULL);

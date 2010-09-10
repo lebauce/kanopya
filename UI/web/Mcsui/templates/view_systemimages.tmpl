@@ -1,16 +1,55 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<div id="content">
 <div id="contentleft">
-	<p>
-	<span class="title">System images</span>
-	View, add, edit and remove you microcluster's system images. 
-	</p>
-	<p><hr /></p>
-		<a class="button"  href="systemimages/add_systemimages">Add system image</a>
-		<a class="button"  href="systemimages/edit_systemimages">Edit system image</a>
-		<a class="button"  href="systemimages/remove_systemimages">Remove system image</a>
-	<p><hr /></p>
+        <p>
+        <span class="title">System images</span><br />
+        View, add, edit and remove you microcluster's System images.
+        </p>
+        <p><hr /></p>
+                <a class="button"  href="/cgi/mcsui.cgi/motherboards/form_addsystemimage">New system image</a>
+                <a id="editbutton" class="hidden"  href="">Edit system image</a>
+                <a id="removebutton" class="hidden"  href="">Remove system image</a>
+        <p><hr /></p>
 </div>
-
-
+<div id="contentright">
+	<table id="systemimagelist" class="listview">
+		<tr><th>name</th><th>description</th><th>distribution</th><th>active</th></tr>
+		<TMPL_LOOP NAME=SYSTEMIMAGE>
+		<tr id="m<TMPL_VAR NAME=ID>" isactive="<TMPL_VAR NAME=ACTIVE>">
+		<td><TMPL_VAR NAME=NAME></td>
+		<td><TMPL_VAR NAME=DESC></td>
+		<td><TMPL_VAR NAME=DISTRO></td>
+		<td><TMPL_VAR NAME=ACTIVE></td></tr>
+		</TMPL_LOOP>
+	</table>
+</div>
+</div>
+<script language="Javascript">
+editbutton = document.getElementById('editbutton');
+removebutton = document.getElementById('removebutton');
+tempty = document.getElementById('tempty');
+function selectme() { 
+	lines = document.getElementById('systemimagelist').getElementsByTagName('tr');
+	for(i=0;i<lines.length;i++) { lines[i].className = ''; }
+	this.classList.add('selected');
+	if(this.getAttribute('isactive') == 'no') {
+		editbutton.className = 'button';
+		removebutton.className = 'button';
+	} else {
+		editbutton.className = 'hidden';
+		removebutton.className = 'hidden';
+	}
+	listdetails = document.getElementsByClassName('listdetails');
+	for(i=0;i<listdetails.length;i++) { listdetails[i].className = 'listdetails hidden'; }
+	document.getElementById('t'+this.id.substring(1)).className = 'listdetails';
+}
+motherboardline = document.getElementById('systemimagelist').getElementsByTagName('tr');
+for(i=0;i<motherboardline.length;i++) {
+	motherboardline[i].onclick = selectme;
+}
+</script>
 <TMPL_INCLUDE NAME="footer.tmpl">

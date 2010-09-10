@@ -109,11 +109,12 @@ Executor->run() run the executor server.
 
 sub run {
 	my $self = shift;
+	my $running = shift;
 	
 	$log->warn("Before New Administrator");
 	my $adm = Administrator->new();
 	$log->warn("After New Administrator"); 
-   	while (1) {
+   	while ($$running) {
    		my $opdata = $adm->getNextOp();
    		if ($opdata){
 	   		my $op = EFactory::newEEntity(data => $opdata);
@@ -132,10 +133,9 @@ sub run {
    				$log->error("Error during execution : $error");
    			}
    		}
-   		else {
-   			sleep 20;
-   		}
-   	} 
+   		else { sleep 10; }
+   	}
+   	$log->debug("condition become false : $$running"); 
 }
 
 =head2 execnrun

@@ -1,4 +1,4 @@
-# DeactiveSystemimage.pm - Operation class implementing Cluster creation operation
+# ActivateMotherboard.pm - Operation class implementing Motherboard activation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,12 +23,12 @@
 
 =head1 NAME
 
-Operation::DeactiveSystemimage - Operation class implementing Systemimage deactivation operation
+Operation::ActivateMotherboard - Operation class implementing Motherboard activation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement systemimage deactivation operation
+It allows to implement motherboard activation operation
 
 =head1 DESCRIPTION
 
@@ -37,7 +37,7 @@ It allows to implement systemimage deactivation operation
 =head1 METHODS
 
 =cut
-package Operation::DeactiveSystemimage;
+package Operation::ActivateMotherboard;
 
 use strict;
 use warnings;
@@ -45,7 +45,6 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
-use Entity::Cluster;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -54,9 +53,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::DeactiveSystemimage->new();
+    my $op = Operation::ActivateMotherboard->new();
 
-Operation::DeactiveSystemimage->new creates a new DeactiveSystemimage operation.
+Operation::ActivateMotherboard->new creates a new ActivateMotherboard operation.
 
 =cut
 
@@ -68,30 +67,19 @@ sub new {
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
      
- 	# check if systemimage_id exist
-    $log->debug("checking systemimage existence with id <$args{params}->{systemimage_id}>");
-    my $row = $admin->{db}->resultset('Systemimage')->find($args{params}->{systemimage_id});
+ 	# check if motherboard_id exist
+    $log->debug("checking motherboard existence with id <$args{params}->{motherboard_id}>");
+    my $row = $admin->{db}->resultset('Motherboard')->find($args{params}->{motherboard_id});
     if(! defined $row) {
-    	$errmsg = "Operation::DeactiveSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
+    	$errmsg = "Operation::ActivateMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
-    # check if systemimage is active
-    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
-   	if( not $row->get_column('active') ) {
-	    	$errmsg = "Operation::DeactiveSystemimage->new : systemimage $args{params}->{systemimage_id} is not active";
-	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
-    }
-    
-    # check if no running cluster is using this system image
-    $row = undef;
-    $row = $admin->{db}->resultset('Cluster')->search(
-    	{ systemimage_id => $args{params}->{systemimage_id},  cluster_state => { '!=' => 'down' }} 
-    )->single;
-    if( defined $row ) {
-	    	$errmsg = "Operation::DeactiveSystemimage->new : systemimage $args{params}->{systemimage_id} is used by running cluster";
+    # check if motherboard is not active
+    $log->debug("checking motherboard active value <$args{params}->{motherboard_id}>");
+   	if( $row->get_column('active') ) {
+	    	$errmsg = "Operation::ActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Mcs::Exception::Internal(error => $errmsg);
     }
