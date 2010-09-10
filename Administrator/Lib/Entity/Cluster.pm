@@ -31,7 +31,7 @@ use constant ATTR_DEF => {
 										is_mandatory	=> 1,
 										is_extended 	=> 0},
 			active					=> {pattern			=> 'm//s',
-										is_mandatory	=> 1,
+										is_mandatory	=> 0,
 										is_extended		=> 0},
 			systemimage_id			=> {pattern 		=> 'm//s',
 										is_mandatory	=> 1,
