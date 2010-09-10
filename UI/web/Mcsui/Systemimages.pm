@@ -40,4 +40,41 @@ sub view_systemimages : StartRunmode {
     return $output;	
     
 }
+
+sub form_addsystemimage : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl =$self->load_tmpl('form_addsystemimage.tmpl');
+	my $output = '';
+	
+	$tmpl->param('TITLE_PAGE' => "Adding a system image");
+	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('SUBMENU_SYSTEMIMAGES' => 1);
+	$tmpl->param($errors) if $errors;
+	
+	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
+	my @edistros = $self->{'admin'}->getEntities(type =>'Distribution', hash => {});
+	
+	my $systemimage = [];
+	foreach my $s (@esysteimages){
+		my $tmp = {};
+		$tmp->{ID} = $s->getAttr(name => 'systemimage_id');
+		$tmp->{NAME} = $s->getAttr(name => 'systemimage_name');
+		push (@$systemimage, $tmp); 
+	}
+	
+	my $distro = [];
+	foreach my $d (@edistros){
+		my $tmp = {};
+		$tmp->{ID} = $d->getAttr(name => 'distribution_id');
+		$tmp->{NAME} = join(' ',$d->getAttr(name =>'distribution_name'), $d->getAttr(name =>'distribution_version'));
+		push (@$distro, $tmp);		
+	}
+	
+	$tmpl->param('SYSTEMIMAGE' => $systemimage);
+	$tmpl->param('DISTRIBUTION' => $distro);
+	$output .= $tmpl->output();
+	return $output;
+}
+
 1;

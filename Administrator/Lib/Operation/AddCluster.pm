@@ -83,11 +83,15 @@ sub new {
     # if kernel_id present, check if exists
     $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
     if(exists $args{params}->{kernel_id}) {
-	    $row = $admin->{db}->resultset('Kernel')->find($args{params}->{kernel_id});
-	    if(! defined $row) {
-	    	$errmsg = "Operation::AddCluster->new : kernel_id $args{params}->{kernel_id} does not exist";
-	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+    	if ($args{params}->{kernel_id} == 0){
+    		$args{params}->{kernel_id} = undef;
+    	}else {
+		    $row = $admin->{db}->resultset('Kernel')->find($args{params}->{kernel_id});
+		    if(! defined $row) {
+		    	$errmsg = "Operation::AddCluster->new : kernel_id $args{params}->{kernel_id} does not exist";
+		    	$log->error($errmsg);
+		    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	}
     	}
     }
     
