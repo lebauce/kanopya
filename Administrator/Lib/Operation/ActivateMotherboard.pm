@@ -78,7 +78,7 @@ sub new {
     
     # check if motherboard is not active
     $log->debug("checking motherboard active value <$args{params}->{motherboard_id}>");
-   	if( $row->get_column('activate') ) {
+   	if( $row->get_column('active') ) {
 	    	$errmsg = "Operation::ActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Mcs::Exception::Internal(error => $errmsg);

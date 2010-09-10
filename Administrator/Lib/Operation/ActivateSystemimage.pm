@@ -79,7 +79,7 @@ sub new {
     
     # check if systemimage is not active
     $log->debug("checking systemimage activate value <$args{params}->{systemimage_id}>");
-   	if( $row->get_column('activate') ) {
+   	if( $row->get_column('active') ) {
 	    	$errmsg = "Operation::ActivateSystemimage->new : systemimage $args{params}->{systemimage_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Mcs::Exception::Internal(error => $errmsg);
