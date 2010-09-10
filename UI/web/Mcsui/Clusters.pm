@@ -1,6 +1,7 @@
 package Mcsui::Clusters;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
+use CGI::Application::Plugin::Redirect;
 
 sub setup {
 	my $self = shift;
@@ -85,6 +86,43 @@ sub form_addcluster : Runmode {
 	$tmpl->param('SYSTEMIMAGES' => $smodels);
 	$output .= $tmpl->output();
 	return $output;
+}
+
+sub process_addcluster : Runmode {
+        my $self = shift;
+        use CGI::Application::Plugin::ValidateRM (qw/check_rm/);
+        my ($results, $err_page) = $self->check_rm('form_addcluster', '_addcluster_profile');
+        return $err_page if $err_page;
+
+        my $query = $self->query();
+        eval {
+                $self->{'admin'}->newOp(type =>"AddCluster", priority => '100', params => {	
+			cluster_name => $query->param('name'),
+			cluster_desc => $query->param('desc'),
+			cluster_min_node => $query->param('min_node'),
+			cluster_max_node => $query->param('max_node'),
+			cluster_priority => $query->param('priority'),
+                        kernel_id => $query->param('kernel'),
+                        systemimage_id => $query->param('systemimage')
+                });
+        };
+        if($@) {
+                my $error = $@;
+                $self->{'admin'}->addMessage(type => 'error', content => $error);
+	} else { 
+		$self->{'admin'}->addMessage(type => 'success', content => 'new cluster operation adding to execution queue'); 
+	}
+    	$self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+}
+
+sub _addcluster_profile {
+        return {
+                required =>'cluster_name',
+                msgs => {
+                                any_errors => 'some_errors',
+                                prefix => 'err_'
+                },
+        };
 }
 
 sub form_removecluster : Runmode {

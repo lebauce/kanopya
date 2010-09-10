@@ -1,7 +1,7 @@
 package Mcsui::Motherboards;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
-use CGI::Application::Plugin::Forward;
+use CGI::Application::Plugin::Redirect;
 use Data::Dumper;
 
 sub setup {
@@ -129,7 +129,7 @@ sub process_addmotherboard : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard operation adding to execution queue'); }
-    $self->forward('view_motherboards');
+    $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
 sub _addmotherboard_profile {

@@ -3,7 +3,7 @@
 <style type="text/css">@import url(/css/form.css);</style>
 
 <div id="content">
-<form method="POST" action="/cgi/mcsui.cgi/motherboards/process_addmotherboard">
+<form method="POST" action="/cgi/mcsui.cgi/clusters/process_addcluster">
 <table class="form">
 	<caption>New cluster</caption>
 	<TMPL_IF NAME=SOME_ERRORS>
@@ -11,7 +11,8 @@
 	</TMPL_IF>
 	<tr>
 		<td class="label">Name :</td>
-		<td><input type="text" name="active" maxlength="50" size="52"/>
+		<td><input type="text" name="name" maxlength="50" size="52"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_CLUSTER_NAME></span></td>
 	</tr>
 	<tr>
 		<td class="label">Description :</td>
@@ -19,15 +20,15 @@
 	</tr>
 	<tr>
 		<td class="label">minimum node number :</td>
-		<td><input type="text" name="active" maxlength="5" size="5"/>
+		<td><input type="text" name="active" maxlength="5" size="5"/></td>
 	</tr>
 	<tr>
 		<td class="label">maximum node number :</td>
-		<td><input type="text" name="active" maxlength="5" size="5"/>
+		<td><input type="text" name="active" maxlength="5" size="5"/></td>
 	</tr>
 	<tr>
 		<td class="label">Priority :</td>
-		<td><input type="text" name="active" maxlength="5" size="5"/>
+		<td><input type="text" name="active" maxlength="5" size="5"/></td>
 	</tr>
 	<tr>
 		<td class="label">System image :</td>

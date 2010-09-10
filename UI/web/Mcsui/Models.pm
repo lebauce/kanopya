@@ -1,7 +1,7 @@
 package Mcsui::Models;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
-use CGI::Application::Plugin::Forward;
+use CGI::Application::Plugin::Redirect;
 use Data::Dumper;
 
 sub setup {
@@ -176,7 +176,7 @@ sub process_addmotherboardmodel : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard model created'); }
-    $self->forward('view_models');
+    $self->redirect('/cgi/mcsui.cgi/models/view_models');
 }
 
 sub _addmotherboardmodel_profile {
