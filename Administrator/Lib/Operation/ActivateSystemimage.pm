@@ -1,4 +1,4 @@
-# DeactiveSystemimage.pm - Operation class implementing Cluster creation operation
+# ActivateSystemimage.pm - Operation class implementing system image activation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,12 +23,12 @@
 
 =head1 NAME
 
-Operation::DeactiveSystemimage - Operation class implementing Systemimage deactivation operation
+Operation::ActivateSystemimage - Operation class implementing Systemimage activation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement systemimage deactivation operation
+It allows to implement systemimage activation operation
 
 =head1 DESCRIPTION
 
@@ -37,7 +37,7 @@ It allows to implement systemimage deactivation operation
 =head1 METHODS
 
 =cut
-package Operation::DeactiveSystemimage;
+package Operation::ActivateSystemimage;
 
 use strict;
 use warnings;
@@ -54,9 +54,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::DeactiveSystemimage->new();
+    my $op = Operation::ActivateSystemimage->new();
 
-Operation::DeactiveSystemimage->new creates a new DeactiveSystemimage operation.
+Operation::ActivateSystemimage->new creates a new ActivateSystemimage operation.
 
 =cut
 
@@ -72,26 +72,15 @@ sub new {
     $log->debug("checking systemimage existence with id <$args{params}->{systemimage_id}>");
     my $row = $admin->{db}->resultset('Systemimage')->find($args{params}->{systemimage_id});
     if(! defined $row) {
-    	$errmsg = "Operation::DeactiveSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
+    	$errmsg = "Operation::ActivateSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
-    # check if systemimage is active
-    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
-   	if( not $row->get_column('active') ) {
-	    	$errmsg = "Operation::DeactiveSystemimage->new : systemimage $args{params}->{systemimage_id} is not active";
-	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
-    }
-    
-    # check if no running cluster is using this system image
-    $row = undef;
-    $row = $admin->{db}->resultset('Cluster')->search(
-    	{ systemimage_id => $args{params}->{systemimage_id},  cluster_state => { '!=' => 'down' }} 
-    )->single;
-    if( defined $row ) {
-	    	$errmsg = "Operation::DeactiveSystemimage->new : systemimage $args{params}->{systemimage_id} is used by running cluster";
+    # check if systemimage is not active
+    $log->debug("checking systemimage activate value <$args{params}->{systemimage_id}>");
+   	if( $row->get_column('activate') ) {
+	    	$errmsg = "Operation::ActivateSystemimage->new : systemimage $args{params}->{systemimage_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Mcs::Exception::Internal(error => $errmsg);
     }

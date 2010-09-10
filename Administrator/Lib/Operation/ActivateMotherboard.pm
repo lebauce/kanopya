@@ -1,4 +1,4 @@
-# ActiveMotherboard.pm - Operation class implementing Motherboard activation operation
+# ActivateMotherboard.pm - Operation class implementing Motherboard activation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Operation::ActiveMotherboard - Operation class implementing Motherboard activation operation
+Operation::ActivateMotherboard - Operation class implementing Motherboard activation operation
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ It allows to implement motherboard activation operation
 =head1 METHODS
 
 =cut
-package Operation::ActiveMotherboard;
+package Operation::ActivateMotherboard;
 
 use strict;
 use warnings;
@@ -53,9 +53,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::ActiveMotherboard->new();
+    my $op = Operation::ActivateMotherboard->new();
 
-Operation::ActiveMotherboard->new creates a new ActiveMotherboard operation.
+Operation::ActivateMotherboard->new creates a new ActivateMotherboard operation.
 
 =cut
 
@@ -71,15 +71,15 @@ sub new {
     $log->debug("checking motherboard existence with id <$args{params}->{motherboard_id}>");
     my $row = $admin->{db}->resultset('Motherboard')->find($args{params}->{motherboard_id});
     if(! defined $row) {
-    	$errmsg = "Operation::ActiveMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
+    	$errmsg = "Operation::ActivateMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
     # check if motherboard is not active
     $log->debug("checking motherboard active value <$args{params}->{motherboard_id}>");
-   	if( $row->get_column('active') ) {
-	    	$errmsg = "Operation::ActiveMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
+   	if( $row->get_column('activate') ) {
+	    	$errmsg = "Operation::ActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Mcs::Exception::Internal(error => $errmsg);
     }
