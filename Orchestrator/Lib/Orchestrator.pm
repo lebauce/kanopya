@@ -42,7 +42,7 @@ use lib qw(/workspace/mcs/Monitor/Lib);
 
 use strict;
 use warnings;
-use Monitor;
+use Monitor::Retriever;
 use XML::Simple;
 
 use Data::Dumper;
@@ -70,7 +70,7 @@ sub new {
 	
 	# Get Administrator
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
-	$self->{_monitor} = Monitor->new( );
+	$self->{_monitor} = Monitor::Retriever->new( );
 
 	
     return $self;
@@ -90,21 +90,105 @@ sub manage {
 	print "Manage\n";
 	
 	my $monitor = $self->{_monitor};
-	my $clusters_data = $monitor->getClustersData( set => "mem", time_laps => 100);
-	print Dumper $clusters_data;
 	
-	$clusters_data = $monitor->getClustersData( set => "mem", time_laps => 100, aggregate => "mea");
-	print Dumper $clusters_data;
+	# TODO load from conf
+	my @traps = (  { 	
+						set_name => 'mem',
+						percent => 1, 
+						time_laps => 60,
+						thresholds => [ { var => "memFree", min => '60' }  ],
+					}, 
+					{ 	
+						set_name => 'cpu',
+						percent => 1,
+						time_laps => 100,
+						thresholds => [ { var => "rawIdleCPU", min => '90' } ]
+					}
+				);
 	
-	while (my ($cluster, $cluster_data) = each %$clusters_data ) {
-		while ( my ($host, $host_data) = each %$cluster_data ) {
-			
+	
+	#TODO à la place de boucler sur trap_set -> cluster -> threshold faire mieux (genre par cluster). attention a l'optim et au nombre de requête au monitor
+	
+	my @skip_clusters = ();
+	for my $trap_def ( @traps ) {
+		print "# Set : $trap_def->{set_name}\n";
+		my $clusters_data_aggreg = $monitor->getClustersData( 	set => $trap_def->{set_name},
+																time_laps => $trap_def->{time_laps},
+																percent => $trap_def->{percent},
+																aggregate => "mean");
+		while (my ($cluster, $cluster_data) = each %$clusters_data_aggreg ) {
+			print "## Cluster : $cluster\n";
+			if ( 0 < grep { $_ eq $cluster } @skip_clusters ) {
+				print "		=> skip\n";
+				next;
+			}
+			foreach my $threshold ( @{ $trap_def->{thresholds} }) {
+				my $value = $cluster_data->{ $threshold->{var} };
+				if (not defined $value) {
+					print "Warning: no value for var '$threshold->{var}' in cluster '$cluster'. Trap ignored.\n";
+					next;
+				}
+				print "### Threshold  : $threshold->{var} ", defined $threshold->{max}?"max=$threshold->{max}":"min=$threshold->{min}", " value=$value\n";
+				if ( 	( defined $threshold->{max} && $value > $threshold->{max} )
+					|| 	( defined $threshold->{min} && $value < $threshold->{min} ) ) {
+					print "======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
+					$self->requireAddNode( cluster => $cluster );
+					push @skip_clusters, $cluster;
+					last;		
+				}
+			}
 		}
 	}
 	
+	print "\n###############   CLUSTERS DETAILED   ##########\n";
+	my $clusters_data_detailed = $monitor->getClustersData( set => "cpu", time_laps => 100, percent => 1);
+	print Dumper $clusters_data_detailed;
 	
+	print "\n###############   CLUSTER DETAILED   ##########\n";
+	my $cluster_data_detailed = $monitor->getClusterData( cluster => "cluster_1", set => "cpu", time_laps => 100, percent => 1);
+	print Dumper $cluster_data_detailed;
 	
+	print "\n###############   CLUSTERS AGGREG   ##########\n";
+	my $clusters_data_aggreg = $monitor->getClustersData( set => "cpu", time_laps => 100, aggregate => "mean", percent => 1);
+	print Dumper $clusters_data_aggreg;
+
+	print "\n###############   CLUSTER AGGREG   ##########\n";
+	my $cluster_data_aggreg = $monitor->getClusterData( cluster => "cluster_1", set => "cpu", time_laps => 100, aggregate => "mean", percent => 1);
+	print Dumper $cluster_data_aggreg;
 	
+}
+
+sub requireAddNode { 
+	my $self = shift;
+    my %args = @_;
+    
+    my $cluster = $args{cluster};
+    my $monitor = $self->{_monitor};
+    my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster );
+    
+    print Dumper $cluster_info;
+    
+    my $host_starting = 0;
+    foreach my $host (values %$cluster_info) {
+    	if ($host->{state} eq "starting") {
+    		$host_starting = 1;
+    		last;
+    	}
+    }
+    
+    return if ($host_starting);
+    
+    #TODO  Check if there is a corresponding add node operation in operation queue!
+    
+    #TODO  Select a node
+    
+    #TODO  Add node
+    
+    print "====> add node in $cluster\n";
+    
+}
+
+sub requireRemoveNode {
 	
 }
 

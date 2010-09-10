@@ -27,6 +27,7 @@ package SnmpProvider;
 
 use strict;
 use warnings;
+use Net::SNMP;
 
 =head2 new
 	
