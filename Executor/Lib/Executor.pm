@@ -133,10 +133,7 @@ sub run {
    				$log->error("Error during execution : $error");
    			}
    		}
-   		else {
-   			$log->debug("nothing to execute ; waiting 20 seconds before asking execution list again");
-   			sleep 20;
-   		}
+   		else { sleep 10; }
    	}
    	$log->debug("condition become false : $$running"); 
 }
