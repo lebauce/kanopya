@@ -274,7 +274,7 @@ sub update_test {
 sub update {
 	my $self = shift;
 	
-	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	
 	#my @hosts = $self->retrieveHostsIp();
 	my %hosts_by_cluster = $self->retrieveHostsByCluster();
@@ -303,19 +303,6 @@ sub update {
 	# update hosts state if needed #
 	################################
 	my $adm = $self->{_admin};
-	
-	##################"" TEST
-	eval {
-		my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => '10.0.0.1' } );
-		my $mb = shift @mb_res;
-		$mb->setAttr( name => "motherboard_state", value => "youpi");
-		$mb->save();
-	};
-	if ($@) {
-		print "====================================> $@";
-	}
-	#############################
-	
 	for my $host_info (@all_hosts_info) {
 		my $host_state = $hosts_state{ $host_info->{ip} };
 		if ( $host_info->{state} ne $host_state ) {

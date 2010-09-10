@@ -71,7 +71,7 @@ sub getData {
 	# retrieve array of ds name ordered like in rrd (db column)	
 	my $ds_names = $rrd->{fetch_ds_names};
 	
-	my @max_def = $args{max_def} || @$ds_names;
+	my @max_def = $args{max_def} ? @{ $args{max_def} } : @$ds_names; 
 	my %res_data = ( "_MAX_" => [] );
 
 	############################################# 
@@ -176,7 +176,7 @@ sub getHostData {
 	
 	my %host_data = $self->getData( rrd_name => $rrd_name,
 									time_laps => $args{time_laps},
-									max_def => scalar @max_def ? @max_def : undef,
+									max_def => (scalar @max_def) ? \@max_def : undef,
 									percent => $args{percent} );
 	
 	return \%host_data;

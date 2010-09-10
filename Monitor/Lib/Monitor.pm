@@ -94,7 +94,7 @@ sub new {
 
 	# Get Administrator
 	print "get ADMIN\n";
-	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	print " => ok\n";
 
 	# test (data generator)

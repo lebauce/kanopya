@@ -73,6 +73,9 @@ sub new {
 	$self->{_monitor} = Monitor::Retriever->new( );
 
 	
+	open FILE, ">/tmp/ochestrator.time";
+	close FILE;
+	
     return $self;
 }
 
@@ -96,64 +99,113 @@ sub manage {
 						set_name => 'mem',
 						percent => 1, 
 						time_laps => 60,
-						thresholds => [ { var => "memFree", min => '60' }  ],
+						thresholds => [ { var => "memAvail", min => '60' },
+										{ var => "memCached", max => '80' }  ],
 					}, 
 					{ 	
 						set_name => 'cpu',
 						percent => 1,
 						time_laps => 100,
 						thresholds => [ { var => "rawIdleCPU", min => '90' } ]
+					},
+					{
+						set_name => 'apache_stat',
+						time_laps => 100,
+						thresholds => [ { var => "BytesPerSec", max => '70' },
+										{ var => "IdleWorkers", max => '40' } ]
 					}
 				);
 	
 	
-	#TODO à la place de boucler sur trap_set -> cluster -> threshold faire mieux (genre par cluster). attention a l'optim et au nombre de requête au monitor
-	
+	my @all_clusters_name = $monitor->getClustersName();
 	my @skip_clusters = ();
-	for my $trap_def ( @traps ) {
-		print "# Set : $trap_def->{set_name}\n";
-		my $clusters_data_aggreg = $monitor->getClustersData( 	set => $trap_def->{set_name},
-																time_laps => $trap_def->{time_laps},
-																percent => $trap_def->{percent},
-																aggregate => "mean");
-		while (my ($cluster, $cluster_data) = each %$clusters_data_aggreg ) {
-			print "## Cluster : $cluster\n";
-			if ( 0 < grep { $_ eq $cluster } @skip_clusters ) {
-				print "		=> skip\n";
-				next;
+	for my $cluster (@all_clusters_name) {
+		print "# CLUSTER: $cluster\n";
+		my $cluster_trapped = 0;
+		for my $trap_def ( @traps ) {
+			if ($cluster_trapped) {
+				print " ==> skip\n";
+				last;
 			}
+			print "	# TRAP: $trap_def->{set_name} (laps: $trap_def->{time_laps})\n";
+			my $cluster_data_aggreg = $monitor->getClusterData( 	cluster => $cluster,
+																	set => $trap_def->{set_name},
+																	time_laps => $trap_def->{time_laps},
+																	percent => $trap_def->{percent},
+																	aggregate => "mean");
+		
 			foreach my $threshold ( @{ $trap_def->{thresholds} }) {
-				my $value = $cluster_data->{ $threshold->{var} };
+				my $value = $cluster_data_aggreg->{ $threshold->{var} };
 				if (not defined $value) {
 					print "Warning: no value for var '$threshold->{var}' in cluster '$cluster'. Trap ignored.\n";
 					next;
 				}
-				print "### Threshold  : $threshold->{var} ", defined $threshold->{max}?"max=$threshold->{max}":"min=$threshold->{min}", " value=$value\n";
+				
+				# TEMPORARY
+				if ( $cluster eq "cluster_1" && $threshold->{var} eq "rawIdleCPU") {
+					my $rrd = RRDTool::OO->new( file =>  "/tmp/orchestrator.rrd" );
+					$rrd->update( time => time(), values =>  { "rawIdleCPU" => $value });
+				}
+				
+				print "		# THRESHOLD  : $threshold->{var} ", defined $threshold->{max}?"max=$threshold->{max}":"min=$threshold->{min}", " value=$value\n";
 				if ( 	( defined $threshold->{max} && $value > $threshold->{max} )
 					|| 	( defined $threshold->{min} && $value < $threshold->{min} ) ) {
-					print "======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
+					print "				======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
 					$self->requireAddNode( cluster => $cluster );
 					push @skip_clusters, $cluster;
+					$cluster_trapped = 1;
 					last;		
 				}
 			}
 		}
 	}
 	
+#TODO à la place de boucler sur trap_set -> cluster -> threshold faire mieux (genre par cluster). attention a l'optim et au nombre de requête au monitor
+#	my @skip_clusters = ();
+#	for my $trap_def ( @traps ) {
+#		print "# Set : $trap_def->{set_name}\n";
+#		my $clusters_data_aggreg = $monitor->getClustersData( 	set => $trap_def->{set_name},
+#																time_laps => $trap_def->{time_laps},
+#																percent => $trap_def->{percent},
+#																aggregate => "mean");
+#		while (my ($cluster, $cluster_data) = each %$clusters_data_aggreg ) {
+#			print "## Cluster : $cluster\n";
+#			if ( 0 < grep { $_ eq $cluster } @skip_clusters ) {
+#				print "		=> skip\n";
+#				next;
+#			}
+#			foreach my $threshold ( @{ $trap_def->{thresholds} }) {
+#				my $value = $cluster_data->{ $threshold->{var} };
+#				if (not defined $value) {
+#					print "Warning: no value for var '$threshold->{var}' in cluster '$cluster'. Trap ignored.\n";
+#					next;
+#				}
+#				print "### Threshold  : $threshold->{var} ", defined $threshold->{max}?"max=$threshold->{max}":"min=$threshold->{min}", " value=$value\n";
+#				if ( 	( defined $threshold->{max} && $value > $threshold->{max} )
+#					|| 	( defined $threshold->{min} && $value < $threshold->{min} ) ) {
+#					print "======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
+#					$self->requireAddNode( cluster => $cluster );
+#					push @skip_clusters, $cluster;
+#					last;		
+#				}
+#			}
+#		}
+#	}
+	
 	print "\n###############   CLUSTERS DETAILED   ##########\n";
-	my $clusters_data_detailed = $monitor->getClustersData( set => "cpu", time_laps => 100, percent => 1);
-	print Dumper $clusters_data_detailed;
+	#my $clusters_data_detailed = $monitor->getClustersData( set => "cpu", time_laps => 100, percent => 1);
+	#print Dumper $clusters_data_detailed;
 	
 	print "\n###############   CLUSTER DETAILED   ##########\n";
-	my $cluster_data_detailed = $monitor->getClusterData( cluster => "cluster_1", set => "cpu", time_laps => 100, percent => 1);
-	print Dumper $cluster_data_detailed;
+	#my $cluster_data_detailed = $monitor->getClusterData( cluster => "cluster_1", set => "cpu", time_laps => 100, percent => 1);
+	#print Dumper $cluster_data_detailed;
 	
 	print "\n###############   CLUSTERS AGGREG   ##########\n";
-	my $clusters_data_aggreg = $monitor->getClustersData( set => "cpu", time_laps => 100, aggregate => "mean", percent => 1);
-	print Dumper $clusters_data_aggreg;
+	#my $clusters_data_aggreg = $monitor->getClustersData( set => "cpu", time_laps => 100, aggregate => "mean", percent => 1);
+	#print Dumper $clusters_data_aggreg;
 
 	print "\n###############   CLUSTER AGGREG   ##########\n";
-	my $cluster_data_aggreg = $monitor->getClusterData( cluster => "cluster_1", set => "cpu", time_laps => 100, aggregate => "mean", percent => 1);
+	my $cluster_data_aggreg = $monitor->getClusterData( cluster => "cluster_1", set => "mem", time_laps => 100, aggregate => "mean", percent => 1);
 	print Dumper $cluster_data_aggreg;
 	
 }
@@ -166,7 +218,7 @@ sub requireAddNode {
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster );
     
-    print Dumper $cluster_info;
+    #print Dumper $cluster_info;
     
     my $host_starting = 0;
     foreach my $host (values %$cluster_info) {
@@ -176,7 +228,7 @@ sub requireAddNode {
     	}
     }
     
-    return if ($host_starting);
+    #return if ($host_starting);
     
     #TODO  Check if there is a corresponding add node operation in operation queue!
     
@@ -186,10 +238,96 @@ sub requireAddNode {
     
     print "====> add node in $cluster\n";
     
+    open FILE, ">>/tmp/ochestrator.time";
+    print FILE ":".time();
+    close FILE;
+    
 }
 
 sub requireRemoveNode {
 	
+}
+
+sub createRRD {
+	my $self = shift;
+	my %args = @_;
+
+	my $var_list = ['rawIdleCPU'];
+
+	my $rrd = RRDTool::OO->new( file =>  "/tmp/orchestrator.rrd" );
+
+	#my $raws = $self->{_period} / $self->{_time_step};
+	my $raws = 100;
+
+	my @rrd_params = ( 	'step', $self->{_time_step},
+						'archive', { rows	=> $raws }
+					 );
+	for my $name ( @$var_list ) {
+		push @rrd_params, 	(
+								'data_source' => { 	name      => $name,
+			     	         						type      => 'GAUGE' },			
+							);
+	}
+
+	# Create a round-robin database
+	$rrd->create( @rrd_params );
+	
+	return $rrd;
+}
+
+
+sub graph {
+	my $self = shift;
+	my %args = @_;
+
+	my $graph_filename = "graph_orchestrator.png";
+
+	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
+	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
+
+
+	# get rrd     
+	my $rrd = RRDTool::OO->new( file => "/tmp/orchestrator.rrd" );
+
+	my @graph_params = (
+							'image' => "/tmp/$graph_filename",
+							#'vertical_label', 'ticks',
+							'start' => time() - 1000,
+							color => { back => "#69B033" },
+						
+							vrule => { time => time()-200, },
+							
+							 hrule => { value => 60,
+                 						color => "#0000ff",
+						                legend => "threshold"
+						               },
+						);
+
+	#for my $addquery_time ( @{ $self->{_addquery_times} } ) {
+	#	push @graph_params, (
+	#							vrule => { time => $addquery_time, }
+	#						);
+	#}
+
+	
+	my $var_list = ['rawIdleCPU'];
+	
+	foreach my $ds (@$var_list) {
+		push @graph_params, (
+								draw   => {
+									#type   => $first == 1 ? "stack" : "stack",
+									type => 'line',
+									dsname => $ds,# . "_P",
+									color => "FF0000",
+									legend => $ds,
+	  							}	
+							);
+	}
+
+	# Draw a graph in a PNG image
+	$rrd->graph( @graph_params );
+	
+	#return $graph_filename;
 }
 
 =head2 run
@@ -202,6 +340,8 @@ sub requireRemoveNode {
 
 sub run {
 	my $self = shift;
+
+	$self->createRRD();
 	
 	while ( 1 ) {
 		$self->manage();
