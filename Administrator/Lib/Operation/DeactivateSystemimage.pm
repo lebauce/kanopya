@@ -1,4 +1,4 @@
-# DeactiveSystemimage.pm - Operation class implementing systemimage deactivation operation
+# DeactivateSystemimage.pm - Operation class implementing systemimage deactivation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-Operation::DeactiveSystemimage - Operation class implementing Systemimage deactivation operation
+Operation::DeactivateSystemimage - Operation class implementing Systemimage deactivation operation
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ It allows to implement systemimage deactivation operation
 =head1 METHODS
 
 =cut
-package Operation::DeactiveSystemimage;
+package Operation::DeactivateSystemimage;
 
 use strict;
 use warnings;
@@ -54,9 +54,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::DeactiveSystemimage->new();
+    my $op = Operation::DeactivateSystemimage->new();
 
-Operation::DeactiveSystemimage->new creates a new DeactiveSystemimage operation.
+Operation::DeactivateSystemimage->new creates a new DeactivateSystemimage operation.
 
 =cut
 

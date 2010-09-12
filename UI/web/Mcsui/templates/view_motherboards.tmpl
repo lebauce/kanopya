@@ -4,78 +4,57 @@
 @import url(/css/listing.css);
 </style>
 <div id="content">
-<div id="contentleft">
-	<p>View, add, edit and remove microcluster's motherboards.</p>
-	<p><hr /></p>
-		<a class="button"  href="/cgi/mcsui.cgi/motherboards/form_addmotherboard">New motherboard</a>
-		<a id="editbutton" class="hidden"  href="">Edit motherboard</a>
-		<a id="removebutton" class="hidden"  href="">Remove motherboard</a>
-	<p><hr /></p>
-</div>
-
-<div id="contentright">
-	<table id="motherboardlist" class="listview">
-		<tr><th>position</th><th>model</th><th>active</th></tr>
-		<TMPL_LOOP NAME=MOTHERBOARDS>
-		<tr id="m<TMPL_VAR NAME=ID>" isactive="<TMPL_VAR NAME=ACTIVE>"><td><TMPL_VAR NAME=POSITION></td>
+<h1>Motherboards</h1>
+<table id="motherboardlist" class="listview">
+	<tr><th></th><th>place</th><th>model</th><th>state</th><th>active</th><th>actions</th></tr><TMPL_LOOP NAME=MOTHERBOARDS>
+	<tr>
+		<td id="m<TMPL_VAR NAME=ID>" class="expand">+</td>
+		<td><TMPL_VAR NAME=POSITION></td>
 		<td><TMPL_VAR NAME=MODEL></td>
-		<td><TMPL_VAR NAME=ACTIVE></td></tr>
-		</TMPL_LOOP>
-	</table>
-	<TMPL_LOOP NAME=DETAILS>
-	<table id="t<TMPL_VAR NAME=ID>" class="listdetails hidden">
-		<tr><td colspan="2"><hr/></td></tr>
-		<tr><td class="label">S/N : </td><td class="content"><TMPL_VAR NAME=SN></td></tr>
-		<tr><td class="label">mac address : </td><td class="content"><TMPL_VAR NAME=MAC></td></tr>
-		<tr><td class="label">CPU : </td><td class="content"><TMPL_VAR NAME=CPU></td></tr>
-		<tr><td class="label">cores number : </td><td class="content"><TMPL_VAR NAME=CORES></td></tr>
-		<tr><td class="label">RAM quantity (GB): </td><td class="content"><TMPL_VAR NAME=RAM></td></tr>
-		<tr><td class="label">consumption (W): </td><td class="content"><TMPL_VAR NAME=CONSUMPTION></td></tr>
-		<tr><td colspan="2"><hr/></td></tr>
-		<tr><td class="label">internal ip : </td><td class="content"><TMPL_VAR NAME=IP></td></tr>
-		<tr><td class="label">default kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
-		<tr><td colspan="2"><hr/></td></tr>
-		<tr><td colspan="2"><TMPL_VAR NAME=DESC></td></tr>
-	</table>
-	</TMPL_LOOP>
-	<table id="tempty" class="listdetails">
-		<tr><td colspan="2"><hr/></td></tr>
-		<tr><td class="label">S/N : </td><td class="content">d</td></tr>
-		<tr><td class="label">mac address : </td><td class="content"></td></tr>
-		<tr><td class="label">CPU : </td><td class="content"></td></tr>
-		<tr><td class="label">cores number : </td><td class="content"></td></tr>
-		<tr><td class="label">RAM quantity (GB): </td><td class="content"></td></tr>
-		<tr><td class="label">consumption (W): </td><td class="content"></td></tr>
-		<tr><td colspan="2"><hr/></td></tr>
-		<tr><td class="label">internal ip : </td><td class="content"></td></tr>
-		<tr><td class="label">default kernel : </td><td class="content"></td></tr>
-		<tr><td colspan="2"><hr/></td></tr>
-		<tr><td colspan="2"></td></tr>
-	</table>	
-</div>
+		<td><TMPL_VAR NAME=STATE></td>
+		<td><img src="/images/icons/<TMPL_IF NAME=ACTIVE>active.png<TMPL_ELSE>deactive.png</TMPL_IF>"/></td>
+		<td><TMPL_IF NAME=ACTIVE>
+		<a class="imgDeactive" href="/cgi/mcsui.cgi/motherboards/process_deactivatemotherboard?motherboard_id=<TMPL_VAR NAME=ID>">deactivate</a>
+		<TMPL_ELSE><a class="imgActive" href="/cgi/mcsui.cgi/motherboards/process_activatemotherboard?motherboard_id=<TMPL_VAR NAME=ID>">activate</a>
+		|<a class="imgEdit" href="">edit</a>
+		|<a class="imgRemove" href="/cgi/mcsui.cgi/motherboards/process_removemotherboard?motherboard_id=<TMPL_VAR NAME=ID>">remove</a>
+		</TMPL_IF>
+		</td>
+	</tr>
+	<tr id="t<TMPL_VAR NAME=ID>" class="hidden">
+		<td colspan="6">
+			<table class="listdetails">
+				<tr><td class="label">S/N : </td><td class="content"><TMPL_VAR NAME=SN></td></tr>
+				<tr><td class="label">mac address : </td><td class="content"><TMPL_VAR NAME=MAC></td></tr>
+				<tr><td class="label">CPU : </td><td class="content"><TMPL_VAR NAME=CPU></td></tr>
+				<tr><td class="label">cores number : </td><td class="content"><TMPL_VAR NAME=CORES></td></tr>
+				<tr><td class="label">RAM quantity (GB): </td><td class="content"><TMPL_VAR NAME=RAM></td></tr>
+				<tr><td class="label">consumption (W): </td><td class="content"><TMPL_VAR NAME=CONSUMPTION></td></tr>
+				<tr><td colspan="2"><hr/></td></tr>
+				<tr><td class="label">internal ip : </td><td class="content"><TMPL_VAR NAME=IP></td></tr>
+				<tr><td class="label">default kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
+				<tr><td colspan="2"><hr/></td></tr>
+				<tr><td colspan="2"><TMPL_VAR NAME=DESC></td>
+			</table>
+		</td>
+	</tr>
+</TMPL_LOOP>
+</table>
 </div>
 <script language="Javascript">
-editbutton = document.getElementById('editbutton');
-removebutton = document.getElementById('removebutton');
-tempty = document.getElementById('tempty');
 
 function selectme() { 
-	lines = document.getElementById('motherboardlist').getElementsByTagName('tr');
-	for(i=0;i<lines.length;i++) { lines[i].className = ''; }
-	this.classList.add('selected');
-	if(this.getAttribute('isactive') == 'no') {
-		editbutton.className = 'button';
-		removebutton.className = 'button';
-	} else {
-		editbutton.className = 'hidden';
-		removebutton.className = 'hidden';
+	if(this.innerHTML == '+') { 
+		this.innerHTML = '-'; 
+		document.getElementById('t'+this.id.substring(1)).className = ''; 
 	}
-	listdetails = document.getElementsByClassName('listdetails');
-	for(i=0;i<listdetails.length;i++) { listdetails[i].className = 'listdetails hidden'; }
-	document.getElementById('t'+this.id.substring(1)).className = 'listdetails';
+	else { 
+		this.innerHTML = '+';
+		document.getElementById('t'+this.id.substring(1)).className = 'hidden'; 
+	}
 }
 
-motherboardline = document.getElementById('motherboardlist').getElementsByTagName('tr');
+motherboardline = document.getElementById('motherboardlist').getElementsByClassName('expand');
 for(i=0;i<motherboardline.length;i++) {
 	motherboardline[i].onclick = selectme;
 }
