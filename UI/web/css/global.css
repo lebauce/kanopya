@@ -112,6 +112,9 @@ a.imgActive { background-image: url("/images/icons/active.png"); }
 a.imgDeactive { background-image: url("/images/icons/deactive.png"); }
 a.imgRemove { background-image: url("/images/icons/remove.png"); }
 a.imgEdit { background-image: url("/images/icons/edit.png"); }
+a.imgStart { background-image: url("/images/icons/start.png"); }
+a.imgStop { background-image: url("/images/icons/stop.png"); }
+a.imgCluster { background-image: url("/images/icons/cluster.png"); }
 
 #submenu li ul { display: none; }
 

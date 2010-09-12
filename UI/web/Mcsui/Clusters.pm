@@ -22,39 +22,36 @@ sub view_clusters : StartRunmode {
 	
     foreach my $n (@eclusters){
     	my $tmp = {};
-	$tmp->{ID} = $n->getAttr(name => 'cluster_id');
-	$tmp->{NAME} = $n->getAttr(name => 'cluster_name');
-	$tmp->{STATE} = $n->getAttr(name => 'cluster_state');
-	$tmp->{ACTIVE} = $n->getAttr('name' => 'active');
-	push (@$clusters, $tmp);	
+		$tmp->{ID} = $n->getAttr(name => 'cluster_id');
+		$tmp->{NAME} = $n->getAttr(name => 'cluster_name');
+		$tmp->{DESC} = $n->getAttr(name => 'cluster_desc');
+		$tmp->{STATE} = $n->getAttr(name => 'cluster_state');
+		$tmp->{ACTIVE} = $n->getAttr('name' => 'active');
+		$tmp->{MIN_NODE} = $n->getAttr(name => 'cluster_min_node');
+		$tmp->{MAX_NODE} = $n->getAttr(name => 'cluster_max_node');
+		my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $n->getAttr(name =>'kernel_id'));
+		$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version')." ".$ekernel->getAttr(name => 'kernel_name');
+		if ($n->getAttr(name => 'systemimage_id')){
+			my $esystem = $self->{'admin'}->getEntity(type =>'Systemimage', id => $n->getAttr(name =>'systemimage_id'));
+			$tmp->{SYSIMGNAME} =  $esystem->getAttr(name => 'systemimage_name');
+		}else{
+			$tmp->{SYSIMGNAME} = "";
+		}
+		if($tmp->{ACTIVE} and $tmp->{STATE} eq 'down') {$tmp->{CANSTART} = 1; }
+		elsif($tmp->{ACTIVE} and $tmp->{STATE} eq 'up') {$tmp->{CANSTOP} = 1; }
+		push (@$clusters, $tmp);	
     }	
-    foreach my $m (@eclusters){
-	my $tmp = {};
-	$tmp->{ID} = $m->getAttr(name => 'cluster_id');
-	$tmp->{MIN_NODE} = $m->getAttr(name => 'cluster_min_node');
-	$tmp->{MAX_NODE} = $m->getAttr(name => 'cluster_max_node');
-	my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $m->getAttr(name =>'kernel_id'));
-	$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version')." ".$ekernel->getAttr(name => 'kernel_name');
-	if ($m->getAttr(name => 'systemimage_id')){
-		my $esystem = $self->{'admin'}->getEntity(type =>'Systemimage', id => $m->getAttr(name =>'systemimage_id'));
-		$tmp->{SYSIMGNAME} =  $esystem->getAttr(name => 'systemimage_name');
-	}else{
-		$tmp->{SYSIMGNAME} = "";
-	}
-	push (@$details, $tmp);
-    }
-
+   
     my $tmpl =  $self->load_tmpl('view_clusters.tmpl');
 	$tmpl->param('CLUSTERS' => $clusters);
-	$tmpl->param('DETAILS' => $details);
     $tmpl->param('TITLE_PAGE' => "Clusters View");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
-	$tmpl->param('SUBMENU_CLUSTERS' => 1);
-	
+		
 	$output .= $tmpl->output();
         
     return $output;
 }
+
 sub form_addcluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
@@ -136,9 +133,51 @@ sub _addcluster_profile {
         };
 }
 
-sub form_removecluster : Runmode {
+sub process_activatecluster : Runmode {
     my $self = shift;
-    return 'you are on remove_cluster page';
+        
+    my $query = $self->query();
+    eval {
+    $self->{'admin'}->newOp(type => "ActivateCluster", priority => '100', params => { 
+		cluster_id => $query->param('cluster_id'), 
+		});
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'activate cluster operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+}
+
+sub process_deactivatecluster : Runmode {
+    my $self = shift;
+        
+    my $query = $self->query();
+    eval {
+    $self->{'admin'}->newOp(type => "DeactivateCluster", priority => '100', params => { 
+		cluster_id => $query->param('cluster_id'), 
+		});
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'deactivate cluster operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+}
+
+sub process_removecluster : Runmode {
+    my $self = shift;
+    my $query = $self->query();
+    eval {
+    $self->{'admin'}->newOp(type => "RemoveCluster", priority => '100', params => { 
+		cluster_id => $query->param('cluster_id'), 
+		});
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'remove cluster operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/cluster/view_clusters');
 }
 
 1;

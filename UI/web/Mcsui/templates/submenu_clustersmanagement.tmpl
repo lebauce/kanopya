@@ -1,5 +1,11 @@
 <div id="submenu">
-	<a <TMPL_IF NAME=SUBMENU_CLUSTERS>class="select"<TMPL_ELSE>href="/cgi/mcsui.cgi/clusters"</TMPL_IF>>Clusters</a>
-	<a <TMPL_IF NAME=SUBMENU_SYSTEMIMAGES>class="select"<TMPL_ELSE>href="/cgi/mcsui.cgi/systemimages"</TMPL_IF>>System images</a>
-	<a <TMPL_IF NAME=SUBMENU_SHAREDDISKS>class="select"<TMPL_ELSE>href="/cgi/mcsui.cgi/shareddisks"</TMPL_IF>>Shared Disks</a>
+	<ul>
+	<li><a class="imgCluster" href="">Clusters</a>
+		<ul>
+			<li><a class="imgListing" href="/cgi/mcsui.cgi/clusters">Cluster view</a></li>
+			<li><a class="imgAdding" href="/cgi/mcsui.cgi/clusters/form_addcluster">Add appliance cluster</a></li>
+			<li class="separator"><a class="imgAdding" href="">Add custom cluster</a></li>
+		</ul>
+	</li>
+	</ul>
 </div>
