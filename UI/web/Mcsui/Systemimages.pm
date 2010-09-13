@@ -25,6 +25,7 @@ sub view_systemimages : StartRunmode {
 		$edistro = $self->{'admin'}->getEntity(type =>'Distribution', id => $s->getAttr(name => 'distribution_id'));
 		$tmp->{DISTRO} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
 		$tmp->{ACTIVE} = $s->getAttr(name => 'active');
+		$tmp->{COMPONENTS} = $s->getInstalledComponents();
 		push (@$systemimage, $tmp);
     }		
     

@@ -23,7 +23,13 @@
 	<tr id="t<TMPL_VAR NAME=ID>" class="hidden">
 		<td colspan="5">
 				<table class="listdetails">
-					<tr><td colspan="2"><TMPL_VAR NAME=DESC></td></tr>
+					<tr><td colspan="2" class="content"><TMPL_VAR NAME=DESC></td></tr>
+					<tr><th colspan="2">Components installed</th></tr>
+					<TMPL_LOOP NAME=COMPONENTS>
+					<tr id="c<TMPL_VAR NAME=COMPONENT_ID>"><td class="label"><TMPL_VAR NAME=COMPONENT_NAME></td>
+					<td class="content">v<TMPL_VAR NAME=COMPONENT_VERSION> (<TMPL_VAR NAME=COMPONENT_CATEGORY>)</td>
+					</TMPL_LOOP>
+				</tr>
 				</table>
 			</td>
 	</tr>

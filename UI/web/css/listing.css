@@ -4,6 +4,8 @@ table.listview {
 	float: left;
 	clear: both;
 	background-color: white;
+	min-width: 50%;
+	max-width: 1022px;
 }
 
 
