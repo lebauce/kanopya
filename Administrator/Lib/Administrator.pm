@@ -1143,7 +1143,6 @@ sub getOperations {
 		
 		while (my $param = $Parameters->next) {
 			push @$opparams, { 
-				'ID' => $op->get_column('operation_id'), 
 				'PARAMNAME' => $param->get_column('name'), 
 				'VAL' => $param->get_column('value')
 			};
@@ -1155,10 +1154,11 @@ sub getOperations {
 			'DATE' => $op->get_column('creation_date'), 
 			'TIME' => $op->get_column('creation_time'), 
 			'RANK' => $op->get_column('execution_rank'), 
-			'PRIORITY' => $op->get_column('priority'), 
+			'PRIORITY' => $op->get_column('priority'),
+			'PARAMETERS' => $opparams,
 		};
 	}
-	return ($arr, $opparams);
+	return $arr;
 
 }
 
