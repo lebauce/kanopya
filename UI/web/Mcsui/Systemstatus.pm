@@ -15,8 +15,7 @@ sub view_status : StartRunmode {
     my $tmpl =  $self->load_tmpl('view_status.tmpl');
     $tmpl->param('TITLE_PAGE' => "System Status");
 	$tmpl->param('MENU_SYSTEMSTATUS' => 1);
-	$tmpl->param('SUBMENU_MAINVIEW' => 1);
-	
+		
 	$output .= $tmpl->output();
         
     return $output;   
@@ -29,13 +28,10 @@ sub view_executionqueue : Runmode {
     my $tmpl =  $self->load_tmpl('view_executionqueue.tmpl');
     $tmpl->param('TITLE_PAGE' => "Execution Queue");
 	$tmpl->param('MENU_SYSTEMSTATUS' => 1);
-	$tmpl->param('SUBMENU_EXECQUEUE' => 1);
-	
-	my ($Operations, $Parameters) = $self->{admin}->getOperations();
 		
+	my $Operations = $self->{admin}->getOperations();
 	$tmpl->param('OPERATIONS' => $Operations);
-	$tmpl->param('OPERATIONSPARAMETERS' => $Parameters);
-	
+		
 	$output .= $tmpl->output();
     
     return $output;   

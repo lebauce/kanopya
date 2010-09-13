@@ -115,6 +115,11 @@ a.imgEdit { background-image: url("/images/icons/edit.png"); }
 a.imgStart { background-image: url("/images/icons/start.png"); }
 a.imgStop { background-image: url("/images/icons/stop.png"); }
 a.imgCluster { background-image: url("/images/icons/cluster.png"); }
+a.imgEye { background-image: url("/images/icons/eye.png"); }
+a.imgDatabase { background-image: url("/images/icons/database.png"); }
+a.imgBoot { background-image: url("/images/icons/boot.png"); }
+a.imgExecute { background-image: url("/images/icons/execute.png"); }
+a.imgMonitor { background-image: url("/images/icons/monitor.png"); }
 
 #submenu li ul { display: none; }
 
