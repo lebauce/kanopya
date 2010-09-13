@@ -15,11 +15,12 @@
 		<td><TMPL_IF NAME=ACTIVE>
 		<TMPL_IF NAME=CANSTART><a class="imgStart" href="/cgi/mcsui.cgi/clusters/process_startcluster?cluster_id=<TMPL_VAR NAME=ID>">start</a></TMPL_IF>
 		<TMPL_IF NAME=CANSTOP><a class="imgStop" href="/cgi/mcsui.cgi/clusters/process_stopcluster?cluster_id=<TMPL_VAR NAME=ID>">stop</a></TMPL_IF>
-		<a class="imgDeactive" href="/cgi/mcsui.cgi/clusters/process_deactivatecluster?cluster_id=<TMPL_VAR NAME=ID>">deactivate</a>
+		|<a class="imgDeactive" href="/cgi/mcsui.cgi/clusters/process_deactivatecluster?cluster_id=<TMPL_VAR NAME=ID>">deactivate</a>
 		<TMPL_ELSE><a class="imgActive" href="/cgi/mcsui.cgi/cluster/process_activatecluster?cluster_id=<TMPL_VAR NAME=ID>">activate</a>
 		|<a class="imgEdit" href="">edit</a>
 		|<a class="imgRemove" href="/cgi/mcsui.cgi/motherboards/process_removecluster?cluster_id=<TMPL_VAR NAME=ID>">remove</a>
 		</TMPL_IF>
+		|<a class="imgNetwork" href="/cgi/mcsui.cgi/clusters/form_setpubliciptocluster?cluster_id=<TMPL_VAR NAME=ID>">add public ip</a>
 		</td>
 	</tr>
 	<tr id="t<TMPL_VAR NAME=ID>" class="hidden">
@@ -27,10 +28,18 @@
 			<table class="listdetails">	
 				<tr><td class="label">Min node : </td><td class="content"><TMPL_VAR NAME=MIN_NODE></td></tr>
 				<tr><td class="label">Max node : </td><td class="content"><TMPL_VAR NAME=MAX_NODE></td></tr>
+				<tr><td class="label">Priority : </td><td class="content"><TMPL_VAR NAME=PRIORITY></td></tr>
 				<tr><td class="label">Kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
 				<tr><td class="label">System image : </td><td class="content"><TMPL_VAR NAME=SYSIMGNAME></td></tr>
 				<tr><td colspan="2"><hr/></td></tr>
 				<tr><td colspan="2" class="content"><TMPL_VAR NAME=DESC></td></tr>
+				<tr><td colspan="2"><hr/></td></tr>
+				<tr><td class="label">Public IP : </td><td>
+				<select ><TMPL_LOOP NAME=PUBLICIPS>
+					<option nothing="<TMPL_VAR NAME=NAME>"><TMPL_VAR NAME=ADDRESS> / <TMPL_VAR NAME=NETMASK> (<TMPL_VAR NAME=GATEWAY>)</option>
+				</TMPL_LOOP>
+				</select>
+				</td></tr>
 			</table>
 		</td>
 	</tr>

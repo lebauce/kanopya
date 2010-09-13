@@ -35,7 +35,7 @@ sub view_motherboards : StartRunmode {
 		$tmp->{CONSUMPTION} = $emotherboard->getAttr(name =>'motherboardmodel_consumption'); 
 		$tmp->{IP} = $m->getAttr(name => 'motherboard_internal_ip');
 		my $ekernel= $self->{'admin'}->getEntity(type => 'Kernel', id => $m->getAttr(name => 'kernel_id'));
-		$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version')." ".$ekernel->getAttr(name => 'kernel_name'); 
+		$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_name')." (".$ekernel->getAttr(name => 'kernel_version').")"; 
 		$tmp->{DESC} = $m->getAttr(name => 'motherboard_desc');
     
 		push (@$motherboards, $tmp);
@@ -88,7 +88,7 @@ sub form_addmotherboard : Runmode {
 	foreach my $x (@kernel){
 		my $tmp = {
 			ID => $x->getAttr( name => 'kernel_id'),
-		    NAME => join(' ',$x->getAttr(name =>'kernel_name'),$x->getAttr(name => 'kernel_version')),
+		    NAME => $x->getAttr(name =>'kernel_name')." (".$x->getAttr(name => 'kernel_version').")",
 		};
 		push (@$kern, $tmp);
 	}

@@ -7,10 +7,6 @@ use CGI::Application::Plugin::Redirect;
 sub setup {
 	my $self = shift;
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
-	$self->mode_param(
-		path_info => 2,
-		param => 'rm'
-	);
 }
 
 sub view_clusters : StartRunmode {
@@ -25,6 +21,7 @@ sub view_clusters : StartRunmode {
 		$tmp->{ID} = $n->getAttr(name => 'cluster_id');
 		$tmp->{NAME} = $n->getAttr(name => 'cluster_name');
 		$tmp->{DESC} = $n->getAttr(name => 'cluster_desc');
+		$tmp->{PRIORITY} = $n->getAttr(name => 'cluster_priority');
 		$tmp->{STATE} = $n->getAttr(name => 'cluster_state');
 		$tmp->{ACTIVE} = $n->getAttr('name' => 'active');
 		$tmp->{MIN_NODE} = $n->getAttr(name => 'cluster_min_node');
@@ -37,6 +34,8 @@ sub view_clusters : StartRunmode {
 		}else{
 			$tmp->{SYSIMGNAME} = "";
 		}
+		$tmp->{PUBLICIPS} = $n->getPublicIps();
+				
 		if($tmp->{ACTIVE} and $tmp->{STATE} eq 'down') {$tmp->{CANSTART} = 1; }
 		elsif($tmp->{ACTIVE} and $tmp->{STATE} eq 'up') {$tmp->{CANSTOP} = 1; }
 		push (@$clusters, $tmp);	
@@ -55,13 +54,8 @@ sub view_clusters : StartRunmode {
 sub form_addcluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $log = get_logger('administrator');
 	my $tmpl =$self->load_tmpl('form_addcluster.tmpl');
 	my $output = '';
-	$tmpl->param('TITLE_PAGE' => "Adding a Cluster");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
-	$tmpl->param('SUBMENU_CLUSTERS' => 1);
-	$tmpl->param($errors) if $errors;
 	
 	my @ekernels = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
 	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
@@ -72,7 +66,6 @@ sub form_addcluster : Runmode {
 	for (my $i=1; $i<=$count; $i++) {
 		my $tmp->{CM}=$i;
 		push(@$c, $tmp);
-		$log->debug('coucou '.$id);
 	}
 	my $kmodels = [];
 	foreach $k (@ekernels) {
@@ -89,9 +82,12 @@ sub form_addcluster : Runmode {
 		push (@$smodels, $tmp);
 	}
 	
+	$tmpl->param('TITLE_PAGE' => "Adding a Cluster");
+	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 	$tmpl->param('COUNT' => $c);
 	$tmpl->param('KERNELS' => $kmodels);
 	$tmpl->param('SYSTEMIMAGES' => $smodels);
+	$tmpl->param($errors) if $errors;
 	$output .= $tmpl->output();
 	return $output;
 }
@@ -178,6 +174,39 @@ sub process_removecluster : Runmode {
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'remove cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/cluster/view_clusters');
+}
+
+sub form_setpubliciptocluster : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl =$self->load_tmpl('form_setpubliciptocluster.tmpl');
+	my $output = '';
+	my $query = $self->query();	
+	my $freepublicips = $self->{admin}->getFreePublicIPs();
+	
+	$tmpl->param('TITLE_PAGE' => "Adding a public ip to a Cluster");
+	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('CLUSTER_ID' => $query->param('cluster_id'));
+	$tmpl->param('FREEPUBLICIPS' => $freepublicips);
+	
+	$output .= $tmpl->output();
+	return $output;
+}
+
+sub process_setpubliciptocluster : Runmode {
+	my $self = shift;
+    my $query = $self->query();
+    eval {
+    	$self->{admin}->setClusterPublicIP(
+    		publicip_id => $query->param('publicip_id'),
+    		cluster_id => $query->param('cluster_id'),
+    	);
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new public ip added to cluster.'); }
+    $self->redirect('/cgi/mcsui.cgi/clusters');
 }
 
 1;

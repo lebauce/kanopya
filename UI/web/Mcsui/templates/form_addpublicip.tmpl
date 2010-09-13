@@ -1,0 +1,36 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/form.css);</style>
+
+<div id="content">
+<form method="POST" action="/cgi/mcsui.cgi/network/process_addpublicip">
+<table class="form">
+	<caption>New Public IP</caption>
+	<TMPL_IF NAME=SOME_ERRORS>
+	<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
+	</TMPL_IF>
+	<tr>
+		<td class="label">IP :</td>
+		<td><input type="text" name="ip_address" maxlength="39" size="20"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_IP_ADDRESS></span></td>
+	</tr>
+	<tr>
+		<td class="label">mask :</td>
+		<td><input type="text" name="ip_mask" maxlength="39" size="20"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_IP_MASK></span></td>
+	</tr>
+	<tr>
+		<td class="label">gateway :</td>
+		<td><input type="text" name="gateway" maxlength="39" size="20"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_GATEWAY></span></td>
+	</tr>
+	
+</table>
+<div class="formbuttons">
+	<input class="button" type="reset" value="clear" />
+	<a class="button" href="/cgi/mcsui.cgi/network/view_publicips">cancel</a>
+	<input class="button" type="submit" value="add" />
+</div>
+</form> 
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
