@@ -12,6 +12,7 @@ my $orchestrator = Orchestrator->new();
 my $sub = shift;
 if ( $sub eq "run" ) {
 	$orchestrator->run();
-} elsif ( $sub eq "test" ) {
-	$orchestrator->run();
+} elsif ( $sub eq "graph" ) {
+	$orchestrator->graph();
+	my $tmp =  `eog /tmp/graph_orchestrator.png`;
 }
