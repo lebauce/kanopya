@@ -6,10 +6,6 @@ use CGI::Application::Plugin::Redirect;
 sub setup {
 	my $self = shift;
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
-	$self->mode_param(
-		path_info => 2,
-		param => 'rm'
-	);
 }
 
 sub view_systemimages : StartRunmode {
@@ -56,7 +52,7 @@ sub form_addsystemimage : Runmode {
 	my @edistros = $self->{'admin'}->getEntities(type =>'Distribution', hash => {});
 	
 	my $systemimage = [];
-	foreach my $s (@esysteimages){
+	foreach my $s (@esystemimages){
 		my $tmp = {};
 		$tmp->{ID} = $s->getAttr(name => 'systemimage_id');
 		$tmp->{NAME} = $s->getAttr(name => 'systemimage_name');
@@ -84,12 +80,37 @@ sub process_addsystemimage : Runmode {
     return $err_page if $err_page;
 	
 	my $query = $self->query();
-
+	if($query->param('type') eq 'systemimage') {
+		eval {
+			 $self->{'admin'}->newOp(type => "CloneSystemimage", priority => '100', params => {
+			 	systemimage_name => $query->param('systemimage_name'),
+			 	systemimage_desc => $query->param('systemimage_desc'),
+			 	distribution_id =>  $query->param('distribution_id'), });
+		};	
+		if(@$) {
+			my $error = $@;
+			$self->{'admin'}->addMessage(type => 'error', content => $error); 
+		} else { $self->{'admin'}->addMessage(type => 'success', content => 'clone system image operation adding to execution queue'); }	
+		
+	} elsif($query->param('type') eq 'distribution') {
+		eval {
+			$self->{'admin'}->newOp(type => "AddSystemimage", priority => '100', params => {
+				systemimage_name => $query->param('systemimage_name'),
+			 	systemimage_desc => $query->param('systemimage_desc'),
+			 	systemimage_id =>  $query->param('distribution_id'), });
+		};
+		if(@$) {
+			my $error = $@;
+			$self->{'admin'}->addMessage(type => 'error', content => $error); 
+		} else { $self->{'admin'}->addMessage(type => 'success', content => 'new system image operation adding to execution queue'); }
+	}
+	
+    $self->redirect('/cgi/mcsui.cgi/systemimages/view_systemimages');
 }
 
 sub _addsystemimage_profile {
 	return {
-		required => 'name',
+		required => 'systemimage_name',
 		msgs => {
 				any_errors => 'some_errors',
 				prefix => 'err_'

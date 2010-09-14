@@ -1,11 +1,12 @@
-html { height: 100%; }
+
 
 body {
-	margin: 0 auto;
-	width: 1024px;
-	height: 100%;
-	font: small Georgia,Serif;
 	background-color: #EEE;
+	font: small Georgia,Serif;
+	width: 1024px;
+	margin: 0 auto;
+	/* min-height: 100%; */
+	
 } 
 
 #ivy1 {
@@ -15,15 +16,24 @@ body {
 	z-index: -1;
 }
 
+a#logout { 
+	color: green;
+	float: right;
+	margin-top: 10px;
+	padding: 8px;
+	display: block;
+	background-color: white;
+	border: 1px solid #765;
+	opacity: 0.9;
+}
+
 iframe { 
 	background-color: white;
-	float: left;
 	border: none;
-	margin: 0 auto;
-	width: 1024px;
+	min-width: 1024px;
+	left: 0;
 	bottom: 0;
-	height: 100px;
-	
+	margin: 0 auto;
 }
 
 /* mainmenu */
@@ -102,24 +112,25 @@ iframe {
 	background-repeat: no-repeat;	
 }
 
-a.imgHardware { background-image: url("/images/icons/hardware.png"); }
-a.imgLinux { background-image: url("/images/icons/linux.png"); }
-a.imgNetwork { background-image: url("/images/icons/network.png"); }
-a.imgRights { background-image: url("/images/icons/rights.png"); }
-a.imgListing { background-image: url("/images/icons/list.png"); }
-a.imgAdding { background-image: url("/images/icons/add.png"); }
-a.imgActive { background-image: url("/images/icons/active.png"); }
-a.imgDeactive { background-image: url("/images/icons/deactive.png"); }
-a.imgRemove { background-image: url("/images/icons/remove.png"); }
-a.imgEdit { background-image: url("/images/icons/edit.png"); }
-a.imgStart { background-image: url("/images/icons/start.png"); }
-a.imgStop { background-image: url("/images/icons/stop.png"); }
-a.imgCluster { background-image: url("/images/icons/cluster.png"); }
-a.imgEye { background-image: url("/images/icons/eye.png"); }
-a.imgDatabase { background-image: url("/images/icons/database.png"); }
-a.imgBoot { background-image: url("/images/icons/boot.png"); }
-a.imgExecute { background-image: url("/images/icons/execute.png"); }
-a.imgMonitor { background-image: url("/images/icons/monitor.png"); }
+.imgHardware { background-image: url("/images/icons/hardware.png"); }
+.imgLinux { background-image: url("/images/icons/linux.png"); }
+.imgNetwork { background-image: url("/images/icons/network.png"); }
+.imgRights { background-image: url("/images/icons/rights.png"); }
+.imgListing { background-image: url("/images/icons/list.png"); }
+.imgAdding { background-image: url("/images/icons/add.png"); }
+.imgActive { background-image: url("/images/icons/active.png"); }
+.imgDeactive { background-image: url("/images/icons/deactive.png"); }
+.imgRemove { background-image: url("/images/icons/remove.png"); }
+.imgEdit { background-image: url("/images/icons/edit.png"); }
+.imgStart { background-image: url("/images/icons/start.png"); }
+.imgStop { background-image: url("/images/icons/stop.png"); }
+.imgCluster { background-image: url("/images/icons/cluster.png"); }
+.imgEye { background-image: url("/images/icons/eye.png"); }
+.imgDatabase { background-image: url("/images/icons/database.png"); }
+.imgBoot { background-image: url("/images/icons/boot.png"); }
+.imgExecute { background-image: url("/images/icons/execute.png"); }
+.imgMonitor { background-image: url("/images/icons/monitor.png"); }
+.imgCancel { background-image: url("/images/icons/cancel.png"); }
 
 #submenu li ul { display: none; }
 

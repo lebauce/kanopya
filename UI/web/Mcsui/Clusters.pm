@@ -100,16 +100,17 @@ sub process_addcluster : Runmode {
 
         my $query = $self->query();
         eval {
-                $self->{'admin'}->newOp(type =>"AddCluster", priority => '100', params => {	
-			cluster_name => $query->param('name'),
-			cluster_desc => $query->param('desc'),
-			cluster_min_node => $query->param('min_node'),
-			cluster_max_node => $query->param('max_node'),
-			cluster_priority => $query->param('priority'),
-			kernel_id => $query->param('kernel') ne '0' ? $query->param('kernel') : undef,
-			systemimage_id => $query->param('systemimage')
-                });
-        };
+            my $params = {
+				cluster_name => $query->param('name'),
+				cluster_desc => $query->param('desc'),
+				cluster_min_node => $query->param('min_node'),
+				cluster_max_node => $query->param('max_node'),
+				cluster_priority => $query->param('priority'),
+				systemimage_id => $query->param('systemimage_id')
+			};
+			if($query->param('kernel_id') ne '0') { $args->{kernel_id} = $query->param('kernel_id'); }
+			$self->{'admin'}->newOp(type =>"AddCluster", priority => '100', params => $params);
+		};
         if($@) {
                 my $error = $@;
                 $self->{'admin'}->addMessage(type => 'error', content => $error);
@@ -121,7 +122,7 @@ sub process_addcluster : Runmode {
 
 sub _addcluster_profile {
         return {
-                required => ['name', 'systemimage', 'kernel', 'min_node', 'max_node'],
+                required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node'],
                 msgs => {
                                 any_errors => 'some_errors',
                                 prefix => 'err_'

@@ -42,7 +42,7 @@
 	</tr>
 	<tr>
 		<td class="label">System image :</td>
-		<td><select name="systemimage">
+		<td><select name="systemimage_id">
 		<TMPL_LOOP NAME=SYSTEMIMAGES>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
@@ -51,7 +51,7 @@
 	</tr>
 	<tr>
 		<td class="label">Kernel :</td>
-		<td><select name="kernel">
+		<td><select name="kernel_id">
 		<option value="0">default motherboard kernel</option>
 		<TMPL_LOOP NAME=KERNELS>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>

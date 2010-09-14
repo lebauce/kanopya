@@ -16,11 +16,11 @@
 		<td><TMPL_VAR NAME=DATE></td>
 		<td><TMPL_VAR NAME=TIME></td>
 		<td>
-		<a class="imgRemove" href="/cgi/mcsui.cgi/systemstatus/process_canceloperation?operation_id=<TMPL_VAR NAME=ID>">cancel</a>
+		<a class="imgCancel" href="/cgi/mcsui.cgi/systemstatus/process_canceloperation?operation_id=<TMPL_VAR NAME=ID>">cancel</a>
 		</td>
 	</tr>
 	<tr id="t<TMPL_VAR NAME=ID>" class="hidden">
-		<td colspan="7">
+		<td colspan="8">
 			<table class="listdetails">	
 				<TMPL_LOOP NAME=PARAMETERS>
 				<tr><td class="label"><TMPL_VAR NAME=PARAMNAME> : </td><td class="content"><TMPL_VAR NAME=VAL></td></tr>
@@ -30,14 +30,6 @@
 	</tr>
 </TMPL_LOOP>
 </table>
-<TMPL_LOOP NAME=OPERATIONSPARAMETERS>
-<table id="l<TMPL_VAR NAME=ID>" class="listdetails hidden">
-	<tr><td colspan="2"><hr/></td></tr>
-	<tr><td class="label"><TMPL_VAR NAME=PARAMNAME></td><td class="content"><TMPL_VAR NAME=VAL></td></tr>
-	<tr><td colspan="2"><hr/></td></tr>
-</table>
-</TMPL_LOOP>
-
 </div>
 <script language="Javascript">
 function selectme() { 

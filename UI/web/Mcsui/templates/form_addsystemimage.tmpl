@@ -10,26 +10,31 @@
 		<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
 		</TMPL_IF>
 		<tr>
-			<td class="label">Duplicate distribution :</td>
-			<td><input type="radio" name="type" onClick="Duplicate()" checked /></td>
-		</tr>
+		<td class="label">Name :</td>
+		<td><input type="text" name="systemimage_name" maxlength="50" size="52"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_SYSTEMIMAGE_NAME></span></td>
+	</tr>
 		<tr>
-			<td class="label">Clone system image :</td>
-			<td><input type="radio" name="type" onClick="Clone()" /></td>
-		</tr>
-		<tr id="duplicate">
-			<td class="label">Select a  distribution to duplicate :</td>
-			<td><select name="distribution">
+			<td class="label">from a distribution :<input type="radio" name="type" value="distribution" onClick="Duplicate()" checked="checked" /></td>
+			<td>
+			<select id="duplicate" name="distribution_id">
 			<TMPL_LOOP NAME=DISTRIBUTION>
 				<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 			</TMPL_LOOP></td>	
+			</td>
 		</tr>
-		<tr id="clone">
-			<td class="label">Select a system image to clone :</td>
-			<td><select name="system_image">
+		<tr>
+			<td class="label">clone a system image :<input type="radio" name="type" value="systemimage" onClick="Clone()" /></td>
+			<td>
+			<select name="systemimage_id">
 			<TMPL_LOOP NAME=SYSTEMIMAGE>
 				<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
-			</TMPL_LOOP></td>
+			</TMPL_LOOP>
+			</td>
+		</tr>
+		<tr>
+			<td class="label">Description :</td>
+			<td><textarea cols="50" name="systemimage_desc" value=""></textarea></td> 
 		</tr>
 	</table>
 	<div class="formbuttons">
@@ -39,19 +44,4 @@
 	</div>
 	</form> 
 </div>
-<script language="Javascript">
-	clone = document.getElementById('clone');
-	duplicate = document.getElementById('duplicate');
-	window.onload = function() {
-		clone.style.visibility="hidden";
-	}
-	function Clone(){
-		clone.style.visibility="visible";
-		duplicate.style.visibility="hidden";
-	}
-	function Duplicate(){
-		clone.style.visibility="hidden";
-		duplicate.style.visibility="visible";
-	}
-</script>
 <TMPL_INCLUDE NAME="footer.tmpl">
