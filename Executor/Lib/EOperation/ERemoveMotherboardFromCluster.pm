@@ -228,9 +228,12 @@ sub execute{
 	
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
-
+	$self->{_objs}->{motherboard}->save();
+	
 	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+
+	$self->{_objs}->{motherboard}->save();
 }
 
 
@@ -244,7 +247,7 @@ sub stopNode {
 	my $result = $motherboard_econtext->execute(command => $command);
 	my $state = 'stopping:'.time;
 	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
-	$self->{_objs}->{motherboard}->save();
+	
 }
 
 

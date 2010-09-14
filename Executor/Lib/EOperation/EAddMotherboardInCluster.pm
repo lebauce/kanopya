@@ -305,6 +305,7 @@ sub execute{
 
 	# finaly we start the node
 	$self->startNode();
+	$self->{_objs}->{motherboard}->save();
 
 }
 
@@ -321,7 +322,6 @@ sub startNode {
 	my $result = $self->{econtext}->execute(command => $command);
 	my $state = "starting:".time;
 	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
-	$self->{_objs}->{motherboard}->save();
 }
 
 sub generateNodeConf {
