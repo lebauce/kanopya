@@ -905,7 +905,6 @@ sub getFreePublicIPs {
 	while(my $ips = $pubips->next) {
 		push @$pubiparray, {
 			publicip_id => $ips->get_column('publicip_id'),
-			cluster_id => $ips->get_column('cluster_id'),
 			ip_address => $ips->get_column('ip_address'),
 			ip_mask => $ips->get_column('ip_mask'),
 			gateway =>$ips->get_column('gateway') 
@@ -1084,7 +1083,7 @@ sub getNodes {
 	while (my $n = $nodes->next) {
 		push @$motherboards, $self->getEntity(type => 'Motherboard', id => $n->get_column('motherboard_id'));
 	}
-	return scalar @$motherboards ? @$motherboards : undef;
+	return $motherboards;
 }
 
 
@@ -1136,9 +1135,11 @@ sub getOperations {
 		'+columns' => [ 'user_id.user_login' ],
 		join => [ 'user_id' ]
 	});
+	
 	my $arr = [];
-	my $opparams = [];
 	while (my $op = $Operations->next) {
+		
+		my $opparams = [];
 		my $Parameters = $self->{db}->resultset('OperationParameter')->search({operation_id=>$op->get_column('operation_id')});
 		
 		while (my $param = $Parameters->next) {

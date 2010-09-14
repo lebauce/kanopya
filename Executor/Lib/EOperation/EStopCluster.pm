@@ -117,7 +117,7 @@ sub execute {
 	$log->info("getting cluster's nodes");
 	my $nodes = $adm->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));	
 	
-	if(not defined $nodes) {
+	if(not scalar @$nodes) {
 		$errmsg = "EStopCluster->execute : this cluster with id $self->{_objs}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
