@@ -302,20 +302,20 @@ sub update {
 	################################
 	# update hosts state if needed #
 	################################
-	my $adm = $self->{_admin};
-	for my $host_info (@all_hosts_info) {
-		my $host_state = $hosts_state{ $host_info->{ip} };
-		if ( $host_info->{state} ne $host_state ) {
-				my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_info->{ip} } );
-				my $mb = shift @mb_res;
-				if ( defined $mb ) {
-					$mb->setAttr( name => "motherboard_state", value => $host_state );
-					$mb->save();
-				} else {
-					print "===> Error: can't find motherboard in DB : ip = $host_info->{ip}\n";
-				}
-		}
-	}
+#	my $adm = $self->{_admin};
+#	for my $host_info (@all_hosts_info) {
+#		my $host_state = $hosts_state{ $host_info->{ip} };
+#		if ( $host_info->{state} ne $host_state ) {
+#				my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_info->{ip} } );
+#				my $mb = shift @mb_res;
+#				if ( defined $mb ) {
+#					$mb->setAttr( name => "motherboard_state", value => $host_state );
+#					$mb->save();
+#				} else {
+#					print "===> Error: can't find motherboard in DB : ip = $host_info->{ip}\n";
+#				}
+#		}
+#	}
 	
 }
 

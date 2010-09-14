@@ -44,9 +44,11 @@ use strict;
 use warnings;
 use Monitor::Retriever;
 use XML::Simple;
+use General;
 
 use Data::Dumper;
 
+				
 =head2 new
 	
 	Class : Public
@@ -67,14 +69,11 @@ sub new {
 	# Load conf
 	my $conf = XMLin("/workspace/mcs/Orchestrator/Conf/orchestrator.conf");
 	$self->{_time_step} = $conf->{time_step};
+	$self->{_traps} = General::getAsArrayRef( data => $conf, tag => 'traps' );
 	
 	# Get Administrator
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	$self->{_monitor} = Monitor::Retriever->new( );
-
-	
-	open FILE, ">/tmp/ochestrator.time";
-	close FILE;
 	
     return $self;
 }
@@ -93,59 +92,42 @@ sub manage {
 	print "Manage\n";
 	
 	my $monitor = $self->{_monitor};
-	
-	# TODO load from conf
-	my @traps = (  { 	
-						set_name => 'mem',
-						percent => 1, 
-						time_laps => 60,
-						thresholds => [ { var => "memAvail", min => '60' },
-										{ var => "memCached", max => '80' }  ],
-					}, 
-					{ 	
-						set_name => 'cpu',
-						percent => 1,
-						time_laps => 100,
-						thresholds => [ { var => "rawIdleCPU", min => '90' } ]
-					},
-					{
-						set_name => 'apache_stat',
-						time_laps => 100,
-						thresholds => [ { var => "BytesPerSec", max => '70' },
-										{ var => "IdleWorkers", max => '40' } ]
-					}
-				);
-	
+
 	
 	my @all_clusters_name = $monitor->getClustersName();
 	my @skip_clusters = ();
 	for my $cluster (@all_clusters_name) {
 		print "# CLUSTER: $cluster\n";
+		my %values = ();
 		my $cluster_trapped = 0;
-		for my $trap_def ( @traps ) {
+		for my $trap_def ( @{ $self->{_traps} } ) {
 			if ($cluster_trapped) {
 				print " ==> skip\n";
 				last;
 			}
-			print "	# TRAP: $trap_def->{set_name} (laps: $trap_def->{time_laps})\n";
-			my $cluster_data_aggreg = $monitor->getClusterData( 	cluster => $cluster,
-																	set => $trap_def->{set_name},
-																	time_laps => $trap_def->{time_laps},
-																	percent => $trap_def->{percent},
-																	aggregate => "mean");
-		
-			foreach my $threshold ( @{ $trap_def->{thresholds} }) {
+			print "	# TRAP: $trap_def->{set} (laps: $trap_def->{time_laps})\n";
+			my $cluster_data_aggreg;
+			eval {
+				$cluster_data_aggreg = $monitor->getClusterData( 	cluster => $cluster,
+																		set => $trap_def->{set},
+																		time_laps => $trap_def->{time_laps},
+																		percent => $trap_def->{percent},
+																		aggregate => "mean");
+			};
+			if ($@) {
+				my $error = $@;
+				print "=> Error getting data (set '$trap_def->{set}' for cluster '$cluster') : $error\n";
+				next;
+			}
+			foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
+				
 				my $value = $cluster_data_aggreg->{ $threshold->{var} };
 				if (not defined $value) {
 					print "Warning: no value for var '$threshold->{var}' in cluster '$cluster'. Trap ignored.\n";
 					next;
 				}
 				
-				# TEMPORARY
-				if ( $cluster eq "cluster_1" && $threshold->{var} eq "rawIdleCPU") {
-					my $rrd = RRDTool::OO->new( file =>  "/tmp/orchestrator.rrd" );
-					$rrd->update( time => time(), values =>  { "rawIdleCPU" => $value });
-				}
+				$values{  $threshold->{var} . "_" . $trap_def->{time_laps} } = $value;
 				
 				print "		# THRESHOLD  : $threshold->{var} ", defined $threshold->{max}?"max=$threshold->{max}":"min=$threshold->{min}", " value=$value\n";
 				if ( 	( defined $threshold->{max} && $value > $threshold->{max} )
@@ -153,10 +135,15 @@ sub manage {
 					print "				======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
 					$self->requireAddNode( cluster => $cluster );
 					push @skip_clusters, $cluster;
-					$cluster_trapped = 1;
-					last;		
+					#$cluster_trapped = 1;
+					#last;		
 				}
 			}
+		}
+		# Store values
+		if ( scalar keys %values ) {
+			my $rrd = $self->getRRD( cluster => $cluster );
+			$rrd->update( time => time(), values => \%values );
 		}
 	}
 	
@@ -238,8 +225,15 @@ sub requireAddNode {
     
     print "====> add node in $cluster\n";
     
-    open FILE, ">>/tmp/ochestrator.time";
-    print FILE ":".time();
+    # Store the time in a file, keeping only last 11 values
+    open FILE, "</tmp/orchestrator_$cluster.time";
+    my $times = <FILE>;
+    close FILE;
+    my @times = $times ? split( /:/, $times ) : ();
+    my @last_times = scalar @times > 10 ? @times[$#times - 10 .. $#times] : @times;
+    push @last_times, time();
+    open FILE, ">/tmp/orchestrator_$cluster.time";
+    print FILE join(":", @last_times);
     close FILE;
     
 }
@@ -248,13 +242,37 @@ sub requireRemoveNode {
 	
 }
 
+sub getRRD {
+	my $self = shift;
+	my %args = @_;
+	
+	my $cluster = $args{cluster};
+	my $rrd_file = "/tmp/orchestrator_$cluster.rrd";
+	
+	my $rrd;
+	if ( -e $rrd_file ) {
+		$rrd = RRDTool::OO->new( file =>  $rrd_file );
+	} else {
+		print "info: create orchestrator rrd for cluster '$cluster'\n";
+		$rrd = $self->createRRD( file => $rrd_file );
+	}
+	return $rrd;
+}
+
 sub createRRD {
 	my $self = shift;
 	my %args = @_;
 
-	my $var_list = ['rawIdleCPU'];
+	# Build list of var to store (all traps var)
+	my @var_list = ();
+	for my $trap_def ( @{ $self->{_traps} } ) {
+		foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
+			push @var_list, $threshold->{var} . "_" . $trap_def->{time_laps};
+		}
+	}
+	
 
-	my $rrd = RRDTool::OO->new( file =>  "/tmp/orchestrator.rrd" );
+	my $rrd = RRDTool::OO->new( file =>  $args{file} );
 
 	#my $raws = $self->{_period} / $self->{_time_step};
 	my $raws = 100;
@@ -262,7 +280,8 @@ sub createRRD {
 	my @rrd_params = ( 	'step', $self->{_time_step},
 						'archive', { rows	=> $raws }
 					 );
-	for my $name ( @$var_list ) {
+					 
+	for my $name ( @var_list ) {
 		push @rrd_params, 	(
 								'data_source' => { 	name      => $name,
 			     	         						type      => 'GAUGE' },			
@@ -280,51 +299,71 @@ sub graph {
 	my $self = shift;
 	my %args = @_;
 
-	my $graph_filename = "graph_orchestrator.png";
+#    use Log::Log4perl qw(:easy);
+#    Log::Log4perl->easy_init({
+#        level    => $DEBUG
+#    }); 
+    
+    my $cluster = $args{cluster};
+    
+	my $graph_filename = "graph_orchestrator_$cluster.png";
 
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
 
 	# get rrd     
-	my $rrd = RRDTool::OO->new( file => "/tmp/orchestrator.rrd" );
+	my $rrd = RRDTool::OO->new( file => "/tmp/orchestrator_$cluster.rrd" );
 
 	my @graph_params = (
 							'image' => "/tmp/$graph_filename",
 							#'vertical_label', 'ticks',
 							'start' => time() - 1000,
 							color => { back => "#69B033" },
-						
-							vrule => { time => time()-200, },
 							
-							 hrule => { value => 60,
-                 						color => "#0000ff",
-						                legend => "threshold"
-						               },
+							lower_limit => 0,
+							upper_limit => 100,
+							
+							#width => 500,
+							#height => 500,
+							
+							#comment => "YEAH !"
+							
 						);
 
-	#for my $addquery_time ( @{ $self->{_addquery_times} } ) {
-	#	push @graph_params, (
-	#							vrule => { time => $addquery_time, }
-	#						);
-	#}
-
+	# Add vertical lines corresponding to add query times
+	open FILE, "</tmp/orchestrator_$cluster.time" || die "Can't open orchestrator time file for cluster '$cluster'";
+	my $times = <FILE>;
+	close FILE;
+	my @addquery_times = split( /:/, $times );
 	
-	my $var_list = ['rawIdleCPU'];
-	
-	foreach my $ds (@$var_list) {
+	for my $addquery_time ( @addquery_times ) {
 		push @graph_params, (
-								draw   => {
-									#type   => $first == 1 ? "stack" : "stack",
-									type => 'line',
-									dsname => $ds,# . "_P",
-									color => "FF0000",
-									legend => $ds,
-	  							}	
+								vrule => { time => $addquery_time },	
 							);
 	}
+	
+	for my $trap_def ( @{ $self->{_traps} } ) {
+		foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
+			push @graph_params, (
+									draw   => {
+										type => 'line',
+										dsname => $threshold->{var} . "_" . $trap_def->{time_laps},
+										color => $threshold->{color},
+										legend => sprintf( "%-25s|", $threshold->{var} . "(" . $trap_def->{time_laps} . ")" ),
+		  							},
+		  
+		  							hrule => {
+		  							 	value => $threshold->{min} || $threshold->{max},
+                 						color => '#' . $threshold->{color},
+						                #legend => $threshold->{var}
+						               },
+						              
+								);
+		}
+	}
 
-	# Draw a graph in a PNG image
+	# Draw the graph in a PNG image
 	$rrd->graph( @graph_params );
 	
 	#return $graph_filename;
@@ -340,8 +379,9 @@ sub graph {
 
 sub run {
 	my $self = shift;
-
-	$self->createRRD();
+	
+	# TEMPORARY
+	#$self->createRRD();
 	
 	while ( 1 ) {
 		$self->manage();
