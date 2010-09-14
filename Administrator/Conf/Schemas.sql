@@ -308,7 +308,7 @@ CREATE TABLE `message` (
   `message_creationdate` date NOT NULL,
   `message_creationtime` time NOT NULL,
   `message_type` char(32) NOT NULL,
-  `message_content` char(255) NOT NULL,
+  `message_content` text(512) NOT NULL,
   PRIMARY KEY (`message_id`),
   KEY `fk_message_1` (`user_id`),
   CONSTRAINT `fk_message_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION

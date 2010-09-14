@@ -391,7 +391,7 @@ sub generateUdevConf{
 	
 
 	#TODO Get ALL network interface !
-	my $interfaces = [{mac_address => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address"), net_interface => "eth0"}];
+	my $interfaces = [{mac_address => lc($self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address")), net_interface => "eth0"}];
 	$log->debug(Dumper($interfaces));
 	$template->process($input, {interfaces => $interfaces}, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules");	
@@ -413,10 +413,18 @@ sub generateFstabConf{
 	my $tmpfile = $rand->randpattern("cccccccc");
 	my $adm = Administrator->new();
 	my $input = "fstab.tt";
-	my $vars = {etc_dev			=> "/dev/sdb",
+	
+	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
+	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
+	my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
+	my $etc_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $etc_target_id);
+	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+	my $vars = {#etc_dev			=> "/dev/sdb",
+   	    		etc_dev			=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_target->{target}."-lun-0",
    	    		etc_fs			=> $args{etc_dev}->{filesystem},
 				etc_options		=> "defaults",
-				root_dev		=> "/dev/sda",
+				#root_dev		=> "/dev/sda",
+				root_dev		=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_target->{target}."-lun-0",
 				root_fs			=> $args{root_dev}->{filesystem},
 				root_options	=> "ro,noatime,nodiratime",
 				

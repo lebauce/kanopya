@@ -73,11 +73,15 @@ constructor
 sub new {
     my $class = shift;
     my %args = @_;
+    
+    # WARNINGS THIS CODE CAUSE GRID::Machine to fail execution the second time we use 
+    # the EContext (error is : Premature EOF received at ...GRID/Machine.pm line 323)
+
     # do not reinstanciate existing ssh context, reuse 
-    if(exists $sshcontexts->{$args{ip}}) {
-    	$log->info("EContext::SSH instance for $args{ip} retrieved");
-    	return $sshcontexts->{$args{ip}};
-    }
+#    if(exists $sshcontexts->{$args{ip}}) {
+#    	$log->info("EContext::SSH instance for $args{ip} retrieved");
+#    	return $sshcontexts->{$args{ip}};
+#    }
     
     my $self = {
     	ip => $args{ip},
@@ -104,7 +108,7 @@ sub new {
 	#	throw Mcs::Exception::Network(error => "EContext::SSH->new : $@"); 
 	#}
 	bless $self, $class;
-	$sshcontexts->{$args{ip}} = $self;	
+	#$sshcontexts->{$args{ip}} = $self;	
 	return $self;
 }
 

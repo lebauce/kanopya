@@ -56,8 +56,7 @@ sub view_models : StartRunmode {
     my $tmpl = $self->load_tmpl('view_models.tmpl');
     $tmpl->param('TITLE_PAGE' => "Models View");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param('SUBMENU_MODELS' => 1);
-	
+		
 	$tmpl->param('USERID' => 1234);
 	$tmpl->param('PROCESSORMODELS' => $processormodels);
 	$tmpl->param('MOTHERBOARDMODELS' => $motherboardmodels);
@@ -76,7 +75,6 @@ sub form_addprocessormodel : Runmode {
     my $tmpl =  $self->load_tmpl('form_addprocessormodel.tmpl');
     $tmpl->param('TITLE_PAGE' => "Adding a Processor model");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param('SUBMENU_MODELS' => 1);
 	$tmpl->param($errors) if $errors;
 	
 	$tmpl->param('USERID' => 1234);
@@ -132,7 +130,6 @@ sub form_addmotherboardmodel : Runmode {
     my $tmpl =  $self->load_tmpl('form_addmotherboardmodel.tmpl');
     $tmpl->param('TITLE_PAGE' => "Adding a Motherboard model");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param('SUBMENU_MODELS' => 1);
 	$tmpl->param($errors) if $errors;
 	
 	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});

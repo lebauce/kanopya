@@ -4,50 +4,38 @@
 @import url(/css/listing.css);
 </style>
 <div id="content">
-<div id="contentleft">
-	<p>View, add, edit and remove motherboards and processors models.</p>
-	<p><hr /></p>
-		<a class="button"  href="/cgi/mcsui.cgi/models/form_addmotherboardmodel">New motherboard model</a>
-		<a class="button"  href="/cgi/mcsui.cgi/models/form_addprocessormodel">New processor model</a>		
-	<p><hr /></p>
-</div>
-
-<div id="contentright">
-	<h2>Processor models :</h2>
-	<table id="motherboardmodellist" class="listview">
-		<tr><th>brand</th><th>name</th><th>cores</th><th>clock<br/>speed</th><th>FSB</th><th>L2 cache</th><th>consumption</th><th>TDP</th><th>64 bits</th><th>CPU<br/>flags</th></tr>
-		<TMPL_LOOP NAME=PROCESSORMODELS>
-		<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=BRAND></td>
-		<td><TMPL_VAR NAME=NAME></td>
-		<td><TMPL_VAR NAME=CORENUM></td>
-		<td><TMPL_VAR NAME=CLOCKSPEED> GHz</td>
-		<td><TMPL_VAR NAME=FSB></td>
-		<td><TMPL_VAR NAME=L2CACHE> Mo</td>
-		<td><TMPL_VAR NAME=CONSUMPTION> W</td>
-		<td><TMPL_VAR NAME=TDP> W</td>
-		<td><TMPL_VAR NAME=IS64></td>
-		<td><TMPL_VAR NAME=CPUFLAGS></td>
-		</tr>
-		</TMPL_LOOP>
-	</table>
-	<h2>Motherboard models :</h2>
-	<table id="motherboardmodellist" class="listview">
-		<tr><th>brand</th><th>name</th><th>chipset</th><th>processors<br/>number</th><th>consumption</th><th>iface<br/>number</th><th>RAM slots</th><th>RAM max</th></tr>
-		<TMPL_LOOP NAME=MOTHERBOARDMODELS>
-		<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=BRAND></td>
-		<td><TMPL_VAR NAME=NAME></td>
-		<td><TMPL_VAR NAME=CHIPSET></td>
-		<td><TMPL_VAR NAME=PROCNUM></td>
-		<td><TMPL_VAR NAME=CONSUMPTION> W</td>
-		<td><TMPL_VAR NAME=IFACENUM></td>
-		<td><TMPL_VAR NAME=RAMNUM></td>
-		<td><TMPL_VAR NAME=RAMMAX> Go</td>
-		
-		</tr>
-		</TMPL_LOOP>
-	</table>
-	
-</div>
+<h1>Processor models</h1>
+<table id="motherboardmodellist" class="listview">
+	<tr><th>brand</th><th>name</th><th>cores</th><th>clock<br/>speed</th><th>FSB</th><th>L2 cache</th><th>consumption</th><th>TDP</th><th>64 bits</th><th>CPU<br/>flags</th></tr>
+	<TMPL_LOOP NAME=PROCESSORMODELS>
+	<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=BRAND></td>
+	<td><TMPL_VAR NAME=NAME></td>
+	<td><TMPL_VAR NAME=CORENUM></td>
+	<td><TMPL_VAR NAME=CLOCKSPEED> GHz</td>
+	<td><TMPL_VAR NAME=FSB></td>
+	<td><TMPL_VAR NAME=L2CACHE> Mo</td>
+	<td><TMPL_VAR NAME=CONSUMPTION> W</td>
+	<td><TMPL_VAR NAME=TDP> W</td>
+	<td><TMPL_VAR NAME=IS64></td>
+	<td><TMPL_VAR NAME=CPUFLAGS></td>
+	</tr>
+	</TMPL_LOOP>
+</table>
+<h1>Motherboard models</h1>
+<table id="motherboardmodellist" class="listview">
+	<tr><th>brand</th><th>name</th><th>chipset</th><th>processors<br/>number</th><th>consumption</th><th>iface<br/>number</th><th>RAM slots</th><th>RAM max</th></tr>
+	<TMPL_LOOP NAME=MOTHERBOARDMODELS>
+	<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=BRAND></td>
+	<td><TMPL_VAR NAME=NAME></td>
+	<td><TMPL_VAR NAME=CHIPSET></td>
+	<td><TMPL_VAR NAME=PROCNUM></td>
+	<td><TMPL_VAR NAME=CONSUMPTION> W</td>
+	<td><TMPL_VAR NAME=IFACENUM></td>
+	<td><TMPL_VAR NAME=RAMNUM></td>
+	<td><TMPL_VAR NAME=RAMMAX> Go</td>
+	</tr>
+	</TMPL_LOOP>
+</table>
 </div>
 
 <TMPL_INCLUDE NAME="footer.tmpl">

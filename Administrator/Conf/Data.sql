@@ -96,9 +96,10 @@ INSERT INTO `component` VALUES
 (3,'Iscsitarget','1','Export'),
 (4,'Openiscsi','2','Exportclient'),
 (5,'Dhcpd','3','Dhcpserver'),
-(6,'Atftpd','0','Tftpserver');
+(6,'Atftpd','0','Tftpserver'),
+(7,'Snmpd','5','Snmpagent');
 
--- default kernel
+-- kernels
 INSERT INTO `kernel` VALUES (1,'admin','2.6.32','Admin Kernel');
 INSERT INTO `kernel` VALUES (2,'2.6.26-2-486','2.6.26-2-486','');
 INSERT INTO `kernel` VALUES (3,'2.6.26-2-xen-686','2.6.26-2-xen-686','');
@@ -120,12 +121,15 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8);
 INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
+-- components provided by default distribution
+INSERT INTO `component_provided` VALUES (2,1),(4,1),(7,1);
+
 -- default systemimage based on default distribution
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
--- components provided by default distribution
-INSERT INTO `component_provided` VALUES (1,1),(2,1),(3,1), (4,1);
+-- components installed on systemimage DebianSystemImage
+INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1);
 
 -- admin cluster
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1, 'up');

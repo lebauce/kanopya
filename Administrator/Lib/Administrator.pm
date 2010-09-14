@@ -905,7 +905,6 @@ sub getFreePublicIPs {
 	while(my $ips = $pubips->next) {
 		push @$pubiparray, {
 			publicip_id => $ips->get_column('publicip_id'),
-			cluster_id => $ips->get_column('cluster_id'),
 			ip_address => $ips->get_column('ip_address'),
 			ip_mask => $ips->get_column('ip_mask'),
 			gateway =>$ips->get_column('gateway') 
@@ -1084,7 +1083,7 @@ sub getNodes {
 	while (my $n = $nodes->next) {
 		push @$motherboards, $self->getEntity(type => 'Motherboard', id => $n->get_column('motherboard_id'));
 	}
-	return scalar @$motherboards ? @$motherboards : undef;
+	return $motherboards;
 }
 
 
@@ -1136,14 +1135,15 @@ sub getOperations {
 		'+columns' => [ 'user_id.user_login' ],
 		join => [ 'user_id' ]
 	});
+	
 	my $arr = [];
-	my $opparams = [];
 	while (my $op = $Operations->next) {
+		
+		my $opparams = [];
 		my $Parameters = $self->{db}->resultset('OperationParameter')->search({operation_id=>$op->get_column('operation_id')});
 		
 		while (my $param = $Parameters->next) {
 			push @$opparams, { 
-				'ID' => $op->get_column('operation_id'), 
 				'PARAMNAME' => $param->get_column('name'), 
 				'VAL' => $param->get_column('value')
 			};
@@ -1155,10 +1155,11 @@ sub getOperations {
 			'DATE' => $op->get_column('creation_date'), 
 			'TIME' => $op->get_column('creation_time'), 
 			'RANK' => $op->get_column('execution_rank'), 
-			'PRIORITY' => $op->get_column('priority'), 
+			'PRIORITY' => $op->get_column('priority'),
+			'PARAMETERS' => $opparams,
 		};
 	}
-	return ($arr, $opparams);
+	return $arr;
 
 }
 

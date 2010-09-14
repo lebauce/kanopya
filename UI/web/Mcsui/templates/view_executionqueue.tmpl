@@ -4,50 +4,48 @@
 @import url(/css/listing.css);
 </style>
 <div id="content">
-<div id="contentleft">
-	<p>View and cancel operations in execution queue.</p>
-	<p><hr /></p>
-		<a id="cancelbutton" class="hidden" href="/cgi/mcsui.cgi/systemstatus/process_canceloperation">Cancel operation</a>
-	<p><hr /></p>
-</div>
-
-<div id="contentright">
-	<table id="executionlist" class="listview">
-		<tr><th>type</th><th>by</th><th>priority</th><th>rank</th><th>date</th><th>time</th></tr>
-		<TMPL_LOOP NAME=OPERATIONS>
-		<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=TYPE></td>
+<h1>Execution Queue</h1>
+<table id="executionlist" class="listview">
+	<tr><th></th><th>type</th><th>by</th><th>priority</th><th>rank</th><th>date</th><th>time</th><th>actions</th></tr><TMPL_LOOP NAME=OPERATIONS>
+	<tr>
+		<td id="m<TMPL_VAR NAME=ID>" class="expand">+</td>
+		<td><TMPL_VAR NAME=TYPE></td>
 		<td><TMPL_VAR NAME=FROM></td>
 		<td><TMPL_VAR NAME=PRIORITY></td>
 		<td><TMPL_VAR NAME=RANK></td>
 		<td><TMPL_VAR NAME=DATE></td>
-		<td><TMPL_VAR NAME=TIME></td></tr>
-		</TMPL_LOOP>
-	</table>
-	<TMPL_LOOP NAME=OPERATIONSPARAMETERS>
-	<table id="l<TMPL_VAR NAME=ID>" class="listdetails hidden">
-		<tr><td colspan="2"><hr/></td></tr>
-		<tr><td class="label"><TMPL_VAR NAME=PARAMNAME></td><td class="content"><TMPL_VAR NAME=VAL></td></tr>
-		<tr><td colspan="2"><hr/></td></tr>
-	</table>
-	</TMPL_LOOP>
-</div>
+		<td><TMPL_VAR NAME=TIME></td>
+		<td>
+		<a class="imgCancel" href="/cgi/mcsui.cgi/systemstatus/process_canceloperation?operation_id=<TMPL_VAR NAME=ID>">cancel</a>
+		</td>
+	</tr>
+	<tr id="t<TMPL_VAR NAME=ID>" class="hidden">
+		<td colspan="8">
+			<table class="listdetails">	
+				<TMPL_LOOP NAME=PARAMETERS>
+				<tr><td class="label"><TMPL_VAR NAME=PARAMNAME> : </td><td class="content"><TMPL_VAR NAME=VAL></td></tr>
+				</TMPL_LOOP>
+			</table>
+		</td>
+	</tr>
+</TMPL_LOOP>
+</table>
 </div>
 <script language="Javascript">
-cancelbutton = document.getElementById('cancelbutton');
-
 function selectme() { 
-	lines = document.getElementById('executionlist').getElementsByTagName('tr');
-	for(i=0;i<lines.length;i++) { lines[i].className = ''; }
-	this.classList.add('selected');
-	cancelbutton.className = 'button';
-	listdetails = document.getElementsByClassName('listdetails');
-	for(i=0;i<listdetails.length;i++) { listdetails[i].className = 'listdetails hidden'; }
-	document.getElementById('t'+this.id.substring(1)).className = 'listdetails';
+	if(this.innerHTML == '+') { 
+		this.innerHTML = '-'; 
+		document.getElementById('t'+this.id.substring(1)).className = ''; 
+	}
+	else { 
+		this.innerHTML = '+';
+		document.getElementById('t'+this.id.substring(1)).className = 'hidden'; 
+	}
 }
 
-coltr = document.getElementById('executionlist').getElementsByTagName('tr');
-for(i=0;i<coltr.length;i++) {
-	coltr[i].onclick = selectme;
+motherboardline = document.getElementById('executionlist').getElementsByClassName('expand');
+for(i=0;i<motherboardline.length;i++) {
+	motherboardline[i].onclick = selectme;
 }
 
 </script>

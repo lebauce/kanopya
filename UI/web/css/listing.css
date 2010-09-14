@@ -1,41 +1,57 @@
 table.listview {
-	margin: 20px;
+	margin: 0 0 20px 0;
 	border-collapse: collapse;
 	float: left;
-	background-color: #EEF2BE;
-	
+	clear: both;
+	background-color: white;
+	min-width: 50%;
+	max-width: 1022px;
 }
 
-h2 { color: green; font-size: 1.2em;}
 
-table.listview  th { background-color: #DDD; }
-table.listview  tr:hover { background-color: white; cursor: pointer;}
-table.listview  tr.selected { background-color: #9CE366; cursor:default; }
 
-table.listview td { padding: 6px 9px; }
-table.listview th { padding: 10px; }
+table.listview  th { background-color: #DDD; padding: 10px; }
+table.listview .expand { color: green; }
+table.listview .expand:hover { cursor: pointer; font-weight: bold; }
+
+table.listview tr:hover { background-color: #e4f3c6; }
+
+table.listview td { padding: 6px 9px; background-color: transparent; }
 
 table.listview th, table.listview td {
-	border-width: 0px 0px 2px 1px ;
+	border-width: 1px ;
 	border-style: solid;
-	border-color: white;
-	
+	border-color: #765;
 	text-align: center;
 }
 
-table.listdetails {
-	float: left;
-	margin: 20px auto;
-	clear: right;
-	min-width: 360px; 
+table.listview a { 
+	text-decoration: none;
+	background-repeat: no-repeat;
+	color: green;
+	margin: 0 8px;
+	padding-left: 19px;
 }
+
+table.listdetails { 
+	font-family: monospace;
+	font-size: medium;
+	width: 100%;
+	border-collapse: collapse;
+	background-color: white;
+	margin: 0;
+	padding: 0;
+}
+
+table.listdetails td { border: none; padding: 3px; }
 
 table.listdetails td.label {
 	font-weight: bold;
 	text-align: right;
 }
+
 table.listdetails td.content { 
-	padding-left: 3px; 
 	min-width: 50% ;
+	text-align: left;
 }
-table.listdetails hr { margin: 5px 0; }
+table.listdetails hr { margin: 2px 0; }

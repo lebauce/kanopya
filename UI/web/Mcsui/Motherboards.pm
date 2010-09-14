@@ -11,48 +11,41 @@ sub setup {
 
 sub view_motherboards : StartRunmode {
     my $self = shift;
-     my $tmpl =  $self->load_tmpl('view_motherboards.tmpl');
+    my $tmpl =  $self->load_tmpl('view_motherboards.tmpl');
     my $output = '';
     my @emotherboards = $self->{'admin'}->getEntities(type => 'Motherboard', hash => {});
     my $motherboards = [];
     my $details = [];
 
-    foreach my $n (@emotherboards){
-	my $tmp = {};
-	$tmp->{ID} = $n->getAttr(name => 'motherboard_id');
-	$tmp->{POSITION} = $n->getAttr(name => 'motherboard_slot_position');
-	my $emodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $n->getAttr(name => 'motherboardmodel_id'));
-	$tmp->{MODEL} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
-	$tmp->{ACTIVE} = $n->getAttr(name => 'active');
-	push (@$motherboards, $tmp);
+    foreach my $m (@emotherboards) {
+		my $tmp = {};
+		$tmp->{ID} = $m->getAttr(name => 'motherboard_id');
+		$tmp->{POSITION} = $m->getAttr(name => 'motherboard_slot_position');
+		my $emodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
+		$tmp->{MODEL} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
+		$tmp->{STATE} = $m->getAttr(name => 'motherboard_state');
+		$tmp->{ACTIVE} = $m->getAttr(name => 'active');
+		$tmp->{SN} = $m->getAttr(name => 'motherboard_serial_number');
+		$tmp->{MAC} = $m->getAttr(name => 'motherboard_mac_address');
+		my $eprocessor = $self->{'admin'}->getEntity(type => 'Processormodel', id => $m->getAttr(name => 'processormodel_id'));
+		$tmp->{CPU} = $eprocessor->getAttr(name => 'processormodel_brand')." ".$eprocessor->getAttr(name => 'processormodel_name');
+		$tmp->{CORES} = $eprocessor->getAttr(name => 'processormodel_core_num');
+		my $emotherboard = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
+		$tmp->{RAM} = $emotherboard->getAttr(name => 'motherboardmodel_ram_max');
+		$tmp->{CONSUMPTION} = $emotherboard->getAttr(name =>'motherboardmodel_consumption'); 
+		$tmp->{IP} = $m->getAttr(name => 'motherboard_internal_ip');
+		my $ekernel= $self->{'admin'}->getEntity(type => 'Kernel', id => $m->getAttr(name => 'kernel_id'));
+		$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version'); 
+		$tmp->{DESC} = $m->getAttr(name => 'motherboard_desc');
+    
+		push (@$motherboards, $tmp);
     }
 		
-    foreach my $m (@emotherboards) {
-    	my $tmp = {};
-	$tmp->{ID} = $m->getAttr(name => 'motherboard_id');
-	$tmp->{SN} = $m->getAttr(name => 'motherboard_serial_number');
-	$tmp->{MAC} = $m->getAttr(name => 'motherboard_mac_address');
-	my $eprocessor = $self->{'admin'}->getEntity(type => 'Processormodel', id => $m->getAttr(name => 'processormodel_id'));
-	$tmp->{CPU} = $eprocessor->getAttr(name => 'processormodel_brand')." ".$eprocessor->getAttr(name => 'processormodel_name');
-	$tmp->{CORES} = $eprocessor->getAttr(name => 'processormodel_core_num');
-	my $emotherboard = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
-	$tmp->{RAM} = $emotherboard->getAttr(name => 'motherboardmodel_ram_max');
-	$tmp->{CONSUMPTION} = $emotherboard->getAttr(name =>'motherboardmodel_consumption'); 
-	$tmp->{IP} = $m->getAttr(name => 'motherboard_internal_ip');
-	my $ekernel= $self->{'admin'}->getEntity(type => 'Kernel', id => $m->getAttr(name => 'kernel_id'));
-	$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version')." ".$ekernel->getAttr(name => 'kernel_name'); 
-	$tmp->{DESC} = $m->getAttr(name => 'motherboard_desc');
-        push (@$details, $tmp); 
-    }
-    
-   
     $tmpl->param('TITLE_PAGE' => "Motherboards View");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
-	
+		
 	$tmpl->param('USERID' => 1234);
 	$tmpl->param('MOTHERBOARDS' => $motherboards);
-	$tmpl->param('DETAILS' => $details);
 	
 	$output .= $tmpl->output();
         
@@ -66,7 +59,6 @@ sub form_addmotherboard : Runmode {
     my $output = '';
     $tmpl->param('TITLE_PAGE' => "Adding a Motherboard");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param('SUBMENU_MOTHERBOARDS' => 1);
 	$tmpl->param($errors) if $errors;
 
 	my @motherboardmodels = $self->{'admin'}->getEntities(type => 'Motherboardmodel', hash => {});
@@ -96,7 +88,7 @@ sub form_addmotherboard : Runmode {
 	foreach my $x (@kernel){
 		my $tmp = {
 			ID => $x->getAttr( name => 'kernel_id'),
-		    NAME => join(' ',$x->getAttr(name =>'kernel_name'),$x->getAttr(name => 'kernel_version')),
+		    NAME => $x->getAttr(name => 'kernel_version'),
 		};
 		push (@$kern, $tmp);
 	}
@@ -128,7 +120,7 @@ sub process_addmotherboard : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'new motherboard operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
@@ -142,4 +134,51 @@ sub _addmotherboard_profile {
 	};
 }
 
+sub process_activatemotherboard : Runmode {
+    my $self = shift;
+        
+    my $query = $self->query();
+    eval {
+    $self->{'admin'}->newOp(type => "ActivateMotherboard", priority => '100', params => { 
+		motherboard_id => $query->param('motherboard_id'), 
+		});
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'activate motherboard operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
+}
+
+sub process_deactivatemotherboard : Runmode {
+    my $self = shift;
+        
+    my $query = $self->query();
+    eval {
+    $self->{'admin'}->newOp(type => "DeactivateMotherboard", priority => '100', params => { 
+		motherboard_id => $query->param('motherboard_id'), 
+		});
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'deactivate motherboard operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
+}
+
+sub process_removemotherboard : Runmode {
+    my $self = shift;
+        
+    my $query = $self->query();
+    eval {
+    $self->{'admin'}->newOp(type => "RemoveMotherboard", priority => '100', params => { 
+		motherboard_id => $query->param('motherboard_id'), 
+		});
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'remove motherboard operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
+}
 1;

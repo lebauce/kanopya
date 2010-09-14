@@ -185,4 +185,37 @@ sub getDevices {
 	return $devices;
 }
 
+=head getInstalledComponents
+
+get components installed on this systemimage
+return array ref containing hash ref 
+
+=cut
+
+sub getInstalledComponents {
+	my $self = shift;
+	if(! $self->{_dbix}->in_storage) {
+		$errmsg = "Entity::Systemimage->getComponents must be called on an already save instance";
+		$log->error($errmsg);
+		throw Mcs::Exception(error => $errmsg);
+	}
+	my $components = [];
+	my $search = $self->{_dbix}->component_installeds->search(undef, 
+		{ '+columns' => [ 'component_id.component_id', 
+						'component_id.component_name', 
+						'component_id.component_version', 
+						'component_id.component_category' ],
+			join => ['component_id'] } 
+	);
+	while (my $row = $search->next) {
+		my $tmp = {};
+		$tmp->{component_id} = $row->get_column('component_id');
+		$tmp->{component_name} = $row->get_column('component_name');
+		$tmp->{component_version} = $row->get_column('component_version');
+		$tmp->{component_category} = $row->get_column('component_category');
+		push @$components, $tmp;
+	}
+	return $components;
+}
+
 1;

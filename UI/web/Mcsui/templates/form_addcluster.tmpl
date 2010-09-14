@@ -19,7 +19,7 @@
 		<td><textarea cols="50" name="desc" value=""></textarea></td> 
 	</tr>
 	<tr>
-		<td class="label">minimum node number :</td>
+		<td class="label">minimum node to used :</td>
 		<td><select name="min_node">
 		<TMPL_LOOP NAME=COUNT>
 			<option value="<TMPL_VAR NAME=CM>"><TMPL_VAR NAME=CM></option>
@@ -28,7 +28,7 @@
 		<span style="color: red"><TMPL_VAR NAME=ERR_MIN_NODE></span></td>
 	</tr>
 	<tr>
-		<td class="label">maximum node number :</td>
+		<td class="label">maximum node to used :</td>
 		<td><select name="max_node">
 		<TMPL_LOOP NAME=COUNT>
 			<option value="<TMPL_VAR NAME=CM>"><TMPL_VAR NAME=CM></option>
@@ -42,7 +42,7 @@
 	</tr>
 	<tr>
 		<td class="label">System image :</td>
-		<td><select name="systemimage">
+		<td><select name="systemimage_id">
 		<TMPL_LOOP NAME=SYSTEMIMAGES>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
@@ -51,7 +51,7 @@
 	</tr>
 	<tr>
 		<td class="label">Kernel :</td>
-		<td><select name="kernel">
+		<td><select name="kernel_id">
 		<option value="0">default motherboard kernel</option>
 		<TMPL_LOOP NAME=KERNELS>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
