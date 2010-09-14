@@ -391,7 +391,7 @@ sub generateUdevConf{
 	
 
 	#TODO Get ALL network interface !
-	my $interfaces = [{mac_address => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address"), net_interface => "eth0"}];
+	my $interfaces = [{mac_address => lc($self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address")), net_interface => "eth0"}];
 	$log->debug(Dumper($interfaces));
 	$template->process($input, {interfaces => $interfaces}, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules");	
