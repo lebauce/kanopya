@@ -120,7 +120,7 @@ sub process_addmotherboard : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'new motherboard operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
@@ -146,7 +146,7 @@ sub process_activatemotherboard : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'activate motherboard operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'activate motherboard operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
@@ -162,7 +162,7 @@ sub process_deactivatemotherboard : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'deactivate motherboard operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'deactivate motherboard operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
@@ -178,7 +178,7 @@ sub process_removemotherboard : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'remove motherboard operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'remove motherboard operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 1;

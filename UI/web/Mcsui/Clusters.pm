@@ -115,7 +115,7 @@ sub process_addcluster : Runmode {
                 my $error = $@;
                 $self->{'admin'}->addMessage(type => 'error', content => $error);
 	} else { 
-		$self->{'admin'}->addMessage(type => 'success', content => 'new cluster operation adding to execution queue'); 
+		$self->{'admin'}->addMessage(type => 'newop', content => 'new cluster operation adding to execution queue'); 
 	}
     	$self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
@@ -142,7 +142,7 @@ sub process_activatecluster : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'activate cluster operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'activate cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -158,7 +158,7 @@ sub process_deactivatecluster : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'deactivate cluster operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'deactivate cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -173,7 +173,7 @@ sub process_removecluster : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'remove cluster operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'remove cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/cluster/view_clusters');
 }
 
@@ -221,7 +221,7 @@ sub process_startcluster : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'start cluster operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'start cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -236,7 +236,7 @@ sub process_stopcluster : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'stop cluster operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 

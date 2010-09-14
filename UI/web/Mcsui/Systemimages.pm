@@ -90,7 +90,7 @@ sub process_addsystemimage : Runmode {
 		if(@$) {
 			my $error = $@;
 			$self->{'admin'}->addMessage(type => 'error', content => $error); 
-		} else { $self->{'admin'}->addMessage(type => 'success', content => 'clone system image operation adding to execution queue'); }	
+		} else { $self->{'admin'}->addMessage(type => 'newop', content => 'clone system image operation adding to execution queue'); }	
 		
 	} elsif($query->param('type') eq 'distribution') {
 		eval {
@@ -102,7 +102,7 @@ sub process_addsystemimage : Runmode {
 		if(@$) {
 			my $error = $@;
 			$self->{'admin'}->addMessage(type => 'error', content => $error); 
-		} else { $self->{'admin'}->addMessage(type => 'success', content => 'new system image operation adding to execution queue'); }
+		} else { $self->{'admin'}->addMessage(type => 'newop', content => 'new system image operation adding to execution queue'); }
 	}
 	
     $self->redirect('/cgi/mcsui.cgi/systemimages/view_systemimages');
@@ -129,7 +129,7 @@ sub process_activatesystemimage : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'activate systemimage operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'activate systemimage operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/systemimages/view_systemimages');
 }
 
@@ -144,7 +144,7 @@ sub process_deactivatesystemimage : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'deactivate systemimage operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'deactivate systemimage operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/systemimages/view_systemimages');
 }
 
@@ -160,7 +160,7 @@ sub process_removesystemimage : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'remove systemimage operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'remove systemimage operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
