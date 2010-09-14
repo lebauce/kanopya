@@ -103,7 +103,7 @@ sub retrieveData {
 	while ( my ($name, $oid) = each %$var_map ) {
 		my $value;
 		if ($server_status =~ /$oid: ([\d|\.]+)/i ) {
-			$value = $1;
+			$value = $1 || 0;
 		}
 		else
 		{

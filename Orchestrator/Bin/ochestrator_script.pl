@@ -13,6 +13,7 @@ my $sub = shift;
 if ( $sub eq "run" ) {
 	$orchestrator->run();
 } elsif ( $sub eq "graph" ) {
-	$orchestrator->graph();
-	my $tmp =  `eog /tmp/graph_orchestrator.png`;
+	my $cluster = shift;
+	$orchestrator->graph( cluster => $cluster );
+	my $tmp =  `eog /tmp/graph_orchestrator_$cluster.png`;
 }
