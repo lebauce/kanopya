@@ -27,7 +27,7 @@ sub view_clusters : StartRunmode {
 		$tmp->{MIN_NODE} = $n->getAttr(name => 'cluster_min_node');
 		$tmp->{MAX_NODE} = $n->getAttr(name => 'cluster_max_node');
 		my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $n->getAttr(name =>'kernel_id'));
-		$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version')." ".$ekernel->getAttr(name => 'kernel_name');
+		$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version');
 		if ($n->getAttr(name => 'systemimage_id')){
 			my $esystem = $self->{'admin'}->getEntity(type =>'Systemimage', id => $n->getAttr(name =>'systemimage_id'));
 			$tmp->{SYSIMGNAME} =  $esystem->getAttr(name => 'systemimage_name');
@@ -70,7 +70,7 @@ sub form_addcluster : Runmode {
 	my $kmodels = [];
 	foreach $k (@ekernels) {
 		my $tmp = { ID => $k->getAttr( name => 'kernel_id'),
-			NAME => join (' ',$k->getAttr(name => 'kernel_name'),$k->getAttr(name => 'kernel_version'))
+			NAME => $k->getAttr(name => 'kernel_version')
 		};
 		push (@$kmodels, $tmp);	
 	} 
