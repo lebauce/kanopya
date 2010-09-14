@@ -210,4 +210,34 @@ sub process_setpubliciptocluster : Runmode {
     $self->redirect('/cgi/mcsui.cgi/clusters');
 }
 
+sub process_startcluster : Runmode {
+	my $self = shift;
+	my $query = $self->query();
+    eval {
+	    $self->{'admin'}->newOp(type => "StartCluster", priority => '100', 
+	    	params => { cluster_id => $query->param('cluster_id') } 
+		);
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'start cluster operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+}
+
+sub process_stopcluster : Runmode {
+	my $self = shift;
+	my $query = $self->query();
+    eval {
+	    $self->{'admin'}->newOp(type => "StopCluster", priority => '100', 
+	    	params => { cluster_id => $query->param('cluster_id') } 
+		);
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'stop cluster operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+}
+
 1;
