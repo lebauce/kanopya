@@ -16,9 +16,9 @@
 		<TMPL_IF NAME=CANSTART><a title="start this cluster" class="imgStart" href="/cgi/mcsui.cgi/clusters/process_startcluster?cluster_id=<TMPL_VAR NAME=ID>">start</a></TMPL_IF>
 		<TMPL_IF NAME=CANSTOP><a class="imgStop" href="/cgi/mcsui.cgi/clusters/process_stopcluster?cluster_id=<TMPL_VAR NAME=ID>">stop</a></TMPL_IF>
 		|<a class="imgDeactive" href="/cgi/mcsui.cgi/clusters/process_deactivatecluster?cluster_id=<TMPL_VAR NAME=ID>">deactivate</a>
-		<TMPL_ELSE><a class="imgActive" href="/cgi/mcsui.cgi/cluster/process_activatecluster?cluster_id=<TMPL_VAR NAME=ID>">activate</a>
+		<TMPL_ELSE><a class="imgActive" href="/cgi/mcsui.cgi/clusters/process_activatecluster?cluster_id=<TMPL_VAR NAME=ID>">activate</a>
 		|<a class="imgEdit" href="">edit</a>
-		|<a class="imgRemove" href="/cgi/mcsui.cgi/motherboards/process_removecluster?cluster_id=<TMPL_VAR NAME=ID>">remove</a>
+		|<a class="imgRemove" href="/cgi/mcsui.cgi/clusters/process_removecluster?cluster_id=<TMPL_VAR NAME=ID>">remove</a>
 		</TMPL_IF>
 		|<a class="imgNetwork" href="/cgi/mcsui.cgi/clusters/form_setpubliciptocluster?cluster_id=<TMPL_VAR NAME=ID>">add public ip</a>
 		|<a href="/cgi/mcsui.cgi/clusters/form_setpubliciptocluster?cluster_id=<TMPL_VAR NAME=ID>">remove public ip</a>
