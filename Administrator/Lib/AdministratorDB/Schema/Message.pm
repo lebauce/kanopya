@@ -19,7 +19,12 @@ __PACKAGE__->add_columns(
   "message_type",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "message_content",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 255 },
+  {
+    data_type => "TEXT",
+    default_value => undef,
+    is_nullable => 0,
+    size => 65535,
+  },
 );
 __PACKAGE__->set_primary_key("message_id");
 __PACKAGE__->belongs_to(
@@ -34,8 +39,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-07 14:38:26
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MXm6GlBhI8bSawYffgbZTw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-15 21:20:53
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Sie4Y13V9FDlB2lsKEdq2A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

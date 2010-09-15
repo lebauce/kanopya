@@ -97,7 +97,7 @@ INSERT INTO `component` VALUES
 (4,'Openiscsi','2','Exportclient'),
 (5,'Dhcpd','3','Dhcpserver'),
 (6,'Atftpd','0','Tftpserver'),
-(7,'Snmpd','5','Snmpagent');
+(7,'Snmpd','5','Monitoragent');
 
 -- kernels
 INSERT INTO `kernel` VALUES (1,'admin','2.6.32','Admin Kernel');
@@ -122,7 +122,7 @@ INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components provided by default distribution
-INSERT INTO `component_provided` VALUES (2,1),(4,1),(7,1);
+INSERT INTO `component_provided` VALUES (4,1),(7,1);
 
 -- default systemimage based on default distribution
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
@@ -148,6 +148,7 @@ INSERT INTO `node` VALUES (1,1,1,1);
 -- components templates
 INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/defaultapache', 2);
 INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
+INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/mcssnmpd', 7);
 
 -- initial components instance for admin cluster: 
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);
@@ -175,7 +176,6 @@ INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'10.0.0.0','255.255.255.0');
 
-
 --
 -- data for development tests
 -- 
@@ -190,14 +190,23 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); S
 INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,1,5, 'down');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
 
-INSERT INTO `component_instance` VALUES (6,2,4,NULL);
+-- openiscsi component 
+INSERT INTO `component_instance` VALUES (6,2,4,NULL); 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,6); SET @eid := @eid +1;
+-- snmpd
+INSERT INTO `component_instance` VALUES (7,2,7,NULL); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,7); SET @eid := @eid +1;
+INSERT INTO `snmpd5` VALUES (7,'10.0.0.1','-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
+
 
 INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
 
 INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '127.0.0.1', '3260', '/srv', '', 'ext3');
 
 INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ext3');
+
+
+
 
 SET foreign_key_checks=1;
 
