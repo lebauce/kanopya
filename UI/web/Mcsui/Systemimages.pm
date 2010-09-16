@@ -80,31 +80,29 @@ sub process_addsystemimage : Runmode {
     return $err_page if $err_page;
 	
 	my $query = $self->query();
-	if($query->param('type') eq 'systemimage') {
-		eval {
-			 $self->{'admin'}->newOp(type => "CloneSystemimage", priority => '100', params => {
+	eval {
+		if($query->param('type') eq 'systemimage') {
+			$self->{'admin'}->newOp(type => "CloneSystemimage", priority => '100', params => {
 			 	systemimage_name => $query->param('systemimage_name'),
 			 	systemimage_desc => $query->param('systemimage_desc'),
-			 	distribution_id =>  $query->param('distribution_id'), });
-		};	
-		if(@$) {
-			my $error = $@;
-			$self->{'admin'}->addMessage(type => 'error', content => $error); 
-		} else { $self->{'admin'}->addMessage(type => 'newop', content => 'clone system image operation adding to execution queue'); }	
+			 	systemimage_id =>  $query->param('distribution_id'),  });
+			
+			$self->{'admin'}->addMessage(type => 'newop', content => 'clone system image operation adding to execution queue'); 
 		
-	} elsif($query->param('type') eq 'distribution') {
-		eval {
+		} elsif($query->param('type') eq 'distribution') {	
 			$self->{'admin'}->newOp(type => "AddSystemimage", priority => '100', params => {
 				systemimage_name => $query->param('systemimage_name'),
 			 	systemimage_desc => $query->param('systemimage_desc'),
-			 	systemimage_id =>  $query->param('distribution_id'), });
-		};
-		if(@$) {
-			my $error = $@;
-			$self->{'admin'}->addMessage(type => 'error', content => $error); 
-		} else { $self->{'admin'}->addMessage(type => 'newop', content => 'new system image operation adding to execution queue'); }
-	}
-	
+			 	distribution_id =>  $query->param('distribution_id'), });
+			
+			$self->{'admin'}->addMessage(type => 'newop', content => 'new system image operation adding to execution queue'); 
+		}
+	};		
+	if(@$) {
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} 	
+		
     $self->redirect('/cgi/mcsui.cgi/systemimages/view_systemimages');
 }
 
@@ -154,14 +152,14 @@ sub process_removesystemimage : Runmode {
     my $query = $self->query();
     eval {
     $self->{'admin'}->newOp(type => "RemoveSystemimage", priority => '100', params => { 
-		motherboard_id => $query->param('systemimage_id'), 
+		systemimage_id => $query->param('systemimage_id'), 
 		});
     };
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'remove systemimage operation adding to execution queue'); }
-    $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
+    $self->redirect('/cgi/mcsui.cgi/systemimages/view_systemimages');
 }
 
 1;

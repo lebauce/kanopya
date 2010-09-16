@@ -1,0 +1,4 @@
+[% FOREACH target = targets %]
+Target [% target.target_name %][% FOREACH lun = target.luns %]
+	Lun [% lun.number %] Path=[% lun.device %],Type=[% lun.type %],IOMode=[% lun.iomode %][% END %]
+[% END %]

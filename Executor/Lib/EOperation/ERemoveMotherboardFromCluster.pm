@@ -212,7 +212,7 @@ sub execute{
 													 iscsitarget1_target_name 	=> $target_name,
 													 econtext 					=> $self->{nas}->{econtext});
 																  
-	$self->{_objs}->{component_export}->reload();
+	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 	
 	## Remove Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();

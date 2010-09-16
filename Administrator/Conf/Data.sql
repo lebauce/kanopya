@@ -199,9 +199,9 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALU
 INSERT INTO `snmpd5` VALUES (7,'10.0.0.1','-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
 
 
-INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
+-- INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
 
-INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '127.0.0.1', '3260', '/srv', '', 'ext3');
+-- INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '127.0.0.1', '3260', '/srv', '', 'ext3');
 
 INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ext3');
 
