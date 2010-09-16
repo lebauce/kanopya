@@ -277,7 +277,6 @@ sub execute {
 
 	# Get All nodes in cluster
 	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards(administrator => $adm);
-	$log->debug("Node in cluster are : ". Dumper($clust_nodes));
 	# Generate Node configuration
 	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},

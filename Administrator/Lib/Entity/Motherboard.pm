@@ -31,8 +31,8 @@ use constant ATTR_DEF => {
 			  active		=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_mac_address	=> {pattern 		=> 'm//s',
-											is_mandatory	=> 1,
+			  motherboard_mac_address	=> {pattern 		=> 'm//s',  # mac address format must be lower case
+											is_mandatory	=> 1,		# to have udev persistent net rules work
 											is_extended 	=> 0},
 			  motherboard_internal_ip	=> {pattern 		=> 'm//s',
 											is_mandatory	=> 0,
@@ -213,9 +213,11 @@ sub getEtcDev {
 	return $devices;
 }
 
-sub generateHostname{
-#TODO generateHostname
-	return "node002";
+sub generateHostname {
+	my $self = shift;
+	my $mac = $self->getAttr(name => 'motherboard_mac_address');	
+	$mac =~ s/://g;
+	return "node".$mac;
 }
 
 
