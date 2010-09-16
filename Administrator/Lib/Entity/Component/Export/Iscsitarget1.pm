@@ -140,4 +140,29 @@ sub getTarget {
 
 	return $export;
 }
+
+# return a data structure to pass to the template processor 
+sub getTemplateData {
+	my $self = shift;
+	my $data = {};
+	my $targets = $self->{_dbix}->iscsitarget1_targets;
+	$data->{targets} = [];
+	while (my $onetarget = $targets->next) {
+		my $record = {};
+		$record->{target_name} = $onetarget->get_column('iscsitarget1_target_name');
+		$record->{luns} = [];
+		my $luns = $onetarget->iscsitarget1_luns->search();
+		while(my $onelun = $luns->next) {
+			push @{$record->{luns}}, { 
+				number => $onelun->get_column('iscsitarget1_lun_number'),
+				device => $onelun->get_column('iscsitarget1_lun_device'),
+				type => $onelun->get_column('iscsitarget1_lun_typeio'),
+				iomode => $onelun->get_column('iscsitarget1_lun_iomode'),
+			}; 
+		}
+		push @{$data->{targets}}, $record;
+	}
+	 
+	return $data;	  
+}
 1;

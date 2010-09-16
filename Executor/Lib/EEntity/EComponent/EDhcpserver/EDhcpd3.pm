@@ -82,7 +82,7 @@ sub generate {
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/dhcp3/dhcpd.conf");	
-		 	 
+	unlink "/tmp/$tmpfile";		 	 
 }
 
 # Reload conf on edhcp

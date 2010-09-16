@@ -2,7 +2,7 @@ package EEntity::EComponent::EExportclient::EOpeniscsi2;
 
 use strict;
 
-use base "Entity::Component::EExportClient";
+use base "EEntity::EComponent::EExportclient";
 
 
 # contructor
@@ -27,5 +27,7 @@ sub initiator_conf ($$) {
         my $result = $args{econtext}->execute("echo \"InitiatorName=$args{'initiatorname'}\" > $args{remotepath}/iscsi/initiatorname.iscsi");
         return 0;
 }
+
+sub configureNode {}
 
 1;

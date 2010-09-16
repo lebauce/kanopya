@@ -3,6 +3,8 @@ package EEntity::EComponent::EExport::EIscsitarget1;
 use strict;
 use Date::Simple (':all');
 use Log::Log4perl "get_logger";
+use Template;
+use String::Random;
 
 use base "EEntity::EComponent::EExport";
 
@@ -99,11 +101,7 @@ sub gettid {
 
 sub reload {
 	my $self = shift;
-
 	$self->generateConf();
-
-	
-	$self->restart();
 }
 
 sub addLun {
@@ -152,11 +150,65 @@ sub removeTarget{
 	return $self->_getEntity()->removeTarget(%args);	
 }
 
-sub generateConf{
+
+sub cleanIscsiSession {
+	my $self = shift;
+	my %args  = @_;	
+	if ((! exists $args{initiatorname} or ! defined $args{initiatorname}) ||
+		(! exists $args{target_name} or ! defined $args{target_name})||
+		(! exists $args{econtext} or ! defined $args{econtext})) {
+		$errmsg = "EComponent::EExport::EIscsitarget1->removeTarget needs a target_name,  initiatorname and econtext named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $command = 'cat /proc/net/iet/session';
+	my $result = $args{econtext}->execute(command => $command);
+	$result->{stdout} =~ m/tid:([0-9]+)\sname:$args{target_name}\n(\tsid:[0-9]+\sinitiator:.*\n\t\tcid:.*\n)*\tsid:([0-9]+)\sinitiator:$args{initiatorname}\n\t\tcid:.*\n/;
+	if(defined $1 and defined $3) {
+		my $tid = $1;
+		my $sid = $3;
+		$command = "ietadm --op delete --tid=$tid --sid=$sid --cid=0";
+		$result = $args{econtext}->execute(command => $command);
+	}
 	
 }
-sub restart {
+
+
+# generate /etc/ietd.conf configuration file
+sub generate {
+	my $self = shift;
+	my %args = @_;
+	if(! exists $args{econtext} or ! defined $args{econtext}) {
+		$errmsg = "EComponent::EExport::EIscsitarget1->generate needs a econtext named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+		
+	my $config = {
+	    INCLUDE_PATH => '/templates/mcsietd',
+	    INTERPOLATE  => 1,               # expand "$var" in plain text
+	    POST_CHOMP   => 0,               # cleanup whitespace 
+	    EVAL_PERL    => 1,               # evaluate Perl code blocks
+	    RELATIVE => 1,                   # desactive par defaut
+	};
 	
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("cccccccc");
+	# create Template object
+	my $template = Template->new($config);
+    my $input = "ietd.conf.tt";
+    my $data = $self->_getEntity()->getTemplateData();
+	
+	$template->process($input, $data, "/tmp/".$tmpfile) || do {
+		$errmsg = "EComponent::EExport::EIscsitarget1->generate : error during template generation : $template->error;";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);	
+	};
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/ietd.conf");	
+	unlink "/tmp/$tmpfile";		 	 
 }
+
+
+
 
 1;

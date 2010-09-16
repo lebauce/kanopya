@@ -171,7 +171,8 @@ sub execute{
 													 iscsitarget1_target_name 	=> $target_name,
 													 econtext 					=> $self->{nas}->{econtext});
 																  
-	$self->{_objs}->{component_export}->reload();
+	# generate new configuration file
+	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 		
 	# set system image active in db
 	$self->{_objs}->{systemimage}->setAttr(name => 'active', value => 0);

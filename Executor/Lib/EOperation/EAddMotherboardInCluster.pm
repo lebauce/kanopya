@@ -97,6 +97,7 @@ sub _init {
 	$self->{nas} = {};
 	$self->{executor} = {};
 	$self->{bootserver} = {};
+	$self->{monitor} = {};
 	$self->{_objs} = {};
 	return;
 }
@@ -135,6 +136,9 @@ sub prepare {
 	# Instanciate bootserver Cluster
 	$self->{bootserver}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{bootserver});
 	$log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
+	# Instanciate monitor Cluster
+	$self->{monitor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{monitor});
+	$log->debug("Monitor Cluster get with ref : " . ref($self->{monitor}->{obj}));
 	
 	
 	#### Get Internal IP
@@ -148,6 +152,9 @@ sub prepare {
 	# Get Internal Ip address of Master node of cluster bootserver
 	my $bootserver_ip = $self->{bootserver}->{obj}->getMasterNodeIp();
 	$log->debug("Bootserver ip is : <$bootserver_ip>");
+	# Get Internal Ip address of Master node of cluster monitor
+	my $monitor_ip = $self->{monitor}->{obj}->getMasterNodeIp();
+	$log->debug("Monitor ip is : <$monitor_ip>");
 	
 	
 	#### Instanciate context 
@@ -204,7 +211,7 @@ sub prepare {
 
 }
 
-sub execute{
+sub execute {
 	my $self = shift;
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
@@ -238,7 +245,9 @@ sub execute{
 												iscsitarget1_lun_iomode	=> "wb",
 												iscsitarget1_target_name=>$target_name,
 												econtext 				=> $self->{nas}->{econtext});
-	$self->{_objs}->{component_export}->reload();
+	
+	# 
+	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 		
 	## ADD Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
@@ -268,7 +277,6 @@ sub execute{
 
 	# Get All nodes in cluster
 	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards(administrator => $adm);
-	$log->debug("Node in cluster are : ". Dumper($clust_nodes));
 	# Generate Node configuration
 	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},
@@ -277,11 +285,16 @@ sub execute{
 					 		nodes		=> $clust_nodes);
 	
 	#TODO  component migrate (node, exec context?)
-	#my $components = $self->{_objs}->{components};
-	#foreach my $i (keys %$components) {
-		#my $tmp = EFactory::newEEntity(data => $components->{$i});
-		#$tmp->migrateNode(motherboard => $self->{_objs}->{motherboard}, mount_point=>"/mnt/$node_dev->{etc}->{lvname}");
-	#}
+	my $components = $self->{_objs}->{components};
+	$log->info('Processing cluster components configuration for this node');
+	foreach my $i (keys %$components) {
+		
+		my $tmp = EFactory::newEEntity(data => $components->{$i});
+		$log->debug("component is ".ref($tmp));
+		$tmp->configureNode(motherboard => $self->{_objs}->{motherboard}, 
+							mount_point => "/mnt/$node_dev->{etc}->{lvname}",
+							econtext => $self->{nas}->{econtext});
+	}
 	
 
 	# Umount Motherboard etc to populate it
@@ -305,6 +318,7 @@ sub execute{
 
 	# finaly we start the node
 	$self->startNode();
+	$self->{_objs}->{motherboard}->save();
 
 }
 
@@ -321,7 +335,6 @@ sub startNode {
 	my $result = $self->{econtext}->execute(command => $command);
 	my $state = "starting:".time;
 	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
-	$self->{_objs}->{motherboard}->save();
 }
 
 sub generateNodeConf {
@@ -389,12 +402,12 @@ sub generateUdevConf{
 	my $template = Template->new($config);
     my $input = "udev_70-persistent-net.rules.tt";
 	
-
 	#TODO Get ALL network interface !
 	my $interfaces = [{mac_address => lc($self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address")), net_interface => "eth0"}];
 	$log->debug(Dumper($interfaces));
 	$template->process($input, {interfaces => $interfaces}, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules");	
+	unlink "/tmp/$tmpfile";
 }
 
 sub generateFstabConf{
@@ -445,7 +458,7 @@ sub generateFstabConf{
 	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/fstab");	
-
+	unlink "/tmp/$tmpfile";
 }
 
 sub generateMcsHalt{
@@ -472,11 +485,13 @@ sub generateMcsHalt{
    	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
+    unlink "/tmp/$tmpfile";
     $self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/mcs_halt");
     $self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_halt $args{mount_point}/rc0.d/S89mcs_halt");
 	
 	$self->{nas}->{econtext}->execute(command=> "cp /templates/internal/$omitted_file /tmp/");
    	$self->{nas}->{econtext}->send(src => "/tmp/$omitted_file", dest => "$args{mount_point}/init.d/mcs_omitted_iscsid");
+   	unlink "/tmp/$omitted_file";
    	$self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/mcs_omitted_iscsid");
    	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_omitted_iscsid $args{mount_point}/rc0.d/S19mcs_omitted_iscsid");
 }
@@ -511,7 +526,8 @@ sub generateHosts {
 	}
 	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
-    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/hosts");	
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/hosts");
+    unlink 	"/tmp/$tmpfile";
 }
 
 sub generateNetConf {
@@ -535,6 +551,7 @@ sub generateNetConf {
 	$log->debug(Dumper($interfaces));
 	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Mcs::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");	
+	unlink "/tmp/$tmpfile"; 
 }
 
 sub generateBootConf {
@@ -585,6 +602,7 @@ sub generateBootConf {
     my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
     my $dest = $tftp_conf->{'repository'}.'/'. $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname") . ".conf";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
+    unlink "/tmp/$tmpfile";
 }
 
 sub generateResolvConf{

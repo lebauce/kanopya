@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Apache2;
+package AdministratorDB::Schema::Snmpd5;
 
 use strict;
 use warnings;
@@ -6,12 +6,14 @@ use warnings;
 use base 'DBIx::Class';
 
 __PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
-__PACKAGE__->table("apache2");
+__PACKAGE__->table("snmpd5");
 __PACKAGE__->add_columns(
   "component_instance_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "servername",
-  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
+  "monitor_server_ip",
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 39 },
+  "snmpd_options",
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 128 },
 );
 __PACKAGE__->set_primary_key("component_instance_id");
 __PACKAGE__->belongs_to(
@@ -22,7 +24,7 @@ __PACKAGE__->belongs_to(
 
 
 # Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-15 21:20:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XUxaX9NXQgxr3EQlGGaKTA
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OPLdHV5OIWJNonuK2i2sLw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

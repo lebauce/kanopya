@@ -1,0 +1,6 @@
+export MIBDIRS=/usr/share/snmp/mibs
+SNMPDRUN=yes
+SNMPDOPTS='[% options %] [% node_ip_address %]'
+TRAPDRUN=no
+TRAPDOPTS='-Lsd -p /var/run/snmptrapd.pid'
+SNMPDCOMPAT=yes

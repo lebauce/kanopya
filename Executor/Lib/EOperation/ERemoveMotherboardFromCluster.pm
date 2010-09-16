@@ -195,9 +195,26 @@ sub execute{
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
 	
-	# first we halt the node
+	## halt the node
 	$self->stopNode();
 	
+	## Remove Motherboard in the dhcp
+	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
+	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
+	my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id			=> $subnet,
+															 			   dhcpd3_hosts_mac_address	=> $motherboard_mac);
+	$self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id	=> $subnet,
+												  dhcpd3_hosts_id	=> $hostid);
+	
+	$self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
+	
+	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+	
+	## Update Motherboard internal ip
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
+	
+	
+	## Remove motherboard etc export from iscsitarget 
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
 	
 	my $target_name = $node_dev->{etc}->{lvname};
@@ -212,25 +229,21 @@ sub execute{
 													 iscsitarget1_target_name 	=> $target_name,
 													 econtext 					=> $self->{nas}->{econtext});
 																  
-	$self->{_objs}->{component_export}->reload();
+	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 	
-	## Remove Motherboard in the dhcp
-	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
-	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
-	my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id			=> $subnet,
-															 			   dhcpd3_hosts_mac_address	=> $motherboard_mac);
-	$self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id	=> $subnet,
-												  dhcpd3_hosts_id	=> $hostid);
 	
-	$self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
-	
-	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
-	
-	#Update Motherboard internal ip
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
-
 	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+
+	# TODO ici finir l'appel au nettoyage des sessions iscsi
+	#$self->{_objs}->{component_export}->cleanIscsiSession(
+	#	initiatorname => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_initiatorname'),
+	#	target_name => ICI RECUPERE LE TARGET NAME DU ROOT SYSTEMIMAGE UTILISE PAR LE CLUSTER,
+	#	econtext => $self->{nas}->{econtext}
+	#);
+	
+	## finaly save motherboard 
+	$self->{_objs}->{motherboard}->save();
 }
 
 
@@ -244,9 +257,9 @@ sub stopNode {
 	my $result = $motherboard_econtext->execute(command => $command);
 	my $state = 'stopping:'.time;
 	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
-	$self->{_objs}->{motherboard}->save();
 }
 
+1;
 
 __END__
 
