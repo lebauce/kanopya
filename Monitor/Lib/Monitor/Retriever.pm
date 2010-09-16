@@ -8,6 +8,12 @@ use Data::Dumper;
 
 use base "Monitor";
 
+# logger
+use Log::Log4perl "get_logger";
+Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+my $log = get_logger("retriever");
+
+
 # Constructor
 
 sub new {
@@ -282,41 +288,6 @@ sub getClustersData {
 	return \%clusters_data;
 }
 
-#TODO required_ds
-sub getClustersData_OLD {
-	my $self = shift;
-	my %args = @_;
-	
-	#$log->debug("##########################################################");
-	Monitor::logArgs( "getClusterData", %args );
-	
-	my $aggregate = $args{aggregate};
-	
-	my %clusters_data = ();
-	my %hosts_by_cluster = $self->retrieveHostsByCluster();
-	while ( my ($cluster, $hosts) = each %hosts_by_cluster ) {
-		my %hosts_data = ();
-		#foreach my $host (@$hosts) {
-		while ( my ($hostname, $host_info) = each %$hosts ) {
-			if ( $host_info->{state} eq "up" ) {
-				my $host_data = $self->getHostData( host => $host_info->{ip}, set => $args{set}, time_laps => $args{time_laps}, percent => $args{percent} );
-				$hosts_data{ $hostname } = $host_data;
-			}
-			else {
-				$hosts_data{ $hostname } = $host_info->{state};
-			}
-		}
-		if ( defined $aggregate ) {
-			my @data_list = values %hosts_data;
-			my %aggregate_data = $self->aggregate( hash_list => \@data_list, f => $aggregate );
-			$clusters_data{ $cluster } = \%aggregate_data;
-		} else {
-			$clusters_data{ $cluster } = \%hosts_data;
-		}
-	}
-	
-	return \%clusters_data;
-}
 
 #TODO amélioration
 sub fetch {
@@ -401,8 +372,19 @@ sub graph {
 						'image' => "$self->{_graph_dir}/$graph_filename",
 						#'vertical_label', 'ticks',
 						'start' => time() - $args{time_laps},
-						color => { back => "#69B033" }
+						color => { back => "#69B033" },
+						lower_limit => 0,
+						
+						slope_mode => undef,	# smooth
+					
 						);
+						
+	if (defined $args{thumbnail} ) {
+		push @graph_params, (	
+								height => 64, width => 64,
+								only_graph => undef,
+							);
+	}
 
 	my $first = 1;
 	foreach my $ds (@{ $args{ds_def_list} }) {
@@ -448,7 +430,8 @@ sub graphPercent {
 						'image' => "$self->{_graph_dir}/$graph_filename",
 						#'vertical_label', 'ticks',
 						'start' => time() - $args{time_laps},
-						color => { back => "#69B033" }
+						color => { back => "#69B033" },
+						lower_limit => 0,
 						);
 
 
@@ -568,6 +551,70 @@ sub makeGraph {
 	}
 	
 	return \%res;
+}
+
+=head2 graphNodeCount
+	
+	Class : Public
+	
+	Desc :	For a cluster, generate the graph counting all nodes depending on state (up, starting, stopping, broken).
+			
+	
+	Args :
+		cluster: the cluster name for wich we want graph nodes count
+		(optionnal) time_laps: seconds
+	
+	Return : The path of the generated graph
+	
+=cut
+
+sub graphNodeCount {
+	my $self = shift;
+	my %args = @_;
+	
+	my $cluster = $args{cluster};
+    my $time_laps = $args{time_laps} || 3600;
+    
+	my $graph_file_path = "/tmp/graph_nodecount_$cluster.png";
+	
+	# get rrd     
+	my $rrd = RRDTool::OO->new( file => "/tmp/nodes_$cluster.rrd" );
+	
+	$rrd->graph( 	'image' => $graph_file_path,
+					'vertical_label' => 'number of nodes',
+					'start' => time() - $time_laps,
+					#color => { back => "#69B033" },
+					lower_limit => 0,
+					
+					'y_grid' => '1:1',
+					
+					draw => 	{
+									type => 'stack',
+									dsname => 'up',
+									color => "00FF00",
+									legend => "up",
+		  						},
+					draw => 	{
+									type => 'stack',
+									dsname => 'starting',
+									color => "0000FF",
+									legend => "starting",
+		  						},
+					draw => 	{
+									type => 'stack',
+									dsname => 'stopping',
+									color => "FFFF00",
+									legend => "stopping",
+		  						},
+		  			draw => 	{
+									type => 'stack',
+									dsname => 'broken',
+									color => "FF0000",
+									legend => "broken",
+		  						},
+					);
+					
+	return $graph_file_path;
 }
 
 #TODO comm

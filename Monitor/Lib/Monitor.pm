@@ -91,16 +91,54 @@ sub new {
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp';
 	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp';
 	$self->{_monitored_data} = General::getAsArrayRef( data => $conf, tag => 'set' );
+	$self->{_node_states} = $conf->{node_states};
 
 	# Get Administrator
 	print "get ADMIN\n";
-#	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	print " => ok\n";
 
 	# test (data generator)
 	$self->{_t} = 0;
 	
     return $self;
+}
+
+=head2 _getAdmin
+	
+	Class : Private
+	
+	Desc : instanciate the admin only when necessary
+	
+	Return : Administrator instance
+	
+=cut
+
+sub _getAdmin {
+	my $self = shift;
+
+	if (not defined $self->{_admin}) {
+		$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	}
+	return $self->{_admin};
+}
+
+sub _mbState {
+	my $self = shift;
+	my %args = @_;
+	
+	my $state_info = $args{state_info};
+	
+	my ($mb_state, $mb_state_time);
+	if ($state_info =~ /([a-zA-Z]+):?([\d]*)/) {
+		($mb_state, $mb_state_time) = ($1, $2);
+	} else {
+		print "Error: bad motherboard state format '$state_info'.\n";
+		$log->error("Bad motherboard state format '$state_info'.");
+		($mb_state, $mb_state_time) = ("unknown", 0);
+	}
+	
+	return ($mb_state, $mb_state_time);
 }
 
 =head2 retrieveHostsByCluster
@@ -118,43 +156,35 @@ sub retrieveHostsByCluster {
 
 	my %hosts_by_cluster;
 
-#	my $adm = $self->{_admin};
-#	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
-#	foreach my $cluster (@clusters) {
-#		#my @mb_ip;
-#		my %mb_info;
-#		foreach my $mb ( values %{ $cluster->getMotherboards( administrator => $adm) } ) {
-#			#push @mb_ip, $mb->getAttr( name => "motherboard_internal_ip" );
-#			
-#			my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
-#			my $mb_ip = $mb->getAttr( name => "motherboard_internal_ip" );
-#			my $mb_state_info = $mb->getAttr( name => "motherboard_state" );
-#			my ($mb_state, $mb_state_time);
-#			if ($mb_state_info =~ /([a-zA-Z]+):?([\d]*)/) {
-#				($mb_state, $mb_state_time) = ($1, $2);
-#			} else {
-#				print "Error: bad motherboard state format.\n";
-#				$log->error("Bad motherboard state format.");
-#				($mb_state, $mb_state_time) = ("unknown", 0);
-#			}
-#			
-#			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, state_time => $mb_state_time };
-#		}
-#		#$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \@mb_ip;
-#		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
-#	}	
+	my $adm = $self->{_admin};
+	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
+	foreach my $cluster (@clusters) {
+		#my @mb_ip;
+		my %mb_info;
+		foreach my $mb ( values %{ $cluster->getMotherboards( administrator => $adm) } ) {
+			#push @mb_ip, $mb->getAttr( name => "motherboard_internal_ip" );
+			
+			my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
+			my $mb_ip = $mb->getAttr( name => "motherboard_internal_ip" );
+			my ($mb_state, $mb_state_time) = $self->_mbState( state_info => $mb->getAttr( name => "motherboard_state" ) );
+			
+			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, state_time => $mb_state_time };
+		}
+		#$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \@mb_ip;
+		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
+	}	
 	
 	#print Dumper \%hosts_by_cluster;
 	
 	# TEMPORARY !!
-	%hosts_by_cluster = ( 	"cluster_1" => { 	
-												'node001' => { ip => 'localhost', state => 'up', state_time => time() },
-												'node002' => { ip => '127.0.0.1', state => 'starting', state_time => time() - 600 }
-											},
-							"cluster_2" => {	
-												'node003' => { ip => '192.168.0.123', state => 'down', state_time => time() }
-											} 
-							);
+#	%hosts_by_cluster = ( 	"cluster_1" => { 	
+#												'node001' => { ip => 'localhost', state => 'up', state_time => time() },
+#												'node002' => { ip => '127.0.0.1', state => 'starting', state_time => time() - 600 }
+#											},
+#							"cluster_2" => {	
+#												'node003' => { ip => '192.168.0.123', state => 'down', state_time => time() }
+#											} 
+#							);
 	
 	return %hosts_by_cluster;
 }
@@ -164,15 +194,17 @@ sub getClustersName {
 
 	my @clustersName;
 
-#	my $adm = $self->{_admin};
-#	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
-#	@clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
+	my $adm = $self->{_admin};
+	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
+	@clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
 
 	# TEMPORARY !!
-	@clustersName = ("cluster_1", "cluster_2");
+#	@clustersName = ("cluster_1", "cluster_2");
 	
 	return @clustersName;
 }
+
+
 
 =head2 retrieveHosts DEPRECATED
 	
@@ -223,7 +255,7 @@ sub getClusterHostsInfo {
 	
 	my $cluster = $args{cluster};
 	
-	#TODO ne as récupérer tous les clusters mais ajouter un paramètre optionnel à retrieveHostsByCluster pour ne récupérer que certains clusters
+	#TODO ne pas récupérer tous les clusters mais ajouter un paramètre optionnel à retrieveHostsByCluster pour ne récupérer que certains clusters
 	my %hosts_by_cluster = $self->retrieveHostsByCluster();
 	return $hosts_by_cluster{ $cluster };
 }

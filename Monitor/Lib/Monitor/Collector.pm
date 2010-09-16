@@ -10,6 +10,11 @@ use Data::Dumper;
 
 use base "Monitor";
 
+# logger
+use Log::Log4perl "get_logger";
+Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+my $log = get_logger("collector");
+
 # Constructor
 
 sub new {
@@ -20,57 +25,127 @@ sub new {
     return $self;
 }
 
-sub manageReachableHost {
-	my $self = shift;
-	my %args = @_;
-	
-	my $adm = $self->{_admin};
-	my $host = $args{host};
-	
-	
-}
 
-#TODO gérer les hosts starting, stopping, broken, up, down
-sub manageUnreachableHost {
+=head2 _manageHostState
+	
+	Class : Private
+	
+	Desc : update the state of host in db if necessary (depending if this host is reachable or not and on the state time)
+	
+	Args :
+		host: ip of the host
+		reachable: 0 (false) or 1 (true): tell if we have succeeded in retrieving information from this host (i.e reachable or not)
+
+=cut
+
+sub _manageHostState {
 	my $self = shift;
 	my %args = @_;
 	
-	my $STARTING_MAX_TIME = 300;
-	my $STOPPING_MAX_TIME = 300;
-	
-	my $adm = $self->{_admin};
-	
-	my $host = $args{host};
-	$host = "127.0.0.1"; ############ TEMP #######""
-	
-	eval {
-		my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host } );
-			
-		my $mb = shift @mb_res;
-		my $mb_state = $mb->getAttr( name => "motherboard_state" );
-		my $state = "something";
-		my $state_time = 666;
+	my $starting_max_time = $self->{_node_states}{starting_max_time};
 		
-		if ( 	$state eq "up"
-			|| 	( $state eq "starting" && $state_time > $STARTING_MAX_TIME )
-			||	( $state eq "stopping" && $state_time > $STOPPING_MAX_TIME ) )
-		{
-			$mb->setAttr( name => "motherboard_state", value => "broken" );
-			$mb->save();
-		} elsif ( $state eq "stopping" ) {
-			# we check if host is really stopped (unpingable)
-			my $p = Net::Ping->new();
-			my $reachable = $p->ping($host);
-			$p->close();
-			if ( not $reachable ) {
-				$mb->setAttr( name => "motherboard_state", value => "down" );
-				$mb->save();
+	my $adm = $self->{_admin};
+	my $reachable = $args{reachable};
+	my $host_ip = $args{host};
+
+	eval {
+		
+		#TODO 	On peut éviter de refaire une requête si on conserve l'état lors de la recupération des hosts au début
+		#		Mais risque de ne plus être à jour..
+		
+		# Retrieve motherboard
+		my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_ip } );	
+		my $mb = shift @mb_res;
+
+		die "motherboard '$host_ip' no more in DB" if (not defined $mb);
+
+		# Retrieve mb state and state time
+		my ($state, $state_time) = $self->_mbState( state_info => $mb->getAttr( name => "motherboard_state" ) );
+		my $new_state = $state;
+		
+		# Manage new state
+		if ( $reachable ) {					# if reachable, node is now 'up', don't care of what was the last state
+			$new_state = "up";
+		} elsif ( $state eq "up" ) {		# if unreachable and last state was 'up', node is considered 'broken'
+				$new_state = 'broken';
+		} else {							# else we check if node is not 'starting' for too long, if it is, node is 'broken'
+			my $diff_time = 0;
+			if ($state_time) {
+				$diff_time = time() - $state_time;	
 			}
+			if ( ( $state eq "starting" ) && ( $diff_time > $starting_max_time ) ) {
+				$new_state = 'broken';
+				print "'host' is in state '$state' for $diff_time seconds, it's too long, considered as broken.\n";
+			}
+		}
+		
+		# Update state in DB if changed
+		if ( $state ne $new_state ) {
+			print "===========> ($host_ip) last state : $state  =>  new state : $new_state \n";
+			$mb->setAttr( name => "motherboard_state", value => $new_state );
+			$mb->save();		
 		}
 	};
 	if ($@) {
 		my $error = $@;
 		print "===> $error";
+		$log->error( $error );
+	}
+}
+
+=head2 _manageStoppingHost
+	
+	Class : Private
+	
+	Desc : Try to reach a stopping host and update its state depending on the result (and stopping time)
+	
+	Args :
+		host: Entity::Motherboard : the stopping host to manage
+
+=cut
+
+sub _manageStoppingHost {
+	my $self = shift;
+	my %args = @_;
+	
+	my $host = $args{host};
+	
+	my $stopping_max_time = $self->{_node_states}{stopping_max_time};
+	
+	eval {
+		my ($state, $state_time) = $self->_mbState( state_info => $host->getAttr( name => "motherboard_state" ) );
+		my $new_state = $state;
+		
+		my $host_ip = $host->getAttr( name => 'motherboard_internal_ip' );
+		# we check if host is stopped (unpingable)
+		my $p = Net::Ping->new();
+		my $pingable = $p->ping($host_ip);
+		$p->close();
+		if ( not $pingable ) {
+			$new_state = 'down';
+		}
+		
+		# compute diff time between state time and now
+		my $diff_time = 0;
+		if ($state_time) {
+			$diff_time = time() - $state_time;	
+		}
+		
+		if ( $diff_time > $stopping_max_time ) {
+			$new_state = 'broken';
+			print "'host' is in state '$state' for $diff_time seconds, it's too long, considered as broken.\n";
+		} 
+		
+		# Update state in DB if changed
+		if ( $state ne $new_state ) {
+			$host->setAttr( name => "motherboard_state", value => $new_state );
+			$host->save();		
+		}
+	};
+	if ($@) {
+		my $error = $@;
+		print "===> $error";
+		$log->error( $error );
 	}
 }
 
@@ -91,10 +166,8 @@ sub updateHostData {
 
 	my $host = $args{host};
 	#my $session = $self->createSNMPSession( host => $host );
-	my $host_state;
-	
-	print "\n###############   ", $host, "   ##########\n";
-	
+	my $host_reachable = 1;
+	my $error_happened = 0;	
 	eval {
 		#For each set of var defined in conf file
 		foreach my $set ( @{ $self->{_monitored_data} } ) {
@@ -121,16 +194,21 @@ sub updateHostData {
 			};
 			if ($@) {
 				my $error = $@;
-				print  "Error collecting data set  ===> $error";
+				#print  "[$host] Error collecting data set  ===> $error";
+				$log->warn( "[", threads->tid(), "][$host] Collecting data set '$set->{label}' => $provider_class : $error" );
+				#TODO find a better way to detect unreachable host (grep error string is not very safe)
 				if ( "$error" =~ "No response" ) {
-					$host_state = $self->hostState( host => $host, reachable => 0 );
+					$log->info( "Unreachable host '$host' => we stop collecting data.");
+					$host_reachable = 0;
 					last; # we stop collecting data sets
+				} else {
+					$error_happened = 1;
 				}
 				next; # continue collecting the other data sets
 			}
 			
 			# DEBUG print values
-			print "[", threads->tid(), "]$time : ", join( " | ", map { "$_: $update_values->{$_}" } keys %$update_values ), "\n";
+			print "[", threads->tid(), "][$host] $time : ", join( " | ", map { "$_: $update_values->{$_}" } keys %$update_values ), "\n";
 	
 			#############################################
 			# Store new values in the corresponding RRD #
@@ -138,71 +216,21 @@ sub updateHostData {
 			my $rrd_name = $self->rrdName( set_name => $set->{label}, host_name => $host );
 			$self->updateRRD( rrd_name => $rrd_name, ds_type => $set->{ds_type}, time => $time, data => $update_values );
 		}
-		# Set host state if no unreachable host error happened
-		if (not defined $host_state) {$host_state = $self->hostState( host => $host, reachable => 1 ) };
+		# Update host state
+		$self->_manageHostState( host => $host, reachable => $host_reachable );
 	};
 	if ($@) {
 		my $error = $@;
 		print "===> $error";
-		
+		$log->error( $error );
+		$error_happened = 1;
 		#TODO gérer $host_state dans ce cas (error)
 		
 	}
 	
-	
-	return $host_state;
-	
+	print "[$host] => some errors happened collecting data\n" if ($error_happened);
 }
 
-sub hostState {
-	my $self = shift;
-	my %args = @_;
-	
-	my $STARTING_MAX_TIME = 300;
-	my $STOPPING_MAX_TIME = 300;
-	
-	my $adm = $self->{_admin};
-	
-	my $reachable = $args{reachable};
-	
-	if ( $reachable ) {
-		return "up";
-	}
-	
-	my $host = $args{host};
-	$host = "10.0.0.1"; ############ TEMP #######""
-	
-	my $state;
-	eval {
-		my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host } );
-			
-		my $mb = shift @mb_res;
-		my $mb_state = $mb->getAttr( name => "motherboard_state" );
-		$state = "something";
-		my $state_time = 666;
-		
-		if ( 	$state eq "up"
-			|| 	( $state eq "starting" && $state_time > $STARTING_MAX_TIME )
-			||	( $state eq "stopping" && $state_time > $STOPPING_MAX_TIME ) )
-		{
-			return 'broken';
-		} elsif ( $state eq "stopping" ) {
-			# we check if host is really stopped (unpingable)
-			my $p = Net::Ping->new();
-			my $pingable = $p->ping($host);
-			$p->close();
-			if ( not $pingable ) {
-				return 'down';
-			}
-		}
-	};
-	if ($@) {
-		my $error = $@;
-		print "===> $error";
-		return 'unk';
-	}
-	return $state;
-}
 
 # TEST
 sub thread_test {
@@ -274,50 +302,102 @@ sub update_test {
 sub update {
 	my $self = shift;
 	
-	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	eval {
+		#my @hosts = $self->retrieveHostsIp();
+		my %hosts_by_cluster = $self->retrieveHostsByCluster();
+		my @all_hosts_info = map { values %$_ } values %hosts_by_cluster;
+		
+		#############################
+		# Update data for each host #
+		#############################
+		my @threads = ();
+		for my $host_info (@all_hosts_info) {
+			# We create a thread for each host to don't block update if a host is unreachable
+			#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
+			my $thr = threads->create('updateHostData', $self, host => $host_info->{ip});
+			#$threads{$host_info->{ip}} = $thr;
+			push @threads, $thr;
+		}
+		
+		#########################
+		# Manage stopping hosts	#	
+		#########################
+		my $adm = $self->{_admin};
+		my @stoppingHosts = $adm->getEntities( type => "Motherboard", hash => { motherboard_state => { like => "stopping%" } } );
+		foreach my $host (@stoppingHosts) {
+			my $thr = threads->create('_manageStoppingHost', $self, host => $host);
+			push @threads, $thr;
+		}
+		
+		############################
+		# Wait end of all threads  #
+		############################
+		#my %hosts_state = ();
+		#while ( my ($host_ip, $thr) = each %threads ) {
+		foreach my $thr (@threads) {	
+			#$hosts_state{ $host_ip } = $thr->join();
+			$thr->join();
+		}
+		
+		################################
+		# update hosts state if needed #
+		################################
+	#	my $adm = $self->{_admin};
+	#	for my $host_info (@all_hosts_info) {
+	#		my $host_state = $hosts_state{ $host_info->{ip} };
+	#		if ( $host_info->{state} ne $host_state ) {
+	#				my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_info->{ip} } );
+	#				my $mb = shift @mb_res;
+	#				if ( defined $mb ) {
+	#					$mb->setAttr( name => "motherboard_state", value => $host_state );
+	#					$mb->save();
+	#				} else {
+	#					print "===> Error: can't find motherboard in DB : ip = $host_info->{ip}\n";
+	#				}
+	#		}
+	#	}
+		
+		
+		###############################
+		# update clusters nodes count #
+		###############################
+		#TODO ici on retrieve une nouvelle fois alors qu'on le fait au début de la fonction
+		# (mais entre temps l'état des noeuds à eventuellement été modifié). Il y a surement mieux à faire.
+		%hosts_by_cluster = $self->retrieveHostsByCluster();
+		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
+			my @nodes_state = map { $_->{state} } values %$cluster_info;
+			
+			# RRD for node count
+			my $rrd_file = "/tmp/nodes_$cluster_name.rrd";
+			my $rrd = RRDTool::OO->new( file =>  $rrd_file );
+			if ( not -e $rrd_file ) {	
+				print "Info: create nodes rrd for '$cluster_name'\n";
+				$rrd->create( 	'step' => $self->{_time_step}, 'archive' => { rows => 100 },
+								'data_source' => { 	name => 'up', type => 'GAUGE' },
+								'data_source' => { 	name => 'starting', type => 'GAUGE' },
+								'data_source' => { 	name => 'stopping', type => 'GAUGE' },
+								'data_source' => { 	name => 'broken', type => 'GAUGE' },
+							);
+				
+			}
+			
+			my $up_count = scalar grep { $_ =~ 'up' } @nodes_state;
+			my $starting_count = scalar grep { $_ =~ 'starting' } @nodes_state;
+			my $stopping_count = scalar grep { $_ =~ 'stopping' } @nodes_state;
+			my $broken_count = scalar grep { $_ =~ 'broken' } @nodes_state;
 	
-	#my @hosts = $self->retrieveHostsIp();
-	my %hosts_by_cluster = $self->retrieveHostsByCluster();
-	my @all_hosts_info = map { values %$_ } values %hosts_by_cluster;
-	
-	#############################
-	# Update data for each host #
-	#############################
-	my %threads = ();
-	for my $host_info (@all_hosts_info) {
-		# We create a thread for each host to don't block update if a host is unreachable
-		#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
-		my $thr = threads->create('updateHostData', $self, host => $host_info->{ip});
-		$threads{$host_info->{ip}} = $thr;
+			$rrd->update( time => time(), values => { 	'up' => $up_count, 'starting' => $starting_count,
+														'stopping' => $stopping_count, 'broken' => $broken_count } );
+		}
+	};
+	if ($@) {
+		my $error = $@;
+		print "===> $error";
+		$log->error( $error );
 	}
-	
-	#############################################################
-	# Wait end of all threads and get return value (host state) #
-	#############################################################
-	my %hosts_state = ();
-	while ( my ($host_ip, $thr) = each %threads ) {
-		$hosts_state{ $host_ip } = $thr->join();
-	}
-	
-	################################
-	# update hosts state if needed #
-	################################
-#	my $adm = $self->{_admin};
-#	for my $host_info (@all_hosts_info) {
-#		my $host_state = $hosts_state{ $host_info->{ip} };
-#		if ( $host_info->{state} ne $host_state ) {
-#				my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_info->{ip} } );
-#				my $mb = shift @mb_res;
-#				if ( defined $mb ) {
-#					$mb->setAttr( name => "motherboard_state", value => $host_state );
-#					$mb->save();
-#				} else {
-#					print "===> Error: can't find motherboard in DB : ip = $host_info->{ip}\n";
-#				}
-#		}
-#	}
-	
+		
 }
+
 
 =head2 run
 	
