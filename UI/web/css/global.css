@@ -112,6 +112,8 @@ iframe {
 	background-repeat: no-repeat;	
 }
 
+.nolink { cursor: default; }
+
 .imgHardware { background-image: url("/images/icons/hardware.png"); }
 .imgLinux { background-image: url("/images/icons/linux.png"); }
 .imgNetwork { background-image: url("/images/icons/network.png"); }
