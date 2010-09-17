@@ -66,19 +66,31 @@ sub new {
 	# presence of 'params' named argument is done in parent class 
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
+    my $cluster;
      
  	# check if cluster_id exist
     $log->debug("checking cluster existence with id <$args{params}->{cluster_id}>");
-    my $row = $admin->{db}->resultset('Cluster')->find($args{params}->{cluster_id});
-    if(! defined $row) {
+    eval {
+    	$cluster = $admin->getEntity(type => 'Cluster', id => $args{params}->{cluster_id});
+    };
+    if($@) {
     	$errmsg = "Operation::ActivateCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
+    # check if system image used is active 
+    $log->debug("checking cluster 's systemimage active value <$args{params}->{cluster_id}>");
+    my $systemimage = $admin->getEntity(type => 'Systemimage', id => $cluster->getAttr(name => 'systemimage_id'));
+    if(not $systemimage->getAttr(name => 'active')) {
+	    	$errmsg = "Operation::ActivateCluster->new : cluster's systemimage is not activated";
+	    	$log->error($errmsg);
+	    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
     # check if cluster is not active
     $log->debug("checking cluster active value <$args{params}->{cluster_id}>");
-   	if( $row->get_column('active') ) {
+   	if($cluster->getAttr(name => 'active')) {
 	    	$errmsg = "Operation::ActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Mcs::Exception::Internal(error => $errmsg);
