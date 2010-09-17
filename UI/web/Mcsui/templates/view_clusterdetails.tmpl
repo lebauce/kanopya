@@ -1,0 +1,25 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+	@import url(/css/listing.css);
+</style>
+<div id="content">
+	<h1>Cluster details</h1>
+	<table id="clustercomponentsdetails" class="listview">
+			<tr><th>Cluster components: </th></tr> 
+				<TMPL_LOOP NAME=COMPONENTS>
+					<tr><td>component name : <TMPL_VAR NAME=NAME></td>
+					<td>component id : <TMPL_VAR NAME=ID></td>
+					<td>component instance id : <TMPL_VAR NAME=INSTANCE></td>
+					<td>component category : <TMPL_VAR NAME=CATEGORY></td></tr>
+				</TMPL_LOOP>
+	</table>
+	<table id="clustermotherboardsdetails" class="listview">
+			<tr><th>Cluster nodes: </th></tr> 
+			<td class="content">
+				<TMPL_LOOP NAME=MOTHERBOARDS>
+				</TMPL_LOOP>
+			</td>
+	</table>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

@@ -1,4 +1,5 @@
 package Mcsui::Clusters;
+use Data::Dumper;
 use base 'CGI::Application';
 use Log::Log4perl "get_logger";
 use CGI::Application::Plugin::AutoRunmode;
@@ -46,9 +47,39 @@ sub view_clusters : StartRunmode {
     $tmpl->param('TITLE_PAGE' => "Clusters View");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 		
-	$output .= $tmpl->output();
-        
+	$output .= $tmpl->output();       
     return $output;
+}
+
+sub view_clusterdetails : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl = $self->load_tmpl('view_clusterdetails.tmpl');
+	my $output ='';
+	my $query =$self->query();
+	$clustId = $query->param('cluster_id');
+	 
+	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+	my $motherboards = $ecluster->getMotherboards(administrator => $self->{'admin'});	
+	my $components = $ecluster->getComponents(administrator => $self->{'admin'}, category => 'all');
+	my $comps = []; 
+        
+	foreach my $c (keys %$components){
+		my $tmp = {};
+		my $compAtt = $components->{$c}->getComponentAttr();
+		my $tmp->{ID} = $compAtt->{component_id};
+		my $tmp->{NAME} = $compAtt->{component_name}." ".$compAtt->{component_version};
+		my $tmp->{CATEGORY} = $compAtt->{component_category};
+		push (@$comps, $tmp);
+	}
+	
+	$tmpl->param('TITLE_PAGE' => "Cluster's details");
+	$tmpl->param('COMPONENTS' => $comps);
+	#$tmpl->param('MOTHERBOARDS' => $motherboards);
+	$tmpl->param($errors) if $errors;
+	$output .= $tmpl->output();
+	return $output;
+ 	return Dumper $components;
 }
 
 sub form_addcluster : Runmode {
