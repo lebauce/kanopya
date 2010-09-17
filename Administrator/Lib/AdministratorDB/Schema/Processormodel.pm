@@ -17,19 +17,13 @@ __PACKAGE__->add_columns(
   "processormodel_core_num",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
   "processormodel_clock_speed",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
-  "processormodel_fsb",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
+  { data_type => "FLOAT", default_value => undef, is_nullable => 0, size => 32 },
   "processormodel_l2_cache",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
-  "processormodel_max_consumption",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
   "processormodel_max_tdp",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 2 },
   "processormodel_64bits",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
-  "processormodel_cpu_flags",
-  { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 255 },
 );
 __PACKAGE__->set_primary_key("processormodel_id");
 __PACKAGE__->add_unique_constraint("processormodel_UNIQUE", ["processormodel_id"]);
@@ -50,8 +44,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-15 21:20:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3ObuxVygfK+ukEwjn6eiWg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-17 14:10:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iQS+yKieVmeBVo+BVTZeBQ
 
 __PACKAGE__->has_one(
   "entitylink",

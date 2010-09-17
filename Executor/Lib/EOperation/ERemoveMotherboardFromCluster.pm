@@ -197,7 +197,7 @@ sub execute{
 	
 	## halt the node
 	$self->stopNode();
-	
+		
 	## Remove Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
@@ -213,15 +213,27 @@ sub execute{
 	## Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
 	
-	
 	## Remove motherboard etc export from iscsitarget 
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
-	
 	my $target_name = $node_dev->{etc}->{lvname};
 	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $target_name);
-
 	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
+	
+	# a stopping node disconnects his etc so this session must disappear 
+	# we check session existence (3 times with a 5 seconds delay between them)   
+	my $tidsid;
+	foreach (1..3) { 
+		$tidsid = $self->{_objs}->{component_export}->getIscsiSession(
+			targetname => $target_name,	
+			initiatorname => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname"),
+			econtext => $self->{nas}->{econtext}
+		);				
+		if(not defined $tidsid) { last; } # session is no found so the node is halt
+		else { sleep 5; }
+	}
+
+	
 
 	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id 	=> $lun_id,
 												  iscsitarget1_target_id=>$target_id);

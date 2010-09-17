@@ -8,8 +8,8 @@
 <table id="clusterlist" class="listview">
 	<tr><th></th><th>name</th><th>state</th><th>active</th><th>actions</th></tr><TMPL_LOOP NAME=CLUSTERS>
 	<tr>
-		<td id="m<TMPL_VAR NAME=ID>" class="expand">+</td>
-		<td><a href="/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=ID> : <TMPL_VAR NAME=NAME></a></td>
+		<td id="m<TMPL_VAR NAME=ID>" class="expanddown">&nbsp;</td>
+		<td><a href="/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></a></td>
 		<td><TMPL_VAR NAME=STATE></td>
 		<td><img src="/images/icons/<TMPL_IF NAME=ACTIVE>active.png<TMPL_ELSE>deactive.png</TMPL_IF>"/></td>
 		<td><TMPL_IF NAME=ACTIVE>
@@ -48,21 +48,5 @@
 </TMPL_LOOP>
 </table>
 </div>
-<script language="Javascript">
-function selectme() { 
-	if(this.innerHTML == '+') { 
-		this.innerHTML = '-'; 
-		document.getElementById('t'+this.id.substring(1)).className = ''; 
-	}
-	else { 
-		this.innerHTML = '+';
-		document.getElementById('t'+this.id.substring(1)).className = 'hidden'; 
-	}
-}
-
-motherboardline = document.getElementById('clusterlist').getElementsByClassName('expand');
-for(i=0;i<motherboardline.length;i++) {
-	motherboardline[i].onclick = selectme;
-}
-</script>
+<script language="Javascript" src="/js/listingtools.js"></script>
 <TMPL_INCLUDE NAME="footer.tmpl">

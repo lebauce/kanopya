@@ -33,12 +33,28 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,10)
 INSERT INTO `user` VALUES (1,'executer','executer','executer','executer',NULL,'2010-07-22',NULL,'executer');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
--- motherboard and processor models
-INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,2,0,2,17,0,0,NULL);
+-- processor models
+INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1);
+INSERT INTO `processormodel` VALUES (2,'Intel','Atom D510',2,1.66,1,13,1);
+INSERT INTO `processormodel` VALUES (3,'VIA Nano','L2200',2,1.6,1,13,1);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
 
-INSERT INTO `motherboardmodel` VALUES (1,'Intel','DG945GCLF2','945GC',2,42,1,1,2,1);
+-- motherboard models
+INSERT INTO `motherboardmodel` VALUES (1,'INTEL','DG945GCLF2','945GC',1,42,1,1,2,1);
+INSERT INTO `motherboardmodel` VALUES (2,'ASUS','AT3GC-I','945GC',1,42,1,1,2,1);
+INSERT INTO `motherboardmodel` VALUES (3,'ASUS','AT3N7A-I','NVIDIA ION',1,42,1,2,4,1);
+INSERT INTO `motherboardmodel` VALUES (4,'J&W','MINIX ATOM330','945GC',1,42,1,1,2,1);
+INSERT INTO `motherboardmodel` VALUES (5,'VIA','VB8001','VIA CN896',1,42,1,2,4,3);
+INSERT INTO `motherboardmodel` VALUES (6,'GIGABYTE','GA-D510UD','INTEL NM10',1,42,1,2,4,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
+
 
 -- operation types list
 INSERT INTO `operationtype` VALUES 
@@ -98,6 +114,7 @@ INSERT INTO `component` VALUES
 (5,'Dhcpd','3','Dhcpserver'),
 (6,'Atftpd','0','Tftpserver'),
 (7,'Snmpd','5','Monitoragent');
+
 
 -- kernels
 INSERT INTO `kernel` VALUES (1,'admin','2.6.32','Admin Kernel');

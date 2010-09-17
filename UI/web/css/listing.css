@@ -11,8 +11,10 @@ table.listview {
 
 
 table.listview  th { background-color: #DDD; padding: 10px; }
-table.listview .expand { color: green; }
-table.listview .expand:hover { cursor: pointer; font-weight: bold; }
+table.listview .expanddown { background: url('/images/icons/arrow-down.png') no-repeat center; }
+table.listview .expandup { background: url('/images/icons/arrow-up.png') no-repeat center; }
+
+table.listview .expanddown:hover, table.listview .expandup:hover { cursor: pointer; }
 
 table.listview tr:hover { background-color: #e4f3c6; }
 

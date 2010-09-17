@@ -4,22 +4,24 @@
 	@import url(/css/listing.css);
 </style>
 <div id="content">
-	<h1>Cluster details</h1>
+	<h1>Cluster components: </h1>
 	<table id="clustercomponentsdetails" class="listview">
-			<tr><th>Cluster components: </th></tr> 
-				<TMPL_LOOP NAME=COMPONENTS>
-					<tr><td>component name : <TMPL_VAR NAME=NAME></td>
-					<td>component id : <TMPL_VAR NAME=ID></td>
-					<td>component instance id : <TMPL_VAR NAME=INSTANCE></td>
-					<td>component category : <TMPL_VAR NAME=CATEGORY></td></tr>
-				</TMPL_LOOP>
+		<tr><th>component name: </th><th>component version: </th><th>component category: </th></tr>
+			<TMPL_LOOP NAME=COMPONENTS>
+				<tr><td><TMPL_VAR NAME=NAME></td>
+				<td><TMPL_VAR NAME=VERSION></td>
+				<td><TMPL_VAR NAME=CATEGORY></td></tr>
+			</TMPL_LOOP>
 	</table>
+	<h1>Cluster nodes: </h1>
 	<table id="clustermotherboardsdetails" class="listview">
-			<tr><th>Cluster nodes: </th></tr> 
-			<td class="content">
-				<TMPL_LOOP NAME=MOTHERBOARDS>
-				</TMPL_LOOP>
-			</td>
+		<tr><th>Motherboard hostname: </th><th>Motherboard slot number: </th><th>Motherboard internal ip: </th></tr>
+			<TMPL_LOOP NAME=MOTHERBOARDS>
+				<tr><td><TMPL_VAR NAME=HOSTNAME></td>
+				<td><TMPL_VAR NAME=SLOTNUMBER></td>
+				<td><TMPL_VAR NAME=INTERNALIP></td></tr>
+			</TMPL_LOOP>
 	</table>
 </div>
+<script language="Javascript" src="/js/listingtools.js"></script>
 <TMPL_INCLUDE NAME="footer.tmpl">
