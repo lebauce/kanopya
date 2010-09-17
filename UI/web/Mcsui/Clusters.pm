@@ -108,7 +108,7 @@ sub process_addcluster : Runmode {
 				cluster_priority => $query->param('priority'),
 				systemimage_id => $query->param('systemimage_id')
 			};
-			if($query->param('kernel_id') ne '0') { $args->{kernel_id} = $query->param('kernel_id'); }
+			if($query->param('kernel_id') ne '0') { $params->{kernel_id} = $query->param('kernel_id'); }
 			$self->{'admin'}->newOp(type =>"AddCluster", priority => '100', params => $params);
 		};
         if($@) {
