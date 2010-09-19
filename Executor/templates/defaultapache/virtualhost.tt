@@ -1,0 +1,165 @@
+[% FOREACH virtualhost = virtualhosts %]
+<VirtualHost *:[% virtualhosts.port %].>
+	ServerName   [% virtualhost.servername %]
+	[% FOREACH serveralias = virtualhost.serveraliases %]
+	ServerAlias  [% serveralias %]
+	[% END %]
+	ServerAdmin  "[% virtualhost.servername %]"
+	DocumentRoot [% virtualhost.documentroot %]
+	CustomLog  [% virtualhost.log %]
+	ErrorLog  [% virtualhost.errorlog %]
+</VirtualHost>
+
+[% IF virtualhost.sslenable %]
+<VirtualHost *:[% virtualhosts.sslport %].>
+        ServerName   [% virtualhost.servername %]
+        [% FOREACH serveralias = virtualhost.serveraliases %]
+        ServerAlias  [% serveralias %]
+        [% END %]
+        ServerAdmin  "[% virtualhost.servername %]"
+        DocumentRoot [% virtualhost.documentroot %]
+        CustomLog  [% virtualhost.log %]
+        ErrorLog  [% virtualhost.errorlog %]
+</VirtualHost>
+[% END %]
+
+[% END %]
+
+
+<IfModule mod_ssl.c>
+
+<VirtualHost 62.193.219.82:443>
+	ServerName   hederatech.com:443
+	ServerAlias www.hederatech.com
+	ServerAlias  www.hedera-technology.com
+	ServerAlias  hedera-technology.com
+		SuexecUserGroup         ftphedera psacln
+	ServerAdmin  "antoine.castaing@hederatech.com"
+	DocumentRoot /var/www/vhosts/hederatech.com/httpdocs
+	CustomLog  /var/www/vhosts/hederatech.com/statistics/logs/access_ssl_log plesklog
+	ErrorLog  /var/www/vhosts/hederatech.com/statistics/logs/error_log
+<IfModule mod_userdir.c>
+	UserDir /var/www/vhosts/hederatech.com/web_users
+</IfModule>
+	ScriptAlias  /cgi-bin/ /var/www/vhosts/hederatech.com/cgi-bin/
+	Alias  /plesk-stat /var/www/vhosts/hederatech.com/statistics/
+	<Location  /plesk-stat/>
+		Options +Indexes
+	</Location>
+	<Location  /plesk-stat/logs/>
+		Require valid-user
+	</Location>
+	Alias  /webstat /var/www/vhosts/hederatech.com/statistics/webstat
+	Alias  /webstat-ssl /var/www/vhosts/hederatech.com/statistics/webstat-ssl
+	Alias  /ftpstat /var/www/vhosts/hederatech.com/statistics/ftpstat
+	Alias  /anon_ftpstat /var/www/vhosts/hederatech.com/statistics/anon_ftpstat
+	Alias  /awstats-icon /usr/share/awstats/icon
+	SSLEngine  on
+	SSLVerifyClient none
+	SSLCertificateFile /opt/psa/var/certificates/certxmL5911
+	<Directory /var/www/vhosts/hederatech.com/httpdocs>
+	<IfModule mod_perl.c>
+	<Files ~ (\.pl$)>
+		SetHandler perl-script
+		PerlHandler ModPerl::Registry
+		Options ExecCGI
+		allow from all
+		PerlSendHeader On
+	</Files>
+	</IfModule>
+	<IfModule mod_php4.c>
+		php_admin_flag engine on
+		php_admin_flag safe_mode on
+		php_admin_value open_basedir "/var/www/vhosts/hederatech.com/httpdocs:/tmp"
+	</IfModule>
+	<IfModule mod_php5.c>
+		php_admin_flag engine on
+		php_admin_flag safe_mode on
+		php_admin_value open_basedir "/var/www/vhosts/hederatech.com/httpdocs:/tmp"
+	</IfModule>
+	<IfModule mod_fcgid.c>
+		<Files ~ (\.fcgi)>
+			SetHandler fcgid-script
+			Options +FollowSymLinks +ExecCGI
+		</Files>
+	</IfModule>
+		SSLRequireSSL
+		Options -Includes +ExecCGI
+	</Directory>
+	<Directory /var/www/vhosts/hederatech.com/web_users>
+	<IfModule mod_php4.c>
+		php_admin_flag engine off
+	</IfModule>
+	<IfModule mod_php5.c>
+		php_admin_flag engine off
+	</IfModule>
+	</Directory>
+	<Directory "/var/www/vhosts/hederatech.com/statistics">
+		AuthType Basic
+		AuthName "Statistiques du domaine"
+		AuthUserFile /var/www/vhosts/hederatech.com/pd/d..httpdocs@plesk-stat
+		require  valid-user
+	</Directory>
+</VirtualHost>
+</IfModule>
+
+<VirtualHost 62.193.219.82:80>
+	ServerName   hederatech.com:80
+	ServerAlias  www.hederatech.com
+	ServerAlias  hedera-technology.com
+	SuexecUserGroup         ftphedera psacln
+	ServerAdmin  "antoine.castaing@hederatech.com"
+	DocumentRoot /var/www/vhosts/hederatech.com/httpdocs
+	CustomLog  /var/www/vhosts/hederatech.com/statistics/logs/access_log plesklog
+	ErrorLog  /var/www/vhosts/hederatech.com/statistics/logs/error_log
+<IfModule mod_userdir.c>
+	UserDir /var/www/vhosts/hederatech.com/web_users
+</IfModule>
+	ScriptAlias  /cgi-bin/ /var/www/vhosts/hederatech.com/cgi-bin/
+	Redirect permanent /plesk-stat https://hederatech.com/plesk-stat
+	Redirect permanent /webstat https://hederatech.com/webstat
+	Redirect permanent /webstat-ssl https://hederatech.com/webstat-ssl
+	Redirect permanent /ftpstat https://hederatech.com/ftpstat
+	Redirect permanent /anon_ftpstat https://hederatech.com/anon_ftpstat
+	Redirect permanent /awstats-icon https://hederatech.com/awstats-icon
+	<IfModule mod_ssl.c>
+		SSLEngine off
+	</IfModule>
+	<Directory /var/www/vhosts/hederatech.com/httpdocs>
+	<IfModule mod_perl.c>
+	<Files ~ (\.pl$)>
+		SetHandler perl-script
+		PerlHandler ModPerl::Registry
+		Options ExecCGI
+		allow from all
+		PerlSendHeader On
+	</Files>
+	</IfModule>
+	<IfModule mod_php4.c>
+		php_admin_flag engine on
+		php_admin_flag safe_mode on
+		php_admin_value open_basedir "/var/www/vhosts/hederatech.com/httpdocs:/tmp"
+	</IfModule>
+	<IfModule mod_php5.c>
+		php_admin_flag engine on
+		php_admin_flag safe_mode on
+		php_admin_value open_basedir "/var/www/vhosts/hederatech.com/httpdocs:/tmp"
+	</IfModule>
+	<IfModule mod_fcgid.c>
+		<Files ~ (\.fcgi)>
+			SetHandler fcgid-script
+			Options +FollowSymLinks +ExecCGI
+		</Files>
+	</IfModule>
+		Options -Includes +ExecCGI
+	</Directory>
+	<Directory /var/www/vhosts/hederatech.com/web_users>
+	<IfModule mod_php4.c>
+		php_admin_flag engine off
+	</IfModule>
+	<IfModule mod_php5.c>
+		php_admin_flag engine off
+	</IfModule>
+	</Directory>
+</VirtualHost>
+

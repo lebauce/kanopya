@@ -1,0 +1,4 @@
+<defaultapache>
+<apache2.conf serverroot="m//s" user="m//s" group="m//s" hostnamelookups="m//s" loglevel="m//s" logformat="m//s"/>
+<ports.conf ports="m//s" sslports="">
+</defaultapache>
