@@ -92,12 +92,6 @@ sub prepare {
 	my $self = shift;
 	my %args = @_;
 	$self->SUPER::prepare();
-
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EStartCluster->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 	
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
@@ -113,7 +107,7 @@ sub execute {
 	my $self = shift;
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
-		
+	
 	$log->info("getting cluster's nodes");
 	my $nodes = $adm->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));	
 	
@@ -126,7 +120,10 @@ sub execute {
 	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
 	
 	foreach my $node (@$nodes) {
-		$adm->newOp(type => 'RemoveMotherboardFromCluster',
+		# we stop only nodes with 'up' state 
+		#TODO gerer les nodes dans un autre état
+		if($node->getAttr(name => 'motherboard_state') ne 'up') { next; }
+		$adm->newOp(type => 'StopNode',
 					priority => $priority,
 					params => {
 						cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
@@ -135,7 +132,7 @@ sub execute {
 		);
 	} 	
 	
-	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping:'.time);
+	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down');
 	$self->{_objs}->{cluster}->save();
 }
 
