@@ -150,6 +150,34 @@ sub removeTarget{
 	return $self->_getEntity()->removeTarget(%args);	
 }
 
+=head 
+
+	given a targetname, an initiatorname and an econtext 
+	return a hash reference containing iscsi target id and session id for an initiator and a target
+	return nothing if no session found                                                                                 
+
+=cut 
+
+sub getIscsiSession {
+	my $self = shift;
+	my %args  = @_;	
+	if ((! exists $args{initiatorname} or ! defined $args{initiatorname}) ||
+		(! exists $args{targetname} or ! defined $args{targetname})||
+		(! exists $args{econtext} or ! defined $args{econtext})) {
+		$errmsg = "EComponent::EExport::EIscsitarget1->getIscsiSession needs a targetname,  initiatorname and econtext named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $command = 'cat /proc/net/iet/session';
+	my $result = $args{econtext}->execute(command => $command);
+	$result->{stdout} =~ m/tid:([0-9]+)\sname:$args{targetname}\n(\tsid:[0-9]+\sinitiator:.*\n\t\tcid:.*\n)*\tsid:([0-9]+)\sinitiator:$args{initiatorname}\n\t\tcid:.*\n/;
+	if(defined $1 && defined $3) {
+		$log->debug("tid found : $1\tsid found : $3");
+		return { tid => $1, sid => $3 };
+	}
+	return undef;
+}
 
 sub cleanIscsiSession {
 	my $self = shift;
@@ -157,7 +185,7 @@ sub cleanIscsiSession {
 	if ((! exists $args{initiatorname} or ! defined $args{initiatorname}) ||
 		(! exists $args{target_name} or ! defined $args{target_name})||
 		(! exists $args{econtext} or ! defined $args{econtext})) {
-		$errmsg = "EComponent::EExport::EIscsitarget1->removeTarget needs a target_name,  initiatorname and econtext named argument!";
+		$errmsg = "EComponent::EExport::EIscsitarget1->cleanIscsiSession needs a target_name,  initiatorname and econtext named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}

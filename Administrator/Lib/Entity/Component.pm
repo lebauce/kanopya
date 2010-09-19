@@ -24,5 +24,18 @@ sub getTemplateDirectory {
 	}
 }
 
+sub getComponentAttr {
+	my $self = shift;
+	my %args = @_;
+	my $componentAttr = {};
+	
+	$componentAttr->{component_name} = $self->{_dbix}->component_id->get_column('component_name');
+	$componentAttr->{component_id} = $self->{_dbix}->component_id->get_column('component_id');	
+	$componentAttr->{component_version} = $self->{_dbix}->component_id->get_column('component_version');
+	$componentAttr->{component_category} = $self->{_dbix}->component_id->get_column('component_category');
+	
+	return $componentAttr;	
+}
+
 
 1;

@@ -92,10 +92,10 @@ sub retrieveData {
 	my $server_status = qx( $self->{_cmd} );
 	
 	if ( $server_status eq "" ) {
-		die "Error (apache) : no response from remote host : '$self->{_host}' ";
+		die "No response from remote host : '$self->{_host}' ";
 	}
 	if ( $server_status =~ "403 Forbidden" ) {
-		die "Error (apache) : you don't have permission to access $self->{_host}/server_status";
+		die "You don't have permission to access $self->{_host}/server_status";
 	}
 	
 

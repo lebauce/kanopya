@@ -1,0 +1,27 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+	@import url(/css/listing.css);
+</style>
+<div id="content">
+	<h1>Cluster components: </h1>
+	<table id="clustercomponentsdetails" class="listview">
+		<tr><th>component name: </th><th>component version: </th><th>component category: </th></tr>
+			<TMPL_LOOP NAME=COMPONENTS>
+				<tr><td><TMPL_VAR NAME=NAME></td>
+				<td><TMPL_VAR NAME=VERSION></td>
+				<td><TMPL_VAR NAME=CATEGORY></td></tr>
+			</TMPL_LOOP>
+	</table>
+	<h1>Cluster nodes: </h1>
+	<table id="clustermotherboardsdetails" class="listview">
+		<tr><th>Motherboard hostname: </th><th>Motherboard slot number: </th><th>Motherboard internal ip: </th></tr>
+			<TMPL_LOOP NAME=MOTHERBOARDS>
+				<tr><td><TMPL_VAR NAME=HOSTNAME></td>
+				<td><TMPL_VAR NAME=SLOTNUMBER></td>
+				<td><TMPL_VAR NAME=INTERNALIP></td></tr>
+			</TMPL_LOOP>
+	</table>
+</div>
+<script language="Javascript" src="/js/listingtools.js"></script>
+<TMPL_INCLUDE NAME="footer.tmpl">

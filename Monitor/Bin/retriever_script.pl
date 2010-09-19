@@ -21,8 +21,9 @@ if ( $cmd eq "fetch" ) {
 	$collector->getData( rrd_name => "cpu_localhost", time_laps => 100, percent => 'ok' );
 } elsif ( $cmd eq "rebuild" ) {
 	$collector->rebuild( set_label => shift );
-} elsif ( $cmd eq "hosts" ) {
-    $collector->retrieveHostsByCluster();
+} elsif ( $cmd eq "clusters" ) {
+    my %clusters = $collector->retrieveHostsByCluster();
+    print Dumper \%clusters;
 } elsif ( $cmd eq "hostsip" ) {
     print "===> ", join( ", ", $collector->retrieveHostsIp()), "\n";
 } elsif ( $cmd eq "test" ) {
@@ -35,4 +36,8 @@ if ( $cmd eq "fetch" ) {
 	print Dumper \%res;
 } elsif ( $cmd eq "thr" ) {
     $collector->update_test();
+}  elsif ( $cmd eq "nodes" ) {
+	my $cluster = shift;
+    my $graph_path = $collector->graphNodeCount( cluster => $cluster );
+    my $tmp =  `eog $graph_path`;
 }

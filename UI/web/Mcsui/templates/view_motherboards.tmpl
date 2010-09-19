@@ -8,7 +8,7 @@
 <table id="motherboardlist" class="listview">
 	<tr><th></th><th>place</th><th>model</th><th>state</th><th>active</th><th>actions</th></tr><TMPL_LOOP NAME=MOTHERBOARDS>
 	<tr>
-		<td id="m<TMPL_VAR NAME=ID>" class="expand">+</td>
+		<td id="m<TMPL_VAR NAME=ID>" class="expanddown">&nbsp;</td>
 		<td><TMPL_VAR NAME=POSITION></td>
 		<td><TMPL_VAR NAME=MODEL></td>
 		<td><TMPL_VAR NAME=STATE></td>
@@ -41,23 +41,5 @@
 </TMPL_LOOP>
 </table>
 </div>
-<script language="Javascript">
-
-function selectme() { 
-	if(this.innerHTML == '+') { 
-		this.innerHTML = '-'; 
-		document.getElementById('t'+this.id.substring(1)).className = ''; 
-	}
-	else { 
-		this.innerHTML = '+';
-		document.getElementById('t'+this.id.substring(1)).className = 'hidden'; 
-	}
-}
-
-motherboardline = document.getElementById('motherboardlist').getElementsByClassName('expand');
-for(i=0;i<motherboardline.length;i++) {
-	motherboardline[i].onclick = selectme;
-}
-
-</script>
+<script language="Javascript" src="/js/listingtools.js"></script>
 <TMPL_INCLUDE NAME="footer.tmpl">

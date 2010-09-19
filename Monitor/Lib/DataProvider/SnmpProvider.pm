@@ -57,7 +57,7 @@ sub new {
 	);
 
 	if (!defined $session) {
-	  die "ERROR (new) : ", $error;
+	  die $error;
 	}
 	
 	$self->{_session} = $session;
@@ -95,7 +95,7 @@ sub retrieveData {
 
 	if (!defined $result) {
       	#$session->close();
-		die "ERROR (retrieve) : ", $session->error();
+		die $session->error();
 	}
 
 	my %values = ();

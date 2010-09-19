@@ -202,40 +202,114 @@ sub requireAddNode {
     my %args = @_;
     
     my $cluster = $args{cluster};
+    
+    print "Node required in cluster '$cluster'\n";
+    
+    ############################################################
+    # Check if there is already a node starting in the cluster #
+    ############################################################
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster );
-    
-    #print Dumper $cluster_info;
-    
-    my $host_starting = 0;
     foreach my $host (values %$cluster_info) {
     	if ($host->{state} eq "starting") {
-    		$host_starting = 1;
-    		last;
+    		print " => A node is alredy starting in cluster '$cluster'\n";
+    		return;
     	}
     }
     
-    #return if ($host_starting);
+    ############################################################################
+    # Check if there is a corresponding add node operation in operation queue! #
+    ############################################################################
+    my $adm = $self->{_admin};
+    foreach my $op ( @{ $adm->getOperations() } ) {
+    	if ($op->{'TYPE'} eq 'AddMotherboardInCluster') {
+    		foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
+    			if ( ($param->{'PARAMNAME'} eq 'cluster') && ($param->{'VAL'} eq $cluster) ) {
+    				print " => An operation to add node in cluster '$cluster' is already in queue\n";
+    				return;
+    			}
+    		}	
+    	}
+    }
     
-    #TODO  Check if there is a corresponding add node operation in operation queue!
+    ############
+    # Add node #
+    ############
+    $self->addNode( cluster => $cluster );
     
-    #TODO  Select a node
+    #########################################################
+    # Store the time in a file, keeping only last 11 values #
+    #########################################################
+
     
-    #TODO  Add node
+}
+
+=head2 _storeAddTime
+	
+	Class : Private
+	
+	Desc : 	Store in a file the time of adding a node in a cluster.
+			Keep only the last $NUMBER_TO_KEEP values.
+	
+	Args :
+		time: time in second (since epoch) to store
+		cluster: name of the cluster in which we added a node
+	
+	Return :
+	
+=cut
+
+sub _storeAddTime {
+	my $self = shift;
+    my %args = @_;
     
-    print "====> add node in $cluster\n";
+    my $NUMBER_TO_KEEP = 10;
     
-    # Store the time in a file, keeping only last 11 values
+    my $cluster = $args{cluster};
+    
     open FILE, "</tmp/orchestrator_$cluster.time";
     my $times = <FILE>;
     close FILE;
     my @times = $times ? split( /:/, $times ) : ();
-    my @last_times = scalar @times > 10 ? @times[$#times - 10 .. $#times] : @times;
-    push @last_times, time();
+    my @last_times = scalar @times > $NUMBER_TO_KEEP ? @times[$#times + 1 - $NUMBER_TO_KEEP .. $#times] : @times;
+    push @last_times, $args{time};
     open FILE, ">/tmp/orchestrator_$cluster.time";
     print FILE join(":", @last_times);
     close FILE;
+}
+
+sub addNode {
+	my $self = shift;
+    my %args = @_;
     
+    print "====> add node in $args{cluster_name}\n";
+       
+    #my $adm = $args{adm};
+    my $adm = $self->{_admin};
+    
+    my $priority = 1000;
+    
+    my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $args{cluster_name} } );
+    my $cluster = pop @cluster;
+    
+	my @free_motherboards = $adm->getEntities(type => 'Motherboard', hash => { active => 1, motherboard_state => 'down'});
+	
+	if ( scalar @free_motherboards > 0 ) {
+		#TODO  Select the best node ?
+		my $motherboard = pop @free_motherboards;
+		$adm->newOp(type => 'AddMotherboardInCluster',
+					priority => $priority,
+					params => {
+						cluster_id => $cluster->getAttr(name => "cluster_id"),
+						motherboard_id => $motherboard->getAttr(name => 'motherboard_id')
+					}
+		);
+		$self->_storeAddTime( time => time(), cluster => $cluster );
+	}
+	else {
+		print "Warning: No free motherboard to add in cluster '$cluster'";
+	}
+
 }
 
 sub requireRemoveNode {

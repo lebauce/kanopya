@@ -6,18 +6,15 @@
 <div id="content">
 <h1>Processor models</h1>
 <table id="motherboardmodellist" class="listview">
-	<tr><th>brand</th><th>name</th><th>cores</th><th>clock<br/>speed</th><th>FSB</th><th>L2 cache</th><th>consumption</th><th>TDP</th><th>64 bits</th><th>CPU<br/>flags</th></tr>
+	<tr><th>brand</th><th>name</th><th>cores</th><th>clock<br/>speed</th><th>L2 cache</th><th>TDP</th><th>64 bits</th></tr>
 	<TMPL_LOOP NAME=PROCESSORMODELS>
 	<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=BRAND></td>
 	<td><TMPL_VAR NAME=NAME></td>
 	<td><TMPL_VAR NAME=CORENUM></td>
 	<td><TMPL_VAR NAME=CLOCKSPEED> GHz</td>
-	<td><TMPL_VAR NAME=FSB></td>
 	<td><TMPL_VAR NAME=L2CACHE> Mo</td>
-	<td><TMPL_VAR NAME=CONSUMPTION> W</td>
 	<td><TMPL_VAR NAME=TDP> W</td>
 	<td><TMPL_VAR NAME=IS64></td>
-	<td><TMPL_VAR NAME=CPUFLAGS></td>
 	</tr>
 	</TMPL_LOOP>
 </table>

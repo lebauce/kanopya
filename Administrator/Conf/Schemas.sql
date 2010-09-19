@@ -26,13 +26,10 @@ CREATE TABLE `processormodel` (
   `processormodel_brand` char(64) NOT NULL,
   `processormodel_name` char(32) NOT NULL,
   `processormodel_core_num` int(2) unsigned NOT NULL,
-  `processormodel_clock_speed` int(2) unsigned NOT NULL,
-  `processormodel_fsb` int(2) unsigned NOT NULL,
+  `processormodel_clock_speed` float unsigned NOT NULL,
   `processormodel_l2_cache` int(2) unsigned NOT NULL,
-  `processormodel_max_consumption` int(2) unsigned NOT NULL,
   `processormodel_max_tdp` int(2) unsigned NOT NULL,
   `processormodel_64bits` int(1) unsigned NOT NULL,
-  `processormodel_cpu_flags` char(255) DEFAULT NULL,
   PRIMARY KEY (`processormodel_id`),
   UNIQUE KEY `processormodel_UNIQUE` (`processormodel_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
