@@ -67,10 +67,10 @@ sub new {
      
 	# check if node exist in db
     $log->debug("checking node existence");
-    my $node = $admin->{db}->resultset('Node')->find(
-    	$args{motherboard_id},
-    	{ key => 'motherboard_id' }
-    );
+    my $node = $admin->{db}->resultset('Node')->search( { 
+    	motherboard_id => $args{motherboard_id},
+    	cluster_id => $args{cluster_id}
+    })->single;
     if(not defined $node) {
     	my $errmsg = "Operation::StopNode->new : can't find this node in db !";
     	$log->error($errmsg);
