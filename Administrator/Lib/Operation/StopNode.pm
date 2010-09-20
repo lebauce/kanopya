@@ -1,4 +1,4 @@
-# ActivateCluster.pm - Operation class implementing Cluster activation operation
+# StopNode.pm - Operation class implementing Cluster stop operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,21 +23,19 @@
 
 =head1 NAME
 
-Operation::ActivateCluster - Operation class implementing Cluster activation operation
+Operation::StopNode - Operation class implementing node stop operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement cluster activation operation
+It allows to implement node stop operation
 
 =head1 DESCRIPTION
-
-
 
 =head1 METHODS
 
 =cut
-package Operation::ActivateCluster;
+package Operation::StopNode;
 
 use strict;
 use warnings;
@@ -53,9 +51,9 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::ActivateCluster->new();
+    my $op = Operation::StopNode->new();
 
-Operation::ActivateCluster->new creates a new ActivateCluster operation.
+Operation::StopNode->new creates a new StopNode operation.
 
 =cut
 
@@ -66,50 +64,34 @@ sub new {
 	# presence of 'params' named argument is done in parent class 
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
-    my $cluster;
      
- 	# check if cluster_id exist
-    $log->debug("checking cluster existence with id <$args{params}->{cluster_id}>");
-    eval {
-    	$cluster = $admin->getEntity(type => 'Cluster', id => $args{params}->{cluster_id});
-    };
-    if($@) {
-    	$errmsg = "Operation::ActivateCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
+	# check if node exist in db
+    $log->debug("checking node existence");
+    my $node = $admin->{db}->resultset('Node')->search( { 
+    	motherboard_id => $args{params}->{motherboard_id},
+    	cluster_id => $args{params}->{cluster_id}
+    })->single;
+    if(not defined $node) {
+    	my $errmsg = "Operation::StopNode->new : can't find this node in db (cluster_id is $args{params}->{cluster_id}, motherboard_id is $args{params}->{motherboard_id})";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
+        
+    # check if node is up
+    #TODO comment fait-on pour les nodes broken ?
+    #logiquement on pourra éteindre un node broken quand on manipulera la carte de dispatch
+    my $motherboard = $admin->getEntity(type => 'Motherboard', id => $args{params}->{motherboard_id} ); 
     
-    # check if system image used is active 
-    $log->debug("checking cluster 's systemimage active value <$args{params}->{cluster_id}>");
-    my $systemimage = $admin->getEntity(type => 'Systemimage', id => $cluster->getAttr(name => 'systemimage_id'));
-    if(not $systemimage->getAttr(name => 'active')) {
-	    	$errmsg = "Operation::ActivateCluster->new : cluster's systemimage is not activated";
-	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+    if($motherboard->getAttr(name => 'motherboard_state') ne 'up') {
+    	my $errmsg = "Operation::StopNode->new : motherboard must be up to be stopped";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
     }
-    
-    # check if cluster is not active
-    $log->debug("checking cluster active value <$args{params}->{cluster_id}>");
-   	if($cluster->getAttr(name => 'active')) {
-	    	$errmsg = "Operation::ActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
-	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
-    }
-       
-    return $self;
+
+	return $self;
 }
 
-=head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-	my $self = shift;
-
-	return;
-}
 
 =head2 prepare
 

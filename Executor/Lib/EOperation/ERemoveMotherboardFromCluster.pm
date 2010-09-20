@@ -1,4 +1,4 @@
-# ERemoveMotherboardFromCluster.pm - Operation class implementing Cluster creation operation
+# ERemoveMotherboardFromCluster.pm - Operation class node removing from cluster operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,12 +23,12 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EOperation::ERemoveMotherboardFromCluster - Operation class implementing node removing operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement node removing operation
 
 =head1 DESCRIPTION
 
@@ -45,7 +45,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use vars qw(@ISA $VERSION);
 use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
+use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use EFactory;
 
@@ -55,9 +55,7 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = EEntity::EOperation::EAddMotherboard->new();
-
-EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
+EOperation::ERemoveMotherboardFromCluster->new creates a new ERemoveMotherboardFromCluster operation.
 
 =cut
 
@@ -106,7 +104,18 @@ sub prepare {
 
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
-
+	
+	# Get instance of Motherboard Entity
+	$log->info("Load Motherboard instance");
+	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
+	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+	
+	# if the node is in stopping state, we add this operation again in the execution list
+	
+	while($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
+		sleep 10;				
+	}
+	
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 
@@ -144,11 +153,6 @@ sub prepare {
 	# Get context for executor
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
-
-	# Get instance of Motherboard Entity
-	$log->info("Load Motherboard instance");
-	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
-	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 
 	my $cluster_id = $self->{_objs}->{motherboard}->getClusterId();
 	#### Get instance of Cluster Entity
@@ -188,16 +192,13 @@ sub prepare {
 
 }
 
-sub execute{
+sub execute {
 	my $self = shift;
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
-	
-	## halt the node
-	$self->stopNode();
-	
+		
 	## Remove Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
@@ -213,15 +214,30 @@ sub execute{
 	## Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
 	
-	
 	## Remove motherboard etc export from iscsitarget 
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
-	
 	my $target_name = $node_dev->{etc}->{lvname};
 	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $target_name);
-
 	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
+	
+	 
+	# we check for existing session on etc target   
+	my $tidsid = $self->{_objs}->{component_export}->getIscsiSession(
+			targetname => $target_name,	
+			initiatorname => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname"),
+			econtext => $self->{nas}->{econtext}
+	);				
+	if(defined $tidsid) { 
+		$self->{_objs}->{component_export}->cleanIscsiSession(
+			tid => $tidsid->{tid},
+			sid => $tidsid->{sid},
+			econtext => $self->{nas}->{econtext}
+		);	
+	}
+	
+	#TODO faire de même pour le nettoyage dela session sur le root systemimage...
+	
 
 	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id 	=> $lun_id,
 												  iscsitarget1_target_id=>$target_id);
@@ -235,28 +251,10 @@ sub execute{
 	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 
-	# TODO ici finir l'appel au nettoyage des sessions iscsi
-	#$self->{_objs}->{component_export}->cleanIscsiSession(
-	#	initiatorname => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_initiatorname'),
-	#	target_name => ICI RECUPERE LE TARGET NAME DU ROOT SYSTEMIMAGE UTILISE PAR LE CLUSTER,
-	#	econtext => $self->{nas}->{econtext}
-	#);
+	
 	
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
-}
-
-
-sub stopNode {
-	my $self = shift;
-	my $motherboard_econtext = EFactory::newEContext(
-		ip_source => "127.0.0.1", 
-		ip_destination => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_internal_ip')
-	);
-	my $command = 'halt';
-	my $result = $motherboard_econtext->execute(command => $command);
-	my $state = 'stopping:'.time;
-	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
 }
 
 1;

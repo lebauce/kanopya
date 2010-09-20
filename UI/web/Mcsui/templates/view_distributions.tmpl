@@ -8,7 +8,7 @@
 <table id="distributionlist" class="listview">
 	<tr><th></th><th>name</th><th>version</th><th>description</th></tr><TMPL_LOOP NAME=DISTRIBUTIONS>
 	<tr>
-		<td id="m<TMPL_VAR NAME=ID>" class="expand">+</td>
+		<td id="m<TMPL_VAR NAME=ID>" class="expanddown">&nbsp;</td>
 		<td><TMPL_VAR NAME=NAME></td>
 		<td><TMPL_VAR NAME=VERSION></td>
 		<td><TMPL_VAR NAME=DESC></td>
@@ -28,23 +28,5 @@
 </TMPL_LOOP>
 </table>
 </div>
-<script language="Javascript">
-
-function selectme() { 
-	if(this.innerHTML == '+') { 
-		this.innerHTML = '-'; 
-		document.getElementById('t'+this.id.substring(1)).className = ''; 
-	}
-	else { 
-		this.innerHTML = '+';
-		document.getElementById('t'+this.id.substring(1)).className = 'hidden'; 
-	}
-}
-
-motherboardline = document.getElementById('distributionlist').getElementsByClassName('expand');
-for(i=0;i<motherboardline.length;i++) {
-	motherboardline[i].onclick = selectme;
-}
-
-</script>
+<script language="Javascript" src="/js/listingtools.js"></script>
 <TMPL_INCLUDE NAME="footer.tmpl">

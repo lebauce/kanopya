@@ -132,7 +132,7 @@ sub execute {
 		);
 	} 	
 	
-	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'starting:'.time);
+	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'up');
 	$self->{_objs}->{cluster}->save();
 }
 

@@ -1,4 +1,4 @@
-# EStopCluster.pm - Operation class cluster stop operation
+# EStopNode.pm - Operation class implementing stop node operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,40 +23,41 @@
 
 =head1 NAME
 
-EOperation::EStopCluster - Operation class implementing cluster stopping operation
+EOperation::EStopNode - Operation class implementing stop node operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement cluster stopping operation
+It allows to implement stop node operation
 
 =head1 DESCRIPTION
 
-
+Component is an abstract class of operation objects
 
 =head1 METHODS
 
 =cut
-package EOperation::EStopCluster;
+package EOperation::EStopNode;
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 use vars qw(@ISA $VERSION);
 use base "EOperation";
 use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
+use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
-
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
-    my $op = EOperation::EStopCluster->new();
+    my $op = EEntity::EOperation::EStopNode->new();
 
-EOperation::EStartCluster->new creates a new EStopCluster operation.
+EOperation::EStopNode->new creates a new StopNode operation.
 
 =cut
 
@@ -64,22 +65,11 @@ sub new {
     my $class = shift;
     my %args = @_;
     
+    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
     return $self;
-}
-
-=head2 _init
-
-	$op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-	my $self = shift;
-
-	return;
 }
 
 =head2 prepare
@@ -89,51 +79,53 @@ sub _init {
 =cut
 
 sub prepare {
+	
 	my $self = shift;
 	my %args = @_;
 	$self->SUPER::prepare();
-	
+
+	$log->info("Operation preparation");
+
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
-	$self->{_objs} = {};
+	# Get instance of Motherboard Entity
+	$log->info("Load Motherboard instance");
+	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
 	
-	# Get cluster to start from param
-	$self->{_objs}->{cluster} = $adm->getEntity(type => 'Cluster', id => $params->{cluster_id});
-		
+	# Get instance of Cluster Entity
+	$log->info("Load cluster instance");
+	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
 }
 
 sub execute {
 	my $self = shift;
+	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
+	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
 	
-	$log->info("getting cluster's nodes");
-	my $nodes = $adm->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));	
+	## halt the node
+	my $motherboard_econtext = EFactory::newEContext(
+		ip_source => "127.0.0.1", 
+		ip_destination => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_internal_ip')
+	);
+	my $command = 'halt';
+	my $result = $motherboard_econtext->execute(command => $command);
+	my $state = 'stopping:'.time;
+	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
+	$self->{_objs}->{motherboard}->save();
 	
-	if(not scalar @$nodes) {
-		$errmsg = "EStopCluster->execute : this cluster with id $self->{_objs}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
-	}
-	
-	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
-	
-	foreach my $node (@$nodes) {
-		# we stop only nodes with 'up' state 
-		#TODO gerer les nodes dans un autre état
-		if($node->getAttr(name => 'motherboard_state') ne 'up') { next; }
-		$adm->newOp(type => 'StopNode',
-					priority => $priority,
-					params => {
-						cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
-						motherboard_id => $node->getAttr(name => 'motherboard_id')
-					}
-		);
-	} 	
-	
-	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down');
-	$self->{_objs}->{cluster}->save();
+	## add RemoveMotherboardFromCluster operation for this node
+		
+	$adm->newOp(
+		type => 'RemoveMotherboardFromCluster',
+		priority => 100, #TODO manager la priorite de l'operation autrement
+		params => {
+			cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
+			motherboard_id => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_id"),
+		} 
+	);
 }
 
 1;
@@ -146,3 +138,14 @@ Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All right
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut
+
+
+
+
+
+
+
+
+
+
+

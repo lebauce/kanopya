@@ -26,13 +26,10 @@ sub view_models : StartRunmode {
 		$h->{NAME} = $p->getAttr(name => 'processormodel_name');
 		$h->{CORENUM} = $p->getAttr(name => 'processormodel_core_num');
 		$h->{CLOCKSPEED} = $p->getAttr(name => 'processormodel_clock_speed');
-		$h->{FSB} = $p->getAttr(name => 'processormodel_fsb');
 		$h->{L2CACHE} = $p->getAttr(name => 'processormodel_l2_cache');
-		$h->{CONSUMPTION} = $p->getAttr(name => 'processormodel_max_consumption');
 		$h->{TDP} = $p->getAttr(name => 'processormodel_max_tdp');
 		$h->{IS64} = $p->getAttr(name => 'processormodel_64bits');
-		$h->{CPUFLAGS} = $p->getAttr(name => 'processormodel_cpu_flags');
-			
+					
 		push @$processormodels, $h;
 	}
     

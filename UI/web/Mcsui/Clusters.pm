@@ -1,8 +1,12 @@
 package Mcsui::Clusters;
+use Data::Dumper;
 use base 'CGI::Application';
 use Log::Log4perl "get_logger";
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
+
+my $log = get_logger("administrator");
+
 
 sub setup {
 	my $self = shift;
@@ -46,10 +50,51 @@ sub view_clusters : StartRunmode {
     $tmpl->param('TITLE_PAGE' => "Clusters View");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 		
-	$output .= $tmpl->output();
-        
+	$output .= $tmpl->output();       
     return $output;
 }
+
+sub view_clusterdetails : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl = $self->load_tmpl('view_clusterdetails.tmpl');
+	my $output ='';
+	my $query =$self->query();
+	$clustId = $query->param('cluster_id');
+	 
+	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+	my $motherboards = $ecluster->getMotherboards(administrator => $self->{'admin'});
+	my $components = $ecluster->getComponents(administrator => $self->{'admin'}, category => 'all');
+	my $mothboards = [];
+	my $comps = []; 
+        
+	foreach my $c (keys %$components){
+		my $tmp = {};
+		my $compAtt = $components->{$c}->getComponentAttr();
+		$tmp->{NAME} = $compAtt->{component_name};
+		$tmp->{VERSION} = $compAtt->{component_version};
+		#$log->debug("component name : ".$tmp->{NAME});
+		$tmp->{CATEGORY} = $compAtt->{component_category};
+		#$log->debug("component category : ".$tmp->{CATEGORY});
+		push (@$comps, $tmp);
+	}
+	
+	foreach my $m (keys %$motherboards){
+		my $tmp ={};
+		$tmp->{HOSTNAME} = $motherboards->{$m}->getAttr(name=>'motherboard_hostname');
+		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_slot_position');
+		$tmp->{INTERNALIP} = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
+		push (@$mothboards, $tmp);
+	}
+	
+	$tmpl->param('TITLE_PAGE' => "Cluster's details");
+	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('COMPONENTS' => $comps);
+	$tmpl->param('MOTHERBOARDS' => $mothboards);
+	$tmpl->param($errors) if $errors;
+	$output .= $tmpl->output();
+	return $output;
+	}
 
 sub form_addcluster : Runmode {
 	my $self = shift;
@@ -108,7 +153,7 @@ sub process_addcluster : Runmode {
 				cluster_priority => $query->param('priority'),
 				systemimage_id => $query->param('systemimage_id')
 			};
-			if($query->param('kernel_id') ne '0') { $args->{kernel_id} = $query->param('kernel_id'); }
+			if($query->param('kernel_id') ne '0') { $params->{kernel_id} = $query->param('kernel_id'); }
 			$self->{'admin'}->newOp(type =>"AddCluster", priority => '100', params => $params);
 		};
         if($@) {
