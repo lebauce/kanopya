@@ -80,7 +80,7 @@ sub new {
     # check if node is up
     #TODO comment fait-on pour les nodes broken ?
     #logiquement on pourra éteindre un node broken quand on manipulera la carte de dispatch
-    my $motherboard = $admin->getEntity(type => 'motherboard', id => $args{params}->{motherboard_id} ); 
+    my $motherboard = $admin->getEntity(type => 'Motherboard', id => $args{params}->{motherboard_id} ); 
     
     if($motherboard->getAttr(name => 'motherboard_state') ne 'up') {
     	my $errmsg = "Operation::StopNode->new : motherboard must be up to be stopped";
