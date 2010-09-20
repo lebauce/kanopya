@@ -45,14 +45,16 @@ package Monitor;
 #TODO Modulariser: Collector, DataProvider (snmp, generator,...), DataStorage (rrd, ...), DataManipulator, Grapher, ...
 #TODO use Mcs::Exception
 #TODO remplacer les prints par des logs
+#TODO renommer correctement ex: $host représente des fois $host_name ou $host_ip 
 
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+#use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+use lib qw(/workspace/mcs/Common/Lib);
 
 use strict;
 use warnings;
 use RRDTool::OO;
 use XML::Simple;
-use Administrator;
+use AdminWrapper;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -85,7 +87,10 @@ sub new {
 	$log->info("NEW");
 
 	# Load conf
-	my $conf = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
+	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
+	my $conf = shift @conf;
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_period} = $conf->{period};
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp';
@@ -95,7 +100,9 @@ sub new {
 
 	# Get Administrator
 	print "get ADMIN\n";
-	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	$self->{_admin_wrap} = AdminWrapper->new( );
+	
 	print " => ok\n";
 
 	# test (data generator)
@@ -113,15 +120,15 @@ sub new {
 	Return : Administrator instance
 	
 =cut
-
-sub _getAdmin {
-	my $self = shift;
-
-	if (not defined $self->{_admin}) {
-		$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
-	}
-	return $self->{_admin};
-}
+#
+#sub _getAdmin {
+#	my $self = shift;
+#
+#	if (not defined $self->{_admin}) {
+#		$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+#	}
+#	return $self->{_admin};
+#}
 
 sub _mbState {
 	my $self = shift;
@@ -153,55 +160,14 @@ sub _mbState {
 
 sub retrieveHostsByCluster {
 	my $self = shift;
-
-	my %hosts_by_cluster;
-
-	my $adm = $self->{_admin};
-	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
-	foreach my $cluster (@clusters) {
-		#my @mb_ip;
-		my %mb_info;
-		foreach my $mb ( values %{ $cluster->getMotherboards( administrator => $adm) } ) {
-			#push @mb_ip, $mb->getAttr( name => "motherboard_internal_ip" );
-			
-			my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
-			my $mb_ip = $mb->getAttr( name => "motherboard_internal_ip" );
-			my ($mb_state, $mb_state_time) = $self->_mbState( state_info => $mb->getAttr( name => "motherboard_state" ) );
-			
-			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, state_time => $mb_state_time };
-		}
-		#$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \@mb_ip;
-		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
-	}	
 	
-	#print Dumper \%hosts_by_cluster;
-	
-	# TEMPORARY !!
-#	%hosts_by_cluster = ( 	"cluster_1" => { 	
-#												'node001' => { ip => 'localhost', state => 'up', state_time => time() },
-#												'node002' => { ip => '127.0.0.1', state => 'starting', state_time => time() - 600 }
-#											},
-#							"cluster_2" => {	
-#												'node003' => { ip => '192.168.0.123', state => 'down', state_time => time() }
-#											} 
-#							);
-	
-	return %hosts_by_cluster;
+	return ($self->{_admin_wrap})->retrieveHostsByCluster();
 }
 
 sub getClustersName {
 	my $self = shift;
 
-	my @clustersName;
-
-	my $adm = $self->{_admin};
-	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
-	@clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
-
-	# TEMPORARY !!
-#	@clustersName = ("cluster_1", "cluster_2");
-	
-	return @clustersName;
+	return ($self->{_admin_wrap})->getClustersName();
 }
 
 
@@ -261,25 +227,6 @@ sub getClusterHostsInfo {
 }
 
 
-
-############ TEST #################
-sub gaussData {
-	my $self = shift;
-	my %args = @_;
-	
-	my $var_map = $args{var_map};
-	
-	my $time = time();
-	print "$time : ";
-	my %values = ();
-	for my $var_name (keys %$var_map) {
-		$values{ $var_name } = sin $self->{_t}; 
-		print " $var_name : ", $values{ $var_name }, ", ";
-	}
-	print "\n";
-	
-	return ($time, \%values);
-}
 
 
 =head2 rrdName

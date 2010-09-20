@@ -32,6 +32,10 @@ use Exception::Class (
     Mcs::Exception::Execution => {
 	isa => 'Mcs::Exception',
 	description => 'Command execution failed',
+    },
+    Mcs::Exception::Execution::Delayed => {
+	isa => 'Mcs::Exception::Execution',
+	description => 'Operation delayed',
     }
     
     );

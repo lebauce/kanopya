@@ -7,37 +7,72 @@ use warnings;
 use Monitor::Retriever;
 use Data::Dumper;
 
+my $cmd = shift;
+
 print "#### monitoring ######\n";
-my $collector = Monitor::Retriever->new();
+my $retriever = Monitor::Retriever->new();
 
 # MAIN
-my $cmd = shift;
 if ( $cmd eq "fetch" ) {
-	$collector->fetch( rrd_name => shift );
-} elsif ( $cmd eq "graph" ) {
-	print Dumper $collector->makeGraph( time_laps => 600);
-} elsif ( $cmd eq "get" ) {
-	#$collector->getData( rrd_name => "mem_localhost", time_laps => 100, required_ds => ["memAvail", "memTotal"] );
-	$collector->getData( rrd_name => "cpu_localhost", time_laps => 100, percent => 'ok' );
-} elsif ( $cmd eq "rebuild" ) {
-	$collector->rebuild( set_label => shift );
-} elsif ( $cmd eq "clusters" ) {
-    my %clusters = $collector->retrieveHostsByCluster();
+	$retriever->fetch( rrd_name => shift );
+}
+elsif ( $cmd eq "gengraph" ) {
+	print Dumper $retriever->genGraphFromConf();
+}
+elsif ( $cmd eq "graph" ) {
+	my $set = shift;
+	my $var = shift;
+	print Dumper $retriever->makeGraph( time_laps => 600, required_set => $set, required_indicator => $var );
+}
+elsif ( $cmd eq "graphcluster" ) {
+	my $cluster = shift;
+	my $set = shift;
+	my $var = shift;
+	my ($dir, $file) = $retriever->graphCluster( time_laps => 600, cluster => $cluster, set_name => $set, ds_name => $var );
+	`eog $dir/$file`;
+}
+elsif ( $cmd eq "get" ) {
+	#$retriever->getData( rrd_name => "mem_localhost", time_laps => 100, required_ds => ["memAvail", "memTotal"] );
+	$retriever->getData( rrd_name => "cpu_localhost", time_laps => 100, percent => 'ok' );
+}
+elsif ( $cmd eq "rebuild" ) {
+	$retriever->rebuild( set_label => shift );
+}
+elsif ( $cmd eq "clusters" ) {
+    my %clusters = $retriever->retrieveHostsByCluster();
     print Dumper \%clusters;
-} elsif ( $cmd eq "hostsip" ) {
-    print "===> ", join( ", ", $collector->retrieveHostsIp()), "\n";
-} elsif ( $cmd eq "test" ) {
-	#$collector->retrieveHosts();
-	
-	
+}
+elsif ( $cmd eq "hostsip" ) {
+    print "===> ", join( ", ", $retriever->retrieveHostsIp()), "\n";
+}
+elsif ( $cmd eq "test" ) {
+	#$retriever->retrieveHosts(); 
 	my @a = ({ p1 => 1, p2 => 2, p3 => 10 }, 
 			 { p1 => 3, p2 => 10, p3 => 10 } );
-	my %res = $collector->aggregate( hash_list => \@a, mean => 1 );
+	my %res = $retriever->aggregate( hash_list => \@a, mean => 1 );
 	print Dumper \%res;
-} elsif ( $cmd eq "thr" ) {
-    $collector->update_test();
-}  elsif ( $cmd eq "nodes" ) {
+}
+elsif ( $cmd eq "nodes" ) {
 	my $cluster = shift;
-    my $graph_path = $collector->graphNodeCount( cluster => $cluster );
+    my $graph_path = $retriever->graphNodeCount( cluster => $cluster );
     my $tmp =  `eog $graph_path`;
+} 
+elsif ( $cmd eq 'clusters_data' ) {
+	my $set_name = shift || "cpu";
+	my $percent = shift;
+	my $clusters_data_detailed = $retriever->getClustersData( set => $set_name, time_laps => 100, percent => $percent);
+	print "################### DETAILED ####################\n", Dumper $clusters_data_detailed;
+	
+	my $clusters_data_aggreg = $retriever->getClustersData( set => $set_name, time_laps => 100, aggregate => "mean", percent => $percent);
+	print "################### AGGREGATE ####################\n", Dumper $clusters_data_aggreg;
+}
+elsif ( $cmd eq 'cluster_data' ) {
+	my $cluster_name = shift;
+	my $set_name = shift || "cpu";
+	my $percent = shift;
+	my $cluster_data_detailed = $retriever->getClusterData( cluster => $cluster_name, set => $set_name, time_laps => 100, percent => $percent);
+	print "################### DETAILED ####################\n", Dumper $cluster_data_detailed;
+	
+	my $cluster_data_aggreg = $retriever->getClusterData( cluster => $cluster_name, set => $set_name, time_laps => 100, aggregate => "mean", percent => $percent);
+	print "################### AGGREGATE ####################\n", Dumper $cluster_data_aggreg;	
 }

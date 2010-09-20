@@ -75,7 +75,9 @@ sub _manageHostState {
 			}
 			if ( ( $state eq "starting" ) && ( $diff_time > $starting_max_time ) ) {
 				$new_state = 'broken';
-				print "'host' is in state '$state' for $diff_time seconds, it's too long, considered as broken.\n";
+				my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
+				print $mess . "\n";
+				$adm->addMessage( type => "warning", content => $mess );
 			}
 		}
 		
@@ -83,7 +85,8 @@ sub _manageHostState {
 		if ( $state ne $new_state ) {
 			print "===========> ($host_ip) last state : $state  =>  new state : $new_state \n";
 			$mb->setAttr( name => "motherboard_state", value => $new_state );
-			$mb->save();		
+			$mb->save();
+			$adm->addMessage( type => "statechanged", content => "[$host_ip] State changed : $state => $new_state" );
 		}
 	};
 	if ($@) {
@@ -108,6 +111,7 @@ sub _manageStoppingHost {
 	my $self = shift;
 	my %args = @_;
 	
+	my $adm = $self->{_admin};
 	my $host = $args{host};
 	
 	my $stopping_max_time = $self->{_node_states}{stopping_max_time};
@@ -133,13 +137,17 @@ sub _manageStoppingHost {
 		
 		if ( $diff_time > $stopping_max_time ) {
 			$new_state = 'broken';
-			print "'host' is in state '$state' for $diff_time seconds, it's too long, considered as broken.\n";
+			my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
+			print $mess . "\n";
+			$adm->addMessage( type => "warning", content => $mess );
 		} 
 		
 		# Update state in DB if changed
 		if ( $state ne $new_state ) {
+			print "===========> ($host_ip) last state : $state  =>  new state : $new_state \n";
 			$host->setAttr( name => "motherboard_state", value => $new_state );
-			$host->save();		
+			$host->save();
+			$adm->addMessage( type => "statechanged", content => "[$host_ip] State changed : $state => $new_state" );
 		}
 	};
 	if ($@) {
@@ -237,26 +245,18 @@ sub thread_test {
 	my $self = shift;
 	my %args = @_;
 		
-	my $adm = $self->{_admin};
 	
 	my $tid = threads->tid();
+	my $admin = $self->{_admin_wrap};
+	print "[$tid] ==> ADMIN: ", $admin, "    res : ", %{$admin->{_ref}} , "\n";
 	
 	#while (1) {
 	for (1..10) {
 		$self->{_num} = $self->{_num} + 1; 
 		print "($tid) : ", $self->{_num}, "\n";
 		
-		my $mb = $adm->getEntity( type => "Motherboard", id => 1 );
-		my $mb_state = $mb->getAttr( name => "motherboard_state" );
 		
-		print "State : $mb_state\n";
 		
-		#my $new_state = $mb_state . $tid;
-		$mb->setAttr( name => "motherboard_state", value => "pouet" );
-		
-		print "save...\n";
-		#$mb->save();
-
 		sleep(2 - $tid);
 	}
 	print "($tid) : bye\n";
@@ -268,6 +268,9 @@ sub update_test {
 	my $self = shift;
 	
 	$self->{_num} = 2;
+	
+	my $admin = $self->{_admin_wrap};
+	print "==> ADMIN: ", $admin, "    res : ", %{$admin->{_ref}}  , "\n";
 	
 	{#for (1..2) { 
 		print "create thread\n";
@@ -302,6 +305,8 @@ sub update_test {
 sub update {
 	my $self = shift;
 	
+	my $start_time = time();
+	
 	eval {
 		#my @hosts = $self->retrieveHostsIp();
 		my %hosts_by_cluster = $self->retrieveHostsByCluster();
@@ -322,7 +327,7 @@ sub update {
 		#########################
 		# Manage stopping hosts	#	
 		#########################
-		my $adm = $self->{_admin};
+		my $adm = $self->{_admin_wrap};
 		my @stoppingHosts = $adm->getEntities( type => "Motherboard", hash => { motherboard_state => { like => "stopping%" } } );
 		foreach my $host (@stoppingHosts) {
 			my $thr = threads->create('_manageStoppingHost', $self, host => $host);
@@ -367,8 +372,12 @@ sub update {
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
 			my @nodes_state = map { $_->{state} } values %$cluster_info;
 			
+			# print nodes state
+			my %infos = map { $_->{ip} => $_->{state} } values %$cluster_info;
+			print "### $cluster_name ###\n", Dumper \%infos;
+			
 			# RRD for node count
-			my $rrd_file = "/tmp/nodes_$cluster_name.rrd";
+			my $rrd_file = "$self->{_rrd_base_dir}/nodes_$cluster_name.rrd";
 			my $rrd = RRDTool::OO->new( file =>  $rrd_file );
 			if ( not -e $rrd_file ) {	
 				print "Info: create nodes rrd for '$cluster_name'\n";
@@ -392,10 +401,15 @@ sub update {
 	};
 	if ($@) {
 		my $error = $@;
-		print "===> $error";
+		print "update() ===> $error";
 		$log->error( $error );
 	}
-		
+	
+	my $duration = time() - $start_time;
+	print "#### Update duration = $duration ###\n";	
+	if ( $duration > $self->{_time_step} ) {
+		print "=> Warn: update duration > collector time step (conf)\n";
+	}
 }
 
 

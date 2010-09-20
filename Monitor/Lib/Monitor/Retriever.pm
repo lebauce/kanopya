@@ -3,6 +3,8 @@ package Monitor::Retriever;
 use strict;
 use warnings;
 use List::Util qw(sum);
+use XML::Simple;
+#use General;
 
 use Data::Dumper;
 
@@ -32,9 +34,7 @@ sub getSetDef {
 	my $set_label = $args{set_label};
 	my @res = grep { $_->{label} eq $set_label } @{ $self->{_monitored_data} };
 	
-	if ( 0 == @res ) {
-		print "Undefined set label : $set_label\n";
-	}	
+	die "Undefined set label : '$set_label'\n" if ( 0 == @res );
 		
 	return shift @res;
 		
@@ -248,16 +248,21 @@ sub getClusterData {
 	my %hosts_data = ();
 	my $hosts = $self->getClusterHostsInfo( cluster => $args{cluster} );
 	
-	#foreach my $host (@$hosts) {
+	my $up;
+	#foreach my $host (@$hosts) { 
 	while ( my ($hostname, $host_info) = each %$hosts ) {
 		if ( $host_info->{state} eq "up" ) {
 			my $host_data = $self->getHostData( host => $host_info->{ip}, set => $args{set}, time_laps => $args{time_laps}, percent => $args{percent} );
 			$hosts_data{ $hostname } = $host_data;
+			$up = 1;
 		}
 		else {
 			$hosts_data{ $hostname } = $host_info->{state};
 		}
 	}
+	
+	die "No node 'up' in cluster '$args{cluster}'" if ( not defined $up );
+	
 	if ( defined $aggregate ) {
 		my @data_list = values %hosts_data;
 		my %aggregate_data = $self->aggregate( hash_list => \@data_list, f => $aggregate );
@@ -375,7 +380,7 @@ sub graph {
 						color => { back => "#69B033" },
 						lower_limit => 0,
 						
-						slope_mode => undef,	# smooth
+						#slope_mode => undef,	# smooth
 					
 						);
 						
@@ -418,7 +423,7 @@ sub graphPercent {
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
 	my $graph_filename = "graph_percent_$rrd_name.png";
 
-	my $graph_type = $args{graph_type} || "stack";
+	my $graph_type = $args{graph_type} || "line";
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
@@ -490,8 +495,98 @@ sub graphPercent {
 	return $graph_filename;
 }
 
-sub graphCluster {
+=head2 graphCluster
 	
+	Class : Public
+	
+	Desc : generate the graph of mean value for one indicator and for one cluster
+	
+	Args :
+		cluster: name of the cluster
+		set_name: name of the set of var
+		ds_name: name of the indicator in set_name to draw the mean
+	
+	Return :
+		[0] : graph dir
+		[1] : generate graph file name
+	
+=cut
+
+sub graphCluster {
+	my $self = shift;
+	my %args = @_;
+	
+	my $cluster = $args{cluster};
+	my $set_name = $args{set_name};
+	my $ds_label = $args{ds_name};
+	
+	my $graph_filename = "graph_" . "$cluster" . "_$ds_label.png";
+
+	my $graph_type = $args{graph_type} || "line";
+	
+	my @graph_params = (
+						'image' => "$self->{_graph_dir}/$graph_filename",
+						#'vertical_label', 'ticks',
+						'start' => time() - $args{time_laps},
+						color => { back => "#69B033" },
+						lower_limit => 0,
+						);
+	
+	
+	
+	
+	my $total_op = "";
+	my $nb_hosts = 0;
+	my $rrd_file;
+	my $cluster_info = $self->getClusterHostsInfo( cluster => $cluster);
+	foreach my $host_info ( values %$cluster_info ) {
+		my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host_info->{ip} );
+		$rrd_file = "$rrd_name.rrd";
+		my $var_name = "host$nb_hosts" . "_$ds_label";
+		push @graph_params, (
+								draw   => {
+									type => "hidden",
+									file => $self->{_rrd_base_dir} . "/" . $rrd_file, 
+									dsname => $ds_label,
+									name => $var_name,
+									#color => $ds->{color} || "FFFFFF",
+									#legend => $ds->{label},
+	  							}	
+							);
+
+		$total_op .= "$var_name,";
+		$nb_hosts++;
+	} 
+	
+	chop $total_op;
+	my $i = $nb_hosts;
+	$total_op .= ",+"  while --$i;
+	
+	print "TOTAL op : $total_op\n";
+	
+	my $mean_op = $total_op . ",$nb_hosts,/";
+	
+	print "Mean op : $mean_op\n";
+	
+	
+	# Add mean graph
+	push @graph_params, (
+								draw   => {
+									type => $graph_type,
+									cdef => "$mean_op",
+									color => "FF0000",
+									legend => "$ds_label (cluster mean)",
+									name => "mean"
+	  							}	
+							);		
+
+	# get rrd (we need one to graph so we get the last host rrd (arbitrary))
+	my $rrd = $self->getRRD( file => $rrd_file );
+	
+	# Draw a graph in a PNG image
+	$rrd->graph( @graph_params );
+	
+	return ($self->{_graph_dir}, $graph_filename);
 }
 
 =head2 makeGraph
@@ -553,6 +648,39 @@ sub makeGraph {
 	return \%res;
 }
 
+sub genGraphFromConf {
+	my $self = shift;
+	my %args = @_;
+	
+	my @clusters_name = $self->getClustersName();
+	
+	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	my $graphs = General::getAsArrayRef( data => $config->{generate_graph}, tag => 'graph' );
+	
+	print Dumper $graphs;
+	
+	my %graph_files = ();
+	my $i = 0;
+	foreach my $graph_def ( @$graphs ) {
+		my %graph_info = ();
+		++$i;
+		if ( $graph_def->{type} eq 'CLUSTER' ) {
+			foreach my $cluster (@clusters_name) {
+				my ($dir, $file) = $self->graphCluster( time_laps => $graph_def->{time_laps},
+														cluster => $cluster,
+														set_name => $graph_def->{set_label},
+														ds_name => $graph_def->{ds_label} );
+				$graph_info{$cluster} = [ $dir, $file ];
+				
+			}
+		$graph_files{ "graph_$i" } = \%graph_info;
+		}
+	} 
+	
+	return %graph_files;
+	
+}
+
 =head2 graphNodeCount
 	
 	Class : Public
@@ -575,10 +703,10 @@ sub graphNodeCount {
 	my $cluster = $args{cluster};
     my $time_laps = $args{time_laps} || 3600;
     
-	my $graph_file_path = "/tmp/graph_nodecount_$cluster.png";
+	my $graph_file_path = "$self->{_graph_dir}/graph_nodecount_$cluster.png";
 	
 	# get rrd     
-	my $rrd = RRDTool::OO->new( file => "/tmp/nodes_$cluster.rrd" );
+	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/nodes_$cluster.rrd" );
 	
 	$rrd->graph( 	'image' => $graph_file_path,
 					'vertical_label' => 'number of nodes',
