@@ -67,7 +67,7 @@ sub new {
      
 	# check if node exist in db
     $log->debug("checking node existence with id <$args{params}->{cluster_id}>");
-    my $node = $admin->{_dbix}->resultset('Node')->search(
+    my $node = $admin->{db}->resultset('Node')->search(
     	{ motherboard_id => $args{motherboard_id},
     	  cluster_id => $args{cluster_id}
     });
