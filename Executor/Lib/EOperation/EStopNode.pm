@@ -117,9 +117,7 @@ sub execute {
 	$self->{_objs}->{motherboard}->save();
 	
 	## add RemoveMotherboardFromCluster operation for this node
-	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
-	my $motherboard_id = $self->_getOperation()->getAttr(attr_name => 'motherboard_id');
-	
+		
 	$adm->newOp(
 		type => 'RemoveMotherboardFromCluster',
 		priority => 100, #TODO manager la priorite de l'operation autrement
