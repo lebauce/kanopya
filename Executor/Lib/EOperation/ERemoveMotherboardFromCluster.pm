@@ -112,15 +112,8 @@ sub prepare {
 	
 	# if the node is in stopping state, we add this operation again in the execution list
 	
-	if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
-		$adm->newOp(
-			type => 'RemoveMotherboardFromCluster',
-			priority => 100, #TODO manager la priorite de l'operation autrement
-			params => $params 
-		);
-		my $errmsg = "EOperation::ERemoveMotherboardFromCluster : node is still stopping, operation is delayed";
-    	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+	while($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
+		sleep 10;				
 	}
 	
 	#### Instanciate Clusters
