@@ -112,10 +112,12 @@ sub prepare {
 	
 	# if the node is in stopping state, we add this operation again in the execution list
 	
-	while($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
-		sleep 10;				
+	if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
+		my $msg = "Node is still in stopping state.";
+		$log->error($msg);
+		throw Mcs::Exception::Execution::Delayed(error => $msg);
 	}
-	
+		
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 

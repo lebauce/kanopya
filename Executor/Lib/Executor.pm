@@ -128,9 +128,15 @@ sub run {
    			};
 			if ($@) {
    				my $error = $@;
-   				$op->cancel();
-   				$adm->addMessage(type => 'error', content => ref($op)." abording: $error");
-   				$log->error("Error during execution : $error");
+   				if($error->isa('Mcs::Exception::Execution::Delayed')) {
+   					$adm->addMessage(type => 'info', content => ref($op)." delayed");
+   					$adm->{db}->txn_commit;
+   					$log->debug("Operation ".ref($op)." delayed");
+   				} else {
+   					$op->cancel();
+   					$adm->addMessage(type => 'error', content => ref($op)." abording: $error");
+   					$log->error("Error during execution : $error");
+   				}
    			}
    		}
    		else { sleep 10; }

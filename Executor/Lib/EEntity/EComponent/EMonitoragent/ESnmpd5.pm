@@ -77,7 +77,7 @@ sub configureNode {
 	 	 
 }
 
-# Reload dhcp3 process
+# Reload snmp process
 sub reload {
 	my $self = shift;
 	my %args = @_;
