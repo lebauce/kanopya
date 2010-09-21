@@ -12,7 +12,7 @@ use base "Monitor";
 
 # logger
 use Log::Log4perl "get_logger";
-Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 my $log = get_logger("collector");
 
 # Constructor
@@ -381,7 +381,7 @@ sub update {
 			my $rrd = RRDTool::OO->new( file =>  $rrd_file );
 			if ( not -e $rrd_file ) {	
 				print "Info: create nodes rrd for '$cluster_name'\n";
-				$rrd->create( 	'step' => $self->{_time_step}, 'archive' => { rows => 100 },
+				$rrd->create( 	'step' => $self->{_time_step}, 'archive' => { rows => 500 },
 								'data_source' => { 	name => 'up', type => 'GAUGE' },
 								'data_source' => { 	name => 'starting', type => 'GAUGE' },
 								'data_source' => { 	name => 'stopping', type => 'GAUGE' },

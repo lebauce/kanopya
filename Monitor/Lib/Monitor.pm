@@ -64,7 +64,7 @@ use Data::Dumper;
 #use enum qw( :STATE_ UP DOWN STARTING STOPPING BROKEN );
 
 # logger
-Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 my $log = get_logger("monitor");
 
 =head2 new
@@ -99,11 +99,11 @@ sub new {
 	$self->{_node_states} = $conf->{node_states};
 
 	# Get Administrator
-	print "get ADMIN\n";
+	#print "get ADMIN\n";
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	$self->{_admin_wrap} = AdminWrapper->new( );
 	
-	print " => ok\n";
+	#print " => ok\n";
 
 	# test (data generator)
 	$self->{_t} = 0;
@@ -292,6 +292,10 @@ sub createRRD {
 	my $self = shift;
 	my %args = @_;
 
+	print "\n##############################################################################\n";
+	print "CREATE RRD : '$args{file}'";
+	print "\n##############################################################################\n";
+
 	my $dsname_list = $args{dsname_list};
 
 	my $rrd = $self->getRRD( file => $args{file} );
@@ -370,12 +374,17 @@ sub updateRRD {
 	# if happens then we create the rrd file. All stored data will be lost.
 	if ($@) {
 		my $error = $@;
-		#print "==> $error\n";
-		print "=> Info: update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n";
-		my @dsname_list = keys %{ $args{data} };
-		$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type} );
-		$rrd->update( time => $time, values =>  $args{data} );
 		
+		if ( $error =~ "illegal attempt to update using time") {
+			print "==> $error\n";
+		}
+		# TODO check the error
+		else {
+			print "=> Info: update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n";
+			my @dsname_list = keys %{ $args{data} };
+			$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type} );
+			$rrd->update( time => $time, values =>  $args{data} );
+		}
 		#print "Warning : unexisting RRD file or set definition changed in conf => nothing will be done until you rebuild the corresponding set ($rrdfile_name).\n";
 	} 
 

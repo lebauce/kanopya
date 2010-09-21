@@ -78,15 +78,43 @@ sub view_clusterdetails : Runmode {
 		#$log->debug("component category : ".$tmp->{CATEGORY});
 		push (@$comps, $tmp);
 	}
-	
+
+	# Retrieve from conf graph type we want display
+	use XML::Simple;
+	my $conf = XMLin("/workspace/mcs/UI/web/clusterdetails.conf");
+	my $graph_dir_alias = $conf->{graph_dir_alias};
+	my $cluster_indicators = $conf->{cluster_graph}{indicators};
+	my $node_sets = $conf->{node_graph}{sets};
+	my @indics = split ",", $cluster_indicators;
+	my @indic_sets = split ",", $node_sets;
+		
 	foreach my $m (keys %$motherboards){
 		my $tmp ={};
+		my $ip = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
 		$tmp->{HOSTNAME} = $motherboards->{$m}->getAttr(name=>'motherboard_hostname');
 		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_slot_position');
-		$tmp->{INTERNALIP} = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
+		$tmp->{INTERNALIP} = $ip;
+		my @graphs = ();
+		foreach my $indic_set ( @indic_sets ) {
+			push @graphs, { GRAPH_FILE => "$graph_dir_alias/graph_$ip" . "_$indic_set.png" };
+		}
+		$tmp->{GRAPHS} = \@graphs;
 		push (@$mothboards, $tmp);
 	}
 	
+
+	$cluster_name = $ecluster->getAttr( name => 'cluster_name' );	
+	my @monitoring_graphs = ( );
+	foreach my $indic ( @indics )  {
+		my $file_name = "graph_" . "$cluster_name" . "_$indic.png";
+		push( @monitoring_graphs, { 'graph_info' =>  $indic,
+									'graph_file' =>  $graph_dir_alias."/".$file_name,
+								} );
+	}
+	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
+	$tmpl->param('ORCHESTRATOR_GRAPH' => "$graph_dir_alias/graph_orchestrator_$cluster_name.png");
+
+
 	$tmpl->param('TITLE_PAGE' => "Cluster's details");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 	$tmpl->param('COMPONENTS' => $comps);

@@ -1,0 +1,24 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+
+
+<div id="contentright">
+
+	<br/><br/>
+
+	<p>
+		<table>
+			<tr>
+				<th ALIGN=CENTER>file</th>
+				<th ALIGN=CENTER>graph</th>
+			</tr>
+		<TMPL_LOOP NAME=GRAPHS>
+			<tr>
+		    		<td ALIGN=CENTER><TMPL_VAR NAME=FILE></td>
+		      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=FILE>'/></td>
+			</tr>
+		</TMPL_LOOP>
+		</table>
+	</p>
+</div>
+
+<TMPL_INCLUDE NAME="footer.tmpl">

@@ -140,6 +140,9 @@ sub manage {
 		
 		# Check conditions for remove node
 		$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
+		
+		# Updata graph for this cluster
+		$self->graph( cluster => $cluster );
 	}
 	
 }
