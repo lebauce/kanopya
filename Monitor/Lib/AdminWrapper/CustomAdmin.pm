@@ -25,17 +25,16 @@ sub retrieveHostsByCluster {
 	my $conf = XMLin("/workspace/mcs/Monitor/Conf/nodes.conf");
 	my $clusters = $conf->{clusters};#General::getAsHashRef( data => $conf, tag => 'cluster', key => 'label' );
 	
-	#print "\n###############   ", "AAAAAAAAAAAAAAAAAA", "   ##########\n";
 	#print Dumper $clusters;
 	
 	return %$clusters;
 	
 #	my %hosts_by_cluster = ( 	"cluster_1" => { 	
-#												'node001' => { ip => 'localhost', state => 'up', state_time => time() },
-#												'node002' => { ip => '127.0.0.1', state => 'up', state_time => time() - 600 }
+#												'node001' => { ip => 'localhost', state => 'up'},
+#												'node002' => { ip => '127.0.0.1', state => 'up' }
 #											},
 #								"cluster_2" => {	
-#												'node003' => { ip => '192.168.0.123', state => 'down', state_time => time() }
+#												'node003' => { ip => '192.168.0.123', state => 'down' }
 #											} 
 #							);
 #	

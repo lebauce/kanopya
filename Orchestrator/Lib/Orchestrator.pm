@@ -97,6 +97,19 @@ sub new {
 	$self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
 	$self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
 	
+	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
+	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
+	
+	# Create orchestrator dirs if needed
+	for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
+		my @dir_path = split '/', $dir_path;
+		my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
+		while (scalar @dir_path) {
+			$dir .= (shift @dir_path) . "/";
+			mkdir $dir;
+		}
+	}
+	
 	# Get Administrator
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	$self->{_monitor} = Monitor::Retriever->new( );
@@ -135,14 +148,20 @@ sub manage {
 		# Pas forcément très grave, on peut stocker une variable spéciale précisant que l'on pas fait les tests puisque non nécessaire  
 		##########################################################################################################
 	
-		# Detect trap for adding node
-		my $cluster_trapped = $self->detectTraps( cluster_name => $cluster );
-		
-		# Check conditions for remove node
-		$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
-		
-		# Updata graph for this cluster
-		$self->graph( cluster => $cluster );
+		eval {
+			# Detect trap for adding node
+			my $cluster_trapped = $self->detectTraps( cluster_name => $cluster );
+			
+			# Check conditions for remove node
+			$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
+			
+			# Updata graph for this cluster
+			$self->graph( cluster => $cluster );
+		};
+		if ($@) {
+			my $error = $@;
+			print "error for cluster '$cluster' : $error\n";
+		}
 	}
 	
 }
@@ -155,7 +174,7 @@ sub checkRemoveConditions {
 	my $monitor = $self->{_monitor};
 	
 	my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster );
-	my $upnode_count = grep { $_->{state} eq 'up' } values %$cluster_info;
+	my $upnode_count = grep { $_->{state} =~ 'up' } values %$cluster_info;
 	
 	if ( $upnode_count <= 1 ) {
 		print "No node to eventually remove => don't check remove conditions\n";
@@ -263,9 +282,6 @@ sub detectTraps {
 			if ( 	( defined $threshold->{max} && $value > $threshold->{max} )
 				|| 	( defined $threshold->{min} && $value < $threshold->{min} ) ) {
 				print "				======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
-				if ( not $cluster_trapped ) {
-					$self->requireAddNode( cluster => $cluster );
-				}
 				$cluster_trapped = 1;
 				#last;		
 			}
@@ -286,6 +302,10 @@ sub detectTraps {
 		}
 	}
 
+	if ( $cluster_trapped ) {
+		$self->requireAddNode( cluster => $cluster );
+	}
+				
 	return $cluster_trapped;
 }
 
@@ -621,7 +641,7 @@ sub _timeFile  {
 	my $self = shift;
     my %args = @_;
 
-    return "/tmp/" . "orchestrator" . "_" . "$args{cluster}" . ".time";
+    return $self->{_rrd_base_dir} ."/" . "orchestrator" . "_" . "$args{cluster}" . ".time";
 }
 
 sub getRRD {
@@ -629,7 +649,7 @@ sub getRRD {
 	my %args = @_;
 	
 	my $cluster = $args{cluster};
-	my $rrd_file = "/tmp/orchestrator_$cluster.rrd";
+	my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster.rrd";
 	
 	my $rrd;
 	if ( -e $rrd_file && not defined $args{create} ) {
@@ -688,7 +708,7 @@ sub graph {
     
     my $cluster = $args{cluster};
     
-    my $graph_dir = "/tmp";
+    my $graph_dir = $self->{_graph_dir};
 	my $graph_filename = "graph_orchestrator_$cluster.png";
 
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
@@ -696,7 +716,7 @@ sub graph {
 
 
 	# get rrd     
-	my $rrd = RRDTool::OO->new( file => "/tmp/orchestrator_$cluster.rrd" );
+	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/orchestrator_$cluster.rrd" );
 
 	my @graph_params = (
 							'image' => "$graph_dir/$graph_filename",

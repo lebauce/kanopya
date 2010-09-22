@@ -33,7 +33,10 @@ print FILE $cmd;
 
 close FILE;
 
-print "Do: sudo cp /tmp/mcs.cron.tmp /etc/cron.d/mcs\n";
+
+print 	"###############################################\n",
+		"Do: sudo cp /tmp/mcs.cron.tmp /etc/cron.d/mcs\n",
+		"###############################################\n";
 
 sub cronCmd {
 	my %args = @_;	
@@ -43,19 +46,20 @@ sub cronCmd {
 
 	die "Time step too small, risk of time error with cron" if ( $step < 10 );
 	
-	my $d = $step;
+	my $period = $step;
 	my $it = 1;
-	while ($d % 60 != 0) {
+	while ($period % 60 != 0) {
 		++$it;
-		$d += $step;
+		$period += $step;
 	}	
 	
-	my $minute_step = $d / 60;
+	my $minute_step = $period / 60;
 	
 	die "Hours not implemented" if ($minute_step >= 60);
-	my $user = "tortue";
+	
+	my $user = "root";
 	my $cron = "*/$minute_step * * * * $user $cmd\n";
-	for ( my $sleep = $step; $sleep != $d; $sleep += $step ) {
+	for ( my $sleep = $step; $sleep != $period; $sleep += $step ) {
 		$cron .= "*/$minute_step * * * * $user sleep " . $sleep . "; $cmd\n";
 	} 
 	

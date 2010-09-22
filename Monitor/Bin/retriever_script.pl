@@ -51,7 +51,7 @@ elsif ( $cmd eq "test" ) {
 	#$retriever->retrieveHosts(); 
 	my @a = ({ p1 => 1, p2 => 2, p3 => 10 }, 
 			 { p1 => 3, p2 => 10, p3 => 10 } );
-	my %res = $retriever->aggregate( hash_list => \@a, mean => 1 );
+	my %res = $retriever->aggregate( hash_list => \@a, f => 'mean' );
 	print Dumper \%res;
 }
 elsif ( $cmd eq "nodes" ) {

@@ -83,10 +83,11 @@ sub view_clusterdetails : Runmode {
 	use XML::Simple;
 	my $conf = XMLin("/workspace/mcs/UI/web/clusterdetails.conf");
 	my $graph_dir_alias = $conf->{graph_dir_alias};
-	my $cluster_indicators = $conf->{cluster_graph}{indicators};
-	my $node_sets = $conf->{node_graph}{sets};
-	my @indics = split ",", $cluster_indicators;
-	my @indic_sets = split ",", $node_sets;
+	my $graph_monitor_subdir = $conf->{graph_monitor_subdir};
+	my $graph_orchestrator_subdir = $conf->{graph_orchestrator_subdir};
+	my $graph_dir_alias = $conf->{graph_dir_alias};
+	my @node_indic_sets = split ",", $conf->{node_graph}{sets};
+	my @cluster_indic_sets = split ",", $conf->{cluster_graph}{sets};
 		
 	foreach my $m (keys %$motherboards){
 		my $tmp ={};
@@ -95,8 +96,9 @@ sub view_clusterdetails : Runmode {
 		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_slot_position');
 		$tmp->{INTERNALIP} = $ip;
 		my @graphs = ();
-		foreach my $indic_set ( @indic_sets ) {
-			push @graphs, { GRAPH_FILE => "$graph_dir_alias/graph_$ip" . "_$indic_set.png" };
+		foreach my $indic_set ( @node_indic_sets ) {
+			my $graph_filename = "graph_" . "$ip" . "_$indic_set.png";
+			push @graphs, { GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_filename" };
 		}
 		$tmp->{GRAPHS} = \@graphs;
 		push (@$mothboards, $tmp);
@@ -105,14 +107,14 @@ sub view_clusterdetails : Runmode {
 
 	$cluster_name = $ecluster->getAttr( name => 'cluster_name' );	
 	my @monitoring_graphs = ( );
-	foreach my $indic ( @indics )  {
-		my $file_name = "graph_" . "$cluster_name" . "_$indic.png";
-		push( @monitoring_graphs, { 'graph_info' =>  $indic,
-									'graph_file' =>  $graph_dir_alias."/".$file_name,
+	foreach my $indic_set ( @cluster_indic_sets )  {
+		my $file_name = "graph_" . "$cluster_name" . "_$indic_set.png";
+		push( @monitoring_graphs, { 'graph_info' =>  $indic_set,
+									'graph_file' =>  "$graph_dir_alias/$graph_monitor_subdir/$file_name",
 								} );
 	}
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
-	$tmpl->param('ORCHESTRATOR_GRAPH' => "$graph_dir_alias/graph_orchestrator_$cluster_name.png");
+	$tmpl->param('ORCHESTRATOR_GRAPH' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name.png");
 
 
 	$tmpl->param('TITLE_PAGE' => "Cluster's details");
