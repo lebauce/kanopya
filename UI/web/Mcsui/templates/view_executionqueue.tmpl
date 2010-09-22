@@ -6,15 +6,15 @@
 <div id="content">
 <h1>Execution Queue</h1>
 <table id="executionlist" class="listview">
-	<tr><th></th><th>type</th><th>by</th><th>priority</th><th>rank</th><th>date</th><th>time</th><th>actions</th></tr><TMPL_LOOP NAME=OPERATIONS>
+	<tr><th></th><th>type</th><th>by</th><th>priority</th><th>rank</th><th>creation</th><th>planned</th><th>actions</th></tr><TMPL_LOOP NAME=OPERATIONS>
 	<tr>
 		<td id="m<TMPL_VAR NAME=ID>" class="expanddown">&nbsp;</td>
 		<td><TMPL_VAR NAME=TYPE></td>
 		<td><TMPL_VAR NAME=FROM></td>
 		<td><TMPL_VAR NAME=PRIORITY></td>
 		<td><TMPL_VAR NAME=RANK></td>
-		<td><TMPL_VAR NAME=DATE></td>
-		<td><TMPL_VAR NAME=TIME></td>
+		<td><TMPL_VAR NAME=CREATION></td>
+		<td><TMPL_VAR NAME=PLANNED></td>
 		<td>
 		<a class="imgCancel" href="/cgi/mcsui.cgi/systemstatus/process_canceloperation?operation_id=<TMPL_VAR NAME=ID>">cancel</a>
 		</td>

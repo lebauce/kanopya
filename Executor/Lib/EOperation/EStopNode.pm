@@ -121,6 +121,7 @@ sub execute {
 	$adm->newOp(
 		type => 'RemoveMotherboardFromCluster',
 		priority => 100, #TODO manager la priorite de l'operation autrement
+		hoped_execution_time => 10,
 		params => {
 			cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
 			motherboard_id => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_id"),
