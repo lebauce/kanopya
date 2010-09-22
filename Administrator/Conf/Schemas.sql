@@ -190,6 +190,7 @@ CREATE TABLE `operation` (
   `priority` int(2) unsigned NOT NULL,
   `creation_date` date NOT NULL,
   `creation_time` time NOT NULL,
+  `hoped_execution_time` int(4) unsigned DEFAULT NULL,
   `execution_rank` int(8) unsigned NOT NULL,
   PRIMARY KEY (`operation_id`),
   UNIQUE KEY `execution_rank_UNIQUE` (`execution_rank`),

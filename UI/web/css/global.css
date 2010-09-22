@@ -1,10 +1,10 @@
+html, body { height: 100%; }
+
 body {
 	background-color: #EEE;
 	font: small Georgia,Serif;
 	width: 1024px;
 	margin: 0 auto;
-	/* min-height: 100%; */
-	
 } 
 
 #ivy1 {
@@ -25,8 +25,12 @@ a#logout {
 	opacity: 0.9;
 }
 
+
+
+
+
 iframe { 
-	background-color: white;
+	background-color: transparent;
 	border: none;
 	min-width: 1024px;
 	left: 0;
@@ -45,7 +49,7 @@ iframe {
 }
     
 #menu ul  {
-	margin: 20px 0 0 0;
+	margin: 20px 0 0 20px;
 	padding: 0;
 	list-style: none;
 	float:left;
@@ -173,6 +177,7 @@ iframe {
 	border: none;
 	width:1022px;
 	float: left;
+	min-height: 70%;
 }
 
 #content h1 {
