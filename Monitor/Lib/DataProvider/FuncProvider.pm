@@ -32,7 +32,7 @@ use General;
 my %funcs = ( 	
 				"sinus" => \&sinus,
 				"custom_sinus" => \&custom_sinus,
-				"const" => \$const
+				"const" => \&const
 			);
 
 =head2 new
@@ -154,7 +154,6 @@ sub retrieveData {
 	my $var_map = $args{var_map};
 
 	my $time = time();
-	print "$time : ";
 	my $dt = $time - $self->{_timeref};
 	
 	my %values = ();
@@ -174,9 +173,7 @@ sub retrieveData {
 
 
 		$values{ $var_name } = $res; 
-		print " $var_name : ", $values{ $var_name }, ", ";
 	}
-	print "\n";
 	
 	return ($time, \%values);
 }

@@ -2,6 +2,8 @@
 
 use lib "/workspace/mcs/Monitor/Lib"; #TODO replace by absolute path
 
+Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+
 use strict;
 use warnings;
 use Monitor::Collector;
