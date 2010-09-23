@@ -12,7 +12,7 @@ use base "Monitor";
 
 # logger
 use Log::Log4perl "get_logger";
-Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 my $log = get_logger("collector");
 
 # Constructor
@@ -44,7 +44,7 @@ sub _manageHostState {
 	
 	my $starting_max_time = $self->{_node_states}{starting_max_time};
 		
-	my $adm = $self->{_admin};
+	my $adm = $self->{_admin_wrap};
 	my $reachable = $args{reachable};
 	my $host_ip = $args{host};
 
@@ -111,7 +111,7 @@ sub _manageStoppingHost {
 	my $self = shift;
 	my %args = @_;
 	
-	my $adm = $self->{_admin};
+	my $adm = $self->{_admin_wrap};
 	my $host = $args{host};
 	
 	my $stopping_max_time = $self->{_node_states}{stopping_max_time};
@@ -173,6 +173,8 @@ sub updateHostData {
 	my %args = @_;
 
 	my $host = $args{host};
+	
+	my %all_values = ();
 	#my $session = $self->createSNMPSession( host => $host );
 	my $host_reachable = 1;
 	my $error_happened = 0;	
@@ -218,6 +220,8 @@ sub updateHostData {
 			# DEBUG print values
 			print "[", threads->tid(), "][$host] $time : ", join( " | ", map { "$_: $update_values->{$_}" } keys %$update_values ), "\n";
 	
+			$all_values{ $set->{label} } = $update_values;
+	
 			#############################################
 			# Store new values in the corresponding RRD #
 			#############################################
@@ -237,6 +241,8 @@ sub updateHostData {
 	}
 	
 	print "[$host] => some errors happened collecting data\n" if ($error_happened);
+	
+	return \%all_values;
 }
 
 
@@ -307,6 +313,8 @@ sub update {
 	
 	my $start_time = time();
 	
+	print "#### UPDATE start : $start_time\n";
+	
 	eval {
 		#my @hosts = $self->retrieveHostsIp();
 		my %hosts_by_cluster = $self->retrieveHostsByCluster();
@@ -315,13 +323,13 @@ sub update {
 		#############################
 		# Update data for each host #
 		#############################
-		my @threads = ();
+		my %threads = ();
 		for my $host_info (@all_hosts_info) {
 			# We create a thread for each host to don't block update if a host is unreachable
 			#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
 			my $thr = threads->create('updateHostData', $self, host => $host_info->{ip});
-			#$threads{$host_info->{ip}} = $thr;
-			push @threads, $thr;
+			$threads{$host_info->{ip}} = $thr;
+			#push @threads, $thr;
 		}
 		
 		#########################
@@ -331,17 +339,20 @@ sub update {
 		my @stoppingHosts = $adm->getEntities( type => "Motherboard", hash => { motherboard_state => { like => "stopping%" } } );
 		foreach my $host (@stoppingHosts) {
 			my $thr = threads->create('_manageStoppingHost', $self, host => $host);
-			push @threads, $thr;
+			#push @threads, $thr;
+			my $host_ip = $host->getAttr( name => "motherboard_internal_ip" );
+			$threads{$host_ip} = $thr;
 		}
 		
 		############################
 		# Wait end of all threads  #
 		############################
-		#my %hosts_state = ();
-		#while ( my ($host_ip, $thr) = each %threads ) {
-		foreach my $thr (@threads) {	
-			#$hosts_state{ $host_ip } = $thr->join();
-			$thr->join();
+		my %hosts_values = ();
+		while ( my ($host_ip, $thr) = each %threads ) {
+		#foreach my $thr (@threads) {
+			my $ret = $thr->join();
+			$hosts_values{ $host_ip } = $ret;
+			#$thr->join();
 		}
 		
 		################################
@@ -363,13 +374,39 @@ sub update {
 	#	}
 		
 		
-		###############################
-		# update clusters nodes count #
-		###############################
+		######################################################
+		# update clusters base (nodes count and mean values) #
+		######################################################
 		#TODO ici on retrieve une nouvelle fois alors qu'on le fait au début de la fonction
 		# (mais entre temps l'état des noeuds à eventuellement été modifié). Il y a surement mieux à faire.
 		%hosts_by_cluster = $self->retrieveHostsByCluster();
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
+			
+			############################## Update cluster rrd #########################################
+			my @nodes_ip = map { $_->{ip} } values %$cluster_info;
+			
+			my %sets;
+			foreach my $host_ip (@nodes_ip) {
+				my @sets_name = keys %{ $hosts_values{ $host_ip } };
+				foreach my $set_name ( @sets_name ) {	
+					push @{$sets{$set_name}}, $hosts_values{ $host_ip }{$set_name};
+				}
+			}
+			
+			my %sets_aggreg;
+			while ( my ($set_name, $sets_list) = each %sets ) {
+				my %aggreg = $self->aggregate( hash_list => $sets_list, f => 'mean' );
+				$sets_aggreg{ $set_name } = \%aggreg;
+				#my $rrd_name = "monitor_$cluster_name" . "_$set_name";
+				my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
+
+				$self->updateRRD( rrd_name => $rrd_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg);
+			} 
+			
+			
+			################################# update cluster node count ##########################################
+			
+			
 			my @nodes_state = map { $_->{state} } values %$cluster_info;
 			
 			# print nodes state
@@ -381,7 +418,7 @@ sub update {
 			my $rrd = RRDTool::OO->new( file =>  $rrd_file );
 			if ( not -e $rrd_file ) {	
 				print "Info: create nodes rrd for '$cluster_name'\n";
-				$rrd->create( 	'step' => $self->{_time_step}, 'archive' => { rows => 100 },
+				$rrd->create( 	'step' => $self->{_time_step}, 'archive' => { rows => 500 },
 								'data_source' => { 	name => 'up', type => 'GAUGE' },
 								'data_source' => { 	name => 'starting', type => 'GAUGE' },
 								'data_source' => { 	name => 'stopping', type => 'GAUGE' },
@@ -395,7 +432,7 @@ sub update {
 			my $stopping_count = scalar grep { $_ =~ 'stopping' } @nodes_state;
 			my $broken_count = scalar grep { $_ =~ 'broken' } @nodes_state;
 	
-			$rrd->update( time => time(), values => { 	'up' => $up_count, 'starting' => $starting_count,
+			$rrd->update( time => $start_time, values => { 	'up' => $up_count, 'starting' => $starting_count,
 														'stopping' => $stopping_count, 'broken' => $broken_count } );
 		}
 	};

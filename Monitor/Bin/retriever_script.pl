@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use lib "../Lib"; #TODO replace by absolute path
+use lib "/workspace/mcs/Monitor/Lib"; #TODO replace by absolute path
 
 use strict;
 use warnings;
@@ -16,13 +16,15 @@ my $retriever = Monitor::Retriever->new();
 if ( $cmd eq "fetch" ) {
 	$retriever->fetch( rrd_name => shift );
 }
-elsif ( $cmd eq "gengraph" ) {
-	print Dumper $retriever->genGraphFromConf();
+elsif ( $cmd eq "--generate-graph" || $cmd eq "-gg" ) {
+	my %files = $retriever->graphFromConf();
+	print Dumper \%files;
 }
 elsif ( $cmd eq "graph" ) {
 	my $set = shift;
 	my $var = shift;
-	print Dumper $retriever->makeGraph( time_laps => 600, required_set => $set, required_indicator => $var );
+	my $files = $retriever->graphNode( time_laps => 600, required_set => $set, required_indicator => $var );
+	print Dumper $files;
 }
 elsif ( $cmd eq "graphcluster" ) {
 	my $cluster = shift;
@@ -49,13 +51,14 @@ elsif ( $cmd eq "test" ) {
 	#$retriever->retrieveHosts(); 
 	my @a = ({ p1 => 1, p2 => 2, p3 => 10 }, 
 			 { p1 => 3, p2 => 10, p3 => 10 } );
-	my %res = $retriever->aggregate( hash_list => \@a, mean => 1 );
+	my %res = $retriever->aggregate( hash_list => \@a, f => 'mean' );
 	print Dumper \%res;
 }
 elsif ( $cmd eq "nodes" ) {
 	my $cluster = shift;
     my $graph_path = $retriever->graphNodeCount( cluster => $cluster );
-    my $tmp =  `eog $graph_path`;
+    print "open $graph_path\n";
+    my $tmp =  `eog /tmp/$graph_path`;
 } 
 elsif ( $cmd eq 'clusters_data' ) {
 	my $set_name = shift || "cpu";

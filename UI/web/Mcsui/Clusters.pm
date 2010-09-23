@@ -30,8 +30,12 @@ sub view_clusters : StartRunmode {
 		$tmp->{ACTIVE} = $n->getAttr('name' => 'active');
 		$tmp->{MIN_NODE} = $n->getAttr(name => 'cluster_min_node');
 		$tmp->{MAX_NODE} = $n->getAttr(name => 'cluster_max_node');
-		my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $n->getAttr(name =>'kernel_id'));
-		$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version');
+		if(not defined $n->getAttr(name =>'kernel_id')) {
+			$tmp->{KERNEL} = 'default motherboards kernels';
+		} else {
+			my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $n->getAttr(name =>'kernel_id'));
+			$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version');
+		}
 		if ($n->getAttr(name => 'systemimage_id')){
 			my $esystem = $self->{'admin'}->getEntity(type =>'Systemimage', id => $n->getAttr(name =>'systemimage_id'));
 			$tmp->{SYSIMGNAME} =  $esystem->getAttr(name => 'systemimage_name');
@@ -78,15 +82,45 @@ sub view_clusterdetails : Runmode {
 		#$log->debug("component category : ".$tmp->{CATEGORY});
 		push (@$comps, $tmp);
 	}
-	
+
+	# Retrieve from conf graph type we want display
+	use XML::Simple;
+	my $conf = XMLin("/workspace/mcs/UI/web/clusterdetails.conf");
+	my $graph_dir_alias = $conf->{graph_dir_alias};
+	my $graph_monitor_subdir = $conf->{graph_monitor_subdir};
+	my $graph_orchestrator_subdir = $conf->{graph_orchestrator_subdir};
+	my $graph_dir_alias = $conf->{graph_dir_alias};
+	my @node_indic_sets = split ",", $conf->{node_graph}{sets};
+	my @cluster_indic_sets = split ",", $conf->{cluster_graph}{sets};
+		
 	foreach my $m (keys %$motherboards){
 		my $tmp ={};
+		my $ip = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
 		$tmp->{HOSTNAME} = $motherboards->{$m}->getAttr(name=>'motherboard_hostname');
 		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_slot_position');
-		$tmp->{INTERNALIP} = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
+		$tmp->{INTERNALIP} = $ip;
+		my @graphs = ();
+		foreach my $indic_set ( @node_indic_sets ) {
+			my $graph_filename = "graph_" . "$ip" . "_$indic_set.png";
+			push @graphs, { GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_filename" };
+		}
+		$tmp->{GRAPHS} = \@graphs;
 		push (@$mothboards, $tmp);
 	}
 	
+
+	$cluster_name = $ecluster->getAttr( name => 'cluster_name' );	
+	my @monitoring_graphs = ( );
+	foreach my $indic_set ( @cluster_indic_sets )  {
+		my $file_name = "graph_" . "$cluster_name" . "_$indic_set.png";
+		push( @monitoring_graphs, { 'graph_info' =>  $indic_set,
+									'graph_file' =>  "$graph_dir_alias/$graph_monitor_subdir/$file_name",
+								} );
+	}
+	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
+	$tmpl->param('ORCHESTRATOR_GRAPH' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name.png");
+
+
 	$tmpl->param('TITLE_PAGE' => "Cluster's details");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 	$tmpl->param('COMPONENTS' => $comps);

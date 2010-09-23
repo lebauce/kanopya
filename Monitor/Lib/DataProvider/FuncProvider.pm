@@ -29,7 +29,11 @@ use warnings;
 use XML::Simple;
 use General;
 
-#my $func = \&sinus;
+my %funcs = ( 	
+				"sinus" => \&sinus,
+				"custom_sinus" => \&custom_sinus,
+				"const" => \&const
+			);
 
 =head2 new
 	
@@ -86,8 +90,14 @@ sub new {
 }
 
 sub sinus {
-	print "########SINUS !!!!!!!!\n";
 	return 0;
+}
+
+sub const {
+	my $self = shift;
+	my %args = @_;
+	
+	return $args{var}{value} || 0;
 }
 
 sub custom_sinus {
@@ -102,7 +112,6 @@ sub custom_sinus {
 	my $period = $var->{period};
 	my $plate_time = $var->{plate_time};
 	my $min_plate_time = 60;
-	print "=======> mAX = $max\n";
 	
 	my $sin_period = $period - $plate_time;
 	
@@ -145,7 +154,6 @@ sub retrieveData {
 	my $var_map = $args{var_map};
 
 	my $time = time();
-	print "$time : ";
 	my $dt = $time - $self->{_timeref};
 	
 	my %values = ();
@@ -154,9 +162,7 @@ sub retrieveData {
 		my @var = grep { $_->{label} eq $var_name } @{ $self->{_vars} };
 		my $var = shift @var;
 		die "var not found for '$self->{_host} : '$var_name'" if (not defined $var);
-		
-		my %funcs = ( 	"sinus" => \&sinus,
-						"custom_sinus" => \&custom_sinus, ) ;
+
 		my $func_name = $var->{func};
 		#my $func = \&gen1;
 		#&{$func}();
@@ -167,9 +173,7 @@ sub retrieveData {
 
 
 		$values{ $var_name } = $res; 
-		print " $var_name : ", $values{ $var_name }, ", ";
 	}
-	print "\n";
 	
 	return ($time, \%values);
 }

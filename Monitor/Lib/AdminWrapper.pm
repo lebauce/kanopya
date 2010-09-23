@@ -1,7 +1,7 @@
 package AdminWrapper;
 
-#my $wrap_class = "MCSAdmin";
-my $wrap_class = "CustomAdmin";
+my $wrap_class = "MCSAdmin";
+#my $wrap_class = "CustomAdmin";
 
 sub new {
 	

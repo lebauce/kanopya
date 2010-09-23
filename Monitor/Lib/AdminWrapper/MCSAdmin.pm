@@ -13,20 +13,22 @@ sub new {
 	my $self = {};
 	bless $self, $class;
 
-	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );;
+	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );;
 	
     return $self;
 }
 
-#sub getEntities {
-#	my $self = shift;
-#	
-#	return ($self->{_admin})->getEntities( @_ ); #?
-#}
+#TODO AUTOLOAD
+
+sub getEntities { my $self = shift; return ($self->{_admin})->getEntities( @_ ); }
+sub getOperations { my $self = shift; return ($self->{_admin})->getOperations( @_ ); }
+sub newOp { my $self = shift; return ($self->{_admin})->newOp( @_ ); }
+sub addMessage { my $self = shift; return ($self->{_admin})->addMessage( @_ ); }
+
 
 sub retrieveHostsByCluster {
 	my $self = shift;
-return ();
+
 	my %hosts_by_cluster;
 
 	my $adm = $self->{_admin};
@@ -39,26 +41,19 @@ return ();
 			
 			my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
 			my $mb_ip = $mb->getAttr( name => "motherboard_internal_ip" );
-			my ($mb_state, $mb_state_time) = $self->_mbState( state_info => $mb->getAttr( name => "motherboard_state" ) );
+			#my ($mb_state, $mb_state_time) = $self->_mbState( state_info => $mb->getAttr( name => "motherboard_state" ) );
+			my $mb_state = $mb->getAttr( name => "motherboard_state" );
 			
-			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, state_time => $mb_state_time };
+			#$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, state_time => $mb_state_time };
+			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state };
 		}
 		#$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \@mb_ip;
 		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
 	}	
 	
+	#use Data::Dumper;
 	#print Dumper \%hosts_by_cluster;
-	
-	# TEMPORARY !!
-#	%hosts_by_cluster = ( 	"cluster_1" => { 	
-#												'node001' => { ip => 'localhost', state => 'up', state_time => time() },
-#												'node002' => { ip => '127.0.0.1', state => 'starting', state_time => time() - 600 }
-#											},
-#							"cluster_2" => {	
-#												'node003' => { ip => '192.168.0.123', state => 'down', state_time => time() }
-#											} 
-#							);
-	
+
 	return %hosts_by_cluster;
 }
 

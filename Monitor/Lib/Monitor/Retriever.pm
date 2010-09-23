@@ -12,7 +12,7 @@ use base "Monitor";
 
 # logger
 use Log::Log4perl "get_logger";
-Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 my $log = get_logger("retriever");
 
 
@@ -23,6 +23,10 @@ sub new {
     my %args = @_;
 	
 	my $self = $class->SUPER::new( %args );
+	
+	#$self->{_graph_color} = { back => "#69B033" };
+	$self->{_graph_color} = { };
+	
     return $self;
 }
 
@@ -188,55 +192,7 @@ sub getHostData {
 	return \%host_data;
 }
 
-=head2 aggregate
-	
-	Class : Public
-	
-	Desc :	Aggregate a list of hash into one hash by applying desired function (sum, mean).
-	
-	Args :
-		hash_list: array ref: list of hashes to aggregate. [ { p1 => v11, p2 => v12}, { p1 => v21, p2 => v22} ]
-		(optionnal) f: "mean", "sum" : aggregation function. If not defined, f() = sum().
-		
-	Return : The aggregated hash. ( p1 => f(v11,v21), p2 => f(v12,v22) )
-	
-=cut
 
-sub aggregate {
-	my $self = shift;
-	my %args = @_;
-	
-	Monitor::logArgs( "aggregate", %args );
-	
-	my %res = ();
-	my $nb_keys;
-	my $nb_elems = 0;
-	foreach my $data (@{ $args{hash_list} })
-	{
-		if ( ref $data eq "HASH"  ) {
-			$nb_elems++;
-			if ( 0 == scalar keys %res ) {
-				%res = %$data;
-				$nb_keys = scalar keys %res;
-			} else {
-				if (  $nb_keys != scalar keys %$data) {
-					print "Warning: hash to aggregate have not the same number of keys. => mean computing will be incorrect.\n";
-				}
-				while ( my ($key, $value) = each %$data ) {
-						$res{ $key } += $value;
-				}
-			}
-		}
-	}
-	
-	if ( defined $args{f} && $args{f} eq "mean" && $nb_elems > 0) {
-		for my $key (keys %res) {
-			$res{$key} /= $nb_elems;
-		}
-	}
-	
-	return %res;
-}
 
 sub getClusterData {
 	my $self = shift;
@@ -251,7 +207,7 @@ sub getClusterData {
 	my $up;
 	#foreach my $host (@$hosts) { 
 	while ( my ($hostname, $host_info) = each %$hosts ) {
-		if ( $host_info->{state} eq "up" ) {
+		if ( $host_info->{state} =~ "up" ) {
 			my $host_data = $self->getHostData( host => $host_info->{ip}, set => $args{set}, time_laps => $args{time_laps}, percent => $args{percent} );
 			$hosts_data{ $hostname } = $host_data;
 			$up = 1;
@@ -338,7 +294,7 @@ sub getIndicators {
 	return \%res;
 }
 
-=head2 graph
+=head2 graphNode
 	
 	Class : Public
 	
@@ -355,7 +311,7 @@ sub getIndicators {
 	
 =cut
 
-sub graph {
+sub graphNode {
 	my $self = shift;
 	my %args = @_;
 
@@ -363,9 +319,10 @@ sub graph {
 	
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
-	my $graph_filename = "graph_$rrd_name.png";
+	#my $graph_filename = "graph_$rrd_name.png";
+	my $graph_filename = "graph_$host" . "_$set_name.png";
 
-	my $graph_type = $args{graph_type} || "stack";
+	my $graph_type = $args{graph_type} || "line";
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
@@ -377,7 +334,8 @@ sub graph {
 						'image' => "$self->{_graph_dir}/$graph_filename",
 						#'vertical_label', 'ticks',
 						'start' => time() - $args{time_laps},
-						color => { back => "#69B033" },
+						color => $self->{_graph_color},
+						
 						lower_limit => 0,
 						
 						#slope_mode => undef,	# smooth
@@ -435,7 +393,7 @@ sub graphPercent {
 						'image' => "$self->{_graph_dir}/$graph_filename",
 						#'vertical_label', 'ticks',
 						'start' => time() - $args{time_laps},
-						color => { back => "#69B033" },
+						color => $self->{_graph_color},
 						lower_limit => 0,
 						);
 
@@ -512,7 +470,8 @@ sub graphPercent {
 	
 =cut
 
-sub graphCluster {
+#TODO enable multi indicators graph
+sub OLD_graphCluster {
 	my $self = shift;
 	my %args = @_;
 	
@@ -528,7 +487,8 @@ sub graphCluster {
 						'image' => "$self->{_graph_dir}/$graph_filename",
 						#'vertical_label', 'ticks',
 						'start' => time() - $args{time_laps},
-						color => { back => "#69B033" },
+						#color => { back => "#69B033" },
+						color => $self->{_graph_color},
 						lower_limit => 0,
 						);
 	
@@ -562,12 +522,9 @@ sub graphCluster {
 	my $i = $nb_hosts;
 	$total_op .= ",+"  while --$i;
 	
-	print "TOTAL op : $total_op\n";
-	
 	my $mean_op = $total_op . ",$nb_hosts,/";
 	
-	print "Mean op : $mean_op\n";
-	
+	#print "Mean op : $mean_op\n";
 	
 	# Add mean graph
 	push @graph_params, (
@@ -589,7 +546,48 @@ sub graphCluster {
 	return ($self->{_graph_dir}, $graph_filename);
 }
 
-=head2 makeGraph
+sub graphCluster {
+	my $self = shift;
+	my %args = @_;
+
+	my $cluster = $args{cluster};
+
+	my $time_laps = $args{time_laps} || 3600;
+	
+	my $required_set = $args{required_set} || "all";
+	my $required_ds = $args{required_indicators} || "all";
+	
+	my %res = ();
+	foreach my $set_def ( @{ $self->{_monitored_data} } ) {
+		if ( $required_set eq "all" || $required_set eq $set_def->{label} )
+		{
+			#TODO optimisation: là on rebuild le même array pour chaque host, il faudrait le faire une seule fois
+			my $ds_def_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
+			my @required_ds_def_list;
+			foreach my $ds_def ( @$ds_def_list ) {
+				push( @required_ds_def_list, $ds_def ) if $required_ds eq "all" || 0 < grep { $ds_def->{label} eq $_ } @$required_ds;
+			}
+
+			eval {
+				my $graph_filename = $self->graphNode( 	host => $cluster,
+													time_laps => $time_laps,
+													set_label => $set_def->{label},
+													ds_def_list => \@required_ds_def_list,
+													graph_type => $args{graph_type} );
+				$res{$set_def->{label}} = $graph_filename;
+			};
+			if ($@) {
+				my $error = $@;
+				#die $error;
+				print "$error\n";
+			}
+		}
+	}
+	
+	return \%res;
+}
+
+=head2 graphNodes
 	
 	Class : Public
 	
@@ -605,7 +603,8 @@ sub graphCluster {
 	
 =cut
 
-sub makeGraph {
+#TODO choix des hosts
+sub graphNodes {
 	my $self = shift;
 	my %args = @_;
 	
@@ -618,6 +617,7 @@ sub makeGraph {
 	
 	my @hosts = $self->retrieveHostsIp();
 	foreach my $host (@hosts) {
+		#print "#### $host\n";
 		foreach my $set_def ( @{ $self->{_monitored_data} } ) {
 			if ( $required_set eq "all" || $required_set eq $set_def->{label} )
 			{
@@ -629,7 +629,7 @@ sub makeGraph {
 				}
 	
 				eval {
-					my $graph_filename = $self->graph( 	host => $host,
+					my $graph_filename = $self->graphNode( 	host => $host,
 														time_laps => $time_laps,
 														set_label => $set_def->{label},
 														ds_def_list => \@required_ds_def_list,
@@ -639,7 +639,7 @@ sub makeGraph {
 				if ($@) {
 					my $error = $@;
 					#die $error;
-					#print "$error\n";
+					print "$error\n";
 				}
 			}
 		}
@@ -648,7 +648,7 @@ sub makeGraph {
 	return \%res;
 }
 
-sub genGraphFromConf {
+sub graphFromConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -657,24 +657,44 @@ sub genGraphFromConf {
 	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
 	my $graphs = General::getAsArrayRef( data => $config->{generate_graph}, tag => 'graph' );
 	
-	print Dumper $graphs;
-	
 	my %graph_files = ();
 	my $i = 0;
 	foreach my $graph_def ( @$graphs ) {
 		my %graph_info = ();
 		++$i;
-		if ( $graph_def->{type} eq 'CLUSTER' ) {
-			foreach my $cluster (@clusters_name) {
-				my ($dir, $file) = $self->graphCluster( time_laps => $graph_def->{time_laps},
-														cluster => $cluster,
-														set_name => $graph_def->{set_label},
-														ds_name => $graph_def->{ds_label} );
-				$graph_info{$cluster} = [ $dir, $file ];
-				
+		print Dumper $graph_def;
+		eval {
+			if ( $graph_def->{target} eq 'CLUSTERS' ) {
+				foreach my $cluster (@clusters_name) {
+					my ($dir, $file);
+					if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
+						($dir, $file) = $self->graphNodeCount( 	time_laps => $graph_def->{time_laps},
+																cluster => $cluster );	
+					} else {
+						my @required_indicators = split ",", $graph_def->{ds_label};
+						($dir, $file) = $self->graphCluster( time_laps => $graph_def->{time_laps},
+																cluster => $cluster,
+																required_set => $graph_def->{set_label},
+																required_indicators => \@required_indicators );
+					}
+					$graph_info{$cluster} = [ $dir, $file ];
+					
+				}
+			} elsif ( $graph_def->{target} eq 'NODES' ) {
+				my @required_indicators = split ",", $graph_def->{ds_label};
+				my $res = $self->graphNodes( time_laps => $graph_def->{time_laps},
+											required_set => $graph_def->{set_label},
+											required_indicators => \@required_indicators );
+				%graph_info = %$res;
 			}
-		$graph_files{ "graph_$i" } = \%graph_info;
+		};
+		if ($@) {
+			my $error = $@;
+			#die $error;
+			print "Error generating graph : $error\n";
+			next;
 		}
+		$graph_files{ "graph_$i" } = \%graph_info;
 	} 
 	
 	return %graph_files;
@@ -703,7 +723,8 @@ sub graphNodeCount {
 	my $cluster = $args{cluster};
     my $time_laps = $args{time_laps} || 3600;
     
-	my $graph_file_path = "$self->{_graph_dir}/graph_nodecount_$cluster.png";
+    my $graph_file = "graph_$cluster" . "_nodecount.png";
+	my $graph_file_path = "$self->{_graph_dir}/$graph_file";
 	
 	# get rrd     
 	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/nodes_$cluster.rrd" );
@@ -713,6 +734,7 @@ sub graphNodeCount {
 					'start' => time() - $time_laps,
 					#color => { back => "#69B033" },
 					lower_limit => 0,
+					upper_limit => 10,
 					
 					'y_grid' => '1:1',
 					
@@ -742,7 +764,7 @@ sub graphNodeCount {
 		  						},
 					);
 					
-	return $graph_file_path;
+	return ($self->{_graph_dir}, $graph_file);
 }
 
 #TODO comm

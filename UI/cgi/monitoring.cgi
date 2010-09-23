@@ -4,7 +4,7 @@ use lib "/workspace/mcs/Monitor/Lib";
 
 use strict;
 use warnings;
-use Monitor;
+use Monitor::Retriever;
 use HTML::Template;
 use CGI;
 
@@ -15,7 +15,7 @@ my $template = HTML::Template->new(filename => 'templates/monitoring.tmpl');
 my $cgi = new CGI;
 
 # instanciate Monitor
-my $monitor = Monitor->new();
+my $monitor = Monitor::Retriever->new();
 
 #$template->param(AUTO_REFRESH => 1);
 
@@ -31,7 +31,7 @@ if ( $cgi->param("submit_show") )
 	@required_indicators = $cgi->param("indicator[]");
 }
 else {
-	$selected_set = "net";
+	$selected_set = "gen";
 	@required_indicators = @{ $set_def->{ $selected_set } };
 }
 
@@ -63,7 +63,7 @@ while ( my ($set_name, $indicators) = each %$set_def )
 $template->param(INDICATORS_SET => \@set_loop_data);
 
 
-my $graph_infos = $monitor->makeGraph( 	time_laps => $time_laps,
+my $graph_infos = $monitor->graphNodes( time_laps => $time_laps,
 										graph_type => $graph_type,
 										required_set => $selected_set,
 										required_indicators => \@required_indicators);

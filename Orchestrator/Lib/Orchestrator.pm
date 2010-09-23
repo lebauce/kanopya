@@ -70,6 +70,7 @@ use warnings;
 use Monitor::Retriever;
 use XML::Simple;
 use General;
+use AdminWrapper;
 
 use Data::Dumper;
 
@@ -97,8 +98,22 @@ sub new {
 	$self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
 	$self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
 	
+	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
+	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
+	
+	# Create orchestrator dirs if needed
+	for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
+		my @dir_path = split '/', $dir_path;
+		my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
+		while (scalar @dir_path) {
+			$dir .= (shift @dir_path) . "/";
+			mkdir $dir;
+		}
+	}
+	
 	# Get Administrator
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
+	$self->{_admin_wrap} = AdminWrapper->new( );
 	$self->{_monitor} = Monitor::Retriever->new( );
 	
     return $self;
@@ -135,11 +150,20 @@ sub manage {
 		# Pas forcément très grave, on peut stocker une variable spéciale précisant que l'on pas fait les tests puisque non nécessaire  
 		##########################################################################################################
 	
-		# Detect trap for adding node
-		my $cluster_trapped = $self->detectTraps( cluster_name => $cluster );
-		
-		# Check conditions for remove node
-		$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
+		eval {
+			# Detect trap for adding node
+			my $cluster_trapped = $self->detectTraps( cluster_name => $cluster );
+			
+			# Check conditions for remove node
+			$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
+			
+			# Updata graph for this cluster
+			$self->graph( cluster => $cluster );
+		};
+		if ($@) {
+			my $error = $@;
+			print "error for cluster '$cluster' : $error\n";
+		}
 	}
 	
 }
@@ -152,7 +176,7 @@ sub checkRemoveConditions {
 	my $monitor = $self->{_monitor};
 	
 	my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster );
-	my $upnode_count = grep { $_->{state} eq 'up' } values %$cluster_info;
+	my $upnode_count = grep { $_->{state} =~ 'up' } values %$cluster_info;
 	
 	if ( $upnode_count <= 1 ) {
 		print "No node to eventually remove => don't check remove conditions\n";
@@ -260,9 +284,6 @@ sub detectTraps {
 			if ( 	( defined $threshold->{max} && $value > $threshold->{max} )
 				|| 	( defined $threshold->{min} && $value < $threshold->{min} ) ) {
 				print "				======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
-				if ( not $cluster_trapped ) {
-					$self->requireAddNode( cluster => $cluster );
-				}
 				$cluster_trapped = 1;
 				#last;		
 			}
@@ -283,6 +304,10 @@ sub detectTraps {
 		}
 	}
 
+	if ( $cluster_trapped ) {
+		$self->requireAddNode( cluster => $cluster );
+	}
+				
 	return $cluster_trapped;
 }
 
@@ -342,8 +367,8 @@ sub _isOpInQueue {
     my $cluster = $args{cluster};
     my $type = $args{type};
     
-    my $adm = $self->{_admin};
-    foreach my $op ( @{ $adm->getOperations() } ) {
+	my $adm = $self->{_admin_wrap};
+	foreach my $op ( @{ $adm->getOperations() } ) {
     	if ($op->{'TYPE'} eq $type) {
     		foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
     			if ( ($param->{'PARAMNAME'} eq 'cluster') && ($param->{'VAL'} eq $cluster) ) {
@@ -401,12 +426,12 @@ sub requireAddNode {
     print "Node required in cluster '$cluster'\n";
     
     # TEMP
-    $self->_storeTime( time => time(), cluster => $cluster, op_type => "add" );
+    $self->_storeTime( time => time(), cluster => $cluster, op_type => "add", up_info => "req" );
     
     eval {
 	   	if ( $self->_canAddNode( cluster => $cluster ) ) {
 	    	$self->addNode( cluster_name => $cluster );
-	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "add" );
+	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "add", up_info => "ok" );
 	   	}
     };
     if ($@) {
@@ -454,12 +479,12 @@ sub requireRemoveNode {
     print "Want remove node in cluster '$cluster'\n";
     
    	# TEMP
-    $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove" );
+    $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", up_info => "req");
     
     eval {
 	   	if ( $self->_canAddNode( cluster => $cluster ) ) {
 	    	$self->removeNode( cluster_name => $cluster );
-	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "remove" );
+	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", up_info => "ok");
 	   	}
     };
    	if ($@) {
@@ -478,7 +503,7 @@ sub addNode {
     print "====> add node in $args{cluster_name}\n";
        
     #my $adm = $args{adm};
-    my $adm = $self->{_admin};
+    my $adm = $self->{_admin_wrap};
     
     my $priority = 1000;
     
@@ -514,18 +539,18 @@ sub removeNode {
     my $priority = 1000;
     my $cluster_name = $args{cluster_name};
     
-    my $adm = $self->{_admin};
+    my $adm = $self->{_admin_wrap};
     
     #TODO Find the best node to remove (notation system)
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
-    my @up_nodes = grep { $_ eq 'up' } values %$cluster_info;
+    my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
     my $node_to_remove = shift @up_nodes; 
     die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove ); 
     
     my @mb =  $adm->getEntities(type => 'Motherboard', hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
     my $mb_to_remove = pop @mb;
-    die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!";
+    die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!" if ( not defined $mb_to_remove );
     
     my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $cluster_name } );
     my $cluster = pop @cluster;
@@ -565,16 +590,18 @@ sub _storeTime {
     
     my $file = $self->_timeFile( cluster => $args{cluster} );  
     
+    my $info = $args{op_info} || "";
+    
     my $times = "";
     if ( open FILE, "<$file" ) {
 	    $times = <FILE>;
 	    close FILE;
     }
-    my @times = $times ? split( /:/, $times ) : ();
+    my @times = $times ? split( /,/, $times ) : ();
     my @last_times = scalar @times > $NUMBER_TO_KEEP ? @times[$#times + 1 - $NUMBER_TO_KEEP .. $#times] : @times;
-    push @last_times, "$args{op_type}". '@' . "$args{time}";
+    push @last_times, "$args{op_type}:$info". '@' . "$args{time}";
     open FILE, ">$file";
-    print FILE join(":", @last_times);
+    print FILE join(",", @last_times);
     close FILE;
 }
 
@@ -598,27 +625,32 @@ sub _getTimes {
 
     my $file = $self->_timeFile( cluster => $args{cluster} );
     
-    my @times = ();
+    my %times = ();
    	if ( open FILE, "<$file" ) {
 		my $times = <FILE>;
 		close FILE;
-		my @alltimes = split( /:/, $times );
+		my @alltimes = split( /,/, $times );
 		my @optimes = grep { $_ =~ $args{op_type} } @alltimes;
-		@times = map { $1 if ( $_ =~ /[a-zA-Z_]+@([\d]+)/ ) } @optimes;
+		foreach my $op ( @optimes ) {
+			if ( $op =~ /[a-zA-Z_]+:([a-zA-Z_]*)@([\d]+)/ ) {
+				$times{ $2 } = $1;
+			}
+		}
+		#@times = map { $1 if ( $_ =~ /[a-zA-Z_]+@([\d]+)/ ) } @optimes;
    	}
    	else
    	{
    		print "Can't open orchestrator time file for cluster '$args{cluster}'\n";
    	}
 	
-	return @times;
+	return %times;
 }
 
 sub _timeFile  {
 	my $self = shift;
     my %args = @_;
 
-    return "/tmp/" . "orchestrator" . "_" . "$args{cluster}" . ".time";
+    return $self->{_rrd_base_dir} ."/" . "orchestrator" . "_" . "$args{cluster}" . ".time";
 }
 
 sub getRRD {
@@ -626,7 +658,7 @@ sub getRRD {
 	my %args = @_;
 	
 	my $cluster = $args{cluster};
-	my $rrd_file = "/tmp/orchestrator_$cluster.rrd";
+	my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster.rrd";
 	
 	my $rrd;
 	if ( -e $rrd_file && not defined $args{create} ) {
@@ -685,7 +717,7 @@ sub graph {
     
     my $cluster = $args{cluster};
     
-    my $graph_dir = "/tmp";
+    my $graph_dir = $self->{_graph_dir};
 	my $graph_filename = "graph_orchestrator_$cluster.png";
 
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
@@ -693,7 +725,7 @@ sub graph {
 
 
 	# get rrd     
-	my $rrd = RRDTool::OO->new( file => "/tmp/orchestrator_$cluster.rrd" );
+	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/orchestrator_$cluster.rrd" );
 
 	my @graph_params = (
 							'image' => "$graph_dir/$graph_filename",
@@ -712,15 +744,21 @@ sub graph {
 						);
 
 	# Add vertical red lines corresponding to add times
-	my @add_times = $self->_getTimes( cluster => $cluster, op_type => "add" );
-	for my $add_time ( @add_times ) {
-		push @graph_params, ( vrule => { time => $add_time, color => "#FF0000" } );
+	my %add_times = $self->_getTimes( cluster => $cluster, op_type => "add" );
+	#for my $add_time ( @add_times ) {
+	while ( my ($add_time, $add_info) = each %add_times ) {
+		#push @graph_params, ( vrule => { time => $add_time, color => "#FF0000" } );
+		my $color = (defined $add_info && $add_info eq "ok") ? "#FF0000" : "#FFAAAA";
+		push @graph_params, ( vrule => { time => $add_time, color => $color } );
 	}
 
 	# Add vertical green lines corresponding to remove times
-	my @remove_times = $self->_getTimes( cluster => $cluster, op_type => "remove" );
-	for my $remove_time ( @remove_times ) {
-		push @graph_params, ( vrule => { time => $remove_time, color => "#00FF00" } );
+	my %remove_times = $self->_getTimes( cluster => $cluster, op_type => "remove" );
+	#for my $remove_time ( @remove_times ) {
+	while ( my ($remove_time, $remove_info) = each %remove_times ) {
+		#push @graph_params, ( vrule => { time => $remove_time, color => "#00FF00" } );
+		my $color = (defined $remove_info && $remove_info eq "ok") ? "#00FF00" : "#66FF66";
+		push @graph_params, ( vrule => { time => $remove_time, color => $color } );
 	}
 		
 	for my $trap_def ( @{ $self->{_traps} } ) {

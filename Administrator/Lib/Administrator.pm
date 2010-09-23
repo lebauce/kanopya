@@ -59,6 +59,7 @@ use McsExceptions;
 use General;
 use Entity;
 use XML::Simple;
+use DateTime;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -436,12 +437,14 @@ sub newOp {
 	my $user_id = $self->{_rightschecker}->{_user};
 #	my $user_id = 16;
 	$log->debug("User id in _rightschecker is $user_id");
+	my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef; 
 	my $op_data = $self->_newDbix( table => 'Operation', row => { 	type => $args{type},
 																	execution_rank => $rank,
 																	user_id => $user_id,
 																	priority => $args{priority},
 																	creation_date => \"CURRENT_DATE()",
-																	creation_time => \"CURRENT_TIME()"
+																	creation_time => \"CURRENT_TIME()",
+																	hoped_execution_time => $hoped_execution_time
 																	});
 
 	my $subclass = $args{type};
@@ -497,8 +500,16 @@ sub getNextOp {
 	# Get all operation
 	my $all_ops = $self->_getDbixFromHash( table => 'Operation', hash => {});
 	$log->debug("Get Operation $all_ops");
-	# Choose the next operation to be trated
-	my $op_data = $all_ops->search( {}, { order_by => { -asc => 'execution_rank' }  } )->next();
+	
+	# Choose the next operation to be treated :
+	# if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
+	# unless operation is not execute at this moment
+	
+	my $op_data = $all_ops->search( 
+		{ -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
+		{ order_by => { -asc => 'execution_rank' }}   
+	)->next();
+	
 	# if no other operation to Operation::$subclassbe treated, return undef
 	if(! defined $op_data) { 
 		$log->info("No operation left in the queue");
@@ -1140,6 +1151,7 @@ sub getOperations {
 	while (my $op = $Operations->next) {
 		
 		my $opparams = [];
+		my $execution_time;
 		my $Parameters = $self->{db}->resultset('OperationParameter')->search({operation_id=>$op->get_column('operation_id')});
 		
 		while (my $param = $Parameters->next) {
@@ -1148,12 +1160,19 @@ sub getOperations {
 				'VAL' => $param->get_column('value')
 			};
 		}
+		if( defined $op->get_column('hoped_execution_time') ) {
+			my $dt = DateTime->from_epoch(epoch => $op->get_column('hoped_execution_time'), time_zone => 'Europe/Paris');
+			$execution_time = $dt->ymd()." ".$dt->hms();
+			
+		} else {
+			$execution_time = 'no'; 
+		}  
 		push @$arr, { 
 			'ID' => $op->get_column('operation_id'),
 			'TYPE' => $op->get_column('type'), 
 			'FROM' => $op->get_column('user_login'), 
-			'DATE' => $op->get_column('creation_date'), 
-			'TIME' => $op->get_column('creation_time'), 
+			'CREATION' => $op->get_column('creation_date')." ".$op->get_column('creation_time'), 
+			'PLANNED' => $execution_time, 
 			'RANK' => $op->get_column('execution_rank'), 
 			'PRIORITY' => $op->get_column('priority'),
 			'PARAMETERS' => $opparams,

@@ -20,6 +20,8 @@ __PACKAGE__->add_columns(
   { data_type => "DATE", default_value => undef, is_nullable => 0, size => 10 },
   "creation_time",
   { data_type => "TIME", default_value => undef, is_nullable => 0, size => 8 },
+  "hoped_execution_time",
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 4 },
   "execution_rank",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
@@ -47,8 +49,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-20 18:19:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LOZa0vm7j6YVJHzLD9xkTg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-22 11:46:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QT1N7Ef3FSVSDaI3p5jaFg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

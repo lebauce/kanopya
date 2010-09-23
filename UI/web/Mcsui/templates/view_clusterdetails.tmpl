@@ -15,13 +15,52 @@
 	</table>
 	<h1>Cluster nodes: </h1>
 	<table id="clustermotherboardsdetails" class="listview">
-		<tr><th>Motherboard hostname: </th><th>Motherboard slot number: </th><th>Motherboard internal ip: </th></tr>
+		<tr><th></th><th>Motherboard hostname: </th><th>Motherboard slot number: </th><th>Motherboard internal ip: </th></tr>
 			<TMPL_LOOP NAME=MOTHERBOARDS>
-				<tr><td><TMPL_VAR NAME=HOSTNAME></td>
+				<tr>
+				<td id="m<TMPL_VAR NAME=HOSTNAME>" class="expanddown">&nbsp;</td>
+				<td><TMPL_VAR NAME=HOSTNAME></td>
 				<td><TMPL_VAR NAME=SLOTNUMBER></td>
-				<td><TMPL_VAR NAME=INTERNALIP></td></tr>
+				<td><TMPL_VAR NAME=INTERNALIP></td>
+				</tr>
+				
+				<tr id="t<TMPL_VAR NAME=HOSTNAME>" class="hidden">
+					<td colspan="5">
+						<table class="listdetails">
+						<TMPL_LOOP NAME=GRAPHS>	
+							<tr><td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_FILE>'/></td></tr>
+						</TMPL_LOOP>
+						</table>
+					</td>
+				</tr>
+				
+				
 			</TMPL_LOOP>
 	</table>
+	
+	<h1>Monitoring: </h1>
+	<!--table id="graph_table"-->
+	<table class="listview">
+		<tr>
+			<th ALIGN=CENTER>Set</th>
+			<th ALIGN=CENTER>Evolution</th>
+		</tr>
+		<TMPL_LOOP NAME=MONITORING_GRAPHS>
+			<tr>
+		    		<td ALIGN=CENTER><TMPL_VAR NAME=GRAPH_INFO></td>
+		      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_FILE>'/></td>
+			</tr>
+		</TMPL_LOOP>
+	</table>
+
+	<h1>Orchestration: </h1>
+	<table class="listview">
+	<tr>
+      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=ORCHESTRATOR_GRAPH>'/></td>
+	</tr>
+	
+	</table>
+		
 </div>
 <script language="Javascript" src="/js/listingtools.js"></script>
 <TMPL_INCLUDE NAME="footer.tmpl">

@@ -64,7 +64,7 @@ use Data::Dumper;
 #use enum qw( :STATE_ UP DOWN STARTING STOPPING BROKEN );
 
 # logger
-Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
+#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 my $log = get_logger("monitor");
 
 =head2 new
@@ -93,17 +93,27 @@ sub new {
 	my $conf = shift @conf;
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_period} = $conf->{period};
-	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp';
-	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp';
+	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/monitor';
+	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/monitor';
 	$self->{_monitored_data} = General::getAsArrayRef( data => $conf, tag => 'set' );
-	$self->{_node_states} = $conf->{node_states};
+	$self->{_node_states} = $conf->{node_states}; 
+
+	# Create monitor dirs if needed
+	for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
+		my @dir_path = split '/', $dir_path;
+		my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
+		while (scalar @dir_path) {
+			$dir .= (shift @dir_path) . "/";
+			mkdir $dir;
+		}
+	}
 
 	# Get Administrator
-	print "get ADMIN\n";
+	#print "get ADMIN\n";
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	$self->{_admin_wrap} = AdminWrapper->new( );
 	
-	print " => ok\n";
+	#print " => ok\n";
 
 	# test (data generator)
 	$self->{_t} = 0;
@@ -227,7 +237,55 @@ sub getClusterHostsInfo {
 }
 
 
+=head2 aggregate
+	
+	Class : Public
+	
+	Desc :	Aggregate a list of hash into one hash by applying desired function (sum, mean).
+	
+	Args :
+		hash_list: array ref: list of hashes to aggregate. [ { p1 => v11, p2 => v12}, { p1 => v21, p2 => v22} ]
+		(optionnal) f: "mean", "sum" : aggregation function. If not defined, f() = sum().
+		
+	Return : The aggregated hash. ( p1 => f(v11,v21), p2 => f(v12,v22) )
+	
+=cut
 
+sub aggregate {
+	my $self = shift;
+	my %args = @_;
+	
+	#Monitor::logArgs( "aggregate", %args );
+	
+	my %res = ();
+	my $nb_keys;
+	my $nb_elems = 0;
+	foreach my $data (@{ $args{hash_list} })
+	{
+		if ( ref $data eq "HASH"  ) {
+			$nb_elems++;
+			if ( 0 == scalar keys %res ) {
+				%res = %$data;
+				$nb_keys = scalar keys %res;
+			} else {
+				if (  $nb_keys != scalar keys %$data) {
+					print "Warning: hash to aggregate have not the same number of keys. => mean computing will be incorrect.\n";
+				}
+				while ( my ($key, $value) = each %$data ) {
+						$res{ $key } += $value;
+				}
+			}
+		}
+	}
+	
+	if ( defined $args{f} && $args{f} eq "mean" && $nb_elems > 0) {
+		for my $key (keys %res) {
+			$res{$key} /= $nb_elems;
+		}
+	}
+	
+	return %res;
+}
 
 =head2 rrdName
 	
@@ -292,6 +350,10 @@ sub createRRD {
 	my $self = shift;
 	my %args = @_;
 
+	print "\n##############################################################################\n";
+	print "CREATE RRD : '$args{file}'";
+	print "\n##############################################################################\n";
+
 	my $dsname_list = $args{dsname_list};
 
 	my $rrd = $self->getRRD( file => $args{file} );
@@ -350,7 +412,7 @@ sub rebuild {
 	Args :
 		time: the time associated with values retrieving
 		rrd_name: the name of the rrd
-		values: hash ref { var_name => value }
+		data: hash ref { var_name => value }
 		ds_type: the type of data sources (vars)
 	
 =cut
@@ -370,12 +432,17 @@ sub updateRRD {
 	# if happens then we create the rrd file. All stored data will be lost.
 	if ($@) {
 		my $error = $@;
-		#print "==> $error\n";
-		print "=> Info: update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n";
-		my @dsname_list = keys %{ $args{data} };
-		$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type} );
-		$rrd->update( time => $time, values =>  $args{data} );
 		
+		if ( $error =~ "illegal attempt to update using time") {
+			print "==> $error\n";
+		}
+		# TODO check the error
+		else {
+			print "=> Info: update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n";
+			my @dsname_list = keys %{ $args{data} };
+			$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type} );
+			$rrd->update( time => $time, values =>  $args{data} );
+		}
 		#print "Warning : unexisting RRD file or set definition changed in conf => nothing will be done until you rebuild the corresponding set ($rrdfile_name).\n";
 	} 
 

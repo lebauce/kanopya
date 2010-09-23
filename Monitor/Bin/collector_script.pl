@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 
-use lib "../Lib"; #TODO replace by absolute path
+use lib "/workspace/mcs/Monitor/Lib"; #TODO replace by absolute path
+
+Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 
 use strict;
 use warnings;
@@ -12,7 +14,12 @@ my $collector = Monitor::Collector->new();
 
 # MAIN
 my $cmd = shift;
-if ( $cmd eq "run" ) {
+
+if ( $cmd eq "--update" ) {
+	print "UPDATE : ", time(), "\n";
+	$collector->update();
+		
+} elsif ( $cmd eq "run" ) {
 	$collector->run();
 } elsif ( $cmd eq "rebuild" ) {
 	$collector->rebuild( set_label => shift );
