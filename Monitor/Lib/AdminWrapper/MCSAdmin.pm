@@ -18,11 +18,13 @@ sub new {
     return $self;
 }
 
-sub getEntities {
-	my $self = shift;
-	
-	return ($self->{_admin})->getEntities( @_ );
-}
+#TODO AUTOLOAD
+
+sub getEntities { my $self = shift; return ($self->{_admin})->getEntities( @_ ); }
+sub getOperations { my $self = shift; return ($self->{_admin})->getOperations( @_ ); }
+sub newOp { my $self = shift; return ($self->{_admin})->newOp( @_ ); }
+sub addMessage { my $self = shift; return ($self->{_admin})->addMessage( @_ ); }
+
 
 sub retrieveHostsByCluster {
 	my $self = shift;

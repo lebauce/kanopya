@@ -255,7 +255,7 @@ sub aggregate {
 	my $self = shift;
 	my %args = @_;
 	
-	Monitor::logArgs( "aggregate", %args );
+	#Monitor::logArgs( "aggregate", %args );
 	
 	my %res = ();
 	my $nb_keys;

@@ -34,9 +34,9 @@ print FILE $cmd;
 close FILE;
 
 
-print 	"###############################################\n",
-		"Do: sudo cp /tmp/mcs.cron.tmp /etc/cron.d/mcs\n",
-		"###############################################\n";
+`cp /tmp/mcs.cron.tmp /etc/cron.d/mcs`;
+
+print " => generated '/etc/cron.d/mcs'\n";
 
 sub cronCmd {
 	my %args = @_;	
