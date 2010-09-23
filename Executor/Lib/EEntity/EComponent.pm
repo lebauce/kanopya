@@ -80,6 +80,9 @@ sub _init {
 	return;
 }
 
+sub addNode {}
+sub removeNode {}
+
 1;
 
 __END__

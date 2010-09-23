@@ -291,7 +291,7 @@ sub execute {
 		
 		my $tmp = EFactory::newEEntity(data => $components->{$i});
 		$log->debug("component is ".ref($tmp));
-		$tmp->configureNode(motherboard => $self->{_objs}->{motherboard}, 
+		$tmp->addNode(motherboard => $self->{_objs}->{motherboard}, 
 							mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 							econtext => $self->{nas}->{econtext});
 	}
