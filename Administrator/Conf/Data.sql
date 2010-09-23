@@ -218,6 +218,11 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALU
 INSERT INTO `component_instance` VALUES (7,2,7,NULL); 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,7); SET @eid := @eid +1;
 INSERT INTO `snmpd5` VALUES (7,'10.0.0.1','-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
+-- keepalived component 
+INSERT INTO `component_instance` VALUES (8,2,8,NULL); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
+INSERT INTO `keepalived1` VALUES (1,8,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
+
 
 
 -- INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
