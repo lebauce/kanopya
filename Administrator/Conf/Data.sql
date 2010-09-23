@@ -115,7 +115,8 @@ INSERT INTO `component` VALUES
 (4,'Openiscsi','2','Exportclient'),
 (5,'Dhcpd','3','Dhcpserver'),
 (6,'Atftpd','0','Tftpserver'),
-(7,'Snmpd','5','Monitoragent');
+(7,'Snmpd','5','Monitoragent'),
+(8,'Keepalived','1','Loadbalancer');
 
 
 -- kernels
@@ -148,7 +149,7 @@ INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image ba
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components installed on systemimage DebianSystemImage
-INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1);
+INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1);
 
 -- admin cluster
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1, 'up');
@@ -168,6 +169,7 @@ INSERT INTO `node` VALUES (1,1,1,1);
 INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/defaultapache', 2);
 INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
 INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/mcssnmpd', 7);
+INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/mcskeepalived', 8);
 
 -- initial components instance for admin cluster: 
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);
