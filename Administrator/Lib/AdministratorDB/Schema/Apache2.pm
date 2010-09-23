@@ -18,6 +18,8 @@ __PACKAGE__->add_columns(
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "apache2_sslports",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
+  "apache2_phpsession_dir",
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 64 },
   "apache2_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
@@ -34,8 +36,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-22 11:46:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FF0bRHTj+bgqgzz9tngRBg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-23 16:08:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lIb8/Sl2Dv+bTtE3V60DcA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
