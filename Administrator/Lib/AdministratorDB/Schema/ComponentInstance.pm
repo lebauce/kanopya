@@ -59,6 +59,11 @@ __PACKAGE__->has_many(
   { "foreign.component_instance_id" => "self.component_instance_id" },
 );
 __PACKAGE__->has_many(
+  "keepalived1s",
+  "AdministratorDB::Schema::Keepalived1",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+);
+__PACKAGE__->has_many(
   "lvm2_vgs",
   "AdministratorDB::Schema::Lvm2Vg",
   { "foreign.component_instance_id" => "self.component_instance_id" },
@@ -75,8 +80,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-22 11:46:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8U/Ic/n6m3VaYUQIg7A18w
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-09-23 17:23:01
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oA5grpat/QvacRqelHqgGA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
