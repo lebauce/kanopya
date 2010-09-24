@@ -168,7 +168,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@ei
 INSERT INTO `node` VALUES (1,1,1,1);
 
 -- components templates
-INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/defaultapache', 2);
+INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/mcsapache2', 2);
 INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
 INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/mcssnmpd', 7);
 INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/mcskeepalived', 8);
