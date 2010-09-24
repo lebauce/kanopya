@@ -156,7 +156,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@ei
 INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1);
 
 -- components installed on systemimage BenchClientSystemImage
-INSERT INTO `component_installed` VALUES (2,2),(4,2),(7,2),(8,2);
+INSERT INTO `component_installed` VALUES (2,2),(4,2),(7,2);
 
 -- admin cluster
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1, 'up');
