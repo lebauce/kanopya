@@ -21,6 +21,9 @@ sub new {
     return $self;
 }
 
+sub setGeneralConf {
+	
+}
 sub addVirtualhost {
 	
 }

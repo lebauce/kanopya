@@ -142,7 +142,7 @@ INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components provided by default distribution
-INSERT INTO `component_provided` VALUES (4,1),(7,1);
+INSERT INTO `component_provided` VALUES (2,1),(4,1),(7,1),(8,1);
 
 -- default systemimage based on default distribution
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
@@ -220,7 +220,8 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); S
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); SET @eid := @eid +1;
 
-INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,1,5, 'down');
+-- WebBench cluster
+INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,6,6,5, 'down');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
 
 -- openiscsi component 

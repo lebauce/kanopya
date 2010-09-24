@@ -65,7 +65,7 @@ eval {
 		processormodel_id => 1});
 	
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '00:27:OE:14:39:7B', 
+		motherboard_mac_address => '00:27:0E:14:39:7B', 
 		kernel_id => 1, 
 		motherboard_serial_number => "Test6 sn",
 		motherboardmodel_id => 1,
