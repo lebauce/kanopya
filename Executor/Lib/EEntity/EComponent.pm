@@ -43,10 +43,11 @@ use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
-use lib "../";
+use lib qw(/workspace/mcs/Common/Lib);
 use base "EEntity";
 
 my $log = get_logger("executor");
+my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
@@ -79,6 +80,44 @@ sub _init {
 
 	return;
 }
+
+=head2 addInitScripts
+
+add start and stop rc init scripts
+
+=cut
+
+sub addInitScripts {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{etc_mountpoint} or ! defined $args{etc_mountpoint}) ||
+		(! exists $args{econtext} or ! defined $args{econtext}) ||
+		(! exists $args{scriptname} or ! defined $args{scriptname}) ||
+		(! exists $args{startvalue} or ! defined $args{startvalue}) ||
+		(! exists $args{stopvalue} or ! defined $args{stopvalue})) {
+			$errmsg = "EEntity::EComponent->addInitScripts needs a etc_mountpoint, econtext,scriptname, startvalue, stopvalue  named argument!";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+		
+	foreach my $startlevel ((2, 3, 4, 5)) { 
+      		my $command = "ln -fs ../init.d/$args{scriptname} $args{etc_mountpoint}/rc$startlevel.d/S$args{startvalue}$args{scriptname}";
+      		$log->debug($command);
+      		my $result = $args{econtext}->execute(command => $command);
+      		#TODO gere les erreurs d'execution
+  	}
+  	
+  	foreach my $stoplevel ((0, 1, 6)) { 
+      		my $command = "ln -fs ../init.d/$args{scriptname} $args{etc_mountpoint}/rc$stoplevel.d/K$args{stopvalue}$args{scriptname}";
+      		$log->debug($command);
+      		my $result = $args{econtext}->execute(command => $command);
+      		#TODO gere les erreurs d'execution
+    }	
+}
+
+sub addNode {}
+sub removeNode {}
 
 1;
 

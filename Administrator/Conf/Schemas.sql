@@ -535,7 +535,6 @@ CREATE TABLE `keepalived1_virtualserver` (
 --
 
 CREATE TABLE `keepalived1_realserver` (
-  
   `realserver_id` int(8) unsigned NOT NULL AUTO_INCREMENT, 
   `virtualserver_id` int(8) unsigned NOT NULL,
   `realserver_ip` char(39) NOT NULL,

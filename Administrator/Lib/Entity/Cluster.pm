@@ -259,9 +259,14 @@ sub getMasterNodeIp{
 	my $self = shift;
 	#TODO Test if cluster is active, return undef if not found ?
 	my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
-	my $node_ip = $node_instance_rs->motherboard_id->get_column('motherboard_internal_ip');
-	$log->debug("Master node found and its ip is $node_ip");
-	return $node_ip
+	if(defined $node_instance_rs) {
+		my $node_ip = $node_instance_rs->motherboard_id->get_column('motherboard_internal_ip');
+		$log->debug("Master node found and its ip is $node_ip");
+		return $node_ip;
+	} else {
+		$log->debug("No Master node found for this cluster");
+		return undef;
+	}
 }
 
 =head2 addComponent

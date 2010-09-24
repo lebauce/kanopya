@@ -48,12 +48,14 @@ INSERT INTO `motherboardmodel` VALUES (3,'ASUS','AT3N7A-I','NVIDIA ION',1,42,1,2
 INSERT INTO `motherboardmodel` VALUES (4,'J&W','MINIX ATOM330','945GC',1,42,1,1,2,1);
 INSERT INTO `motherboardmodel` VALUES (5,'VIA','VB8001','VIA CN896',1,42,1,2,4,3);
 INSERT INTO `motherboardmodel` VALUES (6,'GIGABYTE','GA-D510UD','INTEL NM10',1,42,1,2,4,2);
+INSERT INTO `motherboardmodel` VALUES (7,'INTEL','D510MO','INTEL NM10',1,42,1,2,4,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,7); SET @eid := @eid +1;
 
 
 -- operation types list
