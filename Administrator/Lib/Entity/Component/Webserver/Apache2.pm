@@ -39,8 +39,8 @@ sub getVirtualhostConf{
 	my $virtualhost_rs = $self->{_dbix}->apache2s->first->apache2_virtualhosts;
 	my @tab_virtualhosts = ();
 	while (my $virtualhost_row = $virtualhost_rs->next){
-		my $virtualhost = $virtualhost_row->get_columns();
-		push @tab_virtualhosts, $virtualhost;
+		my %virtualhost = $virtualhost_row->get_columns();
+		push @tab_virtualhosts, \%virtualhost;
 	}
 	return \@tab_virtualhosts;
 }
@@ -53,7 +53,7 @@ sub getGeneralConf{
 		$log->error($errmsg);
 		throw Mcs::Exception(error => $errmsg);
 	}
-	my $apache2_conf = $self->{_dbix}->apache2s->first->get_columns();
-	return $apache2_conf;
+	my %apache2_conf = $self->{_dbix}->apache2s->first->get_columns();
+	return \%apache2_conf;
 }
 1;
