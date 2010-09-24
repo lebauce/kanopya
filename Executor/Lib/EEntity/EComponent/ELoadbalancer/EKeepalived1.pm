@@ -65,7 +65,7 @@ sub addNode {
 		# a masternode exists so we update his keepalived configuration
 		$log->debug("Keepalived update");
 		use EFactory;
-		my $masternode_econtext = EFactory::EContext->new(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+		my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
 		
 		# add this motherboard as realserver for each virtualserver of this cluster
 		my $virtualservers = $keepalived->getVirtualservers();
