@@ -284,6 +284,16 @@ sub execute {
 					 		etc_export	=> $node_etc_export,
 					 		nodes		=> $clust_nodes);
 	
+	
+	my $masternode;
+	$log->debug("Node Number in cluster is : ".scalar (keys(%$clust_nodes)));
+	if (scalar (keys(%$clust_nodes))) {
+		$masternode = 0;
+	} else {
+		$masternode =1;
+	}
+	
+	
 	#TODO  component migrate (node, exec context?)
 	my $components = $self->{_objs}->{components};
 	$log->info('Processing cluster components configuration for this node');
@@ -293,6 +303,7 @@ sub execute {
 		$log->debug("component is ".ref($tmp));
 		$tmp->addNode(motherboard => $self->{_objs}->{motherboard}, 
 							mount_point => "/mnt/$node_dev->{etc}->{lvname}",
+							cluster => $self->{_objs}->{cluster},
 							econtext => $self->{nas}->{econtext});
 	}
 	
@@ -304,14 +315,6 @@ sub execute {
 	$self->{nas}->{econtext}->execute(command => $rmdir_cmd);
 
 	# Create node instance
-
-	my $masternode;
-	$log->debug("Node Number in cluster is : ".scalar (keys(%$clust_nodes)));
-	if (scalar (keys(%$clust_nodes))) {
-		$masternode = 0;
-	} else {
-		$masternode =1;
-	}
 	$adm->createNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
 					 master_node => $masternode);

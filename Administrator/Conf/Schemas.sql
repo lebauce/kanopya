@@ -502,22 +502,13 @@ CREATE TABLE `keepalived1` (
   `component_instance_id` int(8) unsigned NOT NULL,
   `daemon_method` enum('master','backup','both') NOT NULL DEFAULT 'master',
   `iface` char(64) DEFAULT NULL,
-<<<<<<< HEAD
-  `notification_email` char(256) DEFAULT 'admin@hedera-technology.com',
-  `notification_email_from` char(256) DEFAULT 'keepalived@some-cluster.com',
-=======
   `notification_email` char(255) DEFAULT 'admin@hedera-technology.com',
   `notification_email_from` char(255) DEFAULT 'keepalived@some-cluster.com',
->>>>>>> 1ac61103eabad868456cf241e9ffa0bf2d37d1e3
   `smtp_server` char(39) NOT NULL,
   `smtp_connect_timeout` int(2) unsigned NOT NULL DEFAULT 30,
   `lvs_id` char(32) NOT NULL DEFAULT 'MAIN_LVS',
   PRIMARY KEY (`keepalived_id`),
-<<<<<<< HEAD
-  KEY `fk_keepalived1_1` (`component_instance_id`),
-=======
   UNIQUE KEY `fk_keepalived1_1` (`component_instance_id`),
->>>>>>> 1ac61103eabad868456cf241e9ffa0bf2d37d1e3
   CONSTRAINT `fk_keepalived1_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
