@@ -9,6 +9,8 @@ use warnings;
 use Monitor::Collector;
 use Data::Dumper;
 
+my $start_time = time();
+
 print "#### monitoring ######\n";
 my $collector = Monitor::Collector->new();
 
@@ -18,6 +20,7 @@ my $cmd = shift;
 if ( $cmd eq "--update" ) {
 	print "UPDATE : ", time(), "\n";
 	$collector->update();
+	print "# collector script update time => ", time() - $start_time, "\n";
 		
 } elsif ( $cmd eq "run" ) {
 	$collector->run();

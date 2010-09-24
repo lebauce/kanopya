@@ -28,7 +28,10 @@
 					<td colspan="5">
 						<table class="listdetails">
 						<TMPL_LOOP NAME=GRAPHS>	
-							<tr><td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_FILE>'/></td></tr>
+							<tr><td ALIGN=CENTER>
+								<!--img src='<TMPL_VAR NAME=GRAPH_FILE>'/-->
+								<img src="<TMPL_VAR NAME=GRAPH_FILE>" id="reloader_<TMPL_VAR NAME=GRAPH_FILE>" onload="setTimeout('document.getElementById(\'reloader_<TMPL_VAR NAME=GRAPH_FILE>\').src=\'<TMPL_VAR NAME=GRAPH_FILE>?\'+new Date().getMilliseconds()', 5000)" />
+							</td></tr>
 						</TMPL_LOOP>
 						</table>
 					</td>
@@ -48,7 +51,10 @@
 		<TMPL_LOOP NAME=MONITORING_GRAPHS>
 			<tr>
 		    		<td ALIGN=CENTER><TMPL_VAR NAME=GRAPH_INFO></td>
-		      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_FILE>'/></td>
+		      		<!--td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_FILE>'/></td-->
+		      		<td>
+		      		<img src="<TMPL_VAR NAME=GRAPH_FILE>" id="reloader_<TMPL_VAR NAME=GRAPH_INFO>" onload="setTimeout('document.getElementById(\'reloader_<TMPL_VAR NAME=GRAPH_INFO>\').src=\'<TMPL_VAR NAME=GRAPH_FILE>?\'+new Date().getMilliseconds()', 5000)" />
+		      		</td>
 			</tr>
 		</TMPL_LOOP>
 	</table>

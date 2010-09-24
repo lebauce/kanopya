@@ -13,7 +13,7 @@ my @conf        = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
 my $conf        = shift @conf;
 my $monit_delay = $conf->{time_step};
 
-my $graph_conf      = $config->{generate_graph};
+my $graph_conf      = $conf->{generate_graph};
 my $gen_graph_delay = $graph_conf->{time_step};
 
 print "=> update monitoring every $monit_delay seconds\n";

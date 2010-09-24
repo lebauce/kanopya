@@ -30,9 +30,10 @@ use XML::Simple;
 use General;
 
 my %funcs = ( 	
+				"const" => \&const,
 				"sinus" => \&sinus,
 				"custom_sinus" => \&custom_sinus,
-				"const" => \&const
+				"random" => \&random,
 			);
 
 =head2 new
@@ -98,6 +99,17 @@ sub const {
 	my %args = @_;
 	
 	return $args{var}{value} || 0;
+}
+
+sub random {
+	my $self = shift;
+	my %args = @_;
+	
+	my $var = $args{var};
+	
+	my $rand = rand( $var->{max} - $var->{min} ) + $var->{min};
+	
+	return $rand;
 }
 
 sub custom_sinus {
