@@ -48,14 +48,12 @@ INSERT INTO `motherboardmodel` VALUES (3,'ASUS','AT3N7A-I','NVIDIA ION',1,42,1,2
 INSERT INTO `motherboardmodel` VALUES (4,'J&W','MINIX ATOM330','945GC',1,42,1,1,2,1);
 INSERT INTO `motherboardmodel` VALUES (5,'VIA','VB8001','VIA CN896',1,42,1,2,4,3);
 INSERT INTO `motherboardmodel` VALUES (6,'GIGABYTE','GA-D510UD','INTEL NM10',1,42,1,2,4,2);
-INSERT INTO `motherboardmodel` VALUES (7,'INTEL','D510MO','INTEL NM10',1,42,1,2,4,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,7); SET @eid := @eid +1;
 
 
 -- operation types list
@@ -209,6 +207,35 @@ INSERT INTO `user` VALUES
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); SET @eid := @eid +1;
+
+INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,1,1,5, 'down');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
+
+-- openiscsi component 
+INSERT INTO `component_instance` VALUES (6,2,4,NULL); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,6); SET @eid := @eid +1;
+-- snmpd
+INSERT INTO `component_instance` VALUES (7,2,7,NULL); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,7); SET @eid := @eid +1;
+INSERT INTO `snmpd5` VALUES (7,'10.0.0.1','-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
+-- keepalived component 
+INSERT INTO `component_instance` VALUES (8,2,8,NULL); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
+INSERT INTO `keepalived1` VALUES (1,8,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
+
+-- Insert Bench Kub10 motherboards
+INSERT INTO `motherboard` VALUES (2,1,1,1,'Node1 sn',1,'motherboard 00:1c:c0:1c:a6:02',0,'00:1c:c0:1c:a6:02',NULL,NULL,NULL,NULL, 'up');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
+
+
+-- INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
+
+-- INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '127.0.0.1', '3260', '/srv', '', 'ext3');
+
+INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ext3');
+
+
+
 
 SET foreign_key_checks=1;
 
