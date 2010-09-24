@@ -135,7 +135,7 @@ sub generateKeepalived {
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/keepalived/keepalived.conf");	
-	#unlink "/tmp/$tmpfile";		 	 
+	unlink "/tmp/$tmpfile";		 	 
 }
 
 # generate /etc/default/ipvsadm configuration file for the master node
@@ -170,7 +170,7 @@ sub generateIpvsadm {
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/default/ipvsadm");	
-	#unlink "/tmp/$tmpfile";		
+	unlink "/tmp/$tmpfile";		
 }
 
 
