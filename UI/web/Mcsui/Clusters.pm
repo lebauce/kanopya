@@ -96,6 +96,8 @@ sub view_clusterdetails : Runmode {
 	foreach my $m (keys %$motherboards){
 		my $tmp ={};
 		my $ip = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
+		$tmp->{CLUSTER_ID} = $clustId;
+		$tmp->{MOTHERBOARD_ID} = $motherboards->{$m}->getAttr(name=>'motherboard_id');
 		$tmp->{HOSTNAME} = $motherboards->{$m}->getAttr(name=>'motherboard_hostname');
 		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_slot_position');
 		$tmp->{INTERNALIP} = $ip;
@@ -318,5 +320,21 @@ sub process_stopcluster : Runmode {
 	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
+
+sub process_removenode : Runmode {
+	my $self = shift;
+	my $query = $self->query();
+    eval {
+	    $self->{'admin'}->newOp(type => "StopNode", priority => '100', 
+	    	params => { cluster_id => $query->param('cluster_id'), motherboard_id => $query->param('motherboard_id') } 
+		);
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop cluster operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+}
+
 
 1;

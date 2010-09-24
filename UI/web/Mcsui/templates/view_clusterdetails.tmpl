@@ -6,7 +6,7 @@
 <div id="content">
 	<h1>Cluster components: </h1>
 	<table id="clustercomponentsdetails" class="listview">
-		<tr><th>component name: </th><th>component version: </th><th>component category: </th></tr>
+		<tr><th>name</th><th>version</th><th>category</th></tr>
 			<TMPL_LOOP NAME=COMPONENTS>
 				<tr><td><TMPL_VAR NAME=NAME></td>
 				<td><TMPL_VAR NAME=VERSION></td>
@@ -15,13 +15,14 @@
 	</table>
 	<h1>Cluster nodes: </h1>
 	<table id="clustermotherboardsdetails" class="listview">
-		<tr><th></th><th>Motherboard hostname: </th><th>Motherboard slot number: </th><th>Motherboard internal ip: </th></tr>
+		<tr><th></th><th>hostname</th><th>Motherboard slot number</th><th>internal ip</th><th>actions</th></tr>
 			<TMPL_LOOP NAME=MOTHERBOARDS>
 				<tr>
 				<td id="m<TMPL_VAR NAME=HOSTNAME>" class="expanddown">&nbsp;</td>
 				<td><TMPL_VAR NAME=HOSTNAME></td>
 				<td><TMPL_VAR NAME=SLOTNUMBER></td>
 				<td><TMPL_VAR NAME=INTERNALIP></td>
+				<td><a href="/cgi/mcsui.cgi/clusters/process_removenode?cluster_id=<TMPL_VAR NAME=CLUSTER_ID>&motherboard_id=<TMPL_VAR NAME=MOTHERBOARD_ID>">remove this node</a></td>
 				</tr>
 				
 				<tr id="t<TMPL_VAR NAME=HOSTNAME>" class="hidden">
