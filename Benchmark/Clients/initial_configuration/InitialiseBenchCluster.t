@@ -31,42 +31,42 @@ eval {
 	note("Add Motherboard");	
 	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
 		motherboard_mac_address => '00:1c:c0:c1:a6:02', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test sn",
 		motherboardmodel_id => 1,
 		processormodel_id => 1});
 	
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:d1:1a:8e', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test2 sn",
 		motherboardmodel_id => 1,
 		processormodel_id => 1});
 
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:c1:a5:42', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test3 sn",
 		motherboardmodel_id => 1,
 		processormodel_id => 1});
 
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:d1:18:46', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test4 sn",
 		motherboardmodel_id => 1,
 		processormodel_id => 1});
 	
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:c1:a5:81', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test5 sn",
 		motherboardmodel_id => 1,
 		processormodel_id => 1});
 	
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:27:0E:14:39:7B', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test6 sn",
 		motherboardmodel_id => 1,
 		processormodel_id => 1});

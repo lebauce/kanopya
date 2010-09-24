@@ -25,6 +25,20 @@ sub getOperations { my $self = shift; return ($self->{_admin})->getOperations( @
 sub newOp { my $self = shift; return ($self->{_admin})->newOp( @_ ); }
 sub addMessage { my $self = shift; return ($self->{_admin})->addMessage( @_ ); }
 
+sub opAdd {
+	my $self = shift;
+	my %args = @_;
+	
+	my $adm = $self->{_admin};
+	
+	$adm->newOp(type => 'AddMotherboardInCluster',
+				priority => $args{priority},
+				params => {
+					cluster_id => ($args{cluster})->getAttr(name => "cluster_id"),
+					motherboard_id => ($args{motherboard})->getAttr(name => 'motherboard_id')
+				}
+	);
+}
 
 sub retrieveHostsByCluster {
 	my $self = shift;

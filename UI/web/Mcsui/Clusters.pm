@@ -89,7 +89,6 @@ sub view_clusterdetails : Runmode {
 	my $graph_dir_alias = $conf->{graph_dir_alias};
 	my $graph_monitor_subdir = $conf->{graph_monitor_subdir};
 	my $graph_orchestrator_subdir = $conf->{graph_orchestrator_subdir};
-	my $graph_dir_alias = $conf->{graph_dir_alias};
 	my @node_indic_sets = split ",", $conf->{node_graph}{sets};
 	my @cluster_indic_sets = split ",", $conf->{cluster_graph}{sets};
 		
@@ -122,6 +121,7 @@ sub view_clusterdetails : Runmode {
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
 	$tmpl->param('ORCHESTRATOR_GRAPH' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name.png");
 
+	#$tmpl->param('AUTO_REFRESH' => 10);
 
 	$tmpl->param('TITLE_PAGE' => "Cluster's details");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);

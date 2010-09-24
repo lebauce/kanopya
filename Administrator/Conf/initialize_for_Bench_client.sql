@@ -220,8 +220,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); S
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); SET @eid := @eid +1;
 
+
 -- WebBench cluster
-INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,1,4,500,6,6,5, 'down');
+INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,6,6,500,1,1,5, 'down');
+
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
 
 -- openiscsi component 
@@ -232,9 +234,9 @@ INSERT INTO `component_instance` VALUES (7,2,7,NULL);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,7); SET @eid := @eid +1;
 INSERT INTO `snmpd5` VALUES (7,'10.0.0.1','-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
 -- keepalived component 
-INSERT INTO `component_instance` VALUES (8,2,8,NULL); 
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
-INSERT INTO `keepalived1` VALUES (1,8,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
+-- INSERT INTO `component_instance` VALUES (8,2,8,NULL); 
+-- INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
+-- INSERT INTO `keepalived1` VALUES (1,8,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
 
 
 -- INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');

@@ -16,16 +16,19 @@ my $cgi = new CGI;
 
 $template->param(AUTO_REFRESH => 1);
 
-my $dir = "/tmp/monitor/graph";
+my $dir = "/tmp";
 my $dir_alias = "/graph/";
-my $graph_subdir = "monitor/graph/";
 
-opendir DIR, $dir or die "$dir doesn't exist !";
-my @files = readdir DIR;
 my @graphs = ();
-for my $file (@files) {
-	if ( $file =~ "^graph_" ) {
-		push @graphs, { dir_alias => $dir_alias, file => "$graph_subdir$file"};
+for my $subdir ( ("monitor/graph", "orchestrator/graph") ) {
+	my $graph_dir = "$dir/$subdir";
+
+	opendir DIR, $graph_dir or die "$graph_dir doesn't exist !";
+	my @files = readdir DIR;
+	for my $file (@files) {
+		if ( $file =~ "^graph_" ) {
+			push @graphs, { dir_alias => $dir_alias, file => "$subdir/$file"};
+		}
 	}
 }
 
