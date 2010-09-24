@@ -30,3 +30,21 @@ virtual_server [% vs.ip %] [% vs.port %] {
 	[% END %]
 }
 [% END %]
+
+vrrp_sync_group G1 {
+	group {
+		VI_1
+	}
+}
+
+vrrp_instance VI_1 {
+	state MASTER
+	interface eth0
+	virtual_router_id 1
+	priority 100
+	virtual_ipaddress {
+		[% FOREACH vs = virtualservers %] 
+		[% vs.ip %]
+		[% END %]
+	}
+}
