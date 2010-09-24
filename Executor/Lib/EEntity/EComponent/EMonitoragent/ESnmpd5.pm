@@ -73,7 +73,14 @@ sub addNode {
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/snmp/snmpd.conf');	
 	unlink "/tmp/$tmpfile";
 	
-	
+	# add snmpd init scripts
+	$self->addInitScripts(
+		etc_mountpoint => $args{mount_point},
+		econtext => $args{econtext},
+		scriptname => 'snmpd',
+		startvalue => 20,
+		stopvalue => 20
+	);
 	 	 
 }
 
