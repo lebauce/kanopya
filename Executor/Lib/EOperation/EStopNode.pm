@@ -114,6 +114,11 @@ sub execute {
 	my $result = $motherboard_econtext->execute(command => $command);
 	my $state = 'stopping:'.time;
 	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
+	
+	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
+					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+	
+	
 	$self->{_objs}->{motherboard}->save();
 	
 	## add RemoveMotherboardFromCluster operation for this node

@@ -1,0 +1,50 @@
+global_defs {
+	notification_email {
+		[% notification_email %]
+		
+	}
+	notification_email_from [% notification_email_from %]
+	smtp_server [% smtp_server %]
+	smtp_connect_timeout [% smtp_connect_timeout %]
+	lvs_id [% lvs_id %]
+}
+
+[% FOREACH vs = virtualservers %] 
+virtual_server [% vs.ip %] [% vs.port %] {
+	delay_loop 30
+	lb_algo [% vs.lb_algo %]
+	lb_kind [% vs.lb_kind %]
+	persistence_timeout 50
+	protocol TCP
+	
+	#sorry_server IP PORT
+	
+	[% FOREACH rs = vs.realservers %]	
+	real_server [% rs.ip %] [% rs.port %] {
+		weight [% rs.weight %]
+		TCP_CHECK {
+			connect_port [% rs.check_port %]
+			connect_timeout [% rs.check_timeout %]
+		}
+	}
+	[% END %]
+}
+[% END %]
+
+vrrp_sync_group G1 {
+	group {
+		VI_1
+	}
+}
+
+vrrp_instance VI_1 {
+	state MASTER
+	interface eth0
+	virtual_router_id 1
+	priority 100
+	virtual_ipaddress {
+		[% FOREACH vs = virtualservers %] 
+		[% vs.ip %]
+		[% END %]
+	}
+}

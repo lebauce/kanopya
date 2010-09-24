@@ -11,11 +11,11 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	distribution_name => {pattern => //, is_mandatory => 1, is_extended => 0},
-	distribution_version => {pattern => //, is_mandatory => 1, is_extended => 0},
-	distribution_desc => {pattern => //, is_mandatory => 1, is_extended => 0},
-	etc_device_id => {pattern => //, is_mandatory => 1, is_extended => 0},
-	root_device_id => {pattern => //, is_mandatory => 1, is_extended => 0}
+	distribution_name => {pattern => "//", is_mandatory => 1, is_extended => 0},
+	distribution_version => {pattern => "//", is_mandatory => 1, is_extended => 0},
+	distribution_desc => {pattern => "//", is_mandatory => 1, is_extended => 0},
+	etc_device_id => {pattern => "//", is_mandatory => 1, is_extended => 0},
+	root_device_id => {pattern => "//", is_mandatory => 1, is_extended => 0}
 };
 
 =head new

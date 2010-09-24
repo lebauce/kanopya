@@ -20,7 +20,7 @@ sub new {
     return $self;
 }
 
-sub configureNode {
+sub addNode {
 	my $self = shift;
 	my %args = @_;
 	
@@ -40,41 +40,71 @@ sub configureNode {
 	    RELATIVE => 1,                   # desactive par defaut
 	};
 	
-	my $conf = $self->_getEntity()->getConf();
+	my $apache2_conf = $self->_getEntity()->getGeneralConf();	
 	my $rand = new String::Random;
 	my $template = Template->new($config);
 	
-	# generation of /etc/default/snmpd 
+	# generation of /etc/apache2/apache2.conf 
 	my $tmpfile = $rand->randpattern("cccccccc");
-	my $input = "default_apache2.tt";
+	my $input = "apache2.conf.tt";
     my $data = {};
-    $data->{node_ip_address} = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
-    $data->{options} = $conf->{options};
+    $data->{serverroot} = $apache2_conf->{'apache2_serverroot'};
    	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
+		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/default/snmpd');	
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/apache2/apache2.conf');	
 	unlink "/tmp/$tmpfile";
 	
-	# generation of /etc/snmpd/snmpd.conf 
+	# generation of /etc/apache2/ports.conf 
 	$tmpfile = $rand->randpattern("cccccccc");
-	$input = "snmpd.conf.tt";
+	$input = "ports.conf.tt";
     $data = {};
-    $data->{monitor_server_ip} = $conf->{monitor_server_ip};
+    $data->{ports} = $apache2_conf->{apache2_ports};
+    $data->{sslports} = $apache2_conf->{apache2_sslports};
        	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
+		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/snmp/snmpd.conf');	
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/apache2/ports.conf');	
 	unlink "/tmp/$tmpfile";
 	
+	# generation of /etc/php5/apache2/php.ini 
+	$tmpfile = $rand->randpattern("cccccccc");
+	$input = "php.ini.tt";
+    $data = {};
+    $data->{phpsessions_dir} = $apache2_conf->{apache2_phpsession};
+       	
+	$template->process($input, $data, "/tmp/".$tmpfile) || do {
+		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);	
+	};
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/php5/apache2/php.ini');	
+	unlink "/tmp/$tmpfile";
 	
-	 	 
+	# generation of /etc/apache2/sites-available/default
+	$tmpfile = $rand->randpattern("cccccccc");
+	$input = "virtualhost.tt";
+    
+    $data = {};
+    $data->{virtualhosts} = $self->_getEntity()->getVirtualhostConf();
+    
+	$template->process($input, $data, "/tmp/".$tmpfile) || do {
+		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);	
+	};
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/apache2/sites-available/default');	
+	unlink "/tmp/$tmpfile";
+}
+
+sub removeNode{
+	
 }
 
 # Reload snmp process

@@ -1,0 +1,26 @@
+[% FOREACH virtualhost = virtualhosts %]
+<VirtualHost *:[% virtualhosts.port %].>
+	ServerName   [% virtualhost.servername %]
+	[% FOREACH serveralias = virtualhost.serveraliases %]
+	ServerAlias  [% serveralias %]
+	[% END %]
+	ServerAdmin  "[% virtualhost.servername %]"
+	DocumentRoot [% virtualhost.documentroot %]
+	CustomLog  [% virtualhost.log %]
+	ErrorLog  [% virtualhost.errorlog %]
+</VirtualHost>
+
+[% IF virtualhost.sslenable %]
+<VirtualHost *:[% virtualhosts.sslport %].>
+        ServerName   [% virtualhost.servername %]
+        [% FOREACH serveralias = virtualhost.serveraliases %]
+        ServerAlias  [% serveralias %]
+        [% END %]
+        ServerAdmin  "[% virtualhost.servername %]"
+        DocumentRoot [% virtualhost.documentroot %]
+        CustomLog  [% virtualhost.log %]
+        ErrorLog  [% virtualhost.errorlog %]
+</VirtualHost>
+[% END %]
+
+[% END %]

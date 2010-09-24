@@ -248,13 +248,7 @@ sub execute {
 													 econtext 					=> $self->{nas}->{econtext});
 																  
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
-	
-	
-	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
-					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
-
-	
-	
+		
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
 }

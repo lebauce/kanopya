@@ -20,7 +20,7 @@ sub new {
 }
 
 # generate snmpd configuration files on node
-sub configureNode {
+sub addNode {
 	my $self = shift;
 	my %args = @_;
 	
