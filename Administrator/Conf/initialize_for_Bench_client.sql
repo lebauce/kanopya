@@ -247,7 +247,7 @@ INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology
 INSERT INTO `iscsitarget1_lun` VALUE (2,2,0,'/dev/vg1/srv_WebBench','fileio','rw');
 
 -- Insert Disk into WebBench cluster openiscsi component
-INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', '', 'ocfs2');
+INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', 'defaults', 'ocfs2');
 
 -- keepalived component 
 -- INSERT INTO `component_instance` VALUES (8,2,8,NULL); 
