@@ -1,5 +1,5 @@
 [% FOREACH virtualhost = virtualhosts %]
-<VirtualHost *:[% ports %].>
+<VirtualHost *:[% ports %]>
 	ServerName   [% virtualhost.apache2_virtualhost_servername %]
 #TODO Implement serverAlias
 	ServerAdmin  "[% virtualhost.apache2_virtualhost_serveradmin %]"
@@ -9,7 +9,7 @@
 </VirtualHost>
 
 [% IF virtualhost.apache2_virtualhost_sslenable %]
-<VirtualHost *:[% sslports %].>
+<VirtualHost *:[% sslports %]>
         ServerName   [% virtualhost.apache2_virtualhost_servername %]
 #TODO Implement serverAlias
         ServerAdmin  "[% virtualhost.apache2_virtualhost_serveradmin %]"

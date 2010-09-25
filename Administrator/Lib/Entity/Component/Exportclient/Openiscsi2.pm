@@ -22,7 +22,7 @@ sub new {
     return $self;
 }
 
-sub getExport {
+sub getExports {
 	my $self = shift;
 	my $export_rs = $self->{_dbix}->openiscsi2s;
 	my @tab_exports =();
