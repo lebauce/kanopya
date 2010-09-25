@@ -499,6 +499,20 @@ sub generateMcsHalt{
    	    		nas_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				nas_port		=> "3260",
    	   };
+   	my $components = $self->{_objs}->{components};
+   	foreach my $i (keys %$components) {
+		my $tmp = $components->{$i};
+		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+				$log->debug("The cluster component is an Openiscsi2");
+				my $iscsi_export = $components->{$i};
+				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+				#									 						version => "0",
+				#															administrator => $adm);
+				$vars->{data_exports} = $iscsi_export->getExports();
+   			}
+		}
+	}
    	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
