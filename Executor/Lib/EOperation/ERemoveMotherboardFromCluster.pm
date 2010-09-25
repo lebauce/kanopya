@@ -228,8 +228,7 @@ sub execute {
 	
 	## Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
+
 	
 	## Remove motherboard etc export from iscsitarget 
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
@@ -263,7 +262,10 @@ sub execute {
 													 econtext 					=> $self->{nas}->{econtext});
 																  
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
-		
+	
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
+	
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
 }
