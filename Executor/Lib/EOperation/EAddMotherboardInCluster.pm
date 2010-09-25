@@ -451,11 +451,16 @@ sub generateFstabConf{
    	my $components = $self->{_objs}->{components};
    	$vars->{mounts_iscsi} = [];
 	foreach my $i (keys %$components) {
+		my $tmp = $components->{$i};
+		$log->debug("Found component of type : " . ref($tmp));
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+			$log->debug("The cluster component is an Exportclient");
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
-				my $iscsi_export = $self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-													 						version => "0",
-																			administrator => $adm);
+				$log->debug("The cluster component is an Openiscsi2");
+				my $iscsi_export = $components->{$i};
+				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+				#									 						version => "0",
+				#															administrator => $adm);
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
    			}
 		}
