@@ -426,12 +426,12 @@ sub requireAddNode {
     print "Node required in cluster '$cluster'\n";
     
     # TEMP
-    $self->_storeTime( time => time(), cluster => $cluster, op_type => "add", up_info => "req" );
+    $self->_storeTime( time => time(), cluster => $cluster, op_type => "add", op_info => "req" );
     
     eval {
 	   	if ( $self->_canAddNode( cluster => $cluster ) ) {
 	    	$self->addNode( cluster_name => $cluster );
-	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "add", up_info => "ok" );
+	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "add", op_info => "ok" );
 	   	}
     };
     if ($@) {
@@ -479,12 +479,12 @@ sub requireRemoveNode {
     print "Want remove node in cluster '$cluster'\n";
     
    	# TEMP
-    $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", up_info => "req");
+    $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "req");
     
     eval {
 	   	if ( $self->_canAddNode( cluster => $cluster ) ) {
 	    	$self->removeNode( cluster_name => $cluster );
-	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", up_info => "ok");
+	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "ok");
 	   	}
     };
    	if ($@) {
@@ -520,13 +520,14 @@ sub addNode {
 	############################################
 	# Enqueue the add motherboard operation
 	############################################
-	$adm->newOp(type => 'AddMotherboardInCluster',
-				priority => $priority,
-				params => {
-					cluster_id => $cluster->getAttr(name => "cluster_id"),
-					motherboard_id => $motherboard->getAttr(name => 'motherboard_id')
-				}
-	);
+#	$adm->newOp(type => 'AddMotherboardInCluster',
+#				priority => $priority,
+#				params => {
+#					cluster_id => $cluster->getAttr(name => "cluster_id"),
+#					motherboard_id => $motherboard->getAttr(name => 'motherboard_id')
+#				}
+#	);
+	$adm->opAdd( cluster => $cluster, motherboard => $motherboard, priority => $priority );
 
 }
 
@@ -542,6 +543,7 @@ sub removeNode {
     my $adm = $self->{_admin_wrap};
     
     #TODO Find the best node to remove (notation system)
+    #TODO Ne pas choisir le Master Node !! (cf antoine)
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
     my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;

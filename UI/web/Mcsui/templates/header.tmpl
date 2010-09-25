@@ -4,6 +4,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <link href="/css/global.css" rel="stylesheet" type="text/css" media="screen" />
 <title><TMPL_VAR NAME=TITLE_PAGE></title>
+
+<TMPL_IF NAME=AUTO_REFRESH>
+	<meta http-equiv="Refresh" content='<TMPL_VAR NAME=AUTO_REFRESH>'>
+</TMPL_IF>
+
 </head>
 <body>
 <img id="ivy1" src="/images/ivy1.png" />

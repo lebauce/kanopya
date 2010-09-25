@@ -193,7 +193,7 @@ sub getHostData {
 }
 
 
-
+#TODO now we store cluster data, so retrieve this data from rrd
 sub getClusterData {
 	my $self = shift;
 	my %args = @_;
@@ -311,6 +311,7 @@ sub getIndicators {
 	
 =cut
 
+#TODO now this sub is also used to graph cluster => change sub name and sub args
 sub graphNode {
 	my $self = shift;
 	my %args = @_;
@@ -320,7 +321,8 @@ sub graphNode {
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
 	#my $graph_filename = "graph_$rrd_name.png";
-	my $graph_filename = "graph_$host" . "_$set_name.png";
+	my $graph_name = "graph_$host" . "_$set_name";
+	my $graph_filename = "$graph_name.png";
 
 	my $graph_type = $args{graph_type} || "line";
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
@@ -365,6 +367,14 @@ sub graphNode {
 
 	# Draw a graph in a PNG image
 	$rrd->graph( @graph_params );
+	
+	if ($host eq "WebBench" && $set_name eq "cpu") {
+		my $backup_dir = $self->{_graph_dir} . "/" . "backup_$host" . "_$set_name"; 
+		mkdir $backup_dir;
+		my @file_count = <$backup_dir/*.png>;
+		my $backup_filename = sprintf( "%s_%.6d.png", $graph_name, scalar @file_count);
+		#`cp "$self->{_graph_dir}/$graph_filename" "$backup_dir/$backup_filename"`;
+	}
 	
 	return $graph_filename;
 }
@@ -652,10 +662,15 @@ sub graphFromConf {
 	my $self = shift;
 	my %args = @_;
 	
+	my $start_time = time();
+	
 	my @clusters_name = $self->getClustersName();
 	
 	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
-	my $graphs = General::getAsArrayRef( data => $config->{generate_graph}, tag => 'graph' );
+	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
+	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
+	my $conf = shift @conf;
+	my $graphs = General::getAsArrayRef( data => $conf->{generate_graph}, tag => 'graph' );
 	
 	my %graph_files = ();
 	my $i = 0;
@@ -672,19 +687,22 @@ sub graphFromConf {
 																cluster => $cluster );	
 					} else {
 						my @required_indicators = split ",", $graph_def->{ds_label};
+						my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
 						($dir, $file) = $self->graphCluster( time_laps => $graph_def->{time_laps},
 																cluster => $cluster,
 																required_set => $graph_def->{set_label},
-																required_indicators => \@required_indicators );
+																required_indicators => $required,
+																graph_type => $graph_def->{graph_type} || 'line');
 					}
 					$graph_info{$cluster} = [ $dir, $file ];
 					
 				}
 			} elsif ( $graph_def->{target} eq 'NODES' ) {
 				my @required_indicators = split ",", $graph_def->{ds_label};
+				my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
 				my $res = $self->graphNodes( time_laps => $graph_def->{time_laps},
 											required_set => $graph_def->{set_label},
-											required_indicators => \@required_indicators );
+											required_indicators => $required );
 				%graph_info = %$res;
 			}
 		};
@@ -696,6 +714,8 @@ sub graphFromConf {
 		}
 		$graph_files{ "graph_$i" } = \%graph_info;
 	} 
+	
+	print "# graph from conf time => ", time() - $start_time, "\n";
 	
 	return %graph_files;
 	

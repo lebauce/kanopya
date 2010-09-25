@@ -172,6 +172,8 @@ sub updateHostData {
 	my $self = shift;
 	my %args = @_;
 
+	my $start_time = time();
+
 	my $host = $args{host};
 	
 	my %all_values = ();
@@ -187,20 +189,26 @@ sub updateHostData {
 			###################################################
 			my %var_map = map { $_->{label} => $_->{oid} } @{ General::getAsArrayRef( data => $set, tag => 'ds') };
 			
-			#################################
-			# Get the specific DataProvider #
-			#################################
-			# TODO vérifier que c'est pas trop moche (possibilité plusieurs fois le même require,...)
-			my $provider_class = $set->{'data_provider'} || "SnmpProvider";
-			require "DataProvider/$provider_class.pm";
-			my $data_provider = $provider_class->new( host => $host );
-			
-			################################################################################
-			# Retrieve the map ref { var_name => value } corresponding to required var_map #
-			################################################################################
+
 			my ($time, $update_values);
+			my $retrieve_start_time = time();
+			my $provider_class;
 			eval {
+				#################################
+				# Get the specific DataProvider #
+				#################################
+				# TODO vérifier que c'est pas trop moche (possibilité plusieurs fois le même require,...)
+				$provider_class = $set->{'data_provider'} || "SnmpProvider";
+				require "DataProvider/$provider_class.pm";
+				my $data_provider = $provider_class->new( host => $host );
+				
+				################################################################################
+				# Retrieve the map ref { var_name => value } corresponding to required var_map #
+				################################################################################
+			#eval {
+				
 				($time, $update_values) = $data_provider->retrieveData( var_map => \%var_map );
+				
 			};
 			if ($@) {
 				my $error = $@;
@@ -210,6 +218,7 @@ sub updateHostData {
 				if ( "$error" =~ "No response" ) {
 					$log->info( "Unreachable host '$host' => we stop collecting data.");
 					$host_reachable = 0;
+					#print "[$host] => retrieve '$set->{label}' time : ", time() - $retrieve_start_time, "\n";
 					last; # we stop collecting data sets
 				} else {
 					$error_happened = 1;
@@ -229,7 +238,9 @@ sub updateHostData {
 			$self->updateRRD( rrd_name => $rrd_name, ds_type => $set->{ds_type}, time => $time, data => $update_values );
 		}
 		# Update host state
+		my $state_start_time = time();
 		$self->_manageHostState( host => $host, reachable => $host_reachable );
+		print "[$host] ##### manage state Time : ", time() - $state_start_time, "\n";
 	};
 	if ($@) {
 		my $error = $@;
@@ -241,6 +252,8 @@ sub updateHostData {
 	}
 	
 	print "[$host] => some errors happened collecting data\n" if ($error_happened);
+	
+	print "[$host] ##### Udate Time : ", time() - $start_time, "\n";
 	
 	return \%all_values;
 }
@@ -344,6 +357,7 @@ sub update {
 			$threads{$host_ip} = $thr;
 		}
 		
+
 		############################
 		# Wait end of all threads  #
 		############################
@@ -378,7 +392,7 @@ sub update {
 		# update clusters base (nodes count and mean values) #
 		######################################################
 		#TODO ici on retrieve une nouvelle fois alors qu'on le fait au début de la fonction
-		# (mais entre temps l'état des noeuds à eventuellement été modifié). Il y a surement mieux à faire.
+		# (mais entre temps l'état des noeuds a eventuellement été modifié). Il y a surement mieux à faire.
 		%hosts_by_cluster = $self->retrieveHostsByCluster();
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
 			
@@ -400,7 +414,9 @@ sub update {
 				#my $rrd_name = "monitor_$cluster_name" . "_$set_name";
 				my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
 
-				$self->updateRRD( rrd_name => $rrd_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg);
+				my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
+				my $set_def = shift @set_def;
+				$self->updateRRD( rrd_name => $rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg);
 			} 
 			
 			

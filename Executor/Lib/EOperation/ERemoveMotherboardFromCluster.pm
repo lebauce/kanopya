@@ -156,7 +156,8 @@ sub prepare {
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
 
-	my $cluster_id = $self->{_objs}->{motherboard}->getClusterId();
+	my $cluster_id = $params->{motherboard_id};
+#$self->{_objs}->{motherboard}->getClusterId();
 	#### Get instance of Cluster Entity
 	$log->info("Load cluster instance");
 	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $cluster_id);

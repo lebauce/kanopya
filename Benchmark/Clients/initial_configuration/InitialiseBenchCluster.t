@@ -31,45 +31,45 @@ eval {
 	note("Add Motherboard");	
 	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
 		motherboard_mac_address => '00:1c:c0:c1:a6:02', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test sn",
-		motherboard_model_id => 1,
-		processor_model_id => 1});
+		motherboardmodel_id => 1,
+		processormodel_id => 1});
 	
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:d1:1a:8e', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test2 sn",
-		motherboard_model_id => 1,
-		processor_model_id => 1});
+		motherboardmodel_id => 1,
+		processormodel_id => 1});
 
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:c1:a5:42', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test3 sn",
-		motherboard_model_id => 1,
-		processor_model_id => 1});
+		motherboardmodel_id => 1,
+		processormodel_id => 1});
 
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:d1:18:46', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test4 sn",
-		motherboard_model_id => 1,
-		processor_model_id => 1});
+		motherboardmodel_id => 1,
+		processormodel_id => 1});
 	
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '00:1c:c0:c1:a5:81', 
-		kernel_id => 1, 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test5 sn",
-		motherboard_model_id => 1,
-		processor_model_id => 1});
+		motherboardmodel_id => 1,
+		processormodel_id => 1});
 	
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '00:27:OE:14:39:7B', 
-		kernel_id => 1, 
+		motherboard_mac_address => '00:27:0E:14:39:7B', 
+		kernel_id => 5, 
 		motherboard_serial_number => "Test6 sn",
-		motherboard_model_id => 1,
-		processor_model_id => 1});
+		motherboardmodel_id => 1,
+		processormodel_id => 1});
 	
 	#BEGIN { $ENV{DBIC_TRACE} = 1 }
 	

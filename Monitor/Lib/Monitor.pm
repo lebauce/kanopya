@@ -84,6 +84,8 @@ sub new {
 	my $self = {};
 	bless $self, $class;
 
+	my $start_time = time();
+
 	$log->info("NEW");
 
 	# Load conf
@@ -91,12 +93,15 @@ sub new {
 	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
 	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
 	my $conf = shift @conf;
+	
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_period} = $conf->{period};
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/monitor';
 	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/monitor';
 	$self->{_monitored_data} = General::getAsArrayRef( data => $conf, tag => 'set' );
 	$self->{_node_states} = $conf->{node_states}; 
+
+	print "Monitor::new : load conf time = ", time() - $start_time, "\n";
 
 	# Create monitor dirs if needed
 	for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
@@ -112,6 +117,8 @@ sub new {
 	#print "get ADMIN\n";
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	$self->{_admin_wrap} = AdminWrapper->new( );
+	
+	print "Monitor::new : instanciate admin time = ", time() - $start_time, "\n";
 	
 	#print " => ok\n";
 
