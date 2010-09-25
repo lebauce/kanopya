@@ -213,6 +213,24 @@ sub execute {
 	
 	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
 	
+	# component migration
+	my $components = $self->{_objs}->{components};
+	$log->info('Processing cluster components configuration for this node');
+	foreach my $i (keys %$components) {
+		
+		my $tmp = EFactory::newEEntity(data => $components->{$i});
+		$log->debug("component is ".ref($tmp));
+		$tmp->removeNode(motherboard => $self->{_objs}->{motherboard}, 
+							mount_point => '',
+							cluster => $self->{_objs}->{cluster},
+							econtext => $self->{nas}->{econtext});
+	}
+	
+	
+	
+	
+	
+	
 	## Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
 	

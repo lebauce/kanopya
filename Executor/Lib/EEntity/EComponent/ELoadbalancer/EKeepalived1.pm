@@ -95,6 +95,7 @@ sub removeNode {
 	my $masternodeip = $args{cluster}->getMasterNodeIp();
 	if(not defined $masternodeip) {
 		# masternodeip is undef, this motherboard was the masternode so we do nothing
+		$log->debug('No master node ip retreived, we are stopping the master node');
 	} else {
 		use EFactory;
 		my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
