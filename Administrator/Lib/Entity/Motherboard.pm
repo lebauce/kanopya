@@ -214,10 +214,26 @@ sub getEtcDev {
 }
 
 sub generateHostname {
+#	my $self = shift;
+#	my $mac = $self->getAttr(name => 'motherboard_mac_address');	
+#	$mac =~ s/://g;
+#	return "node".$mac;
 	my $self = shift;
-	my $mac = $self->getAttr(name => 'motherboard_mac_address');	
-	$mac =~ s/://g;
-	return "node".$mac;
+	my %args = @_;
+	my $hostname = "node";
+
+	$log->debug("Create hostname with ip $self->{'ip_address'}");
+	my @tmp = split(/\./, $args{ip});
+
+	$log->debug("differents ip part are <$tmp[0]> <$tmp[1]> <$tmp[2]> <$tmp[3]>");
+	my $cpt = 3 - length $tmp[3];
+	while ($cpt) {
+		$hostname .= "0";
+		$cpt--;
+	}
+	$hostname .= $tmp[3];
+	$log->info("Hostname generated : $self->{'hostname'}");
+	return $hostname;
 }
 
 

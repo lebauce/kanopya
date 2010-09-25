@@ -252,6 +252,13 @@ sub execute {
 	## ADD Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_ip = $adm->getFreeInternalIP();
+	# Set Hostname
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
+										   value => $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip));
+	# Set initiatorName
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
+										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
+	
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
 	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
 	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
@@ -492,6 +499,20 @@ sub generateMcsHalt{
    	    		nas_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				nas_port		=> "3260",
    	   };
+   	my $components = $self->{_objs}->{components};
+   	foreach my $i (keys %$components) {
+		my $tmp = $components->{$i};
+		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+				$log->debug("The cluster component is an Openiscsi2");
+				my $iscsi_export = $components->{$i};
+				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+				#									 						version => "0",
+				#															administrator => $adm);
+				$vars->{data_exports} = $iscsi_export->getExports();
+   			}
+		}
+	}
    	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
