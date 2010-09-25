@@ -109,25 +109,16 @@ sub prepare {
 	my $adm = Administrator->new();
 	#$adm->changeUser(user_id => $self->{userid});
 	$log->debug("Change user effective : New user is $adm->{_rightschecker}->{_user}");
-	$adm->{db}->txn_begin;
 }
 
-sub execute {
-	
-}
+sub execute {}
 
-sub finish {
+sub finish {}
+
+sub delete {
 	my $self = shift;
 	my $adm = Administrator->new();
-	$self->{_operation}->cancel();
-	$adm->{db}->txn_commit;
-}
-
-sub cancel {
-	my $self = shift;
-	my $adm = Administrator->new();
-	$adm->{db}->txn_rollback;
-	$self->{_operation}->cancel();	
+	$self->{_operation}->delete();	
 }
 1;
 

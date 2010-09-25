@@ -48,12 +48,14 @@ INSERT INTO `motherboardmodel` VALUES (3,'ASUS','AT3N7A-I','NVIDIA ION',1,42,1,2
 INSERT INTO `motherboardmodel` VALUES (4,'J&W','MINIX ATOM330','945GC',1,42,1,1,2,1);
 INSERT INTO `motherboardmodel` VALUES (5,'VIA','VB8001','VIA CN896',1,42,1,2,4,3);
 INSERT INTO `motherboardmodel` VALUES (6,'GIGABYTE','GA-D510UD','INTEL NM10',1,42,1,2,4,2);
+INSERT INTO `motherboardmodel` VALUES (7,'INTEL','D510MO','INTEL NM10',1,42,1,2,4,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,7); SET @eid := @eid +1;
 
 
 -- operation types list
@@ -148,15 +150,8 @@ INSERT INTO `component_provided` VALUES (2,1),(4,1),(7,1),(8,1);
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
--- Client benchmark system image
-INSERT INTO `systemimage` VALUES (2,'ClientBenchSystemImage','System image for Benchmark clients', 1, 5, 6, 1);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,2); SET @eid := @eid +1;
-
 -- components installed on systemimage DebianSystemImage
 INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1);
-
--- components installed on systemimage BenchClientSystemImage
-INSERT INTO `component_installed` VALUES (2,2),(4,2),(7,2);
 
 -- admin cluster
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1, 'up');
@@ -166,7 +161,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1)
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
 
 -- admin motherboard
-INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
+INSERT INTO `motherboard` VALUES (1,6,2,1,'Admin SN',1,'Admin motherboard',1,'6c:f0:49:d1:dc:9f','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
@@ -196,9 +191,7 @@ INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',6144,0,'ext3');
 -- systemimage device for DebianSystemImage
 INSERT INTO `lvm2_lv` VALUES (3,1,'etc_DebianSystemImage',52,0,'ext3');
 INSERT INTO `lvm2_lv` VALUES (4,1,'root_DebianSystemImage',6144,0,'ext3');
--- systemimage device for ClientBenchSystemImage
-INSERT INTO `lvm2_lv` VALUES (5,1,'etc_ClientBenchSystemImage',52,0,'ext3');
-INSERT INTO `lvm2_lv` VALUES (6,1,'root_ClientBenchSystemImage',6144,0,'ext3');
+
 
 
 
@@ -222,7 +215,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); S
 
 
 -- WebBench cluster
-INSERT INTO `cluster` VALUES (2,'WebBench','Benchmark cluster',0,6,6,500,1,1,5, 'down');
+INSERT INTO `cluster` VALUES (2,'WebServerBench','Benchmark cluster',0,1,9,500,1,1,NULL,'down');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
 
 -- openiscsi component 
@@ -238,9 +231,14 @@ INSERT INTO `component_instance` VALUES (8,2,2,1);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
 INSERT INTO `apache2` VALUES (8,'/srv','warn','80','443','/srv/.phpsessions',1);
 INSERT INTO `apache2_virtualhost` VALUES (1,1,'client.hedera-technology.com',1,'antoine.castaing@hederatech.com','/srv/www/','/tmp/apache2.log vhost_combined', '/tmp/apache2_error.log');
+-- keepalived component 
+INSERT INTO `component_instance` VALUES (9,2,8,NULL); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,9); SET @eid := @eid +1;
+INSERT INTO `keepalived1` VALUES (1,9,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
+
 
 -- Insert /srv disk  
-INSERT INTO `lvm2_lv` VALUES (7,1,'srv_WebBench',100,0,'ocfs2');
+INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ocfs2');
 
 -- Insert shared disk into iscsitarget
 INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
@@ -248,11 +246,6 @@ INSERT INTO `iscsitarget1_lun` VALUES (1,1,0,'/dev/vg1/srv_WebBench','fileio','r
 
 -- Insert Disk into WebBench cluster openiscsi component
 INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', 'defaults', 'ocfs2');
-
--- keepalived component 
--- INSERT INTO `component_instance` VALUES (8,2,8,NULL); 
--- INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
--- INSERT INTO `keepalived1` VALUES (1,8,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
 
 
 

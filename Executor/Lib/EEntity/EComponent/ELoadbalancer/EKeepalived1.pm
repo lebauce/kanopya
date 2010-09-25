@@ -22,6 +22,7 @@ sub new {
     return $self;
 }
 
+# called when a node is added to a cluster
 sub addNode {
 	my $self = shift;
 	my %args = @_;
@@ -34,19 +35,33 @@ sub addNode {
 		# no masternode defined, this motherboard becomes the masternode
 		#  so it is the first initialization of keepalived
 				
-		$log->debug("adding virtualserver definition in database");
-		my $vsid = $keepalived->addVirtualserver(
-			virtualserver_ip => '192.168.100.1',
+		$log->debug("adding virtualserver  definition in database");
+		my $vsid1 = $keepalived->addVirtualserver(
+			virtualserver_ip => '192.168.100.254',
 			virtualserver_port => 80,
+			virtualserver_lbkind => 'NAT',
+			virtualserver_lbalgo => 'rr');
+			
+		my $vsid2 = $keepalived->addVirtualserver(
+			virtualserver_ip => '192.168.100.254',
+			virtualserver_port => 443,
 			virtualserver_lbkind => 'NAT',
 			virtualserver_lbalgo => 'rr');
 		
 		$log->debug("adding realserver definition in database");
-		 my $rsid = $keepalived->addRealserver(
-			virtualserver_id => $vsid,
+		 my $rsid1 = $keepalived->addRealserver(
+			virtualserver_id => $vsid1,
 			realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'),
 			realserver_port => 80,
 			realserver_checkport => 80,
+			realserver_checktimeout => 15,
+			realserver_weight => 1);
+			
+		my $rsid2 = $keepalived->addRealserver(
+			virtualserver_id => $vsid2,
+			realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'),
+			realserver_port => 443,
+			realserver_checkport => 443,
 			realserver_checktimeout => 15,
 			realserver_weight => 1);
 	
@@ -85,7 +100,36 @@ sub addNode {
 	}
 }
 
-sub removeNode {}
+# called when a node is removed from a cluster 
+sub removeNode {
+	my $self = shift;
+	my %args = @_;
+	
+	my $keepalived = $self->_getEntity();
+	my $masternodeip = $args{cluster}->getMasterNodeIp();
+	if(not defined $masternodeip) {
+		# masternodeip is undef, this motherboard was the masternode so we do nothing
+		$log->debug('No master node ip retreived, we are stopping the master node');
+	} else {
+		use EFactory;
+		my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+		
+		# remove this motherboard as realserver for each virtualserver of this cluster
+		my $virtualservers = $keepalived->getVirtualservers();
+		
+		foreach my $vs (@$virtualservers) {
+			my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id}, realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'));
+			
+			$keepalived->removeRealserver(
+				virtualserver_id => $vs->{virtualserver_id},
+				realserver_id => $realserver_id);
+		}
+		
+		$self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
+		$self->reload(econtext => $masternode_econtext);	
+	}
+	
+}
 
 
 # Reload configuration of keepalived process

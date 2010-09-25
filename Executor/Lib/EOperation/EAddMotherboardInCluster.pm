@@ -252,6 +252,13 @@ sub execute {
 	## ADD Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_ip = $adm->getFreeInternalIP();
+	# Set Hostname
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
+										   value => $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip));
+	# Set initiatorName
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
+										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
+	
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
 	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
 	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
@@ -362,8 +369,8 @@ sub generateNodeConf {
 	$self->generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
 	$log->info("Generate Mcs Halt script Conf");
 	$self->generateMcsHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
-	$log->info("Generate Hosts Conf");
-	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
+#	$log->info("Generate Hosts Conf");
+#	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
 	$log->info("Generate Network Conf");
 	$self->generateNetConf(mount_point=>$args{mount_point});
 	$log->info("Generate resolv.conf");
@@ -430,8 +437,10 @@ sub generateFstabConf{
 	my $adm = Administrator->new();
 	my $input = "fstab.tt";
 	
+	$log->debug("Get targetid with the following pattern : " . '%'."$args{root_dev}->{lvname}");
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
 	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
+	$log->debug("Get targetid with the following pattern : " . '%'."$args{etc_dev}->{lvname}");
 	my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
 	my $etc_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $etc_target_id);
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
@@ -449,11 +458,16 @@ sub generateFstabConf{
    	my $components = $self->{_objs}->{components};
    	$vars->{mounts_iscsi} = [];
 	foreach my $i (keys %$components) {
+		my $tmp = $components->{$i};
+		$log->debug("Found component of type : " . ref($tmp));
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+			$log->debug("The cluster component is an Exportclient");
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
-				my $iscsi_export = $self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-													 						version => "0",
-																			administrator => $adm);
+				$log->debug("The cluster component is an Openiscsi2");
+				my $iscsi_export = $components->{$i};
+				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+				#									 						version => "0",
+				#															administrator => $adm);
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
    			}
 		}
@@ -485,6 +499,20 @@ sub generateMcsHalt{
    	    		nas_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				nas_port		=> "3260",
    	   };
+   	my $components = $self->{_objs}->{components};
+   	foreach my $i (keys %$components) {
+		my $tmp = $components->{$i};
+		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+				$log->debug("The cluster component is an Openiscsi2");
+				my $iscsi_export = $components->{$i};
+				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+				#									 						version => "0",
+				#															administrator => $adm);
+				$vars->{data_exports} = $iscsi_export->getExports();
+   			}
+		}
+	}
    	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
@@ -591,9 +619,10 @@ sub generateBootConf {
 	foreach my $i (keys %$components) {
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
-				my $iscsi_export = $self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-													 						version => "0",
-																			administrator => $adm);
+				my $iscsi_export = $components->{$i};
+				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+				#									 						version => "0",
+				#															administrator => $adm);
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
    			}
 		}

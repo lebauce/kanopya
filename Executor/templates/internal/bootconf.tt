@@ -22,13 +22,13 @@ etc_iscsi_in_username=
 etc_iscsi_in_password=
 
 [% FOREACH mount=mounts_iscsi %]
-[% mount.name %]_iscsi_target_name=[% mount.target %]
-[% mount.name %]_iscsi_target_ip=[% mount.ip %]
-[% mount.name %]_iscsi_target_port=[% mount.port %]
-[% mount.name %]_iscsi_target_group=
-[% mount.name %]_iscsi_username=
-[% mount.name %]_iscsi_password=
-[% mount.name %]_iscsi_in_username=
-[% mount.name %]_iscsi_in_password=
+data_iscsi_target_name=[% mount.target %]
+data_iscsi_target_ip=[% mount.ip %]
+data_iscsi_target_port=[% mount.port %]
+data_iscsi_target_group=
+data_iscsi_username=
+data_iscsi_password=
+data_iscsi_in_username=
+data_iscsi_in_password=
 
 [% END %]

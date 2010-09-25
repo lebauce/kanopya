@@ -117,29 +117,39 @@ sub run {
    	while ($$running) {
    		my $opdata = $adm->getNextOp();
    		if ($opdata){
+	   		# start transaction
 	   		my $op = EFactory::newEEntity(data => $opdata);
    			$log->info("New operation (".ref($op).") retrieve ; execution processing");
    			$adm->addMessage(type => 'info', content => "Executor begin an operation process (".ref($op).")");
+   			$adm->{db}->txn_begin;
    			eval {
    				$op->prepare(internal_cluster => $self->{config}->{cluster});
    				$op->execute();
    				$op->finish();
-   				$adm->addMessage(type => 'success', content => ref($op)." processing finished");
    			};
 			if ($@) {
    				my $error = $@;
    				if($error->isa('Mcs::Exception::Execution::Delayed')) {
-   					$adm->addMessage(type => 'info', content => ref($op)." delayed");
+   					# commit transaction
    					$adm->{db}->txn_commit;
+   					$adm->addMessage(type => 'info', content => ref($op)." delayed");
    					$log->debug("Operation ".ref($op)." delayed");
    				} else {
-   					$op->cancel();
+   					# rollback transaction
+   					eval { $adm->{db}->txn_rollback; };
    					$adm->addMessage(type => 'error', content => ref($op)." abording: $error");
    					$log->error("Error during execution : $error");
+   					$op->delete();
    				}
+   			} else {
+   				# commit transaction
+   				$adm->{db}->txn_commit;
+   				$adm->addMessage(type => 'success', content => ref($op)." processing finished");	
+   				$op->delete();
    			}
+   			
    		}
-   		else { sleep 10; }
+   		else { sleep 5; }
    	}
    	$log->debug("condition become false : $$running"); 
 }

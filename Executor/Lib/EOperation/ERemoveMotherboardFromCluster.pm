@@ -156,7 +156,7 @@ sub prepare {
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
 
-	my $cluster_id = $self->{_objs}->{motherboard}->getClusterId();
+	my $cluster_id = $params->{cluster_id};
 	#### Get instance of Cluster Entity
 	$log->info("Load cluster instance");
 	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $cluster_id);
@@ -213,8 +213,21 @@ sub execute {
 	
 	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
 	
-	## Update Motherboard internal ip
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
+	# component migration
+	my $components = $self->{_objs}->{components};
+	$log->info('Processing cluster components configuration for this node');
+	foreach my $i (keys %$components) {
+		
+		my $tmp = EFactory::newEEntity(data => $components->{$i});
+		$log->debug("component is ".ref($tmp));
+		$tmp->removeNode(motherboard => $self->{_objs}->{motherboard}, 
+							mount_point => '',
+							cluster => $self->{_objs}->{cluster},
+							econtext => $self->{nas}->{econtext});
+	}
+	
+
+
 	
 	## Remove motherboard etc export from iscsitarget 
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
@@ -248,7 +261,12 @@ sub execute {
 													 econtext 					=> $self->{nas}->{econtext});
 																  
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
-		
+	
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
+	## Update Motherboard internal ip
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
+	
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
 }

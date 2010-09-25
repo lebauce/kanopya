@@ -1,25 +1,21 @@
 [% FOREACH virtualhost = virtualhosts %]
-<VirtualHost *:[% virtualhosts.port %].>
-	ServerName   [% virtualhost.servername %]
-	[% FOREACH serveralias = virtualhost.serveraliases %]
-	ServerAlias  [% serveralias %]
-	[% END %]
-	ServerAdmin  "[% virtualhost.servername %]"
-	DocumentRoot [% virtualhost.documentroot %]
-	CustomLog  [% virtualhost.log %]
-	ErrorLog  [% virtualhost.errorlog %]
+<VirtualHost *:[% ports %]>
+	ServerName   [% virtualhost.apache2_virtualhost_servername %]
+#TODO Implement serverAlias
+	ServerAdmin  "[% virtualhost.apache2_virtualhost_serveradmin %]"
+	DocumentRoot [% virtualhost.apache2_virtualhost_documentroot %]
+	CustomLog  [% virtualhost.apache2_virtualhost_log %]
+	ErrorLog  [% virtualhost.apache2_virtualhost_errorlog %]
 </VirtualHost>
 
-[% IF virtualhost.sslenable %]
-<VirtualHost *:[% virtualhosts.sslport %].>
-        ServerName   [% virtualhost.servername %]
-        [% FOREACH serveralias = virtualhost.serveraliases %]
-        ServerAlias  [% serveralias %]
-        [% END %]
-        ServerAdmin  "[% virtualhost.servername %]"
-        DocumentRoot [% virtualhost.documentroot %]
-        CustomLog  [% virtualhost.log %]
-        ErrorLog  [% virtualhost.errorlog %]
+[% IF virtualhost.apache2_virtualhost_sslenable %]
+<VirtualHost *:[% sslports %]>
+        ServerName   [% virtualhost.apache2_virtualhost_servername %]
+#TODO Implement serverAlias
+        ServerAdmin  "[% virtualhost.apache2_virtualhost_serveradmin %]"
+        DocumentRoot [% virtualhost.apache2_virtualhost_documentroot %]
+        CustomLog  [% virtualhost.apache2_virtualhost_log %]
+        ErrorLog  [% virtualhost.apache2_virtualhost_errorlog %]
 </VirtualHost>
 [% END %]
 

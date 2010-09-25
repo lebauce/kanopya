@@ -1,0 +1,48 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/form.css);</style>
+
+<div id="content">
+<form method="POST" action="/cgi/mcsui.cgi/shareddisks/process_addshareddisk">
+<table class="form">
+	<caption>New shared disk</caption>
+	<TMPL_IF NAME=SOME_ERRORS>
+	<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
+	</TMPL_IF>
+	<tr>
+		<td class="label">name :</td>
+		<td><input type="text" name="name" maxlength="40" size="30"/>
+	</tr>
+	<tr>
+		<td class="label">MAC address :</td>
+		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_MAC_ADDRESS></span></td>
+	</tr>
+	<tr>
+		<td class="label">Serial Number :</td>
+		<td><input type="text" name="serial_number" size="50" /></td>
+	</tr>
+	<tr>
+		<td class="label">Motherboard model :</td>
+		<td><select name="motherboard_model">
+		
+			<option value=""></option>
+		
+		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addmotherboardmodel">no found ?</a></td>
+	</tr>
+	
+	
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="desc" value=""></textarea></td> 
+	</tr>
+</table>
+<div class="formbuttons">
+	<input class="button" type="reset" value="clear" />
+	<a class="button" href="/cgi/mcsui.cgi/shareddisks">cancel</a>
+	<input class="button" type="submit" value="add" />
+</div>
+</form> 
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
+
