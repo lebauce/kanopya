@@ -77,7 +77,7 @@ sub addNode {
 	$tmpfile = $rand->randpattern("cccccccc");
 	$input = "php.ini.tt";
     $data = {};
-    $data->{phpsessions_dir} = $apache2_conf->{apache2_phpsession};
+    $data->{phpsessions_dir} = $apache2_conf->{apache2_phpsession_dir};
        	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
@@ -93,6 +93,8 @@ sub addNode {
     
     $data = {};
     $data->{virtualhosts} = $self->_getEntity()->getVirtualhostConf();
+    $data->{ports} =  $apache2_conf->{apache2_ports};
+    $data->{sslports} = $apache2_conf->{apache2_sslports};
     
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
