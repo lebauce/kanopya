@@ -85,7 +85,7 @@ sub new {
     return $self;
 }
 
-=head2 cancel
+=head2 delete
 	
 	Class : Public
 	
@@ -93,7 +93,7 @@ sub new {
 	
 =cut
 
-sub cancel {
+sub delete {
 	my $self = shift;
 
 	my $params_rs = $self->{_dbix}->operation_parameters;
