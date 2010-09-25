@@ -28,6 +28,6 @@ sub initiator_conf ($$) {
         return 0;
 }
 
-sub configureNode {}
+sub AddNode {}
 
 1;

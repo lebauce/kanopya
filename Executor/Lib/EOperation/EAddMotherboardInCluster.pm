@@ -430,10 +430,10 @@ sub generateFstabConf{
 	my $adm = Administrator->new();
 	my $input = "fstab.tt";
 	
-	$log->debug("Get targetit with the following pattern : " . '%'."$args{root_dev}->{lvname}");
+	$log->debug("Get targetid with the following pattern : " . '%'."$args{root_dev}->{lvname}");
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
 	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
-	$log->debug("Get targetit with the following pattern : " . '%'."$args{etc_dev}->{lvname}");
+	$log->debug("Get targetid with the following pattern : " . '%'."$args{etc_dev}->{lvname}");
 	my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
 	my $etc_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $etc_target_id);
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
