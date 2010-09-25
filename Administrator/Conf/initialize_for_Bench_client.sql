@@ -240,7 +240,7 @@ INSERT INTO `apache2` VALUES (8,'/srv','warn','80','443','/srv/.phpsessions',1);
 INSERT INTO `apache2_virtualhost` VALUES (1,1,'client.hedera-technology.com',1,'antoine.castaing@hederatech.com','/srv/www/','/tmp/apache2.log', '/tmp/apache2_error.log');
 
 -- Insert /srv disk  
-INSERT INTO `lvm2_lv` VALUES (7,1,'src_WebBench',100,0,'ocfs2');
+INSERT INTO `lvm2_lv` VALUES (7,1,'srv_WebBench',100,0,'ocfs2');
 
 -- Insert shared disk into iscsitarget
 INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
