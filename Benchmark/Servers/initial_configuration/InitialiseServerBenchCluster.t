@@ -34,8 +34,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test sn",
 		motherboard_slot_position => 2,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 	
@@ -44,8 +44,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test2 sn",
 		motherboard_slot_position => 3,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 
@@ -54,8 +54,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test3 sn",
 		motherboard_slot_position => 4,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 
@@ -64,8 +64,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test4 sn",
 		motherboard_slot_position => 5,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 	
@@ -74,8 +74,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test5 sn",
 		motherboard_slot_position => 6,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 	
@@ -84,8 +84,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test6 sn",
 		motherboard_slot_position => 7,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 		
@@ -94,8 +94,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test7 sn",
 		motherboard_slot_position => 8,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 		
@@ -104,8 +104,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test8 sn",
 		motherboard_slot_position => 9,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 		
@@ -114,8 +114,8 @@ eval {
 		kernel_id => 5, 
 		motherboard_serial_number => "Test9 sn",
 		motherboard_slot_position => 10,
-		motherboardmodel_id => 1,
-		processormodel_id => 1,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
 		active => 1
 	});
 	
