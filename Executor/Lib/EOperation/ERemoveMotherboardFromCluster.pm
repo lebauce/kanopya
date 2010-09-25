@@ -226,8 +226,7 @@ sub execute {
 							econtext => $self->{nas}->{econtext});
 	}
 	
-	## Update Motherboard internal ip
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
+
 
 	
 	## Remove motherboard etc export from iscsitarget 
@@ -265,6 +264,8 @@ sub execute {
 	
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
+	## Update Motherboard internal ip
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
 	
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
