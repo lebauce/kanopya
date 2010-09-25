@@ -35,19 +35,33 @@ sub addNode {
 		# no masternode defined, this motherboard becomes the masternode
 		#  so it is the first initialization of keepalived
 				
-		$log->debug("adding virtualserver definition in database");
-		my $vsid = $keepalived->addVirtualserver(
+		$log->debug("adding virtualserver  definition in database");
+		my $vsid1 = $keepalived->addVirtualserver(
 			virtualserver_ip => '192.168.100.1',
 			virtualserver_port => 80,
 			virtualserver_lbkind => 'NAT',
 			virtualserver_lbalgo => 'rr');
+			
+		my $vsid2 = $keepalived->addVirtualserver(
+			virtualserver_ip => '192.168.100.1',
+			virtualserver_port => 443,
+			virtualserver_lbkind => 'NAT',
+			virtualserver_lbalgo => 'rr');
 		
 		$log->debug("adding realserver definition in database");
-		 my $rsid = $keepalived->addRealserver(
-			virtualserver_id => $vsid,
+		 my $rsid1 = $keepalived->addRealserver(
+			virtualserver_id => $vsid1,
 			realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'),
 			realserver_port => 80,
 			realserver_checkport => 80,
+			realserver_checktimeout => 15,
+			realserver_weight => 1);
+			
+		my $rsid2 = $keepalived->addRealserver(
+			virtualserver_id => $vsid2,
+			realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'),
+			realserver_port => 443,
+			realserver_checkport => 443,
 			realserver_checktimeout => 15,
 			realserver_weight => 1);
 	
