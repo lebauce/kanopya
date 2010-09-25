@@ -240,14 +240,14 @@ INSERT INTO `apache2` VALUES (8,'/srv','warn','80','443','/srv/.phpsessions',1);
 INSERT INTO `apache2_virtualhost` VALUES (1,1,'client.hedera-technology.com',1,'antoine.castaing@hederatech.com','/srv/www/','/tmp/apache2.log', '/tmp/apache2_error.log');
 
 -- Insert /srv disk  
-INSERT INTO `lvm2_lv` VALUES (7,1,'src_WebBench',100,0,'ocfs2');
+INSERT INTO `lvm2_lv` VALUES (7,1,'srv_WebBench',100,0,'ocfs2');
 
 -- Insert shared disk into iscsitarget
-INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
-INSERT INTO `iscsitarget1_lun` VALUE (2,2,0,'/dev/vg1/srv_WebBench','fileio','rw');
+INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
+INSERT INTO `iscsitarget1_lun` VALUES (1,1,0,'/dev/vg1/srv_WebBench','fileio','rw');
 
 -- Insert Disk into WebBench cluster openiscsi component
-INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', '', 'ocfs2');
+INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', 'defaults', 'ocfs2');
 
 -- keepalived component 
 -- INSERT INTO `component_instance` VALUES (8,2,8,NULL); 

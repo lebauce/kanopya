@@ -237,12 +237,15 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALU
 INSERT INTO `keepalived1` VALUES (1,9,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
 
 
+-- Insert /srv disk  
+INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ocfs2');
 
--- INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
+-- Insert shared disk into iscsitarget
+INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
+INSERT INTO `iscsitarget1_lun` VALUES (1,1,0,'/dev/vg1/srv_WebBench','fileio','rw');
 
--- INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '127.0.0.1', '3260', '/srv', '', 'ext3');
-
--- INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ext3');
+-- Insert Disk into WebBench cluster openiscsi component
+INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', 'defaults', 'ocfs2');
 
 
 
