@@ -369,8 +369,8 @@ sub generateNodeConf {
 	$self->generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
 	$log->info("Generate Mcs Halt script Conf");
 	$self->generateMcsHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
-	$log->info("Generate Hosts Conf");
-	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
+#	$log->info("Generate Hosts Conf");
+#	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
 	$log->info("Generate Network Conf");
 	$self->generateNetConf(mount_point=>$args{mount_point});
 	$log->info("Generate resolv.conf");
