@@ -139,13 +139,15 @@ sub run {
    					eval { $adm->{db}->txn_rollback; };
    					$adm->addMessage(type => 'error', content => ref($op)." abording: $error");
    					$log->error("Error during execution : $error");
+   					$op->delete();
    				}
    			} else {
    				# commit transaction
    				$adm->{db}->txn_commit;
    				$adm->addMessage(type => 'success', content => ref($op)." processing finished");	
+   				$op->delete();
    			}
-   			$op->delete();
+   			
    		}
    		else { sleep 5; }
    	}
