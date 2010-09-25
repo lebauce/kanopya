@@ -100,7 +100,7 @@ eval {
 	});
 		
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '70:71:bc:6c:49:89', 
+		motherboard_mac_address => '70:71:bc:6c:49:84', 
 		kernel_id => 5, 
 		motherboard_serial_number => "Test8 sn",
 		motherboard_slot_position => 9,
