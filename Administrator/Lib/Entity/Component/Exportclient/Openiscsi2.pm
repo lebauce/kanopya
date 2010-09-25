@@ -1,8 +1,15 @@
 package Entity::Component::Exportclient::Openiscsi2;
 
-use strict;
-
 use base "Entity::Component::ExportClient";
+use strict;
+use Template;
+use String::Random;
+use Data::Dumper;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("administrator");
+my $errmsg;
+
 
 
 # contructor
@@ -29,6 +36,7 @@ sub getExport {
 		$export->{fs} = $export_row->get_column('openiscsi2_filesystem');
 		push @tab_exports, $export;
 	}
+	$log->debug("asked openiscsi import : " . Dumper(@tab_exports));
 	return \@tab_exports;
 }
 
