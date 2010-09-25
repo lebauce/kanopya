@@ -1,6 +1,6 @@
 package Entity::Component::Exportclient::Openiscsi2;
 
-use base "Entity::Component::ExportClient";
+use base "Entity::Component::Exportclient";
 use strict;
 use Template;
 use String::Random;
