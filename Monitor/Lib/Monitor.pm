@@ -446,6 +446,7 @@ sub updateRRD {
 		# TODO check the error
 		else {
 			print "=> Info: update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n";
+			print "	(Reason: $error)\n";
 			my @dsname_list = keys %{ $args{data} };
 			$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type} );
 			$rrd->update( time => $time, values =>  $args{data} );

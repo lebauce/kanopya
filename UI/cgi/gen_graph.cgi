@@ -23,7 +23,7 @@ my @graphs = ();
 for my $subdir ( ("monitor/graph", "orchestrator/graph") ) {
 	my $graph_dir = "$dir/$subdir";
 
-	opendir DIR, $graph_dir or die "$graph_dir doesn't exist !";
+	opendir DIR, $graph_dir or next;
 	my @files = readdir DIR;
 	for my $file (@files) {
 		if ( $file =~ "^graph_" ) {

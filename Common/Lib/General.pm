@@ -119,7 +119,7 @@ sub getAsArrayRef {
 	if ( ref $elems eq 'ARRAY' ) {
 		return $elems;
 	}
-	return [$elems];
+	return $elems ? [$elems] : [];
 }
 
 =head2 getAsHashRef

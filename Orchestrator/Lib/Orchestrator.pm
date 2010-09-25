@@ -158,7 +158,8 @@ sub manage {
 			$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
 			
 			# Updata graph for this cluster
-			$self->graph( cluster => $cluster );
+			$self->graph( cluster => $cluster, op => 'add' );
+			$self->graph( cluster => $cluster, op => 'remove' );
 		};
 		if ($@) {
 			my $error = $@;
@@ -190,6 +191,7 @@ sub checkRemoveConditions {
 	
 	my $required_failed = 0;
 	my $one_required_ok = 0;
+	my %values = ();
 	for my $cond ( @{ $self->{_conditions} } ) {
 		print "	# CONDITIONS on '$cond->{set}' (laps: $cond->{time_laps})\n";
 		my $cluster_data_aggreg;
@@ -221,6 +223,8 @@ sub checkRemoveConditions {
 			###################################################################
 			my $prevision = $value + ( $value / ( $upnode_count - 1 ));
 			
+			$values{ $required->{var} . "_" . $cond->{time_laps} } = $prevision;
+			
 			print "				=> REQUIRED : ($required->{var} current = $value prevision = $prevision ", defined $required->{max}?" max : $required->{max}":" min : $required->{min}" ," )\n";
 			
 			if ( 	( defined $required->{max} && $prevision < $required->{max} )
@@ -235,6 +239,12 @@ sub checkRemoveConditions {
 		} # end required
 	} # end conditions
 	
+	# Store values
+	if ( scalar keys %values ) {
+		$self->updateRRD( cluster => $cluster, op => 'remove', time => time(), values => \%values  )
+	}
+	
+	# Required remove node if all conditions are ok
 	if ( $required_failed == 0 && $one_required_ok != 0 ) {
 		print "========> REQUIRED REMOVE NODE : $required_failed | $one_required_ok\n\n";
 		$self->requireRemoveNode( cluster => $cluster );
@@ -292,18 +302,10 @@ sub detectTraps {
 	
 	# Store values
 	if ( scalar keys %values ) {
-		my $rrd = $self->getRRD( cluster => $cluster );
-		eval {
-			$rrd->update( time => time(), values => \%values );
-		};
-		if ($@) {
-			my $error = $@;
-			print "Info: conf changed ($error)\n";
-			my $rrd = $self->getRRD( cluster => $cluster, create => 1 );
-			$rrd->update( time => time(), values => \%values );
-		}
+		$self->updateRRD( cluster => $cluster, op => 'add', time => time(), values => \%values  )
 	}
 
+	# Require add if trapped
 	if ( $cluster_trapped ) {
 		$self->requireAddNode( cluster => $cluster );
 	}
@@ -482,7 +484,7 @@ sub requireRemoveNode {
     $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "req");
     
     eval {
-	   	if ( $self->_canAddNode( cluster => $cluster ) ) {
+	   	if ( $self->_canRemoveNode( cluster => $cluster ) ) {
 	    	$self->removeNode( cluster_name => $cluster );
 	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "ok");
 	   	}
@@ -560,13 +562,14 @@ sub removeNode {
     ############################################
 	# Enqueue the remove motherboard operation
 	############################################
-	$adm->newOp(type => 'RemoveMotherboardFromCluster',
-				priority => $priority,
-				params => {
-					cluster_id => $cluster->getAttr(name => "cluster_id"),
-					motherboard_id => $mb_to_remove->getAttr(name => 'motherboard_id')
-				}
-	);
+#	$adm->newOp(type => 'RemoveMotherboardFromCluster',
+#				priority => $priority,
+#				params => {
+#					cluster_id => $cluster->getAttr(name => "cluster_id"),
+#					motherboard_id => $mb_to_remove->getAttr(name => 'motherboard_id')
+#				}
+#	);
+	$adm->opRemove( cluster => $cluster, motherboard => $mb_to_remove, priority => $priority );
 }
 
 =head2 _storeTime
@@ -655,19 +658,35 @@ sub _timeFile  {
     return $self->{_rrd_base_dir} ."/" . "orchestrator" . "_" . "$args{cluster}" . ".time";
 }
 
+sub updateRRD {
+	my $self = shift;
+    my %args = @_;
+    
+    my $rrd = $self->getRRD( cluster => $args{cluster}, op => $args{op} );
+	eval {
+		$rrd->update( time => $args{time}, values => $args{values} );
+	};
+	if ($@) {
+		my $error = $@;
+		print "Info: conf changed ($error)\n";
+		my $rrd = $self->getRRD( cluster => $args{cluster}, op => $args{op}, force_create => 1 );
+		$rrd->update( time => $args{time}, values => $args{values} );
+	}
+}
+
 sub getRRD {
 	my $self = shift;
 	my %args = @_;
 	
 	my $cluster = $args{cluster};
-	my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster.rrd";
+	my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$args{op}" . ".rrd";
 	
 	my $rrd;
-	if ( -e $rrd_file && not defined $args{create} ) {
+	if ( -e $rrd_file && not defined $args{force_create} ) {
 		$rrd = RRDTool::OO->new( file =>  $rrd_file );
 	} else {
 		print "info: create orchestrator rrd for cluster '$cluster'\n";
-		$rrd = $self->createRRD( file => $rrd_file );
+		$rrd = $self->createRRD( file => $rrd_file, op => $args{op} );
 	}
 	return $rrd;
 }
@@ -676,13 +695,24 @@ sub createRRD {
 	my $self = shift;
 	my %args = @_;
 
-	# Build list of var to store (all traps var)
+	# Build list of var to store (all traps or conditions var)
+	my ($rules, $tag) = $args{op} eq "add" ? ($self->{_traps}, 'threshold') : ($self->{_conditions}, 'required');
+	
 	my @var_list = ();
-	for my $trap_def ( @{ $self->{_traps} } ) {
-		foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
-			push @var_list, $threshold->{var} . "_" . $trap_def->{time_laps};
+	for my $rule ( @{ $rules } ) {
+		foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
+			push @var_list, $cond->{var} . "_" . $rule->{time_laps};
 		}
 	}
+	
+#		for my $trap_def ( @{ $self->{_traps} } ) {
+#			foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
+#				push @var_list, $threshold->{var} . "_" . $trap_def->{time_laps};
+#			}
+#		}
+	
+	
+	
 	
 
 	my $rrd = RRDTool::OO->new( file =>  $args{file} );
@@ -718,16 +748,17 @@ sub graph {
 #    }); 
     
     my $cluster = $args{cluster};
+    my $op = $args{op};
     
     my $graph_dir = $self->{_graph_dir};
-	my $graph_filename = "graph_orchestrator_$cluster.png";
+	my $graph_filename = "graph_orchestrator_$cluster" . "_$op" . ".png";
 
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
 
 	# get rrd     
-	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/orchestrator_$cluster.rrd" );
+	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$op" . ".rrd" );
 
 	my @graph_params = (
 							'image' => "$graph_dir/$graph_filename",
@@ -750,7 +781,7 @@ sub graph {
 	#for my $add_time ( @add_times ) {
 	while ( my ($add_time, $add_info) = each %add_times ) {
 		#push @graph_params, ( vrule => { time => $add_time, color => "#FF0000" } );
-		my $color = (defined $add_info && $add_info eq "ok") ? "#FF0000" : "#FFAAAA";
+		my $color = (defined $add_info && $add_info eq "ok") ? "#FF0000" : "#FFBBBB";
 		push @graph_params, ( vrule => { time => $add_time, color => $color } );
 	}
 
@@ -759,24 +790,28 @@ sub graph {
 	#for my $remove_time ( @remove_times ) {
 	while ( my ($remove_time, $remove_info) = each %remove_times ) {
 		#push @graph_params, ( vrule => { time => $remove_time, color => "#00FF00" } );
-		my $color = (defined $remove_info && $remove_info eq "ok") ? "#00FF00" : "#66FF66";
+		my $color = (defined $remove_info && $remove_info eq "ok") ? "#00FF00" : "#BBFFBB";
 		push @graph_params, ( vrule => { time => $remove_time, color => $color } );
 	}
-		
-	for my $trap_def ( @{ $self->{_traps} } ) {
-		foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
+	
+	my ($rules, $tag) = $args{op} eq "add" ? ($self->{_traps}, 'threshold') : ($self->{_conditions}, 'required');
+	
+	my @var_list = ();
+	for my $rule ( @{ $rules } ) {
+		foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
+			
 			push @graph_params, (
 									draw   => {
 										type => 'line',
-										dsname => $threshold->{var} . "_" . $trap_def->{time_laps},
-										color => $threshold->{color},
-										legend => sprintf( "%-25s", $threshold->{var} . "(" . $trap_def->{time_laps} . ")" ),
+										dsname => $cond->{var} . "_" . $rule->{time_laps},
+										color => $cond->{color},
+										legend => sprintf( "%-25s", $cond->{var} . " (" . ($rule->{percent} ? "%" : "mean") . " on " . $rule->{time_laps} . "s)" ),
 		  							},
 		  
 		  							hrule => {
-		  							 	value => $threshold->{min} || $threshold->{max},
-                 						color => '#' . $threshold->{color},
-						                #legend => $threshold->{var}
+		  							 	value => $cond->{min} || $cond->{max},
+                 						color => '#' . $cond->{color},
+						                #legend => $cond->{var}
 						               },
 						              
 								);

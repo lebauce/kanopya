@@ -25,7 +25,12 @@ sub new {
 	my $self = $class->SUPER::new( %args );
 	
 	#$self->{_graph_color} = { back => "#69B033" };
-	$self->{_graph_color} = { };
+	$self->{_graph_color} = { 	back => "#111111",
+								font => "#DDDDDD",
+								canvas => "#222222",	# graph background
+								frame => "#666666",		# line around color spot
+								#mgrid => "#AAAAAA",
+							};
 	
     return $self;
 }
@@ -136,7 +141,8 @@ sub getData {
 		}
 	}
 
-	#print Dumper \%res_data;
+	print "\n###############   ", "getData res data   # $args{rrd_name} #", "   ##########\n";
+	print Dumper \%res_data;
 
 	######################################################
 	# Build resulting hash : ( ds_name => f(v1,v2,...) ) #
@@ -161,7 +167,8 @@ sub getData {
 	}
 
 	# debug
-	#print Dumper \%res;
+	print "\n###############   ", "getData res", "   ##########\n";
+	print Dumper \%res;
 	
 	Monitor::logRet( %res );
 	
@@ -204,6 +211,7 @@ sub getClusterData {
 	my %hosts_data = ();
 	my $hosts = $self->getClusterHostsInfo( cluster => $args{cluster} );
 	
+	print "\n###############   Get Cluster Data   #############\n";
 	my $up;
 	#foreach my $host (@$hosts) { 
 	while ( my ($hostname, $host_info) = each %$hosts ) {
@@ -217,6 +225,8 @@ sub getClusterData {
 		}
 	}
 	
+	print Dumper \%hosts_data;
+	
 	die "No node 'up' in cluster '$args{cluster}'" if ( not defined $up );
 	
 	if ( defined $aggregate ) {
@@ -226,6 +236,9 @@ sub getClusterData {
 	} else {
 		$res = \%hosts_data;
 	}
+	
+	print "\n###############   ", "res", "   ##########\n";
+	print Dumper $res;
 	
 	return $res;
 }
@@ -389,12 +402,31 @@ sub graphPercent {
 	
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
-	my $graph_filename = "graph_percent_$rrd_name.png";
+	#my $graph_filename = "graph_percent_$rrd_name.png";	
+	my $graph_name = "graph_$host" . "_$set_name" . "_percent";
+	my $graph_filename = "$graph_name.png";
+
 
 	my $graph_type = $args{graph_type} || "line";
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
+
+	# Retrieve max definition
+	my $set_def = $self->getSetDef(set_label => $set_name);
+	my @max_def;
+	if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
+	if ( 0 == scalar @max_def ) {
+		print "Warning: No max definition to compute percent for '$set_name'.\n";
+	}
+	
+	my @required_ds_def = @{ $args{ds_def_list} };
+	my @needed_ds = map { $_->{label} } @required_ds_def;
+	foreach my $ds_name (@max_def) {
+		if ( 0 == grep { $_ eq $ds_name } @needed_ds ) {
+			push @needed_ds, $ds_name;
+		}
+	}
 
 	# get rrd     
 	my $rrd = $self->getRRD( file => "$rrd_name.rrd" );
@@ -408,28 +440,34 @@ sub graphPercent {
 						);
 
 
-	my $total_op = "";
-	my $nb_ds = 0;
-	foreach my $ds (@{ $args{ds_def_list} }) {
+	#my $total_op = "";
+	#my $nb_ds = 0;
+	foreach my $ds_name ( @needed_ds ) {
 		push @graph_params, (
 								draw   => {
 									type => "hidden",
-									dsname => $ds->{label},
-									name => $ds->{label},
-									color => $ds->{color} || "FFFFFF",
-									legend => $ds->{label},
+									dsname => $ds_name,
+									name => $ds_name,
+									#color => $ds->{color} || "FFFFFF",
+									#legend => $ds->{label},
 	  							}	
 							);
 
-		$total_op .= "$ds->{label},";
-		$nb_ds++;
+		#$total_op .= "$ds->{label},";
+		#$nb_ds++;
 	}
 
-	chop $total_op;
-	$total_op .= ",+"  while --$nb_ds;
+	#chop $total_op;
+	#$total_op .= ",+"  while --$nb_ds;
 	
 	# TEMP
-	$total_op = "memTotal";
+	#$total_op = "memTotal";
+	
+	my $total_op = join( ",", @max_def);
+	for (my $i=1; $i < @max_def; ++$i) { $total_op .= ",+" };
+	
+	print "#### TOTAL op : $total_op\n";
+	
 	
 	# Add total graph
 	push @graph_params, (
@@ -579,7 +617,9 @@ sub graphCluster {
 			}
 
 			eval {
-				my $graph_filename = $self->graphNode( 	host => $cluster,
+					my $graph_sub = defined $args{percent} && $args{percent} ne "no" ? \&graphPercent : \&graphNode;
+					my $graph_filename = $graph_sub->( 	$self,
+													host => $cluster,
 													time_laps => $time_laps,
 													set_label => $set_def->{label},
 													ds_def_list => \@required_ds_def_list,
@@ -639,7 +679,9 @@ sub graphNodes {
 				}
 	
 				eval {
-					my $graph_filename = $self->graphNode( 	host => $host,
+					my $graph_sub = defined $args{percent} && $args{percent} ne "no" ? \&graphPercent : \&graphNode;
+					my $graph_filename = $graph_sub->( 	$self,
+														host => $host,
 														time_laps => $time_laps,
 														set_label => $set_def->{label},
 														ds_def_list => \@required_ds_def_list,
@@ -679,32 +721,38 @@ sub graphFromConf {
 		++$i;
 		print Dumper $graph_def;
 		eval {
-			if ( $graph_def->{target} eq 'CLUSTERS' ) {
-				foreach my $cluster (@clusters_name) {
-					my ($dir, $file);
-					if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
-						($dir, $file) = $self->graphNodeCount( 	time_laps => $graph_def->{time_laps},
-																cluster => $cluster );	
-					} else {
-						my @required_indicators = split ",", $graph_def->{ds_label};
-						my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
-						($dir, $file) = $self->graphCluster( time_laps => $graph_def->{time_laps},
-																cluster => $cluster,
-																required_set => $graph_def->{set_label},
-																required_indicators => $required,
-																graph_type => $graph_def->{graph_type} || 'line');
+			my @targets = split ",", $graph_def->{targets};
+			foreach my $target (@targets) {
+				if ( $target eq 'CLUSTERS' ) {
+					#TODO sub graphClusters
+					foreach my $cluster (@clusters_name) {
+						my ($dir, $file);
+						if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
+							($dir, $file) = $self->graphNodeCount( 	time_laps => $graph_def->{time_laps},
+																	cluster => $cluster );	
+						} else {
+							my @required_indicators = split ",", $graph_def->{ds_label};
+							my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
+							($dir, $file) = $self->graphCluster( time_laps => $graph_def->{time_laps},
+																	cluster => $cluster,
+																	required_set => $graph_def->{set_label},
+																	required_indicators => $required,
+																	percent => $graph_def->{percent},
+																	graph_type => $graph_def->{graph_type} || 'line');
+						}
+						$graph_info{$cluster} = [ $dir, $file ];
+						
 					}
-					$graph_info{$cluster} = [ $dir, $file ];
-					
+				} elsif ( $target eq 'NODES' ) {
+					my @required_indicators = split ",", $graph_def->{ds_label};
+					my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
+					my $res = $self->graphNodes( time_laps => $graph_def->{time_laps},
+												required_set => $graph_def->{set_label},
+												required_indicators => $required,
+												percent => $graph_def->{percent} );
+					%graph_info = %$res;
 				}
-			} elsif ( $graph_def->{target} eq 'NODES' ) {
-				my @required_indicators = split ",", $graph_def->{ds_label};
-				my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
-				my $res = $self->graphNodes( time_laps => $graph_def->{time_laps},
-											required_set => $graph_def->{set_label},
-											required_indicators => $required );
-				%graph_info = %$res;
-			}
+			} # end foreach target
 		};
 		if ($@) {
 			my $error = $@;
