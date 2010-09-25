@@ -135,6 +135,7 @@ iframe {
 .imgExecute { background-image: url("/images/icons/execute.png"); }
 .imgMonitor { background-image: url("/images/icons/monitor.png"); }
 .imgCancel { background-image: url("/images/icons/cancel.png"); }
+.imgHarddisk { background-image: url("/images/icons/harddisk.png"); }
 
 #submenu li ul { display: none; }
 
