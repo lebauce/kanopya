@@ -104,6 +104,13 @@ sub addNode {
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/apache2/sites-available/default');	
 	unlink "/tmp/$tmpfile";
+	
+	$self->addInitScripts(	etc_mountpoint => $args{mount_point}, 
+								econtext => $args{econtext}, 
+								scriptname => 'apache2', 
+								startvalue => '91', 
+								stopvalue => '09');
+	
 }
 
 sub removeNode{

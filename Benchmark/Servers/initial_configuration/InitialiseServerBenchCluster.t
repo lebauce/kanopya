@@ -105,7 +105,9 @@ eval {
 		motherboard_serial_number => "Test8 sn",
 		motherboard_slot_position => 9,
 		motherboardmodel_id => 1,
-		processormodel_id => 1});
+		processormodel_id => 1,
+		active => 1
+	});
 		
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '70:71:bc:6c:4a:a0', 
