@@ -3,7 +3,7 @@ package EEntity::EComponent::EWebserver::EApache2;
 use strict;
 use Template;
 use String::Random;
-
+use Data::Dumper;
 use base "EEntity::EComponent::EWebserver";
 use Log::Log4perl "get_logger";
 
@@ -41,14 +41,15 @@ sub addNode {
 	};
 	
 	my $apache2_conf = $self->_getEntity()->getGeneralConf();	
+	$log->debug("Apache2 conf return is : " . Dumper($apache2_conf));
 	my $rand = new String::Random;
 	my $template = Template->new($config);
 	
 	# generation of /etc/apache2/apache2.conf 
 	my $tmpfile = $rand->randpattern("cccccccc");
 	my $input = "apache2.conf.tt";
-    my $data = {};
-    $data->{serverroot} = $apache2_conf->{'apache2_serverroot'};
+	my $data = {};
+	$data->{serverroot} = $apache2_conf->{'apache2_serverroot'};
    	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
@@ -77,7 +78,7 @@ sub addNode {
 	$tmpfile = $rand->randpattern("cccccccc");
 	$input = "php.ini.tt";
     $data = {};
-    $data->{phpsessions_dir} = $apache2_conf->{apache2_phpsession};
+    $data->{phpsessions_dir} = $apache2_conf->{apache2_phpsession_dir};
        	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
@@ -93,6 +94,8 @@ sub addNode {
     
     $data = {};
     $data->{virtualhosts} = $self->_getEntity()->getVirtualhostConf();
+    $data->{ports} =  $apache2_conf->{apache2_ports};
+    $data->{sslports} = $apache2_conf->{apache2_sslports};
     
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";

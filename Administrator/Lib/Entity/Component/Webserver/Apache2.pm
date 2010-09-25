@@ -54,6 +54,7 @@ sub getGeneralConf{
 		throw Mcs::Exception(error => $errmsg);
 	}
 	my %apache2_conf = $self->{_dbix}->apache2s->first->get_columns();
+	$log->debug("Apache2 conf return is : " . Dumper(%apache2_conf));
 	return \%apache2_conf;
 }
 1;
