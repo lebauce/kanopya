@@ -252,6 +252,13 @@ sub execute {
 	## ADD Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_ip = $adm->getFreeInternalIP();
+	# Set Hostname
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
+										   value => $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip));
+	# Set initiatorName
+	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
+										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
+	
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
 	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
 	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");

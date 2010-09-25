@@ -152,13 +152,13 @@ sub execute{
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
 
-	# Set Hostname
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
-										   value => $self->{_objs}->{motherboard}->generateHostname());
-	# Set initiatorName
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
-										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
-	
+#	# Set Hostname
+#	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
+#										   value => $self->{_objs}->{motherboard}->generateHostname());
+#	# Set initiatorName
+#	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
+#										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
+#	
 	# internal ip is set during node addition in a cluster 
 	#$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip",
 	#									   value => $adm->getFreeInternalIP());
