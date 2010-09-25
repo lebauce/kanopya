@@ -1,4 +1,4 @@
-package Entity::Component::ExportClient;
+package Entity::Component::Exportclient;
 
 use strict;
 

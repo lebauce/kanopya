@@ -598,9 +598,10 @@ sub generateBootConf {
 	foreach my $i (keys %$components) {
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
-				my $iscsi_export = $self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-													 						version => "0",
-																			administrator => $adm);
+				my $iscsi_export = $components->{$i};
+				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
+				#									 						version => "0",
+				#															administrator => $adm);
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
    			}
 		}
