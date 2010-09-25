@@ -20,10 +20,10 @@ my $devices = $systemimage->getDevices();
 my $root_device = "/dev/".$devices->{root}->{vgname}."/".$devices->{root}->{lvname};
 my $etc_device = "/dev/".$devices->{etc}->{vgname}."/".$devices->{etc}->{lvname};
 
-my $row = $admin->{db}->resultset('Iscsitarget1Target')->search(
-	{iscsitarget1_target_name => { like => "%root_$sysimg_name" }})->single;
+#my $row = $admin->{db}->resultset('Iscsitarget1Target')->search(
+#	{iscsitarget1_target_name => { like => "%root_$sysimg_name" }})->single;
 
-my $root_target = $row->get_column('iscsitarget1_target_name');
+#my $root_target = $row->get_column('iscsitarget1_target_name');
 
 if(! -e $root_device) {
     print "Device for rootdisk $root_device no found.\n";
@@ -40,11 +40,11 @@ print "   :: System Image <$sysimg_name> Customization ::\n";
 print "#######################################################\n";
 
 # first we check if no iscsi connection exists
-my $ret = `cat /proc/net/iet/session`;
-$ret =~ m/tid:([0-9]+)\sname:$root_target\n(\tsid:[0-9]+\sinitiator:.*\n\t\tcid:.*\n)*/;
-if( defined $2 ) {
-    print "Iscsi session exists for $root_target\n";
-}
+#my $ret = `cat /proc/net/iet/session`;
+#$ret =~ m/tid:([0-9]+)\sname:$root_target\n(\tsid:[0-9]+\sinitiator:.*\n\t\tcid:.*\n)*/;
+#if( defined $2 ) {
+#    print "Iscsi session exists for $root_target\n";
+#}
 
 #$ret =~ m/tid:([0-9]+)\sname:$datadisk->{target}\n(\tsid:[0-9]+\sinitiator:.*\n\t\tcid:.*\n)*/;
 #if( defined $2 ) {
