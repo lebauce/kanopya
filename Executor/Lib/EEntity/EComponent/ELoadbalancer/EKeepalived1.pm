@@ -118,7 +118,7 @@ sub removeNode {
 		my $virtualservers = $keepalived->getVirtualservers();
 		
 		foreach my $vs (@$virtualservers) {
-			my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->get_column('virtualserver_id'), realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'));
+			my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id}, realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'));
 			
 			$keepalived->removeRealserver(
 				virtualserver_id => $vs->{virtualserver_id},
