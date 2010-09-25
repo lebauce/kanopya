@@ -22,6 +22,7 @@ sub new {
     return $self;
 }
 
+# called when a node is added to a cluster
 sub addNode {
 	my $self = shift;
 	my %args = @_;
@@ -85,7 +86,35 @@ sub addNode {
 	}
 }
 
-sub removeNode {}
+# called when a node is removed from a cluster 
+sub removeNode {
+	my $self = shift;
+	my %args = @_;
+	
+	my $keepalived = $self->_getEntity();
+	my $masternodeip = $args{cluster}->getMasterNodeIp();
+	if(not defined $masternodeip) {
+		# masternodeip is undef, this motherboard was the masternode so we do nothing
+	} else {
+		use EFactory;
+		my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+		
+		# remove this motherboard as realserver for each virtualserver of this cluster
+		my $virtualservers = $keepalived->getVirtualservers();
+		
+		foreach my $vs (@$virtualservers) {
+			my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->get_column('virtualserver_id'), realserver_ip => $args{motherboard}->getAttr(name => 'motherboard_internal_ip'));
+			
+			$keepalived->removeRealserver(
+				virtualserver_id => $vs->{virtualserver_id},
+				realserver_id => $realserver_id);
+		}
+		
+		$self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
+		$self->reload(econtext => $masternode_econtext);	
+	}
+	
+}
 
 
 # Reload configuration of keepalived process

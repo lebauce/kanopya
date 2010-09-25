@@ -29,8 +29,7 @@ sub new {
 
 sub getVirtualservers {
 	my $self = shift;
-	my %args = @_;
-	
+		
 	my $virtualserver_rs = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->search();
 	my $result = [];
 	while(my $vs = $virtualserver_rs->next) {
@@ -45,9 +44,33 @@ sub getVirtualservers {
 	return $result;
 }
 
+=head2 getRealserverId  
+
+	Desc : This method return realserver id given a virtualserver_id and a realserver_ip
+	args: virtualserver_id, realserver_ip
+		
+	return : realserver_id
+
+=cut
+
+sub getRealserverId {
+	my $self = shift;
+    my %args = @_;
+
+	if ((! exists $args{realserver_ip} or ! defined $args{realserver_ip}) ||
+		(! exists $args{virtualserver_id} or ! defined $args{virtualserver_id})){
+		$errmsg = "Component::Loadbalancer::Keepalived1->addVirtualserver needs a virtualserver_id and a realserver_ip named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $virtualserver = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id});
+	my $realserver = $virtualserver->keepalived1_realservers->search({ realserver_ip => $args{realserver_ip} })->single;
+	return $realserver->get_column('realserver_id');
+}
+
 =head2 addVirtualserver
 	
-	Desc : This function a new virtual server entry into keepalived configuration.
+	Desc : This method add a new virtual server entry into keepalived configuration.
 	args: virtualserver_ip, virtualserver_port, virtualserver_lbkind, virtualserver_lbalgo
 		
 	return : virtualserver_id added
@@ -72,14 +95,13 @@ sub addVirtualserver {
 	return $row->get_column("virtualserver_id");
 }
 
-
-
 =head2 addRealserver
 	
-	Desc : This function a new real server to a virtualserver.
-	args: 
-		
-	return : 
+	Desc : This function add a new real server associated a virtualserver.
+	args: virtualserver_id, realserver_ip, realserver_port,realserver_checkport , 
+		realserver_checktimeout, realserver_weight 
+	
+	return :  realserver_id
 
 =cut
 
@@ -109,24 +131,43 @@ sub addRealserver {
 =head2 removeVirtualserver
 	
 	Desc : This function a delete virtual server and all real servers associated.
-	args: 
+	args: virtualserver_id
 		
-	return : 
+	return : ?
 
 =cut
 
-sub removeVirtualserver {}
+sub removeVirtualserver {
+	my $self = shift;
+	my %args  = @_;	
+	if (! exists $args{virtualserver_id} or ! defined $args{virtualserver_id}) {
+		$errmsg = "Component::Loadbalancer::Keepalived1->removeVirtualserver needs a virtualserver_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
+}
 
-=head2 AddRealserver
+=head2 removeRealserver
 	
-	Desc : This function a new real server to a virtualserver.
-	args: 
+	Desc : This function remove a real server from a virtualserver.
+	args: virtualserver_id, realserver_id
 		
 	return : 
 
 =cut
 
-sub removeRealserver {}
+sub removeRealserver {
+	my $self = shift;
+	my %args  = @_;
+	if ((! exists $args{virtualserver_id} or ! defined $args{virtualserver_id})||
+		(! exists $args{realserver_id} or ! defined $args{realserver_id})) {
+		$errmsg = "Component::Loadbalancer::Keepalived1->removeRealserver needs a virtualserver_id and a realserver_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
+}
 
 
 
