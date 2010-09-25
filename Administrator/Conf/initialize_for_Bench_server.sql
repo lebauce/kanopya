@@ -234,7 +234,8 @@ INSERT INTO `apache2_virtualhost` VALUES (1,1,'client.hedera-technology.com',1,'
 -- keepalived component 
 INSERT INTO `component_instance` VALUES (9,2,8,NULL); 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,9); SET @eid := @eid +1;
-INSERT INTO `keepalived1` VALUES (1,8,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
+INSERT INTO `keepalived1` VALUES (1,9,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
+
 
 
 -- INSERT INTO `iscsitarget1_target` VALUES (2,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
