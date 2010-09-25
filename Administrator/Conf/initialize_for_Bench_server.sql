@@ -232,8 +232,8 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALU
 INSERT INTO `apache2` VALUES (8,'/srv','warn','80','443','/srv/.phpsessions',1);
 INSERT INTO `apache2_virtualhost` VALUES (1,1,'client.hedera-technology.com',1,'antoine.castaing@hederatech.com','/srv/www/','/tmp/apache2.log', '/tmp/apache2_error.log');
 -- keepalived component 
-INSERT INTO `component_instance` VALUES (8,2,8,NULL); 
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
+INSERT INTO `component_instance` VALUES (9,2,8,NULL); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,9); SET @eid := @eid +1;
 INSERT INTO `keepalived1` VALUES (1,8,'both','eth0','admin@hedera-technology.com','keepalived@some-cluster.com','10.0.0.1',30,'MAINLVS');
 
 
