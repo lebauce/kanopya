@@ -15,7 +15,6 @@ function refreshgraph() {
 	for(i=0;i<graphs.length;i++) {
 		g = graphs[i];
 		g.src = g.src.split('?')[0] + '?' + new Date().getMilliseconds() ; 
-		alert(g.src);
 	}
 	setTimeout('refreshgraph()', 5000);
 }
