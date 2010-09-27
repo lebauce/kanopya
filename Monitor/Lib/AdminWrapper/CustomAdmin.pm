@@ -35,7 +35,15 @@ sub getEntities {
 				return ($host);
 			}
 			return ();
+		} elsif ( exists $req->{motherboard_internal_ip} ) {
+			
+			return $req->{motherboard_internal_ip};
 		}
+		return ();
+	}
+	if ( $args{type} eq "Cluster" ) {
+		my $clust_name = $args{hash}{cluster_name};
+		return defined $clust_name ? ($clust_name) : ();
 	}
 	
 	#print "!!!!!!!!!!!!!!  Not Implemented: getEntities for : ", Dumper \%args; 
@@ -62,15 +70,36 @@ sub opAdd {
 	my $host = shift @hosts;
 	close POOL;
 	open POOL, ">/tmp/virtual_pool.adm";
-	print POOL "@hosts";
+	print POOL @hosts;
 	close POOL;
 	
 	open CLUST, ">>/tmp/virtual_cluster_$args{cluster}.adm";
 	chomp($host);
-	print CLUST "$host starting\n";
+	print CLUST "$host up\n";
 	close CLUST;
 	
 	print "ADD =============> asked: $args{motherboard} | added: $host\n";
+}
+
+sub opRemove {
+	my $self = shift;
+	my %args = @_;
+	
+	open CLUST, "</tmp/virtual_cluster_$args{cluster}.adm";
+	my @hosts = <CLUST>;
+	my $host = shift @hosts;
+	close CLUST;
+	open CLUST, ">/tmp/virtual_cluster_$args{cluster}.adm";
+	print CLUST @hosts;
+	close CLUST;
+	
+	open POOL, ">>/tmp/virtual_pool.adm";
+	chomp($host);
+	my ($ip) = split " ", $host; 
+	print POOL "$ip\n";
+	close POOL;
+	
+	print "REMOVE =============> asked: $args{motherboard} | removed: $host ($ip)\n";
 }
 
 sub retrieveHostsByCluster {
@@ -89,15 +118,15 @@ sub retrieveHostsByCluster {
 	opendir DIR, $dir or die "$dir doesn't exist !";
 	my @files = readdir DIR;
 	for my $file (@files) {
-		if ( $file =~ /^virtual_cluster_([a-zA-Z_]+).adm/ ) {
+		if ( $file =~ /^virtual_cluster_([a-zA-Z0-9_]+).adm/ ) {
 			my $clust_name = $1;
 			my %hosts = ();
 			open FILE, "<$dir/$file" || die "can't open file $file!";
 			while ( <FILE> ) {
 				my $line = $_;
 				chomp $line;
-				my ($node_name, $node_ip, $node_state) = split ' ', $line;
-				$hosts{$node_name} = { ip => $node_ip, state => $node_state };
+				my ($node_ip, $node_state) = split ' ', $line;
+				$hosts{"node_$node_ip"} = { ip => $node_ip, state => $node_state };
 			}
 			close FILE;
 			$hosts_by_cluster{ $clust_name } = \%hosts;
@@ -132,7 +161,7 @@ sub getClustersName {
 	opendir DIR, $dir or die "$dir doesn't exist !";
 	my @files = readdir DIR;
 	for my $file (@files) {
-		if ( $file =~ /^virtual_cluster_([a-zA-Z_]+).adm/ ) {
+		if ( $file =~ /^virtual_cluster_([a-zA-Z0-9_]+).adm/ ) {
 			push @clustersName,  $1;
 		}
 	}

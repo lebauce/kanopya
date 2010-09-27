@@ -40,6 +40,21 @@ sub opAdd {
 	);
 }
 
+sub opRemove {
+	my $self = shift;
+	my %args = @_;
+	
+	my $adm = $self->{_admin};
+	
+	$adm->newOp(type => 'RemoveMotherboardFromCluster',
+				priority => $args{priority},
+				params => {
+					cluster_id => ($args{cluster})->getAttr(name => "cluster_id"),
+					motherboard_id => ($args{motherboard})->getAttr(name => 'motherboard_id')
+				}
+	);
+}
+	
 sub retrieveHostsByCluster {
 	my $self = shift;
 

@@ -149,17 +149,59 @@ INSERT INTO `component_provided` VALUES (4,1),(7,1);
 -- default systemimage based on default distribution
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,1); SET @eid := @eid +1;
+-- Webserver systemimage based on default distribution
+INSERT INTO `systemimage` VALUES (2,'WebSystemImage','System Image optimize for Web server', 1, 5, 6, 0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,2); SET @eid := @eid +1;
+-- DBserver systemimage based on default distribution
+INSERT INTO `systemimage` VALUES (3,'DBSystemImage','System Image optimize for DB server', 1, 7, 8, 0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,3); SET @eid := @eid +1;
+-- Testserver systemimage based on default distribution
+INSERT INTO `systemimage` VALUES (4,'TestSystemImage','Test using Apache and Mysql on same system image.r', 1, 9, 10, 0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,4); SET @eid := @eid +1;
+-- MailServer systemimage based on default distribution
+INSERT INTO `systemimage` VALUES (5,'MailSystemImage','System image including postfix to send and receive mails', 1, 11, 12, 0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,5); SET @eid := @eid +1;
+
 
 -- components installed on systemimage DebianSystemImage
-INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1);
+INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1),(9,1);
+-- components installed on systemimage WebSystemImage
+INSERT INTO `component_installed` VALUES (2,2),(4,2),(7,2),(8,2);
+-- components installed on systemimage DBSystemImage
+INSERT INTO `component_installed` VALUES (4,3),(7,3),(9,3);
+-- components installed on systemimage TestSystemImage
+INSERT INTO `component_installed` VALUES (2,4),(4,4),(7,4),(8,4),(9,4);
+-- components installed on systemimage MailSystemImage
+INSERT INTO `component_installed` VALUES (4,5),(7,5);
 
 -- admin cluster
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1); SET @eid := @eid +1;
+-- CRM Web cluster
+INSERT INTO `cluster` VALUES (2,'WebCRM','Cluster hosting Web Interface of CRM',0,1,4,200,1,2,NULL, 'up');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,2); SET @eid := @eid +1;
+-- WebSite cluster
+INSERT INTO `cluster` VALUES (3,'WebSite','Cluster hosting Web interface of official site',0,1,2,300,1,2,NULL, 'up');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,3); SET @eid := @eid +1;
+-- ERP Web cluster
+INSERT INTO `cluster` VALUES (4,'WebERP','Cluster hosting Web Interface of ERP',0,1,2,250,1,2,NULL, 'up');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,4); SET @eid := @eid +1;
+-- MutualDB cluster
+INSERT INTO `cluster` VALUES (5,'MutualDB','Cluster hosting DB for official web site and ERP',0,1,1,300,1,3,NULL, 'up');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,5); SET @eid := @eid +1;
+-- CRM DB cluster
+INSERT INTO `cluster` VALUES (6,'CRMDB','Cluster hosting CRM Database',0,1,1,250,1,3,NULL, 'up');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,6); SET @eid := @eid +1;
 
 -- public ip for admin cluster
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
-
+INSERT INTO `publicip` VALUES (2,'212.86.34.1','255.255.255.0','212.86.34.1',3); 
+INSERT INTO `publicip` VALUES (3,'212.86.34.2','255.255.255.0','212.86.34.1',2); 
+INSERT INTO `publicip` VALUES (4,'212.86.34.3','255.255.255.0','212.86.34.1',4); 
+INSERT INTO `publicip` VALUES (5,'212.86.34.4','255.255.255.0','212.86.34.1',NULL); 
+INSERT INTO `publicip` VALUES (6,'212.86.34.5','255.255.255.0','212.86.34.1',NULL); 
+INSERT INTO `publicip` VALUES (7,'212.86.34.6','255.255.255.0','212.86.34.1',NULL);
+ 
 -- admin motherboard
 INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
@@ -172,14 +214,50 @@ INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/mcsapache
 INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
 INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/mcssnmpd', 7);
 INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/mcskeepalived', 8);
+INSERT INTO `component_template` VALUES (5,'mcsmysql','/templates/mcsmysql', 9);
 
 -- initial components instance for admin cluster: 
-INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);
+INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL),(6,1,8,5);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,4); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,5); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,6); SET @eid := @eid +1;
+-- initial components instance for WebCRM cluster: 
+INSERT INTO `component_instance` VALUES (7,2,2,NULL),(8,2,4,1),(9,2,7,NULL),(10,2,8,NULL);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,7); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,9); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,10); SET @eid := @eid +1;
+-- initial components instance for Website cluster: 
+INSERT INTO `component_instance` VALUES (11,3,2,NULL),(12,3,4,1),(13,3,7,NULL),(14,3,8,NULL);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,11); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,12); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,13); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,14); SET @eid := @eid +1;
+-- initial components instance for WebERB cluster: 
+INSERT INTO `component_instance` VALUES (15,4,2,NULL),(16,4,4,1),(17,4,7,NULL),(18,4,8,NULL);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,15); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,16); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,17); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,18); SET @eid := @eid +1;
+-- initial components instance for WebERB cluster: 
+INSERT INTO `component_instance` VALUES (15,4,2,NULL),(16,4,4,1),(17,4,7,NULL),(18,4,8,NULL);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,15); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,16); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,17); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,18); SET @eid := @eid +1;
+-- initial components instance for MutualDB cluster: 
+INSERT INTO `component_instance` VALUES (19,5,4,NULL),(20,5,7,NULL),(21,5,9,NULL);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,19); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,20); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,21); SET @eid := @eid +1;
+-- initial components instance for CRMDB cluster: 
+INSERT INTO `component_instance` VALUES (22,6,4,NULL),(23,6,7,NULL),(24,6,9,NULL);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,22); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,23); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,24); SET @eid := @eid +1;
 
 -- main vg storage from only one pv
 INSERT INTO `lvm2_vg` VALUES (1,1,'vg1',65610,134190);
@@ -191,6 +269,18 @@ INSERT INTO `lvm2_lv` VALUES (2,1,'root_Debian_5.0',6144,0,'ext3');
 -- systemimage device for DebianSystemImage
 INSERT INTO `lvm2_lv` VALUES (3,1,'etc_DebianSystemImage',52,0,'ext3');
 INSERT INTO `lvm2_lv` VALUES (4,1,'root_DebianSystemImage',6144,0,'ext3');
+-- systemimage device for WebSystemImage
+INSERT INTO `lvm2_lv` VALUES (5,1,'etc_WebSystemImage',52,0,'ext3');
+INSERT INTO `lvm2_lv` VALUES (6,1,'root_WebSystemImage',6144,0,'ext3');
+-- systemimage device for DBSystemImage
+INSERT INTO `lvm2_lv` VALUES (7,1,'etc_DBSystemImage',52,0,'ext3');
+INSERT INTO `lvm2_lv` VALUES (8,1,'root_DBSystemImage',6144,0,'ext3');
+-- systemimage device for TestSystemImage
+INSERT INTO `lvm2_lv` VALUES (9,1,'etc_TestSystemImage',52,0,'ext3');
+INSERT INTO `lvm2_lv` VALUES (10,1,'root_TestSystemImage',6144,0,'ext3');
+-- systemimage device for DebianSystemImage
+INSERT INTO `lvm2_lv` VALUES (11,1,'etc_MailSystemImage',52,0,'ext3');
+INSERT INTO `lvm2_lv` VALUES (12,1,'root_MailSystemImage',6144,0,'ext3');
 
 -- atftp configuration
 INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');

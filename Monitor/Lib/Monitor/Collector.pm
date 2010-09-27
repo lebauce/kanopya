@@ -416,7 +416,22 @@ sub update {
 
 				my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
 				my $set_def = shift @set_def;
-				$self->updateRRD( rrd_name => $rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg);
+				
+				# Transtypage if needed (int required for COUNTER and DERIVE)
+    			if ( $set_def->{ds_type} eq "COUNTER" || $set_def->{ds_type} eq "DERIVE" ) {
+    				print "info : transtype values to int\n";
+    				foreach my $dsname (keys %aggreg) {
+    					$aggreg{$dsname} = int $aggreg{$dsname};
+    				} 
+    			}
+    		
+				eval {
+					$self->updateRRD( rrd_name => $rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg);
+				};
+				if ($@){
+					my $error = $@;
+					print "update cluster rrd error => $error\n";
+				}
 			} 
 			
 			
