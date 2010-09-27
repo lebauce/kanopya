@@ -1,4 +1,45 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
-<div id="content"><h1>Welcome to Microcluster Administration Software</h1></div>
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<div id="content">
+<table class="status">
+<tr><th colspan="2" class="imgDatabase">Database server</th><td class="imgUp">&nbsp;</td></tr>
+<tr><th colspan="2" class="imgBoot">Boot server</th><td class="imgUp">&nbsp;</td></tr>
+<tr><th colspan="2" class="imgHarddisk">NAS server</th><td class="imgUp">&nbsp;</td></tr>
+</table>
+
+<table class="status">
+<tr><th colspan="2" class="imgMonitor">Monitor</th><td class="imgUp">&nbsp;</td></tr>
+<tr><th colspan="2" class="imgPlanner">Planner</th><td class="imgDown">&nbsp;</td></tr>
+<tr><th colspan="2" class="imgOrchestrator">Orchestrator</th><td class="imgUp">&nbsp;</td></tr>
+</table>
+
+<table class="status">
+<tr><th colspan="2" class="imgExecute">Executor</th><td class="imgUp">&nbsp;</td></tr>
+</table>
+
+<h1>* Running Clusters *</h1>
+
+<table id="clusterlist" class="listview">
+	<tr><th>name</th><th>priority</th><th>system image</th><th>nodes</th><th>public ip</th></tr><TMPL_LOOP NAME=CLUSTERS>
+	<tr id="m<TMPL_VAR NAME=ID>">
+		<td><a href="/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></a></td>
+		<td><TMPL_VAR NAME=PRIORITY></td>
+		<td><TMPL_VAR NAME=SYSTEMIMAGE></td>
+		<td><TMPL_VAR NAME=NODESCOUNT></td>
+		<td><TMPL_VAR NAME=PUBLICIP></td>
+	</tr></TMPL_LOOP>
+</table>
+
+<h1>* Running Nodes *</h1>	
+
+<table id="nodeslist" class="listview">
+	<tr><th>mac</th><th>ip</th><th>cluster</th><TMPL_LOOP NAME=NODES>
+	<tr>
+		<td><TMPL_VAR NAME=MAC></td><td><TMPL_VAR NAME=IP></td><td><TMPL_VAR NAME=NAME></td>
+	</tr></TMPL_LOOP>
+</table>
+</div>
 <TMPL_INCLUDE NAME="footer.tmpl">
