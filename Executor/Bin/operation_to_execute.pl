@@ -27,6 +27,14 @@ if ($@){
 
 ##### here method to add operations #####
 
+sub AddMotherboardInCluster {
+	print "add motherboard in cluster ...";
+	$adm->newOp(	type => 'AddMotherboardInCluster', 
+					priority => '100', 
+					params => {cluster_id => 2, motherboard_id=>8});
+	print "done\n";
+}
+
 sub ActiveSystemimage {
     print "Active systemimage with id 1 ...";
     $adm->newOp(type => "ActiveSystemimage", priority => '100', params => { systemimage_id => 1 });
