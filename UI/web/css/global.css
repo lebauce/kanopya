@@ -7,6 +7,9 @@ body {
 	margin: 0 auto;
 } 
 
+#logo { float: left; }
+
+
 #ivy1 {
 	position: absolute;
 	right: 100px;
@@ -24,10 +27,6 @@ a#logout {
 	border: 1px solid #765;
 	opacity: 0.9;
 }
-
-
-
-
 
 iframe { 
 	background-color: transparent;
@@ -136,6 +135,10 @@ iframe {
 .imgMonitor { background-image: url("/images/icons/monitor.png"); }
 .imgCancel { background-image: url("/images/icons/cancel.png"); }
 .imgHarddisk { background-image: url("/images/icons/harddisk.png"); }
+.imgPlanner { background-image: url("/images/icons/planner.png"); }
+.imgOrchestrator { background-image: url("/images/icons/orchestrator.png"); }
+.imgUp { background-image: url("/images/icons/up.png"); }
+.imgDown { background-image: url("/images/icons/down.png"); }
 
 #submenu li ul { display: none; }
 

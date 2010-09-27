@@ -45,9 +45,21 @@ table.listdetails {
 	padding: 0;
 }
 
-table.listdetails td { border: none; padding: 3px; }
+table.status {
+	float: left;
+	border: none;
+	margin: 20px 20px 20px 0px;
+}
 
-table.listdetails td.label {
+table.status th { background-color: #DDD; padding: 5px 15px 5px 24px; background-position: 5px 5px;
+	background-repeat: no-repeat; text-align: left;	 }
+table.status td { background-color: #DDD; padding: 5px; background-position: 5px; min-width: 20px; min-height: 20px;
+	background-repeat: no-repeat; text-align: center;	 }
+
+table.listdetails td { border: none; padding: 3px; }
+table.status td { border: none; padding: 3px; }
+
+table.listdetails td.label, table.status td.label {
 	font-weight: bold;
 	text-align: right;
 }
