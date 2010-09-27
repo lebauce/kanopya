@@ -115,6 +115,7 @@ sub new {
 
 	# Get Administrator
 	#print "get ADMIN\n";
+	$start_time = time();
 	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	$self->{_admin_wrap} = AdminWrapper->new( );
 	
