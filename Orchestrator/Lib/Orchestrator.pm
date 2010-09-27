@@ -464,7 +464,9 @@ sub _canRemoveNode {
     my $cluster = $args{cluster};
     
     # Check if there is a corresponding remove node operation in operation queue #
-    if ( $self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) ) {
+    if ( 	$self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
+    		$self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
+    {
     	print " => An operation to remove node from cluster '$cluster' is already in queue\n";
     	return 0;
     }
@@ -549,12 +551,16 @@ sub removeNode {
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
     my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
-    my $node_to_remove = shift @up_nodes; 
-    die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove ); 
-    
-    my @mb =  $adm->getEntities(type => 'Motherboard', hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
-    my $mb_to_remove = pop @mb;
-    die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!" if ( not defined $mb_to_remove );
+  
+  	my $mb_to_remove;  
+#    do {
+	    my $node_to_remove = shift @up_nodes; 
+	    die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove ); 
+	    my @mb =  $adm->getEntities(type => 'Motherboard', hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
+	    $mb_to_remove = pop @mb;
+	    die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!" if ( not defined $mb_to_remove );
+				    
+#   } while ( $adm->isMaster( node => $mb_to_remove ) );
     
     my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $cluster_name } );
     my $cluster = pop @cluster;
