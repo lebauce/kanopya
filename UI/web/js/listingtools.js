@@ -18,7 +18,7 @@ function refreshgraph() {
 		g.src = '';
 		g.src = src;
 	}
-	setTimeout(refreshgraph(), 5000);
+	setTimeout('refreshgraph()', 5000);
 }
 
 refreshgraph();
