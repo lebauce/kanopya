@@ -32,6 +32,8 @@ sub new {
 								#mgrid => "#AAAAAA",
 							};
 	
+	#$self->{_admin_wrap} = AdminWrapper->new( );
+	
     return $self;
 }
 
@@ -329,12 +331,22 @@ sub graphNode {
 	my $self = shift;
 	my %args = @_;
 
+	my $time_laps = $args{time_laps};
+	my $suffix;
+	print " ===> 1 time laps : $time_laps\n";
+	if ( $time_laps =~ /\D/ ) { # not a number
+		 $suffix = "$time_laps";
+		 my %laps = ( 'hour' => 3600, 'day' => 3600*24 );
+		 $time_laps = $laps{$time_laps} || 0;
+	}
+	print " ===> 2 time laps : $time_laps\n";
+
 	my $host = $args{host};
 	
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
 	#my $graph_filename = "graph_$rrd_name.png";
-	my $graph_name = "graph_$host" . "_$set_name";
+	my $graph_name = "graph_$host" . "_$set_name" . ( defined $suffix ? "_$suffix" : "");
 	my $graph_filename = "$graph_name.png";
 
 	my $graph_type = $args{graph_type} || "line";
@@ -348,7 +360,7 @@ sub graphNode {
 	my @graph_params = (
 						'image' => "$self->{_graph_dir}/$graph_filename",
 						#'vertical_label', 'ticks',
-						'start' => time() - $args{time_laps},
+						'start' => time() - $time_laps,
 						color => $self->{_graph_color},
 						
 						lower_limit => 0,
@@ -381,13 +393,14 @@ sub graphNode {
 	# Draw a graph in a PNG image
 	$rrd->graph( @graph_params );
 	
-	if ($host eq "WebBench" && $set_name eq "cpu") {
-		my $backup_dir = $self->{_graph_dir} . "/" . "backup_$host" . "_$set_name"; 
-		mkdir $backup_dir;
-		my @file_count = <$backup_dir/*.png>;
-		my $backup_filename = sprintf( "%s_%.6d.png", $graph_name, scalar @file_count);
-		#`cp "$self->{_graph_dir}/$graph_filename" "$backup_dir/$backup_filename"`;
-	}
+	# backup graph
+#	if ($host eq "WebBench" && $set_name eq "cpu") {
+#		my $backup_dir = $self->{_graph_dir} . "/" . "backup_$host" . "_$set_name"; 
+#		mkdir $backup_dir;
+#		my @file_count = <$backup_dir/*.png>;
+#		my $backup_filename = sprintf( "%s_%.6d.png", $graph_name, scalar @file_count);
+#		`cp "$self->{_graph_dir}/$graph_filename" "$backup_dir/$backup_filename"`;
+#	}
 	
 	return $graph_filename;
 }
@@ -700,6 +713,8 @@ sub graphNodes {
 	return \%res;
 }
 
+# TODO c'est pas optimisé et ça commence à être le bordel
+# TODO listes de graph retournée est mauvaise et mal formé
 sub graphFromConf {
 	my $self = shift;
 	my %args = @_;
@@ -722,37 +737,41 @@ sub graphFromConf {
 		print Dumper $graph_def;
 		eval {
 			my @targets = split ",", $graph_def->{targets};
-			foreach my $target (@targets) {
-				if ( $target eq 'CLUSTERS' ) {
-					#TODO sub graphClusters
-					foreach my $cluster (@clusters_name) {
-						my ($dir, $file);
-						if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
-							($dir, $file) = $self->graphNodeCount( 	time_laps => $graph_def->{time_laps},
-																	cluster => $cluster );	
-						} else {
-							my @required_indicators = split ",", $graph_def->{ds_label};
-							my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
-							($dir, $file) = $self->graphCluster( time_laps => $graph_def->{time_laps},
-																	cluster => $cluster,
-																	required_set => $graph_def->{set_label},
-																	required_indicators => $required,
-																	percent => $graph_def->{percent},
-																	graph_type => $graph_def->{graph_type} || 'line');
+			my @time_laps = split ",", $graph_def->{time_laps};
+			foreach my $laps (@time_laps) {
+				foreach my $target (@targets) {
+					if ( $target eq 'CLUSTERS' ) {
+						#TODO sub graphClusters
+						foreach my $cluster (@clusters_name) {
+							my ($dir, $file);
+							if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
+								($dir, $file) = $self->graphNodeCount( 	time_laps => $laps,
+																		cluster => $cluster );	
+							} else {
+								my @required_indicators = split ",", $graph_def->{ds_label};
+								my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
+								($dir, $file) = $self->graphCluster( time_laps => $laps,
+																		cluster => $cluster,
+																		required_set => $graph_def->{set_label},
+																		required_indicators => $required,
+																		percent => $graph_def->{percent},
+																		graph_type => $graph_def->{graph_type} || 'line');
+							}
+							$graph_info{$cluster} = [ $dir, $file ];
+							
 						}
-						$graph_info{$cluster} = [ $dir, $file ];
-						
+					} elsif ( $target eq 'NODES' ) {
+						my @required_indicators = split ",", $graph_def->{ds_label};
+						my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
+						my $res = $self->graphNodes( time_laps => $laps,
+													required_set => $graph_def->{set_label},
+													required_indicators => $required,
+													percent => $graph_def->{percent},
+													graph_type => $graph_def->{graph_type} || 'line' );
+						%graph_info = %$res;
 					}
-				} elsif ( $target eq 'NODES' ) {
-					my @required_indicators = split ",", $graph_def->{ds_label};
-					my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
-					my $res = $self->graphNodes( time_laps => $graph_def->{time_laps},
-												required_set => $graph_def->{set_label},
-												required_indicators => $required,
-												percent => $graph_def->{percent} );
-					%graph_info = %$res;
-				}
-			} # end foreach target
+				} # end foreach target
+			} # end foreach time_laps
 		};
 		if ($@) {
 			my $error = $@;
@@ -788,6 +807,8 @@ sub graphNodeCount {
 	my $self = shift;
 	my %args = @_;
 	
+	my $alpha = "66";
+	
 	my $cluster = $args{cluster};
     my $time_laps = $args{time_laps} || 3600;
     
@@ -801,6 +822,9 @@ sub graphNodeCount {
 					'vertical_label' => 'number of nodes',
 					'start' => time() - $time_laps,
 					#color => { back => "#69B033" },
+					
+					color => $self->{_graph_color},
+					
 					lower_limit => 0,
 					upper_limit => 10,
 					
@@ -809,25 +833,25 @@ sub graphNodeCount {
 					draw => 	{
 									type => 'stack',
 									dsname => 'up',
-									color => "00FF00",
+									color => "00FF00".$alpha,
 									legend => "up",
 		  						},
 					draw => 	{
 									type => 'stack',
 									dsname => 'starting',
-									color => "0000FF",
+									color => "0000FF".$alpha,
 									legend => "starting",
 		  						},
 					draw => 	{
 									type => 'stack',
 									dsname => 'stopping',
-									color => "FFFF00",
+									color => "FFFF00".$alpha,
 									legend => "stopping",
 		  						},
 		  			draw => 	{
 									type => 'stack',
 									dsname => 'broken',
-									color => "FF0000",
+									color => "FF0000".$alpha,
 									legend => "broken",
 		  						},
 					);

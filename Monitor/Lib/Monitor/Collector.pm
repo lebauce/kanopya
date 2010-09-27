@@ -91,7 +91,7 @@ sub _manageHostState {
 	};
 	if ($@) {
 		my $error = $@;
-		print "===> $error";
+		print "_manageHostState() ===> $error";
 		$log->error( $error );
 	}
 }
@@ -174,6 +174,8 @@ sub updateHostData {
 
 	my $start_time = time();
 
+	#$self->{_admin_wrap} = AdminWrapper->new( );
+
 	my $host = $args{host};
 	
 	my %all_values = ();
@@ -217,6 +219,7 @@ sub updateHostData {
 				#TODO find a better way to detect unreachable host (grep error string is not very safe)
 				if ( "$error" =~ "No response" ) {
 					$log->info( "Unreachable host '$host' => we stop collecting data.");
+					print "[", threads->tid(), "][$host] Unreachable!\n";
 					$host_reachable = 0;
 					#print "[$host] => retrieve '$set->{label}' time : ", time() - $retrieve_start_time, "\n";
 					last; # we stop collecting data sets
@@ -244,7 +247,7 @@ sub updateHostData {
 	};
 	if ($@) {
 		my $error = $@;
-		print "===> $error";
+		print "update host critic ===> $error";
 		$log->error( $error );
 		$error_happened = 1;
 		#TODO gérer $host_state dans ce cas (error)
@@ -329,8 +332,17 @@ sub update {
 	print "#### UPDATE start : $start_time\n";
 	
 	eval {
-		#my @hosts = $self->retrieveHostsIp();
+		
+		#my $admin = AdminWrapper->new( );
+		#my %hosts_by_cluster = $admin->retrieveHostsByCluster();
+		
 		my %hosts_by_cluster = $self->retrieveHostsByCluster();
+		
+		if ( 0 == scalar keys %hosts_by_cluster ) {
+			print " # No cluster to monitor => quit\n";
+			return;
+		}
+		
 		my @all_hosts_info = map { values %$_ } values %hosts_by_cluster;
 		
 		#############################
@@ -393,7 +405,9 @@ sub update {
 		######################################################
 		#TODO ici on retrieve une nouvelle fois alors qu'on le fait au début de la fonction
 		# (mais entre temps l'état des noeuds a eventuellement été modifié). Il y a surement mieux à faire.
+		
 		%hosts_by_cluster = $self->retrieveHostsByCluster();
+		#%hosts_by_cluster = $admin->retrieveHostsByCluster();
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
 			
 			############################## Update cluster rrd #########################################
