@@ -13,7 +13,7 @@ function expand() {
 graphs = document.getElementsByClassName('graph');
 for(i=0;i<graphs.length;i++) {
 	g = graphs[i]
-	setTimeout(g.src = g.src + new Date().getMilliseconds(), 5000);
+	setTimeout(g.src = g.src + '?' + new Date().getMilliseconds(), 5000);
 }
 
 expandables = document.getElementsByClassName('expanddown');
