@@ -232,7 +232,7 @@ sub generateHostname {
 		$cpt--;
 	}
 	$hostname .= $tmp[3];
-	$log->info("Hostname generated : $self->{'hostname'}");
+	$log->info("Hostname generated : $hostname");
 	return $hostname;
 }
 
