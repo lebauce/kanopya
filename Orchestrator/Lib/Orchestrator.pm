@@ -373,7 +373,7 @@ sub _isOpInQueue {
 	foreach my $op ( @{ $adm->getOperations() } ) {
     	if ($op->{'TYPE'} eq $type) {
     		foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
-    			if ( ($param->{'PARAMNAME'} eq 'cluster') && ($param->{'VAL'} eq $cluster) ) {
+    			if ( ($param->{'PARAMNAME'} eq 'cluster_id') && ($param->{'VAL'} eq $cluster) ) {
     				return 1;
     			}
     		}	
@@ -756,9 +756,12 @@ sub graph {
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
+	my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$op" . ".rrd";
+
+	return if ( not -e $rrd_file );
 
 	# get rrd     
-	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$op" . ".rrd" );
+	my $rrd = RRDTool::OO->new( file => $rrd_file );
 
 	my @graph_params = (
 							'image' => "$graph_dir/$graph_filename",
