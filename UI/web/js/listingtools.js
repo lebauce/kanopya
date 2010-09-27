@@ -14,11 +14,9 @@ function refreshgraph() {
 	graphs = document.getElementsByClassName('graph');
 	for(i=0;i<graphs.length;i++) {
 		g = graphs[i];
-		src = g.src; 
-		g.src = '';
-		g.src = src;
+		g.src = g.src.split('?')[0] + '?' + new Date().getMilliseconds() ; 
 	}
-	setTimeout(refreshgraph(), 5000);
+	setTimeout('refreshgraph()', 5000);
 }
 
 refreshgraph();
