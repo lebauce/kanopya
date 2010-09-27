@@ -93,6 +93,9 @@ sub new {
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
+    my $motherboard = $admin->getEntity(type => "Motherboard", id => $args{params}->{motherboard_id});
+    $motherboard->setAttr(name => "motherboard_state", value => "locked");
+    $motherboard->save();
 	return $self;
 }
 
