@@ -78,7 +78,7 @@ sub addNode {
 								
 		# activating ipv4 forwarding to sysctl
 		$log->debug('activating ipv4 forwarding to sysctl.conf');
-		my $command = "echo 'net.ipv4.ip_forward=1' >> $args{mount_point}/sysctl.conf";*
+		my $command = "echo 'net.ipv4.ip_forward=1' >> $args{mount_point}/sysctl.conf";
 		$log->debug($command);
 		$args{econtext}->execute(command => $command);
 	
