@@ -275,7 +275,7 @@ sub addnetwork_routes {
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/init.d/network_routes");	
-	my $command = 'chmod +x '.$args{mount_point}.'/init.d/network_routes';
+	my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/network_routes';
 	$log->debug($command);
 	my $result = $args{econtext}->(command => $command);
 	unlink "/tmp/$tmpfile";		
