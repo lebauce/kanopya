@@ -420,7 +420,8 @@ sub graphPercent {
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
 	#my $graph_filename = "graph_percent_$rrd_name.png";	
-	my $graph_name = "graph_$host" . "_$set_name" . "_percent";
+	my $graph_name = "graph_$host" . "_$set_name";
+	#TODO Specific graph in percent . "_percent";
 	my $graph_filename = "$graph_name.png";
 
 
