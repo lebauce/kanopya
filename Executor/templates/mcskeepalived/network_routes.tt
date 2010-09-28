@@ -15,6 +15,7 @@ PATH=/sbin:/bin
 
 case "$1" in
   start)
+        echo 'Adding default gateway to loadbalancer ip : [% gateway %]'
         /sbin/route add default gw [% gateway %]
         ;;  
   
