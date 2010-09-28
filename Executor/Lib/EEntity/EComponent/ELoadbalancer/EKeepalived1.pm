@@ -78,7 +78,8 @@ sub addNode {
 								
 		# activating ipv4 forwarding to sysctl
 		$log->debug('activating ipv4 forwarding to sysctl.conf');
-		my $command = "echo 'net.ipv4.ip_forward=1' >> sysctl.conf";
+		my $command = "echo 'net.ipv4.ip_forward=1' >> $args{mount_point}/sysctl.conf";*
+		$log->debug($command);
 		$args{econtext}->execute(command => $command);
 	
 	} else {
@@ -275,7 +276,8 @@ sub addnetwork_routes {
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/init.d/network_routes");	
 	my $command = 'chmod +x '.$args{mount_point}.'/init.d/network_routes';
-	$args{econtext}->(command => $command);
+	$log->debug($command);
+	my $result = $args{econtext}->(command => $command);
 	unlink "/tmp/$tmpfile";		
 
 
