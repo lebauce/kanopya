@@ -373,7 +373,7 @@ sub _isOpInQueue {
 	foreach my $op ( @{ $adm->getOperations() } ) {
     	if ($op->{'TYPE'} eq $type) {
     		foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
-    			if ( ($param->{'PARAMNAME'} eq 'cluster') && ($param->{'VAL'} eq $cluster) ) {
+    			if ( ($param->{'PARAMNAME'} eq 'cluster_id') && ($param->{'VAL'} eq $cluster) ) {
     				return 1;
     			}
     		}	
@@ -464,7 +464,9 @@ sub _canRemoveNode {
     my $cluster = $args{cluster};
     
     # Check if there is a corresponding remove node operation in operation queue #
-    if ( $self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) ) {
+    if ( 	$self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
+    		$self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
+    {
     	print " => An operation to remove node from cluster '$cluster' is already in queue\n";
     	return 0;
     }
@@ -549,15 +551,18 @@ sub removeNode {
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
     my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
-    my $node_to_remove = shift @up_nodes; 
-    die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove ); 
+  
+    my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $cluster_name } );
+    my $cluster = pop @cluster;
+    my $master_node_ip = $adm->getClusterMasterNodeIp( cluster => $cluster );
     
+    my $node_to_remove = shift @up_nodes;
+    ($node_to_remove = shift @up_nodes) if ($node_to_remove->{ip} eq $master_node_ip);
+    die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove );
     my @mb =  $adm->getEntities(type => 'Motherboard', hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
     my $mb_to_remove = pop @mb;
     die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!" if ( not defined $mb_to_remove );
-    
-    my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $cluster_name } );
-    my $cluster = pop @cluster;
+
     
     ############################################
 	# Enqueue the remove motherboard operation
@@ -643,10 +648,10 @@ sub _getTimes {
 		}
 		#@times = map { $1 if ( $_ =~ /[a-zA-Z_]+@([\d]+)/ ) } @optimes;
    	}
-   	else
-   	{
-   		print "Can't open orchestrator time file for cluster '$args{cluster}'\n";
-   	}
+#   	else
+#   	{
+#   		print "Can't open orchestrator time file for cluster '$args{cluster}'\n";
+#   	}
 	
 	return %times;
 }
@@ -756,9 +761,12 @@ sub graph {
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
 	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
 
+	my $rrd_file = "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$op" . ".rrd";
+
+	return if ( not -e $rrd_file );
 
 	# get rrd     
-	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/orchestrator_$cluster" . "_$op" . ".rrd" );
+	my $rrd = RRDTool::OO->new( file => $rrd_file );
 
 	my @graph_params = (
 							'image' => "$graph_dir/$graph_filename",

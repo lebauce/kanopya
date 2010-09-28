@@ -25,6 +25,14 @@ sub getOperations { my $self = shift; return ($self->{_admin})->getOperations( @
 sub newOp { my $self = shift; return ($self->{_admin})->newOp( @_ ); }
 sub addMessage { my $self = shift; return ($self->{_admin})->addMessage( @_ ); }
 
+
+sub getClusterMasterNodeIp {
+	my $self = shift;
+	my %args = @_;
+
+	return ($args{cluster})->getMasterNodeIp();
+}
+
 sub opAdd {
 	my $self = shift;
 	my %args = @_;
@@ -46,7 +54,8 @@ sub opRemove {
 	
 	my $adm = $self->{_admin};
 	
-	$adm->newOp(type => 'RemoveMotherboardFromCluster',
+	#$adm->newOp(type => 'RemoveMotherboardFromCluster',
+	$adm->newOp(type => 'StopNode',
 				priority => $args{priority},
 				params => {
 					cluster_id => ($args{cluster})->getAttr(name => "cluster_id"),

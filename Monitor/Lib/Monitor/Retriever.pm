@@ -348,6 +348,8 @@ sub graphNode {
 	#my $graph_filename = "graph_$rrd_name.png";
 	my $graph_name = "graph_$host" . "_$set_name" . ( defined $suffix ? "_$suffix" : "");
 	my $graph_filename = "$graph_name.png";
+	
+	my $graph_title = "$set_name for $host";
 
 	my $graph_type = $args{graph_type} || "line";
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
@@ -362,6 +364,8 @@ sub graphNode {
 						#'vertical_label', 'ticks',
 						'start' => time() - $time_laps,
 						color => $self->{_graph_color},
+						
+						title => $graph_title,
 						
 						lower_limit => 0,
 						

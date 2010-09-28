@@ -1067,7 +1067,7 @@ sub removeNode{
 	
 	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
 		(! exists $args{motherboard_id} or ! defined $args{motherboard_id})){
-		$errmsg = "Administrator->createNode need a cluster_id, motherboard_id and a master_node named argument!";
+		$errmsg = "Administrator->createNode need a cluster_id and a motherboard_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}

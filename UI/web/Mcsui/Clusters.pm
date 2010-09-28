@@ -119,7 +119,8 @@ sub view_clusterdetails : Runmode {
 								} );
 	}
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
-	$tmpl->param('ORCHESTRATOR_GRAPH' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name.png");
+	$tmpl->param('ORCHESTRATOR_GRAPH_ADD' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_add.png");
+	$tmpl->param('ORCHESTRATOR_GRAPH_REMOVE' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_remove.png");
 
 	#$tmpl->param('AUTO_REFRESH' => 10);
 
