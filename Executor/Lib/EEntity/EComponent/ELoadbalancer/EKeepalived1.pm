@@ -277,7 +277,7 @@ sub addnetwork_routes {
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/init.d/network_routes");	
 	my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/network_routes';
 	$log->debug($command);
-	my $result = $args{econtext}->(command => $command);
+	my $result = $args{econtext}->execute(command => $command);
 	unlink "/tmp/$tmpfile";		
 
 
