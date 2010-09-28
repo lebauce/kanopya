@@ -370,10 +370,13 @@ sub _isOpInQueue {
     my $type = $args{type};
     
 	my $adm = $self->{_admin_wrap};
+	
+	my $cluster_id = $adm->getClusterId( cluster_name => $cluster );
+	
 	foreach my $op ( @{ $adm->getOperations() } ) {
     	if ($op->{'TYPE'} eq $type) {
     		foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
-    			if ( ($param->{'PARAMNAME'} eq 'cluster_id') && ($param->{'VAL'} eq $cluster) ) {
+    			if ( ($param->{'PARAMNAME'} eq 'cluster_id') && ($param->{'VAL'} eq $cluster_id) ) {
     				return 1;
     			}
     		}	

@@ -33,6 +33,18 @@ sub getClusterMasterNodeIp {
 	return ($args{cluster})->getMasterNodeIp();
 }
 
+sub getClusterId {
+	my $self = shift;
+	my %args = @_;
+	
+	my @cluster =  ($self->{_admin})->getEntities(type => 'Cluster', hash => { cluster_name => $args{cluster_name} } );
+   	my $cluster = pop @cluster;
+   	
+   	die "No cluster with name '$args{cluster_name}'\n" if not defined $cluster;
+   	
+	return $cluster->getAttr(name => "cluster_id");
+}
+
 sub opAdd {
 	my $self = shift;
 	my %args = @_;
