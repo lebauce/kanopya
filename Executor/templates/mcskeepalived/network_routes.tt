@@ -1,0 +1,27 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          network_routes
+# Required-Start:    $network
+# Required-Stop: 
+# Default-Start:     2 3 4 5
+# Default-Stop:      6
+# Short-Description: add default route to loadbalancer
+### END INIT INFO
+
+PATH=/sbin:/bin
+
+. /lib/lsb/init-functions
+
+
+case "$1" in
+  start)
+        echo 'Adding default gateway to loadbalancer ip : [% gateway %]'
+        /sbin/route add default gw [% gateway %]
+        ;;  
+  
+ stop)
+        ;;
+
+ *)        
+        ;;
+esac
