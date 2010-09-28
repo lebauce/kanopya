@@ -75,6 +75,11 @@ sub addNode {
 								scriptname => 'keepalived', 
 								startvalue => 20, 
 								stopvalue => 20);
+								
+		# activating ipv4 forwarding to sysctl
+		$log->debug('activating ipv4 forwarding to sysctl.conf');
+		my $command = "echo 'net.ipv4.ip_forward=1' >> sysctl.conf";
+		$args{econtext}->execute(command => $command);
 	
 	} else {
 		# a masternode exists so we update his keepalived configuration
@@ -95,8 +100,21 @@ sub addNode {
 				realserver_weight => 1);
 		}
 		
+		$log->debug('Generation of network_routes script');
+		$self->addnetwork_routes(mount_point => $args{mount_point},
+								econtext => $args{econtext},
+								loadbalancer_internal_ip => $masternodeip);
+		
+		$log->debug('init script generation for network_routes script');
+		$self->addInitScripts(	etc_mountpoint => $args{mount_point}, 
+								econtext => $args{econtext}, 
+								scriptname => 'network_routes', 
+								startvalue => 17, 
+								stopvalue => 20);
+		
 		$self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
 		$self->reload(econtext => $masternode_econtext);
+		
 	}
 }
 
@@ -222,6 +240,45 @@ sub generateIpvsadm {
 	unlink "/tmp/$tmpfile";		
 }
 
+# add network_routes script to the node 
+sub addnetwork_routes {
+	my $self = shift;
+	my %args = @_;
+	if((! exists $args{econtext} or ! defined $args{econtext}) || 
+		(! exists $args{mount_point} or ! defined $args{mount_point}) ||
+		(! exists $args{loadbalancer_internal_ip} or ! defined $args{loadbalancer_internal_ip})) {
+		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateKeepalived needs a econtext, mount_point and loadbalancer_internal_ip named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
+	my $config = {
+	    INCLUDE_PATH => '/templates/mcskeepalived',
+	    INTERPOLATE  => 1,               # expand "$var" in plain text
+	    POST_CHOMP   => 0,               # cleanup whitespace 
+	    EVAL_PERL    => 1,               # evaluate Perl code blocks
+	    RELATIVE => 1,                   # desactive par defaut
+	};
+	
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("cccccccc");
+	# create Template object
+	my $template = Template->new($config);
+    my $input = "network_routes.tt";
+    my $data = {};
+    $data->{gateway} = $args{loadbalancer_internal_ip};
+	
+	$template->process($input, $data, "/tmp/".$tmpfile) || do {
+		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->addnetwork_routes : error during template generation : $template->error;";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);	
+	};
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/init.d/network_routes");	
+	unlink "/tmp/$tmpfile";		
+
+
+
+
+}
 
 1;
