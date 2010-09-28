@@ -41,6 +41,7 @@ sub getVirtualservers {
 		$hashvs->{virtualserver_lbkind} = $vs->get_column('virtualserver_lbkind');
 		push @$result, $hashvs;
 	}
+	$log->debug("returning ".scalar @$result." virtualservers");
 	return $result;
 }
 
@@ -59,12 +60,15 @@ sub getRealserverId {
 
 	if ((! exists $args{realserver_ip} or ! defined $args{realserver_ip}) ||
 		(! exists $args{virtualserver_id} or ! defined $args{virtualserver_id})){
-		$errmsg = "Component::Loadbalancer::Keepalived1->addVirtualserver needs a virtualserver_id and a realserver_ip named argument!";
+		$errmsg = "Component::Loadbalancer::Keepalived1->getRealserverId needs a virtualserver_id and a realserver_ip named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $virtualserver = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id});
+	$log->debug("Virtualserver found with id <$args{virtualserver_id}>");
 	my $realserver = $virtualserver->keepalived1_realservers->search({ realserver_ip => $args{realserver_ip} })->single;
+	$log->debug("Realserver found with ip <$args{realserver_ip}>");
+	$log->debug("Returning realserver_id <".$realserver->get_column('realserver_id').">");
 	return $realserver->get_column('realserver_id');
 }
 
@@ -120,7 +124,7 @@ sub addRealserver {
 			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
-	$log->debug("New real server try to be added on virtualserver_id $args{virtualserver_id}");
+	$log->debug("New real server try to be added on virtualserver_id <$args{virtualserver_id}>");
 	my $realserver_rs = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
 
 	my $row = $realserver_rs->create(\%args);
@@ -145,6 +149,7 @@ sub removeVirtualserver {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+	$log->debug("Trying to delete virtualserver with id <$args{virtualserver_id}>");
 	return $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
 }
 
@@ -166,6 +171,7 @@ sub removeRealserver {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+	$log->debug("Trying to delete realserver with id <$args{realserver_id}>");
 	return $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
 }
 

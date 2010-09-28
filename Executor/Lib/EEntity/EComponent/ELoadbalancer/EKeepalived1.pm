@@ -108,8 +108,13 @@ sub removeNode {
 	my $keepalived = $self->_getEntity();
 	my $masternodeip = $args{cluster}->getMasterNodeIp();
 	if(not defined $masternodeip) {
-		# masternodeip is undef, this motherboard was the masternode so we do nothing
+		# masternodeip is undef, this motherboard was the masternode so we remove virtualserver definitions
 		$log->debug('No master node ip retreived, we are stopping the master node');
+		my $virtualservers = $keepalived->getVirtualservers();
+		foreach my $vs (@$virtualservers) {
+			$keepalived->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
+		}
+		
 	} else {
 		use EFactory;
 		my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
