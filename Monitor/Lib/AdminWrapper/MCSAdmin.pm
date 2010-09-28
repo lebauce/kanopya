@@ -25,12 +25,12 @@ sub getOperations { my $self = shift; return ($self->{_admin})->getOperations( @
 sub newOp { my $self = shift; return ($self->{_admin})->newOp( @_ ); }
 sub addMessage { my $self = shift; return ($self->{_admin})->addMessage( @_ ); }
 
-# TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-sub isMaster {
+
+sub getClusterMasterNodeIp {
 	my $self = shift;
 	my %args = @_;
 
-	return 0;
+	return ($args{cluster})->getMasterNodeIp();
 }
 
 sub opAdd {

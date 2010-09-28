@@ -552,18 +552,17 @@ sub removeNode {
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
     my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
   
-  	my $mb_to_remove;  
-#    do {
-	    my $node_to_remove = shift @up_nodes; 
-	    die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove ); 
-	    my @mb =  $adm->getEntities(type => 'Motherboard', hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
-	    $mb_to_remove = pop @mb;
-	    die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!" if ( not defined $mb_to_remove );
-				    
-#   } while ( $adm->isMaster( node => $mb_to_remove ) );
-    
     my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $cluster_name } );
     my $cluster = pop @cluster;
+    my $master_node_ip = $adm->getClusterMasterNodeIp( cluster => $cluster );
+    
+    my $node_to_remove = shift @up_nodes;
+    ($node_to_remove = shift @up_nodes) if ($node_to_remove->{ip} eq $master_node_ip);
+    die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove );
+    my @mb =  $adm->getEntities(type => 'Motherboard', hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
+    my $mb_to_remove = pop @mb;
+    die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!" if ( not defined $mb_to_remove );
+
     
     ############################################
 	# Enqueue the remove motherboard operation
@@ -649,10 +648,10 @@ sub _getTimes {
 		}
 		#@times = map { $1 if ( $_ =~ /[a-zA-Z_]+@([\d]+)/ ) } @optimes;
    	}
-   	else
-   	{
-   		print "Can't open orchestrator time file for cluster '$args{cluster}'\n";
-   	}
+#   	else
+#   	{
+#   		print "Can't open orchestrator time file for cluster '$args{cluster}'\n";
+#   	}
 	
 	return %times;
 }

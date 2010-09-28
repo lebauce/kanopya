@@ -102,6 +102,13 @@ sub opRemove {
 	print "REMOVE =============> asked: $args{motherboard} | removed: $host ($ip)\n";
 }
 
+sub getClusterMasterNodeIp {
+	my $self = shift;
+	my %args = @_;
+
+	return 0;
+}
+
 sub retrieveHostsByCluster {
 	my $self = shift;
 
