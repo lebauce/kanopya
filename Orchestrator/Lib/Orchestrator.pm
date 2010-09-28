@@ -369,11 +369,16 @@ sub _isOpInQueue {
     my $cluster = $args{cluster};
     my $type = $args{type};
     
+    print "Check if exists op '$type' on cluster $cluster: \n";
+    
 	my $adm = $self->{_admin_wrap};
 	foreach my $op ( @{ $adm->getOperations() } ) {
+		print "	- op $op->{'TYPE'}\n";
     	if ($op->{'TYPE'} eq $type) {
     		foreach my $param ( @{ $op->{'PARAMETERS'} } ) {
+    			print "		-> $param->{'PARAMNAME'} = $param->{'VAL'}\n";
     			if ( ($param->{'PARAMNAME'} eq 'cluster_id') && ($param->{'VAL'} eq $cluster) ) {
+    				print "	=> In queue !\n";
     				return 1;
     			}
     		}	
