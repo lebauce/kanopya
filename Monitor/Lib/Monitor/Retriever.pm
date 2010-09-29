@@ -332,14 +332,7 @@ sub graphNode {
 	my $self = shift;
 	my %args = @_;
 
-	my $time_laps = $args{time_laps};
-	my $suffix;
-
-	if ( $time_laps =~ /\D/ ) { # not a number
-		 $suffix = "$time_laps";
-		 my %laps = ( 'hour' => 3600, 'day' => 3600*24 );
-		 $time_laps = $laps{$time_laps} || 0;
-	}
+	my ($time_laps, $suffix) = $self->timeLaps( time_laps => $args{time_laps} );
 
 	my $host = $args{host};
 	
@@ -432,7 +425,21 @@ sub graphNode {
 	return $graph_filename;
 }
 
-#TODO gérer le calcul du total de façon paramétrable (pour l'instant c'est la somme de toutes les ds)
+sub timeLaps {
+	my $self = shift;
+	my %args = @_;
+	
+	my $time_laps = $args{time_laps};
+	my $suffix;
+	if ( $time_laps =~ /\D/ ) { # not a number
+		 $suffix = "$time_laps";
+		 my %laps = ( 'hour' => 3600, 'day' => 3600*24 );
+		 $time_laps = $laps{$time_laps} || 0;
+	}	
+	
+	return ($time_laps, $suffix);
+}
+
 #TODO paramétre pour choisir la liste des ds dont on veut afficher le pourcentage
 sub graphPercent {
 	my $self = shift;
@@ -440,13 +447,19 @@ sub graphPercent {
 	
 	my $host = $args{host};
 	
+	my ($time_laps, $suffix) = $self->timeLaps( time_laps => $args{time_laps} );
+	
 	my $set_name = $args{set_label};
-	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
-	#my $graph_filename = "graph_percent_$rrd_name.png";	
-	my $graph_name = "graph_$host" . "_$set_name";
+	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );	
+	my $graph_name = "graph_$host" . "_$set_name" . ( defined $suffix ? "_$suffix" : "" );
 	#TODO Specific graph in percent . "_percent";
 	my $graph_filename = "$graph_name.png";
 
+	# TODO graph cluster total percent ? -> est ce que c'est logique ? => die?
+	
+	my $graph_title = (defined $args{type} && $args{type} eq 'cluster') ?
+						"$set_name for cluster $host " . ( defined $args{cluster_total} ? "(total)" : "(average)" )
+						: "$set_name for $host";
 
 	my $graph_type = $args{graph_type} || "line";
 	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
@@ -474,8 +487,9 @@ sub graphPercent {
 
 	my @graph_params = (
 						'image' => "$self->{_graph_dir}/tmp/$graph_filename",
+						title => $graph_title,
 						#'vertical_label', 'ticks',
-						'start' => time() - $args{time_laps},
+						'start' => time() - $time_laps,
 						color => $self->{_graph_color},
 						lower_limit => 0,
 						);
@@ -530,7 +544,7 @@ sub graphPercent {
 										#cdef => "total,$ds->{label},-,total,/,100,*",
 										cdef => "$ds->{label},total,/,100,*",
 										color => $ds->{color} || "FFFFFF",
-										legend => $ds->{label} . "_perc",
+										legend => $ds->{label} . " (%)",
 		  							}	
 								);
 				#}
@@ -600,8 +614,6 @@ sub OLD_graphCluster {
 									file => $self->{_rrd_base_dir} . "/" . $rrd_file, 
 									dsname => $ds_label,
 									name => $var_name,
-									#color => $ds->{color} || "FFFFFF",
-									#legend => $ds->{label},
 	  							}	
 							);
 
@@ -852,9 +864,10 @@ sub graphNodeCount {
 	my $alpha = "66";
 	
 	my $cluster = $args{cluster};
-    my $time_laps = $args{time_laps} || 3600;
     
-    my $graph_file = "graph_$cluster" . "_nodecount.png";
+    my ($time_laps, $suffix) = $self->timeLaps( time_laps => $args{time_laps} );
+    
+    my $graph_file = "graph_$cluster" . "_nodecount" . (defined $suffix ? "_$suffix" : "") . ".png";
 	my $graph_file_path = "$self->{_graph_dir}/tmp/$graph_file";
 	
 	# get rrd     
