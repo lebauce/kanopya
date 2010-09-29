@@ -55,7 +55,7 @@ sub addNode {
 			realserver_port => 80,
 			realserver_checkport => 80,
 			realserver_checktimeout => 15,
-			realserver_weight => 1);
+			realserver_weight => 2);
 			
 		my $rsid2 = $keepalived->addRealserver(
 			virtualserver_id => $vsid2,
@@ -63,7 +63,7 @@ sub addNode {
 			realserver_port => 443,
 			realserver_checkport => 443,
 			realserver_checktimeout => 15,
-			realserver_weight => 1);
+			realserver_weight => 2);
 	
 		$log->debug("generate /etc/default/ipvsadm file");
 		$self->generateIpvsadm(econtext => $args{econtext}, mount_point => $args{mount_point});
