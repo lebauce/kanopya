@@ -777,6 +777,8 @@ sub graph {
 							'start' => time() - 1000,
 							color => { back => "#69B033" },
 							
+							title => ($args{op} eq "add" ? "Add" : "Remove") . " rules analysis",
+							
 							lower_limit => 0,
 							#upper_limit => 100,
 							
@@ -816,7 +818,10 @@ sub graph {
 										type => 'line',
 										dsname => $cond->{var} . "_" . $rule->{time_laps},
 										color => $cond->{color},
-										legend => sprintf( "%-25s", $cond->{var} . " (" . ($rule->{percent} ? "%" : "mean") . " on " . $rule->{time_laps} . "s)" ),
+										legend => sprintf( "%-25s", $cond->{var} .
+																	( $args{op} eq "remove" ? " prevision" : "" ).
+																	" (" . ($rule->{percent} ? "%" : "mean") .
+																	" on " . $rule->{time_laps} . "s)" ),
 		  							},
 		  
 		  							hrule => {

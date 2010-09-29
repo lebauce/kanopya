@@ -30,7 +30,9 @@
 						<table class="listdetails">
 						<TMPL_LOOP NAME=GRAPHS>	
 							<tr><td ALIGN=CENTER>
-								<img src="<TMPL_VAR NAME=GRAPH_FILE>" class="graph" id="reloader_<TMPL_VAR NAME=GRAPH_FILE>" />
+				      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" id="reloader_<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" />
+				      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" id="reloader_<TMPL_VAR NAME=HOUR_GRAPH_FILE>" style='display:none'/>
+				      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" id="reloader_<TMPL_VAR NAME=DAY_GRAPH_FILE>" style='display:none'/>
 							</td></tr>
 						</TMPL_LOOP>
 						</table>
@@ -43,6 +45,13 @@
 	
 	<h1>Monitoring: </h1>
 	<!--table id="graph_table"-->
+	<table>
+		<tr>
+			<th><button type="button" onclick="display_graph('hour_graph')" >Hour</button></th>
+			<th><button type="button" onclick="display_graph('day_graph')" >Day</button></th>
+			<th><button type="button" onclick="display_graph('custom_graph')" >Custom</button></th>
+		</tr>
+	</table>
 	<table class="listview">
 		<tr>
 			<th ALIGN=CENTER>Set</th>
@@ -53,7 +62,9 @@
 		    		<td ALIGN=CENTER><TMPL_VAR NAME=GRAPH_INFO></td>
 		      		<!--td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_FILE>'/></td-->
 		      		<td>
-		      		<img src="<TMPL_VAR NAME=GRAPH_FILE>" id="reloader_<TMPL_VAR NAME=GRAPH_INFO>" onload="setTimeout('document.getElementById(\'reloader_<TMPL_VAR NAME=GRAPH_INFO>\').src=\'<TMPL_VAR NAME=GRAPH_FILE>?\'+new Date().getMilliseconds()', 5000)" />
+		      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" id="reloader_<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" />
+		      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" id="reloader_<TMPL_VAR NAME=HOUR_GRAPH_FILE>" style='display:none'/>
+		      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" id="reloader_<TMPL_VAR NAME=DAY_GRAPH_FILE>" style='display:none'/>
 		      		</td>
 			</tr>
 		</TMPL_LOOP>

@@ -411,7 +411,8 @@ sub update {
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
 			
 			############################## Update cluster rrd #########################################
-			my @nodes_ip = map { $_->{ip} } values %$cluster_info;
+			my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
+			my @nodes_ip = map { $_->{ip} } @up_nodes;
 			
 			my %sets;
 			foreach my $host_ip (@nodes_ip) {
@@ -421,12 +422,10 @@ sub update {
 				}
 			}
 			
-			my %sets_aggreg;
 			while ( my ($set_name, $sets_list) = each %sets ) {
-				my %aggreg = $self->aggregate( hash_list => $sets_list, f => 'mean' );
-				$sets_aggreg{ $set_name } = \%aggreg;
-				#my $rrd_name = "monitor_$cluster_name" . "_$set_name";
-				my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
+				my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
+				my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
+
 
 				my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
 				my $set_def = shift @set_def;
@@ -434,13 +433,20 @@ sub update {
 				# Transtypage if needed (int required for COUNTER and DERIVE)
     			if ( $set_def->{ds_type} eq "COUNTER" || $set_def->{ds_type} eq "DERIVE" ) {
     				print "info : transtype values to int\n";
-    				foreach my $dsname (keys %aggreg) {
-    					$aggreg{$dsname} = int $aggreg{$dsname};
+    				foreach my $dsname (keys %aggreg_mean) {
+    					$aggreg_mean{$dsname} = int $aggreg_mean{$dsname};
+    				}
+    				foreach my $dsname (keys %aggreg_sum) {
+    					$aggreg_sum{$dsname} = int $aggreg_sum{$dsname};
     				} 
     			}
     		
+    			my $mean_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
+    			my $sum_rrd_name = $mean_rrd_name;
+    			$sum_rrd_name .= "_total";
 				eval {
-					$self->updateRRD( rrd_name => $rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg);
+					$self->updateRRD( rrd_name => $mean_rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg_mean);
+					$self->updateRRD( rrd_name => $sum_rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg_sum);
 				};
 				if ($@){
 					my $error = $@;
@@ -463,7 +469,8 @@ sub update {
 			my $rrd = RRDTool::OO->new( file =>  $rrd_file );
 			if ( not -e $rrd_file ) {	
 				print "Info: create nodes rrd for '$cluster_name'\n";
-				$rrd->create( 	'step' => $self->{_time_step}, 'archive' => { rows => 500 },
+				$rrd->create( 	'step' => $self->{_time_step},
+								'archive' => { rows => $self->{_period} / $self->{_time_step} },
 								'data_source' => { 	name => 'up', type => 'GAUGE' },
 								'data_source' => { 	name => 'starting', type => 'GAUGE' },
 								'data_source' => { 	name => 'stopping', type => 'GAUGE' },
@@ -477,7 +484,13 @@ sub update {
 			my $stopping_count = scalar grep { $_ =~ 'stopping' } @nodes_state;
 			my $broken_count = scalar grep { $_ =~ 'broken' } @nodes_state;
 	
-			$rrd->update( time => $start_time, values => { 	'up' => $up_count, 'starting' => $starting_count,
+			# we want update the rrd at time multiple of time_step (to avoid rrd extrapolation)
+			# TODO check if this calcul do not introduce time error
+			my $time = time();
+			my $mod_time = $time % $self->{_time_step};
+			$time += ($mod_time > $self->{_time_step} / 2) ? $self->{_time_step} - $mod_time : -$mod_time; 
+	
+			$rrd->update( time => $time, values => { 	'up' => $up_count, 'starting' => $starting_count,
 														'stopping' => $stopping_count, 'broken' => $broken_count } );
 		}
 	};

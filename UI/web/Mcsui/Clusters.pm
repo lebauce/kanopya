@@ -102,8 +102,11 @@ sub view_clusterdetails : Runmode {
 		$tmp->{INTERNALIP} = $ip;
 		my @graphs = ();
 		foreach my $indic_set ( @node_indic_sets ) {
-			my $graph_filename = "graph_" . "$ip" . "_$indic_set.png";
-			push @graphs, { GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_filename" };
+			my $graph_name = "graph_" . "$ip" . "_$indic_set";
+			push @graphs, { CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
+							HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
+							DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
+							};
 		}
 		$tmp->{GRAPHS} = \@graphs;
 		push (@$mothboards, $tmp);
@@ -113,11 +116,14 @@ sub view_clusterdetails : Runmode {
 	$cluster_name = $ecluster->getAttr( name => 'cluster_name' );	
 	my @monitoring_graphs = ( );
 	foreach my $indic_set ( @cluster_indic_sets )  {
-		my $file_name = "graph_" . "$cluster_name" . "_$indic_set.png";
-		push( @monitoring_graphs, { 'graph_info' =>  $indic_set,
-									'graph_file' =>  "$graph_dir_alias/$graph_monitor_subdir/$file_name",
+		my $graph_name = "graph_" . "$cluster_name" . "_$indic_set";
+		push( @monitoring_graphs, { GRAPH_INFO =>  $indic_set,
+									CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
+									HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
+									DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
 								} );
 	}
+	
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
 	$tmpl->param('ORCHESTRATOR_GRAPH_ADD' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_add.png");
 	$tmpl->param('ORCHESTRATOR_GRAPH_REMOVE' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_remove.png");

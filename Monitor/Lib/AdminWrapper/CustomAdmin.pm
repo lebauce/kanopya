@@ -109,6 +109,10 @@ sub getClusterMasterNodeIp {
 	return 0;
 }
 
+sub getClusterId {
+	return 0;
+}
+
 sub retrieveHostsByCluster {
 	my $self = shift;
 
