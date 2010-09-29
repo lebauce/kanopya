@@ -1,5 +1,7 @@
 html, body { height: 100%; }
 
+.small { font-size: small; color: #69B033; text-align: center; position: relative; top: 20px ;}
+
 body {
 	background-color: #EEE;
 	font: small Georgia,Serif;
@@ -30,7 +32,7 @@ a#logout {
 
 iframe { 
 	background-color: transparent;
-	border: none;
+	border: thin dashed black;
 	min-width: 1024px;
 	left: 0;
 	bottom: 0;

@@ -6,9 +6,11 @@
 	color: #69B033;
 }
 
+.small { font-size: small; color: #69B033; text-align: center; position: relative; top: 20px ;}
+
 div#container {
 	margin: auto;
-	width: 500px;
+	width: 350px;
 	margin-top: 100px;
 	background-color: #FFF;
 	border: thin solid #69B033;

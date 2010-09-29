@@ -96,6 +96,8 @@ sub prepare {
 	# Get instance of Cluster Entity
 	$log->info("Load cluster instance");
 	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
+	
+	$self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(administrator => $adm, category => "all");
 }
 
 sub execute {
@@ -104,6 +106,17 @@ sub execute {
 	$self->SUPER::execute();
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
+	
+	my $components = $self->{_objs}->{components};
+	$log->info('Processing cluster components configuration for this node');
+	foreach my $i (keys %$components) {
+		
+		my $tmp = EFactory::newEEntity(data => $components->{$i});
+		$log->debug("component is ".ref($tmp));
+		$tmp->stopNode(motherboard => $self->{_objs}->{motherboard}, 
+						cluster => $self->{_objs}->{cluster} );
+	}
+	
 	
 	## halt the node
 	my $motherboard_econtext = EFactory::newEContext(

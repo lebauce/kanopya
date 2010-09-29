@@ -14,7 +14,7 @@ virtual_server [% vs.ip %] [% vs.port %] {
 	delay_loop 30
 	lb_algo [% vs.lb_algo %]
 	lb_kind [% vs.lb_kind %]
-	persistence_timeout 50
+	#persistence_timeout 50
 	protocol TCP
 	
 	#sorry_server IP PORT
@@ -22,6 +22,7 @@ virtual_server [% vs.ip %] [% vs.port %] {
 	[% FOREACH rs = vs.realservers %]	
 	real_server [% rs.ip %] [% rs.port %] {
 		weight [% rs.weight %]
+		inhibit_on_failure
 		TCP_CHECK {
 			connect_port [% rs.check_port %]
 			connect_timeout [% rs.check_timeout %]
