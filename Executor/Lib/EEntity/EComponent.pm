@@ -118,6 +118,7 @@ sub addInitScripts {
 
 sub addNode {}
 sub removeNode {}
+sub stopNode {}
 
 1;
 

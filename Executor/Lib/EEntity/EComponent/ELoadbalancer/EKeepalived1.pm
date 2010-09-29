@@ -40,13 +40,13 @@ sub addNode {
 			virtualserver_ip => '192.168.100.254/24',
 			virtualserver_port => 80,
 			virtualserver_lbkind => 'NAT',
-			virtualserver_lbalgo => 'rr');
+			virtualserver_lbalgo => 'wlc');
 			
 		my $vsid2 = $keepalived->addVirtualserver(
 			virtualserver_ip => '192.168.100.254/24',
 			virtualserver_port => 443,
 			virtualserver_lbkind => 'NAT',
-			virtualserver_lbalgo => 'rr');
+			virtualserver_lbalgo => 'wlc');
 		
 		$log->debug("adding realserver definition in database");
 		 my $rsid1 = $keepalived->addRealserver(
@@ -120,7 +120,7 @@ sub addNode {
 }
 
 # called when a node is removed from a cluster 
-sub removeNode {
+sub stopNode {
 	my $self = shift;
 	my %args = @_;
 	

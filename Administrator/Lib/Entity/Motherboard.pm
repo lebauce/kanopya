@@ -222,7 +222,7 @@ sub generateHostname {
 	my %args = @_;
 	my $hostname = "node";
 
-	$log->debug("Create hostname with ip $self->{'ip_address'}");
+	$log->debug("Create hostname with ip $args{'ip'}");
 	my @tmp = split(/\./, $args{ip});
 
 	$log->debug("differents ip part are <$tmp[0]> <$tmp[1]> <$tmp[2]> <$tmp[3]>");
