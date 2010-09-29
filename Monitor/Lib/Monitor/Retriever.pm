@@ -451,7 +451,7 @@ sub graphPercent {
 	
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );	
-	my $graph_name = "graph_$host" . "_$set_name" . ( defined $suffix ? "_$suffix" : "" );
+	my $graph_name = "graph_$host" . "_$set_name" . (defined $args{cluster_total} ? "_total" : "") . ( defined $suffix ? "_$suffix" : "" );
 	#TODO Specific graph in percent . "_percent";
 	my $graph_filename = "$graph_name.png";
 
