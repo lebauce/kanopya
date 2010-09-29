@@ -112,6 +112,7 @@ sub new {
 			mkdir $dir;
 		}
 	}
+	mkdir "$self->{_graph_dir}/tmp";
 
 	# Get Administrator
 	#print "get ADMIN\n";

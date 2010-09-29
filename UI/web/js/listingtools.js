@@ -19,6 +19,19 @@ function refreshgraph() {
 	setTimeout('refreshgraph()', 5000);
 }
 
+function display_graph(graph_class) {
+	graphs = document.getElementsByClassName('multi_graph');
+	for(i=0;i<graphs.length;i++) {
+		g = graphs[i];		
+		g.style.display = 'none';
+	}
+	graphs = document.getElementsByClassName(graph_class);
+	for(i=0;i<graphs.length;i++) {
+		g = graphs[i];		
+		g.style.display = 'block';
+	}
+}
+
 refreshgraph();
 
 expandables = document.getElementsByClassName('expanddown');
