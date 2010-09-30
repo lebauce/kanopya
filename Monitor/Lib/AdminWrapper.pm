@@ -1,7 +1,11 @@
 package AdminWrapper;
 
 my $wrap_class = "MCSAdmin";
-#my $wrap_class = "CustomAdmin";
+
+# This env var is defined when generate_cronfile.pl with options (currently only 'custom' for CustomAdmin wrapper)
+if ( exists $ENV{MCS_ADMIN_WRAPPER} ) {
+	$wrap_class = $ENV{MCS_ADMIN_WRAPPER};
+}
 
 sub new {
 	

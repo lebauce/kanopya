@@ -87,26 +87,73 @@ sub retrieveData {
 		my ($ip, $data) = split " ", $line;
 		if ($ip eq $self->{_host}) {
 			
+			my $load;
+			if ($data =~ /LOAD:([\d\.]+)/) {
+				$load = $1 || 0;
+			}
+			else
+			{
+				$load = undef;
+
+				# TODO autre
+				print "## Warning: LOAD not found in virtual nodes file for '$ip'.\n";
+			}
+			
 			while ( my ($name, $oid) = each %$var_map ) {
-				my $value;
-				if ($data =~ /$oid:([\d\.]+)/) {
-					$value = $1 || 0;
-				}
-				else
-				{
-					$value = undef;
-					
-					# TODO autre
-					print "## Warning: '$oid' not found in Virtual status.\n";
-				}
+				my $value = $self->compute( var => $oid, load => $load );
 				$values{$name} = $value;
 			}
+			
+#			while ( my ($name, $oid) = each %$var_map ) {
+#				my $value;
+#				if ($data =~ /$oid:([\d\.]+)/) {
+#					$value = $1 || 0;
+#				}
+#				else
+#				{
+#					$value = undef;
+#					
+#					# TODO autre
+#					print "## Warning: '$oid' not found in Virtual status.\n";
+#				}
+#				$values{$name} = $value;
+#			}
 			last;
 		}
 	}
 	close NODES;
 	
 	return ($time, \%values);
+}
+
+sub compute {
+	my $self = shift;
+	my %args = @_;
+	
+	my $var = $args{var};
+	my $load =$args{load};
+	
+	if ($var =~ "CPU") {	
+		my $idle;
+		if ($load >= 500) {
+			$idle = 0;
+		} else {
+			$idle = 100 - int ($load / 5);
+			$idle += ( rand() * 10 ) - 5;
+			$idle = $idle < 0 ? 0 : $idle > 90 ? 90 + ( rand() * 10 ) - 5 : $idle;
+		}
+		my $rest = 95 - $idle;
+		my $syst = $rest / ( 4 + rand() );
+		my $user = $rest - $syst;
+		
+		my %res = ( 'idleCPU' => $idle, 'systCPU' => $syst, 'userCPU' => $user);
+		return $res{$var};
+	} elsif ($var eq "reqPerSec") {
+		return $load;
+	}
+	
+	print "Error: no definition to compute virtual var '$args{var}'\n";
+	return undef;
 }
 
 # destructor

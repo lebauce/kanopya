@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-my $cluster_name = 'CLUSTY';
+my $cluster_name = 'WebBench';
 
 
 sub balance {
@@ -28,7 +28,7 @@ sub balance {
 				
 		my ($ip) = split " ", $line;
 
-		$line = "$ip virt_var1:$load_avg";
+		$line = "$ip LOAD:$load_avg";
 		
 		print " => $line\n";
 		
@@ -44,21 +44,25 @@ sub balance {
 }
 
 my $time_unit = 60;
-my $y_factor = 10;
-my $start = 10;
+my $y_factor = 450;
+my $start = 0.01;
 my $rand_max = 10;
 
 my @steps = (
-				{ y => 30, period => 2},
-				{ y => 60, period => 0.5},
-				{ y => 80, period => 2},
-				{ y => 50, period => 1},
-				{ y => 45, period => 1},
-				{ y => 100, period => 2},
-				{ y => 100, period => 3},
-				{ y => 70, period => 1},
-				{ y => 65, period => 1},
-				{ y => 20, period => 4},
+				{ y => 0.1, period => 2},
+				{ y => 2, period => 2},
+				{ y => 6, period => 0.5},
+				{ y => 8, period => 2},
+				{ y => 5, period => 1},
+				{ y => 4.5, period => 1},
+				{ y => 4.5, period => 1},
+				{ y => 10, period => 2},
+				{ y => 10, period => 3},
+				{ y => 7, period => 1},
+				{ y => 6.5, period => 1},
+				{ y => 2, period => 4},
+				{ y => 0, period => 1},
+				{ y => 0, period => 100},
 		 	);
 
 sub generateLoad {
@@ -68,9 +72,11 @@ sub generateLoad {
 my $start_time = time();
 
 	while (1) {
+
+
 		
 		my $x = time() - $start_time;
-	
+
 		my $end = 1; 
 		my $t = 0;
 		my $y_start = $start * $y_factor;
