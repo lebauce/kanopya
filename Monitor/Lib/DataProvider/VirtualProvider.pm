@@ -135,10 +135,10 @@ sub compute {
 	
 	if ($var =~ "CPU") {	
 		my $idle;
-		if ($load >= 500) {
+		if ($load >= 410) {
 			$idle = 0;
 		} else {
-			$idle = 100 - int ($load / 5);
+			$idle = 100 - int ($load / 4.1);
 			$idle += ( rand() * 10 ) - 5;
 			$idle = $idle < 0 ? 0 : $idle > 90 ? 90 + ( rand() * 10 ) - 5 : $idle;
 		}

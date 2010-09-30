@@ -6,21 +6,21 @@ use warnings;
 my $cluster_name = shift || 'WebBench';
 
 my $time_unit = 360;
+#my $time_unit = 120; # => modify too in monitor.conf and orchestrator.conf !
 my $y_factor = 400;
 my $start = 0;
 my $rand_max = 10;
 
 my @steps = (
-				{ y => 0, period => 0.5},
-				{ y => 0.1, period => 2},
+				#{ y => 0, period => 0.5},
+				{ y => 0.1, period => 1},
 				{ y => 2, period => 2},
-				{ y => 5, period => 2},
-				{ y => 7, period => 1.5},
+				{ y => 7, period => 3.5},
 				{ y => 5, period => 1},
 				{ y => 4, period => 2},
 				{ y => 3, period => 2},
 				{ y => 2, period => 1},
-				{ y => 2, period => 2},
+				{ y => 2, period => 0.5},
 				{ y => 3, period => 2},
 				{ y => 2, period => 2},
 				{ y => 7, period => 4},

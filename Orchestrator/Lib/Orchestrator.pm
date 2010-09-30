@@ -726,7 +726,7 @@ sub createRRD {
 	my $rrd = RRDTool::OO->new( file =>  $args{file} );
 
 	#my $raws = $self->{_period} / $self->{_time_step};
-	my $raws = 100;
+	my $raws = 3000;
 
 	my @rrd_params = ( 	'step', $self->{_time_step},
 						'archive', { rows	=> $raws }
