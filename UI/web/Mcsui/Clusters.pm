@@ -124,6 +124,7 @@ sub view_clusterdetails : Runmode {
 								} );
 	}
 	
+	$tmpl->param('CLUSTERID' => $query->param('cluster_id') );
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
 	$tmpl->param('ORCHESTRATOR_GRAPH_ADD' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_add.png");
 	$tmpl->param('ORCHESTRATOR_GRAPH_REMOVE' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_remove.png");
@@ -340,8 +341,29 @@ sub process_removenode : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop cluster operation adding to execution queue'); }
-    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails');
 }
 
+sub process_addnode : Runmode {
+	my $self = shift;
+	my $query = $self->query();
+	        
+    eval {
+	    my @free_motherboards = $self->{admin}->getEntities(type => 'Motherboard', hash => { active => 1, motherboard_state => 'down'});
+	    if(not scalar @free_motherboards) {
+	    	my $errmsg = 'no motherboard is available ; can\'t add a new node to this cluster';
+	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    }
+	    my $motherboard = pop @free_motherboards;
+	    $self->{'admin'}->newOp(type => "AddMotherboardInCluster", priority => '100', 
+	    	params => { cluster_id => $query->param('cluster_id'), motherboard_id => $motherboard->getAttr(name => 'motherboard_id') } 
+		);
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'AddMotherboardInCluster operation adding to execution queue'); }
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
+}
 
 1;
