@@ -36,9 +36,9 @@
 						<table class="listdetails">
 						<TMPL_LOOP NAME=GRAPHS>	
 							<tr><td ALIGN=CENTER>
-				      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" id="reloader_<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" />
-				      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" id="reloader_<TMPL_VAR NAME=HOUR_GRAPH_FILE>" style='display:none'/>
-				      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" id="reloader_<TMPL_VAR NAME=DAY_GRAPH_FILE>" style='display:none'/>
+				      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" />
+				      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" style='display:none'/>
+				      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" style='display:none'/>
 							</td></tr>
 						</TMPL_LOOP>
 						</table>
@@ -53,34 +53,43 @@
 	<!--table id="graph_table"-->
 	<table style="float: left; clear: left;">
 		<tr>
-			<th><button type="button" onclick="display_graph('hour_graph')" >Hour</button></th>
-			<th><button type="button" onclick="display_graph('day_graph')" >Day</button></th>
-			<th><button type="button" onclick="display_graph('custom_graph')" >Custom</button></th>
+			<th><input type="radio" name="graph_timeline" value="Hourly" onclick="display_graph('hour_graph')" />Hourly
+			<input type="radio" name="graph_timeline" value="Dayly" onclick="display_graph('day_graph')" />Daily
+			<input type="radio" name="graph_timeline" value="Custom" onclick="display_graph('custom_graph')" />Custom</th>
+		</tr>
+		<tr>
+			<th>
+			<form method="GET" action="/cgi/mcsui.cgi/clusters/process_addnode">
+				start: <input type="text" name="time_start"> end: <input type="text" name="time_end">
+				<input type="submit" value="apply" /></td></tr>
+			</form>
+			</th>
 		</tr>
 	</table>
 	<table class="listview">
-		<tr>
+		<!--tr>
 			<th ALIGN=CENTER>Set</th>
 			<th ALIGN=CENTER>Evolution</th>
-		</tr>
+		</tr-->
 		<TMPL_LOOP NAME=MONITORING_GRAPHS>
 			<tr>
-		    		<td ALIGN=CENTER><TMPL_VAR NAME=GRAPH_INFO></td>
-		      		<!--td ALIGN=CENTER><img src='<TMPL_VAR NAME=GRAPH_FILE>'/></td-->
+		    		<!--td ALIGN=CENTER><TMPL_VAR NAME=GRAPH_INFO></td-->
 		      		<td>
-		      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" id="reloader_<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" />
-		      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" id="reloader_<TMPL_VAR NAME=HOUR_GRAPH_FILE>" style='display:none'/>
-		      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" id="reloader_<TMPL_VAR NAME=DAY_GRAPH_FILE>" style='display:none'/>
+		      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" />
+		      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" style='display:none'/>
+		      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" style='display:none'/>
 		      		</td>
 			</tr>
 		</TMPL_LOOP>
+		<tr><td><b>> Add custom graph <</b></td</tr>
+		<tr><td><b>> Monitored indicators settings <</b></td></tr>
 	</table>
 
 	<h1>Orchestration: </h1>
 	<table class="listview">
 	<tr>
-      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=ORCHESTRATOR_GRAPH_ADD>'/></td>
-      		<td ALIGN=CENTER><img src='<TMPL_VAR NAME=ORCHESTRATOR_GRAPH_REMOVE>'/></td>
+      		<td ALIGN=CENTER><img class="graph" src='<TMPL_VAR NAME=ORCHESTRATOR_GRAPH_ADD>'/></td>
+      		<td ALIGN=CENTER><img class="graph" src='<TMPL_VAR NAME=ORCHESTRATOR_GRAPH_REMOVE>'/></td>
 	</tr>
 	
 	</table>

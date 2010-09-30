@@ -370,7 +370,10 @@ sub createRRD {
 	my $raws = $self->{_period} / $self->{_time_step};
 
 	my @rrd_params = ( 	'step', $self->{_time_step},
-						'archive', { rows	=> $raws }
+						'archive', { rows	=> $raws },
+						'archive', { 	rows => $raws,
+										cpoints => 10,
+										cfunc => "AVERAGE" },
 					 );
 	for my $name ( @$dsname_list ) {
 		push @rrd_params, 	(

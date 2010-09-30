@@ -1,0 +1,16 @@
+http://192.168.100.254/applications.php
+http://192.168.100.254/ecologie.php
+http://192.168.100.254/social.php
+http://192.168.100.254/economie.php
+http://192.168.100.254/servers.php
+http://192.168.100.254/orchestrateur.php
+http://192.168.100.254/plateformes.php
+http://192.168.100.254/offrepartenaire.php
+http://192.168.100.254/offrecommunautaire.php
+http://192.168.100.254/institution.php
+http://192.168.100.254/fondation.php
+http://192.168.100.254/contacts.php
+http://192.168.100.254/presse.php
+http://192.168.100.254/recrutement.php
+http://192.168.100.254/enregistrement.php
+http://192.168.100.254/marketplace.php

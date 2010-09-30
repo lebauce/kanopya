@@ -32,6 +32,8 @@ sub new {
 								#mgrid => "#AAAAAA",
 							};
 	
+	$self->{_graph_title_font} = { name => "Times", element => "title", size => 15 };
+	
 	#$self->{_admin_wrap} = AdminWrapper->new( );
 	
     return $self;
@@ -361,6 +363,8 @@ sub graphNode {
 						#'vertical_label', 'ticks',
 						'start' => time() - $time_laps,
 						color => $self->{_graph_color},
+						
+						font => $self->{_graph_title_font},
 						
 						title => $graph_title,
 						
@@ -880,6 +884,7 @@ sub graphNodeCount {
 					#color => { back => "#69B033" },
 					
 					color => $self->{_graph_color},
+					font => $self->{_graph_title_font},
 					
 					lower_limit => 0,
 					upper_limit => 10,

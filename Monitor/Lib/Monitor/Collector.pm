@@ -471,6 +471,9 @@ sub update {
 				print "Info: create nodes rrd for '$cluster_name'\n";
 				$rrd->create( 	'step' => $self->{_time_step},
 								'archive' => { rows => $self->{_period} / $self->{_time_step} },
+								'archive' => { 	rows => $self->{_period} / $self->{_time_step},
+												cpoints => 10,
+												cfunc => "AVERAGE" },
 								'data_source' => { 	name => 'up', type => 'GAUGE' },
 								'data_source' => { 	name => 'starting', type => 'GAUGE' },
 								'data_source' => { 	name => 'stopping', type => 'GAUGE' },
