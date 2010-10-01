@@ -260,6 +260,7 @@ sub getClusterHostsInfo {
 	
 =cut
 
+#TODO refactor. undef values management
 sub aggregate {
 	my $self = shift;
 	my %args = @_;
@@ -281,7 +282,12 @@ sub aggregate {
 					print "Warning: hash to aggregate have not the same number of keys. => mean computing will be incorrect.\n";
 				}
 				while ( my ($key, $value) = each %$data ) {
-						$res{ $key } += $value;
+						# TODO ! something is wrong here. do a better undef values management!
+						if ( defined $value ) {
+							$res{ $key } += $value;
+						} else {
+							$res{ $key } += 0;
+						}
 				}
 			}
 		}
@@ -289,7 +295,11 @@ sub aggregate {
 	
 	if ( defined $args{f} && $args{f} eq "mean" && $nb_elems > 0) {
 		for my $key (keys %res) {
-			$res{$key} /= $nb_elems;
+			if ( defined $res{$key} ) {
+				$res{$key} /= $nb_elems;
+			} else {
+				$res{$key} = 0;
+			}
 		}
 	}
 	
@@ -467,14 +477,14 @@ sub logArgs {
 	my $sub_name = shift;
 	my %args = @_;
 	
-	$log->debug( "$sub_name( ".join(', ', map( { "$_ => $args{$_}" if defined $args{$_} } keys(%args) )). ");" );
+	#$log->debug( "$sub_name( ".join(', ', map( { "$_ => $args{$_}" if defined $args{$_} } keys(%args) )). ");" );
 	
 }
 
 sub logRet {
 	my %args = @_;
 	
-	$log->debug( "		=> ( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
+	#$log->debug( "		=> ( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 }
 
 
