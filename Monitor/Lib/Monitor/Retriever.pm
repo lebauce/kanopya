@@ -334,14 +334,14 @@ sub graphNode {
 	my $self = shift;
 	my %args = @_;
 
-	my ($time_laps, $suffix) = $self->timeLaps( time_laps => $args{time_laps} );
+	my ($time_start, $time_end, $suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
 
 	my $host = $args{host};
 	
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
 	
-	$rrd_name .= "_total" if (defined $args{cluster_total});	
+	#$rrd_name .= "_total" if (defined $args{cluster_total});	
 
 	my $graph_name = "graph_$host" . "_$set_name" . (defined $args{cluster_total} ? "_total" : "") . ( defined $suffix ? "_$suffix" : "");
 	my $graph_filename = "$graph_name.png";
@@ -361,7 +361,8 @@ sub graphNode {
 	my @graph_params = (
 						'image' => "$self->{_graph_dir}/tmp/$graph_filename",
 						#'vertical_label', 'ticks',
-						'start' => time() - $time_laps,
+						'start' => $time_start,
+						'end' => $time_end,
 						color => $self->{_graph_color},
 						
 						font => $self->{_graph_title_font},
@@ -406,6 +407,21 @@ sub graphNode {
 #							      },
 	  								
 							);
+							
+			if (defined $args{cluster_total}) {
+					push @graph_params, (
+						'draw', {
+									#type   => $first == 1 ? "stack" : "stack",
+									file => $self->{_rrd_base_dir} . "/" . "$rrd_name" . "_total.rrd",
+									name => $ds->{label} . '_total',
+									type => $graph_type,
+									dsname => $ds->{label},
+									color => "FF0000",
+									legend => $ds->{label} . " (total)",
+	  							}
+	  						);
+			}
+			
 		$first = 0;
 	}
 
@@ -434,14 +450,51 @@ sub timeLaps {
 	my %args = @_;
 	
 	my $time_laps = $args{time_laps};
-	my $suffix;
+	my ($time_start, $time_end, $suffix);
 	if ( $time_laps =~ /\D/ ) { # not a number
 		 $suffix = "$time_laps";
 		 my %laps = ( 'hour' => 3600, 'day' => 3600*24 );
 		 $time_laps = $laps{$time_laps} || 0;
-	}	
+		 $time_end = time();
+	} elsif ( defined $args{time_range} ) {
+		my @range = split ",", $args{time_range};
+		# TODO check validity of range 
+		
+		 use DateTime::Format::Strptime;
+
+  		my $analyseur = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M' );
+  		my $dt_start = $analyseur->parse_datetime( $range[0] );
+  		my $dt_end = $analyseur->parse_datetime( $range[1] );
+		
+		my $d = 2 * 3600;
+		
+		$time_end = $dt_end->epoch();
+		$time_laps = $time_end - $dt_start->epoch();
+		$time_end -= $d;
+		
+		print "\n###############   ", " TIME NOW ", "   ##########\n";
+		print DateTime->now();
+		print "\n";
+		my $dt_now = DateTime->from_epoch( epoch => time() );
+		print $dt_now;
+		print "\n###############   ", "", "   ##########\n";
+#		print $dt_now->epoch(), "\n";
+#		print $time_end;
+#		print $dt_end;
+#		print "\n###############   ", "", "   ##########\n";
+#		my $syst_epoch = `date +%s`;
+#		print DateTime->from_epoch( epoch => $syst_epoch ), "\n";
+#		print "gmt : ", gmtime();
+#		print "local: ", localtime();
+#		print "\n###############   ", "", "   ##########\n";
+		
+	} else {
+		$time_end = time();
+	}
 	
-	return ($time_laps, $suffix);
+	$time_start = $time_end - $time_laps; 
+	
+	return ($time_start, $time_end,  $suffix);
 }
 
 #TODO paramétre pour choisir la liste des ds dont on veut afficher le pourcentage
@@ -451,7 +504,7 @@ sub graphPercent {
 	
 	my $host = $args{host};
 	
-	my ($time_laps, $suffix) = $self->timeLaps( time_laps => $args{time_laps} );
+	my ($time_start, $time_end, $suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
 	
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );	
@@ -493,7 +546,8 @@ sub graphPercent {
 						'image' => "$self->{_graph_dir}/tmp/$graph_filename",
 						title => $graph_title,
 						#'vertical_label', 'ticks',
-						'start' => time() - $time_laps,
+						'start' => $time_start,
+						'end' => $time_end,
 						color => $self->{_graph_color},
 						lower_limit => 0,
 						);
@@ -681,6 +735,7 @@ sub graphCluster {
 				my $graph_filename = $graph_sub->( 	$self,
 												host => $cluster,
 												time_laps => $time_laps,
+												time_range => $args{time_range},
 												set_label => $set_def->{label},
 												ds_def_list => \@required_ds_def_list,
 												graph_type => $args{graph_type},
@@ -689,6 +744,7 @@ sub graphCluster {
 				$graph_filename = $graph_sub->( 	$self,
 												host => $cluster,
 												time_laps => $time_laps,
+												time_range => $args{time_range},
 												set_label => $set_def->{label},
 												ds_def_list => \@required_ds_def_list,
 												graph_type => $args{graph_type},
@@ -754,6 +810,7 @@ sub graphNodes {
 					my $graph_filename = $graph_sub->( 	$self,
 														host => $host,
 														time_laps => $time_laps,
+														time_range => $args{time_range},
 														set_label => $set_def->{label},
 														ds_def_list => \@required_ds_def_list,
 														graph_type => $args{graph_type} );
@@ -804,16 +861,18 @@ sub graphFromConf {
 							my ($dir, $file);
 							if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
 								($dir, $file) = $self->graphNodeCount( 	time_laps => $laps,
+																		time_range => $graph_def->{time_range},
 																		cluster => $cluster );	
 							} else {
 								my @required_indicators = split ",", $graph_def->{ds_label};
 								my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
 								($dir, $file) = $self->graphCluster( time_laps => $laps,
+																		time_range => $graph_def->{time_range},
 																		cluster => $cluster,
 																		required_set => $graph_def->{set_label},
 																		required_indicators => $required,
 																		percent => $graph_def->{percent},
-																		graph_type => $graph_def->{graph_type} || 'line');
+																		graph_type => $graph_def->{graph_type} || 'line' );
 							}
 							$graph_info{$cluster} = [ $dir, $file ];
 							
@@ -822,6 +881,7 @@ sub graphFromConf {
 						my @required_indicators = split ",", $graph_def->{ds_label};
 						my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
 						my $res = $self->graphNodes( time_laps => $laps,
+													time_range => $graph_def->{time_range},
 													required_set => $graph_def->{set_label},
 													required_indicators => $required,
 													percent => $graph_def->{percent},
@@ -839,6 +899,11 @@ sub graphFromConf {
 		}
 		$graph_files{ "graph_$i" } = \%graph_info;
 	} 
+	
+	################
+#	if ( exists $ENV{LOGNAME} && $ENV{LOGNAME} eq 'root' ) {
+#		`chmod +w $self->{_graph_dir}/*`;	
+#	}
 	
 	print "# graph from conf time => ", time() - $start_time, "\n";
 	
@@ -869,9 +934,9 @@ sub graphNodeCount {
 	
 	my $cluster = $args{cluster};
     
-    my ($time_laps, $suffix) = $self->timeLaps( time_laps => $args{time_laps} );
+    my ($time_start, $time_end, $time_suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
     
-    my $graph_file = "graph_$cluster" . "_nodecount" . (defined $suffix ? "_$suffix" : "") . ".png";
+    my $graph_file = "graph_$cluster" . "_nodecount" . (defined $time_suffix ? "_$time_suffix" : "") . ".png";
 	my $graph_file_path = "$self->{_graph_dir}/tmp/$graph_file";
 	
 	# get rrd     
@@ -880,7 +945,8 @@ sub graphNodeCount {
 	$rrd->graph( 	'image' => $graph_file_path,
 					#'vertical_label' => 'number of nodes',
 					'title' => "Node count for cluster $cluster",
-					'start' => time() - $time_laps,
+					'start' => $time_start,
+					'end' => $time_end,
 					#color => { back => "#69B033" },
 					
 					color => $self->{_graph_color},

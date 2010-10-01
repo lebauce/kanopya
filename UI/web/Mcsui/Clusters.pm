@@ -5,6 +5,8 @@ use Log::Log4perl "get_logger";
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
 
+use lib "/workspace/mcs/Monitor/Lib";
+
 my $log = get_logger("administrator");
 
 
@@ -187,6 +189,18 @@ sub form_addcluster : Runmode {
 	$tmpl->param($errors) if $errors;
 	$output .= $tmpl->output();
 	return $output;
+}
+
+sub process_customgraph : Runmode {
+	my $self = shift;
+	
+	 my $query = $self->query();
+	 
+#	 use Monitor::Retriever;
+#	 my $monitor = Monitor::Retriever->new();
+#	 my %graph_infos = $monitor->graphFromConf();
+	
+	 $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id') . "#monitoring");
 }
 
 sub process_addcluster : Runmode {
