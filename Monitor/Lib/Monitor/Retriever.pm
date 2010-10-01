@@ -341,7 +341,7 @@ sub graphNode {
 	my $set_name = $args{set_label};
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
 	
-	#$rrd_name .= "_total" if (defined $args{cluster_total});	
+	$rrd_name .= "_total" if (defined $args{cluster_total});	
 
 	my $graph_name = "graph_$host" . "_$set_name" . (defined $args{cluster_total} ? "_total" : "") . ( defined $suffix ? "_$suffix" : "");
 	my $graph_filename = "$graph_name.png";
@@ -407,20 +407,6 @@ sub graphNode {
 #							      },
 	  								
 							);
-							
-			if (defined $args{cluster_total}) {
-					push @graph_params, (
-						'draw', {
-									#type   => $first == 1 ? "stack" : "stack",
-									file => $self->{_rrd_base_dir} . "/" . "$rrd_name" . "_total.rrd",
-									name => $ds->{label} . '_total',
-									type => $graph_type,
-									dsname => $ds->{label},
-									color => "FF0000",
-									legend => $ds->{label} . " (total)",
-	  							}
-	  						);
-			}
 			
 		$first = 0;
 	}
