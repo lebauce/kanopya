@@ -32,7 +32,7 @@ sub addHost {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	#TODO Apply configuration on dhcp server
+
 	return $self->_getEntity()->addHost(%args);
 }
 
