@@ -16,6 +16,19 @@ sub new {
     return $self;
 }
 
+=head2 createDisk
+
+createDisk ( name, size, filesystem, econtext )
+	desc: This function create a new lv on storage server.
+	args:
+		name : string : new lv name
+		size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
+		filesystem : String : The filesystem is defined by mkfs filesystem option
+		econtext : Econtext : execution context on the storage server
+	return:
+		code returned by EEntity::EComponent::ELvm2->lvCreate
+    
+=cut
 sub createDisk {
 	my $self = shift;
 	my %args = @_;
@@ -33,7 +46,17 @@ sub createDisk {
 					lvm2_lv_filesystem =>$args{filesystem}, lvm2_lv_size => $args{size},
 					econtext => $args{econtext}, lvm2_vg_name => $vg->{vgname});
 }
+=head2 removeDisk
 
+removeDisk ( name, econtext )
+	desc: This function remove a lv using it lvname.
+	args:
+		name : string: lv name
+		econtext : Econtext : execution context on the storage server
+	return:
+		code returned by EEntity::EComponent::ELvm2->lvRemove
+
+=cut
 sub removeDisk{
 	my $self = shift;
 	my %args = @_;
@@ -46,10 +69,24 @@ sub removeDisk{
 	}
 	my $vg = $self->_getEntity()->getMainVg();
 
-	$self->lvRemove(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
+	return $self->lvRemove(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
 					econtext => $args{econtext}, lvm2_vg_name => $vg->{vgname});
 }
+=head2 lvCreate
 
+createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, econtext, lvm2_vg_name)
+	desc: This function create a new lv on storage server and add it in db through entity part
+	args:
+		lvm2_lv_name : string : new lv name
+		lvm2_lv_size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
+		lvm2_lv_filesystem : String : The filesystem is defined by mkfs filesystem option
+		econtext : Econtext : execution context on the storage server
+		lvm2_vg_id : Int : VG id on which lv will be created
+		lvm2_vg_name : String : vg name
+	return:
+		code returned by Entity::Component::Lvm2->lvCreate
+    
+=cut
 sub lvCreate{
 	my $self = shift;
 	my %args = @_;
@@ -74,7 +111,7 @@ sub lvCreate{
 		$log->error($errmsg);
 		throw Mcs::Exception::Execution(error => $errmsg);
 	}
-	$self->vgSizeUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
+	$self->vgSpaceUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
 						lvm2_vg_name => $args{lvm2_vg_name});
 	delete $args{econtext};
 	delete $args{lvm2_vg_name};
@@ -82,8 +119,19 @@ sub lvCreate{
 	return $self->_getEntity()->lvCreate(%args);
 	
 }
+=head2 vgSizeUpdate
 
-sub vgSizeUpdate {
+vgSizeUpdate ( lvm2_vg_id, econtext, lvm2_vg_name)
+	desc: This function update vg free space on storage server
+	args:
+		econtext : Econtext : execution context on the storage server
+		lvm2_vg_id : Int : identifier of vg update
+		lvm2_vg_name : String : vg name
+	return:
+		code returned by Entity::Component::Lvm2->vgSpaceUpdate
+    
+=cut
+sub vgSpaceUpdate {
 	my $self = shift;
 	my %args = @_;
 	
@@ -106,6 +154,16 @@ sub vgSizeUpdate {
 	return $self->_getEntity()->vgSizeUpdate(lvm2_vg_freespace => $freespace, lvm2_vg_id => $args{lvm2_vg_id});
 }
 
+=head2 lvRemove
+
+lvRemove ( lvm2_lv_name, lvm2_vg_id, econtext, lvm2_vg_name)
+	desc: This function remove a lv.
+	args:
+		name : string: lv name
+		econtext : Econtext : execution context on the storage server
+
+
+=cut
 sub lvRemove{
 	my $self = shift;
 	my %args = @_;
@@ -126,7 +184,7 @@ sub lvRemove{
 	delete $args{lvm2_vg_name};
 	#TODO Real creation of LV
 	$self->_getEntity()->lvRemove(%args);
-	$self->vgSizeUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
+	$self->vgSpaceUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
 						lvm2_vg_name => $args{lvm2_vg_name});
 }
 
