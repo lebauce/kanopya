@@ -181,7 +181,6 @@ sub setAttr {
 	if($data->has_column( $args{name})) {
     	$data->set_column( $args{name}, $args{value} );	
     } elsif( $self->extension() ) {
-    	# TODO check if ext param name is a valid name for this entity
     	$self->{ _ext_attrs }{ $args{name} } = $args{value};
     } else {
     	$log->debug("setAttrs() : No parameter named '$args{name}' for ". ref($self));

@@ -72,7 +72,7 @@ sub checkAttrs {
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
 		if (exists $struct->{$attr}){
-			if($attrs->{$attr} !~ $struct->{$attr}->{pattern}){
+			if($attrs->{$attr} !~ m/($struct->{$attr}->{pattern})/){
 				$errmsg = "Entity::Cluster->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
 				$log->error($errmsg);
 				$log->debug("Can't match $struct->{$attr}->{pattern} with $attrs->{$attr}");
@@ -97,7 +97,6 @@ sub checkAttrs {
 				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
-	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
 	return {global => \%global_attrs, extended => \%ext_attrs};
 }
 
