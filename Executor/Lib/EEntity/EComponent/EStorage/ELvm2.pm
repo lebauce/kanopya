@@ -28,7 +28,6 @@ sub createDisk {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	#TODO Get main vg could be in entity object or EEntity
 	my $vg = $self->_getEntity()->getMainVg();
 	return $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
 					lvm2_lv_filesystem =>$args{filesystem}, lvm2_lv_size => $args{size},
@@ -45,7 +44,6 @@ sub removeDisk{
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	#TODO Get main vg could be in entity object or EEntity
 	my $vg = $self->_getEntity()->getMainVg();
 
 	$self->lvRemove(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
@@ -76,11 +74,36 @@ sub lvCreate{
 		$log->error($errmsg);
 		throw Mcs::Exception::Execution(error => $errmsg);
 	}
+	$self->vgSizeUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
+						lvm2_vg_name => $args{lvm2_vg_name});
 	delete $args{econtext};
 	delete $args{lvm2_vg_name};
 	
 	return $self->_getEntity()->lvCreate(%args);
 	
+}
+
+sub vgSizeUpdate {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
+		(! exists $args{econtext} or ! defined $args{econtext}) ||
+		(! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
+		$errmsg = "ELvm2->vgSizeUpdate need a econtext, lvm2_vg_id and lvm2_lv_filesystem named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $command = "vgs $args{lvm2_vg_name} --noheadings -o vg_free --nosuffix --units M --rows";
+	my $ret = $args{econtext}->execute(command => $command);
+	if($ret->{exitcode} != 0) {
+		my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
+		$log->error($errmsg);
+		throw Mcs::Exception::Execution(error => $errmsg);
+	}
+	my $freespace = $ret->{stdout};
+	$freespace =~ 's/\s*//';
+	return $self->_getEntity()->vgSizeUpdate(lvm2_vg_freespace => $freespace, lvm2_vg_id => $args{lvm2_vg_id});
 }
 
 sub lvRemove{
@@ -103,7 +126,8 @@ sub lvRemove{
 	delete $args{lvm2_vg_name};
 	#TODO Real creation of LV
 	$self->_getEntity()->lvRemove(%args);
-	
+	$self->vgSizeUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
+						lvm2_vg_name => $args{lvm2_vg_name});
 }
 
 
