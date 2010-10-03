@@ -78,7 +78,6 @@ sub checkAttrs {
 				$log->debug("Can't match $struct->{$attr}->{pattern} with $attrs->{$attr}");
 				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
 			}
-			#TODO Check param with regexp in pattern field of struct
 			if ($struct->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
 			}
