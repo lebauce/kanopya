@@ -12,34 +12,34 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 use constant ATTR_DEF => {
-			cluster_name			=> {pattern			=> 'm//s',
+			cluster_name			=> {pattern			=> '^\w*$',
 										is_mandatory	=> 1,
 										is_extended		=> 0},
-			cluster_desc			=> {pattern			=> 'm//m',
+			cluster_desc			=> {pattern			=> '\w*', # Impossible to check char used because of \n doesn't match with \w
 										is_mandatory	=> 0,
 										is_extended 	=> 0},
-			cluster_type			=> {pattern			=> 'm//s',
-										is_mandatory	=> 0,
-										is_extended		=> 0},
-			cluster_min_node		=> {pattern 		=> 'm//s',
-										is_mandatory	=> 1,
-										is_extended 	=> 0},
-			cluster_max_node		=> {pattern			=> 'm//s',
-										is_mandatory	=> 1,
-										is_extended		=> 0},
-			cluster_priority		=> {pattern 		=> 'm//s',
-										is_mandatory	=> 1,
-										is_extended 	=> 0},
-			active					=> {pattern			=> 'm//s',
+			cluster_type			=> {pattern			=> '^.*$',
 										is_mandatory	=> 0,
 										is_extended		=> 0},
-			systemimage_id			=> {pattern 		=> 'm//s',
+			cluster_min_node		=> {pattern 		=> '^\d*$',
 										is_mandatory	=> 1,
 										is_extended 	=> 0},
-			kernel_id				=> {pattern 		=> 'm//s',
+			cluster_max_node		=> {pattern			=> '^\d*$',
+										is_mandatory	=> 1,
+										is_extended		=> 0},
+			cluster_priority		=> {pattern 		=> '^\d*$',
+										is_mandatory	=> 1,
+										is_extended 	=> 0},
+			active					=> {pattern			=> '^[01]$',
+										is_mandatory	=> 0,
+										is_extended		=> 0},
+			systemimage_id			=> {pattern 		=> '\d*',
+										is_mandatory	=> 1,
+										is_extended 	=> 0},
+			kernel_id				=> {pattern 		=> '^\d*$',
 										is_mandatory	=> 0,
 										is_extended 	=> 0},
-			cluster_state			=> {pattern 		=> 'm//s',
+			cluster_state			=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
 										is_mandatory	=> 0,
 										is_extended 	=> 0}
 			};
@@ -72,6 +72,12 @@ sub checkAttrs {
 	my $attrs = $args{attrs};
 	foreach $attr (keys(%$attrs)) {
 		if (exists $struct->{$attr}){
+			if($attrs->{$attr} !~ $struct->{$attr}->{pattern}){
+				$errmsg = "Entity::Cluster->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
+				$log->error($errmsg);
+				$log->debug("Can't match $struct->{$attr}->{pattern} with $attrs->{$attr}");
+				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+			}
 			#TODO Check param with regexp in pattern field of struct
 			if ($struct->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
