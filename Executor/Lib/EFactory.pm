@@ -50,6 +50,7 @@ use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use General;
 use McsExceptions;
+use Net::IP qw(:PROC);
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -95,8 +96,17 @@ sub newEContext {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	
-	#TODO Check if ips is good format
+
+	if (!ip_is_ipv4($args{ip_source})){
+		$errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
+		if (!ip_is_ipv4($args{ip_destination})){
+		$errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
 	#Create EContext::Local or EContext::SSH
 	if($args{ip_source} eq $args{ip_destination}) {
 		# EContext::Local
