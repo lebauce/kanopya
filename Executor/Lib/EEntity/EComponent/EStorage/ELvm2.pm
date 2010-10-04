@@ -182,7 +182,6 @@ sub lvRemove{
 	my $ret = $args{econtext}->execute(command => "lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
 	delete $args{econtext};
 	delete $args{lvm2_vg_name};
-	#TODO Real creation of LV
 	$self->_getEntity()->lvRemove(%args);
 	$self->vgSpaceUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
 						lvm2_vg_name => $args{lvm2_vg_name});

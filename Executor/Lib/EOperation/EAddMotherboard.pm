@@ -109,7 +109,6 @@ sub prepare {
 	$self->{nas} = {};
 	$self->{executor} = {};
 	
-	# TODO Faire ça ailleurs : la mac address doit etre en miniscule
 	$params->{motherboard_mac_address} = lc($params->{motherboard_mac_address});
 
 	## Instanciate Clusters
