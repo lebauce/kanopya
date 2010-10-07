@@ -161,8 +161,6 @@ sub execute {
 													filesystem => $devs->{root}->{filesystem},
 													econtext => $self->{nas}->{econtext});
 	
-	# TODO update vg freespace 
-	
 	# copy of distribution data to systemimage devices												
 	$log->info('etc device fill with distribution data for new systemimage');
 	my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";

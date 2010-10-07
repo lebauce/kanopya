@@ -7,6 +7,12 @@ use warnings;
 use XML::Simple;
 use General;
 
+my $param = shift;
+my $env;
+if ( defined $param && $param eq 'custom') {
+	$env = "MCS_ADMIN_WRAPPER=CustomAdmin";
+}
+
 my $config      = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
 my $all_conf    = General::getAsArrayRef( data => $config, tag => 'conf' );
 my @conf        = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
@@ -22,11 +28,13 @@ print "=> generate graph every $gen_graph_delay seconds\n";
 open FILE, ">/tmp/mcs.cron.tmp";
 
 my $cmd = cronCmd( 	time_step => $gen_graph_delay,
+					env => $env,
 					cmd => "perl /workspace/mcs/Monitor/Bin/retriever_script.pl --generate-graph > /tmp/gengraph_cron.out 2> /tmp/gengraph_cron.error");
 print $cmd;
 print FILE $cmd;
 
 $cmd = cronCmd( 	time_step => $monit_delay,
+					env => $env,
 					cmd => "perl /workspace/mcs/Monitor/Bin/collector_script.pl --update > /tmp/monitoring_cron.out 2> /tmp/monitoring_cron.error",);
 print $cmd;
 print FILE $cmd;
@@ -43,6 +51,7 @@ sub cronCmd {
 
 	my $cmd = $args{cmd};
 	my $step = $args{time_step};
+	my $env = defined $args{env} ? "env $args{env}" : "";
 
 	die "Time step too small, risk of time error with cron" if ( $step < 10 );
 	
@@ -58,9 +67,9 @@ sub cronCmd {
 	die "Hours not implemented" if ($minute_step >= 60);
 	
 	my $user = "root";
-	my $cron = "*/$minute_step * * * * $user $cmd\n";
+	my $cron = "*/$minute_step * * * * $user $env $cmd\n";
 	for ( my $sleep = $step; $sleep != $period; $sleep += $step ) {
-		$cron .= "*/$minute_step * * * * $user sleep " . $sleep . "; $cmd\n";
+		$cron .= "*/$minute_step * * * * $user sleep " . $sleep . "; $env $cmd\n";
 	} 
 	
 	return $cron;

@@ -11,6 +11,7 @@ my $orchestrator = Orchestrator->new();
 # MAIN
 my $sub = shift;
 if ( $sub eq "run" ) {
+	my $opt = shift;
 	$orchestrator->run();
 } elsif ( $sub eq "graph" ) {
 	my $cluster = shift;

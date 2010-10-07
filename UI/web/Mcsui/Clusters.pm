@@ -5,6 +5,8 @@ use Log::Log4perl "get_logger";
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
 
+use lib "/workspace/mcs/Monitor/Lib";
+
 my $log = get_logger("administrator");
 
 
@@ -124,6 +126,14 @@ sub view_clusterdetails : Runmode {
 								} );
 	}
 	
+	# TEMPORARY display total apache_status set for this cluster
+	my $graph_name = "graph_" . "$cluster_name" . "_apache_status_total";
+	push( @monitoring_graphs, {	GRAPH_INFO =>  "apache status total",
+								CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
+								HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
+								DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
+								} );
+	
 	$tmpl->param('CLUSTERID' => $query->param('cluster_id') );
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
 	$tmpl->param('ORCHESTRATOR_GRAPH_ADD' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_add.png");
@@ -179,6 +189,18 @@ sub form_addcluster : Runmode {
 	$tmpl->param($errors) if $errors;
 	$output .= $tmpl->output();
 	return $output;
+}
+
+sub process_customgraph : Runmode {
+	my $self = shift;
+	
+	 my $query = $self->query();
+	 
+#	 use Monitor::Retriever;
+#	 my $monitor = Monitor::Retriever->new();
+#	 my %graph_infos = $monitor->graphFromConf();
+	
+	 $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id') . "#monitoring");
 }
 
 sub process_addcluster : Runmode {

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use lib "/workspace/mcs/Monitor/Lib"; #TODO replace by absolute path
+use lib "/workspace/mcs/Monitor/Lib";
 
 use strict;
 use warnings;
