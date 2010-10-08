@@ -31,6 +31,7 @@ use General;
 
 my %funcs = ( 	
 				"const" => \&const,
+				"linear" => \&linear,
 				"sinus" => \&sinus,
 				"custom_sinus" => \&custom_sinus,
 				"random" => \&random,
@@ -142,6 +143,18 @@ sub custom_sinus {
 	}
 	
 	return $res;	
+}
+
+sub linear {
+	my $self = shift;
+	my %args = @_;
+	
+	my $x = $args{dt};
+	my $var = $args{var};
+	
+	my $res = $x * $var->{a} + ( $var->{b} || 0 );
+	
+	return $res;
 }
 
 =head2 retrieveData

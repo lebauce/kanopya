@@ -127,12 +127,12 @@ sub view_clusterdetails : Runmode {
 	}
 	
 	# TEMPORARY display total apache_status set for this cluster
-	my $graph_name = "graph_" . "$cluster_name" . "_apache_status_total";
-	push( @monitoring_graphs, {	GRAPH_INFO =>  "apache status total",
-								CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
-								HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
-								DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
-								} );
+#	my $graph_name = "graph_" . "$cluster_name" . "_apache_status_total";
+#	push( @monitoring_graphs, {	GRAPH_INFO =>  "apache status total",
+#								CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
+#								HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
+#								DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
+#								} );
 	
 	$tmpl->param('CLUSTERID' => $query->param('cluster_id') );
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
