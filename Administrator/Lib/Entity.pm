@@ -181,7 +181,6 @@ sub setAttr {
 	if($data->has_column( $args{name})) {
     	$data->set_column( $args{name}, $args{value} );	
     } elsif( $self->extension() ) {
-    	# TODO check if ext param name is a valid name for this entity
     	$self->{ _ext_attrs }{ $args{name} } = $args{value};
     } else {
     	$log->debug("setAttrs() : No parameter named '$args{name}' for ". ref($self));
@@ -339,9 +338,9 @@ sub delete {
 
 sub activate {
 	my $self = shift;
-	#TODO A reflechir ne vaut il pas mieux de faire un update sur le champs active sinon pb avec le save qui prendra en compte les autres champs modifiés 
 	if (defined $self->ATTR_DEF->{active}) {
-		$self->setAttr(name => 'active', value => 1);
+		$self->{_dbix}->update({active => "1"});
+#		$self->setAttr(name => 'active', value => 1);
 		$log->debug("Entity::Activate : Entity is activated");
 	} else {
 		$errmsg = "Entity->activate Entity ". ref($self) . " unable to activate !";

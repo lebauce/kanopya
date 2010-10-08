@@ -85,7 +85,7 @@ sub checkAttrs {
 				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
-	#TODO Check if distribution id exist and are correct.
+	
 	return {global => \%global_attrs, extended => \%ext_attrs};
 }
 

@@ -40,12 +40,27 @@ sub lvCreate{
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-# ICI Recuperer le bon vg et ensuite suivre le lien lv et new dedans
 	$log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_lv_size is $args{lvm2_lv_size}, lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, lvm2_vg_id is $args{lvm2_vg_id}");
 	my $lv_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs;
 	my $res = $lv_rs->create(\%args);
+	
 	$log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
 	return $res->get_column("lvm2_lv_id");
+}
+
+sub vgSizeUpdate{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
+		(! exists $args{lvm2_vg_freespace} or ! defined $args{lvm2_vg_freespace})) { 
+		$errmsg = "Lvm2->vgSizeUpdate need lvm2_vg_id and size named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $vg_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}});
+	delete $args{lvm2_vg_id};
+	return $vg_rs->update(\%args);
 }
 
 sub lvRemove{

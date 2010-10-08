@@ -81,8 +81,8 @@ sub new {
     }
     
     # if kernel_id present, check if exists
-    $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
     if(exists $args{params}->{kernel_id}) {
+    	$log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
     	if ($args{params}->{kernel_id} == 0){
     		$args{params}->{kernel_id} = undef;
     	}else {

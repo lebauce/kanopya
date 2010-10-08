@@ -10,43 +10,43 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	motherboardmodel_id	=>	{pattern			=> 'm//s',
+			  motherboardmodel_id	=>	{pattern			=> '^\d*$',
 											is_mandatory	=> 1,
 											is_extended		=> 0},
-			  processormodel_id		=> {pattern			=> 'm//m',
+			  processormodel_id		=> {pattern			=> '^\d*$',
 											is_mandatory	=> 1,
 											is_extended 	=> 0},
-			  kernel_id					=> {pattern			=> 'm//s',
+			  kernel_id					=> {pattern			=> '^\d*$',
 											is_mandatory	=> 1,
 											is_extended		=> 0},
-			  motherboard_serial_number	=> {pattern 		=> 'm//s',
+			  motherboard_serial_number	=> {pattern 		=> '^.*$',
 											is_mandatory	=> 1,
 											is_extended 	=> 0},
-			  motherboard_slot_position	=> {pattern 		=> 'm//s',
+			  motherboard_slot_position	=> {pattern 		=> '^\w*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_desc			=> {pattern 		=> 'm//s',
+			  motherboard_desc			=> {pattern 		=> '\w*',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  active		=> {pattern 		=> 'm//s',
+			  active		=> {pattern 		=> '^[01]$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_mac_address	=> {pattern 		=> 'm//s',  # mac address format must be lower case
+			  motherboard_mac_address	=> {pattern 		=> '^.*$',  # mac address format must be lower case
 											is_mandatory	=> 1,		# to have udev persistent net rules work
 											is_extended 	=> 0},
-			  motherboard_internal_ip	=> {pattern 		=> 'm//s',
+			  motherboard_internal_ip	=> {pattern 		=> '^.*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_hostname		=> {pattern 		=> 'm//s',
+			  motherboard_hostname		=> {pattern 		=> '^\w*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_initiatorname	=> {pattern 		=> 'm//s',
+			  motherboard_initiatorname	=> {pattern 		=> '^.*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  etc_device_id				=> {pattern 		=> 'm//s',
+			  etc_device_id				=> {pattern 		=> 'm/^\d*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			motherboard_state				=> {pattern 		=> 'm//s',
+			motherboard_state				=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0}
 			};
@@ -80,7 +80,12 @@ sub checkAttrs {
 	foreach $attr (keys(%$attrs)) {
 		if (exists $attr_def->{$attr}){
 			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
-			#TODO Check param with regexp in pattern field of struct
+			if($attrs->{$attr} !~ m/($attr_def->{$attr}->{pattern})/){
+				$errmsg = "Entity::Motherboard->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
+				$log->error($errmsg);
+				$log->debug("Can't match $attr_def->{$attr}->{pattern} with $attrs->{$attr}");
+				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+			}
 			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
 			}
