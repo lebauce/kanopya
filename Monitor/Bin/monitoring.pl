@@ -8,19 +8,20 @@ use XML::Simple;
 use General;
 
 sub start {
-	print "\n###############   ", "Stop current monitoring", "   ##########\n";
+	my @args = @_;
+	
+	print "\n###############   ", "Stop current monitoring and clean waiting processes", "   ##########\n";
 	stop();
-	print "\n###############   ", "Clean process and data", "   ##########\n";
+	print "\n###############   ", "Clean data", "   ##########\n";
 	clean();
 	print "\n###############   ", "Start monitoring", "   ##########\n";
-	generate_cronfile( @_ );
+	generate_cronfile( @args );
 }
 
 sub stop {
+	
+	# Remove mcs cron file
 	`rm /etc/cron.d/mcs`;
-}
-
-sub clean {
 	
 	# Kill processes
 	my @psaux = `ps aux`;
@@ -33,6 +34,10 @@ sub clean {
 			`kill $pid`;
 		}
 	}
+	
+}
+
+sub clean {
 	
 	# rm monitoring directories
 	# TODO get directory path from conf (warning: if we change conf then we clean -> problem!)

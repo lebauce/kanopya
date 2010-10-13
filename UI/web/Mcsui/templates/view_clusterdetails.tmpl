@@ -53,15 +53,16 @@
 	<!--table id="graph_table"-->
 	<table style="float: left; clear: left;">
 		<tr>
-			<th><input type="radio" name="graph_timeline" value="Hourly" onclick="display_graph('hour_graph')" checked />Hourly
-			<input type="radio" name="graph_timeline" value="Dayly" onclick="display_graph('day_graph')" />Daily
-			<input type="radio" name="graph_timeline" value="Custom" onclick="display_graph('custom_graph')" />Custom</th>
+			<th><input type="radio" name="graph_timeline" value="Hourly" id="radioHour" onclick="display_graph('hour_graph')" />Hourly
+			<input type="radio" name="graph_timeline" value="Daily" id="radioDay" onclick="display_graph('day_graph')" />Daily
+			<input type="radio" name="graph_timeline" value="Custom" id="radioCustom" onclick="display_graph('custom_graph')" />Custom</th>
 		</tr>
 		<tr>
 			<th>
-			<form method="GET" action="">
+			<form method="GET" action="/cgi/mcsui.cgi/clusters/process_customgraph">
 				<input type="hidden" name="cluster_id" value="<TMPL_VAR NAME=CLUSTERID>" />
-				start: <input type="text" name="time_start"> end: <input type="text" name="time_end">
+				start: <input type="text" name="time_start" value="<TMPL_VAR NAME=CUSTOM_GRAPH_START>" >
+				end: <input type="text" name="time_end" value="<TMPL_VAR NAME=CUSTOM_GRAPH_END>">
 				<input type="submit" value="apply" /></td></tr>
 			</form>
 			</th>
@@ -76,8 +77,8 @@
 			<tr>
 		    		<!--td ALIGN=CENTER><TMPL_VAR NAME=GRAPH_INFO></td-->
 		      		<td>
-		      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" style='display:none'/>
-		      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" />
+		      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" style='display:none' />
+		      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" style='display:none' />
 		      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" style='display:none'/>
 		      		</td>
 			</tr>
@@ -97,4 +98,6 @@
 		
 </div>
 <script language="Javascript" src="/js/listingtools.js"></script>
+<!--script language="Javascript">display_graph('<TMPL_VAR NAME=DISPLAY_GRAPH>')</script-->
+<script language="Javascript">document.getElementById(<TMPL_IF NAME=SHOW_CUSTOM_GRAPH>"radioCustom"<TMPL_ELSE>"radioHour"</TMPL_IF>).click()</script>
 <TMPL_INCLUDE NAME="footer.tmpl">

@@ -134,6 +134,27 @@ sub view_clusterdetails : Runmode {
 #								DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
 #								} );
 	
+	# Custom graph options
+	my $custom_file = "/tmp/gen_graph_custom.conf";
+	my @dates;
+	if ( -e $custom_file ) {
+		open FILE, "<$custom_file";
+		my @lines = <FILE>;
+		my $line = shift @lines;
+		@dates = split ",", $line;
+	} else {
+		use DateTime;
+		my $date = DateTime->now()->ymd;
+		@dates = ("$date 00:00", "$date 00:00");
+	}
+	$tmpl->param('CUSTOM_GRAPH_START' => $dates[0]);
+	$tmpl->param('CUSTOM_GRAPH_END' => $dates[1]);
+	
+	if (defined $query->param('custom')) {
+		$tmpl->param('SHOW_CUSTOM_GRAPH' => 1 );
+	}
+	
+	
 	$tmpl->param('CLUSTERID' => $query->param('cluster_id') );
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
 	$tmpl->param('ORCHESTRATOR_GRAPH_ADD' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_add.png");
@@ -196,11 +217,15 @@ sub process_customgraph : Runmode {
 	
 	 my $query = $self->query();
 	 
+	 my ($start, $end) = ($query->param('time_start'), $query->param('time_end'));
+	 
+	 `echo "$start,$end" > /tmp/gen_graph_custom.conf`;
+	 
 #	 use Monitor::Retriever;
 #	 my $monitor = Monitor::Retriever->new();
 #	 my %graph_infos = $monitor->graphFromConf();
 	
-	 $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id') . "#monitoring");
+	 $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id') . "&custom" . "#monitoring");
 }
 
 sub process_addcluster : Runmode {

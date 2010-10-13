@@ -6,13 +6,19 @@ use strict;
 use warnings;
 use Orchestrator;
 
-my $orchestrator = Orchestrator->new();
 
 # MAIN
+my $orchestrator = Orchestrator->new();
+
 my $sub = shift;
 if ( $sub eq "run" ) {
 	my $opt = shift;
+	
+	# clean
+
+		
 	$orchestrator->run();
+
 } elsif ( $sub eq "graph" ) {
 	my $cluster = shift;
 	my $file = $orchestrator->graph( cluster => $cluster );

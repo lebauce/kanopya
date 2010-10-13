@@ -452,6 +452,7 @@ sub timeLaps {
   		my $dt_start = $analyseur->parse_datetime( $range[0] );
   		my $dt_end = $analyseur->parse_datetime( $range[1] );
 		
+		# TODO something better to manage gmt+X
 		my $d = 2 * 3600;
 		
 		$time_end = $dt_end->epoch();
@@ -824,11 +825,21 @@ sub graphFromConf {
 	
 	my @clusters_name = $self->getClustersName();
 	
+	# retrieve conf
 	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
 	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
 	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
 	my $conf = shift @conf;
 	my $graphs = General::getAsArrayRef( data => $conf->{generate_graph}, tag => 'graph' );
+	
+	# retrieve custom graph conf
+	my $custom_file = "/tmp/gen_graph_custom.conf";
+	my $time_range;
+	if ( -e $custom_file ) {
+		open FILE, "<$custom_file";
+		my @lines = <FILE>;
+		$time_range = shift @lines;
+	}
 	
 	my %graph_files = ();
 	my $i = 0;
@@ -847,13 +858,13 @@ sub graphFromConf {
 							my ($dir, $file);
 							if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
 								($dir, $file) = $self->graphNodeCount( 	time_laps => $laps,
-																		time_range => $graph_def->{time_range},
+																		time_range => $time_range,
 																		cluster => $cluster );	
 							} else {
 								my @required_indicators = split ",", $graph_def->{ds_label};
 								my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
-								($dir, $file) = $self->graphCluster( time_laps => $laps,
-																		time_range => $graph_def->{time_range},
+								($dir, $file) = $self->graphCluster( 	time_laps => $laps,
+																		time_range => $time_range,
 																		cluster => $cluster,
 																		required_set => $graph_def->{set_label},
 																		required_indicators => $required,
@@ -867,7 +878,7 @@ sub graphFromConf {
 						my @required_indicators = split ",", $graph_def->{ds_label};
 						my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
 						my $res = $self->graphNodes( time_laps => $laps,
-													time_range => $graph_def->{time_range},
+													time_range => $time_range,
 													required_set => $graph_def->{set_label},
 													required_indicators => $required,
 													percent => $graph_def->{percent},
