@@ -127,6 +127,7 @@ sub _manageStoppingHost {
 		$p->close();
 		if ( not $pingable ) {
 			$new_state = 'down';
+			#$self->_cleanRRDs( ip => $host_ip );
 		}
 		
 		# compute diff time between state time and now
@@ -381,6 +382,10 @@ sub update {
 			#$thr->join();
 		}
 		
+		print "\n###############   ", "HOSTS VALUES", "   ##########\n";
+		print Dumper \%hosts_values;
+		$log->info( Dumper \%hosts_values );
+		
 		################################
 		# update hosts state if needed #
 		################################
@@ -426,6 +431,8 @@ sub update {
 				my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
 				my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
 
+				print "\n###############   ", "$set_name AGGREG mean" , "   ##########\n";
+				print Dumper \%aggreg_mean;
 
 				my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
 				my $set_def = shift @set_def;
@@ -441,9 +448,9 @@ sub update {
     				} 
     			}
     		
-    			my $mean_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
-    			my $sum_rrd_name = $mean_rrd_name;
-    			$sum_rrd_name .= "_total";
+    			my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
+    			my $mean_rrd_name = $base_rrd_name . "_avg";
+    			my $sum_rrd_name = $base_rrd_name . "_total";
 				eval {
 					$self->updateRRD( rrd_name => $mean_rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg_mean);
 					$self->updateRRD( rrd_name => $sum_rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg_sum);

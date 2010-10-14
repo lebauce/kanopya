@@ -203,9 +203,33 @@ sub getHostData {
 	return \%host_data;
 }
 
+sub getClusterData {
+	my $self = shift;
+	my %args = @_;
+	
+	#Monitor::logArgs( "getClusterData", %args );
+	
+	my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{cluster} );
+	
+	$rrd_name .= "_avg";
+	
+	my $set_def = $self->getSetDef(set_label => $args{set});
+	my @max_def;
+	if ( $set_def->{max} ) { @max_def = split( /\+/, $set_def->{max} ) };
+	if (defined $args{percent} && 0 == scalar @max_def ) {
+		print "Warning: No max definition to compute percent for '$args{set}'.\n";
+	}
+	
+	my %cluster_data = $self->getData( rrd_name => $rrd_name,
+									time_laps => $args{time_laps},
+									max_def => (scalar @max_def) ? \@max_def : undef,
+									percent => $args{percent} );
+	
+	return \%cluster_data;
+}
 
 #TODO now we store cluster data, so retrieve this data from rrd
-sub getClusterData {
+sub getClusterData_OLD {
 	my $self = shift;
 	my %args = @_;
 	
@@ -339,15 +363,21 @@ sub graphNode {
 	my $host = $args{host};
 	
 	my $set_name = $args{set_label};
-	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
+	my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
 	
-	$rrd_name .= "_total" if (defined $args{cluster_total});	
+	my $rrd_name = $base_rrd_name;
+	$rrd_name .= "_$args{aggreg_ext}" if (defined $args{aggreg_ext});	
 
-	my $graph_name = "graph_$host" . "_$set_name" . (defined $args{cluster_total} ? "_total" : "") . ( defined $suffix ? "_$suffix" : "");
+	my $cluster_total = (defined $args{aggreg_ext} && $args{aggreg_ext} eq 'total') ? 1 : undef;
+
+	my $graph_name = "graph_$host" . "_$set_name";
+	$graph_name .= "_total" if (defined $cluster_total);
+	$graph_name .= ( defined $suffix ? "_$suffix" : "");
+	
 	my $graph_filename = "$graph_name.png";
 	
 	my $graph_title = (defined $args{type} && $args{type} eq 'cluster') ?
-						"$set_name for cluster $host " . ( defined $args{cluster_total} ? "(total)" : "(average)" )
+						"$set_name for cluster $host " . ( defined $cluster_total ? "(total)" : "(average)" )
 						: "$set_name for $host";
 
 	my $graph_type = $args{graph_type} || "line";
@@ -382,7 +412,6 @@ sub graphNode {
 							);
 	}
 
-	my $first = 1;
 	foreach my $ds (@{ $args{ds_def_list} }) {
 		push @graph_params, (
 								'draw', {
@@ -390,9 +419,10 @@ sub graphNode {
 									name => $ds->{label},
 									type => $graph_type,
 									dsname => $ds->{label},# . "_P",
-									color => $ds->{color} || "FFFFFF",
-									legend => $ds->{label},
+									color => (defined $cluster_total) ? "FF0000" : $ds->{color} || "FFFFFF",
+									legend => $ds->{label} . (defined $cluster_total ? " (total)" : " (node average)"),
 	  							},
+	  							
 	  							
 	  							# TODO why this don't work (current value is not the same depending on time laps (?!))
 #	  							'draw', {
@@ -407,8 +437,20 @@ sub graphNode {
 #							      },
 	  								
 							);
-			
-		$first = 0;
+		
+		if ( defined $cluster_total ) {
+			push @graph_params, (
+									'draw', {
+										file => "$self->{_rrd_base_dir}/$base_rrd_name" . "_avg" . ".rrd",
+										type => $graph_type,
+										dsname => $ds->{label},# . "_P",
+										color => $ds->{color} || "FFFFFF",
+										legend => $ds->{label} . " (node average)",
+		  							},
+								);
+		}
+		
+
 	}
 
 	# Draw a graph in a PNG image
@@ -446,34 +488,17 @@ sub timeLaps {
 		my @range = split ",", $args{time_range};
 		# TODO check validity of range 
 		
-		 use DateTime::Format::Strptime;
-
-  		my $analyseur = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M' );
-  		my $dt_start = $analyseur->parse_datetime( $range[0] );
-  		my $dt_end = $analyseur->parse_datetime( $range[1] );
+		use DateTime::Format::Strptime;
 		
-		# TODO something better to manage gmt+X
-		my $d = 2 * 3600;
+		#my $time_zone = 'Europe/Paris';
+		my $time_zone = 'local';
+			
+  		my $analyseur = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M' );
+  		my $dt_start = $analyseur->parse_datetime( $range[0] )->set_time_zone( $time_zone );
+  		my $dt_end = $analyseur->parse_datetime( $range[1] )->set_time_zone( $time_zone );
 		
 		$time_end = $dt_end->epoch();
 		$time_laps = $time_end - $dt_start->epoch();
-		$time_end -= $d;
-		
-		print "\n###############   ", " TIME NOW ", "   ##########\n";
-		print DateTime->now();
-		print "\n";
-		my $dt_now = DateTime->from_epoch( epoch => time() );
-		print $dt_now;
-		print "\n###############   ", "", "   ##########\n";
-#		print $dt_now->epoch(), "\n";
-#		print $time_end;
-#		print $dt_end;
-#		print "\n###############   ", "", "   ##########\n";
-#		my $syst_epoch = `date +%s`;
-#		print DateTime->from_epoch( epoch => $syst_epoch ), "\n";
-#		print "gmt : ", gmtime();
-#		print "local: ", localtime();
-#		print "\n###############   ", "", "   ##########\n";
 		
 	} else {
 		$time_end = time();
@@ -726,7 +751,8 @@ sub graphCluster {
 												set_label => $set_def->{label},
 												ds_def_list => \@required_ds_def_list,
 												graph_type => $args{graph_type},
-												type => 'cluster' );
+												type => 'cluster',
+												aggreg_ext => 'avg');
 				# graph total
 				$graph_filename = $graph_sub->( 	$self,
 												host => $cluster,
@@ -736,7 +762,7 @@ sub graphCluster {
 												ds_def_list => \@required_ds_def_list,
 												graph_type => $args{graph_type},
 												type => 'cluster',
-												cluster_total => 1 );
+												aggreg_ext => "total" );
 												
 				$res{$set_def->{label}} = $graph_filename;
 			};

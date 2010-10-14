@@ -398,6 +398,15 @@ sub createRRD {
 	return $rrd;
 }
 
+#TODO test this sub (call by manageStoppingHosts())
+sub _cleanRRDs {
+	my $self = shift;
+	my %args = @_;
+
+	my $ip = $args{ip};
+	`rm $self->{_rrd_base_dir}/*_$ip.rrd`;
+}
+
 =head2 rebuild
 	
 	Class : Public

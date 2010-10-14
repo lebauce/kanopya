@@ -120,19 +120,23 @@ sub view_clusterdetails : Runmode {
 	foreach my $indic_set ( @cluster_indic_sets )  {
 		my $graph_name = "graph_" . "$cluster_name" . "_$indic_set";
 		push( @monitoring_graphs, { GRAPH_INFO =>  $indic_set,
-									CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
-									HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
-									DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
+									HIDDEN => ($indic_set eq 'nodecount') ? 0 : 1,
+									
+									GRAPH_TYPE => [
+										{
+											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
+											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
+											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
+										},
+										{
+											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . ".png",
+											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_hour.png",
+											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_day.png",
+										}
+									],
+									
 								} );
 	}
-	
-	# TEMPORARY display total apache_status set for this cluster
-#	my $graph_name = "graph_" . "$cluster_name" . "_apache_status_total";
-#	push( @monitoring_graphs, {	GRAPH_INFO =>  "apache status total",
-#								CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
-#								HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
-#								DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
-#								} );
 	
 	# Custom graph options
 	my $custom_file = "/tmp/gen_graph_custom.conf";
@@ -147,8 +151,12 @@ sub view_clusterdetails : Runmode {
 		my $date = DateTime->now()->ymd;
 		@dates = ("$date 00:00", "$date 00:00");
 	}
-	$tmpl->param('CUSTOM_GRAPH_START' => $dates[0]);
-	$tmpl->param('CUSTOM_GRAPH_END' => $dates[1]);
+	my ($date, $time) = split " ", $dates[0];
+	$tmpl->param('CUSTOM_GRAPH_DATE_START' => $date);
+	$tmpl->param('CUSTOM_GRAPH_TIME_START' => $time);
+	($date, $time) = split " ", $dates[1];
+	$tmpl->param('CUSTOM_GRAPH_DATE_END' => $date);
+	$tmpl->param('CUSTOM_GRAPH_TIME_END' => $time);
 	
 	if (defined $query->param('custom')) {
 		$tmpl->param('SHOW_CUSTOM_GRAPH' => 1 );
@@ -217,9 +225,10 @@ sub process_customgraph : Runmode {
 	
 	 my $query = $self->query();
 	 
-	 my ($start, $end) = ($query->param('time_start'), $query->param('time_end'));
+	 my ($date_start, $time_start, $date_end, $time_end) = ( $query->param('date_start'), $query->param('time_start'),
+	 														 $query->param('date_end'), $query->param('time_end') );
 	 
-	 `echo "$start,$end" > /tmp/gen_graph_custom.conf`;
+	 `echo "$date_start $time_start,$date_end $time_end" > /tmp/gen_graph_custom.conf`;
 	 
 #	 use Monitor::Retriever;
 #	 my $monitor = Monitor::Retriever->new();

@@ -551,7 +551,6 @@ sub removeNode {
     my $adm = $self->{_admin_wrap};
     
     #TODO Find the best node to remove (notation system)
-    #TODO Ne pas choisir le Master Node !! (cf antoine)
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
     my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
