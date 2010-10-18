@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use lib "../Lib"; #TODO replace by absolute path
+use lib "/workspace/mcs/Orchestrator/Lib";
 
 use strict;
 use warnings;

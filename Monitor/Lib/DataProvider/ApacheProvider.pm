@@ -69,7 +69,7 @@ sub new {
 	
 	Class : Public
 	
-	Desc : Retrieve a set of snmp var value
+	Desc : Retrieve a set of apache status var value
 	
 	Args :
 		var_map : hash ref : required  var { var_name => oid }
