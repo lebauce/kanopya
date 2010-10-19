@@ -55,11 +55,7 @@ sub new {
 	my $host = $args{host};
 	
 	# TODO user/pwd management to connect to a component providing informations
-	my $dbh = DBI->connect("dbi:mysql:mysql:$host:3306", 'root', 'Hedera@123');
-	
-	if ( DBI::err() ) {
-		die DBI::errstr();
-	}
+	my $dbh = DBI->connect("dbi:mysql:mysql:$host:3306", 'root', 'Hedera@123') or die DBI::errstr();
 			
 	$self->{_dbh} = $dbh;
 	$self->{_host} = $host;

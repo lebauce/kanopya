@@ -183,5 +183,10 @@ sub getClustersName {
 	return @clustersName;
 }
 
+sub addMessage {
+	my $self = shift;
+	
+	#print "[UI message] @_\n";
+}
 
 1;
