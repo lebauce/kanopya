@@ -87,7 +87,7 @@ sub opRemove {
 	
 	open CLUST, "</tmp/virtual_cluster_$args{cluster}.adm";
 	my @hosts = <CLUST>;
-	my $host = shift @hosts;
+	my $host = pop @hosts; # always remove the last node of the file (the more rescently added)
 	close CLUST;
 	open CLUST, ">/tmp/virtual_cluster_$args{cluster}.adm";
 	print CLUST @hosts;

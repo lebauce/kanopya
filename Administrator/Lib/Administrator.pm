@@ -265,7 +265,6 @@ sub getEntities {
 	my @objs = ();
     my ($rs, $entity_class);
 
-#TODO FAire du like et pas du where!!
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Administrator->_getEntityFromHash need a type and a hash named argument!";
@@ -433,9 +432,7 @@ sub newOp {
 	}
 	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
-	#TODO Put the good user in operation
 	my $user_id = $self->{_rightschecker}->{_user};
-#	my $user_id = 16;
 	$log->debug("User id in _rightschecker is $user_id");
 	my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef; 
 	my $op_data = $self->_newDbix( table => 'Operation', row => { 	type => $args{type},
@@ -1071,7 +1068,6 @@ sub removeNode{
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	#TODO Reflechir si on fait le delete sur le node_id ou sur la combo motherboard_id and cluster_id
 	my $row = $self->{db}->resultset('Node')->search(\%args)->first;
 	if(not defined $row) {
 		$errmsg = "Administrator->removeNode : node representing motherboard $args{motherboard_id} and cluster $args{cluster_id} not found!";
