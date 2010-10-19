@@ -501,7 +501,7 @@ sub getNextOp {
 	# Choose the next operation to be treated :
 	# if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
 	# unless operation is not execute at this moment
-	
+	$log->error("Time is : ", time);
 	my $op_data = $all_ops->search( 
 		{ -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
 		{ order_by => { -asc => 'execution_rank' }}   
@@ -514,6 +514,8 @@ sub getNextOp {
 	}
 	# Get the operation type
 	my $op_type = $op_data->get_column('type');
+	
+	my $op_hoped_exec_time = $op_data->get_column('type');
 	
 	# Get Operation parameters
 	my $params_rs = $op_data->operation_parameters;
