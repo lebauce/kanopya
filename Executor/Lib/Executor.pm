@@ -129,11 +129,12 @@ sub run {
    			};
 			if ($@) {
    				my $error = $@;
-   				if($error->isa('Mcs::Exception::Execution::Delayed')) {
+   				if($error->isa('Mcs::Exception::Execution::OperationReported')) {
+   					$op->report();
    					# commit transaction
    					$adm->{db}->txn_commit;
-   					$adm->addMessage(type => 'info', content => ref($op)." delayed");
-   					$log->debug("Operation ".ref($op)." delayed");
+   					$adm->addMessage(type => 'info', content => ref($op)." reported");
+   					$log->debug("Operation ".ref($op)." reported");
    				} else {
    					# rollback transaction
    					eval { $adm->{db}->txn_rollback; };
