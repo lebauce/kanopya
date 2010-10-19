@@ -179,6 +179,23 @@ sub save {
 	$log->info(ref($self)." saved to database (added in execution list)");
 }
 
+=head setHopedExecutionTime
+	modify the field value hoped_execution_time in database
+	arg: value : duration in seconds 
+=cut
 
+sub setHopedExecutionTime {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{value} or ! defined $args{value}) { 
+		$errmsg = "Operation->setHopedExecutionTime need a value named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $t = time + $args{value};
+	$self->{_dbix}->set_column('hoped_execution_time', $t);
+	$self->{_dbix}->update;
+	$log->debug("hoped_execution_time updated with value : $t");
+}
 
 1;

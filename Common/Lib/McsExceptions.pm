@@ -1,6 +1,3 @@
-
-#TODO http://www.drdobbs.com/web-development/184416129
-
 package McsExceptions;
 use Data::Dumper;
 
@@ -33,10 +30,10 @@ use Exception::Class (
 	isa => 'Mcs::Exception',
 	description => 'Command execution failed',
     },
-    Mcs::Exception::Execution::Delayed => {
+    Mcs::Exception::Execution::OperationReported => {
 	isa => 'Mcs::Exception::Execution',
-	description => 'Operation delayed',
-    }
+	description => 'Operation execution reported',
+	}
     
     );
 

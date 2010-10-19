@@ -78,7 +78,7 @@ sub new {
 
 sub _init {
 	my $self = shift;
-
+	$self->{duration_report} = 60; # specific duration for operation reporting (in seconds)
 	return;
 }
 
@@ -115,7 +115,7 @@ sub prepare {
 	if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
 		my $msg = "Node is still in stopping state.";
 		$log->error($msg);
-		throw Mcs::Exception::Execution::Delayed(error => $msg);
+		throw Mcs::Exception::Execution::OperationReported(error => $msg);
 	}
 		
 	#### Instanciate Clusters
@@ -270,6 +270,7 @@ sub execute {
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
 }
+
 
 1;
 
