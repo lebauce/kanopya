@@ -1125,8 +1125,8 @@ sub addMessage {
 sub getMessages {
 	my $self = shift;
 	my $r = $self->{db}->resultset('Message')->search(undef, { 
-		order_by => { -desc => [qw/message_id/],
-		rows => 50 }
+		order_by => { -desc => [qw/message_id/], },
+		rows => 50 
 	});
 	my @arr = ();
 	while (my $row = $r->next) {
