@@ -74,7 +74,10 @@ sub new {
     
     
    	$log->debug("Class is : $class");
-    my $self = { _operation => $args{data}};
+    my $self = { 
+    	_operation => $args{data},
+    	duration_report => 20 	# default duration to wait during operation reporting (in seconds) 
+    };
     bless $self, $class;
 	$self->_init();
 
@@ -114,6 +117,12 @@ sub prepare {
 sub execute {}
 
 sub finish {}
+
+sub report {
+	my $self = shift;
+	$log->debug("Reporting operation with duration_report : $self->{duration_report}");
+	$self->_getOperation()->setHopedExecutionTime(value => $self->{duration_report});
+}
 
 sub delete {
 	my $self = shift;
