@@ -134,7 +134,14 @@ sub new {
 }
 
 =head Administrator::loadConf
-
+	Class : Private
+	
+	Desc : This method allow to load configuration from xml file 
+			/workspace/mcs/Administrator/Conf/administrator.conf
+			File Administrator with config hash containing
+	
+	args: 
+	return: Administrator instance
 =cut
 
 sub loadConf {

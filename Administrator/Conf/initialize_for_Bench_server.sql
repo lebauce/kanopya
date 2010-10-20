@@ -130,6 +130,7 @@ INSERT INTO `kernel` VALUES (5,'2.6.30.1-hedera','2.6.30.1-hedera','');
 INSERT INTO `kernel` VALUES (6,'2.6.31-hederatech-minix','2.6.31-hederatech-minix','');
 INSERT INTO `kernel` VALUES (7,'2.6.31-hederatech-via-vb8001','2.6.31-hederatech-via-vb8001','');
 INSERT INTO `kernel` VALUES (8,'2.6.31-hederatech-zotac-ion','2.6.31-hederatech-zotac-ion','');
+INSERT INTO `kernel` VALUES (9,'2.6.35.4-hedera','2.6.35.4-hedera','');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,3); SET @eid := @eid +1;
@@ -138,6 +139,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,5);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,6); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,7); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
 -- default distribution
 INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
@@ -242,10 +244,10 @@ INSERT INTO `lvm2_lv` VALUES (5,1,'srv_WebBench',100,0,'ocfs2');
 
 -- Insert shared disk into iscsitarget
 INSERT INTO `iscsitarget1_target` VALUES (1,3,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '/srv', '');
-INSERT INTO `iscsitarget1_lun` VALUES (1,1,0,'/dev/vg1/srv_WebBench','fileio','rw');
+INSERT INTO `iscsitarget1_lun` VALUES (1,1,0,'/dev/vg1/srv_WebBench','fileio','wb');
 
 -- Insert Disk into WebBench cluster openiscsi component
-INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', '_netdev,noatime,commit=10,intr', 'ocfs2');
+INSERT INTO `openiscsi2` VALUES (1,6,'iqn.2010-08.com.hedera-technology.nas:srv_WebBench', '10.0.0.1', '3260', '/srv', 'defaults', 'ocfs2');
 
 
 
