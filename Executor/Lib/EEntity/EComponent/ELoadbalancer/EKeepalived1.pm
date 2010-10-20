@@ -126,8 +126,8 @@ sub stopNode {
 	
 	my $keepalived = $self->_getEntity();
 	my $masternodeip = $args{cluster}->getMasterNodeIp();
-	if(not defined $masternodeip) {
-		# masternodeip is undef, this motherboard was the masternode so we remove virtualserver definitions
+	if($masternodeip eq $args{motherboard}->getAttr(name => 'motherboard_internal_ip')) {
+		# this motherboard is the masternode so we remove virtualserver definitions
 		$log->debug('No master node ip retreived, we are stopping the master node');
 		my $virtualservers = $keepalived->getVirtualservers();
 		foreach my $vs (@$virtualservers) {
@@ -279,10 +279,6 @@ sub addnetwork_routes {
 	$log->debug($command);
 	my $result = $args{econtext}->execute(command => $command);
 	unlink "/tmp/$tmpfile";		
-
-
-
-
 }
 
 1;

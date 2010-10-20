@@ -258,10 +258,8 @@ sub getSystemImage {
 	return $args{administrator}->getEntity(type => 'Systemimage', id => $self->getAttr(name => 'systemimage_id'));
 }
 
-#TODO soit on fait un getMasterNode et on retourne le node mais du coup il faut l'admin
-sub getMasterNodeIp{
+sub getMasterNodeIp {
 	my $self = shift;
-	#TODO Test if cluster is active, return undef if not found ?
 	my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
 	if(defined $node_instance_rs) {
 		my $node_ip = $node_instance_rs->motherboard_id->get_column('motherboard_internal_ip');
