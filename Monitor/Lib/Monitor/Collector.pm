@@ -177,7 +177,7 @@ sub updateHostData {
 
 	#$self->{_admin_wrap} = AdminWrapper->new( );
 
-	my $host = $args{host};
+	my $host = $args{host_ip};
 	
 	my %all_values = ();
 	my $host_reachable = 1;
@@ -224,10 +224,13 @@ sub updateHostData {
 					$provider_class =~ /(.*)Provider/;
 					my $comp = $1;
 					my $mess = "Can not reach component '$comp' on $host";
-					$log->info( "Unreachable host '$host' => we stop collecting data.");
-					print "[", threads->tid(), "][$host] $mess\n";
-					$self->{_admin_wrap}->addMessage( type => "warning", content => $mess );
-					
+					if ( $args{host_state} =~ "starting" ) {
+						print "[", threads->tid(), "][$host] $mess => still starting\n";
+					} else {
+						$log->info( "Unreachable host '$host' (component '$comp') => we stop collecting data.");
+						print "[", threads->tid(), "][$host] $mess\n";
+						$self->{_admin_wrap}->addMessage( type => "warning", content => $mess );
+					}
 					$host_reachable = 0;
 					last; # we stop collecting data sets
 				} else {
@@ -342,10 +345,7 @@ sub update {
 	print "#### UPDATE start : $start_time\n";
 	
 	eval {
-		
-		#my $admin = AdminWrapper->new( );
-		#my %hosts_by_cluster = $admin->retrieveHostsByCluster();
-		
+
 		my %hosts_by_cluster = $self->retrieveHostsByCluster();
 		
 		if ( 0 == scalar keys %hosts_by_cluster ) {
@@ -362,9 +362,8 @@ sub update {
 		for my $host_info (@all_hosts_info) {
 			# We create a thread for each host to don't block update if a host is unreachable
 			#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
-			my $thr = threads->create('updateHostData', $self, host => $host_info->{ip});
+			my $thr = threads->create('updateHostData', $self, host_ip => $host_info->{ip}, host_state => $host_info->{state});
 			$threads{$host_info->{ip}} = $thr;
-			#push @threads, $thr;
 		}
 		
 		#########################
@@ -374,7 +373,6 @@ sub update {
 		my @stoppingHosts = $adm->getEntities( type => "Motherboard", hash => { motherboard_state => { like => "stopping%" } } );
 		foreach my $host (@stoppingHosts) {
 			my $thr = threads->create('_manageStoppingHost', $self, host => $host);
-			#push @threads, $thr;
 			my $host_ip = $host->getAttr( name => "motherboard_internal_ip" );
 			$threads{$host_ip} = $thr;
 		}
@@ -391,7 +389,6 @@ sub update {
 		
 		print "\n###############   ", "HOSTS VALUES", "   ##########\n";
 		print Dumper \%hosts_values;
-		$log->info( Dumper \%hosts_values );
 		
 		################################
 		# update hosts state if needed #
@@ -412,9 +409,9 @@ sub update {
 	#	}
 		
 		
-		######################################################
-		# update clusters base (nodes count and mean values) #
-		######################################################
+		############################################################
+		# update clusters base (nodes count and aggregated values) #
+		############################################################
 		#TODO ici on retrieve une nouvelle fois alors qu'on le fait au début de la fonction
 		# (mais entre temps l'état des noeuds a eventuellement été modifié). Il y a surement mieux à faire.
 		
@@ -501,13 +498,22 @@ sub update {
 			my $broken_count = scalar grep { $_ =~ 'broken' } @nodes_state;
 	
 			# we want update the rrd at time multiple of time_step (to avoid rrd extrapolation)
-			# TODO check if this calcul do not introduce time error
 			my $time = time();
 			my $mod_time = $time % $self->{_time_step};
 			$time += ($mod_time > $self->{_time_step} / 2) ? $self->{_time_step} - $mod_time : -$mod_time; 
-	
+			eval {
 			$rrd->update( time => $time, values => { 	'up' => $up_count, 'starting' => $starting_count,
 														'stopping' => $stopping_count, 'broken' => $broken_count } );
+			};
+			if ($@) {
+				my $error = $@;
+				if ($error =~ "illegal attempt to update using time") {
+					print "=> Warn: same nodecount update time.\n";
+				}
+				else {
+					die $error;
+				}
+			}
 		}
 	};
 	if ($@) {

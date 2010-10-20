@@ -358,7 +358,7 @@ sub graphNode {
 	my $self = shift;
 	my %args = @_;
 
-	my ($time_start, $time_end, $suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
+	my ($time_start, $time_end, $time_suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
 
 	my $host = $args{host};
 	
@@ -371,8 +371,9 @@ sub graphNode {
 	my $cluster_total = (defined $args{aggreg_ext} && $args{aggreg_ext} eq 'total') ? 1 : undef;
 
 	my $graph_name = "graph_$host" . "_$set_name";
-	$graph_name .= "_total" if (defined $cluster_total);
-	$graph_name .= ( defined $suffix ? "_$suffix" : "");
+	#$graph_name .= "_total" if (defined $cluster_total);
+	$graph_name .= "_$args{aggreg_ext}" if (defined $args{aggreg_ext});
+	$graph_name .= ( defined $time_suffix ? "_$time_suffix" : "");
 	
 	my $graph_filename = "$graph_name.png";
 	
@@ -413,6 +414,20 @@ sub graphNode {
 	}
 
 	foreach my $ds (@{ $args{ds_def_list} }) {
+		
+		# If we graph cluster total we add also cluster average
+		if ( defined $cluster_total ) {
+			push @graph_params, (
+									'draw', {
+										file => "$self->{_rrd_base_dir}/$base_rrd_name" . "_avg" . ".rrd",
+										type => $graph_type,
+										dsname => $ds->{label},# . "_P",
+										color => $ds->{color} || "FFFFFF",
+										legend => $ds->{label} . " (node average)",
+		  							},
+								);
+		}
+								
 		push @graph_params, (
 								'draw', {
 									#type   => $first == 1 ? "stack" : "stack",
@@ -437,19 +452,6 @@ sub graphNode {
 #							      },
 	  								
 							);
-		
-		if ( defined $cluster_total ) {
-			push @graph_params, (
-									'draw', {
-										file => "$self->{_rrd_base_dir}/$base_rrd_name" . "_avg" . ".rrd",
-										type => $graph_type,
-										dsname => $ds->{label},# . "_P",
-										color => $ds->{color} || "FFFFFF",
-										legend => $ds->{label} . " (node average)",
-		  							},
-								);
-		}
-		
 
 	}
 
@@ -478,9 +480,9 @@ sub timeLaps {
 	my %args = @_;
 	
 	my $time_laps = $args{time_laps};
-	my ($time_start, $time_end, $suffix);
+	my ($time_start, $time_end, $time_suffix);
 	if ( $time_laps =~ /\D/ ) { # not a number
-		 $suffix = "$time_laps";
+		 $time_suffix = "$time_laps";
 		 my %laps = ( 'hour' => 3600, 'day' => 3600*24 );
 		 $time_laps = $laps{$time_laps} || 0;
 		 $time_end = time();
@@ -506,7 +508,7 @@ sub timeLaps {
 	
 	$time_start = $time_end - $time_laps; 
 	
-	return ($time_start, $time_end,  $suffix);
+	return ($time_start, $time_end,  $time_suffix);
 }
 
 #TODO paramétre pour choisir la liste des ds dont on veut afficher le pourcentage
@@ -516,18 +518,24 @@ sub graphPercent {
 	
 	my $host = $args{host};
 	
-	my ($time_start, $time_end, $suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
+	my ($time_start, $time_end, $time_suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
 	
 	my $set_name = $args{set_label};
+	
 	my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );	
-	my $graph_name = "graph_$host" . "_$set_name" . (defined $args{cluster_total} ? "_total" : "") . ( defined $suffix ? "_$suffix" : "" );
+	$rrd_name .= "_$args{aggreg_ext}" if (defined $args{aggreg_ext});
+	#$rrd_name .= "_total" if (defined $args{aggreg_ext});
+	
+	my $cluster_total = (defined $args{aggreg_ext} && $args{aggreg_ext} eq 'total') ? 1 : undef;
+	
+	my $graph_name = "graph_$host" . "_$set_name" . (defined $args{aggreg_ext} ? "_$args{aggreg_ext}" : "") . ( defined $time_suffix ? "_$time_suffix" : "" );
 	#TODO Specific graph in percent . "_percent";
 	my $graph_filename = "$graph_name.png";
 
 	# TODO graph cluster total percent ? -> est ce que c'est logique ? => die?
 	
 	my $graph_title = (defined $args{type} && $args{type} eq 'cluster') ?
-						"$set_name for cluster $host " . ( defined $args{cluster_total} ? "(total)" : "(average)" )
+						"$set_name for cluster $host " . ( defined $cluster_total ? "(total)" : "(average)" )
 						: "$set_name for $host";
 
 	my $graph_type = $args{graph_type} || "line";
@@ -565,8 +573,6 @@ sub graphPercent {
 						);
 
 
-	#my $total_op = "";
-	#my $nb_ds = 0;
 	foreach my $ds_name ( @needed_ds ) {
 		push @graph_params, (
 								draw   => {
@@ -577,16 +583,7 @@ sub graphPercent {
 									#legend => $ds->{label},
 	  							}	
 							);
-
-		#$total_op .= "$ds->{label},";
-		#$nb_ds++;
 	}
-
-	#chop $total_op;
-	#$total_op .= ",+"  while --$nb_ds;
-	
-	# TEMP
-	#$total_op = "memTotal";
 	
 	my $total_op = join( ",", @max_def);
 	for (my $i=1; $i < @max_def; ++$i) { $total_op .= ",+" };

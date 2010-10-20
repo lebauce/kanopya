@@ -124,9 +124,9 @@ sub view_clusterdetails : Runmode {
 									
 									GRAPH_TYPE => [
 										{
-											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
-											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
-											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
+											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . ".png",
+											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_hour.png",
+											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_day.png",
 										},
 										{
 											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . ".png",
@@ -137,6 +137,11 @@ sub view_clusterdetails : Runmode {
 									
 								} );
 	}
+	
+	$graph_name = "graph_" . "$cluster_name" . "_nodecount";
+	$tmpl->param('NODECOUNT_CUSTOM_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png");
+	$tmpl->param('NODECOUNT_HOUR_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png");
+	$tmpl->param('NODECOUNT_DAY_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png");
 	
 	# Custom graph options
 	my $custom_file = "/tmp/gen_graph_custom.conf";
