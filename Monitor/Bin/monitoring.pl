@@ -26,8 +26,7 @@ sub stop {
 	# Kill processes
 	my @psaux = `ps aux`;
 	for my $ps (@psaux) {
-		if ( 	$ps =~ /root[ \t]+([\d]+).*\d:\d{2} (.*collector_script.*)/ ||
-				$ps =~ /root[ \t]+([\d]+).*\d:\d{2} (.*retriever_script.*)/ )
+		if ( $ps =~ /root[ \t]+([\d]+).*\d:\d{2} (.*(collector_script|retriever_script).*)/ )
 		{
 			my $pid = $1;
 			print "KILL $1 ($2)\n";
@@ -37,17 +36,22 @@ sub stop {
 	
 }
 
-sub clean {
-	
-	# rm monitoring directories
-	# TODO get directory path from conf (warning: if we change conf then we clean -> problem!)
-	print "RM /var/cache/mcs/monitor\n";
-	`rm -r /var/cache/mcs/monitor`;
-	
-	print "RM /tmp/monitor\n";
-	`rm -r /tmp/monitor`; 
+sub getConf {
+	my $config      = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	my $all_conf    = General::getAsArrayRef( data => $config, tag => 'conf' );
+	my @conf        = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
+	my $conf        = shift @conf;
+	return $conf;
 }
 
+sub clean {	
+	my $conf = getConf();
+
+	foreach $dir ($conf->{rrd_base_dir}, $conf->{graph_dir}) {
+		print "REMOVE $dir\n";
+		`rm -r $dir`;
+	}
+}
 
 sub generate_cronfile {
 	my %args = @_;
@@ -58,10 +62,7 @@ sub generate_cronfile {
 		$env = "MCS_ADMIN_WRAPPER=CustomAdmin";
 	}
 	
-	my $config      = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
-	my $all_conf    = General::getAsArrayRef( data => $config, tag => 'conf' );
-	my @conf        = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
-	my $conf        = shift @conf;
+	my $conf = getConf();
 	my $monit_delay = $conf->{time_step};
 	
 	my $graph_conf      = $conf->{generate_graph};

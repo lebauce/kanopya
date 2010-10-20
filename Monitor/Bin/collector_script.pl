@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use lib "/workspace/mcs/Monitor/Lib"; #TODO replace by absolute path
+use lib "/workspace/mcs/Monitor/Lib";
 
 Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 
