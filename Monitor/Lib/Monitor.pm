@@ -446,6 +446,7 @@ sub rebuild {
 		data: hash ref { var_name => value }
 		ds_type: the type of data sources (vars)
 	
+	Return : the hash of values as stored in rrd
 =cut
 
 sub updateRRD {
@@ -478,6 +479,21 @@ sub updateRRD {
 		#print "Warning : unexisting RRD file or set definition changed in conf => nothing will be done until you rebuild the corresponding set ($rrdfile_name).\n";
 	} 
 
+	################################################
+	# Retrieve last values as it's stored in rrd
+	################################################
+	my %stored_values = ();
+	if ( $args{ds_type} eq 'GAUGE' ) {
+		%stored_values = %{ $args{data} };
+	} else {
+		$rrd->fetch_start( start => $time - $self->{_time_step} / 2 );
+		my ($t, @values) = $rrd->fetch_next();
+		my @ds_names = @{ $rrd->{fetch_ds_names} };
+		foreach my $i ( 0 .. $#ds_names ) {
+			$stored_values{ $ds_names[$i] } = $values[$i];
+		}
+	}
+	return %stored_values;
 }
 
 

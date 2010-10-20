@@ -180,9 +180,9 @@ sub updateHostData {
 	my $host = $args{host};
 	
 	my %all_values = ();
-	#my $session = $self->createSNMPSession( host => $host );
 	my $host_reachable = 1;
-	my $error_happened = 0;	
+	my $error_happened = 0;
+	my %providers = ();
 	eval {
 		#For each set of var defined in conf file
 		foreach my $set ( @{ $self->{_monitored_data} } ) {
@@ -200,15 +200,17 @@ sub updateHostData {
 				#################################
 				# Get the specific DataProvider #
 				#################################
-				# TODO vérifier que c'est pas trop moche (possibilité plusieurs fois le même require,...)
 				$provider_class = $set->{'data_provider'} || "SnmpProvider";
-				require "DataProvider/$provider_class.pm";
-				my $data_provider = $provider_class->new( host => $host );
+				my $data_provider = $providers{$provider_class};
+				if (not defined $data_provider) {
+					require "DataProvider/$provider_class.pm";
+					$data_provider = $provider_class->new( host => $host );
+					$providers{$provider_class} = $data_provider;
+				}
 				
 				################################################################################
 				# Retrieve the map ref { var_name => value } corresponding to required var_map #
 				################################################################################
-			#eval {
 				
 				($time, $update_values) = $data_provider->retrieveData( var_map => \%var_map );
 				
@@ -218,11 +220,15 @@ sub updateHostData {
 				#print  "[$host] Error collecting data set  ===> $error";
 				$log->warn( "[", threads->tid(), "][$host] Collecting data set '$set->{label}' => $provider_class : $error" );
 				#TODO find a better way to detect unreachable host (grep error string is not very safe)
-				if ( "$error" =~ "No response" ) {
+				if ( "$error" =~ "No response" || "$error" =~ "Can't connect") {
+					$provider_class =~ /(.*)Provider/;
+					my $comp = $1;
+					my $mess = "Can not reach component '$comp' on $host";
 					$log->info( "Unreachable host '$host' => we stop collecting data.");
-					print "[", threads->tid(), "][$host] Unreachable!\n";
+					print "[", threads->tid(), "][$host] $mess\n";
+					$self->{_admin_wrap}->addMessage( type => "warning", content => $mess );
+					
 					$host_reachable = 0;
-					#print "[$host] => retrieve '$set->{label}' time : ", time() - $retrieve_start_time, "\n";
 					last; # we stop collecting data sets
 				} else {
 					$error_happened = 1;
@@ -233,13 +239,16 @@ sub updateHostData {
 			# DEBUG print values
 			print "[", threads->tid(), "][$host] $time : ", join( " | ", map { "$_: $update_values->{$_}" } keys %$update_values ), "\n";
 	
-			$all_values{ $set->{label} } = $update_values;
+			#$all_values{ $set->{label} } = $update_values;
 	
 			#############################################
 			# Store new values in the corresponding RRD #
 			#############################################
 			my $rrd_name = $self->rrdName( set_name => $set->{label}, host_name => $host );
-			$self->updateRRD( rrd_name => $rrd_name, ds_type => $set->{ds_type}, time => $time, data => $update_values );
+			my %stored_values = $self->updateRRD( rrd_name => $rrd_name, ds_type => $set->{ds_type}, time => $time, data => $update_values );
+			
+			$all_values{ $set->{label} } = \%stored_values;
+			
 		}
 		# Update host state
 		my $state_start_time = time();
@@ -376,10 +385,8 @@ sub update {
 		############################
 		my %hosts_values = ();
 		while ( my ($host_ip, $thr) = each %threads ) {
-		#foreach my $thr (@threads) {
 			my $ret = $thr->join();
 			$hosts_values{ $host_ip } = $ret;
-			#$thr->join();
 		}
 		
 		print "\n###############   ", "HOSTS VALUES", "   ##########\n";
@@ -412,7 +419,6 @@ sub update {
 		# (mais entre temps l'état des noeuds a eventuellement été modifié). Il y a surement mieux à faire.
 		
 		%hosts_by_cluster = $self->retrieveHostsByCluster();
-		#%hosts_by_cluster = $admin->retrieveHostsByCluster();
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
 			
 			############################## Update cluster rrd #########################################
@@ -431,29 +437,29 @@ sub update {
 				my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
 				my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
 
-				print "\n###############   ", "$set_name AGGREG mean" , "   ##########\n";
+				print "\n###############   ", " $cluster_name : $set_name AGGREG mean" , "   ##########\n";
 				print Dumper \%aggreg_mean;
 
 				my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
 				my $set_def = shift @set_def;
 				
 				# Transtypage if needed (int required for COUNTER and DERIVE)
-    			if ( $set_def->{ds_type} eq "COUNTER" || $set_def->{ds_type} eq "DERIVE" ) {
-    				print "info : transtype values to int\n";
-    				foreach my $dsname (keys %aggreg_mean) {
-    					$aggreg_mean{$dsname} = int $aggreg_mean{$dsname};
-    				}
-    				foreach my $dsname (keys %aggreg_sum) {
-    					$aggreg_sum{$dsname} = int $aggreg_sum{$dsname};
-    				} 
-    			}
+#    			if ( $set_def->{ds_type} eq "COUNTER" || $set_def->{ds_type} eq "DERIVE" ) {
+#    				print "info : transtype values to int\n";
+#    				foreach my $dsname (keys %aggreg_mean) {
+#    					$aggreg_mean{$dsname} = int $aggreg_mean{$dsname};
+#    				}
+#    				foreach my $dsname (keys %aggreg_sum) {
+#    					$aggreg_sum{$dsname} = int $aggreg_sum{$dsname};
+#    				} 
+#    			}
     		
     			my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
     			my $mean_rrd_name = $base_rrd_name . "_avg";
     			my $sum_rrd_name = $base_rrd_name . "_total";
 				eval {
-					$self->updateRRD( rrd_name => $mean_rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg_mean);
-					$self->updateRRD( rrd_name => $sum_rrd_name, ds_type => $set_def->{ds_type}, time => $start_time, data => \%aggreg_sum);
+					$self->updateRRD( rrd_name => $mean_rrd_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_mean);
+					$self->updateRRD( rrd_name => $sum_rrd_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_sum);
 				};
 				if ($@){
 					my $error = $@;

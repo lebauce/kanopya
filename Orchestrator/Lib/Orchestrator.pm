@@ -158,9 +158,8 @@ sub manage {
 			# Check conditions for remove node
 			$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
 			
-			# Updata graph for this cluster
-			$self->graph( cluster => $cluster, op => 'add' );
-			$self->graph( cluster => $cluster, op => 'remove' );
+			# Update graph for this cluster
+			$self->updateGraph( cluster => $cluster );
 		};
 		if ($@) {
 			my $error = $@;
@@ -168,6 +167,14 @@ sub manage {
 		}
 	}
 	
+}
+
+sub updateGraph {
+	my $self = shift;
+	my %args = @_;
+	my $cluster = $args{cluster};
+	$self->graph( cluster => $cluster, op => 'add' );
+	$self->graph( cluster => $cluster, op => 'remove' );
 }
 
 sub checkRemoveConditions {
@@ -649,7 +656,6 @@ sub _getTimes {
 				$times{ $2 } = $1;
 			}
 		}
-		#@times = map { $1 if ( $_ =~ /[a-zA-Z_]+@([\d]+)/ ) } @optimes;
    	}
 #   	else
 #   	{
@@ -712,16 +718,6 @@ sub createRRD {
 			push @var_list, $cond->{var} . "_" . $rule->{time_laps};
 		}
 	}
-	
-#		for my $trap_def ( @{ $self->{_traps} } ) {
-#			foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
-#				push @var_list, $threshold->{var} . "_" . $trap_def->{time_laps};
-#			}
-#		}
-	
-	
-	
-	
 
 	my $rrd = RRDTool::OO->new( file =>  $args{file} );
 
@@ -758,6 +754,8 @@ sub graph {
     my $cluster = $args{cluster};
     my $op = $args{op};
     
+    my $time_laps = 3600;
+    
     my $graph_dir = $self->{_graph_dir};
 	my $graph_filename = "graph_orchestrator_$cluster" . "_$op" . ".png";
 
@@ -774,7 +772,7 @@ sub graph {
 	my @graph_params = (
 							'image' => "$graph_dir/$graph_filename",
 							#'vertical_label', 'ticks',
-							'start' => time() - 1000,
+							'start' => time() - $time_laps,
 							color => { back => "#69B033" },
 							
 							title => ($args{op} eq "add" ? "Add" : "Remove") . " rules analysis",
@@ -784,31 +782,25 @@ sub graph {
 							
 							#width => 500,
 							#height => 500,
-							
-							#comment => "YEAH !"
-							
+
 						);
 
 	# Add vertical red lines corresponding to add times
 	my %add_times = $self->_getTimes( cluster => $cluster, op_type => "add" );
-	#for my $add_time ( @add_times ) {
 	while ( my ($add_time, $add_info) = each %add_times ) {
-		#push @graph_params, ( vrule => { time => $add_time, color => "#FF0000" } );
 		my $color = (defined $add_info && $add_info eq "ok") ? "#FF0000" : "#FFBBBB";
 		push @graph_params, ( vrule => { time => $add_time, color => $color } );
 	}
 
 	# Add vertical green lines corresponding to remove times
 	my %remove_times = $self->_getTimes( cluster => $cluster, op_type => "remove" );
-	#for my $remove_time ( @remove_times ) {
 	while ( my ($remove_time, $remove_info) = each %remove_times ) {
-		#push @graph_params, ( vrule => { time => $remove_time, color => "#00FF00" } );
 		my $color = (defined $remove_info && $remove_info eq "ok") ? "#00FF00" : "#BBFFBB";
 		push @graph_params, ( vrule => { time => $remove_time, color => $color } );
 	}
 	
+	# Graph data and add horizontal lines corresponding to thresholds for this op
 	my ($rules, $tag) = $args{op} eq "add" ? ($self->{_traps}, 'threshold') : ($self->{_conditions}, 'required');
-	
 	my @var_list = ();
 	for my $rule ( @{ $rules } ) {
 		foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
@@ -879,10 +871,7 @@ sub pouet {
 
 sub run {
 	my $self = shift;
-	
-	# TEMPORARY
-	#$self->createRRD();
-	
+
 	while ( 1 ) {
 		$self->manage();
 		sleep( $self->{_time_step} );

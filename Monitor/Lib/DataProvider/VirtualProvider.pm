@@ -104,20 +104,6 @@ sub retrieveData {
 				$values{$name} = $value;
 			}
 			
-#			while ( my ($name, $oid) = each %$var_map ) {
-#				my $value;
-#				if ($data =~ /$oid:([\d\.]+)/) {
-#					$value = $1 || 0;
-#				}
-#				else
-#				{
-#					$value = undef;
-#					
-#					# TODO autre
-#					print "## Warning: '$oid' not found in Virtual status.\n";
-#				}
-#				$values{$name} = $value;
-#			}
 			last;
 		}
 	}
