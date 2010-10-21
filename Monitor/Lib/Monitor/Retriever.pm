@@ -130,17 +130,11 @@ sub getData {
 			my $max = 0;
 			foreach my $idx (@max_idx) { $max += $values[$idx] };			
 			push @{ $res_data{ "_MAX_"} }, $max;
-
-			#push @{ $res_data{ "_MAX_"} }, sum @values;
 		}
 		# add values in res_data
 		while ( my ($ds_name, $ds_idx) = each %required_ds_idx ) {
 			if (defined $values[$ds_idx]) {
-				
-				#$res{ $ds_name } += $values[$ds_idx];
-				
 				push @{ $res_data{ $ds_name } }, $values[$ds_idx];
-				
 			}
 		}
 	}

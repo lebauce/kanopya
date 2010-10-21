@@ -434,22 +434,11 @@ sub update {
 				my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
 				my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
 
-				print "\n###############   ", " $cluster_name : $set_name AGGREG mean" , "   ##########\n";
-				print Dumper \%aggreg_mean;
+#				print "\n###############    $cluster_name : $set_name AGGREG mean   ##########\n";
+#				print Dumper \%aggreg_mean;
 
 				my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
 				my $set_def = shift @set_def;
-				
-				# Transtypage if needed (int required for COUNTER and DERIVE)
-#    			if ( $set_def->{ds_type} eq "COUNTER" || $set_def->{ds_type} eq "DERIVE" ) {
-#    				print "info : transtype values to int\n";
-#    				foreach my $dsname (keys %aggreg_mean) {
-#    					$aggreg_mean{$dsname} = int $aggreg_mean{$dsname};
-#    				}
-#    				foreach my $dsname (keys %aggreg_sum) {
-#    					$aggreg_sum{$dsname} = int $aggreg_sum{$dsname};
-#    				} 
-#    			}
     		
     			my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
     			my $mean_rrd_name = $base_rrd_name . "_avg";
@@ -523,9 +512,11 @@ sub update {
 	}
 	
 	my $duration = time() - $start_time;
-	print "#### Update duration = $duration ###\n";	
+	print "#### Update duration = $duration ###\n";
+	$log->info( "Update duration : $duration seconds" );
 	if ( $duration > $self->{_time_step} ) {
 		print "=> Warn: update duration > collector time step (conf)\n";
+		$log->warn("update duration > collector time step (conf)");
 	}
 }
 

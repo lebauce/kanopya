@@ -133,12 +133,20 @@ sub manage {
 	my $self = shift;
 	
 	print "Manage\n";
+	my $start_time = time();
 	
 	my $monitor = $self->{_monitor};
 	
+	my @skip_clusters = ('adm');
+	
 	my @all_clusters_name = $monitor->getClustersName();
+	
 	for my $cluster (@all_clusters_name) {
 		print "# CLUSTER: $cluster\n";
+		if ( scalar grep { $_ eq $cluster } @skip_clusters ) {
+			print " => skip\n";
+			next;
+		}
 	
 		##########################################################################################################
 		#TODO on peut tester ici si il est cohérent de faire les tests (traps et conditions) pour ce cluster
@@ -164,9 +172,13 @@ sub manage {
 		if ($@) {
 			my $error = $@;
 			print "error for cluster '$cluster' : $error\n";
+			if ( $error =~ "rrdtool graph" ) {
+				print "=> Can't produce graph\n";
+			}
 		}
 	}
 	
+	print "# Manage time: ", time() - $start_time, " sec\n";
 }
 
 sub updateGraph {
