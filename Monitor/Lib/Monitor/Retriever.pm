@@ -153,7 +153,7 @@ sub getData {
 		my $sum = sum( @$values ) || 0;
 		eval {
 			if (defined $args{percent}) {
-				$res{ $ds_name } = $sum * 100 / $max;
+				$res{ $ds_name } = defined $max ? $sum * 100 / $max : undef;
 			}
 			else { # mean
 				$res{ $ds_name } = $sum / scalar @$values;
@@ -365,7 +365,6 @@ sub graphNode {
 	my $cluster_total = (defined $args{aggreg_ext} && $args{aggreg_ext} eq 'total') ? 1 : undef;
 
 	my $graph_name = "graph_$host" . "_$set_name";
-	#$graph_name .= "_total" if (defined $cluster_total);
 	$graph_name .= "_$args{aggreg_ext}" if (defined $args{aggreg_ext});
 	$graph_name .= ( defined $time_suffix ? "_$time_suffix" : "");
 	
@@ -400,7 +399,7 @@ sub graphNode {
 					
 						);
 						
-	if (defined $args{thumbnail} ) {
+	if (exists $args{thumbnail} ) {
 		push @graph_params, (	
 								height => 64, width => 64,
 								only_graph => undef,
@@ -410,7 +409,7 @@ sub graphNode {
 	foreach my $ds (@{ $args{ds_def_list} }) {
 		
 		# If we graph cluster total we add also cluster average
-		if ( defined $cluster_total ) {
+		if ( defined $cluster_total && $graph_type eq 'line' ) {
 			push @graph_params, (
 									'draw', {
 										file => "$self->{_rrd_base_dir}/$base_rrd_name" . "_avg" . ".rrd",
@@ -428,9 +427,10 @@ sub graphNode {
 									name => $ds->{label},
 									type => $graph_type,
 									dsname => $ds->{label},# . "_P",
-									color => (defined $cluster_total) ? "FF0000" : $ds->{color} || "FFFFFF",
-									legend => $ds->{label} . (defined $cluster_total ? " (total)" : " (node average)"),
-	  							},
+									#color => (defined $cluster_total) ? "FF0000" : $ds->{color} || "FFFFFF",
+									color => $ds->{color} || "FFFFFF",
+									legend => $ds->{label} . ((defined $args{type} && $args{type} eq 'cluster') ? (defined $cluster_total ? " (total)" : " (node average)") : ""),
+								},
 	  							
 	  							
 	  							# TODO why this don't work (current value is not the same depending on time laps (?!))
@@ -582,7 +582,7 @@ sub graphPercent {
 	my $total_op = join( ",", @max_def);
 	for (my $i=1; $i < @max_def; ++$i) { $total_op .= ",+" };
 	
-	print "#### TOTAL op : $total_op\n";
+	#print "#### TOTAL op : $total_op\n";
 	
 	
 	# Add total graph

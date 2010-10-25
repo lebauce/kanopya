@@ -171,9 +171,10 @@ sub manage {
 		};
 		if ($@) {
 			my $error = $@;
-			print "error for cluster '$cluster' : $error\n";
 			if ( $error =~ "rrdtool graph" ) {
-				print "=> Can't produce graph\n";
+				print "=> Can't produce graph (no data)\n";
+			} else {
+				print "error for cluster '$cluster' : $error\n";
 			}
 		}
 	}
@@ -204,8 +205,7 @@ sub checkRemoveConditions {
 		return;
 	}
 	
-	#TODO vérifier que le nombre de noeud est constant depuis un certains temps (sinon ça fausse les moyennes? à vérifier)
-	#	=> point critique! à tester en profondeur 
+	#TODO vérifier que le nombre de noeud est constant depuis un certains temps (ne pas remove un node si on en a ajouté un rescemment)
 	
 	#TODO si il y a un node starting/broken alors return ? sauf si on l'a déjà testé en amont
 	
@@ -232,7 +232,7 @@ sub checkRemoveConditions {
 			
 			my $value = $cluster_data_aggreg->{ $required->{var} };
 			if (not defined $value) {
-				print "Warning: no value for var '$required->{var}' in cluster '$cluster'. required ignored.\n";
+				print "Warning: no value for var '$required->{var}' in cluster '$cluster' (for last $cond->{time_laps}sec). required ignored.\n";
 				next;
 			}
 			
@@ -304,7 +304,7 @@ sub detectTraps {
 			
 			my $value = $cluster_data_aggreg->{ $threshold->{var} };
 			if (not defined $value) {
-				print "Warning: no value for var '$threshold->{var}' in cluster '$cluster'. Trap ignored.\n";
+				print "Warning: no value for var '$threshold->{var}' in cluster '$cluster' (for last $trap_def->{time_laps}sec). Trap ignored.\n";
 				next;
 			}
 			
@@ -450,13 +450,12 @@ sub requireAddNode {
     
     print "Node required in cluster '$cluster'\n";
     
-    # TEMP
-    $self->_storeTime( time => time(), cluster => $cluster, op_type => "add", op_info => "req" );
-    
     eval {
 	   	if ( $self->_canAddNode( cluster => $cluster ) ) {
 	    	$self->addNode( cluster_name => $cluster );
 	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "add", op_info => "ok" );
+	   	} else {
+	   		$self->_storeTime( time => time(), cluster => $cluster, op_type => "add", op_info => "req" );
 	   	}
     };
     if ($@) {
@@ -505,13 +504,12 @@ sub requireRemoveNode {
     
     print "Want remove node in cluster '$cluster'\n";
     
-   	# TEMP
-    $self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "req");
-    
     eval {
 	   	if ( $self->_canRemoveNode( cluster => $cluster ) ) {
 	    	$self->removeNode( cluster_name => $cluster );
 	    	$self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "ok");
+	   	} else {
+	   		$self->_storeTime( time => time(), cluster => $cluster, op_type => "remove", op_info => "req");
 	   	}
     };
    	if ($@) {
@@ -822,10 +820,9 @@ sub graph {
 										type => 'line',
 										dsname => $cond->{var} . "_" . $rule->{time_laps},
 										color => $cond->{color},
-										legend => sprintf( "%-25s", $cond->{var} .
+										legend => sprintf( "%-25s", $cond->{var} . ($rule->{percent} ? " (%)" : "") .
 																	( $args{op} eq "remove" ? " prevision" : "" ).
-																	" (" . ($rule->{percent} ? "%" : "mean") .
-																	" on " . $rule->{time_laps} . "s)" ),
+																	" (mean on " . $rule->{time_laps} . "s)" ),
 		  							},
 		  
 		  							hrule => {

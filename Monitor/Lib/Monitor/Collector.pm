@@ -254,9 +254,9 @@ sub updateHostData {
 			
 		}
 		# Update host state
-		my $state_start_time = time();
+		#my $state_start_time = time();
 		$self->_manageHostState( host => $host, reachable => $host_reachable );
-		print "[$host] ##### manage state Time : ", time() - $state_start_time, "\n";
+		#print "[$host] ##### manage state Time : ", time() - $state_start_time, "\n";
 	};
 	if ($@) {
 		my $error = $@;
@@ -269,7 +269,7 @@ sub updateHostData {
 	
 	print "[$host] => some errors happened collecting data\n" if ($error_happened);
 	
-	print "[$host] ##### Udate Time : ", time() - $start_time, "\n";
+	print "[$host] ##### Collect time : ", time() - $start_time, "\n";
 	
 	return \%all_values;
 }

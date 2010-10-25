@@ -98,8 +98,22 @@ sub new {
 	$self->{_period} = $conf->{period};
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/monitor';
 	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/monitor';
-	$self->{_monitored_data} = General::getAsArrayRef( data => $conf, tag => 'set' );
 	$self->{_node_states} = $conf->{node_states}; 
+
+	my $all_sets = General::getAsArrayRef( data => $config, tag => 'set' );
+	my $monitored_sets = General::getAsArrayRef( data => $conf, tag => 'monitor' );
+	my @monitored_sets_def = ();
+	foreach my $monit_set (@$monitored_sets) {
+		my @set = grep { $monit_set->{set} eq $_->{label} } @{$all_sets};
+		my $set_def = shift @set;
+		if ( defined $set_def ) {
+			push @monitored_sets_def, $set_def;
+		} else {
+			print "Conf error: unexisting set '$monit_set->{set}'\n";
+		}
+	}
+	$self->{_monitored_data} = \@monitored_sets_def;
+
 
 	print "Monitor::new : load conf time = ", time() - $start_time, "\n";
 
@@ -115,17 +129,9 @@ sub new {
 	mkdir "$self->{_graph_dir}/tmp";
 
 	# Get Administrator
-	#print "get ADMIN\n";
 	$start_time = time();
-	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
 	$self->{_admin_wrap} = AdminWrapper->new( );
-	
 	print "Monitor::new : instanciate admin time = ", time() - $start_time, "\n";
-	
-	#print " => ok\n";
-
-	# test (data generator)
-	$self->{_t} = 0;
 	
     return $self;
 }
@@ -381,9 +387,9 @@ sub createRRD {
 
 	my @rrd_params = ( 	'step', $self->{_time_step},
 						'archive', { rows	=> $raws },
-						'archive', { 	rows => $raws,
-										cpoints => 10,
-										cfunc => "AVERAGE" },
+#						'archive', { 	rows => $raws,
+#										cpoints => 10,
+#										cfunc => "AVERAGE" },
 					 );
 	for my $name ( @$dsname_list ) {
 		push @rrd_params, 	(
