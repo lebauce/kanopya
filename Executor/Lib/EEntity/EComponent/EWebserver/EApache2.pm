@@ -127,7 +127,7 @@ sub reload {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $command = "invoke-rc.d snmpd restart";
+	my $command = "invoke-rc.d apache2 restart";
 	my $result = $args{econtext}->execute(command => $command);
 	return undef;
 }
