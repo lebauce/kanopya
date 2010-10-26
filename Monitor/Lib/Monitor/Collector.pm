@@ -203,16 +203,19 @@ sub updateHostData {
 				$provider_class = $set->{'data_provider'} || "SnmpProvider";
 				my $data_provider = $providers{$provider_class};
 				if (not defined $data_provider) {
+					my $inst_time = time();
 					require "DataProvider/$provider_class.pm";
 					$data_provider = $provider_class->new( host => $host );
 					$providers{$provider_class} = $data_provider;
+					print "[$host] ##### Instanciate '$provider_class' time : ", time() - $inst_time, "\n";
 				}
 				
 				################################################################################
 				# Retrieve the map ref { var_name => value } corresponding to required var_map #
 				################################################################################
-				
+				my $retrieve_time = time();
 				($time, $update_values) = $data_provider->retrieveData( var_map => \%var_map );
+				print "[$host] ##### Collect '$set->{label}' time : ", time() - $retrieve_time, "\n";
 				
 			};
 			if ($@) {
