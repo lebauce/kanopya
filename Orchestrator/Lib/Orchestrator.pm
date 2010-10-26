@@ -428,8 +428,9 @@ sub _canAddNode {
     my $cluster = $args{cluster};
     
     # Check if there is already a node starting in the cluster #
-    if ( $self->_isNodeInState( cluster => $cluster, state => 'starting' ) ) {
-		print " => A node is already starting in cluster '$cluster'\n";
+    if ( 	$self->_isNodeInState( cluster => $cluster, state => 'starting' ) ||
+    		$self->_isNodeInState( cluster => $cluster, state => 'locked' ) ) {
+		print " => A node is already starting or locked in cluster '$cluster'\n";
     	return 0;
     }
     
