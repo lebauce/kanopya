@@ -66,6 +66,12 @@ sub _manageHostState {
 		# Manage new state
 		if ( $reachable ) {					# if reachable, node is now 'up', don't care of what was the last state
 			$new_state = "up";
+			if ($state eq "starting"){
+				my $updateclustop = $adm->newOp(type => "UpdateClusterNodeStarted", priority => '500', params => {
+					motherboard_id => $mb->getAttr(name => 'motherboard_id'),
+					cluster_id => $mb->getClusterId()});
+				
+			}
 		} elsif ( $state eq "up" ) {		# if unreachable and last state was 'up', node is considered 'broken'
 				$new_state = 'broken';
 		} else {							# else we check if node is not 'starting' for too long, if it is, node is 'broken'
