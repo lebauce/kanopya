@@ -200,7 +200,10 @@ sub execute {
 	$self->SUPER::execute();
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
-		
+	
+	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
+					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+	
 	## Remove Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");

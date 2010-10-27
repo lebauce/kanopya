@@ -43,7 +43,7 @@ sub _manageHostState {
 	my %args = @_;
 	
 	my $starting_max_time = $self->{_node_states}{starting_max_time};
-		
+	my $stopping_max_time = $self->{_node_states}{stopping_max_time};
 	my $adm = $self->{_admin_wrap};
 	my $reachable = $args{reachable};
 	my $host_ip = $args{host};
@@ -64,7 +64,7 @@ sub _manageHostState {
 		my $new_state = $state;
 		
 		# Manage new state
-		if ( $reachable ) {					# if reachable, node is now 'up', don't care of what was the last state
+		if ( $reachable && $state ne "stopping") {					# if reachable, node is now 'up', don't care of what was the last state
 			$new_state = "up";
 			if ($state eq "starting"){
 				$adm->newOp(type => "UpdateClusterNodeStarted", priority => '500', params => {
@@ -85,6 +85,28 @@ sub _manageHostState {
 				print $mess . "\n";
 				$adm->addMessage( type => "warning", content => $mess );
 			}
+			
+			if ($state eq "stopping"){
+				my $host_ip = $mb->getAttr( name => 'motherboard_internal_ip' );
+				# we check if host is stopped (unpingable)
+				my $p = Net::Ping->new();
+				my $pingable = $p->ping($host_ip);
+				$p->close();
+				if ( not $pingable ) {
+					$new_state = 'down';
+					$adm->newOp(
+						type => 'RemoveMotherboardFromCluster',
+						priority => 100, 
+						params => {
+						motherboard_id => $mb->getAttr(name => 'motherboard_id'),
+						cluster_id => $mb->getClusterId()});
+				} elsif ( $diff_time > $stopping_max_time ) {
+					$new_state = 'broken';
+					my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
+					print $mess . "\n";
+					$adm->addMessage( type => "warning", content => $mess );}
+			}
+			
 		}
 		
 		# Update state in DB if changed
@@ -385,13 +407,13 @@ sub update {
 		#########################
 		# Manage stopping hosts	#	
 		#########################
-		my $adm = $self->{_admin_wrap};
-		my @stoppingHosts = $adm->getEntities( type => "Motherboard", hash => { motherboard_state => { like => "stopping%" } } );
-		foreach my $host (@stoppingHosts) {
-			my $thr = threads->create('_manageStoppingHost', $self, host => $host);
-			my $host_ip = $host->getAttr( name => "motherboard_internal_ip" );
-			$threads{$host_ip} = $thr;
-		}
+#		my $adm = $self->{_admin_wrap};
+#		my @stoppingHosts = $adm->getEntities( type => "Motherboard", hash => { motherboard_state => { like => "stopping%" } } );
+#		foreach my $host (@stoppingHosts) {
+#			my $thr = threads->create('_manageStoppingHost', $self, host => $host);
+#			my $host_ip = $host->getAttr( name => "motherboard_internal_ip" );
+#			$threads{$host_ip} = $thr;
+#		}
 		
 
 		############################
