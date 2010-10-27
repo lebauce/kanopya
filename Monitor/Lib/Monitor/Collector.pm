@@ -67,7 +67,7 @@ sub _manageHostState {
 		if ( $reachable ) {					# if reachable, node is now 'up', don't care of what was the last state
 			$new_state = "up";
 			if ($state eq "starting"){
-				my $updateclustop = $adm->newOp(type => "UpdateClusterNodeStarted", priority => '500', params => {
+				$adm->newOp(type => "UpdateClusterNodeStarted", priority => '500', params => {
 					motherboard_id => $mb->getAttr(name => 'motherboard_id'),
 					cluster_id => $mb->getClusterId()});
 				
@@ -133,6 +133,13 @@ sub _manageStoppingHost {
 		$p->close();
 		if ( not $pingable ) {
 			$new_state = 'down';
+			$adm->newOp(
+					type => 'RemoveMotherboardFromCluster',
+					priority => 100, 
+					params => {
+					motherboard_id => $host->getAttr(name => 'motherboard_id'),
+					cluster_id => $host->getClusterId()} 
+	);
 			#$self->_cleanRRDs( ip => $host_ip );
 		}
 		

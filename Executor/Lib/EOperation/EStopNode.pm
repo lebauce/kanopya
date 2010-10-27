@@ -135,16 +135,6 @@ sub execute {
 	$self->{_objs}->{motherboard}->save();
 	
 	## add RemoveMotherboardFromCluster operation for this node
-		
-	$adm->newOp(
-		type => 'RemoveMotherboardFromCluster',
-		priority => 100, 
-		hoped_execution_time => 10,
-		params => {
-			cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
-			motherboard_id => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_id"),
-		} 
-	);
 }
 
 1;
