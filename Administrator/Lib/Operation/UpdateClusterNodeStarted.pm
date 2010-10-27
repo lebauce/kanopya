@@ -88,7 +88,7 @@ sub new {
     my $motherboard = $admin->getEntity(type => 'Motherboard', id => $args{params}->{motherboard_id});
 
     # check if motherboard is active, up
-    if($motherboard->getAttr(name => 'active') == 0 or $motherboard->getAttr(name => 'motherboard_state') ne 'up') {
+    if($motherboard->getAttr(name => 'active') == 0 ) {
     	my $errmsg = "Operation::UpdateClusterNodeStarted->new : motherboard must be active and started";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
