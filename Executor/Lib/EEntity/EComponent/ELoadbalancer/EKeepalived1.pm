@@ -113,8 +113,8 @@ sub addNode {
 								startvalue => 17, 
 								stopvalue => 20);
 		
-		$self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
-		$self->reload(econtext => $masternode_econtext);
+#		$self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
+#		$self->reload(econtext => $masternode_econtext);
 		
 	}
 }
@@ -281,4 +281,22 @@ sub addnetwork_routes {
 	unlink "/tmp/$tmpfile";		
 }
 
+sub updateNodeStarted{
+	my $self = shift;
+	my %args = @_;
+	
+	my $keepalived = $self->_getEntity();
+	my $masternodeip = $args{cluster}->getMasterNodeIp();
+	if($masternodeip eq $args{motherboard}->getAttr(name => 'motherboard_internal_ip')) {
+		# this motherboard is the masternode so we remove virtualserver definitions
+		$log->debug('First Node is started, nothing to do');
+		return;		
+	} else {
+		use EFactory;
+		my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+		
+		$self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
+		$self->reload(econtext => $masternode_econtext);	
+	}
+}
 1;

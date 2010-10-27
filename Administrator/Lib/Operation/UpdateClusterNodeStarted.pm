@@ -1,4 +1,4 @@
-# AddMotherboardInCluster.pm - Operation class implementing Cluster creation operation
+# UpdateClusterNodeStarted.pm - Operation class implementing Cluster start operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -19,25 +19,23 @@
 # Boston, MA 02110-1301 USA.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
+# Created 26 Octobre 2010
 
 =head1 NAME
 
-Operation::AddMotherboardInCluster - Operation class implementing Motherboard migration to a cluster
+Operation::UpdateClusterNodeStarted - Operation class implementing Cluster start operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Cluster start operation
 
 =head1 DESCRIPTION
-
-Component is an abstract class of operation objects
 
 =head1 METHODS
 
 =cut
-package Operation::AddMotherboardInCluster;
+package Operation::UpdateClusterNodeStarted;
 
 use strict;
 use warnings;
@@ -45,8 +43,6 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
-use Entity::Cluster;
-use Entity::Motherboard;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -55,61 +51,62 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 =head2 new
 
-    my $op = Operation::AddMotherboardInCluster->new(%args);
+    my $op = Operation::UpdateClusterNodeStarted->new();
 
-Operation::AddMotherboardInCluster->new creates a new AddMotheboard operation.
+Operation::UpdateClusterNodeStarted->new creates a new UpdateClusterNodeStarted operation.
 
 =cut
 
 sub new {
     my $class = shift;
     my %args = @_;
-
-	# presence of 'params' named argument is done in parent class
+	
+	# presence of 'params' named argument is done in parent class 
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
- 
-	if ((! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) ||
+    
+    if ((! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) ||
 		(! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id})) { 
-		$errmsg = "Operation::AddMotherboardInCluster->new : params Need a motherboard_id and a cluster_id";
+		$errmsg = "Operation::UpdateClusterNodeStarted->new : params Need a motherboard_id and a cluster_id";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-
-	# check if cluster_id exist
+    
+	# check if cluster exists in db
     $log->debug("checking cluster existence with id <$args{params}->{cluster_id}>");
-    my $row = $admin->{db}->resultset('Cluster')->find($args{params}->{cluster_id});
-    if(! defined $row) {
-    	$errmsg = "Operation::AddMotherboardInCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
+    my $cluster = $admin->getEntity(type => 'Cluster', id => $args{params}->{cluster_id});
+    
+    # check if cluster is active and down
+    if($cluster->getAttr(name => 'active') == 0 or $cluster->getAttr(name => 'cluster_state') ne 'up') {
+    	my $errmsg = "Operation::UpdateClusterNodeStarted->new : cluster must be active and started to be Updated";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
-    # check if motherboard_id exist
+    # check if motherboard exists in db
     $log->debug("checking motherboard existence with id <$args{params}->{motherboard_id}>");
-    $row = $admin->{db}->resultset('Motherboard')->find($args{params}->{motherboard_id});
-    if(! defined $row) {
-    	$errmsg = "Operation::AddMotherboardInCluster->new : motherboard_id $args{params}->{motherboard_id} does not exist";
+    my $motherboard = $admin->getEntity(type => 'Motherboard', id => $args{params}->{motherboard_id});
+
+    # check if motherboard is active, up
+    if($motherboard->getAttr(name => 'active') == 0 or $motherboard->getAttr(name => 'cluster_state') ne 'up') {
+    	my $errmsg = "Operation::UpdateClusterNodeStarted->new : motherboard must be active and started";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
-    my $motherboard = $admin->getEntity(type => "Motherboard", id => $args{params}->{motherboard_id});
-    $motherboard->setAttr(name => "motherboard_state", value => "locked");
-    $motherboard->save();
+	
+	# Check if motherboard is in cluster
+	if (!$admin->{db}->resultset('Node')->search({
+      motherboard_id => $args{params}->{motherboard_id},
+      cluster_id  => $args{params}->{cluster_id}})){
+    	my $errmsg = "Operation::UpdateClusterNodeStarted->new : motherboard $args{params}->{motherboard_id} is not in cluster $args{params}->{cluster_id}";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+      }
+    
 	return $self;
 }
 
-=head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-	my $self = shift;
-
-	return;
-}
 
 =head2 prepare
 
@@ -121,7 +118,6 @@ sub prepare {
 	my $self = shift;
 	my $adm = Administrator->new();
 }
-
 1;
 __END__
 

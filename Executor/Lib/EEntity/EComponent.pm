@@ -119,7 +119,7 @@ sub addInitScripts {
 sub addNode {}
 sub removeNode {}
 sub stopNode {}
-
+sub updateNodeStarted {}
 1;
 
 __END__
