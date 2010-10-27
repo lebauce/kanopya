@@ -225,7 +225,7 @@ sub generate {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/ietd.conf");	
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/iet/ietd.conf");	
 	unlink "/tmp/$tmpfile";		 	 
 }
 
