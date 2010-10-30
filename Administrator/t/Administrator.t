@@ -38,7 +38,7 @@ eval {
 			kernel_id => 1,
 			motherboard_serial_number => '12345', 
 			motherboard_mac_address => "00:11:22:33:44:55",
-			motherboard_slot_position => 1,
+			motherboard_powersupply_id => 2,
 			active => 0}
 		);
 		

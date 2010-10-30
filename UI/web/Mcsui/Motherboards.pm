@@ -20,7 +20,7 @@ sub view_motherboards : StartRunmode {
     foreach my $m (@emotherboards) {
 		my $tmp = {};
 		$tmp->{ID} = $m->getAttr(name => 'motherboard_id');
-		$tmp->{POSITION} = $m->getAttr(name => 'motherboard_slot_position');
+		$tmp->{POSITION} = $m->getAttr(name => 'motherboard_powersupply_id');
 		my $emodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
 		$tmp->{MODEL} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
 		$tmp->{STATE} = $m->getAttr(name => 'motherboard_state');

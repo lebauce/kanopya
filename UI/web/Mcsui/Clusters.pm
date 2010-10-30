@@ -100,7 +100,7 @@ sub view_clusterdetails : Runmode {
 		$tmp->{CLUSTER_ID} = $clustId;
 		$tmp->{MOTHERBOARD_ID} = $motherboards->{$m}->getAttr(name=>'motherboard_id');
 		$tmp->{HOSTNAME} = $motherboards->{$m}->getAttr(name=>'motherboard_hostname');
-		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_slot_position');
+		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_powersupply_id');
 		$tmp->{INTERNALIP} = $ip;
 		my @graphs = ();
 		foreach my $indic_set ( @node_indic_sets ) {
