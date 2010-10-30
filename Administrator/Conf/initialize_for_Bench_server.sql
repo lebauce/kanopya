@@ -165,7 +165,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1)
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
 
 -- admin motherboard
-INSERT INTO `motherboard` VALUES (1,6,2,1,'Admin SN',1,'Admin motherboard',1,'6c:f0:49:d1:dc:9f','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
+INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1,'Admin motherboard',1,'6c:f0:49:d1:dc:9f','node1.hederatech.com','10.0.0.1','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node

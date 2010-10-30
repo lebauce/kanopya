@@ -65,7 +65,7 @@ CREATE TABLE `motherboard` (
   `processormodel_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
   `motherboard_serial_number` char(64) NOT NULL,
-  `motherboard_slot_position` int(1) unsigned NOT NULL,
+  `motherboard_powersupply_id` int(8) unsigned NOT NULL,
   `motherboard_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `motherboard_mac_address` char(18) NOT NULL,
@@ -81,10 +81,12 @@ CREATE TABLE `motherboard` (
   KEY `fk_motherboard_2` (`processormodel_id`),
   KEY `fk_motherboard_3` (`kernel_id`),
   KEY `fk_motherboard_4` (`etc_device_id`),
+  KEY `fk_motherboard_5` (`motherboard_powersupply_id`),
   CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
+  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -99,6 +101,32 @@ CREATE TABLE `motherboarddetails` (
   KEY `fk_motherboarddetails_1` (`motherboard_id`),
   CONSTRAINT `fk_motherboarddetails_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `powersupply`
+--
+CREATE TABLE `powersupply` (
+  `powersupply_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `powersupplycard_id` int(8) unsigned NOT NULL,
+  `powersupplyport_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`powersupply_id`),
+  KEY `fk_powersupplyport_1` (`powersupplycard_id`),
+  CONSTRAINT `fk_powersupplyport_1` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `powersupply`
+--
+CREATE TABLE `powersupplycard` (
+  `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `powersupplycard_name` char(64) NOT NULL,
+  `powersupplycard_ip` char(15) DEFAULT NULL,
+  `powersupplycard_model_id` int(8),
+  `powersupplycard_mac_address` char(32) NOT NULL,
+  PRIMARY KEY (`powersupplycard_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 --
 -- Table structure for table `distribution`

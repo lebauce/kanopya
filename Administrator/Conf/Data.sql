@@ -120,7 +120,7 @@ INSERT INTO `component` VALUES
 (5,'Dhcpd','3','Dhcpserver'),
 (6,'Atftpd','0','Tftpserver'),
 (7,'Snmpd','5','Monitoragent'),
-(8,'Keepalived','1','Loadbalancer');
+(8,'Keepalived','1','Loadbalancer'),
 (9,'Mysql','5','DBserver');
 
 -- kernels
@@ -142,6 +142,12 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,6);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,7); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
+
+-- Power Supply Card
+INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e');
+
+-- Power Supply
+INSERT INTO `powersupply` VALUE (1,1,1);
 
 -- default distribution
 INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
@@ -165,7 +171,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1)
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
 
 -- admin motherboard
-INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
+INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1,'Admin motherboard',1,'6c:f0:49:d1:dc:9f','node1.hederatech.com','10.0.0.1','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
