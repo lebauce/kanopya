@@ -1,7 +1,7 @@
 # AddMotherboard.pm - Operation class implementing Motherboard creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
+#   Hedera Technology sas.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -108,6 +108,15 @@ sub new {
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
+    # Check power supply
+    # Search if there is a power supply defined
+    # TODO User will have to select the powersupplycard and after specify 
+    $row = $admin->{db}->resultset('powersupplycard')->first();
+    if(! defined $row) {
+    	$errmsg = "Operation::AddMotherboard->new : There is no power supply defined in the system!";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
     return $self;
 }
 

@@ -1,7 +1,7 @@
 # ActivateSystemimage.pm - Operation class implementing system image activation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
+#   Hedera Technology sas.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

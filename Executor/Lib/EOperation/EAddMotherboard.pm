@@ -168,6 +168,9 @@ sub execute{
 													filesystem => "ext3",
 													econtext => $self->{nas}->{econtext});
 	$self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
+	
+	# Add power supply informations.
+	
 	# AddMotherboard finish, just save the Entity in DB
 	$self->{_objs}->{motherboard}->save();
 }

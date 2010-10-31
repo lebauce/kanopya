@@ -1,7 +1,6 @@
 # Administrator.pm - Object class of Administrator server
 
-# Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
+# Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1187,6 +1186,21 @@ sub getOperations {
 	return $arr;
 
 }
+
+sub addPowerSupplyCard{
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{powersupplycard_name} or ! defined $args{powersupplycard_name}) ||
+		(! exists $args{powersupplycard_mac_address} or ! defined $args{powersupplycard_mac_address})){
+		$errmsg = "Administrator->addPowerSupplyCard need a type and content named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+}
+sub getPowerSupply{
+	
+}
+
 
 1;
 
