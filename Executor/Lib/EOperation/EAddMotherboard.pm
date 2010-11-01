@@ -180,7 +180,7 @@ sub execute{
 	my $power_supply_card_id = $adm->getMasterPowerSupplyCardId();
 	my $powersupply_id = $adm->addPowerSupply(powerwsupplycard_id => $power_supply_card_id,
 											  powersupplyport_id => $self->{_objs}->{motherboard_powersupply_id});
-	$self->{_objs}->{motherboard}->setAttr(name=>'powerwersupply_id', value=>$powersupply_id);
+	$self->{_objs}->{motherboard}->setAttr(name=>'motherboard_powersupply_id', value=>$powersupply_id);
 	# AddMotherboard finish, just save the Entity in DB
 	$self->{_objs}->{motherboard}->save();
 }
