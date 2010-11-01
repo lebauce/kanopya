@@ -775,7 +775,10 @@ sub getFreeInternalIP{
 		$row = $self->{db}->resultset('Motherboard')->find({ motherboard_internal_ip => $freeip->addr });
 		
 		# if no record is found for this ip address, it is free so we return it
-		if(not defined $row) { return $freeip->addr; }
+		if(not defined $row) { 
+			$row = $self->{db}->resultset('PowersupplyCard')->find({ powersupplycard_ip => $freeip->addr });
+			if(not defined $row) {
+				return $freeip->addr; }}
 		
 		$log->debug($freeip->addr." is already used");
 		$i++;
@@ -1128,6 +1131,7 @@ sub addMessage {
 
 sub getMessages {
 	my $self = shift;
+
 	my $r = $self->{db}->resultset('Message')->search(undef, { 
 		order_by => { -desc => [qw/message_id/], },
 		rows => 50 
@@ -1190,15 +1194,37 @@ sub getOperations {
 sub addPowerSupplyCard{
 	my $self = shift;
 	my %args = @_;
-	if ((! exists $args{powersupplycard_name} or ! defined $args{powersupplycard_name}) ||
-		(! exists $args{powersupplycard_mac_address} or ! defined $args{powersupplycard_mac_address})){
+	if ((! exists $args{name} or ! defined $args{name}) ||
+		(! exists $args{mac_address} or ! defined $args{mac_address})){
 		$errmsg = "Administrator->addPowerSupplyCard need a type and content named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
+	my $psc = {powersupplycard_name => $args{name},
+			   powersupplycard_mac_address => $args{mac_address}};
+	$psc->{powersupply_ip} = $self->getFreeInternalIP();
+
+	if (exists $args{model_id} and defined $args{model_id}) {
+		$psc->{powersupply_model_id} = $args{model_id};
+	}
+	$self->{db}->resultset('Powersupplycard')->create($psc);
+	return;	
 }
-sub getPowerSupply{
-	
+sub getPowerSupplyCard{
+	my $self = shift;
+	my %args = @_;	
+	my $r = $self->{db}->resultset('Powersupplycard')->search(undef, { 
+		order_by => { -desc => [qw/powersupplycard_id/], }, 
+	});
+	my @arr = ();
+	while (my $row = $r->next) {
+		push @arr, { 
+			'NAME' => $row->get_column('powersupplycard_name'), 
+			'IP' => $row->get_column('powersupplycard_ip'), 
+			'MAC' => $row->get_column('powersupplycard_mac_address')
+		};
+	}
+	return @arr;
 }
 
 
