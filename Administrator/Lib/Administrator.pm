@@ -1226,7 +1226,25 @@ sub getPowerSupplyCard{
 	}
 	return @arr;
 }
-
+sub findPowerSupplyCard{
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{id} or ! defined $args{id})){
+		$errmsg = "Administrator->findPowerSupplyCard need an id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $r = $self->{db}->resultset('Powersupplycard')->find($args{id});
+	if(! $r){
+		$errmsg = "Administrator->findPowerSupplyCard can not find power supply card with id : $args{id}";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $psc = {'powersupplycard_name' => $r->get_column('powersupplycard_name'), 
+				'powersupplycard_ip' => $r->get_column('powersupplycard_ip'), 
+				'powersupplycard_mac_address' => $r->get_column('powersupplycard_mac_address')};
+	return $psc;
+}
 
 1;
 
