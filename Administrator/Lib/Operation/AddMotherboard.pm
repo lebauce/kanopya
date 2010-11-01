@@ -112,7 +112,7 @@ sub new {
     # Check power supply
     # Search if there is a power supply defined
     # TODO User will have to select the powersupplycard and after specify 
-    	$row = $admin->{db}->resultset('powersupplycard')->find(1);
+    	$row = $admin->{db}->resultset('Powersupplycard')->find(1);
     	if(! $row) {
     		$errmsg = "Operation::AddMotherboard->new : There is no power supply defined in the system!";
     		$log->error($errmsg);
