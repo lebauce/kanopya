@@ -1249,9 +1249,9 @@ sub findPowerSupplyCard{
 sub addPowerSupply {
 	my $self = shift;
 	my %args = @_;
-	if ((! exists $args{powerwsupplycard_id} or ! defined $args{powerwsupplycard_id}) ||
+	if ((! exists $args{powersupplycard_id} or ! defined $args{powersupplycard_id}) ||
 		(! exists $args{powersupplyport_id} or ! defined $args{powersupplyport_id})){
-		$errmsg = "Administrator->addPowerSupplyCard need a powerwsupplycard_id and powersupplyport_id named argument!";
+		$errmsg = "Administrator->addPowerSupply need a powersupplycard_id and powersupplyport_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
