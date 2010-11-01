@@ -108,14 +108,22 @@ sub new {
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
+    if (defined $args{params}->{motherboard_powersupply_id}){
     # Check power supply
     # Search if there is a power supply defined
     # TODO User will have to select the powersupplycard and after specify 
-    $row = $admin->{db}->resultset('powersupplycard')->first();
-    if(! defined $row) {
-    	$errmsg = "Operation::AddMotherboard->new : There is no power supply defined in the system!";
-    	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	$row = $admin->{db}->resultset('powersupplycard')->first();
+    	if(! $row) {
+    		$errmsg = "Operation::AddMotherboard->new : There is no power supply defined in the system!";
+    		$log->error($errmsg);
+    		throw Mcs::Exception::Internal(error => $errmsg);
+    	}
+    	my $existing_psc_id = $row->powersupplies->single({powersupplyport_id=>$args{params}->{motherboard_powersupply_id}});
+		if ($existing_psc_id) {
+			$errmsg = "Operation::AddMotherboard->new : This power supply port is already recorded!";
+    		$log->error($errmsg);
+    		throw Mcs::Exception::Internal(error => $errmsg);
+		}
     }
     return $self;
 }

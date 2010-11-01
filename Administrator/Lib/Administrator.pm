@@ -1246,6 +1246,30 @@ sub findPowerSupplyCard{
 	return $psc;
 }
 
+sub addPowerSupply {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{powerwsupplycard_id} or ! defined $args{powerwsupplycard_id}) ||
+		(! exists $args{powersupplyport_id} or ! defined $args{powersupplyport_id})){
+		$errmsg = "Administrator->addPowerSupplyCard need a powerwsupplycard_id and powersupplyport_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $powersupply = $self->{db}->resultset('Powersupply')->create(\%args);
+	return $powersupply->get_column('powersupply_id');
+}
+
+sub delPowerSupply {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{powerwsupply_id} or ! defined $args{powerwsupplycard_id})){
+		$errmsg = "Administrator->addPowerSupplyCard need a powerwsupply_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $powersupply = $self->{db}->resultset('Powersupply')->find($args{powerwsupply_id})->delete();
+}
+
 1;
 
 __END__

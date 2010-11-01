@@ -128,6 +128,12 @@ sub prepare {
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
+	# Load the powersupply_id in specific variable
+	$self->{_objs}->{motherboard_powersupply_id} = $params->{motherboard_powersupply_id};
+	# We delete the motherboard_powersupply_id entry to create properly in execute
+	delete $params->{motherboard_powersupply_id};
+	
+	
 	# Instanciate new Motherboard Entity
 	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);
 	
@@ -170,7 +176,11 @@ sub execute{
 	$self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
 	
 	# Add power supply informations.
-	
+	#TODO Replace this call by a parameter to let user choose its own power suplly
+	my $power_supply_card_id = $adm->getMasterPowerSupplyCardId();
+	my $powersupply_id = $adm->addPowerSupply(powerwsupplycard_id => $power_supply_card_id,
+											  powersupplyport_id => $self->{_objs}->{motherboard_powersupply_id});
+	$self->{_objs}->{motherboard}->setAttr(name=>'powerwersupply_id', value=>$powersupply_id);
 	# AddMotherboard finish, just save the Entity in DB
 	$self->{_objs}->{motherboard}->save();
 }
