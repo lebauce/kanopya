@@ -178,7 +178,7 @@ sub execute{
 	# Add power supply informations.
 	#TODO Replace this call by a parameter to let user choose its own power suplly
 	my $power_supply_card_id = 1;
-	my $powersupply_id = $adm->addPowerSupply(powerwsupplycard_id => $power_supply_card_id,
+	my $powersupply_id = $adm->addPowerSupply(powersupplycard_id => $power_supply_card_id,
 											  powersupplyport_id => $self->{_objs}->{motherboard_powersupply_id});
 	$self->{_objs}->{motherboard}->setAttr(name=>'motherboard_powersupply_id', value=>$powersupply_id);
 	# AddMotherboard finish, just save the Entity in DB
