@@ -147,7 +147,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9);
 INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e');
 
 -- Power Supply
-INSERT INTO `powersupply` VALUE (1,1,1);
+INSERT INTO `powersupply` VALUE (1,1,12);
 
 -- default distribution
 INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
