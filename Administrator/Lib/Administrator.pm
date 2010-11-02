@@ -1196,7 +1196,7 @@ sub addPowerSupplyCard{
 	my %args = @_;
 	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{mac_address} or ! defined $args{mac_address})){
-		$errmsg = "Administrator->addPowerSupplyCard need a type and content named argument!";
+		$errmsg = "Administrator->addPowerSupplyCard need a name, mac_Address named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}

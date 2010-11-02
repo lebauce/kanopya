@@ -117,6 +117,7 @@ sub prepare {
 	# Instanciate executor Cluster
 	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
 
+	
 	## Get Internal IP
 	# Get Internal Ip address of Master node of cluster Executor
 	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
@@ -150,6 +151,7 @@ sub prepare {
 																					  version=> "1",
 																					  administrator => $adm));
 	$log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));
+	
 }
 
 sub execute{
