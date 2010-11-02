@@ -32,48 +32,8 @@ eval {
 	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
 		motherboard_mac_address => '70:71:bc:6c:2d:b1', 
 		kernel_id => 9, 
-		motherboard_serial_number => "Test sn",
-		motherboard_slot_position => 2,
-		motherboardmodel_id => 7,
-		processormodel_id => 2,
-		active => 1
-	});
-	
-	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '70:71:bc:6c:2d:e9', 
-		kernel_id => 9, 
-		motherboard_serial_number => "Test2 sn",
-		motherboard_slot_position => 3,
-		motherboardmodel_id => 7,
-		processormodel_id => 2,
-		active => 1
-	});
-
-	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '70:71:bc:6c:4a:fd', 
-		kernel_id => 9, 
-		motherboard_serial_number => "Test3 sn",
-		motherboard_slot_position => 4,
-		motherboardmodel_id => 7,
-		processormodel_id => 2,
-		active => 1
-	});
-
-	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '70:71:bc:6c:31:d4', 
-		kernel_id => 9, 
-		motherboard_serial_number => "Test4 sn",
-		motherboard_slot_position => 5,
-		motherboardmodel_id => 7,
-		processormodel_id => 2,
-		active => 1
-	});
-	
-	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '70:71:bc:6c:2d:20', 
-		kernel_id => 9, 
-		motherboard_serial_number => "Test5 sn",
-		motherboard_slot_position => 6,
+		motherboard_serial_number => "No SN11",
+		motherboard_powersupply_id => 11,
 		motherboardmodel_id => 7,
 		processormodel_id => 2,
 		active => 1
@@ -82,18 +42,59 @@ eval {
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '70:71:bc:6c:56:9f', 
 		kernel_id => 9, 
-		motherboard_serial_number => "Test6 sn",
-		motherboard_slot_position => 7,
+		motherboard_serial_number => "No SN10",
+		motherboard_powersupply_id => 10,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
+		active => 1
+	});
+
+	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
+		motherboard_mac_address => '70:71:bc:6c:2d:20', 
+		kernel_id => 9, 
+		motherboard_serial_number => "No SN9",
+		motherboard_powersupply_id => 9,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
+		active => 1
+	});
+
+	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
+		motherboard_mac_address => '70:71:bc:6c:4a:fd', 
+		kernel_id => 9, 
+		motherboard_serial_number => "No SN8",
+		motherboard_powersupply_id => 8,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
+		active => 1
+	});
+
+	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
+		motherboard_mac_address => '6c:f0:49:95:d8:1b', 
+		kernel_id => 9, 
+		motherboard_serial_number => "No SN7",
+		motherboard_powersupply_id => 7,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
+		active => 1
+	});
+	
+	
+	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
+		motherboard_mac_address => '70:71:bc:6c:56:b7', 
+		kernel_id => 9, 
+		motherboard_serial_number => "No SN6",
+		motherboard_powersupply_id => 6,
 		motherboardmodel_id => 7,
 		processormodel_id => 2,
 		active => 1
 	});
 		
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '70:71:bc:6c:2c:82', 
+		motherboard_mac_address => '70:71:bc:6c:20:e9', 
 		kernel_id => 9, 
-		motherboard_serial_number => "Test7 sn",
-		motherboard_slot_position => 8,
+		motherboard_serial_number => "No SN5",
+		motherboard_powersupply_id => 5,
 		motherboardmodel_id => 7,
 		processormodel_id => 2,
 		active => 1
@@ -102,8 +103,8 @@ eval {
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '70:71:bc:6c:49:84', 
 		kernel_id => 9, 
-		motherboard_serial_number => "Test8 sn",
-		motherboard_slot_position => 9,
+		motherboard_serial_number => "No SN4",
+		motherboard_powersupply_id => 4,
 		motherboardmodel_id => 7,
 		processormodel_id => 2,
 		active => 1
@@ -112,13 +113,34 @@ eval {
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
 		motherboard_mac_address => '70:71:bc:6c:4a:a0', 
 		kernel_id => 9, 
-		motherboard_serial_number => "Test9 sn",
-		motherboard_slot_position => 10,
+		motherboard_serial_number => "No SN3",
+		motherboard_powersupply_id => 3,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
+		active => 1
+	});
+
+	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
+		motherboard_mac_address => '70:71:bc:6c:31:d4', 
+		kernel_id => 9, 
+		motherboard_serial_number => "No SN2 without power controller",
+#		motherboard_powersupply_id => 4,
+		motherboardmodel_id => 7,
+		processormodel_id => 2,
+		active => 1
+	});
+		
+	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
+		motherboard_mac_address => '70:71:bc:6c:2c:b2', 
+		kernel_id => 9, 
+		motherboard_serial_number => "No SN1 without power controller",
+#		motherboard_powersupply_id => 3,
 		motherboardmodel_id => 7,
 		processormodel_id => 2,
 		active => 1
 	});
 	
+
 	#BEGIN { $ENV{DBIC_TRACE} = 1 }
 	
 };
