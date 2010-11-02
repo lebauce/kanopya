@@ -65,7 +65,7 @@ CREATE TABLE `motherboard` (
   `processormodel_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
   `motherboard_serial_number` char(64) NOT NULL,
-  `motherboard_powersupply_id` int(8) unsigned NOT NULL,
+  `motherboard_powersupply_id` int(8) unsigned,
   `motherboard_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `motherboard_mac_address` char(18) NOT NULL,
