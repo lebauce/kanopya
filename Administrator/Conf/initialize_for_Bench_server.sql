@@ -211,7 +211,7 @@ INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 
 -- dhcpd configuration
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'10.0.0.0','255.255.255.0');
-INSERT INTO `dhcpd3_host` VALUES (1,1,'10.0.0.220', '00:30:f9:05:8b:6e','powersupply1',1);
+INSERT INTO `dhcpd3_hosts` VALUES (1,1,'10.0.0.220', '00:30:f9:05:8b:6e','powersupply1',1);
 --
 -- data for development tests
 -- 
