@@ -19,7 +19,7 @@ __PACKAGE__->add_columns(
   "motherboard_serial_number",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 64 },
   "motherboard_powersupply_id",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
   "motherboard_desc",
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 255 },
   "active",
@@ -82,8 +82,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-10-30 04:18:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Dmyso1Hf7GF+373p5AHQ5g
+# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-11-02 18:11:52
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UK8cAXT782cwQ0TlOSjgLw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
