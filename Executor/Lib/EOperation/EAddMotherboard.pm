@@ -179,7 +179,7 @@ sub execute{
 													econtext => $self->{nas}->{econtext});
 	$self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
 
-	if (! exists $self->{_objs}->{motherboard_powersupply_id} or ! defined $self->{_objs}->{motherboard_powersupply_id}){
+	if (exists $self->{_objs}->{motherboard_powersupply_id} and defined $self->{_objs}->{motherboard_powersupply_id}){
 		# Add power supply informations.
 		#TODO Replace this call by a parameter to let user choose its own power suplly
 	
