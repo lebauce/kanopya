@@ -776,7 +776,7 @@ sub getFreeInternalIP{
 		
 		# if no record is found for this ip address, it is free so we return it
 		if(not defined $row) { 
-			$row = $self->{db}->resultset('PowersupplyCard')->find({ powersupplycard_ip => $freeip->addr });
+			$row = $self->{db}->resultset('Powersupplycard')->find({ powersupplycard_ip => $freeip->addr });
 			if(not defined $row) {
 				return $freeip->addr; }}
 		
