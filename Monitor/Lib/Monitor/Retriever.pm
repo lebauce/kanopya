@@ -395,7 +395,7 @@ sub graphNode {
 						
 						lower_limit => 0,
 						
-						#slope_mode => undef,	# smooth
+						slope_mode => undef,	# smooth
 					
 						);
 						
@@ -427,8 +427,8 @@ sub graphNode {
 									name => $ds->{label},
 									type => $graph_type,
 									dsname => $ds->{label},# . "_P",
-									#color => (defined $cluster_total) ? "FF0000" : $ds->{color} || "FFFFFF",
-									color => $ds->{color} || "FFFFFF",
+									color => (defined $cluster_total) ? "FF0000" : $ds->{color} || "FFFFFF",
+									#color => $ds->{color} || "FFFFFF",
 									legend => $ds->{label} . ((defined $args{type} && $args{type} eq 'cluster') ? (defined $cluster_total ? " (total)" : " (node average)") : ""),
 								},
 	  							
@@ -491,9 +491,14 @@ sub timeLaps {
 			
   		my $analyseur = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M' );
   		my $dt_start = $analyseur->parse_datetime( $range[0] )->set_time_zone( $time_zone );
-  		my $dt_end = $analyseur->parse_datetime( $range[1] )->set_time_zone( $time_zone );
+  		
+  		if ( $range[1] =~ 'now' ) {
+  			$time_end = time();
+  		} else {
+  			my $dt_end = $analyseur->parse_datetime( $range[1] )->set_time_zone( $time_zone );
+  			$time_end = $dt_end->epoch();
+  		}
 		
-		$time_end = $dt_end->epoch();
 		$time_laps = $time_end - $dt_start->epoch();
 		
 	} else {

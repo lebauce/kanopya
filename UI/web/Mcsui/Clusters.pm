@@ -233,6 +233,7 @@ sub process_customgraph : Runmode {
 	 my ($date_start, $time_start, $date_end, $time_end) = ( $query->param('date_start'), $query->param('time_start'),
 	 														 $query->param('date_end'), $query->param('time_end') );
 	 
+	 # we write custom range in a specific file which will be read by Monitor::Retriever at the next graph generation iteration
 	 `echo "$date_start $time_start,$date_end $time_end" > /tmp/gen_graph_custom.conf`;
 	 
 #	 use Monitor::Retriever;
