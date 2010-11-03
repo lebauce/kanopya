@@ -327,7 +327,7 @@ sub execute {
 					 master_node => $masternode);
 
 	# finaly we start the node
-	$self->startNode();
+	$self->startNode(adm => $adm);
 	$self->{_objs}->{motherboard}->save();
 
 }
