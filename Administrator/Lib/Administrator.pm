@@ -1250,6 +1250,7 @@ sub findPowerSupplyCard{
 sub addPowerSupply {
 	my $self = shift;
 	my %args = @_;
+	$log->debug("#### $args{powersupplyport_id} and $args{powersupplyport_id}");
 	if ((! exists $args{powersupplycard_id} or ! defined $args{powersupplycard_id}) ||
 		(! exists $args{powersupplyport_id} or ! defined $args{powersupplyport_id})){
 		$errmsg = "Administrator->addPowerSupply need a powersupplycard_id and powersupplyport_id named argument!";
