@@ -25,6 +25,29 @@ sub new {
     return $self;
 }
 
+sub onStateChanged {
+	my $self = shift;
+	my %args = @_;	
+	my ($mb, $last_state, $new_state) = ($args{mb}, $args{last_state}, $args{new_state});
+	my $adm = $self->{_admin_wrap};
+	
+	if ( $last_state eq 'starting' && $new_state eq 'up') {
+		$adm->newOp(
+				type => "UpdateClusterNodeStarted", priority => '500',
+				params => {
+					motherboard_id => $mb->getAttr(name => 'motherboard_id'),
+					cluster_id => $mb->getClusterId()
+				});
+	} elsif ( $last_state eq 'stopping' && $new_state eq 'down') {
+		$adm->newOp(
+				type => 'RemoveMotherboardFromCluster', priority => 100, 
+				params => {
+					motherboard_id => $mb->getAttr(name => 'motherboard_id'),
+					cluster_id => $mb->getClusterId()
+				});
+	}
+
+}
 
 =head2 _manageHostState
 	
@@ -56,7 +79,6 @@ sub _manageHostState {
 		# Retrieve motherboard
 		my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_ip } );	
 		my $mb = shift @mb_res;
-
 		die "motherboard '$host_ip' no more in DB" if (not defined $mb);
 
 		# Retrieve mb state and state time
@@ -64,49 +86,35 @@ sub _manageHostState {
 		my $new_state = $state;
 		
 		# Manage new state
-		if ( $reachable && $state ne "stopping") {					# if reachable, node is now 'up', don't care of what was the last state
+		if ( $reachable && $state ne "stopping") {	# if reachable, node is now 'up', except if node is stopping
 			$new_state = "up";
-			if ($state eq "starting"){
-				$adm->newOp(type => "UpdateClusterNodeStarted", priority => '500', params => {
-					motherboard_id => $mb->getAttr(name => 'motherboard_id'),
-					cluster_id => $mb->getClusterId()});
-				
-			}
-		} elsif ( $state eq "up" ) {		# if unreachable and last state was 'up', node is considered 'broken'
+		} elsif ( $state eq "up" ) {				# if unreachable and last state was 'up', node is considered 'broken'
 				$new_state = 'broken';
-		} else {							# else we check if node is not 'starting' for too long, if it is, node is 'broken'
-			my $diff_time = 0;
-			if ($state_time) {
-				$diff_time = time() - $state_time;	
-			}
-			if ( ( $state eq "starting" ) && ( $diff_time > $starting_max_time ) ) {
-				$new_state = 'broken';
-				my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
-				print $mess . "\n";
-				$adm->addMessage( type => "warning", content => $mess );
-			}
+		} else {									# else we check if node is not 'starting/stopping' for too long, if it is, node is 'broken'
 			
+			# Check if stopping node is pingable
 			if ($state eq "stopping"){
 				my $host_ip = $mb->getAttr( name => 'motherboard_internal_ip' );
-				# we check if host is stopped (unpingable)
 				my $p = Net::Ping->new();
 				my $pingable = $p->ping($host_ip);
 				$p->close();
 				if ( not $pingable ) {
 					$new_state = 'down';
-					$adm->newOp(
-						type => 'RemoveMotherboardFromCluster',
-						priority => 100, 
-						params => {
-						motherboard_id => $mb->getAttr(name => 'motherboard_id'),
-						cluster_id => $mb->getClusterId()});
-				} elsif ( $diff_time > $stopping_max_time ) {
-					$new_state = 'broken';
-					my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
-					print $mess . "\n";
-					$adm->addMessage( type => "warning", content => $mess );}
+				} 
 			}
 			
+			# Check if node is not starting/stopping for too long
+			my $diff_time = 0;
+			if ($state_time) {
+				$diff_time = time() - $state_time;	
+			}
+			if ( 	(( $state eq "starting" ) && ( $diff_time > $starting_max_time )) ||
+					(( $state eq "stopping" ) && ( $diff_time > $stopping_max_time ) && ( $new_state ne 'down') ) ) {
+				$new_state = 'broken';
+				my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
+				print $mess . "\n";
+				$adm->addMessage( type => "warning", content => $mess );
+			}
 		}
 		
 		# Update state in DB if changed
@@ -115,6 +123,7 @@ sub _manageHostState {
 			$mb->setAttr( name => "motherboard_state", value => $new_state );
 			$mb->save();
 			$adm->addMessage( type => "statechanged", content => "[$host_ip] State changed : $state => $new_state" );
+			$self->onStateChanged( mb => $mb, last_state => $state, new_state => $new_state );
 		}
 	};
 	if ($@) {
@@ -213,7 +222,7 @@ sub updateHostData {
 	#$self->{_admin_wrap} = AdminWrapper->new( );
 
 	my $host = $args{host_ip};
-	
+
 	my %all_values = ();
 	my $host_reachable = 1;
 	my $error_happened = 0;
@@ -221,6 +230,15 @@ sub updateHostData {
 	eval {
 		#For each set of var defined in conf file
 		foreach my $set ( @{ $self->{_monitored_data} } ) {
+
+			#############################################################
+			# Skip this set if associated component is not on this host #
+			#############################################################
+			if (defined $set->{'component'} && $set->{'component'} ne 'base' &&	
+				0 == grep { $_ eq $set->{'component'} } @{$args{components}} ) {
+				print "[$host] info: No component '$set->{'component'}' to monitor on this host\n";
+				next;
+			}
 
 			###################################################
 			# Build the required var map: ( var_name => oid ) #
@@ -262,8 +280,8 @@ sub updateHostData {
 					$provider_class =~ /(.*)Provider/;
 					my $comp = $1;
 					my $mess = "Can not reach component '$comp' on $host";
-					if ( $args{host_state} =~ "starting" ) {
-						print "[", threads->tid(), "][$host] $mess => still starting\n";
+					if ( $args{host_state} =~ "starting" || $args{host_state} =~ "stopping" ) {
+						print "[", threads->tid(), "][$host] $mess => still $args{host_state}\n";
 					} else {
 						$log->info( "Unreachable host '$host' (component '$comp') => we stop collecting data.");
 						print "[", threads->tid(), "][$host] $mess\n";
@@ -400,7 +418,11 @@ sub update {
 		for my $host_info (@all_hosts_info) {
 			# We create a thread for each host to don't block update if a host is unreachable
 			#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
-			my $thr = threads->create('updateHostData', $self, host_ip => $host_info->{ip}, host_state => $host_info->{state});
+			my $thr = threads->create( 	'updateHostData',
+										$self,
+										host_ip => $host_info->{ip},
+										host_state => $host_info->{state},
+										components => $host_info->{components} );
 			$threads{$host_info->{ip}} = $thr;
 		}
 		

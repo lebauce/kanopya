@@ -84,18 +84,17 @@ sub retrieveHostsByCluster {
 	my $adm = $self->{_admin};
 	my @clusters = $adm->getEntities( type => "Cluster", hash => { } );
 	foreach my $cluster (@clusters) {
-		#my @mb_ip;
+		
+		my $components = $cluster->getComponents(administrator => $self->{_admin}, category => 'all');
+		my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
+
 		my %mb_info;
 		foreach my $mb ( values %{ $cluster->getMotherboards( administrator => $adm) } ) {
-			#push @mb_ip, $mb->getAttr( name => "motherboard_internal_ip" );
-			
 			my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
 			my $mb_ip = $mb->getAttr( name => "motherboard_internal_ip" );
-			#my ($mb_state, $mb_state_time) = $self->_mbState( state_info => $mb->getAttr( name => "motherboard_state" ) );
 			my $mb_state = $mb->getAttr( name => "motherboard_state" );
-			
-			#$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, state_time => $mb_state_time };
-			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state };
+
+			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };
 		}
 		#$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \@mb_ip;
 		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;

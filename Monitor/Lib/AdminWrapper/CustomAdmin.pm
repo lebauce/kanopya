@@ -137,7 +137,7 @@ sub retrieveHostsByCluster {
 				my $line = $_;
 				chomp $line;
 				my ($node_ip, $node_state) = split ' ', $line;
-				$hosts{"node_$node_ip"} = { ip => $node_ip, state => $node_state };
+				$hosts{"node_$node_ip"} = { ip => $node_ip, state => $node_state, components => ['Apache','Mysql','Openiscsi'] };
 			}
 			close FILE;
 			$hosts_by_cluster{ $clust_name } = \%hosts;
@@ -148,7 +148,7 @@ sub retrieveHostsByCluster {
 	return %hosts_by_cluster;
 	
 #	my %hosts_by_cluster = ( 	"cluster_1" => { 	
-#												'node001' => { ip => 'localhost', state => 'up'},
+#												'node001' => { ip => 'localhost', state => 'up', components => [] },
 #												'node002' => { ip => '127.0.0.1', state => 'up' }
 #											},
 #								"cluster_2" => {	
