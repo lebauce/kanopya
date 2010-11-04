@@ -327,7 +327,7 @@ sub execute {
 					 master_node => $masternode);
 
 	# finaly we start the node
-	$self->startNode();
+	$self->startNode(adm => $adm);
 	$self->{_objs}->{motherboard}->save();
 
 }
@@ -336,13 +336,42 @@ sub execute {
 
 sub startNode {
 	my $self = shift;
-	if(not -e '/usr/sbin/etherwake') {
-		$errmsg = "EOperation::EAddMotherboardInCluster->startNode : /usr/sbin/etherwake not found";
+	my %args = @_;
+	if ((! exists $args{adm} or ! defined $args{adm})){
+		$errmsg = "EAddMotherboardInCluster->startNode need an adm named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Execution(error => $errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	my $command = "/usr/sbin/etherwake ".$self->{_objs}->{motherboard}->getAttr(name => 'motherboard_mac_address');
-	my $result = $self->{econtext}->execute(command => $command);
+
+	my $powersupply_id = $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_powersupply_id");
+	if (!$powersupply_id) {
+		if(not -e '/usr/sbin/etherwake') {
+			$errmsg = "EOperation::EAddMotherboardInCluster->startNode : /usr/sbin/etherwake not found";
+			$log->error($errmsg);
+			throw Mcs::Exception::Execution(error => $errmsg);
+		}
+		my $command = "/usr/sbin/etherwake ".$self->{_objs}->{motherboard}->getAttr(name => 'motherboard_mac_address');
+		my $result = $self->{econtext}->execute(command => $command);
+	}
+	else {
+		my $powersupply = $args{adm}->getPowerSupply(powersupply_id => $powersupply_id);
+		use IO::Socket;
+		my $powersupplycard = $args{adm}->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
+		my $sock = new IO::Socket::INET (
+                                  PeerAddr => $powersupplycard->{powersupplycard_ip},
+                                  PeerPort => '1470',
+                                  Proto => 'tcp',
+                                 );
+		$sock->autoflush(1);
+		die "Could not create socket: $!\n" unless $sock;
+		
+		my $pos = $powersupply->{powersupplyport_id};
+		my $s = "R";
+		$s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
+		$s .= pack "B16", "000000000000000";
+		printf $sock $s;
+		close($sock);
+	}
 	my $state = "starting:".time;
 	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
 }

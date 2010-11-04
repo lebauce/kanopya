@@ -1210,7 +1210,7 @@ sub addPowerSupplyCard{
 	$self->{db}->resultset('Powersupplycard')->create($psc);
 	return;	
 }
-sub getPowerSupplyCard{
+sub getPowerSupplyCards{
 	my $self = shift;
 	my %args = @_;	
 	my $r = $self->{db}->resultset('Powersupplycard')->search(undef, { 
@@ -1226,17 +1226,18 @@ sub getPowerSupplyCard{
 	}
 	return @arr;
 }
+
 sub findPowerSupplyCard{
 	my $self = shift;
 	my %args = @_;
-	if ((! exists $args{id} or ! defined $args{id})){
+	if ((! exists $args{powersupplycard_id} or ! defined $args{powersupplycard_id})){
 		$errmsg = "Administrator->findPowerSupplyCard need an id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	my $r = $self->{db}->resultset('Powersupplycard')->find($args{id});
+	my $r = $self->{db}->resultset('Powersupplycard')->find($args{powersupplycard_id});
 	if(! $r){
-		$errmsg = "Administrator->findPowerSupplyCard can not find power supply card with id : $args{id}";
+		$errmsg = "Administrator->findPowerSupplyCard can not find power supply card with id : $args{powersupplycard_id}";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -1249,6 +1250,7 @@ sub findPowerSupplyCard{
 sub addPowerSupply {
 	my $self = shift;
 	my %args = @_;
+	$log->debug("#### $args{powersupplyport_id} and $args{powersupplyport_id}");
 	if ((! exists $args{powersupplycard_id} or ! defined $args{powersupplycard_id}) ||
 		(! exists $args{powersupplyport_id} or ! defined $args{powersupplyport_id})){
 		$errmsg = "Administrator->addPowerSupply need a powersupplycard_id and powersupplyport_id named argument!";
@@ -1270,6 +1272,19 @@ sub delPowerSupply {
 	my $powersupply = $self->{db}->resultset('Powersupply')->find($args{powerwsupply_id})->delete();
 }
 
+sub getPowerSupply {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{powersupply_id} or ! defined $args{powersupply_id})){
+		$errmsg = "Administrator->addPowerSupply need a powersupply_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $row = $self->{db}->resultset('Powersupply')->find($args{powersupply_id});
+	my $powersupply = { powersupplycard_id => $row->get_column('powersupplycard_id'),
+						powersupplyport_id => $row->get_column('powersupplyport_id')};
+	return $powersupply;
+}
 1;
 
 __END__
