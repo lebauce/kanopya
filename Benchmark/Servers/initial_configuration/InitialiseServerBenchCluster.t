@@ -131,7 +131,7 @@ eval {
 	});
 		
 	$adm->newOp(type => "AddMotherboard", priority => '200', params => { 
-		motherboard_mac_address => '70:71:bc:6c:2c:b2', 
+		motherboard_mac_address => '70:71:bc:6c:2c:82', 
 		kernel_id => 9, 
 		motherboard_serial_number => "No SN1 without power controller",
 #		motherboard_powersupply_id => 3,
