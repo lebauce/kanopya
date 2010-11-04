@@ -249,10 +249,10 @@ sub checkRemoveConditions {
 			
 			if ( 	( defined $required->{max} && $prevision < $required->{max} )
 				|| 	( defined $required->{min} && $prevision > $required->{min} ) ) {
-				print "				======> REQUIRED ok\n";
+				print "				======> ok\n";
 				$one_required_ok = 1;
 			} else {
-				print "				======> REQUIRED failed\n";
+				print "				======> failed\n";
 				$required_failed = 1;
 			}
 			
@@ -266,7 +266,7 @@ sub checkRemoveConditions {
 	
 	# Required remove node if all conditions are ok
 	if ( $required_failed == 0 && $one_required_ok != 0 ) {
-		print "========> REQUIRED REMOVE NODE : $required_failed | $one_required_ok\n\n";
+		print "========> REQUIRED REMOVE NODE\n\n";
 		$self->requireRemoveNode( cluster => $cluster );
 	}
 	
