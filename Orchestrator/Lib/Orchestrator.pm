@@ -815,7 +815,7 @@ sub graph {
 	my @var_list = ();
 	for my $rule ( @{ $rules } ) {
 		foreach my $cond ( @{ General::getAsArrayRef( data => $rule, tag => $tag ) }) {
-			
+
 			push @graph_params, (
 									draw   => {
 										type => 'line',

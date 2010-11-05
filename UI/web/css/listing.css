@@ -11,8 +11,8 @@ table.listview {
 
 
 table.listview  th { background-color: #DDD; padding: 10px; }
-table.listview .expanddown { background: url('/images/icons/arrow-down.png') no-repeat center; }
-table.listview .expandup { background: url('/images/icons/arrow-up.png') no-repeat center; }
+table.listview .expanddown { background: url('/images/icons/arrow-down.png') no-repeat center; text-align: left; }
+table.listview .expandup { background: url('/images/icons/arrow-up.png') no-repeat center; text-align: left; }
 
 table.listview .expanddown:hover, table.listview .expandup:hover { cursor: pointer; }
 

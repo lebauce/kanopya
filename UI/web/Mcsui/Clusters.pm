@@ -88,12 +88,13 @@ sub view_clusterdetails : Runmode {
 	# Retrieve from conf graph type we want display
 	use XML::Simple;
 	my $conf = XMLin("/workspace/mcs/UI/web/clusterdetails.conf");
+	my $graph_dir = $conf->{graph_dir} || "/tmp";
 	my $graph_dir_alias = $conf->{graph_dir_alias};
 	my $graph_monitor_subdir = $conf->{graph_monitor_subdir};
 	my $graph_orchestrator_subdir = $conf->{graph_orchestrator_subdir};
 	my @node_indic_sets = split ",", $conf->{node_graph}{sets};
 	my @cluster_indic_sets = split ",", $conf->{cluster_graph}{sets};
-		
+	
 	foreach my $m (keys %$motherboards){
 		my $tmp ={};
 		my $ip = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
@@ -119,23 +120,25 @@ sub view_clusterdetails : Runmode {
 	my @monitoring_graphs = ( );
 	foreach my $indic_set ( @cluster_indic_sets )  {
 		my $graph_name = "graph_" . "$cluster_name" . "_$indic_set";
-		push( @monitoring_graphs, { GRAPH_INFO =>  $indic_set,
-									HIDDEN => ($indic_set eq 'nodecount') ? 0 : 1,
-									
-									GRAPH_TYPE => [
-										{
-											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . ".png",
-											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_hour.png",
-											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_day.png",
-										},
-										{
-											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . ".png",
-											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_hour.png",
-											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_day.png",
-										}
-									],
-									
-								} );
+		if ( -e "$graph_dir/$graph_monitor_subdir/$graph_name" . "_avg" . ".png" ) {
+			push( @monitoring_graphs, { GRAPH_INFO =>  $indic_set,
+										HIDDEN => ($indic_set eq 'nodecount') ? 0 : 1,
+										
+										GRAPH_TYPE => [
+											{
+												CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . ".png",
+												HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_hour.png",
+												DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_day.png",
+											},
+	#										{
+	#											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . ".png",
+	#											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_hour.png",
+	#											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_day.png",
+	#										}
+										],
+										
+									} );
+		}
 	}
 	
 	$graph_name = "graph_" . "$cluster_name" . "_nodecount";
