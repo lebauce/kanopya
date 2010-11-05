@@ -201,6 +201,27 @@ sub execute {
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
 	
+	my $powersupply_id = $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_powersupply_id");
+	if ($powersupply_id) {
+		my $powersupply = $adm->getPowerSupply(powersupply_id => $powersupply_id);
+		use IO::Socket;
+		my $powersupplycard = $adm->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
+		my $sock = new IO::Socket::INET (
+                                  PeerAddr => $powersupplycard->{powersupplycard_ip},
+                                  PeerPort => '1470',
+                                  Proto => 'tcp',
+                                 );
+		$sock->autoflush(1);
+		die "Could not create socket: $!\n" unless $sock;
+		
+		my $pos = $powersupply->{powersupplyport_id};
+		my $s = "R";
+		$s .= pack "B16", "000000000000000";
+		$s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
+		printf $sock $s;
+		close($sock);
+	}
+	
 	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 	
@@ -269,6 +290,8 @@ sub execute {
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
 	## Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
+	
+
 	
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
