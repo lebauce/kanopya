@@ -263,17 +263,22 @@ sub updateHostData {
 					print "[$host] ##### Instanciate '$provider_class' time : ", time() - $inst_time, "\n";
 				}
 				
-				################################################################################
-				# Retrieve the map ref { var_name => value } corresponding to required var_map #
-				################################################################################
+				############################################################################################################
+				# Retrieve the map ref { index => { var_name => value } } corresponding to required var_map for each entry #
+				############################################################################################################
 				my $retrieve_time = time();
-				($time, $update_values) = $data_provider->retrieveData( var_map => \%var_map );
+				if ( exists $set->{table_oid} ) {
+					($time, $update_values) = $data_provider->retrieveTableData( table_oid => $set->{table_oid}, var_map => \%var_map );
+				} else {
+					($time, $update_values->{"0"}) = $data_provider->retrieveData( var_map => \%var_map );
+				}
 				print "[$host] ##### Collect '$set->{label}' time : ", time() - $retrieve_time, "\n";
-				
 			};
 			if ($@) {
+				#####################
+				# Handle exceptions #
+				#####################
 				my $error = $@;
-				#print  "[$host] Error collecting data set  ===> $error";
 				$log->warn( "[", threads->tid(), "][$host] Collecting data set '$set->{label}' => $provider_class : $error" );
 				#TODO find a better way to detect unreachable host (grep error string is not very safe)
 				if ( "$error" =~ "No response" || "$error" =~ "Can't connect") {
@@ -290,23 +295,27 @@ sub updateHostData {
 					$host_reachable = 0;
 					last; # we stop collecting data sets
 				} else {
+					my $mess = "[$host] Error while collecting data set '$set->{label}' => $error";
+					print $mess . "\n";
+					$self->{_admin_wrap}->addMessage( type => "warning", content => $mess );
 					$error_happened = 1;
 				}
 				next; # continue collecting the other data sets
 			}
-			
-			# DEBUG print values
-			print "[", threads->tid(), "][$host] $time : ", join( " | ", map { "$_: $update_values->{$_}" } keys %$update_values ), "\n";
-	
-			#$all_values{ $set->{label} } = $update_values;
-	
+
 			#############################################
 			# Store new values in the corresponding RRD #
-			#############################################
-			my $rrd_name = $self->rrdName( set_name => $set->{label}, host_name => $host );
-			my %stored_values = $self->updateRRD( rrd_name => $rrd_name, ds_type => $set->{ds_type}, time => $time, data => $update_values );
-			
-			$all_values{ $set->{label} } = \%stored_values;
+			#############################################			
+			while ( my ($index, $values) = each %$update_values) { 
+				# DEBUG print values
+				print "[", threads->tid(), "][$host] $time : ", join( " | ", map { "$_" . ($index eq "0" ? "" : ".$index") . ": $values->{$_}" } keys %$values ), "\n";
+				
+				my $set_name = $set->{label} . ( $index eq "0" ? "" : ".$index" );
+				my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
+				my %stored_values = $self->updateRRD( rrd_name => $rrd_name, ds_type => $set->{ds_type}, time => $time, data => $values );
+				
+				$all_values{ $set_name } = \%stored_values;
+			}
 			
 		}
 		# Update host state
@@ -481,6 +490,7 @@ sub update {
 			############################## Update cluster rrd #########################################
 			my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
 			my @nodes_ip = map { $_->{ip} } @up_nodes;
+			my $nb_up = scalar @up_nodes;
 			
 			my %sets;
 			foreach my $host_ip (@nodes_ip) {
@@ -490,7 +500,16 @@ sub update {
 				}
 			}
 			
+			print "\n###############   ", "SETS", "   ##########\n";
+			print Dumper \%sets;
+			
 			while ( my ($set_name, $sets_list) = each %sets ) {
+				
+				if ( $nb_up != scalar @$sets_list ) {
+					print "Warning: during aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.\n";
+					next;
+				}
+				
 				my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
 				my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
 

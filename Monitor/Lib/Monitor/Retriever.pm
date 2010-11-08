@@ -34,6 +34,9 @@ sub new {
 	
 	$self->{_graph_title_font} = { name => "Times", element => "title", size => 15 };
 	
+	$self->{_graph_width} = 900;
+	$self->{_graph_height} = 100;
+	
 	#$self->{_admin_wrap} = AdminWrapper->new( );
 	
     return $self;
@@ -329,6 +332,119 @@ sub getIndicators {
 	return \%res;
 }
 
+sub timeLaps {
+	my $self = shift;
+	my %args = @_;
+	
+	my $time_laps = $args{time_laps};
+	my ($time_start, $time_end, $time_suffix);
+	if ( $time_laps =~ /\D/ ) { # not a number
+		 $time_suffix = "$time_laps";
+		 my %laps = ( 'hour' => 3600, 'day' => 3600*24 );
+		 $time_laps = $laps{$time_laps} || 0;
+		 $time_end = time();
+	} elsif ( defined $args{time_range} ) {
+		my @range = split ",", $args{time_range};
+		# TODO check validity of range 
+		
+		use DateTime::Format::Strptime;
+		
+		#my $time_zone = 'Europe/Paris';
+		my $time_zone = 'local';
+			
+  		my $analyseur = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M' );
+  		my $dt_start = $analyseur->parse_datetime( $range[0] )->set_time_zone( $time_zone );
+  		
+  		if ( $range[1] =~ 'now' ) {
+  			$time_end = time();
+  		} else {
+  			my $dt_end = $analyseur->parse_datetime( $range[1] )->set_time_zone( $time_zone );
+  			$time_end = $dt_end->epoch();
+  		}
+		
+		$time_laps = $time_end - $dt_start->epoch();
+		
+	} else {
+		$time_end = time();
+	}
+	
+	$time_start = $time_end - $time_laps; 
+	
+	return ($time_start, $time_end,  $time_suffix);
+}
+
+sub graphTable {
+	my $self = shift;
+	my %args = @_;
+
+	my ($time_start, $time_end, $time_suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
+	
+	my $host = $args{host};
+	my $set_name = $args{set_label};
+	
+	my $graph_name = "graph_$host" . "_$set_name";
+	$graph_name .= "_$args{aggreg_ext}" if (defined $args{aggreg_ext});
+	$graph_name .= ( defined $time_suffix ? "_$time_suffix" : "");
+	my $graph_filename = "$graph_name.png";
+	
+#	my $graph_title = (defined $args{type} && $args{type} eq 'cluster') ?
+#					"$set_name for cluster $host " . ( defined $cluster_total ? "(total)" : "(average)" )
+#					: "$set_name for $host";
+	my $graph_title = "$set_name for $host";
+
+
+	my $graph_type = $args{graph_type} || "line";
+	
+	my %rrds = ();
+	my $rrd_files = `ls $self->{_rrd_base_dir} | grep $set_name`;
+	foreach my $file_name ( split '\n', $rrd_files ) {
+		if ( $file_name =~ /$set_name\.(.*)_$host.*/) {
+			$rrds{$1} = $file_name;
+		}
+	}
+		
+	my @graph_params = (
+					'image' => "$self->{_graph_dir}/tmp/$graph_filename",
+					#'vertical_label', 'ticks',
+					'start' => $time_start,
+					'end' => $time_end,
+					color => $self->{_graph_color},				
+					font => $self->{_graph_title_font},
+					title => $graph_title,
+					width => $self->{_graph_width},
+					height => $self->{_graph_height},
+					lower_limit => 0,
+					slope_mode => undef,	# smooth
+				
+					);
+	
+	my $file;				
+	while ( my ($index, $rrd_file) = each %rrds ) {
+		$file = $rrd_file;
+		foreach my $ds (@{ $args{ds_def_list} }) {		
+			push @graph_params, (
+									'draw', {
+										file => "$self->{_rrd_base_dir}/$rrd_file",
+										type => $graph_type,
+										dsname => $ds->{label},# . "_P",
+										color => $ds->{color} || "FFFFFF",
+										legend => $ds->{label} . " ($index)",
+		  							},
+								);
+		}
+	}
+	
+	if ( defined $file) {
+		my $rrd = $self->getRRD( file => "$file" );
+		
+		# Draw a graph in a PNG image
+		$rrd->graph( @graph_params );
+	}
+	
+	# mv graph file from tmp dir to graph_dir
+	`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
+}
+
 =head2 graphNode
 	
 	Class : Public
@@ -375,9 +491,6 @@ sub graphNode {
 						: "$set_name for $host";
 
 	my $graph_type = $args{graph_type} || "line";
-	#my ($set_def) = grep { $_->{label} eq $set_name} @{ $self->{_monitored_data} };
-	#my $ds_list = General::getAsArrayRef( data => $set_def, tag => 'ds');
-
 
 	# get rrd     
 	my $rrd = $self->getRRD( file => "$rrd_name.rrd" );
@@ -387,14 +500,12 @@ sub graphNode {
 						#'vertical_label', 'ticks',
 						'start' => $time_start,
 						'end' => $time_end,
-						color => $self->{_graph_color},
-						
+						color => $self->{_graph_color},				
 						font => $self->{_graph_title_font},
-						
 						title => $graph_title,
-						
+						width => $self->{_graph_width},
+						height => $self->{_graph_height},
 						lower_limit => 0,
-						
 						slope_mode => undef,	# smooth
 					
 						);
@@ -469,46 +580,6 @@ sub graphNode {
 	return $graph_filename;
 }
 
-sub timeLaps {
-	my $self = shift;
-	my %args = @_;
-	
-	my $time_laps = $args{time_laps};
-	my ($time_start, $time_end, $time_suffix);
-	if ( $time_laps =~ /\D/ ) { # not a number
-		 $time_suffix = "$time_laps";
-		 my %laps = ( 'hour' => 3600, 'day' => 3600*24 );
-		 $time_laps = $laps{$time_laps} || 0;
-		 $time_end = time();
-	} elsif ( defined $args{time_range} ) {
-		my @range = split ",", $args{time_range};
-		# TODO check validity of range 
-		
-		use DateTime::Format::Strptime;
-		
-		#my $time_zone = 'Europe/Paris';
-		my $time_zone = 'local';
-			
-  		my $analyseur = DateTime::Format::Strptime->new( pattern => '%Y-%m-%d %H:%M' );
-  		my $dt_start = $analyseur->parse_datetime( $range[0] )->set_time_zone( $time_zone );
-  		
-  		if ( $range[1] =~ 'now' ) {
-  			$time_end = time();
-  		} else {
-  			my $dt_end = $analyseur->parse_datetime( $range[1] )->set_time_zone( $time_zone );
-  			$time_end = $dt_end->epoch();
-  		}
-		
-		$time_laps = $time_end - $dt_start->epoch();
-		
-	} else {
-		$time_end = time();
-	}
-	
-	$time_start = $time_end - $time_laps; 
-	
-	return ($time_start, $time_end,  $time_suffix);
-}
 
 #TODO paramétre pour choisir la liste des ds dont on veut afficher le pourcentage
 sub graphPercent {
@@ -567,7 +638,10 @@ sub graphPercent {
 						#'vertical_label', 'ticks',
 						'start' => $time_start,
 						'end' => $time_end,
+						font => $self->{_graph_title_font},
 						color => $self->{_graph_color},
+						width => $self->{_graph_width},
+						height => $self->{_graph_height},
 						lower_limit => 0,
 						);
 
@@ -641,80 +715,6 @@ sub graphPercent {
 	
 =cut
 
-#TODO enable multi indicators graph
-sub OLD_graphCluster {
-	my $self = shift;
-	my %args = @_;
-	
-	my $cluster = $args{cluster};
-	my $set_name = $args{set_name};
-	my $ds_label = $args{ds_name};
-	
-	my $graph_filename = "graph_" . "$cluster" . "_$ds_label.png";
-
-	my $graph_type = $args{graph_type} || "line";
-	
-	my @graph_params = (
-						'image' => "$self->{_graph_dir}/$graph_filename",
-						#'vertical_label', 'ticks',
-						'start' => time() - $args{time_laps},
-						#color => { back => "#69B033" },
-						color => $self->{_graph_color},
-						lower_limit => 0,
-						);
-	
-	
-	
-	
-	my $total_op = "";
-	my $nb_hosts = 0;
-	my $rrd_file;
-	my $cluster_info = $self->getClusterHostsInfo( cluster => $cluster);
-	foreach my $host_info ( values %$cluster_info ) {
-		my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host_info->{ip} );
-		$rrd_file = "$rrd_name.rrd";
-		my $var_name = "host$nb_hosts" . "_$ds_label";
-		push @graph_params, (
-								draw   => {
-									type => "hidden",
-									file => $self->{_rrd_base_dir} . "/" . $rrd_file, 
-									dsname => $ds_label,
-									name => $var_name,
-	  							}	
-							);
-
-		$total_op .= "$var_name,";
-		$nb_hosts++;
-	} 
-	
-	chop $total_op;
-	my $i = $nb_hosts;
-	$total_op .= ",+"  while --$i;
-	
-	my $mean_op = $total_op . ",$nb_hosts,/";
-	
-	#print "Mean op : $mean_op\n";
-	
-	# Add mean graph
-	push @graph_params, (
-								draw   => {
-									type => $graph_type,
-									cdef => "$mean_op",
-									color => "FF0000",
-									legend => "$ds_label (cluster mean)",
-									name => "mean"
-	  							}	
-							);		
-
-	# get rrd (we need one to graph so we get the last host rrd (arbitrary))
-	my $rrd = $self->getRRD( file => $rrd_file );
-	
-	# Draw a graph in a PNG image
-	$rrd->graph( @graph_params );
-	
-	return ($self->{_graph_dir}, $graph_filename);
-}
-
 sub graphCluster {
 	my $self = shift;
 	my %args = @_;
@@ -739,6 +739,7 @@ sub graphCluster {
 
 			eval {
 				my $graph_sub = defined $args{percent} && $args{percent} ne "no" ? \&graphPercent : \&graphNode;
+				$graph_sub = \&graphTable if defined $set_def->{'table_oid'};
 				# graph mean
 				my $graph_filename = $graph_sub->( 	$self,
 												host => $cluster,
@@ -765,7 +766,7 @@ sub graphCluster {
 			if ($@) {
 				my $error = $@;
 				#die $error;
-				print "$error\n";
+				print "Graph cluster => $error\n";
 			}
 		}
 	}
@@ -816,6 +817,7 @@ sub graphNodes {
 	
 				eval {
 					my $graph_sub = defined $args{percent} && $args{percent} ne "no" ? \&graphPercent : \&graphNode;
+					$graph_sub = \&graphTable if defined $set_def->{'table_oid'};
 					my $graph_filename = $graph_sub->( 	$self,
 														host => $host,
 														time_laps => $time_laps,
@@ -828,7 +830,7 @@ sub graphNodes {
 				if ($@) {
 					my $error = $@;
 					#die $error;
-					print "$error\n";
+					print "Graph node => $error\n";
 				}
 			}
 		}
@@ -924,7 +926,11 @@ sub graphFromConf {
 #		`chmod +w $self->{_graph_dir}/*`;	
 #	}
 	
-	print "# graph from conf time => ", time() - $start_time, "\n";
+	my $duration = time() - $start_time;
+	print "# graph from conf time =>  $duration\n";
+	if ( $duration > $conf->{generate_graph}{time_step} ) {
+		print "=> Warn: graph generation duration > time step (conf)\n";
+	}
 	
 	return %graph_files;
 	
@@ -970,6 +976,8 @@ sub graphNodeCount {
 					
 					color => $self->{_graph_color},
 					font => $self->{_graph_title_font},
+					width => $self->{_graph_width},
+					height => $self->{_graph_height},
 					
 					lower_limit => 0,
 					upper_limit => 10,

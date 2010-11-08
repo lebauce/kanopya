@@ -106,6 +106,31 @@ sub retrieveData {
 	return ($time, \%values);
 }
 
+sub retrieveTableData {
+	my $self =shift;
+	my %args = @_;
+
+	my $var_map = $args{var_map};	
+	my @columns = map { "$args{table_oid}.1." . $_ } values %$var_map;
+	
+	my $time =time();
+	
+	my $result = $self->{_session}->get_entries( -columns => \@columns );
+	
+	my %res = ();
+	while ( my ($ds_name, $entry_oid) = each %$var_map ) {
+    	my $column_oid = "$args{table_oid}.1." . $entry_oid;
+	    while (my ($res_oid, $value) = each %$result) {
+			if ($res_oid =~ /$column_oid\.(.*)/ ) {
+		            my $index = $1;
+		            $res{$index}{$ds_name} = $value;
+			}
+    	}
+	}
+	
+	return ($time, \%res);
+}
+
 # destructor
 sub DESTROY {
 	my $self = shift;

@@ -50,12 +50,14 @@
 	</table>
 	
 	<a name="monitoring"><h1>Monitoring: </h1></a>
-	<!--table id="graph_table"-->
+	<!--
 	<table style="float: left; clear: left;">
 		<tr>
-			<th><input type="radio" name="graph_timeline" value="Hourly" id="radioHour" onclick="display_graph('hour_graph')" />Hourly
+			<th>
+			<input type="radio" name="graph_timeline" value="Hourly" id="radioHour" onclick="display_graph('hour_graph')" />Hourly
 			<input type="radio" name="graph_timeline" value="Daily" id="radioDay" onclick="display_graph('day_graph')" />Daily
-			<input type="radio" name="graph_timeline" value="Custom" id="radioCustom" onclick="display_graph('custom_graph')" />Custom</th>
+			<input type="radio" name="graph_timeline" value="Custom" id="radioCustom" onclick="display_graph('custom_graph')" />Custom
+			</th>
 		</tr>
 		<tr>
 			<th>
@@ -68,11 +70,25 @@
 			</th>
 		</tr>
 	</table>
+	-->
 	<table class="listview">
-		<!--tr>
-			<th ALIGN=CENTER>Set</th>
-			<th ALIGN=CENTER>Evolution</th>
-		</tr-->
+		<tr>
+			<th>
+			<input type="radio" name="graph_timeline" value="Hourly" id="radioHour" onclick="display_graph('hour_graph');document.getElementById('customGraphOptions').className = 'hidden'" />Hourly
+			<input type="radio" name="graph_timeline" value="Daily" id="radioDay" onclick="display_graph('day_graph');document.getElementById('customGraphOptions').className = 'hidden'" />Daily
+			<input type="radio" name="graph_timeline" value="Custom" id="radioCustom" onclick="display_graph('custom_graph');document.getElementById('customGraphOptions').className = ''" />Custom
+			</th>
+		</tr>
+		<tr id='customGraphOptions' class="hidden">
+			<th>
+			<form method="GET" action="/cgi/mcsui.cgi/clusters/process_customgraph">
+				<input type="hidden" name="cluster_id" value="<TMPL_VAR NAME=CLUSTERID>" />
+				start: <input type="text" size="8" name="date_start" value="<TMPL_VAR NAME=CUSTOM_GRAPH_DATE_START>" > <input type="text" size ="3" name="time_start" value="<TMPL_VAR NAME=CUSTOM_GRAPH_TIME_START>" >
+				end: <input type="text" size="8" name="date_end" value="<TMPL_VAR NAME=CUSTOM_GRAPH_DATE_END>" > <input type="text" size ="3" name="time_end" value="<TMPL_VAR NAME=CUSTOM_GRAPH_TIME_END>" >
+				<input type="submit" value="apply" /></td></tr>
+			</form>
+			</th>
+		</tr>
 		<tr>
 			<td colspan="2">
 				<img src="<TMPL_VAR NAME=NODECOUNT_CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" style='display:none' />
@@ -82,9 +98,11 @@
 		</tr>
 		<TMPL_LOOP NAME=MONITORING_GRAPHS>
 			<tr>
-				<td><TMPL_VAR NAME=GRAPH_INFO></td>
+				
 				<TMPL_IF NAME=HIDDEN>
-					<td id="m<TMPL_VAR NAME=GRAPH_INFO>" class="expanddown">&nbsp;</td>
+					<td id="m<TMPL_VAR NAME=GRAPH_INFO>" class="expanddown"><TMPL_VAR NAME=GRAPH_INFO> &nbsp;</td>
+				<TMPL_ELSE>
+					<td><TMPL_VAR NAME=GRAPH_INFO></td>
 				</TMPL_IF>
 			</tr>
 			
