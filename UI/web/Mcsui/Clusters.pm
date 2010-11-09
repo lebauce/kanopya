@@ -405,7 +405,7 @@ sub process_removenode : Runmode {
     if($@) { 
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop cluster operation adding to execution queue'); }
+	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop node operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
 }
 
