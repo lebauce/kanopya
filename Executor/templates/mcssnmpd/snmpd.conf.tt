@@ -445,4 +445,4 @@ syscontact Root <root@localhost> (configure /etc/snmp/snmpd.local.conf)
 
 # mibs +APACHE2-MIB # Test Sylvain, but this module require Apache recompilation
 
-#perl do "/etc/snmp/apache_snmp_module.pl"; 
+perl do "/etc/snmp/iscsi_snmp_module.pl"; 
