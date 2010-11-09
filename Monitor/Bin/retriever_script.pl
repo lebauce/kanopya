@@ -20,7 +20,7 @@ if ( $cmd eq "fetch" ) {
 }
 elsif ( $cmd eq "--generate-graph" || $cmd eq "-gg" ) {
 	my %files = $retriever->graphFromConf();
-	print Dumper \%files;
+	#print Dumper \%files;
 	print "# generate graph time => ", time() - $start_time, "\n";
 }
 elsif ( $cmd eq "graph" ) {

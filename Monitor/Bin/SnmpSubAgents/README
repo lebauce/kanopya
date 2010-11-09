@@ -19,6 +19,6 @@ Enabling MIB.
 	When MIB is enabled, snmp request can be done using the var name instead of its oid.
 	
 	1. Copy the MIB file XXX-MIB.txt into the snmp mib directory (/usr/share/snmp/mibs)
-	2. In /etc/snmp/snmp.conf (create it if doesn't exist) add the line  'mibs +ISCSI-MIB'.
+	2. In /etc/snmp/snmp.conf (create it if doesn't exist) add the line  'mibs +XXX-MIB'.
 
 	

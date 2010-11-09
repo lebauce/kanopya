@@ -439,10 +439,15 @@ sub graphTable {
 		
 		# Draw a graph in a PNG image
 		$rrd->graph( @graph_params );
+	
+		# mv graph file from tmp dir to graph_dir
+		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
+		
+		print "table => $graph_filename\n";
+	} else {
+		print "info: nothing to graph in the table '$set_name'\n";
 	}
 	
-	# mv graph file from tmp dir to graph_dir
-	`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
 }
 
 =head2 graphNode
@@ -519,15 +524,16 @@ sub graphNode {
 
 	foreach my $ds (@{ $args{ds_def_list} }) {
 		
-		# If we graph cluster total we add also cluster average
-		if ( defined $cluster_total && $graph_type eq 'line' ) {
+		# 
+		if ( defined $args{with_total} && $args{with_total} eq 'yes' ) {
 			push @graph_params, (
 									'draw', {
-										file => "$self->{_rrd_base_dir}/$base_rrd_name" . "_avg" . ".rrd",
+										file => "$self->{_rrd_base_dir}/$base_rrd_name" . "_total" . ".rrd",
 										type => $graph_type,
-										dsname => $ds->{label},# . "_P",
-										color => $ds->{color} || "FFFFFF",
-										legend => $ds->{label} . " (node average)",
+										dsname => $ds->{label},
+										#color => $ds->{color} || "FFFFFF",
+										color => "FF000077",
+										legend => $ds->{label} . " (total)",
 		  							},
 								);
 		}
@@ -537,7 +543,7 @@ sub graphNode {
 									#type   => $first == 1 ? "stack" : "stack",
 									name => $ds->{label},
 									type => $graph_type,
-									dsname => $ds->{label},# . "_P",
+									dsname => $ds->{label},
 									color => (defined $cluster_total) ? "FF0000" : $ds->{color} || "FFFFFF",
 									#color => $ds->{color} || "FFFFFF",
 									legend => $ds->{label} . ((defined $args{type} && $args{type} eq 'cluster') ? (defined $cluster_total ? " (total)" : " (node average)") : ""),
@@ -563,10 +569,13 @@ sub graphNode {
 	# Draw a graph in a PNG image
 	$rrd->graph( @graph_params );
 	
-	
-	# mv graph file from tmp dir to graph_dir
-	`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
-	
+	if ( -e "$self->{_graph_dir}/tmp/$graph_filename") {	
+		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;	
+		print " => $graph_filename\n";
+	} else {
+		print " => Error: graph not generated '$graph_filename'\n";
+		return undef;
+	}
 	
 	# backup graph
 #	if ($host eq "WebBench" && $set_name eq "cpu") {
@@ -691,9 +700,15 @@ sub graphPercent {
 	}
 
 	# Draw a graph in a PNG image
-	$rrd->graph( @graph_params );
-	
-	`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
+	my $res = $rrd->graph( @graph_params );
+
+	if ( -e "$self->{_graph_dir}/tmp/$graph_filename") {	
+		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;	
+		print " => $graph_filename\n";
+	} else {
+		print " => Error: graph not generated '$graph_filename'\n";
+		return undef;
+	}
 	
 	return $graph_filename;
 }
@@ -749,17 +764,18 @@ sub graphCluster {
 												ds_def_list => \@required_ds_def_list,
 												graph_type => $args{graph_type},
 												type => 'cluster',
-												aggreg_ext => 'avg');
+												aggreg_ext => 'avg',
+												with_total => $args{with_total});
 				# graph total
-				$graph_filename = $graph_sub->( 	$self,
-												host => $cluster,
-												time_laps => $time_laps,
-												time_range => $args{time_range},
-												set_label => $set_def->{label},
-												ds_def_list => \@required_ds_def_list,
-												graph_type => $args{graph_type},
-												type => 'cluster',
-												aggreg_ext => "total" );
+#				$graph_filename = $graph_sub->( 	$self,
+#												host => $cluster,
+#												time_laps => $time_laps,
+#												time_range => $args{time_range},
+#												set_label => $set_def->{label},
+#												ds_def_list => \@required_ds_def_list,
+#												graph_type => $args{graph_type},
+#												type => 'cluster',
+#												aggreg_ext => "total" );
 												
 				$res{$set_def->{label}} = $graph_filename;
 			};
@@ -893,7 +909,8 @@ sub graphFromConf {
 																		required_set => $graph_def->{set_label},
 																		required_indicators => $required,
 																		percent => $graph_def->{percent},
-																		graph_type => $graph_def->{graph_type} || 'line' );
+																		graph_type => $graph_def->{graph_type} || 'line',
+																		with_total => $graph_def->{with_total} );
 							}
 							$graph_info{$cluster} = [ $dir, $file ];
 							
