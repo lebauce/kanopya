@@ -312,7 +312,7 @@ sub updateHostData {
 				
 				my $set_name = $set->{label} . ( $index eq "0" ? "" : ".$index" );
 				my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
-				my %stored_values = $self->updateRRD( rrd_name => $rrd_name, ds_type => $set->{ds_type}, time => $time, data => $values );
+				my %stored_values = $self->updateRRD( rrd_name => $rrd_name, set_name => $set_name, ds_type => $set->{ds_type}, time => $time, data => $values );
 				
 				$all_values{ $set_name } = \%stored_values;
 			}
@@ -500,8 +500,8 @@ sub update {
 				}
 			}
 			
-			print "\n###############   ", "SETS", "   ##########\n";
-			print Dumper \%sets;
+			#print "\n###############   ", "SETS", "   ##########\n";
+			#print Dumper \%sets;
 			
 			while ( my ($set_name, $sets_list) = each %sets ) {
 				
@@ -516,15 +516,15 @@ sub update {
 #				print "\n###############    $cluster_name : $set_name AGGREG mean   ##########\n";
 #				print Dumper \%aggreg_mean;
 
-				my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
-				my $set_def = shift @set_def;
+				#my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
+				#my $set_def = shift @set_def;
     		
     			my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
     			my $mean_rrd_name = $base_rrd_name . "_avg";
     			my $sum_rrd_name = $base_rrd_name . "_total";
 				eval {
-					$self->updateRRD( rrd_name => $mean_rrd_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_mean);
-					$self->updateRRD( rrd_name => $sum_rrd_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_sum);
+					$self->updateRRD( rrd_name => $mean_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_mean);
+					$self->updateRRD( rrd_name => $sum_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_sum);
 				};
 				if ($@){
 					my $error = $@;

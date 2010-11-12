@@ -312,6 +312,19 @@ sub aggregate {
 	return %res;
 }
 
+sub getSetDef {
+	my $self = shift;
+	my %args = @_;
+	
+	my $set_label = $args{set_label};
+	my @res = grep { $_->{label} eq $set_label } @{ $self->{_monitored_data} };
+	
+	die "Undefined set label : '$set_label'\n" if ( 0 == @res );
+		
+	return shift @res;
+		
+}
+
 =head2 rrdName
 	
 	Class : Public
@@ -329,6 +342,7 @@ sub aggregate {
 sub rrdName {
 	my $self = shift;
 	my %args = @_;
+	
 	return $args{set_name} . "_" . $args{host_name};
 }
 
@@ -381,6 +395,9 @@ sub createRRD {
 
 	my $dsname_list = $args{dsname_list};
 
+	my $set_def = $self->getSetDef( set_label => $args{set_name} );
+	my $ds_list = General::getAsHashRef( data => $set_def, tag => 'ds', key => 'label');
+
 	my $rrd = $self->getRRD( file => $args{file} );
 
 	my $raws = $self->{_period} / $self->{_time_step};
@@ -394,7 +411,9 @@ sub createRRD {
 	for my $name ( @$dsname_list ) {
 		push @rrd_params, 	(
 								'data_source' => { 	name      => $name,
-			     	         						type      => $args{ds_type} },			
+			     	         						type      => $args{ds_type},
+			     	         						min		=> $ds_list->{$name}{min},
+			     	         						max		=> $ds_list->{$name}{max} },			
 							);
 	}
 
@@ -436,7 +455,7 @@ sub rebuild {
 	my @hosts = $self->retrieveHostsIp();
 	for my $host (@hosts) {
 		my $rrd_name = $self->rrdName( set_name => $set_label, host_name => $host );
-		$self->createRRD( file => "$rrd_name.rrd", dsname_list => \@dsname_list, ds_type => $set_def->{ds_type} );
+		$self->createRRD( file => "$rrd_name.rrd", dsname_list => \@dsname_list, ds_type => $set_def->{ds_type}, set_name => $args{set_name} );
 	}
 }
 
@@ -479,7 +498,7 @@ sub updateRRD {
 			print "=> Info: update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n";
 			print "	(Reason: $error)\n";
 			my @dsname_list = keys %{ $args{data} };
-			$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type} );
+			$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type}, set_name => $args{set_name} );
 			$rrd->update( time => $time, values =>  $args{data} );
 		}
 		#print "Warning : unexisting RRD file or set definition changed in conf => nothing will be done until you rebuild the corresponding set ($rrdfile_name).\n";
@@ -492,7 +511,9 @@ sub updateRRD {
 	if ( $args{ds_type} eq 'GAUGE' ) {
 		%stored_values = %{ $args{data} };
 	} else {
-		$rrd->fetch_start( start => $time - $self->{_time_step} / 2 );
+		#print "==> TIME = $time, start = " . ($time - ($self->{_time_step} / 2)) . "\n";
+		#TODO check if we really retrieve the last value in all cases
+		$rrd->fetch_start( start => $time - $self->{_time_step} );
 		my ($t, @values) = $rrd->fetch_next();
 		my @ds_names = @{ $rrd->{fetch_ds_names} };
 		foreach my $i ( 0 .. $#ds_names ) {

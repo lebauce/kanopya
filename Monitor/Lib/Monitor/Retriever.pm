@@ -43,19 +43,6 @@ sub new {
 }
 
 
-sub getSetDef {
-	my $self = shift;
-	my %args = @_;
-	
-	my $set_label = $args{set_label};
-	my @res = grep { $_->{label} eq $set_label } @{ $self->{_monitored_data} };
-	
-	die "Undefined set label : '$set_label'\n" if ( 0 == @res );
-		
-	return shift @res;
-		
-}
-
 =head2 getData
 	
 	Class : Public
@@ -377,10 +364,42 @@ sub graphTable {
 	my $self = shift;
 	my %args = @_;
 
-	my ($time_start, $time_end, $time_suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
-	
 	my $host = $args{host};
 	my $set_name = $args{set_label};
+	
+	# Retrieve list of rrd files corresponding of each raw for the table
+	my %rrds = ();
+	my $rrd_files = `ls $self->{_rrd_base_dir} | grep $set_name`;
+	foreach my $file_name ( split '\n', $rrd_files ) {
+		if ( $file_name =~ /$set_name\.(.*)_$host.*/) {
+			$rrds{$1} = $file_name;
+		}
+	}
+
+	#################################
+	# Case 1: one graph for one raw #
+	#################################
+	if ( (not defined $args{all_in_one}) || ($args{all_in_one} ne 'yes') ) {
+		while ( my ($index, $rrd_file) = each %rrds ) {
+			my $graph_filename = $self->graphNode(
+									host => $args{host},
+									time_laps => $args{time_laps},
+									time_range => $args{time_range},
+									set_label => "$args{set_label}.$index",
+									ds_def_list => $args{ds_def_list},
+									graph_type => $args{graph_type},
+									type => $args{type},
+									aggreg_ext => $args{aggreg_ext},
+									with_total => $args{with_total});
+		}
+		return;
+	}
+
+	###################################
+	# Case 2: one graph with all raws #
+	###################################
+		
+	my ($time_start, $time_end, $time_suffix) = $self->timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
 	
 	my $graph_name = "graph_$host" . "_$set_name";
 	$graph_name .= "_$args{aggreg_ext}" if (defined $args{aggreg_ext});
@@ -394,14 +413,6 @@ sub graphTable {
 
 
 	my $graph_type = $args{graph_type} || "line";
-	
-	my %rrds = ();
-	my $rrd_files = `ls $self->{_rrd_base_dir} | grep $set_name`;
-	foreach my $file_name ( split '\n', $rrd_files ) {
-		if ( $file_name =~ /$set_name\.(.*)_$host.*/) {
-			$rrds{$1} = $file_name;
-		}
-	}
 		
 	my @graph_params = (
 					'image' => "$self->{_graph_dir}/tmp/$graph_filename",
@@ -439,7 +450,7 @@ sub graphTable {
 		
 		# Draw a graph in a PNG image
 		$rrd->graph( @graph_params );
-	
+		
 		# mv graph file from tmp dir to graph_dir
 		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
 		

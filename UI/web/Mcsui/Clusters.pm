@@ -60,6 +60,43 @@ sub view_clusters : StartRunmode {
     return $output;
 }
 
+# Build an array of html template hash for graphs associated to one target (cluster or node) and one set of indicators
+sub graphs {
+	my $self = shift;
+	my %args = @_;
+	
+	my ($dir, $dir_alias, $subdir) = ($args{dir}, $args{dir_alias}, $args{subdir});
+	my $target = $args{target};
+	my $set = $args{set};
+	my $ext = defined $args{ext} ? "_$args{ext}" : ""; 
+	
+	my @graphs = ();
+
+	my $graph_name = "graph_" . "$target" . "_$set";
+	if ( -e "$dir/$subdir/$graph_name$ext.png" ) {
+		push @graphs, { CUSTOM_GRAPH_FILE => "$dir_alias/$subdir/$graph_name$ext.png",
+						HOUR_GRAPH_FILE => "$dir_alias/$subdir/$graph_name$ext" . "_hour.png",
+						DAY_GRAPH_FILE => "$dir_alias/$subdir/$graph_name$ext" . "_day.png",
+						};
+	} else {
+		# Here we manage graph of table when there is one graph per raw
+		my $files = `ls $dir/$subdir/ | grep $graph_name`;
+		my %indexes = ();
+		foreach $file (split '\n', $files) {
+			if ( $file =~ /$graph_name\.(.*)_.*/ ) { $indexes{$1} = undef }
+		}
+		foreach $index ( keys %indexes) {
+			push @graphs,	{
+								CUSTOM_GRAPH_FILE => "$dir_alias/$subdir/$graph_name" . ".$index$ext.png",
+								HOUR_GRAPH_FILE => "$dir_alias/$subdir/$graph_name" . ".$index$ext" . "_hour.png",
+								DAY_GRAPH_FILE => "$dir_alias/$subdir/$graph_name" . ".$index$ext" . "_day.png",
+							}
+		}
+	}
+	
+	return @graphs;
+}
+
 sub view_clusterdetails : Runmode {
 	my $self = shift;
 	my $errors = shift;
@@ -103,44 +140,27 @@ sub view_clusterdetails : Runmode {
 		$tmp->{HOSTNAME} = $motherboards->{$m}->getAttr(name=>'motherboard_hostname');
 		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_powersupply_id');
 		$tmp->{INTERNALIP} = $ip;
+		
 		my @graphs = ();
-		foreach my $indic_set ( @node_indic_sets ) {
-			my $graph_name = "graph_" . "$ip" . "_$indic_set";
-			push @graphs, { CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png",
-							HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png",
-							DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png",
-							};
+		foreach my $set ( @node_indic_sets ) {
+			push @graphs, $self->graphs( 	dir => $graph_dir, dir_alias => $graph_dir_alias, subdir => $graph_monitor_subdir,
+											set => $set, target => $ip );  
 		}
 		$tmp->{GRAPHS} = \@graphs;
+		
 		push (@$mothboards, $tmp);
 	}
 	
-
+	# Add cluster graphs
 	$cluster_name = $ecluster->getAttr( name => 'cluster_name' );	
 	my @monitoring_graphs = ( );
-	foreach my $indic_set ( @cluster_indic_sets )  {
-		my $graph_name = "graph_" . "$cluster_name" . "_$indic_set";
-		if ( -e "$graph_dir/$graph_monitor_subdir/$graph_name" . "_avg" . ".png" ) {
-			push( @monitoring_graphs, { GRAPH_INFO =>  $indic_set,
-										HIDDEN => ($indic_set eq 'nodecount') ? 0 : 1,
-										
-										GRAPH_TYPE => [
-											{
-												CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . ".png",
-												HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_hour.png",
-												DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_avg" . "_day.png",
-											},
-	#										{
-	#											CUSTOM_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . ".png",
-	#											HOUR_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_hour.png",
-	#											DAY_GRAPH_FILE => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_total" . "_day.png",
-	#										}
-										],
-										
-									} );
-		}
+	foreach my $set ( @cluster_indic_sets )  {
+		my @graphs = $self->graphs( dir => $graph_dir, dir_alias => $graph_dir_alias, subdir => $graph_monitor_subdir,
+									set => $set, target => $cluster_name, ext => "avg" );
+		if (scalar @graphs > 0) { push( @monitoring_graphs, { GRAPH_INFO =>  $set, HIDDEN => 1, GRAPH_TYPE => \@graphs } );}
 	}
 	
+	# Add cluster nodecount graph
 	$graph_name = "graph_" . "$cluster_name" . "_nodecount";
 	$tmpl->param('NODECOUNT_CUSTOM_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png");
 	$tmpl->param('NODECOUNT_HOUR_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png");
@@ -175,8 +195,6 @@ sub view_clusterdetails : Runmode {
 	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
 	$tmpl->param('ORCHESTRATOR_GRAPH_ADD' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_add.png");
 	$tmpl->param('ORCHESTRATOR_GRAPH_REMOVE' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_remove.png");
-
-	#$tmpl->param('AUTO_REFRESH' => 10);
 
 	$tmpl->param('TITLE_PAGE' => "Cluster's details");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);

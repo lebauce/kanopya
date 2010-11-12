@@ -148,8 +148,9 @@ sub getAsHashRef {
 	my $array = getAsArrayRef( data => $args{data}, tag => $args{tag} );
 	my %res = ();
 	for my $elem (@$array) {
-		my $val = delete $elem->{$key}; 
-		$res{ $val } = $elem; 
+		my %e = %$elem;
+		my $val = delete $e{$key}; 
+		$res{ $val } = \%e; 
 	}
 	return \%res;
 }
