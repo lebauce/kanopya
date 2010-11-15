@@ -317,9 +317,10 @@ sub getSetDef {
 	my %args = @_;
 	
 	my $set_label = $args{set_label};
+	if ($set_label =~ /(.+)\..+/ ) {$set_label = $1;}
 	my @res = grep { $_->{label} eq $set_label } @{ $self->{_monitored_data} };
 	
-	die "Undefined set label : '$set_label'\n" if ( 0 == @res );
+	die "getSetDef() : Undefined set label : '$set_label'\n" if ( 0 == @res );
 		
 	return shift @res;
 		

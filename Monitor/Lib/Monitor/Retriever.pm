@@ -366,6 +366,7 @@ sub graphTable {
 
 	my $host = $args{host};
 	my $set_name = $args{set_label};
+	my $options = $args{options} || {};
 	
 	# Retrieve list of rrd files corresponding of each raw for the table
 	my %rrds = ();
@@ -379,7 +380,7 @@ sub graphTable {
 	#################################
 	# Case 1: one graph for one raw #
 	#################################
-	if ( (not defined $args{all_in_one}) || ($args{all_in_one} ne 'yes') ) {
+	if ( (not defined $options->{all_in_one}) || ($options->{all_in_one} ne 'yes') ) {
 		while ( my ($index, $rrd_file) = each %rrds ) {
 			my $graph_filename = $self->graphNode(
 									host => $args{host},
@@ -776,7 +777,8 @@ sub graphCluster {
 												graph_type => $args{graph_type},
 												type => 'cluster',
 												aggreg_ext => 'avg',
-												with_total => $args{with_total});
+												with_total => $args{with_total},
+												options => $args{options} );
 				# graph total
 #				$graph_filename = $graph_sub->( 	$self,
 #												host => $cluster,
@@ -851,7 +853,8 @@ sub graphNodes {
 														time_range => $args{time_range},
 														set_label => $set_def->{label},
 														ds_def_list => \@required_ds_def_list,
-														graph_type => $args{graph_type} );
+														graph_type => $args{graph_type},
+														options => $args{options} );
 					$res{$host}{$set_def->{label}} = $graph_filename;
 				};
 				if ($@) {
@@ -921,7 +924,8 @@ sub graphFromConf {
 																		required_indicators => $required,
 																		percent => $graph_def->{percent},
 																		graph_type => $graph_def->{graph_type} || 'line',
-																		with_total => $graph_def->{with_total} );
+																		with_total => $graph_def->{with_total},
+																		options => $graph_def );
 							}
 							$graph_info{$cluster} = [ $dir, $file ];
 							
@@ -934,7 +938,8 @@ sub graphFromConf {
 													required_set => $graph_def->{set_label},
 													required_indicators => $required,
 													percent => $graph_def->{percent},
-													graph_type => $graph_def->{graph_type} || 'line' );
+													graph_type => $graph_def->{graph_type} || 'line',
+													options => $graph_def );
 						%graph_info = %$res;
 					}
 				} # end foreach target

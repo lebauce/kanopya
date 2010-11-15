@@ -113,6 +113,10 @@ sub retrieveTableData {
 	my $var_map = $args{var_map};	
 	my @columns = map { "$args{table_oid}.1." . $_ } values %$var_map;
 	
+	if (defined $args{index_oid}) {
+		push @columns,  "$args{table_oid}.1." . $args{index_oid};
+	}
+	
 	my $time =time();
 	
 	my $result = $self->{_session}->get_entries( -columns => \@columns );
@@ -126,6 +130,19 @@ sub retrieveTableData {
 		            $res{$index}{$ds_name} = $value;
 			}
     	}
+	}
+	
+	# Manage raw indexation with value of a specific column instead of basic indexation (last part of oid)
+	my %res_indexed = ();
+	if (defined $args{index_oid}) {
+		my $index_column_oid = "$args{table_oid}.1." . $args{index_oid};
+	    while (my ($res_oid, $value) = each %$result) {
+			if ($res_oid =~ /$index_column_oid\.(.*)/ ) {
+		            my $index = $1;
+		            $res_indexed{$value} = $res{$index};
+			}
+    	}
+    	%res = %res_indexed;
 	}
 	
 	return ($time, \%res);

@@ -268,7 +268,7 @@ sub updateHostData {
 				############################################################################################################
 				my $retrieve_time = time();
 				if ( exists $set->{table_oid} ) {
-					($time, $update_values) = $data_provider->retrieveTableData( table_oid => $set->{table_oid}, var_map => \%var_map );
+					($time, $update_values) = $data_provider->retrieveTableData( table_oid => $set->{table_oid}, index_oid => $set->{index_oid}, var_map => \%var_map );
 				} else {
 					($time, $update_values->{"0"}) = $data_provider->retrieveData( var_map => \%var_map );
 				}
@@ -285,12 +285,12 @@ sub updateHostData {
 					$provider_class =~ /(.*)Provider/;
 					my $comp = $1;
 					my $mess = "Can not reach component '$comp' on $host";
-					if ( $args{host_state} =~ "starting" || $args{host_state} =~ "stopping" ) {
-						print "[", threads->tid(), "][$host] $mess => still $args{host_state}\n";
-					} else {
+					if ( $args{host_state} =~ "up" ) {
 						$log->info( "Unreachable host '$host' (component '$comp') => we stop collecting data.");
 						print "[", threads->tid(), "][$host] $mess\n";
 						$self->{_admin_wrap}->addMessage( type => "warning", content => $mess );
+					} else {
+						print "[", threads->tid(), "][$host] $mess ($args{host_state})\n";
 					}
 					$host_reachable = 0;
 					last; # we stop collecting data sets

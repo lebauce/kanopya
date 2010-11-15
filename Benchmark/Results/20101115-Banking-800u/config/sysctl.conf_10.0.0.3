@@ -1,0 +1,106 @@
+#
+# /etc/sysctl.conf - Configuration file for setting system variables
+# See /etc/sysctl.d/ for additonal system variables
+# See sysctl.conf (5) for information.
+#
+
+#kernel.domainname = example.com
+
+# Uncomment the following to stop low-level messages on console
+#kernel.printk = 3 4 1 3
+
+##############################################################3
+# Functions previously found in netbase
+#
+
+# Uncomment the next two lines to enable Spoof protection (reverse-path filter)
+# Turn on Source Address Verification in all interfaces to
+# prevent some spoofing attacks
+#net.ipv4.conf.default.rp_filter=1
+#net.ipv4.conf.all.rp_filter=1
+
+# Uncomment the next line to enable TCP/IP SYN cookies
+# See http://lwn.net/Articles/277146/
+#net.ipv4.tcp_syncookies=1
+
+# Uncomment the next line to enable packet forwarding for IPv4
+#net.ipv4.ip_forward=1
+
+# Uncomment the next line to enable packet forwarding for IPv6
+#net.ipv6.conf.all.forwarding=1
+
+
+###################################################################
+# Additional settings - these settings can improve the network
+# security of the host and prevent against some network attacks
+# including spoofing attacks and man in the middle attacks through
+# redirection. Some network environments, however, require that these
+# settings are disabled so review and enable them as needed.
+#
+# Do not accept ICMP redirects (prevent MITM attacks)
+#net.ipv4.conf.all.accept_redirects = 0
+#net.ipv6.conf.all.accept_redirects = 0
+# _or_
+# Accept ICMP redirects only for gateways listed in our default
+# gateway list (enabled by default)
+# net.ipv4.conf.all.secure_redirects = 1
+#
+# Do not send ICMP redirects (we are not a router)
+#net.ipv4.conf.all.send_redirects = 0
+#
+# Do not accept IP source route packets (we are not a router)
+#net.ipv4.conf.all.accept_source_route = 0
+#net.ipv6.conf.all.accept_source_route = 0
+#
+# Log Martian Packets
+#net.ipv4.conf.all.log_martians = 1
+#
+# The contents of /proc/<pid>/maps and smaps files are only visible to 
+# readers that are allowed to ptrace() the process
+# kernel.maps_protect = 1
+
+vm.min_free_kbytes = 204800
+vm.page-cluster = 20
+fs.file-max = 5049800
+vm.swappiness = 200
+#net.ipv4.tcp_rfc1337 = 1
+#net.ipv4.tcp_syncookies = 1
+#net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_max_orphans = 1000
+#net.ipv4.tcp_synack_retries = 3
+net.ipv4.ip_local_port_range = 1024 65000
+net.core.rmem_default = 10000000
+net.core.rmem_max = 10000000
+net.core.wmem_default = 10000000
+net.core.wmem_max = 10000000
+net.ipv4.tcp_wmem = 30000000 30000000 30000000
+net.ipv4.tcp_mem = 30000000 30000000 30000000
+net.ipv4.tcp_rmem = 30000000 30000000 30000000
+net.core.rmem_max = 10000000
+
+kernel.threads-max = 2048
+kernel.sysrq = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+net.ipv4.conf.eth0.send_redirects = 0
+
+### TEST
+#net.ipv4.tcp_keepalive_time = 1800
+#net.ipv4.tcp_window_scaling = 0
+net.ipv4.tcp_sack = 0
+#vm.dirty_ratio = 40
+#vm.dirty_background_ratio=30
+#vm.vfs_cache_pressure=50
+
+# New on 12-11-10
+net.ipv4.tcp_max_tw_buckets = 2000000
+net.core.optmem_max = 10000000
+net.ipv4.tcp_max_syn_backlog = 8192
+net.ipv4.tcp_timestamps = 0
+net.core.hot_list_length = 10000
+net.core.netdev_max_backlog = 10000
+net.core.somaxconn=10000
+
+kernel.panic_on_oops = 1
+kernel.panic = 30
+

@@ -1,0 +1,314 @@
+                          SPECweb2005 Ecommerce Result                          
+
+================================================================================
+                                                        ||
+Ultimate Computers: Model 1                             ||     Invalid Run!     
+SoFast Software: WebStreaker v1.0 (23-bit)              ||
+SoFast Software: JSP Servlet Engine v1.0                ||
+                                                        ||
+================================================================================
+
+Submitter: Speedy Systems, Pomona, SPEC License #: 0, Test date: Oct- 2010
+
+================================================================================
+
+PERFORMANCE
+
+     | Simultaneous  |   Test    | Aggregate QOS Compliance  | Validation |
+     | User Sessions | Iteration |  Good   Tolerable   Fail  |   Errors   |
+     |---------------|-----------|---------------------------|------------|
+     |               |     1     | 99.9%    100.0%    0.0%   |     0      |
+     |               |-----------|---------------------------|------------|
+     |      400      |     2     | 99.9%    99.9%     0.1%   |     0      |
+     |               |-----------|---------------------------|------------|
+     |               |     3     | 99.5%    99.6%     0.4%   |     0      |
+      --------------------------------------------------------------------
+
+================================================================================
+
+CONFIGURATION
+
+                               Availability Dates                               
+--------------------------------------------------------------------------------
+Backend Simulator             Jun-1999                                          
+SUT Hardware                  Jun-1999                                          
+Web Server Software           Dec-2003                                          
+                              Dec-2005                                          
+Operating System              Feb-2000                                          
+Other Components              N/A                                               
+
+                            System Under Test (SUT)                             
+--------------------------------------------------------------------------------
+# of SUTs                     1                                                 
+Vendor                        Ultimate Computers                                
+Model                         Model 1                                           
+Processor                     Celeron                                           
+Processor Speed (MHz)         366                                               
+# Processors                  1 (1 core, 1 chip, 1 core/chip)                   
+Primary Cache                 16KB(I) + 16KB(D) on chip                         
+Secondary Cache               128 KB                                            
+Other Cache                   N/A                                               
+Memory                        128 MB SDRAM                                      
+Disk Subsystem                1 x 10GB SCSI                                     
+Disk Controllers              Onboard LSI SCSI                                  
+Operating System              HURL 6.1 (kernel 2.2.15pre8)                      
+File System                   ext2                                              
+Other Hardware                N/A                                               
+Other Software                N/A                                               
+
+                                 HTTP Software                                  
+--------------------------------------------------------------------------------
+Vendor                        SoFast Software                                   
+Name/Version                  WebStreaker v1.0 (23-bit)                         
+Dynamic Scripts               PHP                                               
+Server Cache                  N/A                                               
+Log Mode                      Common Log Format                                 
+
+                                 Script Engine                                  
+--------------------------------------------------------------------------------
+Vendor                        SoFast Software                                   
+Name/Version                  JSP Servlet Engine v1.0                           
+Dynamic Scripts               JSP                                               
+Server Cache                  N/A                                               
+Log Mode                      Common Log Format                                 
+
+                                  SUT Network                                   
+--------------------------------------------------------------------------------
+# of Controllers              1                                                 
+Network Controllers           Systel FasterNet (embedded)                       
+# of Networks                 1                                                 
+Network Type                  Fast Ethernet                                     
+Network Speed                 100 Mb/s                                          
+MSL (sec)                     30 (Non RFC1122)                                  
+Time-Wait (sec)               60 (Non RFC1122)                                  
+MTU Size                      1500                                              
+
+                                 Client Systems                                 
+--------------------------------------------------------------------------------
+# of Clients                  1                                                 
+Model                         Model 1                                           
+Processor                     Celeron                                           
+Processor Speed (MHz)         366                                               
+# Processors                  1                                                 
+Memory                        128 MB SDRAM                                      
+Network Controller            Systel 10-Speed                                   
+Operating System              HURL 6.1 (kernel 2.2.15pre8)                      
+JVM Version                   Java 2 Runtime Environment, Std Edition (build
+                              1.4.2_01-b06)
+JIT Version                   Java HotSpot Client VM (build 1.4.2_01-b06,
+                              mixed mode)
+Other Hardware                N/A                                               
+Other Software                N/A                                               
+
+                           Backend Simulator (BESIM)                            
+--------------------------------------------------------------------------------
+# of Simulators               1                                                 
+Model                         Model 1                                           
+Processor                     Celeron                                           
+Processor Speed (MHz)         366                                               
+# of Processors               1                                                 
+Memory                        128 MB SDRAM                                      
+Network Controller            Systel 10-Speed                                   
+Operating System              HURL 6.1 (kernel 2.2.15pre8)                      
+File System                   ext2                                              
+Web Server                    New Millenium Webserver v2.000                    
+Server Scripts                SPEC-FCGI v1.0                                    
+Other Hardware                N/A                                               
+Other Software                N/A                                               
+
+================================================================================
+
+NOTES
+
+SUT Notes
+---------
+*  This is my laptop.                                                           
+*  It acts as both web server and load generator.                               
+
+Operating System Notes
+----------------------
+*  No modifications to default OS configuration.                                
+
+HTTP Software Notes
+-------------------
+*  The following tunes made in webserver.conf:                                  
+*  MaxThreads = 10000                                                           
+
+HTTP Script Notes
+-----------------
+*  SPEC-provided PHP scripts used without modification                          
+*  Smarty v2.5.0 used                                                           
+
+Client Notes
+------------
+*  This is my laptop.                                                           
+*  It acts as both web server and load generator.                               
+
+BESIM Notes
+-----------
+*  This is my laptop.                                                           
+*  It acts as both web server and load generator.                               
+
+Other Notes
+-----------
+*  No network switches were used for this result.                               
+*  Result prepared by I.M. Anonymous <anonymous@anonymity.org>                  
+
+================================================================================
+
+DETAILED TEST RESULTS
+
+Iter-|                  |   Total    |                  QOS                   
+ation|   Request Type   |    Reqs    |          Good       Toler      Fail
+-----|------------------|------------|------------------------------------
+     |index             |    8836    |          8829           3         4
+     |search            |    4772    |          4770           1         1
+     |browse            |    7898    |          7890           5         3
+     |browse_productline|    6697    |          6692           3         2
+     |productdetail     |    5358    |          5351           3         4
+     |customize1        |   11015    |         11008           3         4
+  1  |customize2        |    6073    |          6065           5         3
+     |customize3        |    4171    |          4165           4         2
+     |cart              |    3601    |          3595           2         4
+     |login             |    2550    |          2546           3         1
+     |shipping          |    2400    |          2396           2         2
+     |billing           |    2275    |          2275           0         0
+     |confirm           |    1705    |          1705           0         0
+     |------------------|------------|------------------------------------
+     |      TOTAL       |   67351    |         67287          34        30
+
+Iter-|                  |    Byte    |  Weighted  | Avg Resp | Average  
+ation|   Request Type   |    Rate    |    ABR     |  (sec)   |  Bytes   
+-----|------------------|------------|------------|----------|----------
+     |index             |  91,950.0  |  12,841.8  |  1.524   |  140208  
+     |search            |  98,821.0  |  8,845.9   |  1.809   |  178832  
+     |browse            |  94,111.7  |  12,628.2  |  1.639   |  154251  
+     |browse_productline|  96,297.2  |  12,341.8  |  1.846   |  177787  
+     |productdetail     |  56,932.6  |  3,012.8   |  0.952   |  54247   
+     |customize1        |  98,629.4  |  18,978.7  |  1.685   |  166220  
+  1  |customize2        |  98,471.1  |  10,411.9  |  1.679   |  165397  
+     |customize3        |  96,032.5  |  7,779.2   |  1.873   |  179928  
+     |cart              |  89,801.4  |  2,866.6   |  0.855   |  76797   
+     |login             |  84,783.8  |  1,278.8   |  0.570   |  48379   
+     |shipping          |  83,409.8  |  1,070.3   |  0.515   |  43022   
+     |billing           |  80,644.2  |   819.1    |  0.430   |  34734   
+     |confirm           |  92,659.7  |   592.9    |  0.362   |  33547   
+     |------------------|------------|------------|----------|----------
+     |      TOTAL       |     -      |  93,468.1  |  1.432   | 133,881  
+
+Iteration 1: 400 sessions, 67351 requests, 0.09 reqs/sec/session   QOS: 99.9% good, 100.0% tolerable; 0 errors
+
+Iter-|                  |   Total    |                  QOS                   
+ation|   Request Type   |    Reqs    |          Good       Toler      Fail
+-----|------------------|------------|------------------------------------
+     |index             |    8900    |          8892           3         5
+     |search            |    4692    |          4687           0         5
+     |browse            |    7991    |          7985           2         4
+     |browse_productline|    6746    |          6742           2         2
+     |productdetail     |    5389    |          5380           3         6
+     |customize1        |   11173    |         11163           7         3
+  2  |customize2        |    6156    |          6149           4         3
+     |customize3        |    4266    |          4262           1         3
+     |cart              |    3630    |          3626           1         3
+     |login             |    2557    |          2556           0         1
+     |shipping          |    2415    |          2414           0         1
+     |billing           |    2295    |          2294           1         0
+     |confirm           |    1734    |          1734           0         0
+     |------------------|------------|------------------------------------
+     |      TOTAL       |   67944    |         67884          24        36
+
+Iter-|                  |    Byte    |  Weighted  | Avg Resp | Average  
+ation|   Request Type   |    Rate    |    ABR     |  (sec)   |  Bytes   
+-----|------------------|------------|------------|----------|----------
+     |index             |  92,075.1  |  12,846.3  |  1.524   |  140376  
+     |search            |  98,715.9  |  8,628.1   |  1.811   |  178840  
+     |browse            |  94,020.9  |  12,673.1  |  1.640   |  154237  
+     |browse_productline|  96,386.3  |  12,326.9  |  1.843   |  177711  
+     |productdetail     |  56,976.8  |  3,005.4   |  0.951   |  54238   
+     |customize1        |  98,626.9  |  19,096.3  |  1.685   |  166221  
+  2  |customize2        |  98,520.4  |  10,468.6  |  1.678   |  165385  
+     |customize3        |  96,072.5  |  7,887.8   |  1.871   |  179821  
+     |cart              |  89,967.9  |  2,772.7   |  0.825   |  74284   
+     |login             |  85,765.6  |  1,353.4   |  0.600   |  51474   
+     |shipping          |  85,139.9  |  1,068.3   |  0.505   |  43021   
+     |billing           |  81,446.2  |   819.7    |  0.426   |  34733   
+     |confirm           |  92,679.9  |   598.1    |  0.361   |  33547   
+     |------------------|------------|------------|----------|----------
+     |      TOTAL       |     -      |  93,544.8  |  1.431   | 133,897  
+
+Iteration 2: 400 sessions, 67944 requests, 0.09 reqs/sec/session   QOS: 99.9% good, 99.9% tolerable; 0 errors
+
+Iter-|                  |   Total    |                  QOS                   
+ation|   Request Type   |    Reqs    |          Good       Toler      Fail
+-----|------------------|------------|------------------------------------
+     |index             |    8809    |          8745           9        55
+     |search            |    4684    |          4661           6        17
+     |browse            |    7915    |          7887          11        17
+     |browse_productline|    6702    |          6676           3        23
+     |productdetail     |    5337    |          5310           5        22
+     |customize1        |   11012    |         10966          13        33
+  3  |customize2        |    6017    |          5992           1        24
+     |customize3        |    4171    |          4157           8         6
+     |cart              |    3596    |          3580           4        12
+     |login             |    2543    |          2535           2         6
+     |shipping          |    2397    |          2383           1        13
+     |billing           |    2275    |          2270           2         3
+     |confirm           |    1723    |          1715           3         5
+     |------------------|------------|------------------------------------
+     |      TOTAL       |   67181    |         66877          68       236
+
+Iter-|                  |    Byte    |  Weighted  | Avg Resp | Average  
+ation|   Request Type   |    Rate    |    ABR     |  (sec)   |  Bytes   
+-----|------------------|------------|------------|----------|----------
+     |index             |  85,547.7  |  12,286.7  |  1.640   |  140327  
+     |search            |  95,388.3  |  8,325.7   |  1.874   |  178829  
+     |browse            |  91,691.9  |  12,114.5  |  1.679   |  153988  
+     |browse_productline|  92,839.7  |  11,842.2  |  1.914   |  177771  
+     |productdetail     |  53,365.9  |  2,900.2   |  1.024   |  54672   
+     |customize1        |  95,300.2  |  18,194.3  |  1.744   |  166228  
+  3  |customize2        |  94,591.9  |  9,891.3   |  1.748   |  165390  
+     |customize3        |  94,437.7  |  7,457.9   |  1.904   |  179892  
+     |cart              |  84,046.2  |  2,686.7   |  0.894   |  75168   
+     |login             |  78,401.7  |  1,276.0   |  0.643   |  50483   
+     |shipping          |  71,169.6  |  1,025.0   |  0.604   |  43021   
+     |billing           |  74,848.3  |   785.4    |  0.464   |  34733   
+     |confirm           |  76,835.9  |   574.5    |  0.436   |  33547   
+     |------------------|------------|------------|----------|----------
+     |      TOTAL       |     -      |  89,360.5  |  1.497   | 133,823  
+
+Iteration 3: 400 sessions, 67181 requests, 0.09 reqs/sec/session   QOS: 99.5% good, 99.6% tolerable; 0 errors
+
+
+ERRORS
+
+Configuration Errors
+--------------------
+*  CLIENT_SESSION_USER_IDS value is: 400; should be 10                          
+*  SSL disabled for this run; set USE_SSL = 1 for valid run.                    
+
+
+Quality of Service Errors
+-------------------------
+
+*  No QOS Errors Found
+
+
+
+Validation Errors
+-----------------
+
+*  No Validation Errors Found
+
+
+================================================================================
+
+Request Distribution Errors
+---------------------------
+
+*  No Request Distribution Errors Found
+
+================================================================================
+For questions about this result, please contact the submitter: Speedy Systems,
+Pomona
+
+Copyright (c) 2007 Standard Performance Evaluation Corporation
