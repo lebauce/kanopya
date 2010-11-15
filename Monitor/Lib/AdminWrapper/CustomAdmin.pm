@@ -186,7 +186,7 @@ sub getClustersName {
 sub addMessage {
 	my $self = shift;
 	
-	#print "[UI message] @_\n";
+	print "####################### [UI message] @_\n";
 }
 
 1;
