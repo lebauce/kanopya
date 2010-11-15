@@ -6,8 +6,16 @@ use strict;
 use warnings;
 use Monitor::Retriever;
 use Data::Dumper;
+use Proc::PID::File;
 
 my $cmd = shift;
+
+# If already running, then exit
+if( Proc::PID::File->running()) {
+    print STDERR "Try to launch $0 but an instance is already running => exit\n";
+    #$log->warn("$0 already running ; don't start another process");
+    exit(1);
+}
 
 my $start_time = time();
 
