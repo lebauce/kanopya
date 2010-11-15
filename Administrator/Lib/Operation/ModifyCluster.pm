@@ -23,12 +23,12 @@
 
 =head1 NAME
 
-Operation::ModifyCluster - Operation class implementing Cluster creation operation
+Operation::ModifyCluster - Operation class implementing Cluster modification operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Cluster creation operation
+It allows to implement Cluster modification operation
 
 =head1 DESCRIPTION
 
@@ -67,19 +67,16 @@ sub new {
 	# presence of 'params' named argument is done in parent class 
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
+    my $row;
+
+	#TODO check ModifyCluster
+	# Checker cluster exists
+	# Checker que les parametres passé sont bien modifiable (param is_editable)
+	# checker si les valeur est reellement modifiée
+	# Checker chacun des parametre avec checkAttr
      
  	# check validity of cluster attributes
-    Entity::Cluster->checkAttrs(attrs => $args{params});   
-    
-    # check if systemimage_id exist
-    $log->debug("checking systemimage existence with id <$args{params}->{systemimage_id}>");
-    my $row = $admin->{db}->resultset('Systemimage')->find($args{params}->{systemimage_id});
-    if(! defined $row) {
-    	$errmsg = "Operation::ModifyCluster->new : systemimage_id $args{params}->{systemimage_id} does not exist";
-    	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
-    }
-    
+    #Entity::Cluster->checkAttrs(attrs => $args{params});   
     # if kernel_id present, check if exists
     if(exists $args{params}->{kernel_id}) {
     	$log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
@@ -93,15 +90,6 @@ sub new {
 		    	throw Mcs::Exception::Internal(error => $errmsg);
 	    	}
     	}
-    }
-    
-    # check if cluster name does not already exist
-    $log->debug("checking unicity  of cluster name <$args{params}->{cluster_name}>");
-    $row = $admin->{db}->resultset('Cluster')->find({cluster_name => $args{params}->{cluster_name}});
-    if(defined $row) {
-    	$errmsg = "Operation::ModifyCluster->new : cluster_name $args{params}->{cluster_name} already exists";
-    	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
     # check validity of min_node and max_node
