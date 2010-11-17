@@ -51,6 +51,8 @@ table.status {
 	margin: 20px 20px 20px 0px;
 }
 
+table.status .expanddown:hover, table.status .expandup:hover { cursor: pointer; }
+
 table.status th { background-color: #DDD; padding: 5px 15px 5px 24px; background-position: 5px 5px;
 	background-repeat: no-repeat; text-align: left;	 }
 table.status td { background-color: #DDD; padding: 5px; background-position: 5px; min-width: 20px; min-height: 20px;

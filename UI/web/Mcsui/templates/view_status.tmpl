@@ -4,21 +4,23 @@
 @import url(/css/listing.css);
 </style>
 <div id="content">
-<table class="status">
-<tr><th colspan="2" class="imgDatabase">Database server</th><td class="imgUp">&nbsp;</td></tr>
-<tr><th colspan="2" class="imgBoot">Boot server</th><td class="imgUp">&nbsp;</td></tr>
-<tr><th colspan="2" class="imgHarddisk">NAS server</th><td class="imgUp">&nbsp;</td></tr>
-</table>
 
-<table class="status">
-<tr><th colspan="2" class="imgMonitor">Monitor</th><td class="imgUp">&nbsp;</td></tr>
-<tr><th colspan="2" class="imgPlanner">Planner</th><td class="imgDown">&nbsp;</td></tr>
-<tr><th colspan="2" class="imgOrchestrator">Orchestrator</th><td class="imgUp">&nbsp;</td></tr>
-</table>
-
-<table class="status">
-<tr><th colspan="2" class="imgExecute">Executor</th><td class="imgUp">&nbsp;</td></tr>
-</table>
+<TMPL_LOOP NAME=COMPONENTS_STATUS>
+	<table class="status">
+	<TMPL_LOOP NAME=GROUP>
+		<tr id="m<TMPL_VAR NAME=ID>" class="expanddown">
+			<th colspan="2" class="img<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=LABEL></th><td class="img<TMPL_VAR NAME=STATUS>">&nbsp;</td>
+		</tr>
+		<tr id="t<TMPL_VAR NAME=ID>" class="hidden">
+			<td><table class="listdetails">
+				<TMPL_LOOP NAME=DETAILS>
+					<tr><td><TMPL_VAR NAME=NAME></td><td class="img<TMPL_VAR NAME=STATUS>">&nbsp;</td></tr>
+				</TMPL_LOOP>
+			</table></td>
+		</tr>
+	</TMPL_LOOP>
+	</table>
+</TMPL_LOOP>
 
 <h1>* Running Clusters *</h1>
 
@@ -42,4 +44,5 @@
 	</tr></TMPL_LOOP>
 </table>
 </div>
+<script language="Javascript" src="/js/listingtools.js"></script>
 <TMPL_INCLUDE NAME="footer.tmpl">
