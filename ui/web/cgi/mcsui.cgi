@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use lib qw(/opt/kanopya/ui/web /opt/kanoya/lib/Administrator);
+use lib qw(/opt/kanopya/ui/web /opt/kanopya/lib/administrator /opt/kanopya/lib/common);
 use CGI::Fast();
 use CGI::Application::Dispatch;
 use Log::Log4perl;

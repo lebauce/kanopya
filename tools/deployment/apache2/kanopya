@@ -25,11 +25,11 @@
 		</Directory>
 
 
-        ErrorLog /var/log/apache2/mcs/error.log
+        ErrorLog /var/log/apache2/kanopya/error.log
 
         # Possible values include: debug, info, notice, warn, error, crit,
         # alert, emerg.
         LogLevel debug
 
-        CustomLog /var/log/apache2/mcs/access.log combined
+        CustomLog /var/log/apache2/kanopya/access.log combined
 </VirtualHost>
