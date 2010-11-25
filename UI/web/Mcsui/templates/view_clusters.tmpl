@@ -1,52 +1,32 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
-<style type="text/css">
-@import url(/css/listing.css);
-</style>
+<style type="text/css">@import url(/css/listing.css);</style>
+<script language="javascript" src="/js/kanopiaui-tools.js"></script>
 <div id="content">
-<h1>Clusters</h1>
-<table id="clusterlist" class="listview">
-	<tr><th></th><th>name</th><th>state</th><th>active</th><th>actions</th></tr><TMPL_LOOP NAME=CLUSTERS>
-	<tr>
-		<td id="m<TMPL_VAR NAME=ID>" class="expanddown">&nbsp;</td>
-		<td><a href="/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></a></td>
-		<td><TMPL_VAR NAME=STATE></td>
-		<td><img src="/images/icons/<TMPL_IF NAME=ACTIVE>active.png<TMPL_ELSE>deactive.png</TMPL_IF>"/></td>
-		<td><TMPL_IF NAME=ACTIVE>
-		<TMPL_IF NAME=CANSTART><a title="start this cluster" class="imgStart" href="/cgi/mcsui.cgi/clusters/process_startcluster?cluster_id=<TMPL_VAR NAME=ID>">start</a></TMPL_IF>
-		<TMPL_IF NAME=CANSTOP><a class="imgStop" href="/cgi/mcsui.cgi/clusters/process_stopcluster?cluster_id=<TMPL_VAR NAME=ID>">stop</a></TMPL_IF>
-		|<a class="imgDeactive" href="/cgi/mcsui.cgi/clusters/process_deactivatecluster?cluster_id=<TMPL_VAR NAME=ID>">deactivate</a>
-		<TMPL_ELSE><a class="imgActive" href="/cgi/mcsui.cgi/clusters/process_activatecluster?cluster_id=<TMPL_VAR NAME=ID>">activate</a>
-		|<a class="imgEdit" href="">edit</a>
-		|<a class="imgRemove" href="/cgi/mcsui.cgi/clusters/process_removecluster?cluster_id=<TMPL_VAR NAME=ID>">remove</a>
-		</TMPL_IF>
-		|<a class="imgNetwork" href="/cgi/mcsui.cgi/clusters/form_setpubliciptocluster?cluster_id=<TMPL_VAR NAME=ID>">add public ip</a>
-		|<a href="/cgi/mcsui.cgi/clusters/form_setpubliciptocluster?cluster_id=<TMPL_VAR NAME=ID>">remove public ip</a>
-		
-		</td>
-	</tr>
-	<tr id="t<TMPL_VAR NAME=ID>" class="hidden">
-		<td colspan="5">
-			<table class="listdetails">	
-				<tr><td class="label">Min node : </td><td class="content"><TMPL_VAR NAME=MIN_NODE></td></tr>
-				<tr><td class="label">Max node : </td><td class="content"><TMPL_VAR NAME=MAX_NODE></td></tr>
-				<tr><td class="label">Priority : </td><td class="content"><TMPL_VAR NAME=PRIORITY></td></tr>
-				<tr><td class="label">Kernel : </td><td class="content"><TMPL_VAR NAME=KERNEL></td></tr>
-				<tr><td class="label">System image : </td><td class="content"><TMPL_VAR NAME=SYSIMGNAME></td></tr>
-				<tr><td colspan="2"><hr/></td></tr>
-				<tr><td colspan="2" class="content"><TMPL_VAR NAME=DESC></td></tr>
-				<tr><td colspan="2"><hr/></td></tr>
-				<tr><td class="label">Public IP : </td><td>
-				<select ><TMPL_LOOP NAME=PUBLICIPS>
-					<option nothing="<TMPL_VAR NAME=NAME>"><TMPL_VAR NAME=ADDRESS> / <TMPL_VAR NAME=NETMASK> (<TMPL_VAR NAME=GATEWAY>)</option>
-				</TMPL_LOOP>
-				</select>
-				</td></tr>
-			</table>
-		</td>
-	</tr>
-</TMPL_LOOP>
+<TMPL_LOOP NAME=clusters_list>
+<table class="listing">
+<tr><td colspan="3"><h1><TMPL_VAR NAME=cluster_name></h1></td></tr>
+<tr><td><TMPL_VAR NAME=type></td><td>
+<TMPL_IF NAME=active>Active<TMPL_ELSE>Deactivated</TMPL_IF></td><td class="toright">
+<a class="imgManage" href="/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=cluster_id>">details</a></td></tr>
+<tr><td><TMPL_VAR NAME=nbnodes></td>
+<TMPL_IF NAME=active><TMPL_IF NAME=nbnodesup>
+<td><span class="state imgUp">Up (<TMPL_VAR NAME=nbnodesup>)</span></td><TMPL_ELSE>
+<td><span class="state imgDown">Down</span></td>
+</TMPL_IF></TMPL_IF>
+<td class="toright">
+<TMPL_IF NAME=link_activity>
+<a class="imgMonitor" href="/cgi/mcsui.cgi/clusters/view_clustergraphs?cluster_id=<TMPL_VAR NAME=cluster_id>">activity</a>
+</TMPL_IF>
+</td></tr>
+<tr><td class="italic" colspan="3"><TMPL_VAR NAME=cluster_desc></td></tr>
 </table>
+</TMPL_LOOP>
+
+<div class="actions">
+<a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/clusters/form_addcluster', 'create a new cluster', 800, 360,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a cluster</a>
+<p class="italic">Create and configure a new cluster.</p>
 </div>
-<script language="Javascript" src="/js/listingtools.js"></script>
+</div>
 <TMPL_INCLUDE NAME="footer.tmpl">
+

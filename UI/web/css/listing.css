@@ -1,71 +1,66 @@
-table.listview {
-	margin: 0 0 20px 0;
-	border-collapse: collapse;
-	float: left;
-	clear: both;
-	background-color: white;
-	min-width: 50%;
-	max-width: 1022px;
+table.listing {
+    border-bottom: 1px solid black;
+    float: left;    
+    width: 78%;
+    margin-bottom: 15px;
+}
+
+table.listing:hover { background-color: #EEE; }
+
+table.listing { border-collapse: collapse; }
+table.listing td { padding: 5px; width: 25%; }
+
+table.listing h1 {
+    color: #228b22;
+    font-weight: bold;
+    font-size: 1.6em;
+    margin: 10px 0 0 0;
+}
+
+table.listing td.toright a { 
+    background-repeat: no-repeat;
+    padding-left: 20px;
+    text-decoration: none;
+    color: #228b22;
+}
+
+.state {
+	background-position: left;
+	background-repeat:  no-repeat;
+	padding-left: 20px;
+}
+
+
+div.actions {
+    margin-left: 80%;
+    margin-top: 30px;
+    background-color: #F9F9FF;
+    width: 20%;
+    border: thin dashed black;
+}
+
+div.actions a.action {
+    margin: 10px 0 0 10px;    
+    display: block;    
+    color: #0A0;
+    background-repeat: no-repeat;
+    padding-left: 20px;
+    text-decoration: none;   
+    font-size: 1em; 
+}
+
+div.actions p {
+    margin: 5px 0 10px 10px;
+    font-size: 0.9em;
 }
 
 
 
-table.listview  th { background-color: #DDD; padding: 10px; }
-table.listview .expanddown { background: url('/images/icons/arrow-down.png') no-repeat center; text-align: left; }
-table.listview .expandup { background: url('/images/icons/arrow-up.png') no-repeat center; text-align: left; }
 
-table.listview .expanddown:hover, table.listview .expandup:hover { cursor: pointer; }
 
-table.listview tr:hover { background-color: #e4f3c6; }
 
-table.listview td { padding: 6px 9px; background-color: transparent; }
 
-table.listview th, table.listview td {
-	border-width: 1px ;
-	border-style: solid;
-	border-color: #765;
-	text-align: center;
-}
 
-table.listview a { 
-	text-decoration: none;
-	background-repeat: no-repeat;
-	color: green;
-	margin: 0 8px;
-	padding-left: 19px;
-}
 
-table.listdetails { 
-	font-family: monospace;
-	font-size: medium;
-	width: 100%;
-	border-collapse: collapse;
-	background-color: white;
-	margin: 0;
-	padding: 0;
-}
 
-table.status {
-	float: left;
-	border: none;
-	margin: 20px 20px 20px 0px;
-}
 
-table.status th { background-color: #DDD; padding: 5px 15px 5px 24px; background-position: 5px 5px;
-	background-repeat: no-repeat; text-align: left;	 }
-table.status td { background-color: #DDD; padding: 5px; background-position: 5px; min-width: 20px; min-height: 20px;
-	background-repeat: no-repeat; text-align: center;	 }
-
-table.listdetails td { border: none; padding: 3px; }
-table.status td { border: none; padding: 3px; }
-
-table.listdetails td.label, table.status td.label {
-	font-weight: bold;
-	text-align: right;
-}
-
-table.listdetails td.content { 
-	min-width: 50% ;
-	text-align: left;
-}
-table.listdetails hr { margin: 2px 0; }

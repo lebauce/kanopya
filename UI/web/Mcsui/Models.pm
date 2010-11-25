@@ -13,7 +13,11 @@ sub setup {
 
 sub view_models : StartRunmode {
     my $self = shift;
-    my $output = '';
+    my $tmpl = $self->load_tmpl('view_models.tmpl');
+    $tmpl->param('titlepage' => "Hardaware - Models");
+	$tmpl->param('mHardware' => 1);
+	$tmpl->param('submModels' => 1);
+    
     my @eprocessormodels = $self->{admin}->getEntities(type => 'Processormodel', hash => {});
     my @emotherboardmodels = $self->{admin}->getEntities(type => 'Motherboardmodel', hash => {});
     my $processormodels = [];
@@ -48,19 +52,14 @@ sub view_models : StartRunmode {
 			
 		push @$motherboardmodels, $h;
 	} 
-     
-        
-    my $tmpl = $self->load_tmpl('view_models.tmpl');
-    $tmpl->param('TITLE_PAGE' => "Models View");
-	$tmpl->param('MENU_CONFIGURATION' => 1);
 		
 	$tmpl->param('USERID' => 1234);
 	$tmpl->param('PROCESSORMODELS' => $processormodels);
 	$tmpl->param('MOTHERBOARDMODELS' => $motherboardmodels);
 		
-	$output .= $tmpl->output();
+	
         
-    return $output;	
+    return $tmpl->output();
 }
 
 # processor model 
@@ -68,15 +67,15 @@ sub view_models : StartRunmode {
 sub form_addprocessormodel : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $output = '';
+    
     my $tmpl =  $self->load_tmpl('form_addprocessormodel.tmpl');
-    $tmpl->param('TITLE_PAGE' => "Adding a Processor model");
+    $tmpl->param('titlepage' => "Models - Adding a Processor model");
 	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param($errors) if $errors;
 	
 	$tmpl->param('USERID' => 1234);
-	$output .= $tmpl->output();
-	return $output;
+	
+	return $tmpl->output();
 }
 
 sub process_addprocessormodel : Runmode {

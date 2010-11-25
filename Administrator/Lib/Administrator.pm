@@ -1105,6 +1105,31 @@ sub getNodes {
 }
 
 
+sub getComponent {
+	my $self = shift;
+    my %args = @_;
+
+	if ((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) { 
+		$errmsg = "Administrator->getComponent needs a component_instance_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $comp_instance_row = $self->{db}->resultset("ComponentInstance")->find(
+		{ component_instance_id => $args{component_instance_id} }, 
+		{ '+columns' => [ "component_id.component_name",
+						  "component_id.component_version",
+						  "component_id.component_category"], 
+		join => ["component_id"]});	
+	
+	return $self->getEntity (
+				class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
+					$comp_instance_row->get_column('component_name') . 
+					$comp_instance_row->get_column('component_version'),
+				id => $comp_instance_row->get_column('component_instance_id'),
+				type => "ComponentInstance");
+}
+
 ########################################
 ## methodes for fast usage in web ui ##
 ########################################

@@ -301,6 +301,17 @@ sub getMasterNodeIp {
 	}
 }
 
+sub getMasterNodeId {
+	my $self = shift;
+	my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
+	if(defined $node_instance_rs) {
+		my $id = $node_instance_rs->motherboard_id->get_column('motherboard_id');
+		return $id;
+	} else {
+		return undef;
+	}
+}
+
 =head2 addComponent
 
 create a new component instance

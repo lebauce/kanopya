@@ -1,136 +1,110 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
-<style type="text/css">
-	@import url(/css/listing.css);
-</style>
+<style type="text/css">@import url(/css/details.css);</style>
+<script language="javascript" src="/js/kanopiaui-tools.js"></script>
 <div id="content">
-	<h1>Cluster components: </h1>
-	<table id="clustercomponentsdetails" class="listview">
-		<tr><th>name</th><th>version</th><th>category</th></tr>
-			<TMPL_LOOP NAME=COMPONENTS>
-				<tr><td><TMPL_VAR NAME=NAME></td>
-				<td><TMPL_VAR NAME=VERSION></td>
-				<td><TMPL_VAR NAME=CATEGORY></td></tr>
-			</TMPL_LOOP>
-	</table>
-	<h1>Cluster nodes: </h1>
-	<form method="GET" action="/cgi/mcsui.cgi/clusters/process_addnode">
-	<table style="float: left; clear: left;"><tr><td>
-	<input type="hidden" name="cluster_id" value="<TMPL_VAR NAME=CLUSTERID>" />
-	<input type="submit" value="add a new node" /></td></tr>
-	</table>
-	</form>
-	<table id="clustermotherboardsdetails" class="listview">
-		<tr><th></th><th>hostname</th><th>Motherboard slot number</th><th>internal ip</th><th>actions</th></tr>
-			<TMPL_LOOP NAME=MOTHERBOARDS>
-				<tr>
-				<td id="m<TMPL_VAR NAME=HOSTNAME>" class="expanddown">&nbsp;</td>
-				<td><TMPL_VAR NAME=HOSTNAME></td>
-				<td><TMPL_VAR NAME=SLOTNUMBER></td>
-				<td><TMPL_VAR NAME=INTERNALIP></td>
-				<td><a href="/cgi/mcsui.cgi/clusters/process_removenode?cluster_id=<TMPL_VAR NAME=CLUSTER_ID>&motherboard_id=<TMPL_VAR NAME=MOTHERBOARD_ID>">remove this node</a></td>
-				</tr>
-				
-				<tr id="t<TMPL_VAR NAME=HOSTNAME>" class="hidden">
-					<td colspan="5">
-						<table class="listdetails">
-						<TMPL_LOOP NAME=GRAPHS>	
-							<tr><td ALIGN=CENTER>
-				      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" style='display:none' />
-				      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" />
-				      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" style='display:none'/>
-							</td></tr>
-						</TMPL_LOOP>
-						</table>
-					</td>
-				</tr>
-				
-				
-			</TMPL_LOOP>
-	</table>
-	
-	<a name="monitoring"><h1>Monitoring: </h1></a>
-	<!--
-	<table style="float: left; clear: left;">
-		<tr>
-			<th>
-			<input type="radio" name="graph_timeline" value="Hourly" id="radioHour" onclick="display_graph('hour_graph')" />Hourly
-			<input type="radio" name="graph_timeline" value="Daily" id="radioDay" onclick="display_graph('day_graph')" />Daily
-			<input type="radio" name="graph_timeline" value="Custom" id="radioCustom" onclick="display_graph('custom_graph')" />Custom
-			</th>
-		</tr>
-		<tr>
-			<th>
-			<form method="GET" action="/cgi/mcsui.cgi/clusters/process_customgraph">
-				<input type="hidden" name="cluster_id" value="<TMPL_VAR NAME=CLUSTERID>" />
-				start: <input type="text" size="8" name="date_start" value="<TMPL_VAR NAME=CUSTOM_GRAPH_DATE_START>" > <input type="text" size ="3" name="time_start" value="<TMPL_VAR NAME=CUSTOM_GRAPH_TIME_START>" >
-				end: <input type="text" size="8" name="date_end" value="<TMPL_VAR NAME=CUSTOM_GRAPH_DATE_END>" > <input type="text" size ="3" name="time_end" value="<TMPL_VAR NAME=CUSTOM_GRAPH_TIME_END>" >
-				<input type="submit" value="apply" /></td></tr>
-			</form>
-			</th>
-		</tr>
-	</table>
-	-->
-	<table class="listview">
-		<tr>
-			<th>
-			<input type="radio" name="graph_timeline" value="Hourly" id="radioHour" onclick="display_graph('hour_graph');document.getElementById('customGraphOptions').className = 'hidden'" />Hourly
-			<input type="radio" name="graph_timeline" value="Daily" id="radioDay" onclick="display_graph('day_graph');document.getElementById('customGraphOptions').className = 'hidden'" />Daily
-			<input type="radio" name="graph_timeline" value="Custom" id="radioCustom" onclick="display_graph('custom_graph');document.getElementById('customGraphOptions').className = ''" />Custom
-			</th>
-		</tr>
-		<tr id='customGraphOptions' class="hidden">
-			<th>
-			<form method="GET" action="/cgi/mcsui.cgi/clusters/process_customgraph">
-				<input type="hidden" name="cluster_id" value="<TMPL_VAR NAME=CLUSTERID>" />
-				start: <input type="text" size="8" name="date_start" value="<TMPL_VAR NAME=CUSTOM_GRAPH_DATE_START>" > <input type="text" size ="3" name="time_start" value="<TMPL_VAR NAME=CUSTOM_GRAPH_TIME_START>" >
-				end: <input type="text" size="8" name="date_end" value="<TMPL_VAR NAME=CUSTOM_GRAPH_DATE_END>" > <input type="text" size ="3" name="time_end" value="<TMPL_VAR NAME=CUSTOM_GRAPH_TIME_END>" >
-				<input type="submit" value="apply" /></td></tr>
-			</form>
-			</th>
-		</tr>
-		<tr>
-			<td colspan="2">
-				<img src="<TMPL_VAR NAME=NODECOUNT_CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" style='display:none' />
-	  			<img src="<TMPL_VAR NAME=NODECOUNT_HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" style='display:none' />
-	  			<img src="<TMPL_VAR NAME=NODECOUNT_DAY_GRAPH_FILE>" class="graph multi_graph day_graph" style='display:none'/>
-  			</td>
-		</tr>
-		<TMPL_LOOP NAME=MONITORING_GRAPHS>
-			<tr>
-				
-				<TMPL_IF NAME=HIDDEN>
-					<td id="m<TMPL_VAR NAME=GRAPH_INFO>" class="expanddown"><TMPL_VAR NAME=GRAPH_INFO> &nbsp;</td>
-				<TMPL_ELSE>
-					<td><TMPL_VAR NAME=GRAPH_INFO></td>
-				</TMPL_IF>
-			</tr>
-			
-			<tr id="t<TMPL_VAR NAME=GRAPH_INFO>" <TMPL_IF NAME=HIDDEN>class="hidden"</TMPL_IF> >
-				<td colspan="2">
-					<TMPL_LOOP NAME=GRAPH_TYPE>
-		      			<img src="<TMPL_VAR NAME=CUSTOM_GRAPH_FILE>" class="graph multi_graph custom_graph" style='display:none' />
-		      			<img src="<TMPL_VAR NAME=HOUR_GRAPH_FILE>" class="graph multi_graph hour_graph" style='display:none' />
-		      			<img src="<TMPL_VAR NAME=DAY_GRAPH_FILE>" class="graph multi_graph day_graph" style='display:none'/>
-					</TMPL_LOOP>
-				</td>
-			</tr>			
-		</TMPL_LOOP>
-		<tr><td colspan="2"><b>> Add custom graph <</b></td</tr>
-		<tr><td colspan="2"><b>> Monitored indicators settings <</b></td></tr>
-	</table>
+<h2><TMPL_VAR NAME=cluster_name> - overview</h2>
+<hr/>
+<span class="title">Main settings</span>
+<table class="detailspart">
+<tr><td class="italic" colspan="2"><TMPL_VAR NAME=cluster_desc></td>
+<td class="actions" rowspan="10">
+<a class="imgEdit" href="javascript:openform('/cgi/mcsui.cgi/clusters/form_editcluster?cluster_id=<TMPL_VAR NAME=cluster_id>', 'edit cluster', 800, 400, '');">edit</a><br />
+<span class="desc">Modify these global parameters.</span><br /><br />
+<TMPL_IF NAME=link_delete>
+<a class="imgRemove" href="/cgi/mcsui.cgi/clusters/process_deletecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">delete</a><br />
+<span class="desc">Delete this cluster.</span><br /><br />
+</TMPL_IF>
+</td><tr/>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Type :</td><td><TMPL_VAR NAME=type></td></tr>
+<tr><td class="label">Priority :</td><td><TMPL_VAR NAME=cluster_priority></td></tr>
+<tr><td class="label">Minimum nodes :</td><td><TMPL_VAR NAME=cluster_min_node></td></tr>
+<tr><td class="label">Maximum nodes :</td><td><TMPL_VAR NAME=cluster_max_node></td></tr>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">System Image :</td><td><TMPL_VAR NAME=systemimage_name></td></tr>
+<tr><td class="label">Kernel :</td><td><TMPL_VAR NAME=kernel></td></tr>
+</table>
 
-	<h1>Orchestration: </h1>
-	<table class="listview">
-	<tr>
-      		<td ALIGN=CENTER><img class="graph" src='<TMPL_VAR NAME=ORCHESTRATOR_GRAPH_ADD>'/></td>
-      		<td ALIGN=CENTER><img class="graph" src='<TMPL_VAR NAME=ORCHESTRATOR_GRAPH_REMOVE>'/></td>
-	</tr>
-	
-	</table>
-		
+<hr/>
+<span class="title">State</span>
+<table class="detailspart">
+<tr><TMPL_IF NAME=active><td>Active</td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
+<td class="actions" rowspan="2">
+<TMPL_IF NAME=link_activate>
+<a class="imgActivate" href="/cgi/mcsui.cgi/clusters/process_activatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">activate</a><br />
+<span class="desc">Activate this cluster to be able to start it.</span><br /><br />
+<TMPL_ELSE>
+<TMPL_IF NAME=link_start>
+<a class="imgDeactivate" href="/cgi/mcsui.cgi/clusters/process_deactivatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">deactivate</a><br />
+<span class="desc">Deactivate this cluster.</span><br /><br />
+<a class="imgStart" href="/cgi/mcsui.cgi/clusters/process_startcluster?cluster_id=<TMPL_VAR NAME=cluster_id>">start</a><br />
+<span class="desc">Start this cluster.</span>
+<TMPL_ELSE>
+<a class="imgStop" href="/cgi/mcsui.cgi/clusters/process_stopcluster?cluster_id=<TMPL_VAR NAME=cluster_id>">stop</a><br />
+<span class="desc">Stop this cluster.</span><br /><br />
+</TMPL_IF>
+</TMPL_IF>
+</td></tr><tr>
+<TMPL_IF NAME=active>
+<TMPL_IF NAME=nodes_list>
+<td><span class="state imgUp">Up</span></td>
+<TMPL_ELSE>
+<td><span class="state imgDown">Down</span></td>
+</TMPL_IF>
+<TMPL_ELSE>
+<td></td>
+</TMPL_IF>
+</tr>
+</table>
+
+<hr/>
+<span class="title">Components</span>
+<table id="components" class="detailspart list">
+<TMPL_IF NAME=components_list>
+<tr><td colspan="2">&nbsp;</td>
+<td class="actions" rowspan="<TMPL_VAR NAME=NBCOMPONENTS>">
+<a class="imgAdding" href="javascript:openform('/cgi/mcsui.cgi/clusters/form_addcomponent?cluster_id=<TMPL_VAR NAME=cluster_id>', 'Add a component', 500, 200, '');">add a component</a><br />
+<span class="desc">Add a new component to this cluster.</span><br /><br />
+</td></tr>
+<TMPL_LOOP NAME=components_list>
+<tr><td class="label2"><span class="bold"><TMPL_VAR NAME=component_name><TMPL_VAR NAME=component_version></span> - <TMPL_VAR NAME=component_category></td>
+<td class="action"><a class="imgConfigure" href="/cgi/mcsui.cgi/components/form_configurecomponent?component_instance_id=<TMPL_VAR NAME=component_instance_id>">configure</a>
+<a class="imgRemove">remove</a>
+<td></tr>
+</TMPL_LOOP>
+<TMPL_ELSE>
+<tr><td colspan="2">no defined component.</td>
+<td class="actions">
+<a class="imgAdding" href="javascript:openform('/cgi/mcsui.cgi/clusters/form_addcomponent?cluster_id=<TMPL_VAR NAME=cluster_id>', 'Add a component', 500, 200, '');">add a component</a><br />
+<span class="desc">Add a new component to this cluster.</span><br /><br />
+</td></tr>
+</TMPL_IF>
+</table>
+
+<hr/>
+<span class="title">Nodes</span>
+<table id="nodes" class="detailspart list">
+<TMPL_IF NAME=nodes_list>
+<tr><td colspan="3">&nbsp;</td>
+<td class="actions" rowspan="<TMPL_VAR NAME=nbnodesup>">
+<TMPL_IF NAME=link_addnode>
+<a class="imgAdding" href="javascript:openform();">add a node</a><br />
+<span class="desc">Add a new node to this cluster.</span><br /><br />
+</TMPL_IF>
+</td></tr>
+<TMPL_LOOP NAME=nodes_list>
+<tr><td class="label2"><span class="bold"><TMPL_VAR NAME=motherboard_hostname></span></td>
+<td class="label2">ip: <TMPL_VAR NAME=motherboard_internal_ip></td>
+<TMPL_IF NAME=link_remove><td class="action"><a class="imgRemove">remove</a><td>
+<TMPL_ELSE><td></td></TMPL_IF></tr>
+</TMPL_LOOP>
+<TMPL_ELSE>
+<tr><td>This cluster has no nodes</td></tr>
+</TMPL_IF>
+</table>
 </div>
-<script language="Javascript" src="/js/listingtools.js"></script>
-<!--script language="Javascript">display_graph('<TMPL_VAR NAME=DISPLAY_GRAPH>')</script-->
-<script language="Javascript">document.getElementById(<TMPL_IF NAME=SHOW_CUSTOM_GRAPH>"radioCustom"<TMPL_ELSE>"radioHour"</TMPL_IF>).click()</script>
 <TMPL_INCLUDE NAME="footer.tmpl">
+
+
+

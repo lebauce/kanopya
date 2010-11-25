@@ -41,11 +41,11 @@ sub view_motherboards : StartRunmode {
 		push (@$motherboards, $tmp);
     }
 		
-    $tmpl->param('TITLE_PAGE' => "Motherboards View");
-	$tmpl->param('MENU_CONFIGURATION' => 1);
-		
+    $tmpl->param('titlepage' => "Hardware - Motherboards");
+			
 	$tmpl->param('USERID' => 1234);
-	$tmpl->param('MOTHERBOARDS' => $motherboards);
+	$tmpl->param('mHardware' => 1);
+    $tmpl->param('submMotherboards' => 1);
 	
 	$output .= $tmpl->output();
         

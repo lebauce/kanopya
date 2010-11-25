@@ -1,10 +1,27 @@
-a.simple { margin-left: 10px; color: #69B033; }
-a.simple:hover { text-decoration: underline; }
+* { font: small Georgia,Serif; margin: 0; padding: 0; }
+body { background-color: #EEE; }
+div.title { 
+	color: #228b22;
+	font-size: 1.6em; 
+	font-weight: bold;
+	padding: 10px 0 10px 20px;
+} 
 
-table.form, div.formbuttons {
-	margin-left: auto;
-	margin-right: auto;
-	width: 800px;
+div.buttons {
+	height: auto;
+	width :100%;
+	text-align: right;
+} 
+
+div.buttons input { min-width: 6em; margin: 10px; }
+
+table.form {
+	background-color: white;
+	border-width: 1px 0 1px 0;
+	border-color: black;
+	border-style: dashed;
+	margin: 0 auto;
+	width: auto;
 }
 
 table.form caption {
@@ -18,10 +35,11 @@ table.form caption {
 table.form td { width: 25%; padding-top: 5px}
 table.form select { min-width: 200px;}
 
-table.form td.error { 
+.error { 
 	color: red;
 	text-align: center;
 	padding: 10px;
+	font-weight: bold;
 }
 
 table.form td.label {
@@ -29,13 +47,4 @@ table.form td.label {
 	text-align: right;
 }
 
-div.formbuttons { margin: 20px auto; text-align: center;}
 
-div.formbuttons .button {
-	border: thin outset #000;
-	background-color: #69B033;
-	color:  #EEF2BE;
-	padding: 5px 15px;
-	font-weight: bold;
-	cursor: pointer;
-}

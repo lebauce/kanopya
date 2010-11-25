@@ -41,18 +41,15 @@ sub new {
     return $self;
 }
 
-sub setGeneralConf {
-	
-}
-sub addVirtualhost {
-	
-}
+
+
+sub addVirtualhost {}
 
 sub getVirtualhostConf{
 	my $self = shift;
 
 	if(! $self->{_dbix}->in_storage) {
-		$errmsg = "Entity::Distribution->getDevices must be called on an already save instance";
+		$errmsg = "Entity::Component::Webserver::Apache2->getVirtualhostConf must be called on an already save instance";
 		$log->error($errmsg);
 		throw Mcs::Exception(error => $errmsg);
 	}
@@ -69,7 +66,7 @@ sub getGeneralConf{
 	my $self = shift;
 
 	if(! $self->{_dbix}->in_storage) {
-		$errmsg = "Entity::Distribution->getDevices must be called on an already save instance";
+		$errmsg = "Entity::Component::Webserver::Apache2->getGeneralConf must be called on an already save instance";
 		$log->error($errmsg);
 		throw Mcs::Exception(error => $errmsg);
 	}
@@ -77,4 +74,74 @@ sub getGeneralConf{
 	$log->debug("Apache2 conf return is : " . Dumper(%apache2_conf));
 	return \%apache2_conf;
 }
+
+# provide structured configuration data for component edition in ui
+
+sub getConf {
+	my $self = shift;
+	my $apache2_conf = {
+		apache2_id => undef,
+		apache2_loglevel => undef,
+		apache2_serverroot => undef,
+		apache2_ports => undef,
+		apache2_sslports => undef,
+		apache2_phpsession_dir => undef,
+		apache2_virtualhost => [
+			{ apache2_virtualhost_id => undef,
+			  apache2_virtualhost_servername => undef,
+			  apache2_virtualhost_sslenable => undef,
+			  apache2_virtualhost_serveradmin => undef,
+			  apache2_virtualhost_documentroot => undef,
+			  apache2_virtualhost_log => undef,
+			  apache2_virtualhost_errorlog => undef,
+			},
+		]
+	};
+	
+	my $lineindb = $self->{_dbix}->apache2s->first;
+	if($lineindb) {
+		my %dbconf = $lineindb->get_columns();
+		$apache2_conf->{apache2_id} = $dbconf{apache2_id};
+		$apache2_conf->{apache2_serverroot} = $dbconf{apache2_serverroot};
+		$apache2_conf->{apache2_loglevel} = $dbconf{apache2_loglevel};
+		$apache2_conf->{apache2_ports} = $dbconf{apache2_ports};
+		$apache2_conf->{apache2_sslports} = $dbconf{apache2_sslports};
+		$apache2_conf->{apache2_phpsession_dir} = $dbconf{apache2_phpsession_dir};
+		
+		my $virtualhost_rs = $lineindb->apache2_virtualhosts;
+		my $index = 0;
+		while (my $virtualhost_row = $virtualhost_rs->next){
+			my %virtualhost = $virtualhost_row->get_columns();
+			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_id} = $virtualhost{apache2_virtualhost_id};
+			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_servername} = $virtualhost{apache2_virtualhost_servername};
+			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_sslenable} = $virtualhost{apache2_virtualhost_sslenable};
+			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_serveradmin} = $virtualhost{apache2_virtualhost_serveradmin};
+			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_documentroot} = $virtualhost{apache2_virtualhost_documentroot};
+			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_log} = $virtualhost{apache2_virtualhost_log};
+			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_errorlog} = $virtualhost{apache2_virtualhost_errorlog};
+			
+			$index += 1;
+		}
+		
+	}
+
+	return $apache2_conf;
+}
+
+
+
+sub setConf {
+	my $self = shift;
+	my ($conf) = @_;
+	if(not $conf->{apache2_id}) {
+		# new configuration -> insert
+		return 'insert conf'
+	} else {
+		# old configuration -> update
+		return 'update conf';
+	}	
+	
+	
+}
+
 1;

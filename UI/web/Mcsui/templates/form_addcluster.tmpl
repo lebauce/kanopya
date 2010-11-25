@@ -1,18 +1,16 @@
-<TMPL_INCLUDE NAME="header.tmpl">
-<TMPL_INCLUDE NAME="menu.tmpl">
+<html>
+<head>
+	<title>new cluster</title>
+</head>
+<body>
 <style type="text/css">@import url(/css/form.css);</style>
-
-<div id="content">
+<div class="title">create cluster<TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
 <form method="POST" action="/cgi/mcsui.cgi/clusters/process_addcluster">
 <table class="form">
-	<caption>New cluster</caption>
-	<TMPL_IF NAME=SOME_ERRORS>
-	<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
-	</TMPL_IF>
 	<tr>
 		<td class="label">Name :</td>
-		<td><input type="text" name="name" maxlength="50" size="52"/>
-		<span style="color: red"><TMPL_VAR NAME=ERR_CLUSTER_NAME></span></td>
+		<td><input type="text" name="name" maxlength="32" size="32"/>
+		<span style="color: red"><TMPL_VAR NAME=err_name></span></td>
 	</tr>
 	<tr>
 		<td class="label">Description :</td>
@@ -21,8 +19,8 @@
 	<tr>
 		<td class="label">minimum node to used :</td>
 		<td><select name="min_node">
-		<TMPL_LOOP NAME=COUNT>
-			<option value="<TMPL_VAR NAME=CM>"><TMPL_VAR NAME=CM></option>
+		<TMPL_LOOP NAME=nodescount>
+			<option value="<TMPL_VAR NAME=nodes>"><TMPL_VAR NAME=nodes></option>
 		</TMPL_LOOP>	
 		</select></td>
 		<span style="color: red"><TMPL_VAR NAME=ERR_MIN_NODE></span></td>
@@ -30,41 +28,41 @@
 	<tr>
 		<td class="label">maximum node to used :</td>
 		<td><select name="max_node">
-		<TMPL_LOOP NAME=COUNT>
-			<option value="<TMPL_VAR NAME=CM>"><TMPL_VAR NAME=CM></option>
+		<TMPL_LOOP NAME=nodescount>
+			<option value="<TMPL_VAR NAME=nodes>"><TMPL_VAR NAME=nodes></option>
 		</TMPL_LOOP>	
 		</select></td>
 		<span style="color: red"><TMPL_VAR NAME=ERR_MAX_NODE></span></td>
 	</tr>
 	<tr>
 		<td class="label">Priority :</td>
-		<td><input type="text" name="priority" maxlength="5" size="5"/></td>
+		<td><input type="text" name="priority" maxlength="5" size="5"/>
+		<span style="color: red"><TMPL_VAR NAME=err_priority></span></td></td>
 	</tr>
 	<tr>
 		<td class="label">System image :</td>
 		<td><select name="systemimage_id">
-		<TMPL_LOOP NAME=SYSTEMIMAGES>
-			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		<TMPL_LOOP NAME=systemimages_list>
+			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
 		</TMPL_LOOP>	
-		</select><a class="simple" href="/cgi/mcsui.cgi/systemimages/form_addsystemimage">no found ?</a>
+		</select>
 		<span style="color: red"><TMPL_VAR NAME=ERR_SYSTEMIMAGE></span></td>		
 	</tr>
 	<tr>
 		<td class="label">Kernel :</td>
 		<td><select name="kernel_id">
 		<option value="0">default motherboard kernel</option>
-		<TMPL_LOOP NAME=KERNELS>
-			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		<TMPL_LOOP NAME=kernels_list>
+			<option value="<TMPL_VAR NAME=kernel_id>"><TMPL_VAR NAME=kernel_name></option>
 		</TMPL_LOOP>	
-		</select><a class="simple" href="/cgi/mcsui.cgi/kernels/form_addkernel">no found ?</a>
+		</select>
 		<span style="color: red"><TMPL_VAR NAME=ERR_KERNEL></span></td>	
 	</tr>
 </table>
-<div class="formbuttons">
-	<input class="button" type="reset" value="clear" />
-	<a class="button" href="/cgi/mcsui.cgi/clusters">cancel</a>
-	<input class="button" type="submit" value="add" />
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form> 
-</div>
-<TMPL_INCLUDE NAME="footer.tmpl">
+</body>	
+</html>
