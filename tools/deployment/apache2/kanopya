@@ -1,0 +1,35 @@
+<VirtualHost *:80>
+        ServerAdmin webmaster@localhost
+
+        DocumentRoot /opt/kanopya/ui/web
+        <Directory />
+                Options FollowSymLinks
+                AllowOverride None
+        </Directory>
+
+        ScriptAlias /cgi /opt/kanopya/ui/web/cgi/
+        <Directory "/opt/kanopya/ui/web/cgi">
+                AllowOverride None
+                Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
+                Order allow,deny
+                Allow from all
+        </Directory>
+
+		Alias /graph/ "/tmp/"
+		<Directory "/tmp/">
+		    	Options Indexes MultiViews FollowSymLinks
+		    	AllowOverride None
+		        Order deny,allow
+		        Deny from all
+				Allow from localhost    
+		</Directory>
+
+
+        ErrorLog /var/log/apache2/mcs/error.log
+
+        # Possible values include: debug, info, notice, warn, error, crit,
+        # alert, emerg.
+        LogLevel debug
+
+        CustomLog /var/log/apache2/mcs/access.log combined
+</VirtualHost>

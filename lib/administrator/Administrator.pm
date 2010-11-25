@@ -145,7 +145,7 @@ sub new {
 
 sub loadConf {
 	my $self = shift;
-	$self->{config} = XMLin("/workspace/mcs/Administrator/Conf/administrator.conf");
+	$self->{config} = XMLin("/opt/kanopya/conf/administrator.conf");
 	if (! exists $self->{config}->{internalnetwork}->{ip} ||
 		! defined $self->{config}->{internalnetwork}->{ip} ||
 		! exists $self->{config}->{internalnetwork}->{mask} ||

@@ -1,3 +1,4 @@
+#!/usr/bin/perl -w
 # MCExecutor.pl - This is the main script to run microCluster Executor server.
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
@@ -40,20 +41,14 @@ Executor is the main script to run microCluster Executor server.
 
 use strict;
 use warnings;
-use Proc::PID::File;
 use lib "/workspace/mcs/Executor/Lib";
 use Executor;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
-Log::Log4perl->init('/workspace/mcs/Executor/Conf/log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/log.conf');
 my $log = get_logger("executor");
 
-# If already runnign, then exit
-if( Proc::PID::File->running()) {
-    $log->warn("$0 already running ; don't start another process");
-    exit(1);
-}
 
 my $running = 1;
 
@@ -65,7 +60,6 @@ sub signalHandler {
 
 $SIG{TERM} = \&signalHandler;
 	
-$log->info("MCExecutor.pl PID: $$");
 
 try	{
 	my $exec = Executor->new();
