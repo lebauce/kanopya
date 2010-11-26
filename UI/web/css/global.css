@@ -201,7 +201,15 @@ div#footer {
 .imgComponent { background-image: url("/images/icons/component.png"); }
 .imgOperation { background-image: url("/images/icons/operations.png"); }
 
+/* distribution icons */
+.distribution { 
+	padding-left: 32px; 
+	background-repeat: no-repeat;
+}
+.imgDebian { background-image: url("/images/distributions/Debian.png"); }
+
 .italic { font-style:italic; } 
+
 
 
     

@@ -12,6 +12,10 @@ my $closewindow = "<script type=\"text/javascript\">window.opener.location.reloa
 
 sub setup {
 	my $self = shift;
+	my $tmpl_path = [
+	'/workspace/mcs/UI/web/Mcsui/templates',
+	'/workspace/mcs/UI/web/Mcsui/templates/Clusters'];
+	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -277,9 +281,9 @@ sub form_editcluster : Runmode {
 
 # component addition popup window
 
-sub form_addcomponent : Runmode {
+sub form_addcomponenttocluster : Runmode {
 	my $self = shift;
-	my $tmpl = $self->load_tmpl('form_addcomponent.tmpl');
+	my $tmpl = $self->load_tmpl('form_addcomponenttocluster.tmpl');
 	my $query = $self->query();
 	my $cluster_id = $query->param('cluster_id');
 	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $cluster_id);

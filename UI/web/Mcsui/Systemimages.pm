@@ -9,6 +9,10 @@ my $closewindow = "<script type=\"text/javascript\">window.opener.location.reloa
 
 sub setup {
 	my $self = shift;
+	my $tmpl_path = [
+	'/workspace/mcs/UI/web/Mcsui/templates',
+	'/workspace/mcs/UI/web/Mcsui/templates/Systemimages'];
+	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -136,8 +140,8 @@ sub view_systemimagedetails : Runmode {
 	$tmpl->param('submSystemimages' => 1);
 	
 	# actions visibility
-	#$tmpl->param('link_delete' => 0);
-	#$tmpl->param('link_activate' => 0);
+	$tmpl->param('link_delete' => 0);
+	$tmpl->param('link_activate' => 0);
 
 	my $query = $self->query();
 	my $esystemimage = $self->{'admin'}->getEntity(type => 'Systemimage', id => $query->param('systemimage_id'));
@@ -145,6 +149,21 @@ sub view_systemimagedetails : Runmode {
 	$tmpl->param('systemimage_id' => $esystemimage->getAttr(name => 'systemimage_id'));
 	$tmpl->param('systemimage_name' => $esystemimage->getAttr(name => 'systemimage_name'));
 	$tmpl->param('systemimage_desc' => $esystemimage->getAttr(name => 'systemimage_desc'));
+		
+	my $edistro = $self->{'admin'}->getEntity(type =>'Distribution', id => $esystemimage->getAttr(name => 'distribution_id'));
+	$tmpl->param('distribution' => $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version'));
+	
+	if(not $esystemimage->getAttr(name => 'active')) {
+		$tmpl->param('link_activate' => 1);
+		$tmpl->param('link_delete' => 1);
+	} else {
+		$tmpl->param('active' => 1);
+	}
+	
+	my $components_list = $esystemimage->getInstalledComponents();
+	my $nb = scalar(@$components_list);
+	$tmpl->param('components_list' => $components_list);
+	$tmpl->param('components_count' => $nb + 1);
 	
 	
 	return $tmpl->output();

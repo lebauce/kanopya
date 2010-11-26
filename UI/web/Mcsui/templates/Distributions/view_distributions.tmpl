@@ -1,0 +1,18 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<script language="javascript" src="/js/kanopiaui-tools.js"></script>
+<div id="content">
+<TMPL_LOOP NAME=distributions_list>
+<table class="listing">
+<tr><td colspan="2"><h1 class="distribution img<TMPL_VAR NAME=distribution_name>"><TMPL_VAR NAME=distribution_name> <TMPL_VAR NAME=distribution_version></h1></td></tr>
+<tr><td></td><td class="toright">
+<a class="imgManage" href="/cgi/mcsui.cgi/distributions/view_distributiondetails?distribution_id=<TMPL_VAR NAME=distribution_id>">details</a></td></tr>
+<tr><td class="italic" colspan="3"><TMPL_VAR NAME=distribution_desc></td></tr>
+</table>
+</TMPL_LOOP>
+<div class="actions">
+<p class="italic">Linux distribution used to create system images.</p>
+</div>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
