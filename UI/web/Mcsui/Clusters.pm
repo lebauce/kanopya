@@ -309,10 +309,7 @@ sub form_addcomponenttocluster : Runmode {
 }
 
 
-
-
-
-
+# actions processing
 
 sub process_activatecluster : Runmode {
     my $self = shift;

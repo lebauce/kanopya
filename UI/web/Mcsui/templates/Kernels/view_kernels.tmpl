@@ -1,0 +1,13 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<div id="content">
+<TMPL_LOOP NAME=kernels_list>
+<table class="listing">
+<tr><td><h1 id="<TMPL_VAR NAME=kernel_id>"><TMPL_VAR NAME=kernel_name></h1></td></tr>
+<tr><td><TMPL_VAR NAME=kernel_version></td></tr>
+<tr><td class="italic"><TMPL_VAR NAME=kernel_desc></td></tr>
+</table>
+</TMPL_LOOP>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

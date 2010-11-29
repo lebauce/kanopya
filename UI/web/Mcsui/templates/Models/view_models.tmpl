@@ -1,38 +1,41 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
-<style type="text/css">
-@import url(/css/listing.css);
-</style>
+<style type="text/css">@import url(/css/listing.css);</style>
 <div id="content">
-<h1>Processor models</h1>
-<table id="motherboardmodellist" class="listview">
-	<tr><th>brand</th><th>name</th><th>cores</th><th>clock<br/>speed</th><th>L2 cache</th><th>TDP</th><th>64 bits</th></tr>
-	<TMPL_LOOP NAME=PROCESSORMODELS>
-	<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=BRAND></td>
-	<td><TMPL_VAR NAME=NAME></td>
-	<td><TMPL_VAR NAME=CORENUM></td>
-	<td><TMPL_VAR NAME=CLOCKSPEED> GHz</td>
-	<td><TMPL_VAR NAME=L2CACHE> Mo</td>
-	<td><TMPL_VAR NAME=TDP> W</td>
-	<td><TMPL_VAR NAME=IS64></td>
+<table class="simplelisting">
+	<caption>Motherboard Models</caption>
+	<tr><th>model</th><th>chipset</th><th>processors<br/>number</th><th>consumption</th><th>iface<br/>number</th><th>RAM<br/>slots</th><th>RAM<br/>max</th><th></th></tr>
+	<TMPL_LOOP NAME=motherboardmodels_list>
+	<td><TMPL_VAR NAME=mmodel_brand> <span class="bold"><TMPL_VAR NAME=mmodel_name></span></td>
+	<td><TMPL_VAR NAME=mmodel_chipset></td>
+	<td class="right"><TMPL_VAR NAME=mmodel_processornum></td>
+	<td class="right"><TMPL_VAR NAME=mmodel_consumption> W</td>
+	<td class="right"><TMPL_VAR NAME=mmodel_ifacenum></td>
+	<td class="right"><TMPL_VAR NAME=mmodel_ramslotnum></td>
+	<td class="right"><TMPL_VAR NAME=mmodel_rammax> Go</td>
+	<td><a class="imgEdit">edit</a><br 	/><a class="imgRemove">remove</a></td>
 	</tr>
 	</TMPL_LOOP>
 </table>
-<h1>Motherboard models</h1>
-<table id="motherboardmodellist" class="listview">
-	<tr><th>brand</th><th>name</th><th>chipset</th><th>processors<br/>number</th><th>consumption</th><th>iface<br/>number</th><th>RAM slots</th><th>RAM max</th></tr>
-	<TMPL_LOOP NAME=MOTHERBOARDMODELS>
-	<tr id="m<TMPL_VAR NAME=ID>"><td><TMPL_VAR NAME=BRAND></td>
-	<td><TMPL_VAR NAME=NAME></td>
-	<td><TMPL_VAR NAME=CHIPSET></td>
-	<td><TMPL_VAR NAME=PROCNUM></td>
-	<td><TMPL_VAR NAME=CONSUMPTION> W</td>
-	<td><TMPL_VAR NAME=IFACENUM></td>
-	<td><TMPL_VAR NAME=RAMNUM></td>
-	<td><TMPL_VAR NAME=RAMMAX> Go</td>
+<table class="simplelisting">
+	<caption>Processor Models</caption>
+	<tr><th>model</th><th>cores</th><th>clock<br/>speed</th><th>L2 cache</th><th>TDP</th><th>64 bits</th><th></th></tr>
+	<TMPL_LOOP NAME=processormodels_list>
+	<td><TMPL_VAR NAME=pmodel_brand> <span class="bold"><TMPL_VAR NAME=pmodel_name></span></td>
+	<td class="right"><TMPL_VAR NAME=pmodel_corenum></td>
+	<td class="right"><TMPL_VAR NAME=pmodel_clockspeed> GHz</td>
+	<td class="right"><TMPL_VAR NAME=pmodel_l2cache> Mo</td>
+	<td class="right"><TMPL_VAR NAME=pmodel_tdp> W</td>
+	<td><TMPL_IF NAME=pmodel_is64>yes<TMPL_ELSE>no</TMPL_IF></td>
+	<td><a class="imgEdit">edit</a><br 	/><a class="imgRemove">remove</a></td>
 	</tr>
 	</TMPL_LOOP>
 </table>
+<div class="actions">
+<a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/models/form_addmotherboardmodel', 'create a motherboard model', 600, 400,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a motherboard model</a>
+<p class="italic">Create a new model of motherboard.</p>
+<a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/models/form_addprocessormodel', 'create a processor model', 600, 400,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a processor model</a>
+<p class="italic">Create a new model of processor.</p>
 </div>
-
+</div>
 <TMPL_INCLUDE NAME="footer.tmpl">

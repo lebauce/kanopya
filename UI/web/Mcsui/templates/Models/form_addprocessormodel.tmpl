@@ -1,14 +1,12 @@
-<TMPL_INCLUDE NAME="header.tmpl">
-<TMPL_INCLUDE NAME="menu.tmpl">
+<html>
+<head>
+	<title>new processor model</title>
+</head>
+<body>
 <style type="text/css">@import url(/css/form.css);</style>
-
-<div id="content">
+<div class="title">create model of processor<TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
 <form method="POST" action="/cgi/mcsui.cgi/models/process_addprocessormodel">
 <table class="form">
-	<caption>New processor model</caption>
-	<TMPL_IF NAME=SOME_ERRORS>
-	<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
-	</TMPL_IF>
 	<tr>
 		<td class="label">Brand :</td>
 		<td><input type="text" name="brand" size="20"/><TMPL_VAR NAME=ERR_BRAND></td>
@@ -53,12 +51,11 @@
 		<td><input type="text" name="cpuflags" size="40" /></td>
 	</tr>
 </table>
-<div class="formbuttons">
-	<input class="button" type="reset" value="clear" />
-	<a class="button" href="/cgi/mcsui.cgi/models">cancel</a>
-	<input class="button" type="submit" value="add" />
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form> 
-</div>
-<TMPL_INCLUDE NAME="footer.tmpl">
+</body>	
+</html>
 

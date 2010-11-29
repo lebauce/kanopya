@@ -1,0 +1,56 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/details.css);</style>
+<div id="content">
+<h2><TMPL_VAR NAME=motherboard_hostname> - overview</h2>
+<hr/>
+<span class="title">Main settings</span>
+<table class="detailspart">
+<tr><td class="italic" colspan="4"><TMPL_VAR NAME=motherboard_desc></td>
+<td class="actions" rowspan="6">
+<a class="imgEdit" href="javascript:openform('/cgi/mcsui.cgi/clusters/form_editcluster?cluster_id=<TMPL_VAR NAME=cluster_id>', 'edit cluster', 800, 400, '');">edit</a><br />
+<span class="desc">Modify these global parameters.</span><br /><br />
+<TMPL_IF NAME=link_delete>
+<a class="imgRemove" href="/cgi/mcsui.cgi/clusters/process_deletecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">delete</a><br />
+<span class="desc">Delete this cluster.</span><br /><br />
+</TMPL_IF>
+</td><tr/>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr><td class="label">Model :</td><td><TMPL_VAR NAME=motherboard_model></td>
+<td class="label">MAC address :</td><td><TMPL_VAR NAME=motherboard_mac></td></tr>
+<tr><td class="label">Processor :</td><td><TMPL_VAR NAME=processor_model></td>
+<td class="label">Internal IP :</td><td><TMPL_VAR NAME=motherboard_ip></td></tr>
+<tr><td class="label">S/N :</td><td><TMPL_VAR NAME=motherboard_sn></td></tr>
+<tr><td class="label">Power Supply Card :</td><td><TMPL_IF NAME=motherboard_powersupply>
+<TMPL_VAR NAME=motherboard_powersupply> <TMPL_ELSE>none</TMPL_IF>
+</td></tr>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Kernel :</td><td><TMPL_VAR NAME=motherboard_kernel></td></tr>
+</table>
+
+<hr/>
+<span class="title">State</span>
+<table class="detailspart">
+<tr><TMPL_IF NAME=active><td>Active</td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
+<td class="actions" rowspan="2">
+<TMPL_IF NAME=link_activate>
+<a class="imgActivate" href="/cgi/mcsui.cgi/motherboards/process_activatemotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>">activate</a><br />
+<span class="desc">Activate this motherboard.</span><br /><br />
+<TMPL_ELSE>
+<a class="imgDeactivate" href="/cgi/mcsui.cgi/motherboards/process_deactivatemotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>">deactivate</a><br />
+<span class="desc">Deactivate this motherboard.</span><br /><br />
+</TMPL_IF>
+</td></tr>
+<tr>
+<TMPL_IF NAME=active>
+<td><span class="state imgUp"><TMPL_VAR NAME=motherboard_state></span></td>
+</TMPL_IF>
+<td></td>
+</tr>
+</table>
+
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
+
+
+

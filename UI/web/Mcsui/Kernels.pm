@@ -15,7 +15,7 @@ sub setup {
 }
 
 
-# distributions listing page
+# kernels listing page
 
 sub view_kernels : StartRunmode {
     my $self = shift;

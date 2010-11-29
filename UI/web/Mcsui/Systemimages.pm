@@ -10,8 +10,8 @@ my $closewindow = "<script type=\"text/javascript\">window.opener.location.reloa
 sub setup {
 	my $self = shift;
 	my $tmpl_path = [
-	'/workspace/mcs/UI/web/Mcsui/templates',
-	'/workspace/mcs/UI/web/Mcsui/templates/Systemimages'];
+		'/workspace/mcs/UI/web/Mcsui/templates',
+		'/workspace/mcs/UI/web/Mcsui/templates/Systemimages'];
 	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
@@ -36,12 +36,10 @@ sub view_systemimages : StartRunmode {
 		my $edistro = $self->{'admin'}->getEntity(type =>'Distribution', id => $s->getAttr(name => 'distribution_id'));
 		$tmp->{distribution} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
 		$tmp->{active} = $s->getAttr(name => 'active');
-#		$tmp->{COMPONENTS} = $s->getInstalledComponents();
 		push (@$systemimages, $tmp);
     }		
-#        
 	$tmpl->param('systemimages_list' => $systemimages);
-#	$tmpl->param('USERID' => 1234);
+
 	return $tmpl->output();
 }
 
@@ -51,8 +49,6 @@ sub form_addsystemimage : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $tmpl =$self->load_tmpl('form_addsystemimage.tmpl');
-	
-	
 	$tmpl->param($errors) if $errors;
 	
 	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});

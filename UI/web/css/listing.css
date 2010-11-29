@@ -55,6 +55,41 @@ div.actions p {
 }
 
 
+table.simplelisting {
+    float: left;    
+    width: 78%;
+    margin-bottom: 15px;
+    border-collapse: collapse;
+}
+
+table.simplelisting caption { 
+	color: #228b22;
+	font-size: 1.5em;
+	font-weight: bold;
+	margin: 10px;
+	text-align: left; 
+}
+
+table.simplelisting th { 
+	background-color: #CDC;
+	color: #228b22;
+	border: thin solid white;
+}
+
+table.simplelisting td {
+	border-bottom: thin solid #AAA;
+	padding: 15px 5px 5px 5px;
+}
+
+table.simplelisting td a {
+    color: #228b22;
+    background-repeat: no-repeat;
+    padding-left: 20px;
+    text-decoration: none;   
+}
+
+.right { text-align: right; }
+.bold { font-weight: bold; }
 
 
 
