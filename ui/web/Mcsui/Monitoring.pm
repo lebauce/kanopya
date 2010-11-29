@@ -11,7 +11,6 @@ use lib "/workspace/mcs/Monitor/Lib";
 
 my $log = get_logger("administrator");
 
-
 sub setup {
 	my $self = shift;
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
