@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>mcs</name>
-	<comment></comment>
+	<name>Kanopya</name>
+	<comment>Micro Cluster Manager</comment>
 	<projects>
 	</projects>
 	<buildSpec>
