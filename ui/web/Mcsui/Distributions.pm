@@ -8,8 +8,8 @@ use warnings;
 sub setup {
 	my $self = shift;
 	my $tmpl_path = [
-	'/workspace/mcs/UI/web/Mcsui/templates/',
-	'/workspace/mcs/UI/web/Mcsui/templates/Distributions/'];
+		'/opt/kanopya/ui/web/Mcsui/templates/',
+		'/opt/kanopya/ui/web/Mcsui/templates/Distributions/'];
 	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
