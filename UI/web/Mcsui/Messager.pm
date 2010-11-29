@@ -1,17 +1,22 @@
 package Mcsui::Messager;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
-use Data::Dumper;
+use strict;
+use warnings;
 
 sub setup {
 	my $self = shift;
+	my $tmpl_path = [
+	'/workspace/mcs/UI/web/Mcsui/templates/',
+	'/workspace/mcs/UI/web/Mcsui/templates/Messages/'];
+	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
 sub view_messages : StartRunmode {
     my $self = shift;
  	my $query = $self->query();
-    my $output = '';
+    
     my $userid = $query->param('userid');
     my @loopparams = $self->{'admin'}->getMessages();
     
@@ -19,10 +24,8 @@ sub view_messages : StartRunmode {
     
     #$tmpl->param(USERID => $userid);
     $tmpl->param(MESSAGES => \@loopparams);
-    
-	$output .= $tmpl->output();
-        
-    return $output;
+   
+	return $tmpl->output();
 }
 
 

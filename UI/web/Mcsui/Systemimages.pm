@@ -2,50 +2,53 @@ package Mcsui::Systemimages;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
+use strict;
+use warnings;
+
+my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
 
 sub setup {
 	my $self = shift;
+	my $tmpl_path = [
+		'/workspace/mcs/UI/web/Mcsui/templates',
+		'/workspace/mcs/UI/web/Mcsui/templates/Systemimages'];
+	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
+# system images listing page
+
 sub view_systemimages : StartRunmode {
     my $self = shift;
-    my $output = '';
-    my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
-    my $systemimage =[];
-    foreach my $s (@esystemimages){
-		my $tmp = {};
-		$tmp->{ID} = $s->getAttr(name => 'systemimage_id');
-		$tmp->{NAME} = $s->getAttr(name => 'systemimage_name');
-		$tmp->{DESC} = $s->getAttr(name => 'systemimage_desc');
-		$edistro = $self->{'admin'}->getEntity(type =>'Distribution', id => $s->getAttr(name => 'distribution_id'));
-		$tmp->{DISTRO} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
-		$tmp->{ACTIVE} = $s->getAttr(name => 'active');
-		$tmp->{COMPONENTS} = $s->getInstalledComponents();
-		push (@$systemimage, $tmp);
-    }		
-    
     my $tmpl =  $self->load_tmpl('view_systemimages.tmpl');
-    $tmpl->param('TITLE_PAGE' => "System images View");
-	$tmpl->param('SYSTEMIMAGE' => $systemimage);
-	$tmpl->param('MENU_CONFIGURATION' => 1);
-		
-	$tmpl->param('USERID' => 1234);
-	
-	$output .= $tmpl->output();
-        
-    return $output;	
-    
+    $tmpl->param('titlepage' => "Systems - System images");
+    $tmpl->param('mSystems' => 1);
+	$tmpl->param('submSystemimages' => 1);
+	    
+    my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
+    my $systemimages =[];
+   
+	foreach my $s (@esystemimages) {
+		my $tmp = {};
+		$tmp->{systemimage_id} = $s->getAttr(name => 'systemimage_id');
+		$tmp->{systemimage_name} = $s->getAttr(name => 'systemimage_name');
+		$tmp->{systemimage_desc} = $s->getAttr(name => 'systemimage_desc');
+		my $edistro = $self->{'admin'}->getEntity(type =>'Distribution', id => $s->getAttr(name => 'distribution_id'));
+		$tmp->{distribution} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
+		$tmp->{active} = $s->getAttr(name => 'active');
+		push (@$systemimages, $tmp);
+    }		
+	$tmpl->param('systemimages_list' => $systemimages);
+
+	return $tmpl->output();
 }
+
+# system images creation popup window
 
 sub form_addsystemimage : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $tmpl =$self->load_tmpl('form_addsystemimage.tmpl');
-	my $output = '';
-	
-	$tmpl->param('TITLE_PAGE' => "Adding a system image");
-	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param($errors) if $errors;
 	
 	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
@@ -69,9 +72,23 @@ sub form_addsystemimage : Runmode {
 	
 	$tmpl->param('SYSTEMIMAGE' => $systemimage);
 	$tmpl->param('DISTRIBUTION' => $distro);
-	$output .= $tmpl->output();
-	return $output;
+	
+	return $tmpl->output();
 }
+
+# fields verification function to used with form_addsystemimage
+
+sub _addsystemimage_profile {
+	return {
+		required => 'systemimage_name',
+		msgs => {
+				any_errors => 'some_errors',
+				prefix => 'err_'
+		},
+	};
+}
+
+# form_addsystemimage processing
 
 sub process_addsystemimage : Runmode {
 	my $self = shift;
@@ -103,18 +120,51 @@ sub process_addsystemimage : Runmode {
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} 	
 		
-    $self->redirect('/cgi/mcsui.cgi/systemimages/view_systemimages');
+    return $closewindow;
 }
 
-sub _addsystemimage_profile {
-	return {
-		required => 'systemimage_name',
-		msgs => {
-				any_errors => 'some_errors',
-				prefix => 'err_'
-		},
-	};
+# systemimage details page
+
+sub view_systemimagedetails : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl = $self->load_tmpl('view_systemimagedetails.tmpl');
+	 
+	# header / menu variables
+	$tmpl->param('titlepage' => "System image's overview");
+	$tmpl->param('mSystems' => 1);
+	$tmpl->param('submSystemimages' => 1);
+	
+	# actions visibility
+	$tmpl->param('link_delete' => 0);
+	$tmpl->param('link_activate' => 0);
+
+	my $query = $self->query();
+	my $esystemimage = $self->{'admin'}->getEntity(type => 'Systemimage', id => $query->param('systemimage_id'));
+	
+	$tmpl->param('systemimage_id' => $esystemimage->getAttr(name => 'systemimage_id'));
+	$tmpl->param('systemimage_name' => $esystemimage->getAttr(name => 'systemimage_name'));
+	$tmpl->param('systemimage_desc' => $esystemimage->getAttr(name => 'systemimage_desc'));
+		
+	my $edistro = $self->{'admin'}->getEntity(type =>'Distribution', id => $esystemimage->getAttr(name => 'distribution_id'));
+	$tmpl->param('distribution' => $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version'));
+	
+	if(not $esystemimage->getAttr(name => 'active')) {
+		$tmpl->param('link_activate' => 1);
+		$tmpl->param('link_delete' => 1);
+	} else {
+		$tmpl->param('active' => 1);
+	}
+	
+	my $components_list = $esystemimage->getInstalledComponents();
+	my $nb = scalar(@$components_list);
+	$tmpl->param('components_list' => $components_list);
+	$tmpl->param('components_count' => $nb + 1);
+	
+	
+	return $tmpl->output();
 }
+
 
 sub process_activatesystemimage : Runmode {
 	my $self = shift;

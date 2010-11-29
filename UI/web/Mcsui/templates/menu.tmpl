@@ -1,28 +1,70 @@
-<div id="menu"><a id="logout" href="/cgi/mcsui.cgi/login/process_logout">logout</a><TMPL_IF NAME=MENU_SYSTEMSTATUS>
+<div id="menu">
 	<ul>
-		<li id="current"><a>System Status</a></li>
-		<li><a href="/cgi/mcsui.cgi/motherboards">Settings</a></li>
-		<li><a href="/cgi/mcsui.cgi/clusters/view_clusters">Clusters Management</a></li>
-		<li><a href="">other</a></li>
+		<TMPL_IF NAME="mDashboard"><li id="current"><a>Dashboard</a></li>
+		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/overview">Dashboard</a></li></TMPL_IF>
+		<TMPL_IF NAME="mSettings"><li id="current"><a>Settings</a></li>
+		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/users">Settings</a></li></TMPL_IF>
+		<TMPL_IF NAME="mHardware"><li id="current"><a>Hardware</a></li>
+		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/motherboards">Hardware</a></li></TMPL_IF>
+		<TMPL_IF NAME="mSystems"><li id="current"><a>Systems</a></li>
+		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/systemimages">Systems</a></li></TMPL_IF>
+		<TMPL_IF NAME="mClusters"><li id="current"><a>Clusters</a></li>
+		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/clusters">Clusters</a></li></TMPL_IF>
+		<li id="logout"><a href="/cgi/mcsui.cgi/login/process_logout">Logout</a></li>
 	</ul>
 </div>
-<TMPL_INCLUDE NAME="submenu_systemstatus.tmpl"></TMPL_IF>
-<TMPL_IF NAME=MENU_CONFIGURATION>	
-	<ul>
-		<li><a href="/cgi/mcsui.cgi/systemstatus">System Status</a></li>
-		<li id="current"><a>Settings</a></li>
-		<li><a href="/cgi/mcsui.cgi/clusters/view_clusters">Clusters Management</a></li>
-		<li><a href="">other</a></li>
+<div id="submenu">
+	<ul><TMPL_IF NAME="mDashboard">
+		<li><a class="imgEye<TMPL_IF NAME="submOverview"> current</TMPL_IF>" href="/cgi/mcsui.cgi/overview">Overview</a>
+		</li>
+		<li><a class="imgLog<TMPL_IF NAME="submLogs"> current</TMPL_IF>" href="">Logs</a>
+		</li></TMPL_IF>
+		
+		<TMPL_IF NAME="mSettings">
+		<li><a class="imgDatabase<TMPL_IF NAME="submAdministrator"> current</TMPL_IF>" href="">Administrator</a>
+		</li>
+		<li><a class="imgExecute<TMPL_IF NAME="submExecutor"> current</TMPL_IF>" href="">Executor</a>
+		</li>
+		<li><a class="imgMonitor<TMPL_IF NAME="submMonitor"> current</TMPL_IF>" href="">Monitor</a>
+		</li>
+		<li><a class="imgOrchestrator<TMPL_IF NAME="submOrchestrator"> current</TMPL_IF>" href="">Orchestrator</a>
+		</li>
+		<li><a class="imgDrivenet<TMPL_IF NAME="submNAS"> current</TMPL_IF>" href="">NAS</a>
+		</li>
+		<li><a class="imgUsers<TMPL_IF NAME="submUsers"> current</TMPL_IF>" href="/cgi/mcsui.cgi/users">User/Group</a>
+		</li>
+		</TMPL_IF>
+		
+		<TMPL_IF NAME="mHardware">
+		<li><a class="imgMotherboard<TMPL_IF NAME="submMotherboards"> current</TMPL_IF>" href="/cgi/mcsui.cgi/motherboards">Motherboards</a>
+		</li>
+		<li><a class="imgModel<TMPL_IF NAME="submModels"> current</TMPL_IF>" href="/cgi/mcsui.cgi/models">Models</a>
+		</li>
+		<li><a class="imgLightning<TMPL_IF NAME="submPower"> current</TMPL_IF>" href="/cgi/mcsui.cgi/powersupplycards">Power supply cards</a>
+		</li>
+		</TMPL_IF>
+		
+		<TMPL_IF NAME="mSystems">
+		<li><a class="imgRedcross<TMPL_IF NAME="submSystemimages"> current</TMPL_IF>" href="/cgi/mcsui.cgi/systemimages">System images</a>
+		</li>
+		<li><a class="imgRedcross<TMPL_IF NAME="submDistributions"> current</TMPL_IF>" href="/cgi/mcsui.cgi/distributions">Distributions</a>
+		</li>
+		<li><a class="imgKernel<TMPL_IF NAME="submKernels"> current</TMPL_IF>" href="/cgi/mcsui.cgi/kernels">Kernels</a>
+		</li>
+		<li><a class="imgComponent<TMPL_IF NAME="submComponents"> current</TMPL_IF>" href="/cgi/mcsui.cgi/components">Components</a>
+		</li>
+		</TMPL_IF>
+		
+		<TMPL_IF NAME="mClusters">
+		<li><a class="imgCluster<TMPL_IF NAME="submClusters"> current</TMPL_IF>" href="/cgi/mcsui.cgi/clusters">Clusters</a>
+		</li>
+		<li><a class="imgNetwork<TMPL_IF NAME="submNetworks"> current</TMPL_IF>" href="/cgi/mcsui.cgi/networks">Networks</a>
+		</li>
+		<li><a class="imgDrivenet<TMPL_IF NAME="submShareddisks"> current</TMPL_IF>" href="/cgi/mcsui.cgi/shareddisks">Shared disks</a>
+		</li>
+		</TMPL_IF>
+		<li id="messagelauncher"><a class="imgMessage" href="javascript:openform('/cgi/mcsui.cgi/messager/view_messages?userid=<TMPL_VAR NAME=USERID>','messages', 800,400, 'toolbar=no, menubar=no, scrollbars=yes, resizable=no, location=no, directories=no, status=no');">messages</a></li>
+		<li id="operationslauncher"><a class="imgOperation">operations</a></li>
 	</ul>
 </div>
-<TMPL_INCLUDE NAME="submenu_configuration.tmpl"></TMPL_IF>
-<TMPL_IF NAME=MENU_CLUSTERSMANAGEMENT>	
-	<ul>
-		<li><a href="/cgi/mcsui.cgi/systemstatus">System Status</a></li>
-		<li><a href="/cgi/mcsui.cgi/motherboards">Settings</a></li>
-		<li id="current"><a>Clusters Management</a></li>
-		<li><a href="">other</a></li>
-	</ul>
-</div>
-<TMPL_INCLUDE NAME="submenu_clustersmanagement.tmpl"></TMPL_IF>	
 

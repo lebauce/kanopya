@@ -1,42 +1,23 @@
-html, body { height: 100%; }
-
-.small { font-size: small; color: #69B033; text-align: center; position: relative; top: 20px ;}
+html, body { min-height: 100%; }
 
 body {
-	background-color: #EEE;
+	background-color: #FFF;
 	font: small Georgia,Serif;
-	width: 1024px;
-	margin: 0 auto;
 } 
 
-#logo { float: left; }
+#container {
+    width: 1024px;
+	margin: 0 auto;
+	min-height: 100%;   
+}
 
+img#smalllogo { float: left; }
 
-#ivy1 {
+img#ivy1 {
 	position: absolute;
 	right: 100px;
 	top: -70px;
 	z-index: -1;
-}
-
-a#logout { 
-	color: green;
-	float: right;
-	margin-top: 10px;
-	padding: 8px;
-	display: block;
-	background-color: white;
-	border: 1px solid #765;
-	opacity: 0.9;
-}
-
-iframe { 
-	background-color: transparent;
-	border: thin dashed black;
-	min-width: 1024px;
-	left: 0;
-	bottom: 0;
-	margin: 0 auto;
 }
 
 /* mainmenu */
@@ -47,13 +28,15 @@ iframe {
 	background: transparent;
 	font-size:93%;
 	line-height:normal;
+	margin-top: 5px;
 }
     
 #menu ul  {
-	margin: 20px 0 0 20px;
+	margin: 0 0 0 10px;
 	padding: 0;
 	list-style: none;
 	float:left;
+	width: 98%;
 }
       
 #menu ul li {
@@ -61,6 +44,18 @@ iframe {
 	background:url("/images/navigation/left.png") no-repeat left top;
 	margin:0;
 	padding:0 0 0 9px;
+}
+
+#menu ul #logout {
+	float: right;
+	background:url("/images/navigation/left_logout.png") no-repeat left top;
+	opacity: 0.7;
+}
+
+#menu ul #logout a { 
+	background:url("/images/navigation/right_logout.png") no-repeat right top; 
+	color:#000;
+	opacity: 0.9;
 }
       
 #menu ul a {
@@ -86,7 +81,7 @@ iframe {
 
 /* submenus */
 
-#submenu {
+div#submenu {
 	background-color: #EEF2BE;
 	border: 1px solid #765;
 	float:left;
@@ -95,53 +90,118 @@ iframe {
 	width: 100%;
 }
 	
-#submenu ul { 
+div#submenu ul { 
 	border: none;
 	margin: 0;
 	padding : 0;
 	list-style: none;
 	float: left;
+	width: 99%;
 }
 
-#submenu ul li {
+div#submenu ul li {
 	float: left;
 	margin:0;
 	padding: 0;
 	border: none;
 }
 
-#submenu li a {
-	background-position: 5px 5px;
-	background-repeat: no-repeat;	
+div#submenu ul li#messagelauncher,  div#submenu ul li#operationslauncher { float: right; }
+
+div#submenu ul li#messagelauncher a:hover,  div#submenu ul li#operationslauncher a:hover {
+	cursor: pointer;
+	background-color: transparent; 
+	color: black;
+	text-decoration: underline;
 }
 
-.nolink { cursor: default; }
+div#submenu li a {
+	background-position: 5px 5px;
+	background-repeat: no-repeat;	
+    display: block;
+	text-decoration: none;
+	color: black;
+	border: none;
+	padding: 5px 15px 5px 25px;
+	background-color: transparent;
+	margin: 0;
+}
 
-.imgHardware { background-image: url("/images/icons/hardware.png"); }
-.imgLinux { background-image: url("/images/icons/linux.png"); }
-.imgNetwork { background-image: url("/images/icons/network.png"); }
-.imgRights { background-image: url("/images/icons/rights.png"); }
-.imgListing { background-image: url("/images/icons/list.png"); }
+div#submenu li a.current { background-color: #548e29; color: #EEF2BE; font-weight: bold; }
+
+#submenu ul li a:hover { background-color: #548e29; color: #EEF2BE; }
+
+/* middle content */
+
+#content {
+	background-color: transparent;
+	border: none;
+	width: 1024px;
+	float: left;
+	min-height: 70%;
+}
+
+/* footer */
+
+div#footer { 
+	border-top: 2px dotted #69B033;
+	font-size: small; 
+	color: #69B033; 
+	text-align: center;
+	font-weight:bold;
+	width: 1024px;
+	padding: 20px 0 10px 0;
+	float: left;
+	margin: 20px 0 20px 0;
+}
+
+/* classes used anywhere */
+
+/* actions */
 .imgAdding { background-image: url("/images/icons/add.png"); }
-.imgActive { background-image: url("/images/icons/active.png"); }
-.imgDeactive { background-image: url("/images/icons/deactive.png"); }
 .imgRemove { background-image: url("/images/icons/remove.png"); }
+.imgActivate { background-image: url("/images/icons/activate.png"); }
+.imgDeactivate { background-image: url("/images/icons/deactivate.png"); }
 .imgEdit { background-image: url("/images/icons/edit.png"); }
 .imgStart { background-image: url("/images/icons/start.png"); }
 .imgStop { background-image: url("/images/icons/stop.png"); }
+.imgManage { background-image: url("/images/icons/manage.png"); }
+.imgConfigure { background-image: url("/images/icons/configure.png"); }
+.imgCancel { background-image: url("/images/icons/cancel.png"); }
+
+/* states */
+.imgActive { background-image: url("/images/icons/active.png"); }
+.imgDeactive { background-image: url("/images/icons/deactive.png"); }
+.imgUp { background: url("/images/icons/up.png"); }
+.imgDown { background-image: url("/images/icons/down.png"); }
+.imgBroken { background-image: url("/images/icons/broken.png"); }
+
+/* objects */
+.imgMotherboard { background-image: url("/images/icons/motherboard.png"); }
+.imgHardware { background-image: url("/images/icons/hardware.png"); }
+.imgKernel { background-image: url("/images/icons/kernel.png"); }
+.imgNetwork { background-image: url("/images/icons/network.png"); }
+.imgRights { background-image: url("/images/icons/rights.png"); }
+.imgListing { background-image: url("/images/icons/list.png"); }
 .imgCluster { background-image: url("/images/icons/cluster.png"); }
 .imgEye { background-image: url("/images/icons/eye.png"); }
 .imgDatabase { background-image: url("/images/icons/database.png"); }
 .imgBoot { background-image: url("/images/icons/boot.png"); }
 .imgExecute { background-image: url("/images/icons/execute.png"); }
 .imgMonitor { background-image: url("/images/icons/monitor.png"); }
-.imgCancel { background-image: url("/images/icons/cancel.png"); }
 .imgHarddisk { background-image: url("/images/icons/harddisk.png"); }
 .imgPlanner { background-image: url("/images/icons/planner.png"); }
 .imgOrchestrator { background-image: url("/images/icons/orchestrator.png"); }
-.imgUp { background-image: url("/images/icons/up.png"); }
-.imgDown { background-image: url("/images/icons/down.png"); }
-.imgBroken { background-image: url("/images/icons/broken.png"); }
+.imgRedcross { background-image: url("/images/icons/error.png"); }
+.imgLightning { background-image: url("/images/icons/lightning.png"); }
+.imgModel { background-image: url("/images/icons/model.png"); }
+.imgDrivenet { background-image: url("/images/icons/drive-network.png"); }
+.imgUsers { background-image: url("/images/icons/users.png"); }
+.imgLog { background-image: url("/images/icons/log.png"); }
+.imgMessage { background-image: url("/images/icons/messages.png"); }
+.imgComponent { background-image: url("/images/icons/component.png"); }
+.imgOperation { background-image: url("/images/icons/operations.png"); }
+
 
 /*.imgSnmp { background: url("/images/icons/snmp.png") no-repeat center;}*/
 
@@ -159,48 +219,20 @@ iframe {
 	
 }
 
-#submenu ul li a:hover { background-color: #548e29; color: #EEF2BE; }
 
-#submenu li:hover ul { 
-	display: block; 
-	position: absolute;
-	z-index: 1;
-	margin-left: -1px;
-	border-top: 1px solid #765;
+/* distribution icons */
+.distribution { 
+	padding-left: 32px; 
+	background-repeat: no-repeat;
 }
+.imgDebian { background-image: url("/images/distributions/Debian.png"); }
 
-#submenu li:hover li { 
-	float: none;
-	font-size: 11px;
-	border-style: solid;
-	border-width: 0 1px 0 1px;
-}
+.italic { font-style:italic; } 
 
-#submenu li:hover li.separator { border-bottom: 1px solid #765; }
 
-#submenu li:hover a { background-color: #EEF2BE; }
 
-/* middle content */
+    
 
-#content {
-	background-color: transparent;
-	border: none;
-	width:1022px;
-	float: left;
-	min-height: 70%;
-}
-
-#content h1 {
-	margin: 15px;
-	color: #69B033;
-	font-size: 1.5em;
-	float: left;
-	clear: both;
-}
-
-.hidden {
-	display: none;
-}
 
 
 

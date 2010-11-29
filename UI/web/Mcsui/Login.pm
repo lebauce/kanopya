@@ -16,11 +16,16 @@ sub form_login : StartRunmode {
     return $output;
 }
 
+sub process_login : Runmode {
+	my $self = shift;
+	# TODO manage user session...
+	$self->redirect('/cgi/mcsui.cgi/overview');
+}
+
 sub process_logout : Runmode {
 	my $self = shift;
 	# TODO manage user session...
 	$self->redirect('/cgi/mcsui.cgi/login/form_login');
-	
 }
 
 

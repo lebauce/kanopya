@@ -2,10 +2,17 @@ package Mcsui::Models;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
-use Data::Dumper;
+use strict;
+use warnings;
+
+my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
 
 sub setup {
 	my $self = shift;
+	my $tmpl_path = [
+		'/workspace/mcs/UI/web/Mcsui/templates',
+		'/workspace/mcs/UI/web/Mcsui/templates/Models'];
+	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -13,7 +20,11 @@ sub setup {
 
 sub view_models : StartRunmode {
     my $self = shift;
-    my $output = '';
+    my $tmpl = $self->load_tmpl('view_models.tmpl');
+    $tmpl->param('titlepage' => "Hardaware - Models");
+	$tmpl->param('mHardware' => 1);
+	$tmpl->param('submModels' => 1);
+    
     my @eprocessormodels = $self->{admin}->getEntities(type => 'Processormodel', hash => {});
     my @emotherboardmodels = $self->{admin}->getEntities(type => 'Motherboardmodel', hash => {});
     my $processormodels = [];
@@ -21,46 +32,37 @@ sub view_models : StartRunmode {
     
     for my $p (@eprocessormodels) {
 		my $h = {};
-		$h->{ID} = $p->getAttr(name => 'processormodel_id');
-		$h->{BRAND} = $p->getAttr(name => 'processormodel_brand');
-		$h->{NAME} = $p->getAttr(name => 'processormodel_name');
-		$h->{CORENUM} = $p->getAttr(name => 'processormodel_core_num');
-		$h->{CLOCKSPEED} = $p->getAttr(name => 'processormodel_clock_speed');
-		$h->{L2CACHE} = $p->getAttr(name => 'processormodel_l2_cache');
-		$h->{TDP} = $p->getAttr(name => 'processormodel_max_tdp');
-		$h->{IS64} = $p->getAttr(name => 'processormodel_64bits');
+		#$h->{ID} = $p->getAttr(name => 'processormodel_id');
+		$h->{pmodel_brand} = $p->getAttr(name => 'processormodel_brand');
+		$h->{pmodel_name} = $p->getAttr(name => 'processormodel_name');
+		$h->{pmodel_corenum} = $p->getAttr(name => 'processormodel_core_num');
+		$h->{pmodel_clockspeed} = $p->getAttr(name => 'processormodel_clock_speed');
+		$h->{pmodel_l2cache} = $p->getAttr(name => 'processormodel_l2_cache');
+		$h->{pmodel_tdp} = $p->getAttr(name => 'processormodel_max_tdp');
+		$h->{pmodel_is64} = $p->getAttr(name => 'processormodel_64bits');
 					
 		push @$processormodels, $h;
 	}
     
     for my $p (@emotherboardmodels) {
 		my $h = {};
-		$h->{ID} = $p->getAttr(name => 'motherboardmodel_id');
-		$h->{BRAND} = $p->getAttr(name => 'motherboardmodel_brand');
-		$h->{NAME} = $p->getAttr(name => 'motherboardmodel_name');
-		$h->{CHIPSET} = $p->getAttr(name => 'motherboardmodel_chipset');
-		$h->{PROCNUM} = $p->getAttr(name => 'motherboardmodel_processor_num');
-		$h->{CONSUMPTION} = $p->getAttr(name => 'motherboardmodel_consumption');
-		$h->{IFACENUM} = $p->getAttr(name => 'motherboardmodel_iface_num');
-		$h->{RAMNUM} = $p->getAttr(name => 'motherboardmodel_ram_slot_num');
-		$h->{RAMMAX} = $p->getAttr(name => 'motherboardmodel_ram_max');
+		#$h->{ID} = $p->getAttr(name => 'motherboardmodel_id');
+		$h->{mmodel_brand} = $p->getAttr(name => 'motherboardmodel_brand');
+		$h->{mmodel_name} = $p->getAttr(name => 'motherboardmodel_name');
+		$h->{mmodel_chipset} = $p->getAttr(name => 'motherboardmodel_chipset');
+		$h->{mmodel_processornum} = $p->getAttr(name => 'motherboardmodel_processor_num');
+		$h->{mmodel_consumption} = $p->getAttr(name => 'motherboardmodel_consumption');
+		$h->{mmodel_ifacenum} = $p->getAttr(name => 'motherboardmodel_iface_num');
+		$h->{mmodel_ramslotnum} = $p->getAttr(name => 'motherboardmodel_ram_slot_num');
+		$h->{mmodel_rammax} = $p->getAttr(name => 'motherboardmodel_ram_max');
 		#$h->{PROCID} = $p->getAttr(name => 'processormodel_id');
 			
 		push @$motherboardmodels, $h;
 	} 
-     
-        
-    my $tmpl = $self->load_tmpl('view_models.tmpl');
-    $tmpl->param('TITLE_PAGE' => "Models View");
-	$tmpl->param('MENU_CONFIGURATION' => 1);
-		
-	$tmpl->param('USERID' => 1234);
-	$tmpl->param('PROCESSORMODELS' => $processormodels);
-	$tmpl->param('MOTHERBOARDMODELS' => $motherboardmodels);
-		
-	$output .= $tmpl->output();
-        
-    return $output;	
+	$tmpl->param('processormodels_list' => $processormodels);
+	$tmpl->param('motherboardmodels_list' => $motherboardmodels);
+		    
+    return $tmpl->output();
 }
 
 # processor model 
@@ -68,15 +70,10 @@ sub view_models : StartRunmode {
 sub form_addprocessormodel : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $output = '';
     my $tmpl =  $self->load_tmpl('form_addprocessormodel.tmpl');
-    $tmpl->param('TITLE_PAGE' => "Adding a Processor model");
-	$tmpl->param('MENU_CONFIGURATION' => 1);
-	$tmpl->param($errors) if $errors;
+    $tmpl->param($errors) if $errors;
 	
-	$tmpl->param('USERID' => 1234);
-	$output .= $tmpl->output();
-	return $output;
+	return $tmpl->output();
 }
 
 sub process_addprocessormodel : Runmode {
@@ -105,7 +102,7 @@ sub process_addprocessormodel : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new processor model created'); }
-    $self->forward('view_models');
+    return  $closewindow;
 }
 
 sub _addprocessormodel_profile {
@@ -123,25 +120,21 @@ sub _addprocessormodel_profile {
 sub form_addmotherboardmodel : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $output = '';
     my $tmpl =  $self->load_tmpl('form_addmotherboardmodel.tmpl');
-    $tmpl->param('TITLE_PAGE' => "Adding a Motherboard model");
-	$tmpl->param('MENU_CONFIGURATION' => 1);
 	$tmpl->param($errors) if $errors;
 	
 	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});
 	my $pmodels = [];
 	foreach my $x (@processormodels){
 		my $tmp = {
-			ID => $x->getAttr( name => 'processormodel_id'),
-		    NAME => join(' ',$x->getAttr(name =>'processormodel_brand'),$x->getAttr(name => 'processormodel_name')),
+			processormodel_id => $x->getAttr( name => 'processormodel_id'),
+		    processormodel_name => join(' ',$x->getAttr(name =>'processormodel_brand'),$x->getAttr(name => 'processormodel_name')),
 		};
 		push (@$pmodels, $tmp);
 	}
-	$tmpl->param('PROCMODEL' => $pmodels);
-	$tmpl->param('USERID' => 1234);
-	$output .= $tmpl->output();
-	return $output;
+	$tmpl->param('processormodels_list' => $pmodels);
+	
+	return $tmpl->output();
 }
 
 sub process_addmotherboardmodel : Runmode {
@@ -170,7 +163,7 @@ sub process_addmotherboardmodel : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard model created'); }
-    $self->redirect('/cgi/mcsui.cgi/models/view_models');
+    return  $closewindow;
 }
 
 sub _addmotherboardmodel_profile {

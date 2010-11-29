@@ -4,212 +4,77 @@ use base 'CGI::Application';
 use Log::Log4perl "get_logger";
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
-use XML::Simple;
-	
-use lib "/workspace/mcs/Monitor/Lib";
+use strict;
+use warnings;
+
 
 my $log = get_logger("administrator");
-
+my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
 
 sub setup {
 	my $self = shift;
+	my $tmpl_path = [
+	'/workspace/mcs/UI/web/Mcsui/templates',
+	'/workspace/mcs/UI/web/Mcsui/templates/Clusters'];
+	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
+# clusters listing page
+
 sub view_clusters : StartRunmode {
     my $self = shift;
-    my $output = '';
+    my $tmpl =  $self->load_tmpl('view_clusters.tmpl');
+    # header / menu variables
+    $tmpl->param('titlepage' => "Clusters - Clusters");
+	$tmpl->param('mClusters' => 1);
+	$tmpl->param('submClusters' => 1);
+    
     my @eclusters = $self->{'admin'}->getEntities(type => 'Cluster', hash => {});
     my $clusters = [];
-    my $details = [];
-	
+    	
     foreach my $n (@eclusters){
     	my $tmp = {};
-		$tmp->{ID} = $n->getAttr(name => 'cluster_id');
-		$tmp->{NAME} = $n->getAttr(name => 'cluster_name');
-		$tmp->{DESC} = $n->getAttr(name => 'cluster_desc');
-		$tmp->{PRIORITY} = $n->getAttr(name => 'cluster_priority');
-		$tmp->{STATE} = $n->getAttr(name => 'cluster_state');
-		$tmp->{ACTIVE} = $n->getAttr('name' => 'active');
-		$tmp->{MIN_NODE} = $n->getAttr(name => 'cluster_min_node');
-		$tmp->{MAX_NODE} = $n->getAttr(name => 'cluster_max_node');
-		if(not defined $n->getAttr(name =>'kernel_id')) {
-			$tmp->{KERNEL} = 'default motherboards kernels';
+    	$tmp->{link_activity} = 0;
+    	
+		$tmp->{cluster_id} = $n->getAttr(name => 'cluster_id');
+		$tmp->{cluster_name} = $n->getAttr(name => 'cluster_name');
+		my $minnode = $n->getAttr(name => 'cluster_min_node');
+		my $maxnode = $n->getAttr(name => 'cluster_max_node');
+		if($minnode == $maxnode) {
+			$tmp->{type} = 'Static cluster';
+			$tmp->{nbnodes} = "$minnode node";
+			if($minnode > 1) { $tmp->{nbnodes} .= "s"; } 
 		} else {
-			my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $n->getAttr(name =>'kernel_id'));
-			$tmp->{KERNEL} = $ekernel->getAttr(name => 'kernel_version');
+			$tmp->{type} = 'Dynamic cluster';
+			$tmp->{nbnodes} = "$minnode to $maxnode nodes";
 		}
-		if ($n->getAttr(name => 'systemimage_id')){
-			my $esystem = $self->{'admin'}->getEntity(type =>'Systemimage', id => $n->getAttr(name =>'systemimage_id'));
-			$tmp->{SYSIMGNAME} =  $esystem->getAttr(name => 'systemimage_name');
-		}else{
-			$tmp->{SYSIMGNAME} = "";
+		
+		if($n->getAttr('name' => 'active')) {
+			$tmp->{active} = 1;
+			my $nodes = $n->getMotherboards(administrator => $self->{'admin'});
+			my $nbnodesup = scalar(keys %$nodes); 
+			if($nbnodesup > 0) {
+				$tmp->{nbnodesup} = $nbnodesup;
+				$tmp->{link_activity} = 1;
+			} 
+		} else { 
+			$tmp->{active} = 0; 
 		}
-		$tmp->{PUBLICIPS} = $n->getPublicIps();
-				
-		if($tmp->{ACTIVE} and $tmp->{STATE} eq 'down') {$tmp->{CANSTART} = 1; }
-		elsif($tmp->{ACTIVE} and $tmp->{STATE} eq 'up') {$tmp->{CANSTOP} = 1; }
+		$tmp->{cluster_desc} = $n->getAttr(name => 'cluster_desc');	
 		push (@$clusters, $tmp);	
     }	
    
-    my $tmpl =  $self->load_tmpl('view_clusters.tmpl');
-	$tmpl->param('CLUSTERS' => $clusters);
-    $tmpl->param('TITLE_PAGE' => "Clusters View");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
-		
-	$output .= $tmpl->output();       
-    return $output;
+	$tmpl->param('clusters_list' => $clusters);
+	  
+    return $tmpl->output();
 }
 
-# Build an array of html template hash for graphs associated to one target (cluster or node) and one set of indicators
-sub graphs {
-	my $self = shift;
-	my %args = @_;
-	
-	my ($dir, $dir_alias, $subdir) = ($args{dir}, $args{dir_alias}, $args{subdir});
-	my $target = $args{target};
-	my $set = $args{set};
-	my $ext = defined $args{ext} ? "_$args{ext}" : ""; 
-	
-	my @graphs = ();
-
-	my $graph_name = "graph_" . "$target" . "_$set";
-	if ( -e "$dir/$subdir/$graph_name$ext.png" ) {
-		push @graphs, { CUSTOM_GRAPH_FILE => "$dir_alias/$subdir/$graph_name$ext.png",
-						HOUR_GRAPH_FILE => "$dir_alias/$subdir/$graph_name$ext" . "_hour.png",
-						DAY_GRAPH_FILE => "$dir_alias/$subdir/$graph_name$ext" . "_day.png",
-						};
-	} else {
-		# Here we manage graph of table when there is one graph per raw
-		my $files = `ls $dir/$subdir/ | grep $graph_name`;
-		my %indexes = ();
-		foreach $file (split '\n', $files) {
-			if ( $file =~ /$graph_name\.(.*)_.*/ ) { $indexes{$1} = undef }
-		}
-		foreach $index ( keys %indexes) {
-			push @graphs,	{
-								CUSTOM_GRAPH_FILE => "$dir_alias/$subdir/$graph_name" . ".$index$ext.png",
-								HOUR_GRAPH_FILE => "$dir_alias/$subdir/$graph_name" . ".$index$ext" . "_hour.png",
-								DAY_GRAPH_FILE => "$dir_alias/$subdir/$graph_name" . ".$index$ext" . "_day.png",
-							}
-		}
-	}
-	
-	return @graphs;
-}
-
-sub view_clusterdetails : Runmode {
-	my $self = shift;
-	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_clusterdetails.tmpl');
-	my $output ='';
-	my $query =$self->query();
-	$clustId = $query->param('cluster_id');
-	 
-	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
-	my $motherboards = $ecluster->getMotherboards(administrator => $self->{'admin'});
-	my $components = $ecluster->getComponents(administrator => $self->{'admin'}, category => 'all');
-	my $mothboards = [];
-	my $comps = []; 
-        
-	foreach my $c (keys %$components){
-		my $tmp = {};
-		my $compAtt = $components->{$c}->getComponentAttr();
-		$tmp->{NAME} = $compAtt->{component_name};
-		$tmp->{VERSION} = $compAtt->{component_version};
-		#$log->debug("component name : ".$tmp->{NAME});
-		$tmp->{CATEGORY} = $compAtt->{component_category};
-		#$log->debug("component category : ".$tmp->{CATEGORY});
-		push (@$comps, $tmp);
-	}
-
-	# Retrieve from conf graph type we want display
-	my $conf = XMLin("/workspace/mcs/UI/web/clusterdetails.conf");
-	my $graph_dir = $conf->{graph_dir} || "/tmp";
-	my $graph_dir_alias = $conf->{graph_dir_alias};
-	my $graph_monitor_subdir = $conf->{graph_monitor_subdir};
-	my $graph_orchestrator_subdir = $conf->{graph_orchestrator_subdir};
-	my @node_indic_sets = split ",", $conf->{node_graph}{sets};
-	my @cluster_indic_sets = split ",", $conf->{cluster_graph}{sets};
-	
-	foreach my $m (keys %$motherboards){
-		my $tmp ={};
-		my $ip = $motherboards->{$m}->getAttr(name=>'motherboard_internal_ip');
-		$tmp->{CLUSTER_ID} = $clustId;
-		$tmp->{MOTHERBOARD_ID} = $motherboards->{$m}->getAttr(name=>'motherboard_id');
-		$tmp->{HOSTNAME} = $motherboards->{$m}->getAttr(name=>'motherboard_hostname');
-		$tmp->{SLOTNUMBER} = $motherboards->{$m}->getAttr(name=>'motherboard_powersupply_id');
-		$tmp->{INTERNALIP} = $ip;
-		
-		my @graphs = ();
-		foreach my $set ( @node_indic_sets ) {
-			push @graphs, $self->graphs( 	dir => $graph_dir, dir_alias => $graph_dir_alias, subdir => $graph_monitor_subdir,
-											set => $set, target => $ip );  
-		}
-		$tmp->{GRAPHS} = \@graphs;
-		
-		push (@$mothboards, $tmp);
-	}
-	
-	# Add cluster graphs
-	$cluster_name = $ecluster->getAttr( name => 'cluster_name' );	
-	my @monitoring_graphs = ( );
-	foreach my $set ( @cluster_indic_sets )  {
-		my @graphs = $self->graphs( dir => $graph_dir, dir_alias => $graph_dir_alias, subdir => $graph_monitor_subdir,
-									set => $set, target => $cluster_name, ext => "avg" );
-		if (scalar @graphs > 0) { push( @monitoring_graphs, { GRAPH_INFO =>  $set, HIDDEN => 1, GRAPH_TYPE => \@graphs } );}
-	}
-	
-	# Add cluster nodecount graph
-	$graph_name = "graph_" . "$cluster_name" . "_nodecount";
-	$tmpl->param('NODECOUNT_CUSTOM_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name.png");
-	$tmpl->param('NODECOUNT_HOUR_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_hour.png");
-	$tmpl->param('NODECOUNT_DAY_GRAPH_FILE' => "$graph_dir_alias/$graph_monitor_subdir/$graph_name" . "_day.png");
-	
-	# Custom graph options
-	my $custom_file = "/tmp/gen_graph_custom.conf";
-	my @dates;
-	if ( -e $custom_file ) {
-		open FILE, "<$custom_file";
-		my @lines = <FILE>;
-		my $line = shift @lines;
-		@dates = split ",", $line;
-	} else {
-		use DateTime;
-		my $date = DateTime->now()->ymd;
-		@dates = ("$date 00:00", "$date 00:00");
-	}
-	my ($date, $time) = split " ", $dates[0];
-	$tmpl->param('CUSTOM_GRAPH_DATE_START' => $date);
-	$tmpl->param('CUSTOM_GRAPH_TIME_START' => $time);
-	($date, $time) = split " ", $dates[1];
-	$tmpl->param('CUSTOM_GRAPH_DATE_END' => $date);
-	$tmpl->param('CUSTOM_GRAPH_TIME_END' => $time);
-	
-	if (defined $query->param('custom')) {
-		$tmpl->param('SHOW_CUSTOM_GRAPH' => 1 );
-	}
-	
-	
-	$tmpl->param('CLUSTERID' => $query->param('cluster_id') );
-	$tmpl->param('MONITORING_GRAPHS' => \@monitoring_graphs);
-	$tmpl->param('ORCHESTRATOR_GRAPH_ADD' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_add.png");
-	$tmpl->param('ORCHESTRATOR_GRAPH_REMOVE' => "$graph_dir_alias/$graph_orchestrator_subdir/graph_orchestrator_$cluster_name" . "_remove.png");
-
-	$tmpl->param('TITLE_PAGE' => "Cluster's details");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
-	$tmpl->param('COMPONENTS' => $comps);
-	$tmpl->param('MOTHERBOARDS' => $mothboards);
-	$tmpl->param($errors) if $errors;
-	$output .= $tmpl->output();
-	return $output;
-	}
-
+# cluster creation popup window
 sub form_addcluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl =$self->load_tmpl('form_addcluster.tmpl');
-	my $output = '';
+	my $tmpl = $self->load_tmpl('form_addcluster.tmpl');
 	
 	my @ekernels = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
 	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
@@ -218,51 +83,47 @@ sub form_addcluster : Runmode {
 	my $count = scalar @emotherboards;
 	my $c =[];
 	for (my $i=1; $i<=$count; $i++) {
-		my $tmp->{CM}=$i;
+		my $tmp->{nodes}=$i;
 		push(@$c, $tmp);
 	}
 	my $kmodels = [];
-	foreach $k (@ekernels) {
-		my $tmp = { ID => $k->getAttr( name => 'kernel_id'),
-			NAME => $k->getAttr(name => 'kernel_version')
+	foreach my $k (@ekernels) {
+		my $tmp = { 
+			kernel_id => $k->getAttr( name => 'kernel_id'),
+			kernel_name => $k->getAttr(name => 'kernel_version')
 		};
 		push (@$kmodels, $tmp);	
 	} 
 	my $smodels = [];
-	foreach $s (@esystemimages){
-		my $tmp = { ID => $s->getAttr (name => 'systemimage_id'),
-			NAME => $s->getAttr(name => 'systemimage_name')
+	foreach my $s (@esystemimages){
+		my $tmp = { 
+			systemimage_id => $s->getAttr (name => 'systemimage_id'),
+			systemimage_name => $s->getAttr(name => 'systemimage_name')
 		};
 		push (@$smodels, $tmp);
 	}
 	
-	$tmpl->param('TITLE_PAGE' => "Adding a Cluster");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
-	$tmpl->param('COUNT' => $c);
-	$tmpl->param('KERNELS' => $kmodels);
-	$tmpl->param('SYSTEMIMAGES' => $smodels);
+	$tmpl->param('nodescount' => $c);
+	$tmpl->param('kernels_list' => $kmodels);
+	$tmpl->param('systemimages_list' => $smodels);
 	$tmpl->param($errors) if $errors;
-	$output .= $tmpl->output();
-	return $output;
+	
+	return $tmpl->output();
 }
 
-sub process_customgraph : Runmode {
-	my $self = shift;
-	
-	 my $query = $self->query();
-	 
-	 my ($date_start, $time_start, $date_end, $time_end) = ( $query->param('date_start'), $query->param('time_start'),
-	 														 $query->param('date_end'), $query->param('time_end') );
-	 
-	 # we write custom range in a specific file which will be read by Monitor::Retriever at the next graph generation iteration
-	 `echo "$date_start $time_start,$date_end $time_end" > /tmp/gen_graph_custom.conf`;
-	 
-#	 use Monitor::Retriever;
-#	 my $monitor = Monitor::Retriever->new();
-#	 my %graph_infos = $monitor->graphFromConf();
-	
-	 $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id') . "&custom" . "#monitoring");
+# fields verification function to used with form_addcluster
+
+sub _addcluster_profile {
+	return {
+    	required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node', 'priority'],
+        msgs => {
+        	any_errors => 'some_errors',
+            prefix => 'err_'
+        },
+	};
 }
+
+# form_addcluster processing
 
 sub process_addcluster : Runmode {
         my $self = shift;
@@ -289,18 +150,166 @@ sub process_addcluster : Runmode {
 	} else { 
 		$self->{'admin'}->addMessage(type => 'newop', content => 'new cluster operation adding to execution queue'); 
 	}
-    	$self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
+    	
+    return $closewindow;
 }
 
-sub _addcluster_profile {
-        return {
-                required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node'],
-                msgs => {
-                                any_errors => 'some_errors',
-                                prefix => 'err_'
-                },
-        };
+# cluster details page
+
+sub view_clusterdetails : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl = $self->load_tmpl('view_clusterdetails.tmpl');
+	 # header / menu variables
+	$tmpl->param('titlepage' => "Cluster's overview");
+	$tmpl->param('mClusters' => 1);
+	$tmpl->param('submClusters' => 1);
+	
+	# actions visibility
+	$tmpl->param('link_delete' => 0);
+	$tmpl->param('link_activate' => 0);
+	$tmpl->param('link_start' => 0);
+	$tmpl->param('link_addnode' => 0);
+	
+	my $query = $self->query();
+	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+		
+	$tmpl->param('cluster_id' => $ecluster->getAttr(name => 'cluster_id'));
+	$tmpl->param('cluster_name' => $ecluster->getAttr(name => 'cluster_name'));
+	$tmpl->param('cluster_desc' => $ecluster->getAttr(name => 'cluster_desc'));
+	$tmpl->param('cluster_priority' => $ecluster->getAttr(name => 'cluster_priority'));
+	
+	my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
+	my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
+	$tmpl->param('cluster_min_node' => $minnode);
+	$tmpl->param('cluster_max_node' => $maxnode);
+	if($minnode == $maxnode) {
+		$tmpl->param('type' => 'Static cluster');
+	} else {
+		$tmpl->param('type' => 'Dynamic cluster');
+	}
+	
+	my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
+	if($systemimage_id) {
+		my $esystemimage = $self->{'admin'}->getEntity(type =>'Systemimage', id => $systemimage_id);
+		$tmpl->param('systemimage_name' =>  $esystemimage->getAttr(name => 'systemimage_name'));
+	} else {
+		$tmpl->param('systemimage_name' => "no system image");
+	}	
+	
+	my $kernel_id = $ecluster->getAttr(name =>'kernel_id');
+	if($kernel_id) {
+		my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $kernel_id);
+		$tmpl->param('kernel' => $ekernel->getAttr(name => 'kernel_version'));
+	} else {
+		$tmpl->param('kernel' => 'no specific kernel');
+	}
+	
+	#	TODO #$tmp->{PUBLICIPS} = $n->getPublicIps();
+	
+	# state info
+	
+	my $motherboards = $ecluster->getMotherboards(administrator => $self->{'admin'});
+	my $nbnodesup = scalar(keys(%$motherboards)); 
+	my $nodes = [];
+	
+	if($ecluster->getAttr('name' => 'active')) {
+		$tmpl->param('active' => 1);
+		$tmpl->param('link_activate' => 0);
+		
+		if($nbnodesup > 0) {
+			$tmpl->param('nbnodesup' => $nbnodesup+1);	
+			if($minnode != $maxnode and $nbnodesup < $maxnode) { 
+				$tmpl->param('link_addnode' => 1);
+			}
+		} else {
+			$tmpl->param('link_start' => 1);	
+		}
+		
+	} else { 
+		$tmpl->param('active' => 0);
+		$tmpl->param('link_activate' => 1);
+		$tmpl->param('link_delete' => 1);
+	}
+	
+	# components list
+	
+	my $components = $ecluster->getComponents(administrator => $self->{'admin'}, category => 'all');
+	my $comps = [];
+			
+	while( my ($instance_id, $comp) = each %$components) {
+		my $comphash = {};
+		my $compAtt = $comp->getComponentAttr();
+		$comphash->{component_instance_id} = $instance_id;
+		$comphash->{component_name} = $compAtt->{component_name};
+		$comphash->{component_version} = $compAtt->{component_version};
+		$comphash->{component_category} = $compAtt->{component_category};
+		push (@$comps, $comphash);
+	}
+	$tmpl->param('nbcomponents' => scalar(@$comps)+1);
+	$tmpl->param('components_list' => $comps);
+	
+	# nodes list
+	if($nbnodesup) {
+		my $id =  $ecluster->getMasterNodeId();
+		my $masternode = $motherboards->{ $id };
+		my $tmp = {
+			motherboard_hostname => $masternode->getAttr(name => 'motherboard_hostname'),
+			motherboard_internal_ip => $masternode->getAttr(name => 'motherboard_internal_ip'),
+			link_remove => 0
+		};
+		delete $motherboards->{ $id };
+		push @$nodes, $tmp;
+		
+		foreach my $n (values %$motherboards) {
+			$tmp = {};
+			$tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname'); 	
+			$tmp->{motherboard_internal_ip} = $n->getAttr(name => 'motherboard_internal_ip');
+			push @$nodes, $tmp;
+		}
+	}
+	
+	$tmpl->param('nodes_list' => $nodes);
+	return $tmpl->output();
 }
+
+# TODO cluster edition popup window
+
+sub form_editcluster : Runmode {
+	return "TODO";
+}
+
+# component addition popup window
+
+sub form_addcomponenttocluster : Runmode {
+	my $self = shift;
+	my $tmpl = $self->load_tmpl('form_addcomponenttocluster.tmpl');
+	my $query = $self->query();
+	my $cluster_id = $query->param('cluster_id');
+	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $cluster_id);
+	my $esystemimage = $self->{'admin'}->getEntity(type =>'Systemimage', id => $ecluster->getAttr(name => 'systemimage_id'));
+	my $systemimage_components = $esystemimage->getInstalledComponents();
+	my $cluster_components = $ecluster->getComponents(administrator => $self->{'admin'}, category => 'all');
+	my $components = [];
+	#$log->debug(Dumper $systemimage_components);
+	 
+	foreach my $c  (@$systemimage_components) {	
+		my $found = 0;
+		while(my ($instance_id, $component) = each %$cluster_components) {
+			my $attrs = $component->getComponentAttr();
+			if($attrs->{component_id} eq $c->{component_id}) { $found = 1; }
+		}
+		if(not $found) { push @$components, $c; };
+	} 
+	$tmpl->param('cluster_id' => $cluster_id);
+	$tmpl->param('cluster_name' => $ecluster->getAttr(name => 'cluster_name'));
+	$tmpl->param('components_list' => $components);
+	
+	return $tmpl->output();
+}
+
+
+# actions processing
 
 sub process_activatecluster : Runmode {
     my $self = shift;
@@ -447,6 +456,22 @@ sub process_addnode : Runmode {
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'AddMotherboardInCluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
+}
+
+sub process_addcomponent : Runmode {
+	my $self = shift;
+	my $query = $self->query();
+	eval {
+	    my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+	    $ecluster->addComponent(administrator => $self->{'admin'}, component_id => $query->param('component_id'));
+	    
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'Component added sucessfully'); }
+   	return $closewindow;
+
 }
 
 1;
