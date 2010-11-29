@@ -45,13 +45,45 @@ sub view_status : StartRunmode {
 		push (@$clusters, $tmp);	
     }	
     
-    
+    # Define admin components and services we want display status. They are grouped as we want in ui. 
+    my $admin_components = [ 	[
+    							{ id => 'Database', label => 'Database server', comps => [{ name => 'mysql'}] },
+    							{ id => 'Boot', label => 'Boot server', comps => [{ name => 'ntpd'}, { name => 'dhcpd3'}, { name => 'atftpd'}] },
+    							{ id => 'Harddisk', label => 'NAS server', comps => [{ name => 'ietd'}, { name => 'nfsd'}] }
+    							],[
+    							{ id => 'Monitor', label => 'Monitor', comps => [{ name => 'collector'}] },
+    							{ id => 'Planner', label => 'Planner', comps => [] },
+    							{ id => 'Orchestrator', label => 'Orchestrator', comps => [] },
+    							],[
+    							{ id => 'Execute', label => 'Executor', comps => [{ name => 'executor'}] },
+								]
+    						];
+    # Check the status of admin components and build the html template var
+    my @components_status = ();
+    foreach my $group (@$admin_components) {
+    	my @res_group = ();
+    	foreach my $def (@$group) {
+    		my @details = ();
+    		my ($tot, $up) = (0 ,0);
+    		foreach my $serv (@{$def->{comps}}) {
+    			my $grep = `ps aux | grep $serv->{name}`;
+    			my $ps_count = scalar (split '\n', $grep);
+    			my $status = $ps_count > 2 ? 'Up' : 'Down';
+    			$up++ if ($status eq 'Up');
+    			$tot++;
+    			push @details, {name => $serv->{name}, status => $status };
+    		}
+    		push @res_group, {id => $def->{id}, label => $def->{label}, status => ($tot>0 && $up eq $tot ? 'Up':'Down'), details => \@details};
+    	}
+    	push  @components_status, { group => \@res_group};
+    }
     
     my $tmpl =  $self->load_tmpl('view_status.tmpl');
     $tmpl->param('TITLE_PAGE' => "System Status");
 	$tmpl->param('MENU_SYSTEMSTATUS' => 1);
 	$tmpl->param('CLUSTERS' => $clusters);
 	$tmpl->param('NODES' => $nodes);
+	$tmpl->param('COMPONENTS_STATUS' => \@components_status);
 	$output .= $tmpl->output();
      
     return $output;   

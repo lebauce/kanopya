@@ -609,15 +609,35 @@ sub update {
 =cut
 
 #TODO with threading we have a "Scalars leaked: 1" printed, harmless, don't worry 
-sub run {
+sub run_threaded {
 	my $self = shift;
 	
 	while ( 1 ) {
 		my $thr = threads->create('update', $self);
 		$thr->detach();
 		#$self->update();
+
+		sleep( $self->{_time_step} );
+	}
+}
+
+=head2 run
+	
+	Class : Public
+	
+	Desc : Launch an update every time_step (configuration)
+	
+=cut
+ 
+sub run {
+	my $self = shift;
+	my $running = shift;
+	
+	while ( $$running ) {
+
 		
-		$self->{_t} += 0.1;
+		$self->update();
+
 		sleep( $self->{_time_step} );
 	}
 }
