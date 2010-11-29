@@ -130,7 +130,11 @@
 	</table>
 		
 </div>
-<script language="Javascript" src="/js/listingtools.js"></script>
-<!--script language="Javascript">display_graph('<TMPL_VAR NAME=DISPLAY_GRAPH>')</script-->
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/custom.js"></script>
+
+<!--script language="Javascript" src="/js/listingtools.js"></script-->
+
 <script language="Javascript">document.getElementById(<TMPL_IF NAME=SHOW_CUSTOM_GRAPH>"radioCustom"<TMPL_ELSE>"radioHour"</TMPL_IF>).click()</script>
 <TMPL_INCLUDE NAME="footer.tmpl">

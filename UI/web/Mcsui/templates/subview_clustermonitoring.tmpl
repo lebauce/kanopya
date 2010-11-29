@@ -1,0 +1,13 @@
+<node_list>
+<TMPL_LOOP NAME=GRAPHS>
+	<node id='<TMPL_VAR NAME=ID>'>
+		<table>
+		<TMPL_LOOP NAME=SETS>
+				<tr id='<TMPL_VAR NAME=SET_NAME>' class='set_selector'>
+					<td><img src="<TMPL_VAR NAME=IMG_SRC>" /></td>
+				</tr>
+		</TMPL_LOOP>
+		</table>
+	</node>
+</TMPL_LOOP>
+</node_list>

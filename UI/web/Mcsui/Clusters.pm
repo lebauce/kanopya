@@ -4,7 +4,8 @@ use base 'CGI::Application';
 use Log::Log4perl "get_logger";
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
-
+use XML::Simple;
+	
 use lib "/workspace/mcs/Monitor/Lib";
 
 my $log = get_logger("administrator");
@@ -123,7 +124,6 @@ sub view_clusterdetails : Runmode {
 	}
 
 	# Retrieve from conf graph type we want display
-	use XML::Simple;
 	my $conf = XMLin("/workspace/mcs/UI/web/clusterdetails.conf");
 	my $graph_dir = $conf->{graph_dir} || "/tmp";
 	my $graph_dir_alias = $conf->{graph_dir_alias};

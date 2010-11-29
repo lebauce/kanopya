@@ -18,6 +18,11 @@ sub start {
 	generate_cronfile( @args );
 }
 
+sub restart {
+    	generate_cronfile( @_ );
+}
+
+
 sub stop {
 	
 	# Remove mcs cron file

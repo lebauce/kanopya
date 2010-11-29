@@ -141,6 +141,10 @@ iframe {
 .imgOrchestrator { background-image: url("/images/icons/orchestrator.png"); }
 .imgUp { background-image: url("/images/icons/up.png"); }
 .imgDown { background-image: url("/images/icons/down.png"); }
+.imgBroken { background-image: url("/images/icons/broken.png"); }
+
+/*.imgSnmp { background: url("/images/icons/snmp.png") no-repeat center;}*/
+
 
 #submenu li ul { display: none; }
 

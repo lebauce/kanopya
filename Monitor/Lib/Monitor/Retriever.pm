@@ -34,7 +34,7 @@ sub new {
 	
 	$self->{_graph_title_font} = { name => "Times", element => "title", size => 15 };
 	
-	$self->{_graph_width} = 900;
+	$self->{_graph_width} = 800;
 	$self->{_graph_height} = 100;
 	
 	#$self->{_admin_wrap} = AdminWrapper->new( );

@@ -1,0 +1,76 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/custom.js"></script>
+
+<div id="content">
+
+<div>
+
+<!--button id='fold_all'>fold</button-->
+
+
+
+<table id='graphchoices'>
+<tr>
+
+<td class='period_selectors'>
+<table class=''>
+<tr><th>
+<a id="period_label">Period</a>
+<ul>
+	<li id='hour' class='period_selector' >Hourly</li>
+	<li id='day'  class='period_selector selected_period' >Daily</li>
+	<li id='custom' class='period_selector' >Custom</li>
+</ul>
+</th></tr>
+</table>
+
+<!--table class='graphview period_selectors'>
+	<tr><th id='hour' class='period_selector'>hour</th></tr>
+	<tr><th id='day' class='period_selector selected_period'>day</th></tr>
+</table-->
+</td>
+
+<td>
+<table class='graphview set_selectors'>
+	<tr>
+	<TMPL_LOOP NAME=SETS>
+		<th id='<TMPL_VAR NAME=ID>' class='set_selector'><TMPL_VAR NAME=LABEL></th>
+	</TMPL_LOOP>
+	</tr>
+</table>
+</td>
+
+<td id='settings_link'>
+<table class='graphview'>
+<tr><th>
+<a href='/cgi/mcsui.cgi/clusters/view_clustermonitoring_settings' >Settings</a>
+</th></tr>
+</table>
+</td>
+
+</tr>
+</table>
+
+<table id='toto' class="graphview">
+	<tr>
+		<th id='<TMPL_VAR NAME=CLUSTER_ID>' class='node_selector'><TMPL_VAR NAME=CLUSTER_NAME></th>
+		<th id='<TMPL_VAR NAME=CLUSTER_ID>_content' class='content_container'></th>
+	</tr>
+	<TMPL_LOOP NAME=NODES>
+		<tr>
+			<td id='<TMPL_VAR NAME=ID>' class='node_selector'><TMPL_VAR NAME=NAME></td>
+			<td id='<TMPL_VAR NAME=ID>_content' class='content_container'></td>
+		</tr>
+	</TMPL_LOOP>
+</table>
+
+</div>
+
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
