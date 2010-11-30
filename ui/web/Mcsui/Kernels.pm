@@ -7,10 +7,6 @@ use warnings;
 
 sub setup {
 	my $self = shift;
-	my $tmpl_path = [
-	'/workspace/mcs/UI/web/Mcsui/templates/',
-	'/workspace/mcs/UI/web/Mcsui/templates/Kernels/'];
-	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -19,7 +15,7 @@ sub setup {
 
 sub view_kernels : StartRunmode {
     my $self = shift;
-    my $tmpl =  $self->load_tmpl('view_kernels.tmpl');
+    my $tmpl =  $self->load_tmpl('Kernels/view_kernels.tmpl');
 	$tmpl->param('titlepage' => "Systems - Kernels");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submKernels' => 1);

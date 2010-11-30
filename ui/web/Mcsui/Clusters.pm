@@ -13,10 +13,6 @@ my $closewindow = "<script type=\"text/javascript\">window.opener.location.reloa
 
 sub setup {
 	my $self = shift;
-	my $tmpl_path = [
-	'/workspace/mcs/UI/web/Mcsui/templates',
-	'/workspace/mcs/UI/web/Mcsui/templates/Clusters'];
-	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -24,7 +20,7 @@ sub setup {
 
 sub view_clusters : StartRunmode {
     my $self = shift;
-    my $tmpl =  $self->load_tmpl('view_clusters.tmpl');
+    my $tmpl =  $self->load_tmpl('Clusters/view_clusters.tmpl');
     # header / menu variables
     $tmpl->param('titlepage' => "Clusters - Clusters");
 	$tmpl->param('mClusters' => 1);
@@ -74,7 +70,7 @@ sub view_clusters : StartRunmode {
 sub form_addcluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('form_addcluster.tmpl');
+	my $tmpl = $self->load_tmpl('Clusters/form_addcluster.tmpl');
 	
 	my @ekernels = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
 	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
@@ -159,7 +155,7 @@ sub process_addcluster : Runmode {
 sub view_clusterdetails : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_clusterdetails.tmpl');
+	my $tmpl = $self->load_tmpl('Clusters/view_clusterdetails.tmpl');
 	 # header / menu variables
 	$tmpl->param('titlepage' => "Cluster's overview");
 	$tmpl->param('mClusters' => 1);
@@ -283,7 +279,7 @@ sub form_editcluster : Runmode {
 
 sub form_addcomponenttocluster : Runmode {
 	my $self = shift;
-	my $tmpl = $self->load_tmpl('form_addcomponenttocluster.tmpl');
+	my $tmpl = $self->load_tmpl('Clusters/form_addcomponenttocluster.tmpl');
 	my $query = $self->query();
 	my $cluster_id = $query->param('cluster_id');
 	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $cluster_id);
@@ -361,7 +357,7 @@ sub process_removecluster : Runmode {
 sub form_setpubliciptocluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl =$self->load_tmpl('form_setpubliciptocluster.tmpl');
+	my $tmpl =$self->load_tmpl('Clusters/form_setpubliciptocluster.tmpl');
 	my $output = '';
 	my $query = $self->query();	
 	my $freepublicips = $self->{admin}->getFreePublicIPs();

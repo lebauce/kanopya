@@ -10,7 +10,7 @@ sub setup {
 
 sub view_shareddisks : StartRunmode {
     my $self = shift;
-    my $tmpl =  $self->load_tmpl('view_shareddisks.tmpl');
+    my $tmpl =  $self->load_tmpl('Shareddisks/view_shareddisks.tmpl');
     my $output = '';
 
     $tmpl->param('TITLE_PAGE' => "Shared disk View");

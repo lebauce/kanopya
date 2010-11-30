@@ -201,6 +201,7 @@ div#footer {
 .imgMessage { background-image: url("/images/icons/messages.png"); }
 .imgComponent { background-image: url("/images/icons/component.png"); }
 .imgOperation { background-image: url("/images/icons/operations.png"); }
+.imgWarning { background-image: url("/images/icons/warning.png"); }
 
 
 /*.imgSnmp { background: url("/images/icons/snmp.png") no-repeat center;}*/

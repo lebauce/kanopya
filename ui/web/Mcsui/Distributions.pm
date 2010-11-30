@@ -7,10 +7,6 @@ use warnings;
 
 sub setup {
 	my $self = shift;
-	my $tmpl_path = [
-	'/workspace/mcs/UI/web/Mcsui/templates/',
-	'/workspace/mcs/UI/web/Mcsui/templates/Distributions/'];
-	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -19,7 +15,7 @@ sub setup {
 
 sub view_distributions : StartRunmode {
     my $self = shift;
-    my $tmpl =  $self->load_tmpl('view_distributions.tmpl');
+    my $tmpl =  $self->load_tmpl('Distributions/view_distributions.tmpl');
 	$tmpl->param('titlepage' => "Systems - Distributions");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submDistributions' => 1);
@@ -47,7 +43,7 @@ sub view_distributions : StartRunmode {
 sub view_distributiondetails : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_distributiondetails.tmpl');
+	my $tmpl = $self->load_tmpl('Distributions/view_distributiondetails.tmpl');
 	 
 	# header / menu variables
 	$tmpl->param('titlepage' => "Distribution's overview");
