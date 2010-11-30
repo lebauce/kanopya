@@ -9,10 +9,6 @@ my $closewindow = "<script type=\"text/javascript\">window.opener.location.reloa
 
 sub setup {
 	my $self = shift;
-	my $tmpl_path = [
-		'/opt/kanopya/ui/web/Mcsui/templates',
-		'/opt/kanopya/ui/web/Mcsui/templates/Models'];
-	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -20,7 +16,7 @@ sub setup {
 
 sub view_models : StartRunmode {
     my $self = shift;
-    my $tmpl = $self->load_tmpl('view_models.tmpl');
+    my $tmpl = $self->load_tmpl('Models/view_models.tmpl');
     $tmpl->param('titlepage' => "Hardaware - Models");
 	$tmpl->param('mHardware' => 1);
 	$tmpl->param('submModels' => 1);
@@ -70,7 +66,7 @@ sub view_models : StartRunmode {
 sub form_addprocessormodel : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $tmpl =  $self->load_tmpl('form_addprocessormodel.tmpl');
+    my $tmpl =  $self->load_tmpl('Models/form_addprocessormodel.tmpl');
     $tmpl->param($errors) if $errors;
 	
 	return $tmpl->output();
@@ -120,7 +116,7 @@ sub _addprocessormodel_profile {
 sub form_addmotherboardmodel : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $tmpl =  $self->load_tmpl('form_addmotherboardmodel.tmpl');
+    my $tmpl =  $self->load_tmpl('Models/form_addmotherboardmodel.tmpl');
 	$tmpl->param($errors) if $errors;
 	
 	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});

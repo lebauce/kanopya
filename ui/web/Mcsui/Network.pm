@@ -11,7 +11,7 @@ sub setup {
 
 sub view_publicips : StartRunmode {
     my $self = shift;
-    my $tmpl =  $self->load_tmpl('view_publicips.tmpl');
+    my $tmpl =  $self->load_tmpl('Networks/view_publicips.tmpl');
     my $output = '';
     my $publicips = $self->{'admin'}->getPublicIPs();
    
@@ -29,7 +29,7 @@ sub view_publicips : StartRunmode {
 sub form_addpublicip : Runmode {
     my $self = shift;
     my $errors = shift;
-    my $tmpl =  $self->load_tmpl('form_addpublicip.tmpl');
+    my $tmpl =  $self->load_tmpl('Networks/form_addpublicip.tmpl');
     my $output = '';
     $tmpl->param('TITLE_PAGE' => "Adding a Public ip");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);

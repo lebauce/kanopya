@@ -1,14 +1,12 @@
-<TMPL_INCLUDE NAME="header.tmpl">
-<TMPL_INCLUDE NAME="menu.tmpl">
+<html>
+<head>
+	<title>new motherboard</title>
+</head>
+<body>
 <style type="text/css">@import url(/css/form.css);</style>
-
-<div id="content">
+<div class="title">create motherboard<TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
 <form method="POST" action="/cgi/mcsui.cgi/motherboards/process_addmotherboard">
 <table class="form">
-	<caption>New motherboard</caption>
-	<TMPL_IF NAME=SOME_ERRORS>
-	<tr><td class="error" colspan="2">Some fields below are missing or invalid</td></tr>
-	</TMPL_IF>
 	<tr>
 		<td class="label">Position :</td>
 		<td><input type="text" name="active" maxlength="2" size="2"/>
@@ -28,7 +26,7 @@
 		<TMPL_LOOP NAME=MOTHERBOARDMODELS>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
-		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addmotherboardmodel">no found ?</a></td>
+		</select></td>
 	</tr>
 	<tr>
 		<td class="label">Processor model :</td>
@@ -36,7 +34,7 @@
 		<TMPL_LOOP NAME=PROCESSORMODELS>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
-		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_addprocessormodel">no found ?</a></td>
+		</select></td>
 	</tr>
 	<tr>
 		<td class="label">Default kernel :</td>
@@ -44,19 +42,17 @@
 		<TMPL_LOOP NAME=KERNEL>
 			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
 		</TMPL_LOOP>	
-		</select><a class="simple" href="/cgi/mcsui.cgi/models/form_uploadkernel">no found ?</a></td>
+		</select></td>
 	</tr>
 	<tr>
 		<td class="label">Description :</td>
 		<td><textarea cols="50" name="desc" value=""></textarea></td> 
 	</tr>
 </table>
-<div class="formbuttons">
-	<input class="button" type="reset" value="clear" />
-	<a class="button" href="/cgi/mcsui.cgi/motherboards">cancel</a>
-	<input class="button" type="submit" value="add" />
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form> 
-</div>
-<TMPL_INCLUDE NAME="footer.tmpl">
-
+</body>
+</html>

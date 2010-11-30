@@ -9,10 +9,6 @@ my $closewindow = "<script type=\"text/javascript\">window.opener.location.reloa
 
 sub setup {
 	my $self = shift;
-	my $tmpl_path = [
-		'/opt/kanopya/ui/web/Mcsui/templates',
-		'/opt/kanopya/ui/web/Mcsui/templates/Systemimages'];
-	$self->tmpl_path($tmpl_path);
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
@@ -20,7 +16,7 @@ sub setup {
 
 sub view_systemimages : StartRunmode {
     my $self = shift;
-    my $tmpl =  $self->load_tmpl('view_systemimages.tmpl');
+    my $tmpl =  $self->load_tmpl('Systemimages/view_systemimages.tmpl');
     $tmpl->param('titlepage' => "Systems - System images");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submSystemimages' => 1);
@@ -48,7 +44,7 @@ sub view_systemimages : StartRunmode {
 sub form_addsystemimage : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl =$self->load_tmpl('form_addsystemimage.tmpl');
+	my $tmpl =$self->load_tmpl('Systemimages/form_addsystemimage.tmpl');
 	$tmpl->param($errors) if $errors;
 	
 	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
@@ -128,7 +124,7 @@ sub process_addsystemimage : Runmode {
 sub view_systemimagedetails : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_systemimagedetails.tmpl');
+	my $tmpl = $self->load_tmpl('Systemimages/view_systemimagedetails.tmpl');
 	 
 	# header / menu variables
 	$tmpl->param('titlepage' => "System image's overview");

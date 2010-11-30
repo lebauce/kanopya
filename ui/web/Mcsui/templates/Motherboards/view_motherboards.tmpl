@@ -10,8 +10,11 @@
 <a class="imgManage" href="/cgi/mcsui.cgi/motherboards/view_motherboarddetails?motherboard_id=<TMPL_VAR NAME=motherboard_id>">details</a></td></tr>
 <tr><td><TMPL_VAR NAME=motherboard_ip></td>
 <TMPL_IF NAME=active>
-<td><span class="state imgUp"><TMPL_VAR NAME=motherboard_state> on <TMPL_VAR NAME=cluster_name> cluster</span></td><TMPL_ELSE>
-<td></td>
+<TMPL_IF NAME=state_up><td><span class="state imgUp">Up on <TMPL_VAR NAME=cluster_name> cluster</span></td></TMPL_IF>
+<TMPL_IF NAME=state_down><td><span class="state imgDown">Unused</span></td></TMPL_IF>
+<TMPL_IF NAME=state_starting><td><span class="state imgDown">Stopping...</span></td></TMPL_IF>
+<TMPL_IF NAME=state_stopping><td><span class="state imgDown">Starting... on <TMPL_VAR NAME=cluster_name> cluster<</span></td></TMPL_IF>
+<TMPL_IF NAME=state_broken><td><span class="state imgWarning">unknown</span></td></TMPL_IF>
 </TMPL_IF>
 <td class="toright">
 <TMPL_IF NAME=link_activity>
