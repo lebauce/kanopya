@@ -7,8 +7,6 @@ use CGI::Application::Plugin::Redirect;
 use XML::Simple;
 use JSON;
 		
-use lib "/workspace/mcs/Orchestrator/Lib";
-
 my $log = get_logger("administrator");
 
 
@@ -17,8 +15,15 @@ sub setup {
 	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
+sub getOrchestratorConf () {
+	my $self = shift;
+	
+	my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
 
-=head2 save_monitoring_settings
+	return $conf;
+}
+
+=head2 save_orchestrator_settings
 	
 	Class : Public
 	
@@ -51,11 +56,40 @@ sub save_orchestrator_settings : Runmode {
 sub view_orchestrator_settings : StartRunmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_orchestrator_settings.tmpl');
+	my $tmpl = $self->load_tmpl('Orchestrator/view_orchestrator_settings.tmpl');
+	
+	my $conf = $self->getOrchestratorConf();
+	
+	my @rules = ();
+	
+	my $traps =  General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
+	foreach my $trap (@$traps) {
+		my $thresholds = General::getAsArrayRef( data => $trap, tag => 'threshold' );
+		foreach my $thresh (@$thresholds) {
+			push @rules, { 	var => $trap->{set} .':'. $thresh->{var}, time_laps => $trap->{time_laps},
+							inf => defined $thresh->{min},
+							value => defined $thresh->{max} ? $thresh->{max} : $thresh->{min},
+							action => 'Add node',
+						};
+		}
+	}
+	my $conditions =  General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
+	foreach my $cond (@$conditions) {
+		my $required = General::getAsArrayRef( data => $cond, tag => 'required' );
+		foreach my $req (@$required) {
+			push @rules, { 	var => $cond->{set} .':'. $req->{var}, time_laps => $cond->{time_laps},
+							inf => defined $req->{max},
+							value => defined $req->{max} ? $req->{max} : $req->{min},
+							action => 'Remove node',
+						};
+		}
+	}
 	
 	
-	$tmpl->param('TITLE_PAGE' => "Orchestrator settings");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('RULES' => \@rules);
+	$tmpl->param('TITLEPAGE' => "Orchestrator settings");
+	$tmpl->param('MSETTINGS' => 1);
+	$tmpl->param('SUBMORCHESTRATOR' => 1);
 	
 	return $tmpl->output();
 }

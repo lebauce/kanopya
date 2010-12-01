@@ -1,0 +1,41 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/custom.js"></script>
+
+<div id="content">
+
+<button class='operator_button' op='and'>and</button>
+<button class='operator_button' op='or'>or</button>
+
+
+<table class='rulesview'>
+<tr ><th colspan='5'>condition</th><th></th><th></th></tr>
+<tr><th>var1</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
+<tr><th>var2</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
+<tr><th>var3</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
+<tr><th>var4</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
+<tr><th>var5</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
+</table>
+
+<table class='rulesview'>
+	<tr id='rules_head'><th colspan='5'>Condition</th><th></th><th>Action</th></tr>
+	<TMPL_LOOP NAME=RULES>
+		<tr>
+		<th><TMPL_VAR NAME=VAR></th>
+		<td>mean</td>
+		<td><TMPL_VAR NAME=TIME_LAPS>s</td>
+		<td><TMPL_IF NAME=INF>&lsaquo;<TMPL_ELSE>&rsaquo;</TMPL_IF></td>
+		<td><TMPL_VAR NAME=VALUE></td>
+		<td class='then_col'></td>
+		<td><TMPL_VAR NAME=ACTION></td>
+		</tr>
+	</TMPL_LOOP>
+</table>
+
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

@@ -6,10 +6,10 @@ use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
 use XML::Simple;
 use JSON;
-		
-use lib "/workspace/mcs/Monitor/Lib";
 
 my $log = get_logger("administrator");
+
+my $conf_file_path = "/etc/kanopya/monitor.conf";
 
 sub setup {
 	my $self = shift;
@@ -57,7 +57,7 @@ sub graphs {
 sub getMonitorConf () {
 	my $self = shift;
 	
-	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	my $config = XMLin($conf_file_path);
 	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
 	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
 	my $conf = shift @conf;
@@ -74,16 +74,39 @@ sub getMonitoredSets {
 sub getAllSets {
 	my $self = shift;
 	
-	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	my $config = XMLin($conf_file_path);
 	my $sets = General::getAsArrayRef( data => $config, tag => 'set' );
 	
 	return $sets;
 }
 
+#TODO passer par le monitor (et supprimer les bases inutiles) 
+sub writeConf {
+	my $self = shift;
+	my %args = @_; 
+	
+	my $config = XMLin($conf_file_path);
+	
+	my $conf = $self->getMonitorConf();
+	$conf->{generate_graph} = { graph => $args{graphs_settings} };
+	$conf->{monitor} = $args{collect_settings};
+	
+	$config->{conf} = [$conf];
+	
+	#my $xml_conf = XMLout($conf, RootName => 'conf');
+	my $xml_conf = XMLout($config, RootName => 'config');
+	
+	open CONF_FILE, ">$conf_file_path" or die "Can't open conf file for writing";
+	print CONF_FILE $xml_conf;
+	close CONF_FILE;
+	
+	return $xml_conf;
+}
+
 sub view_clustermonitoring : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_clustermonitoring.tmpl');
+	my $tmpl = $self->load_tmpl('Monitor/view_clustermonitoring.tmpl');
 	
 	my $cluster_id = $self->query()->param('cluster_id');
 	
@@ -104,8 +127,8 @@ sub view_clustermonitoring : Runmode {
 	$tmpl->param('CLUSTER_ID' => $cluster_name);
 	$tmpl->param('CLUSTER_NAME' => $cluster_name);
 	
-	$tmpl->param('TITLE_PAGE' => "Cluster's activity");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('TITLEPAGE' => "Cluster's activity");
+	#$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 	
 	return $tmpl->output();
 }
@@ -113,7 +136,7 @@ sub view_clustermonitoring : Runmode {
 sub xml_graph_list : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('subview_clustermonitoring.tmpl');
+	my $tmpl = $self->load_tmpl('Monitor/subview_clustermonitoring.tmpl');
 	my $query = $self->query();
 	my $set_name = $query->param('set');
 	my $node_id = $query->param('node');
@@ -150,6 +173,8 @@ sub xml_graph_list : Runmode {
 	
 }
 
+
+
 =head2 save_monitoring_settings
 	
 	Class : Public
@@ -170,12 +195,10 @@ sub save_monitoring_settings : Runmode {
 	my $graphs_settings_str = $query->param('graphs_settings'); # stringified array of hash
 	my $graphs_settings = decode_json $graphs_settings_str;
 		
-	my $conf = $self->getMonitorConf();
 	
-	$conf->{generate_graph} = { graph => $graphs_settings};
-	$conf->{monitor} = \@formated_monit_sets;
+	my $xml_conf = $self->writeConf( graphs_settings => $graphs_settings, collect_settings => \@formated_monit_sets );
 	
-	my $xml_conf = XMLout($conf, RootName => 'conf');
+	#my $xml_conf = XMLout($conf, RootName => 'conf');
 	
 	return "$xml_conf";
 }
@@ -183,12 +206,14 @@ sub save_monitoring_settings : Runmode {
 sub view_monitoring_settings : StartRunmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_monitoring_settings.tmpl');
+	my $tmpl = $self->load_tmpl('Monitor/view_monitoring_settings.tmpl');
 	
 	#TODO put this in Monitor (method for retrieve conf)
 	my $conf = $self->getMonitorConf();
+	
 	my $collect_sets = General::getAsArrayRef( data => $conf, tag => 'monitor' );
 	my $all_sets = $self->getAllSets();
+
 	my @sets = ();
 	foreach $set (@$all_sets) {
 		my @all_ds = ();
@@ -211,8 +236,9 @@ sub view_monitoring_settings : StartRunmode {
 					'RRD_BASE_DIR'=> $conf->{rrd_base_dir},
 					'GRAPH_DIR'=> $conf->{graph_dir} );
 	
-	$tmpl->param('TITLE_PAGE' => "Monitoring settings");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('TITLEPAGE' => "Monitoring settings");
+	$tmpl->param('MSETTINGS' => 1);
+	$tmpl->param('SUBMMONITOR' => 1);
 	
 	return $tmpl->output();
 }
@@ -233,7 +259,7 @@ sub view_monitoring_settings : StartRunmode {
 sub view_clustermonitoring_settings : Runmode {
 	my $self = shift;
 	my $errors = shift;
-	my $tmpl = $self->load_tmpl('view_clustermonitoring_settings.tmpl');
+	my $tmpl = $self->load_tmpl('Monitor/view_clustermonitoring_settings.tmpl');
 	
 	#TODO put this in Monitor (method for retrieve conf)
 	my $conf = $self->getMonitorConf();
@@ -268,8 +294,9 @@ sub view_clustermonitoring_settings : Runmode {
 	}
 	$tmpl->param('SETS' => \@sets);
 	
-	$tmpl->param('TITLE_PAGE' => "CLuster monitoring settings");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('TITLEPAGE' => "CLuster monitoring settings");
+	$tmpl->param('MSETTINGS' => 1);
+	$tmpl->param('SUBMMONITOR' => 1);
 	
 	return $tmpl->output();
 }

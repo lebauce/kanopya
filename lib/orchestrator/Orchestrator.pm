@@ -51,7 +51,6 @@ package Orchestrator;
 #		- Il n'y a pas eu d'ajout d'un noeud dans le cluster depuis un certain laps de temps (conf)
 
 
-#TODO vérifier que le retrait d'un noeud a un impact direct sur les valeurs remontées (à l'inverse de l'ajout d'un noeud)
 #TODO 	les moyennes remontées par le monitor sont calculées par rapport à l'ensemble des nodes 'up' (logique)
 #		On pourrait prendre en compte les nodes 'starting' ce qui fausserais les moyennes courantes mais nous donnerais une idée de la charge une fois le noeud 'up' (prévision) (?)
     

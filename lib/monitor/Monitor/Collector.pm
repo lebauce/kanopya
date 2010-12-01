@@ -635,6 +635,7 @@ sub run {
 	
 	while ( $$running ) {
 
+		print "RUN !\n";
 		
 		$self->update();
 

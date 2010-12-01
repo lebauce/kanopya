@@ -11,7 +11,7 @@
  		$(this).find('ul').toggle();
  	} ).addClass('clickable');
 
-	$('[id^=X] .expandable').hide();  // hide all elems with id starting with 'X' (expandable elems) 
+	$('[id^=X] .expandable').hide();  // hide all elems of class 'epandable' under elem with id starting with 'X'
  	$(".expander", this).click(function() {
  		
  		var elem_to_expand = $('#X'+this.id).find('.expandable');
@@ -100,15 +100,37 @@
  
  // ---------------------------------------- orchestrator --------------------------------------------	
  	
- 	$('.rulesview tr').click( function () {$(this).not('.inrule').toggleClass('selected'); } );
+ 	$('.rulesview tr').click( function () {
+ 			if ($(this).not('.inrule').size() > 0) {
+ 				var nb_selected = $('.rulesview tr.selected').size();
+	 			if ( nb_selected == 0 || (nb_selected == 1 && $(this).hasClass('selected')) ) {
+	 				$(this).toggleClass('selected'); 
+	 			} else {
+	 				var selected_neighbors = 0;
+	 				if ( $(this).prev().hasClass('selected') ) {selected_neighbors++;}
+	 				if ( $(this).next().hasClass('selected') ) {selected_neighbors++;} 
+	 				if ( selected_neighbors == 1 ) {
+	 					$(this).toggleClass('selected');
+	 				}
+	 			}
+	 		}
+ 		});
  	
- 	$('#button_op_and').click( function () { 
+ 	$('.operator_button').click( function () { 
  		var selected = $('.rulesview .selected');
  		
- 		//selected.first().find('.operator').replaceWith('<td>POUET</td>');
+ 		selected.first().find('.op_col').replaceWith("<td class='operator' rowspan='" + selected.size() + "'>" + $(this).attr('op') + "</td>");
+ 		selected.find('.op_col').replaceWith('');
  		
- 		selected.first().find('.op_sep').replaceWith("<td class='operator' rowspan='" + selected.size() + "'>AND</td><td class='op_sep'>sep</td>");
+ 		selected.first().find('.then_col').replaceWith("<td class='then_col' rowspan='" + selected.size() + "'></td>");
+ 		selected.find('.then_col').not('[rowspan]').replaceWith('');
  		
+ 		var action_text = selected.first().find('.action_col').text();
+ 		selected.first().find('.action_col').replaceWith("<td class='action_col' rowspan='" + selected.size() + "'>" + action_text + "</td>");
+ 		selected.find('.action_col').not('[rowspan]').replaceWith('');
+ 		
+ 		
+ 		//selected.first().find('.op_sep').replaceWith("<td class='operator' rowspan='" + selected.size() + "'>AND</td><td class='op_sep'>sep</td>");		
  		//$('.rulesview .not[selected]').find()
  		
  		selected.removeClass('selected').addClass('inrule');

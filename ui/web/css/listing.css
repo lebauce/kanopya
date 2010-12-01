@@ -96,12 +96,20 @@ table#graphchoices, table.set_selectors {
 
 .rulesview td.operator {
 	border: none;
-	background-color: #900;
+	background-color: #D99;
+	text-align: center;
 }
 
 .rulesview .selected {
 	background-color: #0A0;
 }
+
+.rulesview .then_col { 
+	width: 50px;	
+	background: url("/images/icons/arrow.png") no-repeat center;
+}
+
+.rulesview #rules_head th {text-align: center;}
 
 /* ********************************************************************************************************************** */
 
