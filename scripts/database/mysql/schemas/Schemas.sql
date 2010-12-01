@@ -486,7 +486,7 @@ CREATE TABLE `user_entity` (
   UNIQUE KEY `fk_user_entity_1` (`entity_id`),
   UNIQUE KEY `fk_user_entity_2` (`user_id`),
   CONSTRAINT `fk_user_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_user_entity_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCASE ON UPDATE NO ACTION
+  CONSTRAINT `fk_user_entity_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

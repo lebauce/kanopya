@@ -6,18 +6,26 @@ SET @eid := 1;
 -- permanents data
 --
 
--- user and groups
+-- users
+INSERT INTO `user` VALUES 
+(1,1,'executer','executer','executer','executer',NULL,CURRENT_DATE(),NULL,'executer'),
+(2,0,'admin','admin','Administrator','','admin@somewhere.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); SET @eid := @eid +1;
+
+-- groups
 INSERT INTO `groups` VALUES 
 (1,'User','User master group',1),
-(2,'Processortemplate','Processortemplate master group',1),
-(3,'Motherboardtemplate','Motherboardtemplate master group',1),
+(2,'Processormodel','Processormodel master group',1),
+(3,'Motherboardmodel','Motherboardmodel master group',1),
 (4,'Motherboard','Motherboard master group',1),
 (5,'Cluster','Cluster master group',1),
 (6,'Distribution','Distribution master group',1),
 (7,'Kernel','Kernel master group',1),
 (8,'Systemimage','Systemimage master group',1),
 (9,'Operationtype','Operationtype master group',1),
-(10,'admin','for administration tasks',1);
+(10,'Admin','for administration tasks',1);
+(11,'Powersupply','Powersupply master group',1);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,3); SET @eid := @eid +1;
@@ -28,10 +36,6 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,7);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,8); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,9); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,10); SET @eid := @eid +1;
-
-
-INSERT INTO `user` VALUES (1,'executer','executer','executer','executer',NULL,'2010-07-22',NULL,'executer');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- processor models
 INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1);
@@ -208,17 +212,6 @@ INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 
 -- dhcpd configuration
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'10.0.0.0','255.255.255.0');
-
---
--- data for development tests
--- 
-
-INSERT INTO `user` VALUES 
-(2,'thom','pass','Thomas','MANNI','thomas.manni@hederatech.com',CURRENT_DATE(),NULL,''),(3,'xebech','pass','Antoine','CASTAING','antoine.castaing@hederatech.com',CURRENT_DATE(),NULL,''),
-(4,'tortue','pass','Sylvain','YVON-PALIOT','sylvain.yvon-paliot@hederatech.com',CURRENT_DATE(),NULL,'');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); SET @eid := @eid +1;
 
 SET foreign_key_checks=1;
 
