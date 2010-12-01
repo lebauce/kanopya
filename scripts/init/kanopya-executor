@@ -47,22 +47,29 @@ echo "KANOPYA_EXECUTOR_OPTS : $KANOPYA_EXECUTOR_OPTS"
 
 case "$1" in
   start)
-    log_daemon_msg "Starting Kanopya executor services:"
-    if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
-	start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
-	    -- $KANOPYA_EXECUTOR_OPTS
-	log_progress_msg " Kanopya executor"
+    if [ -f $PIDFILE ]; then
+	log_daemon_msg "Kanopya executor already running"
+    else
+	log_daemon_msg "Starting Kanopya executor services:"
+	if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
+	    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
+		-- $KANOPYA_EXECUTOR_OPTS
+	    log_progress_msg " Kanopya executor"
+	fi
     fi
     ;;
   stop)
     log_daemon_msg "Stopping Kanopya executor service:"
     start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
     log_progress_msg " kanopya executor"
+    echo "rm $PIDFILE"
+    rm $PIDFILE
     ;;
   restart)
     log_daemon_msg "Restarting network management services:"
     if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
-	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 	
+	rm $PIDFILE
 	log_progress_msg " Kanopya executor"
     fi
     # Allow the daemons time to exit completely.
