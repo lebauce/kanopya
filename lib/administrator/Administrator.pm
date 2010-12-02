@@ -59,6 +59,7 @@ use General;
 use Entity;
 use XML::Simple;
 use DateTime;
+use NetworkManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -128,6 +129,11 @@ sub new {
 	$self->{db} = $schema;
 	$self->{_rightschecker} = $rightschecker;		
 	$oneinstance = $self;
+	# Load Manager
+	$self->{manager} = {};
+	$self->{manager}->{network} = NetworkManager->new(schemas=>$self->{db},
+													  internalnetwork => $self->{config}->{internalnetwork});
+	
 	$log->info("new Administrator instance");
 	return $self;
 }
@@ -848,7 +854,7 @@ sub newPublicIP {
 add new route to a public ip given its id
 
 =cut
-
+#TODO TO REMOVE 
 sub addRoute {
 	my $self = shift;
 	my %args = @_;
