@@ -33,6 +33,18 @@ use Exception::Class (
     Mcs::Exception::Execution::OperationReported => {
 	isa => 'Mcs::Exception::Execution',
 	description => 'Operation execution reported',
+	},
+	Mcs::Exception::LoginFailed => {
+	isa => 'Mcs::Exception',
+	description => 'Incorrect Login/Password values pair',
+	},
+	Mcs::Exception::Permission => {
+	isa => 'Mcs::Exception',
+	description => 'MicroCluster Permission Exception'
+	},
+	Mcs::Exception::Permission::Denied => {
+	isa => 'Mcs::Exception::Permission',
+	description => 'Permission denied'
 	}
     
     );

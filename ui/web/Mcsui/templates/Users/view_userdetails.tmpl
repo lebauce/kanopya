@@ -37,7 +37,7 @@
 <table class="detailspart">
 <TMPL_LOOP NAME=groups_list>
 <tr><td class="label2"><span class="bold"><TMPL_VAR NAME=groups_name></span> - <span class="italic"><TMPL_VAR NAME=groups_desc></span></td>
-<TMPL_UNLESS NAME=groups_system><td class="action"><a class="imgManage" href="/cgi/mcsui.cgi/users/view_groupdetails?groups_id=<TMPL_VAR NAME=groups_id>">details</a></td>
+<TMPL_UNLESS NAME=groups_system><td class="action"><a class="imgManage" href="/cgi/mcsui.cgi/groups/view_groupdetails?groups_id=<TMPL_VAR NAME=groups_id>">details</a></td>
 <TMPL_ELSE><td class="action"></td></TMPL_UNLESS>
 </tr>
 </TMPL_LOOP>

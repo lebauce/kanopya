@@ -123,8 +123,13 @@ sub new {
 	};
 	if ($@) {
 		my $error = $@;
-		$log->error("Administrator->new : Error connecting Database $error");
-		throw Mcs::Exception::DB(error => "$error"); 
+		if(ref($error) eq 'Mcs::Exception::LoginFailed') {
+			$log->error("Administrator->new : $error");
+			rethrow $error;
+		} else {
+			$log->error("Administrator->new : Error connecting Database $error");
+			throw Mcs::Exception::DB(error => "$error");
+		} 
 	}
 	
 	$self->{db} = $schema;

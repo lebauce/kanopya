@@ -107,6 +107,7 @@ return groups resultset where this entity appears (only on an already saved enti
 sub getGroups {
 	my $self = shift;
 	if( not $self->{_dbix}->in_storage ) { return undef; } 
+	#$log->debug("======> GetGroups call <======");
 	my $mastergroup = ref $self;
 	$mastergroup =~ s/.*\:\://g;
 	my $groups = $self->{_rightschecker}->{_schema}->resultset('Groups')->search({

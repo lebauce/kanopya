@@ -10,20 +10,9 @@
 	</tr>
 	</TMPL_LOOP>
 </table>
-
-<table class="simplelisting">
-	<caption>Groups</caption>
-	<TMPL_LOOP NAME=groups_list>
-	<td><span class="bold"><TMPL_VAR NAME=groups_name></span> (<TMPL_VAR NAME=groups_type>) - <span class="italic"><TMPL_VAR NAME=groups_desc></span></td>
-	<td><a class="imgManage" href="/cgi/mcsui.cgi/users/view_groupdetails?groups_id=<TMPL_VAR NAME=groups_id>">details</a></td>
-	</tr>
-	</TMPL_LOOP>
-</table>
 <div class="actions">
 <a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/users/form_adduser', 'create a user', 600, 400,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a user</a>
 <p class="italic">Create a new user.</p>
-<a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/users/form_addgroup', 'create a group', 620, 230,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a group</a>
-<p class="italic">Create a group.</p>
 </div>
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">

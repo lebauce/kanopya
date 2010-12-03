@@ -167,7 +167,7 @@ sub new {
 
 	if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity->new need a data and rightschecker named argument!";
+		$errmsg = "Entity::Cluster->new need a data and rightschecker named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}

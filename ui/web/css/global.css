@@ -196,7 +196,8 @@ div#footer {
 .imgLightning { background-image: url("/images/icons/lightning.png"); }
 .imgModel { background-image: url("/images/icons/model.png"); }
 .imgDrivenet { background-image: url("/images/icons/drive-network.png"); }
-.imgUsers { background-image: url("/images/icons/users.png"); }
+.imgUser { background-image: url("/images/icons/user.png"); }
+.imgGroups { background-image: url("/images/icons/groups.png"); }
 .imgLog { background-image: url("/images/icons/log.png"); }
 .imgMessage { background-image: url("/images/icons/messages.png"); }
 .imgComponent { background-image: url("/images/icons/component.png"); }

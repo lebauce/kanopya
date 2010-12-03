@@ -91,8 +91,8 @@ sub new {
 		
 	if(! $self->{_user} ) {
 		$errmsg = "incorrect login/password pair";
-		$log->info($errmsg);
-		return undef;
+		$log->error($errmsg);
+		throw Mcs::Exception::LoginFailed(error => $errmsg);	
 	}
 		
 	bless $self, $class;
