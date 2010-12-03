@@ -12,7 +12,6 @@ use base "Monitor";
 
 # logger
 use Log::Log4perl "get_logger";
-#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 my $log = get_logger("collector");
 
 # Constructor
@@ -590,13 +589,6 @@ sub update {
 		$log->error( $error );
 	}
 	
-	my $duration = time() - $start_time;
-	print "#### Update duration = $duration ###\n";
-	$log->info( "Update duration : $duration seconds" );
-	if ( $duration > $self->{_time_step} ) {
-		print "=> Warn: update duration > collector time step (conf)\n";
-		$log->warn("update duration > collector time step (conf)");
-	}
 }
 
 
@@ -635,11 +627,18 @@ sub run {
 	
 	while ( $$running ) {
 
-		print "RUN !\n";
-		
+		my $start_time = time();
+
 		$self->update();
 
-		sleep( $self->{_time_step} );
+		my $update_duration = time() - $start_time;
+		$log->info( "Update duration : $update_duration seconds" );
+		if ( $update_duration > $self->{_time_step} ) {
+			$log->warn("update duration > collector time step (conf)");
+		} else {
+			sleep( $self->{_time_step} - $update_duration );
+		}
+
 	}
 }
 

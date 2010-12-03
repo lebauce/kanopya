@@ -31,7 +31,7 @@ table.graphview .node_selector {
 	vertical-align: top;
 }
 
-table.graphview .clickable:hover
+.clickable:hover
 {
 	cursor: pointer;
 	/*font-weight: bold;*/
@@ -58,7 +58,7 @@ table#graphchoices, table.set_selectors {
 }
 
 
-
+#graph_table .node_selector {width: 10px;}
 
 .period_selectors, .period_selectors table, #settings_link, #settings_link table {
 	//	border-right: 8px solid #6678b1;
@@ -84,6 +84,10 @@ table#graphchoices, table.set_selectors {
 .monitor_settings .graph_options {width: 100%;}
 .monitor_settings .graph_options td, .monitor_settings .graph_options th {text-align:left; width:50%;}
 
+.monitor_settings tr { height: 30px;}
+
+.monitor_settings .expand_cont { height: 1px;}
+
 
 .monitor_settings .select_collect { border-left: 2px solid #6678b1;border-right: 2px solid #6678b1; width:10px;}
 
@@ -101,15 +105,20 @@ table#graphchoices, table.set_selectors {
 }
 
 .rulesview .selected {
-	background-color: #0A0;
+	background-color: #CFC;
 }
 
 .rulesview .then_col { 
 	width: 50px;	
 	background: url("/images/icons/arrow.png") no-repeat center;
+	border: none;
 }
 
+.rulesview .then_head { background: none;}
+
 .rulesview #rules_head th {text-align: center;}
+
+
 
 /* ********************************************************************************************************************** */
 
@@ -194,12 +203,12 @@ table.simplelisting {
 }
 
 
-table.status .expanddown:hover, table.status .expandup:hover { cursor: pointer; }
-
 table.status th { background-color: #DDD; padding: 5px 15px 5px 24px; background-position: 5px 5px;
 	background-repeat: no-repeat; text-align: left;	 }
 table.status td { background-color: #DDD; padding: 5px; background-position: 5px; min-width: 20px; min-height: 20px;
 	background-repeat: no-repeat; text-align: center;	 }
+
+#admin_status table {display: inline;}
 
 table.simplelisting caption { 
 	color: #228b22;

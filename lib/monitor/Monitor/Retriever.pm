@@ -12,8 +12,7 @@ use base "Monitor";
 
 # logger
 use Log::Log4perl "get_logger";
-#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
-my $log = get_logger("retriever");
+my $log = get_logger("grapher");
 
 
 # Constructor
@@ -34,7 +33,7 @@ sub new {
 	
 	$self->{_graph_title_font} = { name => "Times", element => "title", size => 15 };
 	
-	$self->{_graph_width} = 800;
+	$self->{_graph_width} = 600;
 	$self->{_graph_height} = 100;
 	
 	#$self->{_admin_wrap} = AdminWrapper->new( );
@@ -880,11 +879,14 @@ sub graphFromConf {
 	my @clusters_name = $self->getClustersName();
 	
 	# retrieve conf
-	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
-	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
-	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
-	my $conf = shift @conf;
-	my $graphs = General::getAsArrayRef( data => $conf->{generate_graph}, tag => 'graph' );
+#	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+#	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
+#	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
+#	my $conf = shift @conf;
+#	my $graphs = General::getAsArrayRef( data => $conf->{generate_graph}, tag => 'graph' );
+	my $graphs = $self->{_grapher_options};
+	
+	$log->info(Dumper $graphs);
 	
 	# retrieve custom graph conf
 	my $custom_file = "/tmp/gen_graph_custom.conf";
@@ -902,8 +904,10 @@ sub graphFromConf {
 		++$i;
 		print Dumper $graph_def;
 		eval {
-			my @targets = split ",", $graph_def->{targets};
-			my @time_laps = split ",", $graph_def->{time_laps};
+			#my @targets = split ",", $graph_def->{targets};
+			my @targets = ('NODES', 'CLUSTERS');
+			#my @time_laps = split ",", $graph_def->{time_laps};
+			my @time_laps = ('1200', 'hour', 'day');
 			foreach my $laps (@time_laps) {
 				foreach my $target (@targets) {
 					if ( $target eq 'CLUSTERS' ) {
@@ -961,7 +965,7 @@ sub graphFromConf {
 	
 	my $duration = time() - $start_time;
 	print "# graph from conf time =>  $duration\n";
-	if ( $duration > $conf->{generate_graph}{time_step} ) {
+	if ( $duration > $self->{_grapher_time_step} ) {
 		print "=> Warn: graph generation duration > time step (conf)\n";
 	}
 	
@@ -1062,6 +1066,36 @@ sub computeData {
 	}
 	
 	return \%percents;
+}
+
+
+=head2 run
+	
+	Class : Public
+	
+	Desc : Launch graph generation every time_step (configuration)
+	
+=cut
+ 
+sub run {
+	my $self = shift;
+	my $running = shift;
+	
+	while ( $$running ) {
+
+		my $start_time = time();
+
+		$self->graphFromConf();
+
+		my $update_duration = time() - $start_time;
+		$log->info( "Graphing duration : $update_duration seconds" );
+		if ( $update_duration > $self->{_time_step} ) {
+			$log->warn("graphing duration > graphing time step (conf)");
+		} else {
+			sleep( $self->{_time_step} - $update_duration );
+		}
+
+	}
 }
 
 1;

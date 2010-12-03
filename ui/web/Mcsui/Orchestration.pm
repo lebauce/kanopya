@@ -58,10 +58,11 @@ sub view_orchestrator_settings : StartRunmode {
 	my $errors = shift;
 	my $tmpl = $self->load_tmpl('Orchestrator/view_orchestrator_settings.tmpl');
 	
+	
+	my $var_choices = 'fzfez,fzzefz';
+	
 	my $conf = $self->getOrchestratorConf();
-	
 	my @rules = ();
-	
 	my $traps =  General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
 	foreach my $trap (@$traps) {
 		my $thresholds = General::getAsArrayRef( data => $trap, tag => 'threshold' );
@@ -70,6 +71,8 @@ sub view_orchestrator_settings : StartRunmode {
 							inf => defined $thresh->{min},
 							value => defined $thresh->{max} ? $thresh->{max} : $thresh->{min},
 							action => 'Add node',
+							
+							var_choices => $var_choices,
 						};
 		}
 	}
@@ -81,6 +84,8 @@ sub view_orchestrator_settings : StartRunmode {
 							inf => defined $req->{max},
 							value => defined $req->{max} ? $req->{max} : $req->{min},
 							action => 'Remove node',
+							
+							var_choices => $var_choices,
 						};
 		}
 	}

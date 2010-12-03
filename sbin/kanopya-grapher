@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# kanopya-collector.pl - This is the main script to run kanopya monitoring data collect.
+# kanopya-grapher.pl - This is the main script to run kanopya monitoring data collect.
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -24,16 +24,16 @@
 
 =head1 NAME
 
-kanopya-collector - Collector
+kanopya-grapher - Grapher
 
 =head1 SYNOPSIS	    
 
-	$ ./kanopya-collector
+	$ ./kanopya-grapher
 
 =head1 DESCRIPTION
 
-Collector is the main script to run monitoring data collection.
-Collector dynamically gather informations about clustered nodes and aggregates data for each cluster.
+Grapher is the main script to run monitored data graph generation.
+Grapher allow graphing data for nodes and for cluster, with options defined in configuration file.
 
 =head1 METHODS
 
@@ -41,12 +41,12 @@ Collector dynamically gather informations about clustered nodes and aggregates d
 
 use strict;
 use warnings;
-use Monitor::Collector;
+use Monitor::Retriever;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
 Log::Log4perl->init('/opt/kanopya/conf/log.conf');
-my $log = get_logger("collector");
+my $log = get_logger("grapher");
 
 
 my $running = 1;
@@ -61,18 +61,18 @@ $SIG{TERM} = \&signalHandler;
 	
 
 try	{
-	my $collector = Monitor::Collector->new();
+	my $grapher = Monitor::Retriever->new();
 	$log->info("Starting main loop");
 	# enter in the main loop and continue while $$running is true
-	$collector->run(\$running);
+	$grapher->run(\$running);
 }
 catch Error::Simple with {
 	my $ex = shift;
-	$log->error("error in collector instanciation: $ex");
-	die "Catch error in Monitoring::Collector instanciation: $ex";
+	$log->error("error in grapher instanciation: $ex");
+	die "Catch error in Monitoring::Retriever (grapher) instanciation: $ex";
 };
 
-$log->info("kanopya-collector end.");
+$log->info("kanopya-grapher end.");
 
 
 __END__

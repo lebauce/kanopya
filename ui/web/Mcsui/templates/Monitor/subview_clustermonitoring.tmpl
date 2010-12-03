@@ -1,10 +1,14 @@
 <node_list>
 <TMPL_LOOP NAME=GRAPHS>
 	<node id='<TMPL_VAR NAME=ID>'>
-		<table>
+		<table class='simplelisting'>
 		<TMPL_LOOP NAME=SETS>
 				<tr id='<TMPL_VAR NAME=SET_NAME>' class='set_selector'>
-					<td><img src="<TMPL_VAR NAME=IMG_SRC>" /></td>
+					<TMPL_IF NAME=NO_GRAPH>
+						<td>graph missing</td>
+					<TMPL_ELSE>
+						<td><img src="<TMPL_VAR NAME=IMG_SRC>" alt="missing graph"/></td>
+					</TMPL_IF>
 				</tr>
 		</TMPL_LOOP>
 		</table>

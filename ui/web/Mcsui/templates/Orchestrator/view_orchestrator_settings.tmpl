@@ -9,33 +9,62 @@
 
 <div id="content">
 
-<button class='operator_button' op='and'>and</button>
-<button class='operator_button' op='or'>or</button>
-
-
-<table class='rulesview'>
-<tr ><th colspan='5'>condition</th><th></th><th></th></tr>
-<tr><th>var1</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
-<tr><th>var2</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
-<tr><th>var3</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
-<tr><th>var4</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
-<tr><th>var5</th><td>mean</td><td>30</td><td>inf</td><td>80</td> <td class='op_col'></td><td class='then_col'></td><td class='action_col'>action</td></tr>
-</table>
-
-<table class='rulesview'>
-	<tr id='rules_head'><th colspan='5'>Condition</th><th></th><th>Action</th></tr>
+<table id="rules_table" class='rulesview simplelisting'>
+	<caption>Cluster scaling rules</caption>
+	<tr id='rules_head'><th colspan='5'>Condition</th><th colspan='2' class='then_head'></th><th>Action</th><th>Node selection</th></tr>
 	<TMPL_LOOP NAME=RULES>
 		<tr>
-		<th><TMPL_VAR NAME=VAR></th>
+		<td class='editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'><TMPL_VAR NAME=VAR></td>
 		<td>mean</td>
 		<td><TMPL_VAR NAME=TIME_LAPS>s</td>
 		<td><TMPL_IF NAME=INF>&lsaquo;<TMPL_ELSE>&rsaquo;</TMPL_IF></td>
 		<td><TMPL_VAR NAME=VALUE></td>
+		<td class='op_col'></td>
 		<td class='then_col'></td>
-		<td><TMPL_VAR NAME=ACTION></td>
+		<td class='action_col'><TMPL_VAR NAME=ACTION></td>
+		<td class='node_selection'>min cpu load</td>
 		</tr>
 	</TMPL_LOOP>
 </table>
+
+<table class='rulesview simplelisting'>
+<caption>Nodes control</caption>
+<tr><th colspan='3'>Condition</th><th class='then_head'></th><th>Action</th></tr>
+<tr>
+	<td>One of all nodes</td>
+	<td>process mpi</td>
+	<td>not running</td>
+	<td class='then_col'></td>
+	<td>shut down node</td>
+</tr>
+</table>
+
+<table class='rulesview simplelisting'>
+<caption>Traps management</caption>
+<tr><th colspan='1'>On trap</th><th class='then_head'></th><th>Action</th></tr>
+<tr>
+	<td>processing_done</td>
+	<td class='then_col'></td>
+	<td>shut down sender node</td>
+</tr>
+</table>
+
+<div class="actions">
+<a class="action imgAdding" id='add_cond_button'>add scale condition</a>
+<p class="italic">Add a new condition based on cluster's activity.</p>
+<a class="action operator_button" op='or'>OR operator</a>
+<p class="italic">OR selected conditions.</p>
+<a class="action">AND operator</a>
+<p class="italic">AND selected conditions.</p>
+<a class="action imgSave" href="">save</a>
+<p class="italic">Save rules.</p>
+</div>
+
+<div class="actions">
+<a class="action imgAdding" href="">add node condition</a>
+<p class="italic">Add a new condition based on node's activity.</p>
+</div>
+
 
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">

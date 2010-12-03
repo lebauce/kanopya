@@ -151,6 +151,8 @@ sub xml_graph_list : Runmode {
 	
 	my @sets_name = map { $_->{set} } @{$self->getMonitoredSets()};
 	
+	my ($graph_dir, $graph_dir_alias, $graph_subdir) = ("/tmp", "/graph", "monitor/graph");
+	
 	my @graphs = ();	
 	foreach my $node_id ( defined $node_id ? ($node_id) : @all_ids) {
 		my $node_ip = '';
@@ -163,8 +165,14 @@ sub xml_graph_list : Runmode {
 		}
 		my @sets = ();
 		foreach my $set ( defined $set_name ? ($set_name) : @sets_name ) {
-			push @sets, { 	set_name => $set,
-							img_src => "/graph/monitor/graph/graph_" . $node_ip . "_" . $set . $aggreg_ext . "_" . $period . ".png"};
+			my $graph_name = "graph_" . $node_ip . "_" . $set . $aggreg_ext . "_" . $period . ".png";
+			if ( -e  "$graph_dir/$graph_subdir/$graph_name" ) {
+				push @sets, { 	set_name => $set,
+								img_src => "$graph_dir_alias/$graph_subdir/$graph_name"};
+			} else {
+				push @sets, { 	set_name => $set,
+								no_graph => 1};
+			}
 		}
 		push @graphs, { id => $node_id, sets => \@sets};
 	}

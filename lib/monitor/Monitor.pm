@@ -89,7 +89,8 @@ sub new {
 	$log->info("NEW");
 
 	# Load conf
-	my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	#my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
+	my $config = XMLin("/etc/kanopya/monitor.conf");
 	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
 	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
 	my $conf = shift @conf;
@@ -98,7 +99,10 @@ sub new {
 	$self->{_period} = $conf->{period};
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/monitor';
 	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/monitor';
-	$self->{_node_states} = $conf->{node_states}; 
+	$self->{_node_states} = $conf->{node_states};
+	
+	$self->{_grapher_options} = General::getAsArrayRef( data => $conf->{generate_graph}, tag => 'graph' );
+	$self->{_grapher_time_step} = $conf->{generate_graph}{time_step};
 
 	my $all_sets = General::getAsArrayRef( data => $config, tag => 'set' );
 	my $monitored_sets = General::getAsArrayRef( data => $conf, tag => 'monitor' );

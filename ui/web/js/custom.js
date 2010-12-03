@@ -37,7 +37,7 @@
  						}
  	).addClass('clickable');
  	
- 	$('.monitor_settings .editable_choice').click( 
+ 	$('.editable_choice').click( 
  						function() {
  							if ($(this).hasClass('editing')) {return;}
  							var value = $(this).text();
@@ -128,20 +128,27 @@
  		var action_text = selected.first().find('.action_col').text();
  		selected.first().find('.action_col').replaceWith("<td class='action_col' rowspan='" + selected.size() + "'>" + action_text + "</td>");
  		selected.find('.action_col').not('[rowspan]').replaceWith('');
- 		
- 		
- 		//selected.first().find('.op_sep').replaceWith("<td class='operator' rowspan='" + selected.size() + "'>AND</td><td class='op_sep'>sep</td>");		
- 		//$('.rulesview .not[selected]').find()
- 		
+
+ 		var node_selection_text = selected.first().find('.node_selection').text();
+ 		selected.first().find('.node_selection').replaceWith("<td class='node_selection' rowspan='" + selected.size() + "'>" + node_selection_text + "</td>");
+ 		selected.find('.node_selection').not('[rowspan]').replaceWith('');
+ 		 		
  		selected.removeClass('selected').addClass('inrule');
  		//selected.click( function() {} );
  		
- 	 } );
+ 	 } ).addClass('clickable');
  	
+ 	$('#add_cond_button').click( function () {
+ 		$('#rules_table').append('<tr><td>IHGBFERIHBIZ</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
+ 	} );
  	
  // ------------------------------------------------------------------------------------
  
+ 	$('.simpleexpand').click( function () {
+ 		$('#X'+this.id).toggle();
+ 	}).addClass('clickable');
  
+ // ------------------------------------------------------------------------------------
  
  	setInterval( 
  		function() {
@@ -274,7 +281,7 @@
    		$(".selected_set").removeClass('selected_set');
    		$(".expanded").removeClass('expanded');
    		$(this).addClass('selected_set');
-   		$("#toto img").hide(anim, {}, anim_duration);
+   		$("#graph_table img").hide(anim, {}, anim_duration);
    		setTimeout( function() {
    			
 	   		var set_name = $('.selected_set').attr('id');
@@ -284,13 +291,13 @@
 
 				fill_content_container(xml);
 				 
-				$("#toto img").addClass('autorefresh').show(anim, {}, anim_duration);
+				$("#graph_table img").addClass('autorefresh').show(anim, {}, anim_duration);
 				loading_stop();
 			});
 		}, anim_duration); 
    });
    
-   $("#toto .node_selector").click( toggleNode ).addClass('clickable');
+   $("#graph_table .node_selector").click( toggleNode ).addClass('clickable');
    
    $(".period_selectors .period_selector").click(function() {
    		$('.selected_period').removeClass('selected_period');

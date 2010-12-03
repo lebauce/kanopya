@@ -9,9 +9,9 @@
 
 <div id="content">
 
-<h1>General</h1>
-
-<table class='monitor_settings general_settings graphview'>
+<!--table class='monitor_settings general_settings graphview'-->
+<table class='monitor_settings general_settings simplelisting'-->
+<caption>General</caption>
 <tr><th>Time step</th><th>period</th><th>database files dir</th><th>graph files</th></tr>
 	<tr>
 	<td class='editable'><TMPL_VAR NAME=TIME_STEP></td>
@@ -21,16 +21,15 @@
 	</tr>
 </table>
 
-<h1>Data sources conf</h1>
 
-<table class='monitor_settings graphview'>
+<!--table class='monitor_settings graphview'-->
+<table class='monitor_settings simplelisting'>
+<caption>Data sources conf</caption>
 	<tr>
 		<th>Set</th>
 		<th>Provider</th>
 		<th>Type</th>
 		<th>Component</th>
-		<td></td>
-		<th id="save_monitoring_settings">Save</th>
 	</tr>
 	<tr><td colspan='4'></td></tr>
 	<TMPL_LOOP NAME=SETS>
@@ -40,7 +39,7 @@
 		<td choices='Gauge,Counter,Derive' class='editable_choice set_def'><TMPL_VAR NAME=DS_TYPE></td>
 		<td class='img<TMPL_VAR NAME=COMPONENT>  set_def'><TMPL_VAR NAME=COMPONENT></td>
 		</tr>
-		<tr id='X<TMPL_VAR NAME=LABEL>' >
+		<tr id='X<TMPL_VAR NAME=LABEL>' class='expand_cont' >
 
 		<td colspan='4'>
 		
@@ -67,6 +66,11 @@
 		</tr>
 	</TMPL_LOOP>
 </table>	
-	
+
+<div class="actions">
+<a class="action imgSave" href="">save</a>
+<p class="italic">Save settings.</p>
+</div>
+
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">

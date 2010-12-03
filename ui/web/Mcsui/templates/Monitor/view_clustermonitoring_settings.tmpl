@@ -9,15 +9,12 @@
 
 <div id="content">
 
-<h1>Cluster monitoring conf</h1>
-
-<table class='monitor_settings graphview'>
+<table class='simplelisting monitor_settings'>
+	<caption>Cluster monitoring configuration</caption>
 	<tr>
 		<th>Set</th>
-		<th style='width:10px'>Collect</th>
+		<th>Collect</th>
 		<th>Graph</th>
-		<td></td>
-		<th id="save_monitoring_settings">Save</th>
 	</tr>
 	<tr><td colspan='3'></td></tr>
 	<TMPL_LOOP NAME=SETS>
@@ -65,6 +62,11 @@
 
 	</TMPL_LOOP>
 </table>	
-	
+
+<div class="actions">
+<a class="action imgSave" id="save_monitoring_settings">save</a>
+<p class="italic">Save settings.</p>
+</div>
+
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">

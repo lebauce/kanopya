@@ -9,7 +9,6 @@
 
 <div id="content">
 
-<div>
 
 <!--button id='fold_all'>fold</button-->
 
@@ -30,14 +29,10 @@
 </th></tr>
 </table>
 
-<!--table class='graphview period_selectors'>
-	<tr><th id='hour' class='period_selector'>hour</th></tr>
-	<tr><th id='day' class='period_selector selected_period'>day</th></tr>
-</table-->
 </td>
 
 <td>
-<table class='graphview set_selectors'>
+<table class='set_selectors simplelisting'>
 	<tr>
 	<TMPL_LOOP NAME=SETS>
 		<th id='<TMPL_VAR NAME=ID>' class='set_selector'><TMPL_VAR NAME=LABEL></th>
@@ -46,21 +41,15 @@
 </table>
 </td>
 
-<td id='settings_link'>
-<table class='graphview'>
-<tr><th>
-<a href='/cgi/mcsui.cgi/monitoring/view_clustermonitoring_settings' >Settings</a>
-</th></tr>
-</table>
-</td>
+
 
 </tr>
 </table>
 
-<table id='toto' class="graphview">
+<table id='graph_table' class="graphview simplelisting">
 	<tr>
-		<th id='<TMPL_VAR NAME=CLUSTER_ID>' class='node_selector'><TMPL_VAR NAME=CLUSTER_NAME></th>
-		<th id='<TMPL_VAR NAME=CLUSTER_ID>_content' class='content_container'></th>
+		<td id='<TMPL_VAR NAME=CLUSTER_ID>' class='node_selector'><TMPL_VAR NAME=CLUSTER_NAME></td>
+		<td id='<TMPL_VAR NAME=CLUSTER_ID>_content' class='content_container'></td>
 	</tr>
 	<TMPL_LOOP NAME=NODES>
 		<tr>
@@ -70,6 +59,9 @@
 	</TMPL_LOOP>
 </table>
 
+<div class="actions">
+<a class="action imgSettings" href="/cgi/mcsui.cgi/monitoring/view_clustermonitoring_settings">settings</a>
+<p class="italic">Cluster collect and graph settings.</p>
 </div>
 
 </div>

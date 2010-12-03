@@ -168,6 +168,8 @@ div#footer {
 .imgManage { background-image: url("/images/icons/manage.png"); }
 .imgConfigure { background-image: url("/images/icons/configure.png"); }
 .imgCancel { background-image: url("/images/icons/cancel.png"); }
+.imgSave { background-image: url("/images/icons/save.png"); }
+.imgSettings { background-image: url("/images/icons/settings.png"); }
 
 /* states */
 .imgActive { background-image: url("/images/icons/active.png"); }
@@ -231,7 +233,9 @@ div#footer {
 .italic { font-style:italic; } 
 
 
+/* common classes */
 
+.hidden { display: none;}
     
 
 
