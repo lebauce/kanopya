@@ -1,0 +1,463 @@
+ dpkg-buildpackage -rfakeroot -D -us -uc
+dpkg-buildpackage: set CFLAGS to default value: -g -O2
+dpkg-buildpackage: set CPPFLAGS to default value: 
+dpkg-buildpackage: set LDFLAGS to default value: -Wl,-Bsymbolic-functions
+dpkg-buildpackage: set FFLAGS to default value: -g -O2
+dpkg-buildpackage: set CXXFLAGS to default value: -g -O2
+dpkg-buildpackage: source package administrator
+dpkg-buildpackage: source version 1.1
+dpkg-buildpackage: source changed by maxime <maxime@hederatech.com>
+dpkg-buildpackage: host architecture amd64
+ fakeroot debian/rules clean
+dh  clean
+   dh_testdir
+   dh_auto_clean
+   dh_clean
+ dpkg-source -b administrator-1.1
+dpkg-source: info: using source format `1.0'
+dpkg-source: info: building administrator in administrator_1.1.tar.gz
+dpkg-source: info: building administrator in administrator_1.1.dsc
+ debian/rules build
+dh  build
+   dh_testdir
+   dh_auto_configure
+Argument "6.55_02" isn't numeric in numeric ge (>=) at Makefile.PL line 5.
+WARNING: Setting VERSION via file 'VERSION' failed
+ at /usr/share/perl/5.10/ExtUtils/MakeMaker.pm line 571
+Checking if your kit is complete...
+Warning: the following files are missing in your kit:
+	debian/files
+Please inform the author.
+'CREATE_PACKLIST' is not a known MakeMaker parameter name.
+WARNING: Setting ABSTRACT via file 'ABSTRACT' failed
+ at /usr/share/perl/5.10/ExtUtils/MakeMaker.pm line 583
+Writing Makefile for kanopya
+   dh_auto_build
+make[1]: Entering directory `/workspace/tests/administrator-1.1'
+cp lib/Operation/DeactivateSystemimage.pm blib/lib/Operation/DeactivateSystemimage.pm
+cp lib/Operation/AddMotherboardInCluster.pm blib/lib/Operation/AddMotherboardInCluster.pm
+cp lib/Entity/Component/Sshserver/Openssh5.pm blib/lib/Entity/Component/Sshserver/Openssh5.pm
+cp lib/AdministratorDB/Schema/MotherboardEntity.pm blib/lib/AdministratorDB/Schema/MotherboardEntity.pm
+cp lib/AdministratorDB/Schema/Processormodel.pm blib/lib/AdministratorDB/Schema/Processormodel.pm
+cp lib/Entity/Groups.pm blib/lib/Entity/Groups.pm
+cp lib/AdministratorDB/Schema/Dhcpd3Subnet.pm blib/lib/AdministratorDB/Schema/Dhcpd3Subnet.pm
+cp lib/Entity/User.pm blib/lib/Entity/User.pm
+cp lib/Operation/RemoveSystemimage.pm blib/lib/Operation/RemoveSystemimage.pm
+cp lib/Entity/Component/Monitoragent/Snmpd5.pm blib/lib/Entity/Component/Monitoragent/Snmpd5.pm
+cp lib/AdministratorDB/Schema/MotherboardmodelEntity.pm blib/lib/AdministratorDB/Schema/MotherboardmodelEntity.pm
+cp lib/AdministratorDB/Schema/Motherboard.pm blib/lib/AdministratorDB/Schema/Motherboard.pm
+cp lib/AdministratorDB/Schema/Message.pm blib/lib/AdministratorDB/Schema/Message.pm
+cp lib/Operation/AddSystemimage.pm blib/lib/Operation/AddSystemimage.pm
+cp lib/AdministratorDB/Schema/Lvm2Lv.pm blib/lib/AdministratorDB/Schema/Lvm2Lv.pm
+cp lib/AdministratorDB/Schema/Keepalived1Realserver.pm blib/lib/AdministratorDB/Schema/Keepalived1Realserver.pm
+cp lib/Entity/Component/Exportclient.pm blib/lib/Entity/Component/Exportclient.pm
+cp lib/Operation/ActivateMotherboard.pm blib/lib/Operation/ActivateMotherboard.pm
+cp lib/Entity/Distribution.pm blib/lib/Entity/Distribution.pm
+cp lib/Entity/Component/Webserver.pm blib/lib/Entity/Component/Webserver.pm
+cp lib/AdministratorDB/Schema/ComponentProvided.pm blib/lib/AdministratorDB/Schema/ComponentProvided.pm
+cp lib/Entity/Component/Dhcpserver/Dhcpd3.pm blib/lib/Entity/Component/Dhcpserver/Dhcpd3.pm
+cp lib/Entity.pm blib/lib/Entity.pm
+cp lib/AdministratorDB/Schema/Dhcpd3details.pm blib/lib/AdministratorDB/Schema/Dhcpd3details.pm
+cp lib/AdministratorDB/Schema/Dhcpd3Hosts.pm blib/lib/AdministratorDB/Schema/Dhcpd3Hosts.pm
+cp lib/Operation/RemoveMotherboardFromCluster.pm blib/lib/Operation/RemoveMotherboardFromCluster.pm
+cp lib/Operation/ActivateCluster.pm blib/lib/Operation/ActivateCluster.pm
+cp lib/Operation/AddComponentToCluster.pm blib/lib/Operation/AddComponentToCluster.pm
+cp lib/AdministratorDB/Schema/ComponentInstance.pm blib/lib/AdministratorDB/Schema/ComponentInstance.pm
+cp lib/Entity/Component/Tftpserver/Atftpd0.pm blib/lib/Entity/Component/Tftpserver/Atftpd0.pm
+cp lib/AdministratorDB/Schema/Kernel.pm blib/lib/AdministratorDB/Schema/Kernel.pm
+cp lib/AdministratorDB/Schema/Iscsitarget1Lun.pm blib/lib/AdministratorDB/Schema/Iscsitarget1Lun.pm
+cp lib/Operation/RemoveCluster.pm blib/lib/Operation/RemoveCluster.pm
+cp lib/AdministratorDB/Schema/Operationtype.pm blib/lib/AdministratorDB/Schema/Operationtype.pm
+cp lib/AdministratorDB/Schema/Motherboarddetails.pm blib/lib/AdministratorDB/Schema/Motherboarddetails.pm
+cp lib/AdministratorDB/Schema/ComponentInstalled.pm blib/lib/AdministratorDB/Schema/ComponentInstalled.pm
+cp lib/AdministratorDB/Schema/Systemimage.pm blib/lib/AdministratorDB/Schema/Systemimage.pm
+cp lib/AdministratorDB/Schema/Keepalived1.pm blib/lib/AdministratorDB/Schema/Keepalived1.pm
+cp lib/AdministratorDB/Schema/KernelEntity.pm blib/lib/AdministratorDB/Schema/KernelEntity.pm
+cp lib/Operation/DeactivateMotherboard.pm blib/lib/Operation/DeactivateMotherboard.pm
+cp lib/Operation/ActivateSystemimage.pm blib/lib/Operation/ActivateSystemimage.pm
+cp lib/AdministratorDB/Schema/SystemimageEntity.pm blib/lib/AdministratorDB/Schema/SystemimageEntity.pm
+cp lib/Entity/Cluster.pm blib/lib/Entity/Cluster.pm
+cp lib/Operation/CreateSharedDisk.pm blib/lib/Operation/CreateSharedDisk.pm
+cp lib/Operation/StopCluster.pm blib/lib/Operation/StopCluster.pm
+cp lib/AdministratorDB/Schema/User.pm blib/lib/AdministratorDB/Schema/User.pm
+cp lib/AdministratorDB/Schema/Keepalived1Virtualserver.pm blib/lib/AdministratorDB/Schema/Keepalived1Virtualserver.pm
+cp lib/Entity/Component/Loadbalancer/Keepalived1.pm blib/lib/Entity/Component/Loadbalancer/Keepalived1.pm
+cp lib/AdministratorDB/Schema/Distributionprovides.pm blib/lib/AdministratorDB/Schema/Distributionprovides.pm
+cp lib/AdministratorDB/Schema/MessageEntity.pm blib/lib/AdministratorDB/Schema/MessageEntity.pm
+cp lib/AdministratorDB/Schema/UserEntity.pm blib/lib/AdministratorDB/Schema/UserEntity.pm
+cp lib/AdministratorDB/Schema/Route.pm blib/lib/AdministratorDB/Schema/Route.pm
+cp lib/AdministratorDB/Schema/Powersupplycard.pm blib/lib/AdministratorDB/Schema/Powersupplycard.pm
+cp lib/AdministratorDB/Schema/Component.pm blib/lib/AdministratorDB/Schema/Component.pm
+cp lib/AdministratorDB/Schema/Lvm2.pm blib/lib/AdministratorDB/Schema/Lvm2.pm
+cp lib/Entity/Motherboardmodel.pm blib/lib/Entity/Motherboardmodel.pm
+cp lib/AdministratorDB/Schema/Entityright.pm blib/lib/AdministratorDB/Schema/Entityright.pm
+cp lib/Entity/Motherboard.pm blib/lib/Entity/Motherboard.pm
+cp lib/AdministratorDB/Schema/Operation.pm blib/lib/AdministratorDB/Schema/Operation.pm
+cp lib/AdministratorDB/Schema/ComponentInstanceEntity.pm blib/lib/AdministratorDB/Schema/ComponentInstanceEntity.pm
+cp lib/AdministratorDB/Schema/Iscsitarget1Target.pm blib/lib/AdministratorDB/Schema/Iscsitarget1Target.pm
+cp lib/AdministratorDB/Schema/OperationtypeEntity.pm blib/lib/AdministratorDB/Schema/OperationtypeEntity.pm
+cp lib/AdministratorDB/Schema/Entity.pm blib/lib/AdministratorDB/Schema/Entity.pm
+cp lib/AdministratorDB/Schema/ComponentTemplateAttr.pm blib/lib/AdministratorDB/Schema/ComponentTemplateAttr.pm
+cp lib/AdministratorDB/Schema/DistributionEntity.pm blib/lib/AdministratorDB/Schema/DistributionEntity.pm
+cp lib/Operation/RemoveMotherboard.pm blib/lib/Operation/RemoveMotherboard.pm
+cp lib/AdministratorDB/Schema/Powersupply.pm blib/lib/AdministratorDB/Schema/Powersupply.pm
+cp lib/Operation/DeactivateCluster.pm blib/lib/Operation/DeactivateCluster.pm
+cp lib/Entity/Component/Sshserver.pm blib/lib/Entity/Component/Sshserver.pm
+cp lib/Entity/Component/Export.pm blib/lib/Entity/Component/Export.pm
+cp lib/Operation/StopNode.pm blib/lib/Operation/StopNode.pm
+cp lib/AdministratorDB/Schema/GroupsEntity.pm blib/lib/AdministratorDB/Schema/GroupsEntity.pm
+cp lib/AdministratorDB/Schema/Openiscsi2.pm blib/lib/AdministratorDB/Schema/Openiscsi2.pm
+cp lib/AdministratorDB/Schema/OperationEntity.pm blib/lib/AdministratorDB/Schema/OperationEntity.pm
+cp lib/AdministratorDB/Schema/Publicip.pm blib/lib/AdministratorDB/Schema/Publicip.pm
+cp lib/AdministratorDB/Schema/Node.pm blib/lib/AdministratorDB/Schema/Node.pm
+cp lib/AdministratorDB/EntityBase.pm blib/lib/AdministratorDB/EntityBase.pm
+cp lib/AdministratorDB/Schema/ClusterEntity.pm blib/lib/AdministratorDB/Schema/ClusterEntity.pm
+cp lib/Operation/AddMotherboard.pm blib/lib/Operation/AddMotherboard.pm
+cp lib/Operation/StartCluster.pm blib/lib/Operation/StartCluster.pm
+cp lib/Entity/Component/Storage/Lvm2.pm blib/lib/Entity/Component/Storage/Lvm2.pm
+cp lib/AdministratorDB/Schema/Dhcpd3.pm blib/lib/AdministratorDB/Schema/Dhcpd3.pm
+cp lib/Entity/Component/Export/Iscsitarget1.pm blib/lib/Entity/Component/Export/Iscsitarget1.pm
+cp lib/AdministratorDB/Schema/Motherboardmodel.pm blib/lib/AdministratorDB/Schema/Motherboardmodel.pm
+cp lib/AdministratorDB/Schema.pm blib/lib/AdministratorDB/Schema.pm
+cp lib/AdministratorDB/Schema/ProcessormodelEntity.pm blib/lib/AdministratorDB/Schema/ProcessormodelEntity.pm
+cp lib/Entity/Kernel.pm blib/lib/Entity/Kernel.pm
+cp lib/Operation/CloneSystemimage.pm blib/lib/Operation/CloneSystemimage.pm
+cp lib/AdministratorDB/Schema/Distribution.pm blib/lib/AdministratorDB/Schema/Distribution.pm
+cp lib/NetworkManager.pm blib/lib/NetworkManager.pm
+cp lib/Entity/Processormodel.pm blib/lib/Entity/Processormodel.pm
+cp lib/Operation/UpdateClusterNodeStarted.pm blib/lib/Operation/UpdateClusterNodeStarted.pm
+cp lib/AdministratorDB/Schema/Ingroups.pm blib/lib/AdministratorDB/Schema/Ingroups.pm
+cp lib/AdministratorDB/Schema/Snmpd5.pm blib/lib/AdministratorDB/Schema/Snmpd5.pm
+cp lib/Entity/Component/Webserver/Apache2.pm blib/lib/Entity/Component/Webserver/Apache2.pm
+cp lib/AdministratorDB/Schema/Groups.pm blib/lib/AdministratorDB/Schema/Groups.pm
+cp lib/AdministratorDB/Schema/Atftpd0.pm blib/lib/AdministratorDB/Schema/Atftpd0.pm
+cp lib/Operation/ModifyCluster.pm blib/lib/Operation/ModifyCluster.pm
+cp lib/AdministratorDB/Schema/Apache2.pm blib/lib/AdministratorDB/Schema/Apache2.pm
+cp lib/AdministratorDB/Schema/ComponentTemplate.pm blib/lib/AdministratorDB/Schema/ComponentTemplate.pm
+cp lib/Entity/Systemimage.pm blib/lib/Entity/Systemimage.pm
+cp lib/Entity/Component/Monitoragent.pm blib/lib/Entity/Component/Monitoragent.pm
+cp lib/AdministratorDB/Schema/OperationParameter.pm blib/lib/AdministratorDB/Schema/OperationParameter.pm
+cp lib/Entity/Component/DBserver/Mysql5.pm blib/lib/Entity/Component/DBserver/Mysql5.pm
+cp lib/AdministratorDB/Schema/Cluster.pm blib/lib/AdministratorDB/Schema/Cluster.pm
+cp lib/Entity/Component/Dhcpserver.pm blib/lib/Entity/Component/Dhcpserver.pm
+cp lib/Entity/Component/Loadbalancer.pm blib/lib/Entity/Component/Loadbalancer.pm
+cp lib/AdministratorDB/Schema/ComponentType.pm blib/lib/AdministratorDB/Schema/ComponentType.pm
+cp lib/AdministratorDB/Schema/Clusterdetails.pm blib/lib/AdministratorDB/Schema/Clusterdetails.pm
+cp lib/AdministratorDB/Schema/Apache2Virtualhost.pm blib/lib/AdministratorDB/Schema/Apache2Virtualhost.pm
+cp lib/Entity/Component/Tftpserver.pm blib/lib/Entity/Component/Tftpserver.pm
+cp lib/Administrator.pm blib/lib/Administrator.pm
+cp lib/AdministratorDB/Schema/Lvm2Vg.pm blib/lib/AdministratorDB/Schema/Lvm2Vg.pm
+cp lib/Operation.pm blib/lib/Operation.pm
+cp lib/EntityRights.pm blib/lib/EntityRights.pm
+cp lib/Entity/Component/Storage.pm blib/lib/Entity/Component/Storage.pm
+cp lib/AdministratorDB/Schema/Iscsitarget1.pm blib/lib/AdministratorDB/Schema/Iscsitarget1.pm
+cp lib/AdministratorDB/Schema/ComponentTypeIsInstalled.pm blib/lib/AdministratorDB/Schema/ComponentTypeIsInstalled.pm
+cp lib/Operation/AddCluster.pm blib/lib/Operation/AddCluster.pm
+cp lib/Entity/Component/DBserver.pm blib/lib/Entity/Component/DBserver.pm
+cp lib/Entity/Message.pm blib/lib/Entity/Message.pm
+cp lib/Entity/Component/Exportclient/Openiscsi2.pm blib/lib/Entity/Component/Exportclient/Openiscsi2.pm
+cp lib/Entity/Component.pm blib/lib/Entity/Component.pm
+cp lib/AdministratorDB/Schema/Lvm2Pv.pm blib/lib/AdministratorDB/Schema/Lvm2Pv.pm
+Manifying blib/man3/Operation::DeactivateSystemimage.3pm
+Manifying blib/man3/Operation::RemoveCluster.3pm
+Manifying blib/man3/Operation::AddMotherboardInCluster.3pm
+Manifying blib/man3/Entity::Groups.3pm
+Manifying blib/man3/Operation::RemoveMotherboard.3pm
+Manifying blib/man3/Operation::DeactivateCluster.3pm
+Manifying blib/man3/Entity::User.3pm
+Manifying blib/man3/Operation::StopNode.3pm
+Manifying blib/man3/Operation::RemoveSystemimage.3pm
+Manifying blib/man3/Operation::AddMotherboard.3pm
+Manifying blib/man3/Operation::StartCluster.3pm
+Manifying blib/man3/Operation::AddSystemimage.3pm
+Manifying blib/man3/Operation::ActivateMotherboard.3pm
+Manifying blib/man3/Entity::Distribution.3pm
+Manifying blib/man3/Entity::Component::Export::Iscsitarget1.3pm
+Manifying blib/man3/Entity::Kernel.3pm
+Manifying blib/man3/Operation::CloneSystemimage.3pm
+Manifying blib/man3/Entity.3pm
+Manifying blib/man3/Operation::RemoveMotherboardFromCluster.3pm
+Manifying blib/man3/Entity::Processormodel.3pm
+Manifying blib/man3/NetworkManager.3pm
+Manifying blib/man3/Operation::ActivateCluster.3pm
+Manifying blib/man3/Operation::UpdateClusterNodeStarted.3pm
+Manifying blib/man3/Operation::AddComponentToCluster.3pm
+Manifying blib/man3/Operation::ModifyCluster.3pm
+Manifying blib/man3/Operation::DeactivateMotherboard.3pm
+Manifying blib/man3/Operation::ActivateSystemimage.3pm
+Manifying blib/man3/Entity::Systemimage.3pm
+Manifying blib/man3/Entity::Cluster.3pm
+Manifying blib/man3/Operation::CreateSharedDisk.3pm
+Manifying blib/man3/Operation::StopCluster.3pm
+Manifying blib/man3/Administrator.3pm
+Manifying blib/man3/Entity::Component::Loadbalancer::Keepalived1.3pm
+Manifying blib/man3/Operation.3pm
+Manifying blib/man3/EntityRights.3pm
+Manifying blib/man3/Operation::AddCluster.3pm
+Manifying blib/man3/Entity::Motherboardmodel.3pm
+Manifying blib/man3/Entity::Motherboard.3pm
+Manifying blib/man3/Entity::Message.3pm
+Manifying blib/man3/Entity::Component.3pm
+make[1]: Leaving directory `/workspace/tests/administrator-1.1'
+   dh_auto_test
+make[1]: Entering directory `/workspace/tests/administrator-1.1'
+PERL_DL_NONLAZY=1 /usr/bin/perl "-MExtUtils::Command::MM" "-e" "test_harness(0, 'blib/lib', 'blib/arch')" t/*.t
+Files=0, Tests=0,  0 wallclock secs ( 0.00 usr +  0.01 sys =  0.01 CPU)
+Result: NOTESTS
+make[1]: Leaving directory `/workspace/tests/administrator-1.1'
+ fakeroot debian/rules binary
+dh  binary
+   dh_testroot
+   dh_prep
+   dh_installdirs
+   dh_auto_install
+make[1]: Entering directory `/workspace/tests/administrator-1.1'
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Administrator.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/EntityRights.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/NetworkManager.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/EntityBase.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Atftpd0.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/KernelEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentInstalled.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ProcessormodelEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Apache2Virtualhost.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Motherboarddetails.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Powersupplycard.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Snmpd5.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Operation.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Operationtype.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Dhcpd3Subnet.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Iscsitarget1.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentProvided.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Apache2.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/MotherboardmodelEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/OperationtypeEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Component.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentTypeIsInstalled.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Keepalived1.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Keepalived1Virtualserver.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Motherboard.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Ingroups.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Dhcpd3.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Dhcpd3details.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Node.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Entityright.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Distributionprovides.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/MessageEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Iscsitarget1Target.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Lvm2.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Iscsitarget1Lun.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/DistributionEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentTemplateAttr.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Cluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Dhcpd3Hosts.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Lvm2Lv.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Publicip.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Lvm2Vg.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Route.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Message.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Powersupply.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Motherboardmodel.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/User.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/MotherboardEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ClusterEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentInstanceEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/UserEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Entity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Kernel.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/OperationEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Distribution.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Keepalived1Realserver.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Openiscsi2.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Clusterdetails.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/GroupsEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/OperationParameter.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Groups.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentType.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentTemplate.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Processormodel.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/ComponentInstance.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Systemimage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/Lvm2Pv.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/AdministratorDB/Schema/SystemimageEntity.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/DeactivateSystemimage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/AddCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/RemoveMotherboard.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/RemoveCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/AddMotherboard.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/UpdateClusterNodeStarted.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/CloneSystemimage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/ActivateCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/StopNode.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/RemoveSystemimage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/AddMotherboardInCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/AddSystemimage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/ModifyCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/ActivateMotherboard.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/CreateSharedDisk.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/StopCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/ActivateSystemimage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/DeactivateCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/StartCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/RemoveMotherboardFromCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/AddComponentToCluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Operation/DeactivateMotherboard.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Motherboard.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Cluster.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Message.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Motherboardmodel.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/User.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Kernel.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Distribution.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Groups.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Processormodel.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Systemimage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Tftpserver.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Storage.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Monitoragent.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Export.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Webserver.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Exportclient.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Dhcpserver.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Sshserver.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Loadbalancer.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/DBserver.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Loadbalancer/Keepalived1.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Tftpserver/Atftpd0.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Sshserver/Openssh5.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Monitoragent/Snmpd5.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Dhcpserver/Dhcpd3.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Webserver/Apache2.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Exportclient/Openiscsi2.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Export/Iscsitarget1.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/Storage/Lvm2.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/perl5/Entity/Component/DBserver/Mysql5.pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::User.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Administrator.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Processormodel.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::ActivateSystemimage.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/EntityRights.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Motherboard.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::AddMotherboardInCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::DeactivateSystemimage.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Message.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Distribution.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::CloneSystemimage.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Component.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::RemoveCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::RemoveMotherboard.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/NetworkManager.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::AddSystemimage.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Kernel.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::AddMotherboard.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::RemoveMotherboardFromCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::AddComponentToCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Motherboardmodel.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Component::Loadbalancer::Keepalived1.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::DeactivateCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::ModifyCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::ActivateMotherboard.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Cluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::StopCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::ActivateCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::RemoveSystemimage.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::CreateSharedDisk.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::DeactivateMotherboard.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Systemimage.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::StartCluster.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Component::Export::Iscsitarget1.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::StopNode.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Entity::Groups.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::UpdateClusterNodeStarted.3pm
+Installing /workspace/tests/administrator-1.1/debian/administrator/usr/share/man/man3/Operation::AddCluster.3pm
+make[1]: Leaving directory `/workspace/tests/administrator-1.1'
+   dh_install
+   dh_installdocs
+   dh_installchangelogs
+   dh_installexamples
+   dh_installman
+   dh_installcatalogs
+   dh_installcron
+   dh_installdebconf
+   dh_installemacsen
+   dh_installifupdown
+   dh_installinfo
+   dh_pysupport
+   dh_installinit
+   dh_installmenu
+   dh_installmime
+   dh_installmodules
+   dh_installlogcheck
+   dh_installlogrotate
+   dh_installpam
+   dh_installppp
+   dh_installudev
+   dh_installwm
+   dh_installxfonts
+   dh_bugfiles
+   dh_lintian
+   dh_gconf
+   dh_icons
+   dh_perl
+   dh_usrlocal
+   dh_link
+   dh_compress
+   dh_fixperms
+   dh_strip
+   dh_makeshlibs
+   dh_shlibdeps
+   dh_installdeb
+   dh_gencontrol
+dpkg-gencontrol: warning: unused substitution variable ${misc:Depends}
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package `administrator' in `../administrator_1.1_amd64.deb'.
+ dpkg-genchanges  >../administrator_1.1_amd64.changes
+dpkg-genchanges: including full source code in upload
+dpkg-buildpackage: full upload; Debian-native package (full source is included)
+Now running lintian...
+W: administrator source: debhelper-but-no-misc-depends administrator
+W: administrator source: missing-debian-source-format
+W: administrator source: superfluous-clutter-in-homepage <http://hederatech.org>
+W: administrator source: changelog-should-mention-nmu
+W: administrator source: source-nmu-has-incorrect-version-number 1.1
+E: administrator source: not-using-po-debconf
+E: administrator: helper-templates-in-copyright
+W: administrator: copyright-has-url-from-dh_make-boilerplate
+E: administrator: copyright-contains-dh_make-todo-boilerplate
+W: administrator: malformed-question-in-templates foo/like_debian
+W: administrator: using-first-person-in-templates foo/why_debian_is_great
+W: administrator: postinst-does-not-load-confmodule
+E: administrator: description-starts-with-package-name
+E: administrator: extended-description-is-empty
+W: administrator: superfluous-clutter-in-homepage <http://hederatech.org>
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/Administrator.3pm.gz:358
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/Entity.3pm.gz:212
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Cluster.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Component.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Component::Export::Iscsitarget1.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Component::Loadbalancer::Keepalived1.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Distribution.3pm.gz
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/Entity::Distribution.3pm.gz:141
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Groups.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Kernel.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Message.3pm.gz
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/Entity::Message.3pm.gz:150
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Motherboard.3pm.gz
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/Entity::Motherboard.3pm.gz:159
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Motherboardmodel.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Processormodel.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::Systemimage.3pm.gz
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/Entity::Systemimage.3pm.gz:167
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/Entity::User.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/EntityRights.3pm.gz
+W: administrator: manpage-has-bad-whatis-entry usr/share/man/man3/NetworkManager.3pm.gz
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/NetworkManager.3pm.gz:169
+W: administrator: manpage-has-errors-from-pod2man usr/share/man/man3/Operation.3pm.gz:192
+Finished running lintian.
