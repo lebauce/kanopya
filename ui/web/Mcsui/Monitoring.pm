@@ -14,7 +14,7 @@ my $log = get_logger("administrator");
 
 sub setup {
 	my $self = shift;
-	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
+	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
 }
 
 # Build an array of html template hash for graphs associated to one target (cluster or node) and one set of indicators

@@ -13,7 +13,7 @@ if(not defined $sysimg_name) {
 	exit 1;
 } 
 
-my $admin = Administrator->new(login => 'thom', password => 'pass');
+my $admin = Administrator->new(login => 'admin', password => 'admin');
 my @systemimages = $admin->getEntities(type => 'Systemimage', hash => {systemimage_name => $sysimg_name});
 my $systemimage = $systemimages[0];
 my $devices = $systemimage->getDevices();

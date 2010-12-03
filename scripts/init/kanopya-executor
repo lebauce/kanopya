@@ -70,12 +70,12 @@ case "$1" in
     if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
 	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 	
 	rm $PIDFILE
-	log_progress_msg " Kanopya executor"
     fi
     # Allow the daemons time to exit completely.
     sleep 2
     start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
 	    -- $KANOPYA_EXECUTOR_OPTS
+    log_progress_msg " Kanopya executor"
     ;;
   status)
     status=0

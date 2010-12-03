@@ -13,7 +13,7 @@ sub new {
 	my $self = {};
 	bless $self, $class;
 
-	$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );;
+	$self->{_admin} = Administrator->new( login =>'admin', password => 'admin' );;
 	
     return $self;
 }
