@@ -191,6 +191,19 @@ sub new {
     return $self;
 }
 
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('motherboard_mac_address');
+	$string =~ s/\://g;
+	return $string;
+}
+
 sub getEtcName {
 	my $self = shift;
 	my $mac = $self->getAttr(name => "motherboard_mac_address");

@@ -65,6 +65,7 @@ my $errmsg;
 
 #$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
+
 my $oneinstance;
 
 =head2 Administrator::new (%args)
@@ -115,7 +116,7 @@ sub new {
 		$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
 
 		# When debug is set, all sql queries are printed
-		# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
+		#$schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
 		
 		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
 	};
@@ -281,7 +282,7 @@ sub getEntities {
 	$log->debug( "getEntityFromHash( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 	$log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
 	$rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
-	
+	$log->debug('resultset count:'.$rs->count());
 	$log->debug( "_getEntityClass with type = $args{type}");
 	if (! exists $args{class_path} or ! defined $args{class_path}){
 		 $entity_class = $self->_getEntityClass(type => $args{type});}
@@ -599,7 +600,7 @@ sub _getDbix {
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
 		$dbix = $self->{db}->resultset( $args{table} )->find(  $args{id}, 
-										{ 	'+columns' => [ "entitylink.entity_id" ], 
+										{ 	'+columns' => [ {entity_id => "entitylink.entity_id"} ], 
 										join => ["entitylink"] });};
 	if ($@) {
 		$errmsg = "Administrator->_getDbix error ".$@;

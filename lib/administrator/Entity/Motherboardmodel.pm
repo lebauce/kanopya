@@ -153,5 +153,16 @@ sub new {
     return $self;
 }
 
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('motherboardmodel_name')." ".$self->{_dbix}->get_column('motherboardmodel_brand');
+	return $string;
+}
 
 1;

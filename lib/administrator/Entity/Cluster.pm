@@ -176,6 +176,18 @@ sub new {
     return $self;
 }
 
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('cluster_name');
+	return $string;
+}
+
 =head2 getComponents
 	
 	Desc : This function get components used in a cluster. This function allows to select

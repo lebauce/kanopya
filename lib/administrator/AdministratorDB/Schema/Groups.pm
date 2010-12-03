@@ -43,4 +43,10 @@ __PACKAGE__->has_one(
   { "foreign.groups_id" => "self.groups_id" },
 );
 
+
+__PACKAGE__->add_columns(
+	"groups_type",
+	{ data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
+);
+
 1;

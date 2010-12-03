@@ -5,7 +5,7 @@ use CGI::Application::Plugin::AutoRunmode;
 sub setup {
 	my $self = shift;
 	$self->{'menu'} = 'Dashboard';
-	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
+	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
 }
 
 sub overview : StartRunmode {

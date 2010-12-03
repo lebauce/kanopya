@@ -19,22 +19,15 @@ div#container {
 
 h2 { text-decoration: underline; }
 
-ul {
-	margin-top: 20px; 
-	list-style: none;
-	
-}
+table { margin-top: 20px; width: 100%; font-size: 1em; }
 
-ul li {
+table td.label {
 	text-align: right;
 	margin: 10px 0;
 }
 
-ul li {}
-ul li.button { text-align: center; margin-top: 30px;}
-ul li.button input { width: 150px; }
+table td.button { text-align: center; margin-top: 30px;}
+input { width: 120px; }
 
-img#biglogo {
-	margin-bottom: 20px;
-	
-}
+img#biglogo { margin-bottom: 20px; }
+.dfv_errors { font-size: 0.8em }

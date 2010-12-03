@@ -116,7 +116,7 @@ CREATE TABLE `powersupply` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `powersupply`
+-- Table structure for table `powersupplycard`
 --
 CREATE TABLE `powersupplycard` (
   `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -319,6 +319,7 @@ CREATE TABLE `user` (
 CREATE TABLE `groups` (
   `groups_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `groups_name` char(32) NOT NULL,
+  `groups_type` char(32) NOT NULL,
   `groups_desc` char(255) DEFAULT NULL,
   `groups_system` int(1) unsigned NOT NULL,
   PRIMARY KEY (`groups_id`),
