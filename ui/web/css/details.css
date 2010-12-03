@@ -23,11 +23,17 @@ span.title {
 
 table.detailspart { width: 100%; margin-bottom: 30px; border: none;}
 
+/* table.detailspart td { border: thin solid black; } */
+
 table.detailspart .list td { height: 1em; }
 
 table.detailspart td.label { 
     font-weight: bold;
     text-align: right;
+}
+
+table.detailspart td.label + td { 
+    min-width: 10em; 
 }
 
 table.detailspart td.actions {

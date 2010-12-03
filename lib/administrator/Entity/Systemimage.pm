@@ -163,6 +163,18 @@ sub new {
 	return $self;
 }
 
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('systemimage_name');
+	return $string;
+}
+
 =head getDevices 
 
 get etc and root device attributes for this systemimage

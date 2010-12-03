@@ -59,11 +59,13 @@ use General;
 use Entity;
 use XML::Simple;
 use DateTime;
+use NetworkManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
 
 #$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
 
 my $oneinstance;
 
@@ -115,19 +117,29 @@ sub new {
 		$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
 
 		# When debug is set, all sql queries are printed
-		# $schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
+		#$schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
 		
 		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
 	};
 	if ($@) {
 		my $error = $@;
-		$log->error("Administrator->new : Error connecting Database $error");
-		throw Mcs::Exception::DB(error => "$error"); 
+		if(ref($error) eq 'Mcs::Exception::LoginFailed') {
+			$log->error("Administrator->new : $error");
+			rethrow $error;
+		} else {
+			$log->error("Administrator->new : Error connecting Database $error");
+			throw Mcs::Exception::DB(error => "$error");
+		} 
 	}
 	
 	$self->{db} = $schema;
 	$self->{_rightschecker} = $rightschecker;		
 	$oneinstance = $self;
+	# Load Manager
+	$self->{manager} = {};
+	$self->{manager}->{network} = NetworkManager->new(schemas=>$self->{db},
+													  internalnetwork => $self->{config}->{internalnetwork});
+	
 	$log->info("new Administrator instance");
 	return $self;
 }
@@ -281,7 +293,7 @@ sub getEntities {
 	$log->debug( "getEntityFromHash( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
 	$log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
 	$rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
-	
+	$log->debug('resultset count:'.$rs->count());
 	$log->debug( "_getEntityClass with type = $args{type}");
 	if (! exists $args{class_path} or ! defined $args{class_path}){
 		 $entity_class = $self->_getEntityClass(type => $args{type});}
@@ -599,7 +611,7 @@ sub _getDbix {
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
 		$dbix = $self->{db}->resultset( $args{table} )->find(  $args{id}, 
-										{ 	'+columns' => [ "entitylink.entity_id" ], 
+										{ 	'+columns' => [ {entity_id => "entitylink.entity_id"} ], 
 										join => ["entitylink"] });};
 	if ($@) {
 		$errmsg = "Administrator->_getDbix error ".$@;
@@ -848,7 +860,7 @@ sub newPublicIP {
 add new route to a public ip given its id
 
 =cut
-
+#TODO TO REMOVE 
 sub addRoute {
 	my $self = shift;
 	my %args = @_;

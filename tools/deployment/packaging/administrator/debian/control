@@ -10,6 +10,6 @@ Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 
 Package: administrator
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}
+Depends: ${perl:Depends}, debconf (>= 0.5) | debconf-2.0
 Description: Administrator allow to manipulate kanopya data object.
 

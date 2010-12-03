@@ -12,7 +12,7 @@ my $log = get_logger("administrator");
 
 sub setup {
 	my $self = shift;
-	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
+	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
 }
 
 sub getOrchestratorConf () {

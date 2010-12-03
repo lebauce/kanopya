@@ -5,7 +5,7 @@ use CGI::Application::Plugin::Redirect;
 
 sub setup {
 	my $self = shift;
-	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
+	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
 }
 
 sub view_shareddisks : StartRunmode {

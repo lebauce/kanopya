@@ -57,5 +57,15 @@ sub getComponentAttr {
 	return $componentAttr;	
 }
 
+=head2 toString
 
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->component_id->get_column('component_name')." ".$self->{_dbix}->component_id->get_column('component_version');
+	return $string;
+}
 1;

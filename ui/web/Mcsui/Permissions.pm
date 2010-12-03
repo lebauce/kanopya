@@ -13,7 +13,7 @@ my $closewindow = "<script type=\"text/javascript\">window.opener.location.reloa
 
 sub setup {
 	my $self = shift;
-	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
+	$self->{'admin'} = Administrator->new(login => 'thom', password => 'pass');
 }
 
 # clusters listing page

@@ -116,7 +116,7 @@ CREATE TABLE `powersupply` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `powersupply`
+-- Table structure for table `powersupplycard`
 --
 CREATE TABLE `powersupplycard` (
   `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -299,6 +299,7 @@ CREATE TABLE `route` (
 
 CREATE TABLE `user` (
   `user_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `user_system` int(1) unsigned NOT NULL DEFAULT 0,
   `user_login` char(32) NOT NULL,
   `user_password` char(32) NOT NULL,
   `user_firstname` char(64) DEFAULT NULL,
@@ -318,6 +319,7 @@ CREATE TABLE `user` (
 CREATE TABLE `groups` (
   `groups_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `groups_name` char(32) NOT NULL,
+  `groups_type` char(32) NOT NULL,
   `groups_desc` char(255) DEFAULT NULL,
   `groups_system` int(1) unsigned NOT NULL,
   PRIMARY KEY (`groups_id`),
@@ -432,18 +434,6 @@ CREATE TABLE `component_template_attr` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Components tables
---
-
-
-
-
-
-
-
-
-
---
 -- Entity tables
 --
 
@@ -496,8 +486,8 @@ CREATE TABLE `user_entity` (
   PRIMARY KEY (`entity_id`,`user_id`),
   UNIQUE KEY `fk_user_entity_1` (`entity_id`),
   UNIQUE KEY `fk_user_entity_2` (`user_id`),
-  CONSTRAINT `fk_user_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_user_entity_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_user_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_user_entity_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -650,8 +640,8 @@ CREATE TABLE `processormodel_entity` (
   PRIMARY KEY (`entity_id`,`processormodel_id`),
   UNIQUE KEY `fk_processormodel_entity_1` (`entity_id`),
   UNIQUE KEY `fk_processormodel_entity_2` (`processormodel_id`),
-  CONSTRAINT `fk_processormodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_processormodel_entity_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_processormodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_processormodel_entity_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

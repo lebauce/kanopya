@@ -251,7 +251,7 @@ sub execute {
 		
 	## ADD Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
-	my $motherboard_ip = $adm->getFreeInternalIP();
+	my $motherboard_ip = $adm->{manager}->{network}->getFreeInternalIP();
 	# Set Hostname
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
 										   value => $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip));

@@ -167,13 +167,25 @@ sub new {
 
 	if ((! exists $args{data} or ! defined $args{data}) ||
 		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity->new need a data and rightschecker named argument!";
+		$errmsg = "Entity::Cluster->new need a data and rightschecker named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $self = $class->SUPER::new( %args );
     return $self;
+}
+
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('cluster_name');
+	return $string;
 }
 
 =head2 getComponents

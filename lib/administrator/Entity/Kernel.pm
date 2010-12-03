@@ -148,5 +148,16 @@ sub new {
     return $self;
 }
 
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('kernel_name');
+	return $string;
+}
 
 1;
