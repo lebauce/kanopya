@@ -360,7 +360,7 @@ sub form_setpubliciptocluster : Runmode {
 	my $tmpl =$self->load_tmpl('Clusters/form_setpubliciptocluster.tmpl');
 	my $output = '';
 	my $query = $self->query();	
-	my $freepublicips = $self->{admin}->getFreePublicIPs();
+	my $freepublicips = $self->{admin}->{manager}->{network}->getFreePublicIPs();
 	
 	$tmpl->param('TITLE_PAGE' => "Adding a public ip to a Cluster");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);

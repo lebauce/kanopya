@@ -60,6 +60,7 @@ use Entity;
 use XML::Simple;
 use DateTime;
 use NetworkManager;
+use NodeManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -140,6 +141,7 @@ sub new {
 	$self->{manager}->{network} = NetworkManager->new(schemas=>$self->{db},
 													  internalnetwork => $self->{config}->{internalnetwork});
 	
+	$self->{manager}->{node} = NodeManager->new(node_rs => $self->{db}->resultset('Node'));
 	$log->info("new Administrator instance");
 	return $self;
 }
@@ -649,17 +651,17 @@ sub _getDbixFromHash {
 	my $entitylink = lc($args{table})."_entities";
 #	my $entitylink = lc($args{table})."_entities";
 	eval {
-		$log->debug("Search obj with the following hash $args{hash} in the following table : $args{table}");
-		$log->debug(Dumper $args{hash});
+#		$log->debug("Search obj with the following hash $args{hash} in the following table : $args{table}");
+#		$log->debug(Dumper $args{hash});
 		my $hash = $args{hash};
 		if (keys(%$hash)){
-			$log->debug("Hash has keys and value : %$hash when search in $args{table}");
+#			$log->debug("Hash has keys and value : %$hash when search in $args{table}");
 			$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
 										{ 	'+columns' => [ "$entitylink.entity_id" ], 
 										join => ["$entitylink"] });
 		}
 		else {
-			$log->debug("hash is empty : %$hash when search in $args{table}");
+#			$log->debug("hash is empty : %$hash when search in $args{table}");
 			$dbix = $self->{db}->resultset( $args{table} )->search( undef,
 										{ 	'+columns' => [ "$entitylink.entity_id" ], 
 										join => ["$entitylink"] });

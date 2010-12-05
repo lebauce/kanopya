@@ -13,8 +13,9 @@ sub view_publicips : StartRunmode {
     my $self = shift;
     my $tmpl =  $self->load_tmpl('Networks/view_publicips.tmpl');
     my $output = '';
-    my $publicips = $self->{'admin'}->getPublicIPs();
-   
+    my $publicips = $self->{'admin'}->{manager}->{network}->getPublicIPs();
+
+#       my $publicips = $self->{'admin'}->getPublicIPs();
     $tmpl->param('TITLE_PAGE' => "Public IPs View");
 	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 		
@@ -48,7 +49,7 @@ sub process_addpublicip : Runmode {
     
     my $query = $self->query();
     eval {
-    	$self->{admin}->newPublicIP(
+    	$self->{admin}->{manager}->{network}->newPublicIP(
     		ip_address => $query->param('ip_address'),
     		ip_mask => $query->param('ip_mask'),
     		gateway => $query->param('gateway') ne '' ? $query->param('gateway') : undef, 

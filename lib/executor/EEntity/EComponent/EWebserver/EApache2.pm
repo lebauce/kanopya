@@ -33,7 +33,7 @@ sub addNode {
 	}
 	
 	my $config = {
-	    INCLUDE_PATH => "/templates/mcsapache2", #$self->_getEntity()->getTemplateDirectory(),
+	    INCLUDE_PATH => "/templates/components/mcsapache2", #$self->_getEntity()->getTemplateDirectory(),
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks

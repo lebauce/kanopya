@@ -222,7 +222,7 @@ sub execute {
 		close($sock);
 	}
 	
-	$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
+	$adm->{manager}->{node}->delNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 	
 	## Remove Motherboard in the dhcp

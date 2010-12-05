@@ -31,19 +31,36 @@ use McsExceptions;
 my $log = get_logger("administrator");
 my $errmsg;
 
+=head2 NetworkManager::new (%args)
+	
+	Class : Public
+	
+	Desc : Instanciate Network Manager object
+	
+	args: 
+		shemas : DBIx:Schema : Database schemas
+		internalnetworl : hash : Internal network configuration
+			ip : String : network address : XXX.XXX.XXX.XXX
+			mask : String : network mask : XXX.XXX.XXX.XXX
+	return: NetworkManager instance
+	
+=cut
+
 sub new {
 	my $class = shift;
 	my %args = @_;
 	my $self = {};
 	if ((! exists $args{schemas} or ! defined $args{schemas})||
 		(! exists $args{internalnetwork} or ! defined $args{internalnetwork})){
-		$errmsg = "NetworkManager->new schemas named argument!";
+		$errmsg = "NetworkManager->new schemas and internalnetwork named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	$self->{db} = $args{schemas};
 	$self->{internalnetwork} = $args{internalnetwork};
 	bless $self, $class;
+	$log->info("New Network Manager Loaded");
+	return $self;
 }
 
 =head2 addRoute

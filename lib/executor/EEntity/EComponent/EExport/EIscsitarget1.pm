@@ -206,7 +206,7 @@ sub generate {
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/mcsietd',
+	    INCLUDE_PATH => '/templates/components/mcsietd',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks

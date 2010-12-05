@@ -322,7 +322,7 @@ sub execute {
 	$self->{nas}->{econtext}->execute(command => $rmdir_cmd);
 
 	# Create node instance
-	$adm->createNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
+	$adm->{manager}->{node}->addNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
 					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
 					 master_node => $masternode);
 
