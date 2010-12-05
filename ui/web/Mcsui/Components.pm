@@ -23,7 +23,7 @@ sub form_configurecomponent : Runmode {
 	my $cluster_id = $component->getAttr(name=>'cluster_id');
 	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id=>$cluster_id);
 	my $componentdetail = $component->getComponentAttr();
-	my $tmplfile = 'form_'.lc($componentdetail->{component_name}).$componentdetail->{component_version}.'.tmpl';
+	my $tmplfile = 'Components/form_'.lc($componentdetail->{component_name}).$componentdetail->{component_version}.'.tmpl';
 	my $tmpl =$self->load_tmpl($tmplfile);
 		
 	my $config = $component->getConf();
@@ -34,8 +34,9 @@ sub form_configurecomponent : Runmode {
 	$tmpl->param('COMPONENT_INSTANCE_ID' => $component_instance_id);
 	$tmpl->param('CLUSTER_ID' => $cluster_id);
 	$tmpl->param('CLUSTER_NAME' => $ecluster->getAttr(name => 'cluster_name'));
-	$tmpl->param('TITLE_PAGE' => "Component Configuration : $componentdetail->{COMPNAME}");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+	$tmpl->param('titlepage' => "Component Configuration : $componentdetail->{COMPNAME}");
+	$tmpl->param('mClusters' => 1);
+	$tmpl->param('submClusters' => 1);
 	
 	return $tmpl->output();
 }
