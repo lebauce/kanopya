@@ -141,7 +141,7 @@ table.listing {
     border-bottom: 1px solid black;
     float: left;    
     width: 78%;
-    margin-bottom: 15px;
+    
     border-collapse: collapse;
 }
 
@@ -154,7 +154,7 @@ table.listing h1 {
     color: #228b22;
     font-weight: bold;
     font-size: 1.6em;
-    margin: 10px 0 0 0;
+    margin: 20px 0 0 0;
 }
 
 table.listing td.toright a { 
@@ -219,11 +219,14 @@ table.simplelisting caption {
 }
 
 
+
 table.simplelisting th { 
 	background-color: #CDC;
 	color: #228b22;
 	border: thin solid white;
 }
+
+table.simplelisting tr:hover { background-color: #EEE; }
 
 table.simplelisting td {
 	border-bottom: thin solid #AAA;
