@@ -100,7 +100,7 @@ sub addNode{
 	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
 		(! exists $args{motherboard_id} or ! defined $args{motherboard_id}) ||
 		(! exists $args{master_node} or ! defined $args{master_node})){
-		$errmsg = "NodeManager->createNode need a cluster_id, motherboard_id and a master_node named argument!";
+		$errmsg = "NodeManager->addNode need a cluster_id, motherboard_id and a master_node named argument!";
 		$log->error($errmsg);	
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -141,6 +141,19 @@ sub delNode{
 	}
 	$row->delete;
 }
+
+=head2 NodeManager::getNodes (%args)
+	
+	Class : Public
+	
+	Desc : Get all nodes in a cluster.
+	
+	args: 
+		cluster_id : Int : Cluster identifier
+	return:
+		array of Entity:Motherboard
+	
+=cut
 
 sub getNodes {
 	my $self = shift;

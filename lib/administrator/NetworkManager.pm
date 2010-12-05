@@ -222,7 +222,7 @@ sub getPublicIPs {
 	return $pubiparray;
 }
 
-=head2 getPublicIPs
+=head2 getFreePublicIPs
 
 Get list of unused public ip addresses 
 	return: array ref

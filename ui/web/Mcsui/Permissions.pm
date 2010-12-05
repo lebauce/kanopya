@@ -375,7 +375,7 @@ sub process_setpubliciptocluster : Runmode {
 	my $self = shift;
     my $query = $self->query();
     eval {
-    	$self->{admin}->setClusterPublicIP(
+    	$self->{admin}->{manager}->{network}->setClusterPublicIP(
     		publicip_id => $query->param('publicip_id'),
     		cluster_id => $query->param('cluster_id'),
     	);

@@ -109,7 +109,7 @@ sub execute {
 	my $adm = Administrator->new();
 	
 	$log->info("getting cluster's nodes");
-	my $nodes = $adm->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));	
+	my $nodes = $adm->{manager}->{network}->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));	
 	
 	if(not scalar @$nodes) {
 		$errmsg = "EStopCluster->execute : this cluster with id $self->{_objs}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";

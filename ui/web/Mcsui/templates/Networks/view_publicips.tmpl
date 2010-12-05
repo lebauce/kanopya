@@ -1,24 +1,26 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
-<style type="text/css">
-@import url(/css/listing.css);
-</style>
+<style type="text/css">@import url(/css/listing.css);</style>
 <div id="content">
-<h1>Public IPs</h1>
-<table id="publiciplist" class="listview">
-	<tr><th>ip</th><th>mask</th><th>gateway</th><th>already used</th><th>actions</th></tr><TMPL_LOOP NAME=PUBLICIPS>
+<table class="simplelisting">
+	<caption>Public IP</caption>
+	<tr><th>ip</th><th>mask</th><th>gateway</th><th>already used</th><th></th></tr><TMPL_LOOP NAME=PUBLICIPS>
 	<tr>
-		<td id="m<TMPL_VAR NAME=PUBLICIP_ID>"><TMPL_VAR NAME=IP_ADDRESS></td>
-		<td><TMPL_VAR NAME=IP_MASK></td>
-		<td><TMPL_VAR NAME=GATEWAY></td>
-		<td><TMPL_IF NAME=CLUSTER_ID>yes<TMPL_ELSE>no</TMPL_IF></td>
+		<td class="center"><TMPL_VAR NAME=IP_ADDRESS></td>
+		<td class="center"><TMPL_VAR NAME=IP_MASK></td>
+		<td class="center"><TMPL_VAR NAME=GATEWAY></td>
+		<td class="center"><TMPL_IF NAME=CLUSTER_ID>yes<TMPL_ELSE>no</TMPL_IF></td>
 		<td><TMPL_IF NAME=CLUSTER_ID>
 		<TMPL_ELSE>
-		<a class="imgRemove" href="/cgi/mcsui.cgi/network/process_removepublicip?publicip_id=<TMPL_VAR NAME=PUBLICIP_ID>">remove</a>
+		<a class="imgRemove" href="/cgi/mcsui.cgi/networks/process_removepublicip?publicip_id=<TMPL_VAR NAME=PUBLICIP_ID>">remove</a>
 		</TMPL_IF>
 		</td>
 	</tr>
 </TMPL_LOOP>
 </table>
+<div class="actions">
+<a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/networks/form_addpublicip', 'create a public ip', 600, 200,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a public ip</a>
+<p class="italic">Create a new public ip.</p>
+</div>
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">
