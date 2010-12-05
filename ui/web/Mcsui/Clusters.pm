@@ -201,7 +201,9 @@ sub view_clusterdetails : Runmode {
 		$tmpl->param('kernel' => 'no specific kernel');
 	}
 	
-	#	TODO #$tmp->{PUBLICIPS} = $n->getPublicIps();
+	my $publicips = $ecluster->getPublicIps();
+	$tmpl->param('publicip_list' => $publicips);
+	$tmpl->param('nbpublicips' => scalar(@$publicips)+1);
 	
 	# state info
 	
@@ -362,8 +364,6 @@ sub form_setpubliciptocluster : Runmode {
 	my $query = $self->query();	
 	my $freepublicips = $self->{admin}->getFreePublicIPs();
 	
-	$tmpl->param('TITLE_PAGE' => "Adding a public ip to a Cluster");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 	$tmpl->param('CLUSTER_ID' => $query->param('cluster_id'));
 	$tmpl->param('FREEPUBLICIPS' => $freepublicips);
 	
@@ -384,7 +384,7 @@ sub process_setpubliciptocluster : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new public ip added to cluster.'); }
-    $self->redirect('/cgi/mcsui.cgi/clusters');
+    return $closewindow;
 }
 
 sub process_startcluster : Runmode {

@@ -13,6 +13,7 @@ span.title {
     position: relative;
     top: -20px;
 	margin-left: 20px;
+	cursor: pointer;
 }
 
 .state {

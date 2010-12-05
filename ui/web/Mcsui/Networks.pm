@@ -1,8 +1,10 @@
-package Mcsui::Network;
+package Mcsui::Networks;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
 use Data::Dumper;
+
+my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
 
 sub setup {
 	my $self = shift;
@@ -15,8 +17,9 @@ sub view_publicips : StartRunmode {
     my $output = '';
     my $publicips = $self->{'admin'}->getPublicIPs();
    
-    $tmpl->param('TITLE_PAGE' => "Public IPs View");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+    $tmpl->param('titlepage' => "Public IPs View");
+	$tmpl->param('mClusters' => 1);
+	$tmpl->param('submNetworks' => 1);
 		
 	$tmpl->param('USERID' => 1234);
 	$tmpl->param('PUBLICIPS' => $publicips);
@@ -31,11 +34,9 @@ sub form_addpublicip : Runmode {
     my $errors = shift;
     my $tmpl =  $self->load_tmpl('Networks/form_addpublicip.tmpl');
     my $output = '';
-    $tmpl->param('TITLE_PAGE' => "Adding a Public ip");
-	$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
-	$tmpl->param($errors) if $errors;
+    $tmpl->param($errors) if $errors;
 
-	$tmpl->param('USERID' => 1234);
+	
 	$output .= $tmpl->output();
 	return $output;
 }
@@ -58,7 +59,7 @@ sub process_addpublicip : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new public ip added.'); }
-    $self->redirect('/cgi/mcsui.cgi/network/view_publicips');
+    return $closewindow;
 }
 
 sub _addpublicip_profile {
@@ -81,7 +82,7 @@ sub process_removepublicip : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'public ip removed.'); }
-    $self->redirect('/cgi/mcsui.cgi/network/view_publicips');
+    $self->redirect('/cgi/mcsui.cgi/networks/view_publicips');
 }
 
 
