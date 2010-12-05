@@ -124,6 +124,7 @@ CREATE TABLE `powersupplycard` (
   `powersupplycard_ip` char(15) DEFAULT NULL,
   `powersupplycard_model_id` int(8),
   `powersupplycard_mac_address` char(32) NOT NULL,
+  `active` int(1),
   PRIMARY KEY (`powersupplycard_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -516,6 +517,21 @@ CREATE TABLE `motherboard_entity` (
   UNIQUE KEY `fk_motherboard_entity_2` (`motherboard_id`),
   CONSTRAINT `fk_motherboard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_entity_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `powersupplycard_entity`
+--
+
+CREATE TABLE `powersupplycard_entity` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `powersupplycard_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`powersupplycard_id`),
+  UNIQUE KEY `fk_powersupplycard_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_powersupplycard_entity_2` (`powersupplycard_id`),
+  CONSTRAINT `fk_powersupplycard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_powersupplycard_entity_2` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
