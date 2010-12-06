@@ -18,7 +18,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 17 july 2010
-package Entity::PowerSupplyCard;
+package Entity::Powersupplycard;
 
 use strict;
 use McsExceptions;
