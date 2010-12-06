@@ -354,7 +354,7 @@ sub startNode {
 		my $result = $self->{econtext}->execute(command => $command);
 	}
 	else {
-	    my $powersupplycard = $args{adm}->getEntity(type=>"PowerSupplyCard",id=> $powersupplycard_id);
+	    my $powersupplycard = $args{adm}->getEntity(type=>"Powersupplycard",id=> $powersupplycard_id);
 # = $args{adm}->getPowerSupply(powersupply_id => $powersupply_id);
 		use IO::Socket;
 #		my $powersupplycard = $args{adm}->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});

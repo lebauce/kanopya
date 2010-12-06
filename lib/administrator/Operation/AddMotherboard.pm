@@ -70,6 +70,8 @@ sub new {
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
     
+    # We have to save power supply configuration, it is not link with motherboard.
+    # So th
     my $powersupplyport_number = $args{params}->{powersupplyport_number};
     my $powersupplycard_id = $args{params}->{powersupplycard_id};
     delete $args{params}->{powersupplycard_id};
