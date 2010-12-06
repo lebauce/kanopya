@@ -129,11 +129,13 @@ sub prepare {
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
+	
+
 	# Load the powersupply_id in specific variable
 	if ((! exists $params->{powersupplycard_id} or ! defined $params->{powersupplycard_id})||
 		(! exists $params->{powersupplyport_number} or ! defined $params->{powersupplyport_number})){
 		$self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
-		$self->{_objs}->{powersupplycard} = $adm->getEntity(id => $params->{powersupplycard_id}, type => "PowerSupplyCard");
+		$self->{_objs}->{powersupplycard} = $adm->getEntity(id => $params->{powersupplycard_id}, type => "Powersupplycard");
 		# We delete the motherboard_powersupply_id entry to create properly in execute
 		delete $params->{powersupplycard_id};
 		delete $params->{powersupplyport_number};
