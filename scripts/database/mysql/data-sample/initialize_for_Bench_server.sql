@@ -5,19 +5,18 @@ SET @eid := 1;
 --
 -- permanents data
 --
-
--- user and groups
+-- system groups
 INSERT INTO `groups` VALUES 
-(1,'User','User master group',1),
-(2,'Processortemplate','Processortemplate master group',1),
-(3,'Motherboardtemplate','Motherboardtemplate master group',1),
-(4,'Motherboard','Motherboard master group',1),
-(5,'Cluster','Cluster master group',1),
-(6,'Distribution','Distribution master group',1),
-(7,'Kernel','Kernel master group',1),
-(8,'Systemimage','Systemimage master group',1),
-(9,'Operationtype','Operationtype master group',1),
-(10,'admin','for administration tasks',1);
+(1,'User','User', 'User master group containing all users',1),
+(2,'Processormodel','Processormodel','Processormodel master group containing all processor models',1),
+(3,'Motherboardmodel','Motherboardmodel','Motherboardmodel master group containing all motherboard models',1),
+(4,'Motherboard','Motherboard','Motherboard master group containing all motherboards',1),
+(5,'Cluster','Cluster','Cluster master group containing all clusters',1),
+(6,'Distribution','Distribution','Distribution master group all distributions',1),
+(7,'Kernel','Kernel','Kernel master group containing all kernels',1),
+(8,'Systemimage','Systemimage','Systemimage master group containing all system images',1),
+(9,'Operationtype','Operationtype','Operationtype master group containing all operations',1),
+(10,'Powersupply','Powersupply','Powersupply master group  containing all power supply cards',1);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,3); SET @eid := @eid +1;
@@ -29,9 +28,22 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,8);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,9); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,10); SET @eid := @eid +1;
 
+-- predefined groups
+INSERT INTO `groups` VALUES
+(11,'Admin','User','Privileged users for administration tasks',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
+SET @Admin_group = 11;
 
-INSERT INTO `user` VALUES (1,'executer','executer','executer','executer',NULL,'2010-07-22',NULL,'executer');
+-- system user
+INSERT INTO `user` VALUES 
+(1,1,'executer','executer','executer','executer',NULL,CURRENT_DATE(),NULL,'executer');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
+
+-- predefined user
+INSERT INTO `user` VALUES
+(2,0,'admin','admin','Administrator','','admin@somewhere.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); 
+INSERT INTO `ingroups` VALUES (@Admin_group, @eid); SET @eid := @eid +1;
 
 -- processor models
 INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1);
@@ -144,7 +156,8 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
 -- Power Supply Card
-INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e');
+INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e',1);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- Power Supply
 INSERT INTO `powersupply` VALUE (1,1,12);
@@ -178,10 +191,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@ei
 INSERT INTO `node` VALUES (1,1,1,1);
 
 -- components templates
-INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/mcsapache2', 2);
-INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
-INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/mcssnmpd', 7);
-INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/mcskeepalived', 8);
+INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/components/mcsapache2', 2);
+INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/components/mcsdhcpd', 5);
+INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/components/mcssnmpd', 7);
+INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/components/mcskeepalived', 8);
 
 -- initial components instance for admin cluster: 
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);
@@ -215,14 +228,6 @@ INSERT INTO `dhcpd3_hosts` VALUES (1,1,'10.0.0.220', '00:30:f9:05:8b:6e','powers
 --
 -- data for development tests
 -- 
-
-INSERT INTO `user` VALUES 
-(2,'thom','pass','Thomas','MANNI','thomas.manni@hederatech.com',CURRENT_DATE(),NULL,''),(3,'xebech','pass','Antoine','CASTAING','antoine.castaing@hederatech.com',CURRENT_DATE(),NULL,''),
-(4,'tortue','pass','Sylvain','YVON-PALIOT','sylvain.yvon-paliot@hederatech.com',CURRENT_DATE(),NULL,'');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,4); SET @eid := @eid +1;
-
 
 -- WebBench cluster
 INSERT INTO `cluster` VALUES (2,'WebServerBench','Benchmark cluster',0,1,9,500,1,1,NULL,'down');
