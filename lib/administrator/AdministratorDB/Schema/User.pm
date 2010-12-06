@@ -68,9 +68,4 @@ __PACKAGE__->has_one(
   { "foreign.user_id" => "self.user_id" },
 );
 
-__PACKAGE__->add_columns(
-  "user_system",
-  { data_type => "INT", default_value => 0, is_nullable => 0, size => 1 },
-);
-
 1;
