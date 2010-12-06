@@ -129,16 +129,19 @@ sub prepare {
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
+	$log->debug("################## powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");
 	# Load the powersupply_id in specific variable
-	if ((! exists $params->{powersupplycard_id} or ! defined $params->{powersupplycard_id})||
-		(! exists $params->{powersupplyport_number} or ! defined $params->{powersupplyport_number})){
+	if ((exists $params->{powersupplycard_id} && defined $params->{powersupplycard_id})&&
+	    ( exists $params->{powersupplyport_number} && defined $params->{powersupplyport_number})){
 		$self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
-		$self->{_objs}->{powersupplycard} = $adm->getEntity(id => $params->{powersupplycard_id}, type => "PowerSupplyCard");
+		$self->{_objs}->{powersupplycard} = $adm->getEntity(id => $params->{powersupplycard_id}, type => "Powersupplycard");
+		$log->debug("Power supply card instanciated with id $params->{powersupplycard_id}");
 		# We delete the motherboard_powersupply_id entry to create properly in execute
-		delete $params->{powersupplycard_id};
-		delete $params->{powersupplyport_number};
 	}
-	
+	delete $params->{powersupplycard_id};
+	delete $params->{powersupplyport_number};
+
+	$log->debug("################## powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");
 	
 	# Instanciate new Motherboard Entity
 	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);

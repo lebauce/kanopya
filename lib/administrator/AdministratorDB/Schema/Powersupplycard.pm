@@ -34,9 +34,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-06 13:00:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+yimaql5YBWet9Yofxn9zw
+# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-06 14:01:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nB59BPte9DBoBkoE0m/yJA
 
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::PowersupplycardEntity",
+  { "foreign.powersupplycard_id" => "self.powersupplycard_id" },
+);
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;

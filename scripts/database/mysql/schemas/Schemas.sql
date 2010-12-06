@@ -109,7 +109,7 @@ CREATE TABLE `motherboarddetails` (
 CREATE TABLE `powersupply` (
   `powersupply_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `powersupplycard_id` int(8) unsigned NOT NULL,
-  `powersupplyport_id` int(8) unsigned NOT NULL,
+  `powersupplyport_number` int(8) unsigned NOT NULL,
   PRIMARY KEY (`powersupply_id`),
   KEY `fk_powersupplycard_1` (`powersupplycard_id`),
   CONSTRAINT `fk_powersupplycard_1` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
