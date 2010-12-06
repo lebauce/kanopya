@@ -12,7 +12,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "powersupplycard_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "powersupplyport_id",
+  "powersupplyport_number",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
 __PACKAGE__->set_primary_key("powersupply_id");
@@ -28,8 +28,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-06 13:00:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5y8Ex++G4HWhqR3/0C3cjA
+# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-06 14:01:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zIflCix5xicHMA2QkStQTg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
