@@ -69,9 +69,15 @@ sub new {
 	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
-        
-    Entity::Motherboard->checkAttrs(attrs => $args{params});
     
+    my $powersupplyport_number = $args{params}->{powersupplyport_number};
+    my $powersupplycard_id = $args{params}->{powersupplycard_id};
+    delete $args{params}->{powersupplycard_id};
+    delete $args{params}->{powersupplyport_number};
+    Entity::Motherboard->checkAttrs(attrs => $args{params});
+    $args{params}->{powersupplyport_number} = $powersupplyport_number;
+	$args{params}->{powersupplycard_id} = $powersupplycard_id;
+     
     # check if kernel_id exist
     $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
     my $row = $admin->{db}->resultset('Kernel')->find($args{params}->{kernel_id});
