@@ -167,7 +167,7 @@ INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components provided by default distribution
-INSERT INTO `component_provided` VALUES (4,1),(7,1);
+INSERT INTO `component_provided` VALUES (2,1),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(9,1);
 
 -- default systemimage based on default distribution
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
