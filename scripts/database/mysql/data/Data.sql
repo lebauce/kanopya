@@ -156,7 +156,8 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
 -- Power Supply Card
-INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e');
+INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e',1);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- Power Supply
 INSERT INTO `powersupply` VALUE (1,1,1);

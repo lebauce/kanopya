@@ -343,8 +343,8 @@ sub startNode {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 
-	my $powersupply_id = $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_powersupply_id");
-	if (!$powersupply_id) {
+	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
+	if (!$powersupplycard_id) {
 		if(not -e '/usr/sbin/etherwake') {
 			$errmsg = "EOperation::EAddMotherboardInCluster->startNode : /usr/sbin/etherwake not found";
 			$log->error($errmsg);
@@ -354,18 +354,19 @@ sub startNode {
 		my $result = $self->{econtext}->execute(command => $command);
 	}
 	else {
-		my $powersupply = $args{adm}->getPowerSupply(powersupply_id => $powersupply_id);
+	    my $powersupplycard = $args{adm}->getEntity(type=>"PowerSupplyCard",id=> $powersupplycard_id);
+# = $args{adm}->getPowerSupply(powersupply_id => $powersupply_id);
 		use IO::Socket;
-		my $powersupplycard = $args{adm}->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
+#		my $powersupplycard = $args{adm}->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
 		my $sock = new IO::Socket::INET (
-                                  PeerAddr => $powersupplycard->{powersupplycard_ip},
+                                  PeerAddr => $powersupplycard->getAttr{name => "powersupplycard_ip"},
                                   PeerPort => '1470',
                                   Proto => 'tcp',
                                  );
 		$sock->autoflush(1);
 		die "Could not create socket: $!\n" unless $sock;
-		
-		my $pos = $powersupply->{powersupplyport_id};
+	    my $powersupply_port_number = $powersupplycard->getMotherboardPort(motherboard_powersupply_id=> $self->{_objs}->{motherboard}->getAttr(name => "motherboard_powersupply_id"));
+		my $pos = $powersupply_port_number;
 		my $s = "R";
 		$s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
 		$s .= pack "B16", "000000000000000";
