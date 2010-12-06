@@ -69,17 +69,23 @@ sub new {
 	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
-    
+    my ($powersupplyport_number, $powersupplycard_id);
     # We have to save power supply configuration, it is not link with motherboard.
     # So th
-    my $powersupplyport_number = $args{params}->{powersupplyport_number};
-    my $powersupplycard_id = $args{params}->{powersupplycard_id};
+    if (defined $args{params}->{powersupplyport_number} && exists $args{params}->{powersupplyport_number} &&
+    	defined $args{params}->{powersupplycard_id} && exists $args{params}->{powersupplycard_id}){
+   		$powersupplyport_number = $args{params}->{powersupplyport_number};
+    	$powersupplycard_id = $args{params}->{powersupplycard_id};
+    }
     delete $args{params}->{powersupplycard_id};
     delete $args{params}->{powersupplyport_number};
     Entity::Motherboard->checkAttrs(attrs => $args{params});
-    $args{params}->{powersupplyport_number} = $powersupplyport_number;
-	$args{params}->{powersupplycard_id} = $powersupplycard_id;
-     
+
+   if (defined $args{params}->{powersupplyport_number} && exists $args{params}->{powersupplyport_number} &&
+    	defined $args{params}->{powersupplycard_id} && exists $args{params}->{powersupplycard_id}){
+    	$args{params}->{powersupplyport_number} = $powersupplyport_number;
+		$args{params}->{powersupplycard_id} = $powersupplycard_id;
+    	}     
     # check if kernel_id exist
     $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
     my $row = $admin->{db}->resultset('Kernel')->find($args{params}->{kernel_id});
