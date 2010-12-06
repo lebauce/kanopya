@@ -359,7 +359,7 @@ sub startNode {
 		use IO::Socket;
 #		my $powersupplycard = $args{adm}->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
 		my $sock = new IO::Socket::INET (
-                                  PeerAddr => $powersupplycard->getAttr{name => "powersupplycard_ip"},
+                                  PeerAddr => $powersupplycard->getAttr(name => "powersupplycard_ip"),
                                   PeerPort => '1470',
                                   Proto => 'tcp',
                                  );

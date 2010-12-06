@@ -47,7 +47,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+
 use General;
 use McsExceptions;
 use Net::IP qw(:PROC);
