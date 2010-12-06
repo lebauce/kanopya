@@ -20,12 +20,12 @@
 # Created 14 july 2010
 use DBIx::Class::Schema::Loader qw/ make_schema_at /;
 
-use lib '/workspace/mcs/Administrator/Lib';
+use lib '/opt/kanopya/lib/administrator';
 
   make_schema_at(
       'AdministratorDB::Schema',
       { debug => 1,
-        dump_directory => '/workspace/mcs/Administrator/Lib',
+        dump_directory => '/opt/kanopya/lib/administrator',
         components => '+AdministratorDB::EntityBase',
         #additional_base_classes => '+AdministratorDB::EntityBase',
       },

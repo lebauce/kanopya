@@ -18,6 +18,8 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
   "powersupplycard_mac_address",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
+  "active",
+  { data_type => "INT", default_value => undef, is_nullable => 1, size => 1 },
 );
 __PACKAGE__->set_primary_key("powersupplycard_id");
 __PACKAGE__->has_many(
@@ -25,10 +27,15 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Powersupply",
   { "foreign.powersupplycard_id" => "self.powersupplycard_id" },
 );
+__PACKAGE__->has_many(
+  "powersupplycard_entities",
+  "AdministratorDB::Schema::PowersupplycardEntity",
+  { "foreign.powersupplycard_id" => "self.powersupplycard_id" },
+);
 
 
-# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-11-02 18:11:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WoVimP+97KO1NrEQAedWHQ
+# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-06 13:00:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+yimaql5YBWet9Yofxn9zw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
