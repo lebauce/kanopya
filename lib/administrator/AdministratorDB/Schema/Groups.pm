@@ -12,6 +12,8 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "groups_name",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
+  "groups_type",
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "groups_desc",
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 255 },
   "groups_system",
@@ -31,8 +33,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-11-02 18:11:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:82jP1+jaKf2dKNorRTqjiQ
+# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-06 13:00:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6kmbMrF2Hv1AzfUfywWnYg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
