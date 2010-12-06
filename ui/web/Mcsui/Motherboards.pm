@@ -84,6 +84,7 @@ sub form_addmotherboard : Runmode {
 	my @motherboardmodels = $self->{'admin'}->getEntities(type => 'Motherboardmodel', hash => {});
 	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});
 	my @kernel = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
+	my @powersupplycards = $self->{'admin'}->getEntities(type => 'Powersupplycard', hash => {});
 	
 	my $mmodels = [];
 	foreach my $x (@motherboardmodels){
@@ -94,6 +95,7 @@ sub form_addmotherboard : Runmode {
 		};
 		push (@$mmodels, $tmp);
 	}
+	$tmpl->param('MOTHERBOARDMODELS' => $mmodels);
 	
 	my $pmodels = [];
 	foreach my $x (@processormodels){
@@ -103,6 +105,7 @@ sub form_addmotherboard : Runmode {
 		};
 		push (@$pmodels, $tmp);
 	}
+	$tmpl->param('PROCESSORMODELS' => $pmodels);
 	
 	my $kern = [];
 	foreach my $x (@kernel){
@@ -112,10 +115,19 @@ sub form_addmotherboard : Runmode {
 		};
 		push (@$kern, $tmp);
 	}
-	
-	$tmpl->param('MOTHERBOARDMODELS' => $mmodels);
-	$tmpl->param('PROCESSORMODELS' => $pmodels);
 	$tmpl->param('KERNEL' => $kern);
+	
+	
+	my $pscards = [];
+	foreach my $x (@powersupplycards){
+		my $tmp = {
+			powersupplycard_id => $x->getAttr( name => 'powersupplycard_id'),
+		    powersupplycard_name => $x->getAttr(name => 'powersupplycard_name'),
+		};
+		push (@$pscards, $tmp);
+	}
+	
+	$tmpl->param('powersupplycards' => $pscards);
 		
 	return $tmpl->output();
 }
@@ -136,7 +148,10 @@ sub process_addmotherboard : Runmode {
 		motherboard_serial_number => $query->param('serial_number'), 
 		motherboardmodel_id => $query->param('motherboard_model'), 
 		processormodel_id => $query->param('cpu_model'), 
-		motherboard_desc => $query->param('desc') });
+		motherboard_desc => $query->param('desc'),
+		powersupplycard_id =>  $query->param('powersupplycard_id') ne "none" ? $query->param('powersupplycard_id') : undef,
+		powersupplyport_number => $query->param('powersupplyport_number'),
+		 });
     };
     if($@) { 
 		my $error = $@;

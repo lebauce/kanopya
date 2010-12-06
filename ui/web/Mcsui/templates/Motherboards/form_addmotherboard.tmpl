@@ -8,10 +8,6 @@
 <form method="POST" action="/cgi/mcsui.cgi/motherboards/process_addmotherboard">
 <table class="form">
 	<tr>
-		<td class="label">Position :</td>
-		<td><input type="text" name="active" maxlength="2" size="2"/>
-	</tr>
-	<tr>
 		<td class="label">MAC address :</td>
 		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
 		<span style="color: red"><TMPL_VAR NAME=ERR_MAC_ADDRESS></span></td>
@@ -48,6 +44,20 @@
 		<td class="label">Description :</td>
 		<td><textarea cols="50" name="desc" value=""></textarea></td> 
 	</tr>
+	<tr>
+		<td class="label">Power supply card :</td>
+		<td><select name="powersupplycard_id">
+			<option value="none">none</option>
+		<TMPL_LOOP NAME=powersupplycards>
+			<option value="<TMPL_VAR NAME=powersupplycard_id>"><TMPL_VAR NAME=powersupplycard_name></option>
+		</TMPL_LOOP>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Port number :</td>
+		<td><input type="text" name="powersupplyport_number" maxlength="2" size="2"/>
+	</tr>
+	
 </table>
 <div class="buttons">
 <input type="submit" value="ok"/>
