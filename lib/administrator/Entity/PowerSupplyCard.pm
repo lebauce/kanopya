@@ -146,13 +146,6 @@ Desc : This function return new Entity::PowerSupplyCard instance
 sub new {
     my $class = shift;
     my %args = @_;
-
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity::PowerSupplyCard->new need a data and rightschecker named argument!";
-		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 	
     my $self = $class->SUPER::new( %args );
 	return $self;
@@ -166,83 +159,129 @@ sub new {
 
 sub toString {
 	my $self = shift;
-	my $string = $self->{_dbix}->get_column('PowerSupplyCard_name');
+	my $string = $self->{_dbix}->get_column('powersupplycard_name'). " with mac address ". $self->{_dbix}->get_column('powersupplycard_mac_address') . " and ip " .$self->{_dbix}->get_column('powersupplycard_ip');;
 	return $string;
 }
 
-=head getDevices 
+=head2 addPowerSupplyCard
 
-get etc and root device attributes for this PowerSupplyCard
-
+Desc : This function insert a new power supply card in Kanopya
+	args: 
+		name : String : Power supply card name (SN or internal naming convention)
+		mac_address : String : mac_address allow to use dhcp to configure power supply card network
+		internalip : String : internal ip get from  $adm->getFreeInternalIP();
+	optionals args:
+		model_id : Int : Power supply model id
 =cut
 
-sub getDevices {
+#sub addPowerSupplyCard{
+#	my $self = shift;
+#	my %args = @_;
+#	if ((! exists $args{name} or ! defined $args{name}) ||
+#		(! exists $args{mac_address} or ! defined $args{mac_address}) ||
+#		(! exists $args{internalip} or ! defined $args{internalip})){
+#		$errmsg = "Administrator->addPowerSupplyCard need a name, mac_Address and an internalip named argument!";
+#		$log->error($errmsg);
+#		throw Mcs::Exception::Internal(error => $errmsg);
+#	}
+#	my $psc = {powersupplycard_name => $args{name},
+#			   powersupplycard_mac_address => $args{mac_address}};
+#	$psc->{powersupply_ip} = $args{internalip}; #$self->getFreeInternalIP();
+#
+#	if (exists $args{model_id} and defined $args{model_id}) {
+#		$psc->{powersupply_model_id} = $args{model_id};
+#	}
+#	$self->{db}->resultset('Powersupplycard')->create($psc);
+#	return;	
+#}
+
+#sub getPowerSupplyCards{
+#	my $self = shift;
+#	my %args = @_;	
+#	my $r = $self->{db}->resultset('Powersupplycard')->search(undef, { 
+#		order_by => { -desc => [qw/powersupplycard_id/], }, 
+#	});
+#	my @arr = ();
+#	while (my $row = $r->next) {
+#		push @arr, { 
+#			'NAME' => $row->get_column('powersupplycard_name'), 
+#			'IP' => $row->get_column('powersupplycard_ip'), 
+#			'MAC' => $row->get_column('powersupplycard_mac_address')
+#		};
+#	}
+#	return @arr;
+#}
+
+#sub findPowerSupplyCard{
+#	my $self = shift;
+#	my %args = @_;
+#	if ((! exists $args{powersupplycard_id} or ! defined $args{powersupplycard_id})){
+#		$errmsg = "Administrator->findPowerSupplyCard need an id named argument!";
+#		$log->error($errmsg);
+#		throw Mcs::Exception::Internal(error => $errmsg);
+#	}
+#	my $r = $self->{db}->resultset('Powersupplycard')->find($args{powersupplycard_id});
+#	if(! $r){
+#		$errmsg = "Administrator->findPowerSupplyCard can not find power supply card with id : $args{powersupplycard_id}";
+#		$log->error($errmsg);
+#		throw Mcs::Exception::Internal(error => $errmsg);
+#	}
+#	my $psc = {'powersupplycard_name' => $r->get_column('powersupplycard_name'), 
+#				'powersupplycard_ip' => $r->get_column('powersupplycard_ip'), 
+#				'powersupplycard_mac_address' => $r->get_column('powersupplycard_mac_address')};
+#	return $psc;
+#}
+
+sub getMotherboardPort{
 	my $self = shift;
-	if(! $self->{_dbix}->in_storage) {
-		$errmsg = "Entity::PowerSupplyCard->getDevices must be called on an already save instance";
+	my %args = @_;
+	$log->debug("PowerSupplyCard->getMotherboardPort");
+	if ((! exists $args{motherboard_powersupply_id} or ! defined $args{motherboard_powersupply_id})){
+		$errmsg = "PowerSupplyCard->getMotherboardPort need a motherboard_powersupply_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	$log->info("retrieve etc and root devices attributes");
-	my $etcrow = $self->{_dbix}->etc_device_id;
-	my $rootrow = $self->{_dbix}->root_device_id;
-	my $devices = {
-		etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
-				 lvname => $etcrow->get_column('lvm2_lv_name'),
-				 lvsize => $etcrow->get_column('lvm2_lv_size'),
-				 lvfreespace => $etcrow->get_column('lvm2_lv_freespace'),	
-				 filesystem => $etcrow->get_column('lvm2_lv_filesystem'),
-				 vg_id => $etcrow->get_column('lvm2_vg_id'),
-				 vgname => $etcrow->lvm2_vg_id->get_column('lvm2_vg_name'),
-				 vgsize => $etcrow->lvm2_vg_id->get_column('lvm2_vg_size'),
-				 vgfreespace => $etcrow->lvm2_vg_id->get_column('lvm2_vg_freespace'),
-				},
-		root => { lv_id => $rootrow->get_column('lvm2_lv_id'), 
-				 lvname => $rootrow->get_column('lvm2_lv_name'),
-				 lvsize => $rootrow->get_column('lvm2_lv_size'),
-				 lvfreespace => $rootrow->get_column('lvm2_lv_freespace'),	
-				 filesystem => $rootrow->get_column('lvm2_lv_filesystem'),
-				 vg_id => $rootrow->get_column('lvm2_vg_id'),
-				 vgname => $rootrow->lvm2_vg_id->get_column('lvm2_vg_name'),
-				 vgsize => $rootrow->lvm2_vg_id->get_column('lvm2_vg_size'),
-				 vgfreespace => $rootrow->lvm2_vg_id->get_column('lvm2_vg_freespace'),
-		}
-	};
-	$log->info("PowerSupplyCard etc and root devices retrieved from database");
-	return $devices;
+	return $self->{_dbix}->powersupplies()->find($args{motherboard_powersupply_id})->get_column('powersupplyport_number');
 }
 
-=head getInstalledComponents
-
-get components installed on this PowerSupplyCard
-return array ref containing hash ref 
-
-=cut
-
-sub getInstalledComponents {
+sub addPowerSupplyPort {
 	my $self = shift;
-	if(! $self->{_dbix}->in_storage) {
-		$errmsg = "Entity::PowerSupplyCard->getComponents must be called on an already save instance";
+	my %args = @_;
+	$log->debug("PowerSupplyCard->AddPowerSupplyPort");
+	if (! exists $args{powersupplyport_number} or ! defined $args{powersupplyport_number}){
+		$errmsg = "PowerSupplyCard->AddPowerSupplyPort need a powersupplyport_number named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	my $components = [];
-	my $search = $self->{_dbix}->component_installeds->search(undef, 
-		{ '+columns' => [ 'component_id.component_id', 
-						'component_id.component_name', 
-						'component_id.component_version', 
-						'component_id.component_category' ],
-			join => ['component_id'] } 
-	);
-	while (my $row = $search->next) {
-		my $tmp = {};
-		$tmp->{component_id} = $row->get_column('component_id');
-		$tmp->{component_name} = $row->get_column('component_name');
-		$tmp->{component_version} = $row->get_column('component_version');
-		$tmp->{component_category} = $row->get_column('component_category');
-		push @$components, $tmp;
-	}
-	return $components;
+	my $powersupply_schema = $self->{_dbix}->powersupplies();
+	my $powersupply = $powersupply_schema->create({
+								powersupplycard_id => $self->getAttr(name=>"powersupplycard_id"),
+								powersupplyport_number => $args{powersupplyport_number}});
+	return $powersupply->get_column('powersupply_id');
 }
 
+sub delPowerSupply {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{powerwsupply_id} or ! defined $args{powerwsupplycard_id})){
+		$errmsg = "Administrator->addPowerSupplyCard need a powerwsupply_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $powersupply = $self->{db}->resultset('Powersupply')->find($args{powerwsupply_id})->delete();
+}
+
+sub getPowerSupply {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{powersupply_id} or ! defined $args{powersupply_id})){
+		$errmsg = "Administrator->addPowerSupply need a powersupply_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $row = $self->{db}->resultset('Powersupply')->find($args{powersupply_id});
+	my $powersupply = { powersupplycard_id => $row->get_column('powersupplycard_id'),
+						powersupplyport_id => $row->get_column('powersupplyport_id')};
+	return $powersupply;
+}
 1;

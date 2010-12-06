@@ -111,8 +111,8 @@ CREATE TABLE `powersupply` (
   `powersupplycard_id` int(8) unsigned NOT NULL,
   `powersupplyport_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`powersupply_id`),
-  KEY `fk_powersupplyport_1` (`powersupplycard_id`),
-  CONSTRAINT `fk_powersupplyport_1` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_powersupplycard_1` (`powersupplycard_id`),
+  CONSTRAINT `fk_powersupplycard_1` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

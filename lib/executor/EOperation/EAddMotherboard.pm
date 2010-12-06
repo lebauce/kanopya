@@ -130,10 +130,13 @@ sub prepare {
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
 	# Load the powersupply_id in specific variable
-	if (! exists $args{motherboard_powersupply_id} or ! defined $args{motherboard_powersupply_id}){
-		$self->{_objs}->{motherboard_powersupply_id} = $params->{motherboard_powersupply_id};
+	if ((! exists $params->{powersupplycard_id} or ! defined $params->{powersupplycard_id})||
+		(! exists $params->{powersupplyport_number} or ! defined $params->{powersupplyport_number})){
+		$self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
+		$self->{_objs}->{powersupplycard} = $adm->getEntity(id => $params->{powersupplycard_id}, type => "PowerSupplyCard");
 		# We delete the motherboard_powersupply_id entry to create properly in execute
-		delete $params->{motherboard_powersupply_id};
+		delete $params->{powersupplycard_id};
+		delete $params->{powersupplyport_number};
 	}
 	
 	
@@ -179,13 +182,11 @@ sub execute{
 													econtext => $self->{nas}->{econtext});
 	$self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
 
-	if (exists $self->{_objs}->{motherboard_powersupply_id} and defined $self->{_objs}->{motherboard_powersupply_id}){
-		# Add power supply informations.
-		#TODO Replace this call by a parameter to let user choose its own power suplly
-	
+	if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
+		(exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})){
+			
 		my $powersupplycard_id = 1;
-		my $powersupply_id = $adm->addPowerSupply(powersupplycard_id => $powersupplycard_id,
-											  powersupplyport_id => $self->{_objs}->{motherboard_powersupply_id});
+		my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(powersupplyport_number => $self->{_objs}->{powersupplyport_number});
 		$self->{_objs}->{motherboard}->setAttr(name=>'motherboard_powersupply_id', value=>$powersupply_id);
 	}
 	# AddMotherboard finish, just save the Entity in DB
