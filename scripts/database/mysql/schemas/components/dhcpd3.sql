@@ -14,7 +14,7 @@ CREATE TABLE `dhcpd3` (
   `dhcpd3_servername` char(128) DEFAULT NULL,
   PRIMARY KEY (`dhcpd3_id`),
   KEY `fk_dhcpd3_1` (`component_instance_id`),
-  CONSTRAINT `fk_dhcpd3_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_dhcpd3_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -28,7 +28,7 @@ CREATE TABLE `dhcpd3_subnet` (
   `dhcpd3_subnet_mask` char(40) NOT NULL,
   PRIMARY KEY (`dhcpd3_subnet_id`),
   KEY `fk_dhcpd3_subnet_1` (`dhcpd3_id`),
-  CONSTRAINT `fk_dhcpd3_subnet_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `dhcpd3` (`dhcpd3_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_dhcpd3_subnet_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `dhcpd3` (`dhcpd3_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -48,7 +48,7 @@ CREATE TABLE `dhcpd3_hosts` (
   UNIQUE KEY `ukey_dhcp3_hostname` (`dhcpd3_hosts_hostname`),
   KEY `fk_dhcpd3_hosts_1` (`dhcpd3_subnet_id`),
   KEY `fk_dhcpd3_hosts_2` (`kernel_id`),
-  CONSTRAINT `fk_dhcpd3_hosts_1` FOREIGN KEY (`dhcpd3_subnet_id`) REFERENCES `dhcpd3_subnet` (`dhcpd3_subnet_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_dhcpd3_hosts_1` FOREIGN KEY (`dhcpd3_subnet_id`) REFERENCES `dhcpd3_subnet` (`dhcpd3_subnet_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_dhcpd3_hosts_2` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

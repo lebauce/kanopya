@@ -16,7 +16,7 @@ CREATE TABLE `apache2` (
   `apache2_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`apache2_id`),
   KEY `fk_apache2_1` (`component_instance_id`),
-  CONSTRAINT `fk_apache2_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_apache2_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -34,7 +34,7 @@ CREATE TABLE `apache2_virtualhost` (
   `apache2_virtualhost_errorlog` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`apache2_virtualhost_id`),
   KEY `fk_apache2_virtualhost_1` (`apache2_id`),
-  CONSTRAINT `fk_apache2_virtualhost_1` FOREIGN KEY (`apache2_id`) REFERENCES `apache2` (`apache2_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_apache2_virtualhost_1` FOREIGN KEY (`apache2_id`) REFERENCES `apache2` (`apache2_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
