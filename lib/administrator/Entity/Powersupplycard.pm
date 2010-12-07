@@ -265,7 +265,7 @@ sub delPowerSupply {
 	my $self = shift;
 	my %args = @_;
 	if ((! exists $args{powerwsupply_id} or ! defined $args{powerwsupplycard_id})){
-		$errmsg = "Administrator->delPowerSupplyCard need a powerwsupply_id named argument!";
+		$errmsg = "Powersupplycard->delPowerSupplyCard need a powerwsupply_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -276,7 +276,7 @@ sub getPowerSupply {
 	my $self = shift;
 	my %args = @_;
 	if ((! exists $args{powersupply_id} or ! defined $args{powersupply_id})){
-		$errmsg = "Administrator->addPowerSupply need a powersupply_id named argument!";
+		$errmsg = "Powersupplycard->getPowerSupply need a powersupply_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}

@@ -149,7 +149,6 @@ sub execute{
 		$adm->delPowerSupply(powersupply_id => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id'));
 	}
 	$self->{_objs}->{component_storage}->removeDisk(name => $self->{_objs}->{motherboard}->getEtcName(), econtext => $self->{nas}->{econtext});
-	# AddMotherboard finish, just save the Entity in DB
 	$self->{_objs}->{motherboard}->delete();
 }
 
