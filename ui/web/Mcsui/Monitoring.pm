@@ -134,6 +134,14 @@ sub view_clustermonitoring : Runmode {
 	$tmpl->param('CLUSTER_ID' => $cluster_name);
 	$tmpl->param('CLUSTER_NAME' => $cluster_name);
 	
+	
+	my $period = 'day';
+	#TODO retrieve from conf
+	my ($graph_dir, $graph_dir_alias, $graph_subdir) = ("/tmp", "/graph", "monitor/graph");
+	
+	my $nodecount_graph = "graph_" . $cluster_name . "_nodecount_" . $period . ".png";
+	$tmpl->param('NODECOUNT_GRAPH' => "$graph_dir_alias/$graph_subdir/$nodecount_graph");
+	
 	$tmpl->param('TITLEPAGE' => "Cluster's activity");
 	#$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
 	
@@ -158,19 +166,25 @@ sub xml_graph_list : Runmode {
 	
 	my @sets_name = map { $_->{set} } @{$self->getMonitoredSets()};
 	
+	#TODO retrieve from conf
 	my ($graph_dir, $graph_dir_alias, $graph_subdir) = ("/tmp", "/graph", "monitor/graph");
 	
 	my @graphs = ();	
 	foreach my $node_id ( defined $node_id ? ($node_id) : @all_ids) {
+		my @sets = ();
 		my $node_ip = '';
 		my $aggreg_ext = '';
 		if ($node_id eq $cluster_name) {
 			$aggreg_ext = '_avg';
 			$node_ip = $cluster_name;	
+
+#			my $nodecount_graph = "graph_" . $cluster_name . "_nodecount_" . $period . ".png";
+#			push @sets, { 	set_name => 'nodecount', img_src => "$graph_dir_alias/$graph_subdir/$nodecount_graph"};
+
 		} else {
 			$node_ip = $motherboards->{$node_id}->getAttr(name=>'motherboard_internal_ip');
 		}
-		my @sets = ();
+		
 		foreach my $set ( defined $set_name ? ($set_name) : @sets_name ) {
 			my $graph_name = "graph_" . $node_ip . "_" . $set . $aggreg_ext . "_" . $period . ".png";
 			if ( -e  "$graph_dir/$graph_subdir/$graph_name" ) {
@@ -184,6 +198,11 @@ sub xml_graph_list : Runmode {
 		push @graphs, { id => $node_id, sets => \@sets};
 	}
 	$tmpl->param('GRAPHS' => \@graphs);
+	
+	my $nodecount_graph = "graph_" . $cluster_name . "_nodecount_" . $period . ".png";
+	$tmpl->param('NODECOUNT_GRAPH' => "$graph_dir_alias/$graph_subdir/$nodecount_graph");
+	
+	
 	return $tmpl->output();
 	
 }

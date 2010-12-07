@@ -914,11 +914,11 @@ sub graphFromConf {
 						#TODO sub graphClusters
 						foreach my $cluster (@clusters_name) {
 							my ($dir, $file);
-							if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
-								($dir, $file) = $self->graphNodeCount( 	time_laps => $laps,
-																		time_range => $time_range,
-																		cluster => $cluster );	
-							} else {
+#							if ( defined $graph_def->{type} && $graph_def->{type} eq 'nodecount' ) {
+#								($dir, $file) = $self->graphNodeCount( 	time_laps => $laps,
+#																		time_range => $time_range,
+#																		cluster => $cluster );	
+#							} else {
 								my @required_indicators = split ",", $graph_def->{ds_label};
 								my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
 								($dir, $file) = $self->graphCluster( 	time_laps => $laps,
@@ -930,7 +930,7 @@ sub graphFromConf {
 																		graph_type => $graph_def->{graph_type} || 'line',
 																		with_total => $graph_def->{with_total},
 																		options => $graph_def );
-							}
+#							}
 							$graph_info{$cluster} = [ $dir, $file ];
 							
 						}
@@ -947,12 +947,27 @@ sub graphFromConf {
 						%graph_info = %$res;
 					}
 				} # end foreach target
+			
+			
+				########################## Node count  ###################################
+				foreach my $cluster (@clusters_name) {
+						my ($dir, $file);
+					
+						($dir, $file) = $self->graphNodeCount( 	time_laps => $laps,
+																time_range => $time_range,
+																cluster => $cluster );
+				}
+			
 			} # end foreach time_laps
+			
+			
+														
 		};
 		if ($@) {
 			my $error = $@;
 			#die $error;
 			print "Error generating graph : $error\n";
+			$log->error("Error generating graph : $error");
 			next;
 		}
 		$graph_files{ "graph_$i" } = \%graph_info;

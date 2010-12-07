@@ -61,10 +61,9 @@ table#graphchoices, table.set_selectors {
 #graph_table .node_selector {width: 10px;}
 
 .period_selectors, .period_selectors table, #settings_link, #settings_link table {
-	//	border-right: 8px solid #6678b1;
-//	background: red;
 	width: 100px;
 }
+
 
 .period_selectors .period_selector { display:none;}
 .period_selectors ul { z-index: +1; position: absolute; }
@@ -73,6 +72,7 @@ table#graphchoices, table.set_selectors {
 .period_selectors table { margin: 0 0 20px 0;}
 .period_selectors table th { background: url("/images/icons/clock.png") no-repeat left;}
 
+.selected_period { color: #484; }
 
 .monitor_settings { width: 100%;} 
 /*.monitor_settings table { width: 100%;}*/
