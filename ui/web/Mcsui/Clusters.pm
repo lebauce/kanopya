@@ -254,6 +254,7 @@ sub view_clusterdetails : Runmode {
 		my $id =  $ecluster->getMasterNodeId();
 		my $masternode = $motherboards->{ $id };
 		my $tmp = {
+			motherboard_id => $masternode->getAttr(name => 'motherboard_id'),
 			motherboard_hostname => $masternode->getAttr(name => 'motherboard_hostname'),
 			motherboard_internal_ip => $masternode->getAttr(name => 'motherboard_internal_ip'),
 			link_remove => 0
@@ -263,8 +264,10 @@ sub view_clusterdetails : Runmode {
 		
 		foreach my $n (values %$motherboards) {
 			$tmp = {};
+			$tmp->{motherboard_id} = $n->getAttr(name => 'motherboard_id');
 			$tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname'); 	
 			$tmp->{motherboard_internal_ip} = $n->getAttr(name => 'motherboard_internal_ip');
+			$tmp->{link_remove} = 1;
 			push @$nodes, $tmp;
 		}
 	}

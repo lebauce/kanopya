@@ -110,7 +110,6 @@ sub prepare {
 	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
 	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
-	# if the node is in stopping state, we add this operation again in the execution list
 	
 	if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
 		my $msg = "Node is still in stopping state.";
