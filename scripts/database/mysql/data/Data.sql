@@ -156,7 +156,8 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
 -- Power Supply Card
-INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e');
+INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e',1);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- Power Supply
 INSERT INTO `powersupply` VALUE (1,1,1);
@@ -166,7 +167,7 @@ INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components provided by default distribution
-INSERT INTO `component_provided` VALUES (4,1),(7,1);
+INSERT INTO `component_provided` VALUES (2,1),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(9,1);
 
 -- default systemimage based on default distribution
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
@@ -190,10 +191,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@ei
 INSERT INTO `node` VALUES (1,1,1,1);
 
 -- components templates
-INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/mcsapache2', 2);
-INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
-INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/mcssnmpd', 7);
-INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/mcskeepalived', 8);
+INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/components/mcsapache2', 2);
+INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/components/mcsdhcpd', 5);
+INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/components/mcssnmpd', 7);
+INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/components/mcskeepalived', 8);
 
 -- initial components instance for admin cluster: 
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);

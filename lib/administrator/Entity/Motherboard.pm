@@ -21,7 +21,6 @@
 package Entity::Motherboard;
 
 use strict;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use base "Entity";
 
@@ -278,5 +277,15 @@ sub generateHostname {
 sub getClusterId {
 	my $self = shift;
 	return $self->{_dbix}->nodes->first()->cluster_id->get_column('cluster_id');
+}
+
+sub getPowerSupplyCardId {
+	my $self = shift;
+	my $row = $self->{_dbix}->motherboard_powersupply_id;
+	if (defined $row) {
+		return $row->get_column('powersupplycard_id');}
+	else {
+		return undef;
+	}
 }
 1;

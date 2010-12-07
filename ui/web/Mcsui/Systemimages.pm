@@ -152,8 +152,12 @@ sub view_systemimagedetails : Runmode {
 		$tmpl->param('active' => 1);
 	}
 	
+	my $link_remove = $tmpl->param('active') ? 0 : 1;
 	my $components_list = $esystemimage->getInstalledComponents();
 	my $nb = scalar(@$components_list);
+	foreach my $c (@$components_list) {
+		$c->{link_remove} = $link_remove;
+	}
 	$tmpl->param('components_list' => $components_list);
 	$tmpl->param('components_count' => $nb + 1);
 	

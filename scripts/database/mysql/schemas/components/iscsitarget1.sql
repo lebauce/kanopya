@@ -32,7 +32,7 @@ CREATE TABLE `iscsitarget1_lun` (
   `iscsitarget1_lun_iomode` char(16) NOT NULL,
   PRIMARY KEY (`iscsitarget1_lun_id`),
   KEY `fk_iscsitarget1_lun_1` (`iscsitarget1_target_id`),
-  CONSTRAINT `fk_iscsitarget1_lun_1` FOREIGN KEY (`iscsitarget1_target_id`) REFERENCES `iscsitarget1_target` (`iscsitarget1_target_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_iscsitarget1_lun_1` FOREIGN KEY (`iscsitarget1_target_id`) REFERENCES `iscsitarget1_target` (`iscsitarget1_target_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

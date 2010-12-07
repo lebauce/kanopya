@@ -45,7 +45,6 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use vars qw(@ISA $VERSION);
 use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
 use EFactory;
 use Template;

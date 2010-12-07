@@ -47,7 +47,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+
 use General;
 use McsExceptions;
 use Net::IP qw(:PROC);
@@ -75,9 +75,14 @@ sub newEEntity {
 	my $class = General::getClassEEntityFromEntity(entity => $data);
 	$log->debug("GetClassEEntityFromEntity return $class"); 
 	my $location = General::getLocFromClass(entityclass => $class);
-	$log->debug("General::getLocFromClass return $location"); 
 	
-    require $location;
+	eval { require $location; };
+    if ($@){
+    	$errmsg = "EFactory->newEEntity : require locaction failed (location is $location)";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
 	$log->info("$class instanciated");
     return $class->new(data => $args{data});
 }

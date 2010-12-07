@@ -1,7 +1,7 @@
 <div id="menu">
 	<ul>
 		<TMPL_IF NAME="mDashboard"><li id="current"><a>Dashboard</a></li>
-		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/overview">Dashboard</a></li></TMPL_IF>
+		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/systemstatus">Dashboard</a></li></TMPL_IF>
 		<TMPL_IF NAME="mSettings"><li id="current"><a>Settings</a></li>
 		<TMPL_ELSE><li><a href="/cgi/mcsui.cgi/users">Settings</a></li></TMPL_IF>
 		<TMPL_IF NAME="mHardware"><li id="current"><a>Hardware</a></li>
@@ -15,8 +15,6 @@
 </div>
 <div id="submenu">
 	<ul><TMPL_IF NAME="mDashboard">
-		<li><a class="imgEye<TMPL_IF NAME="submOverview"> current</TMPL_IF>" href="/cgi/mcsui.cgi/overview">Overview</a>
-		</li>
 		<li><a class="imgEye<TMPL_IF NAME="submSystemstatus"> current</TMPL_IF>" href="/cgi/mcsui.cgi/systemstatus">Status</a>
 		</li>
 		<li><a class="imgLog<TMPL_IF NAME="submLogs"> current</TMPL_IF>" href="">Logs</a>

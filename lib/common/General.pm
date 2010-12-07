@@ -74,7 +74,6 @@ sub getLocFromClass{
 	my $data = $args{entityclass};
 	my $location = $args{entityclass};
     $location =~ s/\:\:/\//g;
-    $log->debug("Perl module for class $data : $location.pm");
     return $location . ".pm";
 }
 

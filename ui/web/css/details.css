@@ -13,6 +13,7 @@ span.title {
     position: relative;
     top: -20px;
 	margin-left: 20px;
+	cursor: pointer;
 }
 
 .state {
@@ -21,7 +22,7 @@ span.title {
 	padding-left: 20px;
 }
 
-table.detailspart { width: 100%; margin-bottom: 30px; border: none;}
+table.detailspart { width: 100%; margin-bottom: 30px; border-collapse: collapse;}
 
 /* table.detailspart td { border: thin solid black; } */
 

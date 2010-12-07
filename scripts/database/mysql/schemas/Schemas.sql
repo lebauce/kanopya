@@ -109,10 +109,10 @@ CREATE TABLE `motherboarddetails` (
 CREATE TABLE `powersupply` (
   `powersupply_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `powersupplycard_id` int(8) unsigned NOT NULL,
-  `powersupplyport_id` int(8) unsigned NOT NULL,
+  `powersupplyport_number` int(8) unsigned NOT NULL,
   PRIMARY KEY (`powersupply_id`),
-  KEY `fk_powersupplyport_1` (`powersupplycard_id`),
-  CONSTRAINT `fk_powersupplyport_1` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_powersupplycard_1` (`powersupplycard_id`),
+  CONSTRAINT `fk_powersupplycard_1` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -124,6 +124,7 @@ CREATE TABLE `powersupplycard` (
   `powersupplycard_ip` char(15) DEFAULT NULL,
   `powersupplycard_model_id` int(8),
   `powersupplycard_mac_address` char(32) NOT NULL,
+  `active` int(1),
   PRIMARY KEY (`powersupplycard_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -383,7 +384,7 @@ CREATE TABLE `component_installed` (
   KEY `fk_component_installed_1` (`component_id`),
   KEY `fk_component_installed_2` (`systemimage_id`),
   CONSTRAINT `fk_component_installed_1` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_component_installed_2` FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_component_installed_2` FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -399,7 +400,7 @@ CREATE TABLE `component_instance` (
   KEY `fk_component_instance_1` (`cluster_id`),
   KEY `fk_component_instance_2` (`component_template_id`),
   KEY `fk_component_instance_3` (`component_id`),
-  CONSTRAINT `fk_component_instance_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_component_instance_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_2` FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -430,7 +431,7 @@ CREATE TABLE `component_template_attr` (
   `component_template_attr_type` varchar(45) NOT NULL,
   PRIMARY KEY (`template_component_id`),
   KEY `fk_component_template_attr_1` (`template_component_id`),
-  CONSTRAINT `fk_component_template_attr_1` FOREIGN KEY (`template_component_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_component_template_attr_1` FOREIGN KEY (`template_component_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -516,6 +517,21 @@ CREATE TABLE `motherboard_entity` (
   UNIQUE KEY `fk_motherboard_entity_2` (`motherboard_id`),
   CONSTRAINT `fk_motherboard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_entity_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `powersupplycard_entity`
+--
+
+CREATE TABLE `powersupplycard_entity` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `powersupplycard_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`powersupplycard_id`),
+  UNIQUE KEY `fk_powersupplycard_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_powersupplycard_entity_2` (`powersupplycard_id`),
+  CONSTRAINT `fk_powersupplycard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_powersupplycard_entity_2` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

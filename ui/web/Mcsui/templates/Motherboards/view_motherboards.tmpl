@@ -4,7 +4,7 @@
 <div id="content">
 <TMPL_LOOP NAME=motherboards_list>
 <table class="listing">
-<tr><td colspan="3"><h1><TMPL_VAR NAME=motherboard_model></h1></td></tr>
+<tr><td colspan="3"><h1><TMPL_VAR NAME=motherboard_model> - <TMPL_VAR NAME=motherboard_mac></h1></td></tr>
 <tr><td><TMPL_VAR NAME=motherboard_hostname></td><td>
 <TMPL_IF NAME=active>Active<TMPL_ELSE>Deactivated</TMPL_IF></td><td class="toright">
 <a class="imgManage" href="/cgi/mcsui.cgi/motherboards/view_motherboarddetails?motherboard_id=<TMPL_VAR NAME=motherboard_id>">details</a></td></tr>
@@ -27,7 +27,7 @@
 </table>
 </TMPL_LOOP>
 <div class="actions">
-<a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/motherboards/form_addmotherboard', 'add a new motherboard', 800, 360,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">add a new motherboard</a>
+<a class="action imgAdding" href="javascript:openform('/cgi/mcsui.cgi/motherboards/form_addmotherboard', 'add a new motherboard', 800, 380,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">add a new motherboard</a>
 <p class="italic">add a new motherboard.</p>
 </div>
 </div>

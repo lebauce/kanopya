@@ -14,7 +14,7 @@ CREATE TABLE `lvm2_vg` (
   `lvm2_vg_size` int(8) NOT NULL,
   PRIMARY KEY (`lvm2_vg_id`),
   KEY `fk_lvm2_vg_1` (`component_instance_id`),
-  CONSTRAINT `fk_lvm2_vg_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_lvm2_vg_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -28,7 +28,7 @@ CREATE TABLE `lvm2_pv` (
   PRIMARY KEY (`lvm2_pv_id`),
   UNIQUE KEY `lvm2_UNIQUE` (`lvm2_pv_name`),
   KEY `fk_lvm2_pv_1` (`lvm2_vg_id`),
-  CONSTRAINT `fk_lvm2_pv_1` FOREIGN KEY (`lvm2_vg_id`) REFERENCES `lvm2_vg` (`lvm2_vg_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_lvm2_pv_1` FOREIGN KEY (`lvm2_vg_id`) REFERENCES `lvm2_vg` (`lvm2_vg_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
