@@ -758,10 +758,9 @@ sub _getEntityClass{
 	else {
 		$entity_class = General::getClassEntityFromType(%args);}
     my $location = General::getLocFromClass(entityclass => $entity_class);
-	$log->debug("$entity_class at Location $location");
 	eval { require $location; };
     if ($@){
-    	$errmsg = "Administrator->_getEntityClass type or class_path invalid!";
+    	$errmsg = "Administrator->_getEntityClass type or class_path invalid! (location is $location)";
     	$log->error($errmsg);
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
