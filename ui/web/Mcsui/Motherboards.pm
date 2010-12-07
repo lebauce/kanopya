@@ -36,9 +36,11 @@ sub view_motherboards : StartRunmode {
 		$tmp->{state_broken} = 0;
 		
 		$tmp->{motherboard_id} = $m->getAttr(name => 'motherboard_id');
+		
 		my $emodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
 		$tmp->{motherboard_model} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
 		my $state = $m->getAttr(name => 'motherboard_state');
+		$tmp->{motherboard_mac} = $m->getAttr(name => 'motherboard_mac_address');
 		$tmp->{motherboard_hostname} = $m->getAttr(name => 'motherboard_hostname');
 		$tmp->{motherboard_ip} = $m->getAttr(name => 'motherboard_internal_ip');
 		$tmp->{active} = $m->getAttr(name => 'active');
