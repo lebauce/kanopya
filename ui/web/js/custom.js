@@ -160,8 +160,8 @@
  	} ).addClass('clickable');
  	
  	
-     $('a.normalTip').aToolTip(); 
-     $('div.aToolTip').aToolTip(); 
+     //$('a.normalTip').aToolTip(); 
+     //$('div.aToolTip').aToolTip(); 
 
  // ------------------------------------------------------------------------------------
  
