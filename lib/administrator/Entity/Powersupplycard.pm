@@ -258,8 +258,6 @@ sub addPowerSupplyPort {
 								powersupplycard_id => $self->getAttr(name=>"powersupplycard_id"),
 								powersupplyport_number => $args{powersupplyport_number}});
 	
-	$powersupply->save();
-	$self->save();
 	return $powersupply->get_column('powersupply_id');
 }
 
