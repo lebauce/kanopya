@@ -133,8 +133,9 @@ sub new {
 	mkdir "$self->{_graph_dir}/tmp";
 
 	# Get Administrator
+	my ($login, $password) = ($config->{connection}{login}, $config->{connection}{password});
 	$start_time = time();
-	$self->{_admin_wrap} = AdminWrapper->new( );
+	$self->{_admin_wrap} = AdminWrapper->new( login => $login, password => $password );
 	print "Monitor::new : instanciate admin time = ", time() - $start_time, "\n";
 	
     return $self;

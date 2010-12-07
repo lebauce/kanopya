@@ -33,7 +33,7 @@
 	</tr>
 	<tr><td colspan='4'></td></tr>
 	<TMPL_LOOP NAME=SETS>
-		<tr>
+		<tr class='set_info'>
 		<th id='<TMPL_VAR NAME=LABEL>' class='expander'><TMPL_VAR NAME=LABEL></th>
 		<td choices='Snmp,Apache,MySql,Func' class='img<TMPL_VAR NAME=PROVIDER_NAME> editable_choice set_def'><TMPL_VAR NAME=PROVIDER_NAME></td>
 		<td choices='Gauge,Counter,Derive' class='editable_choice set_def'><TMPL_VAR NAME=DS_TYPE></td>
@@ -44,12 +44,12 @@
 		<td colspan='4'>
 		
 		<TMPL_IF NAME=IS_TABLE>
-			<table class='expandable'>
+			<table class='expandable hidden'>
 			<tr><td>Table</td><td><TMPL_VAR NAME=TABLE_OID></td></tr>
 			<tr><td colspan='2'>
 			<table>
 		<TMPL_ELSE>
-			<table class='expandable'>
+			<table class='expandable hidden'>
 		</TMPL_IF>
 				<TMPL_LOOP NAME=DS>
 					<tr>
@@ -68,7 +68,7 @@
 </table>	
 
 <div class="actions">
-<a class="action imgSave" href="">save</a>
+<a class="action imgSave" id="save_monitoring_settings">save</a>
 <p class="italic">Save settings.</p>
 </div>
 
