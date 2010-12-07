@@ -265,6 +265,7 @@ sub view_clusterdetails : Runmode {
 			$tmp = {};
 			$tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname'); 	
 			$tmp->{motherboard_internal_ip} = $n->getAttr(name => 'motherboard_internal_ip');
+			$tmp->{link_remove} = 1;
 			push @$nodes, $tmp;
 		}
 	}
