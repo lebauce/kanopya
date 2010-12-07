@@ -206,10 +206,10 @@ div#footer {
 .imgComponent { background-image: url("/images/icons/component.png"); }
 .imgOperation { background-image: url("/images/icons/operations.png"); }
 .imgWarning { background-image: url("/images/icons/warning.png"); }
-
+.imgMonitMotherboard { background: url("/images/icons/motherboard.png") no-repeat left top; }
+.imgMonitCluster { background: url("/images/icons/cluster.png") no-repeat left top; }
 
 /*.imgSnmp { background: url("/images/icons/snmp.png") no-repeat center;}*/
-
 
 #submenu li ul { display: none; }
 
@@ -240,7 +240,8 @@ div#footer {
 .hidden { display: none;}
     
 
-
+.info { background: url("/images/icons/question.png") no-repeat center;
+		padding-left: 16px;}
 
 
 

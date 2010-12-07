@@ -2,7 +2,8 @@
  
   	var url_params = window.location.href.split('?')[1];
  	var content_link = "/cgi/mcsui.cgi/monitoring/xml_graph_list?" + url_params;
- 	var save_settings_link = "/cgi/mcsui.cgi/monitoring/save_monitoring_settings?" + url_params;
+ 	var save_clustermonitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
+ 	var save_monitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_monitoring_settings";
  	
  // ------------------------------------------------------------------------------------
  	
@@ -11,7 +12,7 @@
  		$(this).find('ul').toggle();
  	} ).addClass('clickable');
 
-	$('[id^=X] .expandable').hide();  // hide all elems of class 'epandable' under elem with id starting with 'X'
+	$('[id^=X] .expandable').hide();  // hide all elems of class 'expandable' under elem with id starting with 'X'
  	$(".expander", this).click(function() {
  		
  		var elem_to_expand = $('#X'+this.id).find('.expandable');
@@ -28,7 +29,7 @@
    }).addClass('clickable');
  	 
  	
- 	$('.monitor_settings .editable').click( 
+ 	$('.editable').click( 
  						function() {
  							$(this).html( '<input value="' + $(this).text() + '"></input>'
  									).find('input'
@@ -64,7 +65,7 @@
  	
  	$('.select_ds').click( function () { $(this).toggleClass('on_graph'); } ).addClass('clickable');
  	
- 	$('#save_monitoring_settings').click( function () {
+ 	$('#save_clustermonitoring_settings').click( function () {
  			loading_start(); 
  			var set_array = $('.select_collect.collected').map( function () { return $(this).siblings('.expander').attr('id');} ).get();
 
@@ -84,12 +85,26 @@
 
  			var params = { 'collect_sets[]': set_array, 'graphs_settings': JSON.stringify(settings) };
  			
- 			$.get(save_settings_link, params, function(resp) {
+ 			$.get(save_clustermonitoring_settings_link, params, function(resp) {
 				loading_stop();
 				alert(resp);				
 				
 			});
  	} ).addClass('clickable');
+ 
+ 
+ 	$('#save_monitoring_settings').click( function () {
+ 		loading_start(); 
+ 		
+ 		var settings = $('pouet');
+ 		
+ 		var params = {  };
+ 			
+		$.get(save_monitoring_settings_link, params, function(resp) {
+			loading_stop();
+			alert(resp);
+		});
+ 	}).addClass('clickable');
  
  	$('.set_def_show').click( function () { $('.set_def').show(); } );
  	$('.set_def_hide').click( function () { $('.set_def').hide(); } );
@@ -100,21 +115,21 @@
  
  // ---------------------------------------- orchestrator --------------------------------------------	
  	
- 	$('.rulesview tr').click( function () {
+ 	$('#rules_table .then_col').click( function () {
  			if ($(this).not('.inrule').size() > 0) {
- 				var nb_selected = $('.rulesview tr.selected').size();
-	 			if ( nb_selected == 0 || (nb_selected == 1 && $(this).hasClass('selected')) ) {
-	 				$(this).toggleClass('selected'); 
+ 				var nb_selected = $('#rules_table tr.selected').size();
+	 			if ( nb_selected == 0 || (nb_selected == 1 && $(this).parent('tr').hasClass('selected')) ) {
+	 				$(this).parent('tr').toggleClass('selected'); 
 	 			} else {
 	 				var selected_neighbors = 0;
-	 				if ( $(this).prev().hasClass('selected') ) {selected_neighbors++;}
-	 				if ( $(this).next().hasClass('selected') ) {selected_neighbors++;} 
+	 				if ( $(this).parent('tr').prev().hasClass('selected') ) {selected_neighbors++;}
+	 				if ( $(this).parent('tr').next().hasClass('selected') ) {selected_neighbors++;} 
 	 				if ( selected_neighbors == 1 ) {
-	 					$(this).toggleClass('selected');
+	 					$(this).parent('tr').toggleClass('selected');
 	 				}
 	 			}
 	 		}
- 		});
+ 		}).addClass('clickable');
  	
  	$('.operator_button').click( function () { 
  		var selected = $('.rulesview .selected');
@@ -139,9 +154,15 @@
  	 } ).addClass('clickable');
  	
  	$('#add_cond_button').click( function () {
- 		$('#rules_table').append('<tr><td>IHGBFERIHBIZ</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>');
- 	} );
+ 		
+ 		$('#rules_table').append('<tr>' + $('#rules_table #rule_model').html() + '</tr>');
+ 		
+ 	} ).addClass('clickable');
  	
+ 	
+     //$('a.normalTip').aToolTip(); 
+     //$('div.aToolTip').aToolTip(); 
+
  // ------------------------------------------------------------------------------------
  
  	$('.simpleexpand').click( function () {
@@ -164,6 +185,7 @@
  	//$("#logo").mouseover(function() { $(this).show('shake', {}, 500); });
  	
  	function toggleNodeSet() {
+ /*
  		loading_start();
  		alert("marche pas encore... " + $(this).attr('id'));
 		var anim = 'blind';//'blind/slide';
@@ -197,7 +219,7 @@
 				loading_stop();
 			});
 		}, anim_duration);
-   	 		
+*/   	 		
  	}
  
 	function toggleNode() {

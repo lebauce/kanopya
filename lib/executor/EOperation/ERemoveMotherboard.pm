@@ -143,14 +143,18 @@ sub execute{
 	my $self = shift;
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
-
+	my ($powersupplycard,$powersupplyid);
 	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
 	if ($powersupplycard_id) {
-		$adm->delPowerSupply(powersupply_id => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id'));
+		$powersupplycard = $adm->getEntity(id => $powersupplycard_id, type => "Powersupplycard");
+		$powersupplyid = $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id');
 	}
 	$self->{_objs}->{component_storage}->removeDisk(name => $self->{_objs}->{motherboard}->getEtcName(), econtext => $self->{nas}->{econtext});
-	# AddMotherboard finish, just save the Entity in DB
 	$self->{_objs}->{motherboard}->delete();
+	if ($powersupplycard_id){
+		$log->debug("Deleting powersupply with id <$powersupplyid> on the card : <$powersupplycard>");
+		$powersupplycard->delPowerSupply(powersupply_id => $powersupplyid);
+	}
 }
 
 __END__
