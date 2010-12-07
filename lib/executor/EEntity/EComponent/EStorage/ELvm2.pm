@@ -138,7 +138,7 @@ sub vgSpaceUpdate {
 	if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
 		(! exists $args{econtext} or ! defined $args{econtext}) ||
 		(! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
-		$errmsg = "ELvm2->vgSizeUpdate need a econtext, lvm2_vg_id and lvm2_lv_filesystem named argument!";
+		$errmsg = "ELvm2->vgSpaceUpdate need a econtext, lvm2_vg_id and lvm2_vg_name named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -180,8 +180,8 @@ sub lvRemove{
 	$log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 	$log->debug("lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
 	my $ret = $args{econtext}->execute(command => "lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
-	delete $args{econtext};
-	delete $args{lvm2_vg_name};
+#	delete $args{econtext};
+#	delete $args{lvm2_vg_name};
 	$self->_getEntity()->lvRemove(%args);
 	$self->vgSpaceUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
 						lvm2_vg_name => $args{lvm2_vg_name});

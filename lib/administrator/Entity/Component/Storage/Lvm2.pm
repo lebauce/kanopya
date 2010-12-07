@@ -74,7 +74,7 @@ sub vgSizeUpdate{
 	
 	if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
 		(! exists $args{lvm2_vg_freespace} or ! defined $args{lvm2_vg_freespace})) { 
-		$errmsg = "Lvm2->vgSizeUpdate need lvm2_vg_id and size named argument!";
+		$errmsg = "Lvm2->vgSizeUpdate need lvm2_vg_id and lvm2_vg_freespace named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
