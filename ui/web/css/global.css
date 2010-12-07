@@ -183,6 +183,8 @@ div#footer {
 .imgMotherboard { background-image: url("/images/icons/motherboard.png"); }
 .imgHardware { background-image: url("/images/icons/hardware.png"); }
 .imgKernel { background-image: url("/images/icons/kernel.png"); }
+.imgTux { background-image: url("/images/icons/tux.png"); }
+.imgSystemimage { background-image: url("/images/icons/systemimage.png"); }
 .imgNetwork { background-image: url("/images/icons/network.png"); }
 .imgRights { background-image: url("/images/icons/rights.png"); }
 .imgListing { background-image: url("/images/icons/list.png"); }
@@ -233,7 +235,8 @@ div#footer {
 .imgDebian { background-image: url("/images/distributions/Debian.png"); }
 
 .italic { font-style:italic; } 
-
+.underline { text-decoration: underline; }
+.darkgreen { color:  #115911; }
 
 /* common classes */
 
