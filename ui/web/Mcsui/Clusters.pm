@@ -189,9 +189,8 @@ sub view_clusterdetails : Runmode {
 	if($systemimage_id) {
 		my $esystemimage = $self->{'admin'}->getEntity(type =>'Systemimage', id => $systemimage_id);
 		$tmpl->param('systemimage_name' =>  $esystemimage->getAttr(name => 'systemimage_name'));
-	} else {
-		$tmpl->param('systemimage_name' => "no system image");
-	}	
+		$tmpl->param('systemimage_active' => $esystemimage->getAttr('name' => 'active'));		 
+	}
 	
 	my $kernel_id = $ecluster->getAttr(name =>'kernel_id');
 	if($kernel_id) {
@@ -211,7 +210,8 @@ sub view_clusterdetails : Runmode {
 	my $nbnodesup = scalar(keys(%$motherboards)); 
 	my $nodes = [];
 	
-	if($ecluster->getAttr('name' => 'active')) {
+	my $active = $ecluster->getAttr('name' => 'active');
+	if($active) {
 		$tmpl->param('active' => 1);
 		$tmpl->param('link_activate' => 0);
 		
@@ -242,6 +242,8 @@ sub view_clusterdetails : Runmode {
 		$comphash->{component_name} = $compAtt->{component_name};
 		$comphash->{component_version} = $compAtt->{component_version};
 		$comphash->{component_category} = $compAtt->{component_category};
+		$comphash->{link_remove} = not $active;
+				
 		push (@$comps, $comphash);
 	}
 	$tmpl->param('nbcomponents' => scalar(@$comps)+1);
@@ -353,7 +355,7 @@ sub process_removecluster : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'remove cluster operation adding to execution queue'); }
-    $self->redirect('/cgi/mcsui.cgi/cluster/view_clusters');
+    $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
 sub form_setpubliciptocluster : Runmode {

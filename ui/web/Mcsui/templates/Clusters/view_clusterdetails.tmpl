@@ -12,7 +12,12 @@
 <tr><TMPL_IF NAME=active><td>Active</td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
 <td class="actions" rowspan="2">
 <TMPL_IF NAME=link_activate>
-<a class="imgActivate" href="/cgi/mcsui.cgi/clusters/process_activatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">activate</a><br />
+<TMPL_IF NAME=systemimage_active>
+<a class="imgActivate" href="/cgi/mcsui.cgi/clusters/process_activatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">
+<TMPL_ELSE>
+<a class="imgActivate" href="javascript:alert('System image <TMPL_VAR NAME=systemimage_name> used by this cluster must be active.');">
+</TMPL_IF>
+activate</a><br />
 <span class="desc">Activate this cluster to be able to start it.</span><br /><br />
 <TMPL_ELSE>
 <TMPL_IF NAME=link_start>
@@ -46,7 +51,7 @@
 <a class="imgEdit" href="javascript:openform('/cgi/mcsui.cgi/clusters/form_editcluster?cluster_id=<TMPL_VAR NAME=cluster_id>', 'edit cluster', 800, 400, '');">edit</a><br />
 <span class="desc">Modify these global parameters.</span><br /><br />
 <TMPL_IF NAME=link_delete>
-<a class="imgRemove" href="/cgi/mcsui.cgi/clusters/process_deletecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">delete</a><br />
+<a class="imgRemove" href="/cgi/mcsui.cgi/clusters/process_removecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">delete</a><br />
 <span class="desc">Delete this cluster.</span><br /><br />
 </TMPL_IF>
 </td><tr/>
@@ -56,7 +61,10 @@
 <tr><td class="label">Minimum nodes :</td><td><TMPL_VAR NAME=cluster_min_node></td></tr>
 <tr><td class="label">Maximum nodes :</td><td><TMPL_VAR NAME=cluster_max_node></td></tr>
 <tr><td colspan="2">&nbsp;</td></tr>
-<tr><td class="label">System Image :</td><td><TMPL_VAR NAME=systemimage_name></td></tr>
+<tr><TMPL_IF NAME=systemimage_name>
+<td class="label">System Image :</td><td><TMPL_VAR NAME=systemimage_name> (<TMPL_IF NAME=systemimage_active>Active<TMPL_ELSE>Deactivated</TMPL_IF>)</td>
+<TMPL_ELSE><td></td></TMPL_IF>
+</tr>
 <tr><td class="label">Kernel :</td><td><TMPL_VAR NAME=kernel></td></tr>
 </table>
 
@@ -96,8 +104,8 @@
 <TMPL_LOOP NAME=components_list>
 <tr><td class="label2"><span class="bold"><TMPL_VAR NAME=component_name><TMPL_VAR NAME=component_version></span> - <TMPL_VAR NAME=component_category></td>
 <td class="action"><a class="imgConfigure" href="/cgi/mcsui.cgi/components/form_configurecomponent?component_instance_id=<TMPL_VAR NAME=component_instance_id>">configure</a>
-<a class="imgRemove">remove</a>
-<td></tr>
+<TMPL_IF NAME=link_remove><a class="imgRemove" href="/cgi/mcsui.cgi/clusters/process_removecomponent?component_instance_id=<TMPL_VAR NAME=component_instance_id>">remove</a></TMPL_IF>
+</td></tr>
 </TMPL_LOOP>
 <TMPL_ELSE>
 <tr><td colspan="2">no defined component.</td>
