@@ -358,8 +358,10 @@ sub startNode {
 # = $args{adm}->getPowerSupply(powersupply_id => $powersupply_id);
 		use IO::Socket;
 #		my $powersupplycard = $args{adm}->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
+		my $powersupply_ip = $powersupplycard->getAttr(name => "powersupplycard_ip");
+		$log->debug("Start motherboard with power supply which ip is : <$powersupply_ip>");
 		my $sock = new IO::Socket::INET (
-                                  PeerAddr => $powersupplycard->getAttr(name => "powersupplycard_ip"),
+                                  PeerAddr => $powersupply_ip,
                                   PeerPort => '1470',
                                   Proto => 'tcp',
                                  );
