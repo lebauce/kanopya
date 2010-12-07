@@ -264,12 +264,12 @@ sub addPowerSupplyPort {
 sub delPowerSupply {
 	my $self = shift;
 	my %args = @_;
-	if ((! exists $args{powersupply_id} or ! defined $args{powersupplycard_id})){
+	if ((! exists $args{powersupply_id} or ! defined $args{powersupply_id})){
 		$errmsg = "Powersupplycard->delPowerSupply need a powersupply_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	my $powersupply = $self->{_dbix}->powersupplies()->find($args{powerwsupply_id})->delete();
+	my $powersupply = $self->{_dbix}->powersupplies()->find($args{powersupply_id})->delete();
 }
 
 sub getPowerSupply {
