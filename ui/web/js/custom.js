@@ -280,6 +280,8 @@
 			var id = $(this).attr('id');
 			$("#" + id + "_content").html($(this).children());
 		});
+		
+		$("#nodecount_graph").html($(xml).find('nodecount').html());
    }
    
    function loading_start() {
@@ -299,11 +301,12 @@
    		loading_start();
    		
    		var anim = 'fold';//'blind/slide';
-   		var anim_duration = 500;
+   		var anim_duration = 0;
+   		
    		$(".selected_set").removeClass('selected_set');
    		$(".expanded").removeClass('expanded');
    		$(this).addClass('selected_set');
-   		$("#graph_table img").hide(anim, {}, anim_duration);
+   		//$("#graph_table img").hide(anim, {}, anim_duration);
    		setTimeout( function() {
    			
 	   		var set_name = $('.selected_set').attr('id');
@@ -313,7 +316,8 @@
 
 				fill_content_container(xml);
 				 
-				$("#graph_table img").addClass('autorefresh').show(anim, {}, anim_duration);
+				$("#graph_table img").addClass('autorefresh');
+				//$("#graph_table img").show(anim, {}, anim_duration);
 				loading_stop();
 			});
 		}, anim_duration); 
@@ -321,14 +325,16 @@
    
    $("#graph_table .node_selector").click( toggleNode ).addClass('clickable');
    
-   $(".period_selectors .period_selector").click(function() {
+   //$(".period_selectors .period_selector").click(function() {
+   $(".period_selector").click(function() {
    		$('.selected_period').removeClass('selected_period');
    		$(this).addClass('selected_period');
    		$('#period_label').html($(this).text());
    		var period = $(this).attr('id');
    		$('.content_container img').each( function() {
-   			$(this).attr('src',$(this).attr('src').replace(/(day|hour)/, period) );
+   			$(this).attr('src',$(this).attr('src').replace(/(day|hour|custom)/, period) );
    		});
+   		$('#nodecount_graph img').attr('src', $('#nodecount_graph img').attr('src').replace(/(day|hour|custom)/, period) );
    		
    }).addClass('clickable');
    

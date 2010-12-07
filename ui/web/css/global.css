@@ -170,6 +170,7 @@ div#footer {
 .imgCancel { background-image: url("/images/icons/cancel.png"); }
 .imgSave { background-image: url("/images/icons/save.png"); }
 .imgSettings { background-image: url("/images/icons/settings.png"); }
+.imgClock { background-image: url("/images/icons/clock.png"); }
 .imgUploadcomponent { background-image: url("/images/icons/uploadcomponent.png"); }
 
 /* states */
