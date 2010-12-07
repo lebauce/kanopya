@@ -257,6 +257,7 @@ sub addPowerSupplyPort {
 	my $powersupply = $powersupply_schema->create({
 								powersupplycard_id => $self->getAttr(name=>"powersupplycard_id"),
 								powersupplyport_number => $args{powersupplyport_number}});
+	
 	return $powersupply->get_column('powersupply_id');
 }
 

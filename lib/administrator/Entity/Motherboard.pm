@@ -281,6 +281,11 @@ sub getClusterId {
 
 sub getPowerSupplyCardId {
 	my $self = shift;
-	return $self->{_dbix}->motherboard_powersupply_id->get_column('powersupplycard_id');
+	my $row = $self->{_dbix}->motherboard_powersupply_id;
+	if (defined $row) {
+		return $row->get_column('powersupplycard_id');}
+	else {
+		return undef;
+	}
 }
 1;
