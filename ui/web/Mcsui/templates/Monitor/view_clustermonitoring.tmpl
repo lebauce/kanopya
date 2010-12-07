@@ -20,7 +20,7 @@
 <td class='period_selectors'>
 <table class=''>
 <tr><th>
-<a id="period_label">Period</a>
+<a id="period_label">Daily</a>
 <ul>
 	<li id='hour' class='period_selector' >Hourly</li>
 	<li id='day'  class='period_selector selected_period' >Daily</li>
@@ -48,12 +48,12 @@
 
 <table id='graph_table' class="graphview simplelisting">
 	<tr>
-		<td id='<TMPL_VAR NAME=CLUSTER_ID>' class='node_selector'><TMPL_VAR NAME=CLUSTER_NAME></td>
+		<td id='<TMPL_VAR NAME=CLUSTER_ID>' class='node_selector imgMonitCluster'><TMPL_VAR NAME=CLUSTER_NAME></td>
 		<td id='<TMPL_VAR NAME=CLUSTER_ID>_content' class='content_container'></td>
 	</tr>
 	<TMPL_LOOP NAME=NODES>
 		<tr>
-			<td id='<TMPL_VAR NAME=ID>' class='node_selector'><TMPL_VAR NAME=NAME></td>
+			<td id='<TMPL_VAR NAME=ID>' class='node_selector imgMonitMotherboard'><TMPL_VAR NAME=NAME><TMPL_IF NAME=MASTER> (master) </TMPL_IF></td>
 			<td id='<TMPL_VAR NAME=ID>_content' class='content_container'></td>
 		</tr>
 	</TMPL_LOOP>

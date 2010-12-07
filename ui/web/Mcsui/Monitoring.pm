@@ -68,7 +68,7 @@ sub getMonitoredSets {
 	my $self = shift;
 	
 	my $conf = $self->getMonitorConf();
-	return General::getAsArrayRef( data => $conf, tag => 'monitor' )
+	return General::getAsArrayRef( data => $conf, tag => 'monitor' );
 }
 
 sub getAllSets {
@@ -85,22 +85,26 @@ sub writeConf {
 	my $self = shift;
 	my %args = @_; 
 	
-	my $config = XMLin($conf_file_path);
-	
-	my $conf = $self->getMonitorConf();
-	$conf->{generate_graph} = { graph => $args{graphs_settings} };
-	$conf->{monitor} = $args{collect_settings};
-	
-	$config->{conf} = [$conf];
-	
-	#my $xml_conf = XMLout($conf, RootName => 'conf');
-	my $xml_conf = XMLout($config, RootName => 'config');
-	
-	open CONF_FILE, ">$conf_file_path" or die "Can't open conf file for writing";
-	print CONF_FILE $xml_conf;
-	close CONF_FILE;
-	
-	return $xml_conf;
+	eval {
+		my $config = XMLin($conf_file_path);
+
+		my $conf = $self->getMonitorConf();
+		$conf->{generate_graph} = { graph => $args{graphs_settings} };
+		$conf->{monitor} = $args{collect_settings};
+		
+		$config->{conf} = [$conf];
+		
+		#my $xml_conf = XMLout($conf, RootName => 'conf');
+		my $xml_conf = XMLout($config, RootName => 'config');
+		
+		open CONF_FILE, ">$conf_file_path" or die "Can't open configuration file for writing";
+		print CONF_FILE $xml_conf;
+		close CONF_FILE;
+	};
+	if ($@) {
+		return "Error while saving: $@";
+	}
+	return "configuration saved";
 }
 
 sub view_clustermonitoring : Runmode {
@@ -117,9 +121,12 @@ sub view_clustermonitoring : Runmode {
 	#NODES
 	my $cluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $cluster_id);
 	my $motherboards = $cluster->getMotherboards(administrator => $self->{'admin'});
+	my $masterId = $cluster->getMasterNodeId();
 	my @nodes = map { { id => $_->getAttr(name=>'motherboard_id'),
-						name => $_->getAttr(name=>'motherboard_internal_ip')}
+						name => $_->getAttr(name=>'motherboard_internal_ip'),
+						master => ($_->getAttr(name=>'motherboard_id') == $masterId) }
 					} values %$motherboards;
+	
 	$tmpl->param('NODES' => \@nodes);
 	
 	#CLUSTER
@@ -183,16 +190,16 @@ sub xml_graph_list : Runmode {
 
 
 
-=head2 save_monitoring_settings
+=head2 save_clustermonitoring_settings
 	
 	Class : Public
 	
-	Desc : 	Called by client to save monitoring settings.
+	Desc : 	Called by client to save monitoring settings for a cluster (collected sets and graphs options).
 			Transform: query params (json) -> perl type (according to xml conf struct) -> xml (conf) 
 	
 =cut
 
-sub save_monitoring_settings : Runmode {
+sub save_clustermonitoring_settings : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $query = $self->query();
@@ -204,11 +211,22 @@ sub save_monitoring_settings : Runmode {
 	my $graphs_settings = decode_json $graphs_settings_str;
 		
 	
-	my $xml_conf = $self->writeConf( graphs_settings => $graphs_settings, collect_settings => \@formated_monit_sets );
+	my $res = $self->writeConf( graphs_settings => $graphs_settings, collect_settings => \@formated_monit_sets );
 	
 	#my $xml_conf = XMLout($conf, RootName => 'conf');
 	
-	return "$xml_conf";
+	return "$res";
+}
+
+sub save_monitoring_settings : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $query = $self->query();
+	
+	my $config = XMLin($conf_file_path);
+	
+	#return Dumper $config;
+	return "not implemented yet";
 }
 
 sub view_monitoring_settings : StartRunmode {
@@ -232,7 +250,7 @@ sub view_monitoring_settings : StartRunmode {
 		push @sets, {	label => $set->{label},
 						provider_name => ($set->{data_provider} =~ /(.*)Provider/) ? $1 : ($set->{data_provider} ? $set->{data_provider} : "Snmp"),
 						component => $set->{component},
-						ds_type => $set->{ds_type},
+						ds_type => ucfirst lc $set->{ds_type},
 						is_table => defined $set->{table_oid},
 						table_oid => $set->{table_oid},
 						ds => \@all_ds};

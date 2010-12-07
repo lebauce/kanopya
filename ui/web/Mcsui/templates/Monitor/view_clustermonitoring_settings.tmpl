@@ -28,12 +28,12 @@
 			<td colspan='2'>
 			
 			<TMPL_IF NAME=IS_TABLE>
-				<table class='expandable'>
+				<table class='expandable hidden'>
 				<tr><td>Table</td></tr>
 				<tr><td colspan='2'>
 				<table>
 			<TMPL_ELSE>
-				<table class='expandable'>
+				<table class='expandable hidden'>
 			</TMPL_IF>
 					<TMPL_LOOP NAME=DS>
 						<tr>
@@ -48,7 +48,7 @@
 			</td>
 			
 			<td>
-				<table id='graph_options_<TMPL_VAR NAME=LABEL>' class='expandable graph_options'>
+				<table id='graph_options_<TMPL_VAR NAME=LABEL>' class='expandable graph_options hidden'>
 					<tr><th>graph type</th><td opt_name='graph_type' choices='line,stack' class='graph_option editable_choice'><TMPL_VAR NAME=GRAPH_TYPE></td></tr>
 					<tr><th>percentage</th><td opt_name='percent' class='graph_option yes_no_choice'><TMPL_VAR NAME=PERCENT></td></tr>
 					<tr><th>include total</th><td opt_name='with_total' class='graph_option yes_no_choice'><TMPL_VAR NAME=WITH_TOTAL></td></tr>
@@ -64,7 +64,7 @@
 </table>	
 
 <div class="actions">
-<a class="action imgSave" id="save_monitoring_settings">save</a>
+<a class="action imgSave" id="save_clustermonitoring_settings">save</a>
 <p class="italic">Save settings.</p>
 </div>
 
