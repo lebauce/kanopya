@@ -269,7 +269,7 @@ sub delPowerSupply {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	my $powersupply = $self->{_dbix}->powersupplies()->find($args{powerwsupply_id})->delete();
+	my $powersupply = $self->{_dbix}->powersupplies()->find($args{powersupply_id})->delete();
 }
 
 sub getPowerSupply {
