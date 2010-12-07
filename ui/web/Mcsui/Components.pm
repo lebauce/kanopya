@@ -11,7 +11,23 @@ my $log = get_logger("administrator");
 
 sub setup {
 	my $self = shift;
-	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
+	$self->{admin} = Administrator->new(login => 'admin', password => 'admin');
+}
+
+
+
+sub view_components : StartRunmode {
+	my $self = shift;
+	my $tmpl =  $self->load_tmpl('Components/view_components.tmpl');
+	$tmpl->param('titlepage' => "Systems - Components");
+    $tmpl->param('mSystems' => 1);
+	$tmpl->param('submComponents' => 1);
+	
+	my $components = [];
+	$components = $self->{admin}->getComponentsListByCategory();
+	
+	$tmpl->param('components_list' => $components);
+	return $tmpl->output();
 }
 
 sub form_configurecomponent : Runmode {
