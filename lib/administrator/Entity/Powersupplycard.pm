@@ -265,11 +265,11 @@ sub delPowerSupply {
 	my $self = shift;
 	my %args = @_;
 	if ((! exists $args{powerwsupply_id} or ! defined $args{powerwsupplycard_id})){
-		$errmsg = "Administrator->addPowerSupplyCard need a powerwsupply_id named argument!";
+		$errmsg = "Administrator->delPowerSupplyCard need a powerwsupply_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	my $powersupply = $self->{db}->resultset('Powersupply')->find($args{powerwsupply_id})->delete();
+	my $powersupply = $self->{_dbix}->powersupplies()->find($args{powerwsupply_id})->delete();
 }
 
 sub getPowerSupply {
