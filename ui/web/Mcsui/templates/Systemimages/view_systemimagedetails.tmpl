@@ -42,12 +42,14 @@
 <TMPL_IF NAME=components_list>
 <tr><td colspan="2">&nbsp;</td>
 <td class="actions" rowspan="<TMPL_VAR NAME=components_count>">
+<TMPL_UNLESS NAME=active>
 <a class="imgAdding" href="javascript:openform('/cgi/mcsui.cgi/systemimages/form_installcomponent?cluster_id=<TMPL_VAR NAME=cluster_id>', 'Component Installation', 500, 200, '');">Install a component</a><br />
 <span class="desc">Install a component to this system image.</span><br /><br />
+</TMPL_UNLESS>
 </td></tr>
 <TMPL_LOOP NAME=components_list>
 <tr><td class="label2"><span class="bold"><TMPL_VAR NAME=component_name><TMPL_VAR NAME=component_version></span> - <TMPL_VAR NAME=component_category></td>
-<td class="action"><a class="imgRemove" href="<TMPL_VAR NAME=component_id>">remove</a>
+<td class="action"><TMPL_IF NAME=link_remove><a class="imgRemove" href="<TMPL_VAR NAME=component_id>">remove</a></TMPL_IF>
 </td></tr>
 </TMPL_LOOP>
 <TMPL_ELSE>

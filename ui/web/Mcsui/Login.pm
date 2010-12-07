@@ -35,7 +35,7 @@ sub process_login : Runmode {
 	# if defined user_entity_id, on cree la session et on redirige sur la page d'acceuil 
 	
 	# TODO manage user session...
-	$self->redirect('/cgi/mcsui.cgi/overview');
+	$self->redirect('/cgi/mcsui.cgi/systemstatus');
 }
 
 
