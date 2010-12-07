@@ -147,7 +147,9 @@ sub execute{
 	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
 	if ($powersupplycard_id) {
 		my $powersupplycard = $adm->getEntity(id => $powersupplycard_id, type => "Powersupplycard");
-		$powersupplycard->delPowerSupply(powersupply_id => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id'));
+		my $powersupplyid = $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id');
+		$log->debug("Deleting powersupply with id <$powersupplyid> on the card : <$powersupplycard>");
+		$powersupplycard->delPowerSupply(powersupply_id => $powersupplyid);
 	}
 	$self->{_objs}->{component_storage}->removeDisk(name => $self->{_objs}->{motherboard}->getEtcName(), econtext => $self->{nas}->{econtext});
 	$self->{_objs}->{motherboard}->delete();
