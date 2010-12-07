@@ -69,20 +69,20 @@ sub new {
 	# presence of 'params' named argument is done in parent class
     my $self = $class->SUPER::new( %args );
     my $admin = $args{administrator};
-    my ($powersupplyport_number, $powersupplycard_id);
+    my ($powersupplyport_number, $powersupplycard_id, $powersupplyused);
     # We have to save power supply configuration, it is not link with motherboard.
     # So th
     if (defined $args{params}->{powersupplyport_number} && exists $args{params}->{powersupplyport_number} &&
     	defined $args{params}->{powersupplycard_id} && exists $args{params}->{powersupplycard_id}){
    		$powersupplyport_number = $args{params}->{powersupplyport_number};
     	$powersupplycard_id = $args{params}->{powersupplycard_id};
+    	$powersupplyused = 1;
     }
     delete $args{params}->{powersupplycard_id};
     delete $args{params}->{powersupplyport_number};
     Entity::Motherboard->checkAttrs(attrs => $args{params});
 
-   if (defined $args{params}->{powersupplyport_number} && exists $args{params}->{powersupplyport_number} &&
-    	defined $args{params}->{powersupplycard_id} && exists $args{params}->{powersupplycard_id}){
+   if ($powersupplyused){
     	$args{params}->{powersupplyport_number} = $powersupplyport_number;
 		$args{params}->{powersupplycard_id} = $powersupplycard_id;
     	}     
