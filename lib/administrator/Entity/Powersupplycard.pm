@@ -264,8 +264,8 @@ sub addPowerSupplyPort {
 sub delPowerSupply {
 	my $self = shift;
 	my %args = @_;
-	if ((! exists $args{powerwsupply_id} or ! defined $args{powerwsupplycard_id})){
-		$errmsg = "Powersupplycard->delPowerSupplyCard need a powerwsupply_id named argument!";
+	if ((! exists $args{powersupply_id} or ! defined $args{powersupplycard_id})){
+		$errmsg = "Powersupplycard->delPowerSupplyCard need a powersupply_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
