@@ -14,7 +14,7 @@ sub setup {
 	$self->{admin} = Administrator->new(login => 'admin', password => 'admin');
 }
 
-
+# components listing available 
 
 sub view_components : StartRunmode {
 	my $self = shift;
@@ -29,6 +29,8 @@ sub view_components : StartRunmode {
 	$tmpl->param('components_list' => $components);
 	return $tmpl->output();
 }
+
+# get component configuration from database and send it to the appropriate form
 
 sub form_configurecomponent : Runmode {
 	my $self = shift;
@@ -48,7 +50,7 @@ sub form_configurecomponent : Runmode {
 	}
 	
 	$tmpl->param('COMPONENT_INSTANCE_ID' => $component_instance_id);
-	$tmpl->param('CLUSTER_ID' => $cluster_id);
+	$tmpl->param('cluster_id' => $cluster_id);
 	$tmpl->param('CLUSTER_NAME' => $ecluster->getAttr(name => 'cluster_name'));
 	$tmpl->param('titlepage' => "Component Configuration : $componentdetail->{COMPNAME}");
 	$tmpl->param('mClusters' => 1);
@@ -57,7 +59,7 @@ sub form_configurecomponent : Runmode {
 	return $tmpl->output();
 }
 
-
+# retrieve component configuration from interface and save it to the database
 
 sub process_configurecomponent : Runmode {
 	my $self = shift;
@@ -68,13 +70,15 @@ sub process_configurecomponent : Runmode {
 	
 	my $component_instance_id = $query->param('component_instance_id'); 
 	my $component = $self->{'admin'}->getComponent(component_instance_id=>$component_instance_id);
+	my $cluster_id = $query->param('cluster_id'); 
 	my $cname = quotemeta(lc($query->param('component_name')));
+	# quotemeta : Returns the value of EXPR with all non-"word" characters backslashed
 	
 	my @fields = $query->param;
 		
 	while(scalar(@fields)) {
 		my $field = shift(@fields);
-		if($field eq 'component_instance_id' or $field eq 'component_name') {
+		if($field eq 'component_instance_id' or $field eq 'component_name' or $field eq 'cluster_id') {
 			next;
 		}
 		
@@ -87,8 +91,8 @@ sub process_configurecomponent : Runmode {
 			$conf->{$items[0]}[$items[1]]->{$items[2]} = $query->param($field);
 		}
 	} 
-	$output .= Dumper($conf)."<br /><br />";
-	$output .= $component->setConf($conf);
-	return $output;
+	#$output .= Dumper($conf)."<br /><br />";
+	$component->setConf($conf);
+	$self->redirect("/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=".$cluster_id);
 }
 

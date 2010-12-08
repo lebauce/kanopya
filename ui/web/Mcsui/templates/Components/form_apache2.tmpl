@@ -5,6 +5,7 @@
 <hr />
 <form method="POST" action="/cgi/mcsui.cgi/components/process_configurecomponent">
 <input type="hidden" name="component_instance_id" value="<TMPL_VAR NAME=component_instance_id>"/>
+<input type="hidden" name="cluster_id" value="<TMPL_VAR NAME=cluster_id>"/>
 <input type="hidden" name="apache2_id" value="<TMPL_VAR NAME=apache2_id>"/>
 <input type="hidden" name="component_name" value="Apache2"/>
 <table>
@@ -28,21 +29,21 @@
 <h3>Virtual hosts definition</h3>
 <table>
 <tr><th>server name</th><th>admin email</th><th>document root</th><th>SSL enable</th><th>access log</th><th>error log</th></tr>
-<TMPL_LOOP NAME=apache2_virtualhost>
-<tr><td><input type="text" name="apache2_virtualhost-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_servername" value="<TMPL_VAR NAME=apache2_virtualhost_servername>"/></td>
-<td><input type="text" name="apache2_virtualhost-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_serveradmin" value="<TMPL_VAR NAME=apache2_virtualhost_serveradmin>"/></td>
-<td><input type="text" name="apache2_virtualhost-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_documentroot" value="<TMPL_VAR NAME=apache2_virtualhost_documentroot>"/></td>
-<td><select name="apache2_virtualhost-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_sslenable"><option value="1" <TMPL_IF NAME=apache2_virtualhost_sslenable>selected</TMPL_IF>>yes</option><option value="0" <TMPL_UNLESS NAME=apache2_virtualhost_sslenable>selected</TMPL_UNLESS>>no</option></select></td><!-- <TMPL_VAR NAME=apache2_virtualhost_sslenable> -->
-<td><input type="text" name="apache2_virtualhost-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_log" value="<TMPL_VAR NAME=apache2_virtualhost_log>"/></td>
-<td><input type="text" name="apache2_virtualhost-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_errorlog" value="<TMPL_VAR NAME=apache2_virtualhost_errorlog>"/></td>
+<TMPL_LOOP NAME=apache2_virtualhosts>
+<tr><td><input type="text" name="apache2_virtualhosts-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_servername" value="<TMPL_VAR NAME=apache2_virtualhost_servername>"/></td>
+<td><input type="text" name="apache2_virtualhosts-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_serveradmin" value="<TMPL_VAR NAME=apache2_virtualhost_serveradmin>"/></td>
+<td><input type="text" name="apache2_virtualhosts-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_documentroot" value="<TMPL_VAR NAME=apache2_virtualhost_documentroot>"/></td>
+<td><select name="apache2_virtualhosts-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_sslenable"><option value="1" <TMPL_IF NAME=apache2_virtualhost_sslenable>selected</TMPL_IF>>yes</option><option value="0" <TMPL_UNLESS NAME=apache2_virtualhost_sslenable>selected</TMPL_UNLESS>>no</option></select></td><!-- <TMPL_VAR NAME=apache2_virtualhost_sslenable> -->
+<td><input type="text" name="apache2_virtualhosts-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_log" value="<TMPL_VAR NAME=apache2_virtualhost_log>"/></td>
+<td><input type="text" name="apache2_virtualhosts-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_errorlog" value="<TMPL_VAR NAME=apache2_virtualhost_errorlog>"/></td>
 </tr>
-<input type="hidden" name="apache2_virtualhost-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_id" value="<TMPL_VAR NAME=apache2_virtualhost_id>"/>
+<input type="hidden" name="apache2_virtualhosts-<TMPL_IF NAME=apache2_virtualhost_id><TMPL_VAR NAME=apache2_virtualhost_id><TMPL_ELSE>0</TMPL_IF>-apache2_virtualhost_id" value="<TMPL_VAR NAME=apache2_virtualhost_id>"/>
 </TMPL_LOOP>
 </table>
 <hr />
 <div class="right">
 <input type="submit" value="ok"/>
-<input type="button" value="cancel" onclick="javascript:document.location='/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=CLUSTER_ID>'"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=cluster_id>'"/>
 </div>
 </form>
 </div>

@@ -35,12 +35,35 @@ sub new {
     return $self;
 }
 
-sub getConf{
+sub getConf {
 	my $self = shift;
-	my $conf_raw = $self->{_dbix}->snmpd5s->first();
-	return { options => $conf_raw->get_column('snmpd_options'),
-			 monitor_server_ip => $conf_raw->get_column('monitor_server_ip'),
+	my $snmpd5_conf = {
+		snmpd5_id => undef,
+		monitor_server_ip => "10.0.0.1",
+		snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
 	};
+	
+	my $confindb = $self->{_dbix}->snmpd5s->first();
+	if($confindb) {
+		snmpd5_id => $confindb->get_column('snmpd5_id'),
+		monitor_server_ip => $confindb->get_column('monitor_server_ip'),
+		snmpd_options => $confindb->get_column('snmpd_options'),
+	}
+	
+	return $snmpd5_conf; 
+}
+
+sub setConf {
+		my $self = shift;
+	my ($conf) = @_;
+		
+	if(not $conf->{snmpd5_id}) {
+		# new configuration -> create
+		$self->{_dbix}->snmpd5s->create($conf);
+	} else {
+		# old configuration -> update
+		$self->{_dbix}->snmpd5s->update($conf);
+	}
 }
 
 1;
