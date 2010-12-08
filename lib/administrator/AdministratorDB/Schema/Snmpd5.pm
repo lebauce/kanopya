@@ -28,11 +28,6 @@ __PACKAGE__->belongs_to(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->add_columns(
-  "snmpd5_id",
-  { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-);
 
-__PACKAGE__->set_primary_key("snmpd5_id");
 
 1;
