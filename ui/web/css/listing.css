@@ -118,6 +118,8 @@ table#graphchoices, table.set_selectors {
 
 .rulesview #rules_head th {text-align: center;}
 
+#rules_table .new_edit {color: #555; font-style:italic;}
+
 /* ********************************************************************************************************************** */
 
 table.listview {

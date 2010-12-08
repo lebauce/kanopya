@@ -40,7 +40,7 @@ package EntityRights;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use lib qw(../../Common/Lib);
+
 use McsExceptions;
 use Data::Dumper;
 

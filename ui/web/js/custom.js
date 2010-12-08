@@ -4,6 +4,7 @@
  	var content_link = "/cgi/mcsui.cgi/monitoring/xml_graph_list?" + url_params;
  	var save_clustermonitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
  	var save_monitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_monitoring_settings";
+ 	var save_orchestrator_settings_link = "/cgi/mcsui.cgi/orchestration/save_orchestrator_settings"
  	
  // ------------------------------------------------------------------------------------
  	
@@ -29,27 +30,29 @@
    }).addClass('clickable');
  	 
  	
- 	$('.editable').click( 
- 						function() {
- 							$(this).html( '<input value="' + $(this).text() + '"></input>'
- 									).find('input'
- 									).focusout( function () { $(this).replaceWith(this.value); } 
- 									).focus();
- 						}
- 	).addClass('clickable');
+ 	function toggleEditMode() {
+ 		$(this).html( '<input value="' + $(this).text() + '"></input>'
+					).find('input'
+					).focusout( function () { $(this).replaceWith(this.value); } 
+					).focus();
+ 		if ($(this).hasClass('new_edit')) {$(this).removeClass('new_edit');}
+ 	}
  	
- 	$('.editable_choice').click( 
- 						function() {
- 							if ($(this).hasClass('editing')) {return;}
- 							var value = $(this).text();
- 							var choices = $(this).attr('choices').split(',').map( function(elem) { return "<option>"+elem+"</option>";} ).join();
- 							$(this).html( '<select>' + choices + '</select>'
- 									).addClass('editing'
- 									).find('select'
- 									).focusout( function () { $(this).parent().removeClass('editing'); $(this).replaceWith( $(this).find('option:selected').text() );} 
- 									).focus().val(value);
- 						}
- 	).addClass('clickable');
+ 	function toggleChoiceMode() {
+		if ($(this).hasClass('editing')) {return;}
+		var value = $(this).text();
+		var choices = $(this).attr('choices').split(',').map( function(elem) { return "<option>"+elem+"</option>";} ).join();
+		$(this).html( '<select>' + choices + '</select>'
+				).addClass('editing'
+				).find('select'
+				).focusout( function () { $(this).parent().removeClass('editing'); $(this).replaceWith( $(this).find('option:selected').text() );} 
+				).focus().val(value);
+		if ($(this).hasClass('new_edit')) {$(this).removeClass('new_edit');}
+ 	}
+ 	
+ 	$('.editable').click( toggleEditMode ).addClass('clickable');
+ 	
+ 	$('.editable_choice').click( toggleChoiceMode ).addClass('clickable');
  	
  	
  	
@@ -155,13 +158,44 @@
  	
  	$('#add_cond_button').click( function () {
  		
- 		$('#rules_table').append('<tr>' + $('#rules_table #rule_model').html() + '</tr>');
+ 		var new_rule = $('#rules_table').append('<tr class="new_rule">' + $('#rules_table #rule_model').html() + '</tr>').find('.new_rule');
+ 		new_rule.removeClass('new_rule');
+ 		new_rule.find('.editable_choice').click( toggleChoiceMode ).addClass('clickable').addClass('new_edit');
+ 		new_rule.find('.editable').click( toggleEditMode ).addClass('clickable').addClass('new_edit');
+ 		
  		
  	} ).addClass('clickable');
  	
+ 	$('#save_orchestrator_settings').click( function () {
+ 		loading_start(); 
+ 		
+ 		var conditions = $('#rules_table .rule').map( function() {
+ 				var indicator = $(this).find('.indicator_name').text();
+ 				var time_laps = $(this).find('.time_laps').text();
+ 				var thresh_value = $(this).find('.thresh_value').text();
+ 				var required = {'var' : indicator.split(':')[1]};
+ 				required['min'] = thresh_value;
+ 				var rule = { 'set': indicator.split(':')[0], 'time_laps' : time_laps , 'required' : required };
+
+ 				return rule;
+ 			}).get();
+ 		
+ 		var rules = { 'conditions' : conditions };
+ 		
+ 		var params = { rules : JSON.stringify(rules)  };
+ 			
+		$.get(save_orchestrator_settings_link, params, function(resp) {
+			loading_stop();
+			alert(resp);
+		});
+ 	}).addClass('clickable');
+ 	
+ 	
+ 	
  	
      //$('a.normalTip').aToolTip(); 
-     //$('div.aToolTip').aToolTip(); 
+     //$('div.aToolTip').aToolTip();
+     //$('p.aToolTipContent').aToolTipContent();
 
  // ------------------------------------------------------------------------------------
  
