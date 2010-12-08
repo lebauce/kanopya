@@ -169,8 +169,9 @@ sub view_clusterdetails : Runmode {
 	
 	my $query = $self->query();
 	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+	my $cluster_id = $ecluster->getAttr(name => 'cluster_id');
 		
-	$tmpl->param('cluster_id' => $ecluster->getAttr(name => 'cluster_id'));
+	$tmpl->param('cluster_id' => $cluster_id);
 	$tmpl->param('cluster_name' => $ecluster->getAttr(name => 'cluster_name'));
 	$tmpl->param('cluster_desc' => $ecluster->getAttr(name => 'cluster_desc'));
 	$tmpl->param('cluster_priority' => $ecluster->getAttr(name => 'cluster_priority'));
@@ -262,9 +263,10 @@ sub view_clusterdetails : Runmode {
 		delete $motherboards->{ $id };
 		push @$nodes, $tmp;
 		
-		foreach my $n (values %$motherboards) {
+		while( my ($id, $n) = each %$motherboards) {
 			$tmp = {};
-			$tmp->{motherboard_id} = $n->getAttr(name => 'motherboard_id');
+			$tmp->{motherboard_id} = $id;
+			$tmp->{cluster_id} = $cluster_id;
 			$tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname'); 	
 			$tmp->{motherboard_internal_ip} = $n->getAttr(name => 'motherboard_internal_ip');
 			$tmp->{link_remove} = 1;
