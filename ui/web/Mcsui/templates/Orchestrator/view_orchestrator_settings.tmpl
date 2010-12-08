@@ -5,24 +5,38 @@
 </style>
 <script type="text/javascript" src="/js/jquery.js"></script>
 <script type="text/javascript" src="/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/atooltype.jquery.js"></script>
 <script type="text/javascript" src="/js/custom.js"></script>
 
 <div id="content">
 
 <table id="rules_table" class='rulesview simplelisting'>
-	<caption>Cluster scaling rules</caption>
+	<caption>Cluster scaling rules <span class='info'>&nbsp;</span></caption>
 	<tr id='rules_head'><th colspan='5'>Condition</th><th colspan='2' class='then_head'></th><th>Action</th><th>Node selection</th></tr>
+	
+	<tr id='rule_model' class="hidden">
+		<td class='editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
+		<td class='editable_choice' choices='mean,max,min,deriv'>trans func</td>
+		<td><span class='editable'>laps</span> sec</td>
+		<td class='editable_choice' choices='&lsaquo;,&rsaquo;'>comp op</td>
+		<td class='editable'>threshold</td>
+		<td class='op_col'></td>
+		<td class='then_col'></td>
+		<td class='action_col editable_choice' choices='Add node, Remove node'>action</td>
+		<td class='node_selection'>rand</td>
+	</tr>
+	
 	<TMPL_LOOP NAME=RULES>
-		<tr>
-		<td class='editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'><TMPL_VAR NAME=VAR></td>
-		<td>mean</td>
-		<td><TMPL_VAR NAME=TIME_LAPS>s</td>
-		<td><TMPL_IF NAME=INF>&lsaquo;<TMPL_ELSE>&rsaquo;</TMPL_IF></td>
-		<td><TMPL_VAR NAME=VALUE></td>
+		<tr class="rule">
+		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'><TMPL_VAR NAME=VAR></td>
+		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
+		<td><span class='time_laps editable'><TMPL_VAR NAME=TIME_LAPS></span> sec</td>
+		<td class='comp_op editable_choice' choices='&lsaquo;,&rsaquo;'><TMPL_IF NAME=INF>&lsaquo;<TMPL_ELSE>&rsaquo;</TMPL_IF></td>
+		<td class='thresh_value editable'><TMPL_VAR NAME=VALUE></td>
 		<td class='op_col'></td>
 		<td class='then_col'></td>
 		<td class='action_col'><TMPL_VAR NAME=ACTION></td>
-		<td class='node_selection'>min cpu load</td>
+		<td class='node_selection'>rand</td>
 		</tr>
 	</TMPL_LOOP>
 </table>
@@ -38,6 +52,7 @@
 	<td>shut down node</td>
 </tr>
 </table>
+
 
 <table class='rulesview simplelisting'>
 <caption>Traps management</caption>
@@ -56,7 +71,7 @@
 <p class="italic">OR selected conditions.</p>
 <a class="action">AND operator</a>
 <p class="italic">AND selected conditions.</p>
-<a class="action imgSave" href="">save</a>
+<a class="action imgSave" id="save_orchestrator_settings">save</a>
 <p class="italic">Save rules.</p>
 </div>
 
