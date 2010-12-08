@@ -399,6 +399,28 @@ sub addComponent {
 	
 }
 
+=head2 removeComponent
+
+remove a component instance and all its configuration
+from this cluster
+
+=cut
+
+sub removeComponent {
+	my $self = shift;
+	my %args = @_;
+	# check arguments
+	if((! exists $args{administrator} or ! defined $args{administrator}) ||
+	   (! exists $args{component_instance_id} or ! defined $args{component_instance_id})) {
+	   	$errmsg = "Entity::Cluster->removeComponent needs administrator and component_instance_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	$args{administrator}->{db}->resultset('ComponentInstance')->find($args{component_instance_id})->delete;
+	
+}
+
 =head2 getMotherboards
 	
 	Desc : This function get motherboards executing the cluster.
