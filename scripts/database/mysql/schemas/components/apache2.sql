@@ -24,7 +24,7 @@ CREATE TABLE `apache2` (
 --
 
 CREATE TABLE `apache2_virtualhost` (
-  `apache2_virtualhost_id` int(8) unsigned NOT NULL,
+  `apache2_virtualhost_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `apache2_id` int(8) unsigned NOT NULL,
   `apache2_virtualhost_servername` char(128) DEFAULT NULL,
   `apache2_virtualhost_sslenable` int(1) DEFAULT NULL,
