@@ -86,7 +86,7 @@ sub getConf {
 		apache2_ports => undef,
 		apache2_sslports => undef,
 		apache2_phpsession_dir => undef,
-		apache2_virtualhost => [
+		apache2_virtualhosts => [
 			{ apache2_virtualhost_id => undef,
 			  apache2_virtualhost_servername => undef,
 			  apache2_virtualhost_sslenable => undef,
@@ -99,7 +99,7 @@ sub getConf {
 	};
 	
 	my $lineindb = $self->{_dbix}->apache2s->first;
-	if($lineindb) {
+	if(defined $lineindb) {
 		my %dbconf = $lineindb->get_columns();
 		$apache2_conf->{apache2_id} = $dbconf{apache2_id};
 		$apache2_conf->{apache2_serverroot} = $dbconf{apache2_serverroot};
@@ -112,16 +112,17 @@ sub getConf {
 		my $index = 0;
 		while (my $virtualhost_row = $virtualhost_rs->next){
 			my %virtualhost = $virtualhost_row->get_columns();
-			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_id} = $virtualhost{apache2_virtualhost_id};
-			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_servername} = $virtualhost{apache2_virtualhost_servername};
-			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_sslenable} = $virtualhost{apache2_virtualhost_sslenable};
-			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_serveradmin} = $virtualhost{apache2_virtualhost_serveradmin};
-			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_documentroot} = $virtualhost{apache2_virtualhost_documentroot};
-			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_log} = $virtualhost{apache2_virtualhost_log};
-			$apache2_conf->{apache2_virtualhost}[$index]->{apache2_virtualhost_errorlog} = $virtualhost{apache2_virtualhost_errorlog};
+			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_id} = $virtualhost{apache2_virtualhost_id};
+			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_servername} = $virtualhost{apache2_virtualhost_servername};
+			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_sslenable} = $virtualhost{apache2_virtualhost_sslenable};
+			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_serveradmin} = $virtualhost{apache2_virtualhost_serveradmin};
+			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_documentroot} = $virtualhost{apache2_virtualhost_documentroot};
+			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_log} = $virtualhost{apache2_virtualhost_log};
+			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_errorlog} = $virtualhost{apache2_virtualhost_errorlog};
 			
 			$index += 1;
 		}
+		$log->debug("APACHE2 configuration exists in db: ".Dumper $apache2_conf);
 		
 	}
 
@@ -133,15 +134,44 @@ sub getConf {
 sub setConf {
 	my $self = shift;
 	my ($conf) = @_;
+	
+	$log->debug("APACHE2 configuration to save in db: ".Dumper $conf);
+	my $virtualhosts = $conf->{apache2_virtualhosts};
+	delete $conf->{apache2_virtualhosts};
+	
 	if(not $conf->{apache2_id}) {
-		# new configuration -> insert
-		return 'insert conf'
+		# new configuration -> create	
+		my $row = $self->{_dbix}->apache2s->create($conf);
+		$self->{_dbix}->apache2s->clear_cache();
+		foreach my $vh (@$virtualhosts) {
+			$vh->{apache2_virtualhost_id} = undef;
+			$self->{_dbix}->apache2s->first()->apache2_virtualhosts->create($vh);
+		}
+		
 	} else {
 		# old configuration -> update
-		return 'update conf';
+		 $self->{_dbix}->apache2s->update($conf);
+		 my $virtualhosts_indb = $self->{_dbix}->apache2s->first()->apache2_virtualhosts;
+		 while(my $vhost_indb = $virtualhosts_indb->next) {
+		 	my $found = 0;
+		 	my $vhost_data;
+		 	foreach	my $vhost_to_update (@$virtualhosts) {
+		 		if($vhost_to_update->{apache2_virtualhost_id} == $vhost_indb->get_column('apache2_virtualhost_id')) {
+		 			$found = 1;
+		 			$vhost_data = $vhost_to_update;
+		 			last;
+		 		}
+		 	}
+		 	if($found) {
+		 		$vhost_indb->update($vhost_data);
+		 	} else {
+		 		$vhost_indb->delete();
+		 	}
+		 }
+		
 	}	
 	
-	
+		
 }
 
 1;

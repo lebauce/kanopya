@@ -8,9 +8,10 @@ SET foreign_key_checks=0;
 
 CREATE TABLE `snmpd5` (
   `component_instance_id` int(8) unsigned NOT NULL,
+  `snmpd5_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `monitor_server_ip` char(39) NOT NULL,
   `snmpd_options` char(128) NOT NULL,
-  PRIMARY KEY (`component_instance_id`),
+  PRIMARY KEY (`snmpd5_id`),
   KEY `fk_snmpd5_1` (`component_instance_id`),
   CONSTRAINT `fk_snmpd5_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

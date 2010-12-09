@@ -243,6 +243,7 @@ sub view_clusterdetails : Runmode {
 		$comphash->{component_name} = $compAtt->{component_name};
 		$comphash->{component_version} = $compAtt->{component_version};
 		$comphash->{component_category} = $compAtt->{component_category};
+		$comphash->{cluster_id} = $cluster_id;
 		$comphash->{link_remove} = not $active;
 				
 		push (@$comps, $comphash);
@@ -474,7 +475,21 @@ sub process_addcomponent : Runmode {
 		$self->{'admin'}->addMessage(type => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(type => 'success', content => 'Component added sucessfully'); }
    	return $closewindow;
+}
 
+sub process_removecomponent : Runmode {
+	my $self = shift;
+	my $query = $self->query();
+	eval {
+	    my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+	    $ecluster->removeComponent(administrator => $self->{'admin'}, component_instance_id => $query->param('component_instance_id'));
+	    
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{'admin'}->addMessage(type => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(type => 'success', content => 'Component removed sucessfully'); }
+   	$self->redirect("/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=".$query->param('cluster_id'));
 }
 
 1;
