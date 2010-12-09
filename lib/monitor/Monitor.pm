@@ -45,10 +45,7 @@ package Monitor;
 #TODO Modulariser: Collector, DataProvider (snmp, generator,...), DataStorage (rrd, ...), DataManipulator, Grapher, ...
 #TODO use Mcs::Exception
 #TODO remplacer les prints par des logs
-#TODO renommer correctement ex: $host représente des fois $host_name ou $host_ip 
-
-#use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use lib qw(/workspace/mcs/Common/Lib);
+#TODO renommer correctement ex: $host représente des fois $host_name ou $host_ip
 
 use strict;
 use warnings;
@@ -63,8 +60,6 @@ use Data::Dumper;
 
 #use enum qw( :STATE_ UP DOWN STARTING STOPPING BROKEN );
 
-# logger
-#Log::Log4perl->init('/workspace/mcs/Monitor/Conf/log.conf');
 my $log = get_logger("monitor");
 
 =head2 new
@@ -133,7 +128,7 @@ sub new {
 	mkdir "$self->{_graph_dir}/tmp";
 
 	# Get Administrator
-	my ($login, $password) = ($config->{connection}{login}, $config->{connection}{password});
+	my ($login, $password) = ($config->{user}{name}, $config->{user}{password});
 	$start_time = time();
 	$self->{_admin_wrap} = AdminWrapper->new( login => $login, password => $password );
 	print "Monitor::new : instanciate admin time = ", time() - $start_time, "\n";
