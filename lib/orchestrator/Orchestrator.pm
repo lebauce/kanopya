@@ -61,9 +61,6 @@ package Orchestrator;
 #TODO log
 #TODO use mcs exception
 ###############################################################################################################
- 
-
-use lib qw(/workspace/mcs/Monitor/Lib);
 
 use strict;
 use warnings;
@@ -71,8 +68,10 @@ use Monitor::Retriever;
 use XML::Simple;
 use General;
 use AdminWrapper;
-
 use Data::Dumper;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("orchestrator");
 
 				
 =head2 new
@@ -93,7 +92,7 @@ sub new {
 	bless $self, $class;
 
 	# Load conf
-	my $conf = XMLin("/workspace/mcs/Orchestrator/Conf/orchestrator.conf");
+	my $conf = XMLin("/etc/kanopya/orchestrator.conf");
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
 	$self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
@@ -112,8 +111,8 @@ sub new {
 	}
 	
 	# Get Administrator
-	#$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
-	$self->{_admin_wrap} = AdminWrapper->new( );
+	my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+	$self->{_admin_wrap} = AdminWrapper->new( login => $login, password => $password );
 	$self->{_monitor} = Monitor::Retriever->new( );
 	
     return $self;
@@ -132,7 +131,6 @@ sub manage {
 	my $self = shift;
 	
 	print "Manage\n";
-	my $start_time = time();
 	
 	my $monitor = $self->{_monitor};
 	
@@ -143,7 +141,7 @@ sub manage {
 	for my $cluster (@all_clusters_name) {
 		print "# CLUSTER: $cluster\n";
 		if ( scalar grep { $_ eq $cluster } @skip_clusters ) {
-			print " => skip\n";
+			$log->info(" => skip cluster $cluster\n");
 			next;
 		}
 	
@@ -171,14 +169,13 @@ sub manage {
 		if ($@) {
 			my $error = $@;
 			if ( $error =~ "rrdtool graph" ) {
-				print "=> Can't produce graph (no data)\n";
+				$log->info("=> Can't produce graph (no data)\n");
 			} else {
-				print "error for cluster '$cluster' : $error\n";
+				$log->error("error for cluster '$cluster' : $error\n");
 			}
 		}
 	}
-	
-	print "# Manage time: ", time() - $start_time, " sec\n";
+
 }
 
 sub updateGraph {
@@ -880,10 +877,22 @@ sub pouet {
 
 sub run {
 	my $self = shift;
+	my $running = shift;
+	
+	while ( $$running ) {
 
-	while ( 1 ) {
+		my $start_time = time();
+
 		$self->manage();
-		sleep( $self->{_time_step} );
+
+		my $update_duration = time() - $start_time;
+		$log->info( "Manage duration : $update_duration seconds" );
+		if ( $update_duration > $self->{_time_step} ) {
+			$log->warn("graphing duration > graphing time step (conf)");
+		} else {
+			sleep( $self->{_time_step} - $update_duration );
+		}
+
 	}
 }
 

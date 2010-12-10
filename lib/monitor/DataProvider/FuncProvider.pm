@@ -22,8 +22,6 @@ FuncProvider - FuncProvider object
 
 package FuncProvider;
 
-use lib qw(/workspace/mcs/Common/Lib);
-
 #use strict;
 use warnings;
 use XML::Simple;
@@ -78,7 +76,7 @@ sub new {
 	$self->{_timeref} = $timeref;
 	
 	# Load conf
-	my $conf = XMLin("/workspace/mcs/Monitor/Conf/nodes.conf");
+	my $conf = XMLin("/etc/kanopya/nodes.conf");
 	my $nodes = General::getAsArrayRef( data => $conf, tag => 'node' );
 	my @node_conf = grep { $_->{ip} eq $host } @{ $nodes };
 	my $node_conf = shift @node_conf;
