@@ -108,7 +108,7 @@ sub new {
 		if ( defined $set_def ) {
 			push @monitored_sets_def, $set_def;
 		} else {
-			print "Conf error: unexisting set '$monit_set->{set}'\n";
+			$log->warning("Conf error: unexisting set '$monit_set->{set}'");
 		}
 	}
 	$self->{_monitored_data} = \@monitored_sets_def;
@@ -129,9 +129,7 @@ sub new {
 
 	# Get Administrator
 	my ($login, $password) = ($config->{user}{name}, $config->{user}{password});
-	$start_time = time();
 	$self->{_admin_wrap} = AdminWrapper->new( login => $login, password => $password );
-	print "Monitor::new : instanciate admin time = ", time() - $start_time, "\n";
 	
     return $self;
 }
@@ -165,7 +163,6 @@ sub _mbState {
 	if ($state_info =~ /([a-zA-Z]+):?([\d]*)/) {
 		($mb_state, $mb_state_time) = ($1, $2);
 	} else {
-		print "Error: bad motherboard state format '$state_info'.\n";
 		$log->error("Bad motherboard state format '$state_info'.");
 		($mb_state, $mb_state_time) = ("unknown", 0);
 	}
@@ -285,7 +282,7 @@ sub aggregate {
 				$nb_keys = scalar keys %res;
 			} else {
 				if (  $nb_keys != scalar keys %$data) {
-					print "Warning: hash to aggregate have not the same number of keys. => mean computing will be incorrect.\n";
+					$log->warning("Hashes to aggregate have not the same number of keys. => mean computing will be incorrect.");
 				}
 				while ( my ($key, $value) = each %$data ) {
 						# TODO ! something is wrong here. do a better undef values management!
@@ -391,7 +388,7 @@ sub createRRD {
 	my %args = @_;
 
 	print "\n##############################################################################\n";
-	print "CREATE RRD : '$args{file}'";
+	$log->info("## CREATE RRD : '$args{file}' ##");
 	print "\n##############################################################################\n";
 
 	my $dsname_list = $args{dsname_list};
@@ -492,12 +489,12 @@ sub updateRRD {
 		my $error = $@;
 		
 		if ( $error =~ "illegal attempt to update using time") {
-			print "==> $error\n";
+			$log->error( "$error" );
 		}
 		# TODO check the error
 		else {
-			print "=> Info: update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n";
-			print "	(Reason: $error)\n";
+			$log->info("=> update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n (Reason: $error)");
+			#print "	(Reason: $error)\n";
 			my @dsname_list = keys %{ $args{data} };
 			$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type}, set_name => $args{set_name} );
 			$rrd->update( time => $time, values =>  $args{data} );

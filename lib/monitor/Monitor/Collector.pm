@@ -111,23 +111,23 @@ sub _manageHostState {
 					(( $state eq "stopping" ) && ( $diff_time > $stopping_max_time ) && ( $new_state ne 'down') ) ) {
 				$new_state = 'broken';
 				my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
-				print $mess . "\n";
+				$log->warning($mess);
 				$adm->addMessage(from => 'Monitor', level => "warning", content => $mess );
 			}
 		}
 		
 		# Update state in DB if changed
 		if ( $state ne $new_state ) {
-			print "===========> ($host_ip) last state : $state  =>  new state : $new_state \n";
 			$mb->setAttr( name => "motherboard_state", value => $new_state );
 			$mb->save();
+			$log->info("=> ($host_ip) last state : $state  =>  new state : $new_state");
 			$adm->addMessage(from => 'Monitor', level => "info", content => "[$host_ip] State changed : $state => $new_state" );
+			
 			$self->onStateChanged( mb => $mb, last_state => $state, new_state => $new_state );
 		}
 	};
 	if ($@) {
 		my $error = $@;
-		print "_manageHostState() ===> $error";
 		$log->error( $error );
 	}
 }
@@ -235,7 +235,7 @@ sub updateHostData {
 			#############################################################
 			if (defined $set->{'component'} && $set->{'component'} ne 'base' &&	
 				0 == grep { $_ eq $set->{'component'} } @{$args{components}} ) {
-				print "[$host] info: No component '$set->{'component'}' to monitor on this host\n";
+				$log->info("[$host] No component '$set->{'component'}' to monitor on this host");
 				next;
 			}
 
@@ -271,14 +271,14 @@ sub updateHostData {
 				} else {
 					($time, $update_values->{"0"}) = $data_provider->retrieveData( var_map => \%var_map );
 				}
-				print "[$host] ##### Collect '$set->{label}' time : ", time() - $retrieve_time, "\n";
+				$log->info("[$host] ##### Collect '$set->{label}' time : " .  (time() - $retrieve_time));
 			};
 			if ($@) {
 				#####################
 				# Handle exceptions #
 				#####################
 				my $error = $@;
-				$log->warn( "[", threads->tid(), "][$host] Collecting data set '$set->{label}' => $provider_class : $error" );
+				$log->warn( "[" . threads->tid() . "][$host] Collecting data set '$set->{label}' => $provider_class : $error" );
 				#TODO find a better way to detect unreachable host (grep error string is not very safe)
 				if ( "$error" =~ "No response" || "$error" =~ "Can't connect") {
 					$provider_class =~ /(.*)Provider/;
@@ -295,7 +295,7 @@ sub updateHostData {
 					last; # we stop collecting data sets
 				} else {
 					my $mess = "[$host] Error while collecting data set '$set->{label}' => $error";
-					print $mess . "\n";
+					$log->warning($mess);
 					$self->{_admin_wrap}->addMessage(from => 'Monitor', level => "warning", content => $mess );
 					$error_happened = 1;
 				}
@@ -307,7 +307,7 @@ sub updateHostData {
 			#############################################			
 			while ( my ($index, $values) = each %$update_values) { 
 				# DEBUG print values
-				print "[", threads->tid(), "][$host] $time : ", join( " | ", map { "$_" . ($index eq "0" ? "" : ".$index") . ": $values->{$_}" } keys %$values ), "\n";
+				$log->debug( "[" . threads->tid() . "][$host] $time : " . join( " | ", map { "$_" . ($index eq "0" ? "" : ".$index") . ": $values->{$_}" } keys %$values ) );
 				
 				my $set_name = $set->{label} . ( $index eq "0" ? "" : ".$index" );
 				my $rrd_name = $self->rrdName( set_name => $set_name, host_name => $host );
@@ -324,16 +324,15 @@ sub updateHostData {
 	};
 	if ($@) {
 		my $error = $@;
-		print "update host critic ===> $error";
 		$log->error( $error );
 		$error_happened = 1;
 		#TODO gérer $host_state dans ce cas (error)
 		
 	}
 	
-	print "[$host] => some errors happened collecting data\n" if ($error_happened);
+	$log->warning("[$host] => some errors happened collecting data") if ($error_happened);
 	
-	print "[$host] ##### Collect time : ", time() - $start_time, "\n";
+	$log->info("[$host] ##### Collect time : " . (time() - $start_time));
 	
 	return \%all_values;
 }
@@ -413,7 +412,7 @@ sub update {
 		my %hosts_by_cluster = $self->retrieveHostsByCluster();
 		
 		if ( 0 == scalar keys %hosts_by_cluster ) {
-			print " # No cluster to monitor => quit\n";
+			$log->info(" # No cluster to monitor => quit\n");
 			return;
 		}
 		
@@ -455,8 +454,8 @@ sub update {
 			$hosts_values{ $host_ip } = $ret;
 		}
 		
-		print "\n###############   ", "HOSTS VALUES", "   ##########\n";
-		print Dumper \%hosts_values;
+		#print "\n###############   ", "HOSTS VALUES", "   ##########\n";
+		#print Dumper \%hosts_values;
 		
 		################################
 		# update hosts state if needed #
@@ -505,7 +504,7 @@ sub update {
 			while ( my ($set_name, $sets_list) = each %sets ) {
 				
 				if ( $nb_up != scalar @$sets_list ) {
-					print "Warning: during aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.\n";
+					$log->warning("During aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.");
 					next;
 				}
 				
@@ -527,7 +526,7 @@ sub update {
 				};
 				if ($@){
 					my $error = $@;
-					print "update cluster rrd error => $error\n";
+					$log->error("Update cluster rrd error => $error");
 				}
 			} 
 			
@@ -539,7 +538,7 @@ sub update {
 			
 			# print nodes state
 			my %infos = map { $_->{ip} => $_->{state} } values %$cluster_info;
-			print "### $cluster_name ###\n", Dumper \%infos;
+			$log->debug("### $cluster_name nodes state###\n" . (Dumper \%infos));
 			
 			# RRD for node count
 			my $rrd_file = "$self->{_rrd_base_dir}/nodes_$cluster_name.rrd";
@@ -575,7 +574,7 @@ sub update {
 			if ($@) {
 				my $error = $@;
 				if ($error =~ "illegal attempt to update using time") {
-					print "=> Warn: same nodecount update time.\n";
+					$log->warning("=> same nodecount update time.");
 				}
 				else {
 					die $error;
@@ -585,7 +584,6 @@ sub update {
 	};
 	if ($@) {
 		my $error = $@;
-		print "update() ===> $error";
 		$log->error( $error );
 	}
 	
@@ -625,6 +623,9 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
+	my $adm = $self->{_admin_wrap};
+	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopia Collector started.");
+	
 	while ( $$running ) {
 
 		my $start_time = time();
@@ -640,6 +641,8 @@ sub run {
 		}
 
 	}
+	
+	$adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopia Collector stopped");
 }
 
 1;

@@ -1096,6 +1096,9 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
+	my $adm = $self->{_admin_wrap};
+	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopia Grapher started.");
+	
 	while ( $$running ) {
 
 		my $start_time = time();
@@ -1111,6 +1114,8 @@ sub run {
 		}
 
 	}
+	
+	$adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopia Grapher stopped");
 }
 
 1;

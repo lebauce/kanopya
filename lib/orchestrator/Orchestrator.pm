@@ -879,6 +879,9 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
+	my $adm = $self->{_admin_wrap};
+	$adm->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopia Orchestrator started.");
+	
 	while ( $$running ) {
 
 		my $start_time = time();
@@ -894,6 +897,8 @@ sub run {
 		}
 
 	}
+	
+	$adm->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopia Orchestrator stopped");
 }
 
 1;
