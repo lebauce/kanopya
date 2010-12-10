@@ -60,14 +60,14 @@ sub signalHandler {
 $SIG{TERM} = \&signalHandler;
 	
 
-try	{
+eval	{
 	my $collector = Monitor::Collector->new();
 	$log->info("Starting main loop");
 	# enter in the main loop and continue while $$running is true
 	$collector->run(\$running);
-}
-catch Error::Simple with {
-	my $ex = shift;
+};
+if ($@) {
+	my $ex = $@;
 	$log->error("error in collector instanciation: $ex");
 	die "Catch error in Monitoring::Collector instanciation: $ex";
 };

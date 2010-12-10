@@ -1,44 +1,84 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
+# kanopya-orchestrator.pl - This is the main script to run kanopya orchestration rules engine.
 
-use lib "/workspace/mcs/Orchestrator/Lib";
+# Copyright (C) 2009, 2010, 2011, 2012, 2013
+#   Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to the
+# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA 02110-1301 USA.
+
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+# Created 14 july 2010
+
+=head1 NAME
+
+kanopya-orchestrator - Orchestrator
+
+=head1 SYNOPSIS	    
+
+	$ ./kanopya-orchestrator
+
+=head1 DESCRIPTION
+
+Orchestrator is the main script to run orchestration rules engine.
+Orchestrator detect valid conditions and apply associated action.
+
+=head1 METHODS
+
+=cut
 
 use strict;
 use warnings;
 use Orchestrator;
+use Log::Log4perl "get_logger";
+
+Log::Log4perl->init('/opt/kanopya/conf/log.conf');
+my $log = get_logger("orchestrator");
 
 
-# MAIN
-my $orchestrator = Orchestrator->new();
+my $running = 1;
 
-my $sub = shift;
-if ( $sub eq "run" ) {
-	my $opt = shift;
-	
-	# clean
-
-		
-	$orchestrator->run();
-
-} elsif ( $sub eq "graph" ) {
-	my $cluster = shift;
-	my $file = $orchestrator->graph( cluster => $cluster );
-	`eog /tmp/graph_orchestrator_$cluster.png`;
-} elsif ( $sub eq "testtime") {
-	$orchestrator->_storeTime( cluster => "clusTest", time => '123', op_type => "op_one");
-	$orchestrator->_storeTime( cluster => "clusTest", time => '222', op_type => "op_one");
-	$orchestrator->_storeTime( cluster => "clusTest", time => '345', op_type => "op_two");
-	$orchestrator->_storeTime( cluster => "clusTest", time => '333', op_type => "op_one");
-	$orchestrator->_storeTime( cluster => "clusTest", time => '444', op_type => "op_two");
-	$orchestrator->_storeTime( cluster => "clusTest", time => '111', op_type => "op_two");
-	
-	my $file = $orchestrator->_timeFile( cluster => "clusTest"  );
-	print "FILE : $file\n";
-	print `more $file`, "\n";
-	
-	my @times = $orchestrator->_getTimes( cluster => "clusTest", op_type => "op_one" );
-	print "op one times : @times\n";
-	@times = $orchestrator->_getTimes( cluster => "clusTest", op_type => "op_two" );
-	print "op two times : @times\n";
-	
-	`rm $file`;
+sub signalHandler {
+	my $sig = shift;
+	$log->info($sig." received : stopping main loop");
+	$running = 0;
 }
+
+$SIG{TERM} = \&signalHandler;
+	
+
+eval	{
+	my $orchestrator = Orchestrator->new();
+	$log->info("Starting main loop");
+	# enter in the main loop and continue while $$running is true
+	$orchestrator->run(\$running);
+};
+if ($@) {
+	my $ex = $@;
+	$log->error("error in orchestrator instanciation: $ex");
+	die "Catch error in Orchestrator instanciation: $ex";
+};
+
+$log->info("kanopya-orchestrator end.");
+
+
+__END__
+
+=head1 AUTHOR
+
+Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
+This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+
+=cut

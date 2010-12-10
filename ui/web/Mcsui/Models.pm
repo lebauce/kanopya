@@ -96,8 +96,8 @@ sub process_addprocessormodel : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new processor model created'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new processor model created'); }
     return  $closewindow;
 }
 
@@ -157,8 +157,8 @@ sub process_addmotherboardmodel : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new motherboard model created'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new motherboard model created'); }
     return  $closewindow;
 }
 

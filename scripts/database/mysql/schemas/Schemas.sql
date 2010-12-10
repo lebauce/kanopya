@@ -334,9 +334,10 @@ CREATE TABLE `groups` (
 CREATE TABLE `message` (
   `message_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(8) unsigned DEFAULT NULL,
+  `message_from` char(32) NOT NULL,
   `message_creationdate` date NOT NULL,
   `message_creationtime` time NOT NULL,
-  `message_type` char(32) NOT NULL,
+  `message_level` char(32) NOT NULL,
   `message_content` text(512) NOT NULL,
   PRIMARY KEY (`message_id`),
   KEY `fk_message_1` (`user_id`),

@@ -817,17 +817,19 @@ sub getComponent {
 sub addMessage {
 	my $self = shift;
 	my %args = @_;
-	if ((! exists $args{type} or ! defined $args{type}) ||
+	if ((! exists $args{level} or ! defined $args{level}) ||
+		(! exists $args{from} or ! defined $args{from}) ||
 		(! exists $args{content} or ! defined $args{content})){
-		$errmsg = "Administrator->addMessage need a type and content named argument!";
+		$errmsg = "Administrator->addMessage need a level, from and content named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	$self->{db}->resultset('Message')->create({
 		user_id => $self->{_rightschecker}->{_user},
+		message_from => $args{from},
 		message_creationdate => \"CURRENT_DATE()",
 		message_creationtime => \"CURRENT_TIME()",
-		message_type => $args{type},
+		message_level => $args{level},
 		message_content => $args{content}
 	});
 	return;
@@ -843,10 +845,12 @@ sub getMessages {
 	my @arr = ();
 	while (my $row = $r->next) {
 		push @arr, { 
-			'TYPE' => $row->get_column('message_type'), 
-			'DATE' => $row->get_column('message_creationdate'), 
-			'TIME' => $row->get_column('message_creationtime'), 
-			'CONTENT' => $row->get_column('message_content')  
+			'from' => $row->get_column('message_from'),
+			'level' => $row->get_column('message_level'),,
+			'date' => $row->get_column('message_creationdate'), 
+			'time' => $row->get_column('message_creationtime'), 
+			'content' => $row->get_column('message_content'),
+			  
 		};
 	}
 	return @arr;

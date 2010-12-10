@@ -56,8 +56,8 @@ sub process_addshareddisk : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'new motherboard operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new motherboard operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/motherboards/view_motherboards');
 }
 
