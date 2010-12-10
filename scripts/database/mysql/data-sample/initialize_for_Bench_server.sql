@@ -239,7 +239,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALU
 -- snmpd
 INSERT INTO `component_instance` VALUES (7,2,7,NULL); 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,7); SET @eid := @eid +1;
-INSERT INTO `snmpd5` VALUES (7,'10.0.0.1','-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
+INSERT INTO `snmpd5` VALUES (7,1,'10.0.0.1','-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
 
 -- Apache2
 INSERT INTO `component_instance` VALUES (8,2,2,1); 

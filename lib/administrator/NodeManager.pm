@@ -74,6 +74,7 @@ sub new {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	$self->{_node_rs} = $args{node_rs};
+	$self->{adm} = $args{adm};
 	bless $self, $class;
 	$log->info("New Node Manager Loaded");
 	return $self;
@@ -163,10 +164,10 @@ sub getNodes {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	my $nodes = $self->{db}->resultset('Node')->search({ cluster_id => $args{cluster_id}});
+	my $nodes =  $self->{_node_rs}->search({ cluster_id => $args{cluster_id}});
 	my $motherboards = [];
 	while (my $n = $nodes->next) {
-		push @$motherboards, $self->getEntity(type => 'Motherboard', id => $n->get_column('motherboard_id'));
+		push @$motherboards, $self->{adm}->getEntity(type => 'Motherboard', id => $n->get_column('motherboard_id'));
 	}
 	return $motherboards;
 }

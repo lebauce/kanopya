@@ -141,7 +141,7 @@ sub new {
 	$self->{manager}->{network} = NetworkManager->new(schemas=>$self->{db},
 													  internalnetwork => $self->{config}->{internalnetwork});
 	
-	$self->{manager}->{node} = NodeManager->new(node_rs => $self->{db}->resultset('Node'));
+	$self->{manager}->{node} = NodeManager->new(node_rs => $self->{db}->resultset('Node'), adm => $self);
 	$log->info("new Administrator instance");
 	return $self;
 }
