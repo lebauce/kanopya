@@ -12,11 +12,13 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "user_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
+  "message_from",
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "message_creationdate",
   { data_type => "DATE", default_value => undef, is_nullable => 0, size => 10 },
   "message_creationtime",
   { data_type => "TIME", default_value => undef, is_nullable => 0, size => 8 },
-  "message_type",
+  "message_level",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "message_content",
   {
@@ -39,8 +41,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-08 16:36:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6u3B7iisB/r8/LklkRRt0g
+# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-10 10:34:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fHhVo5XzAXMJS+n21GxIGw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

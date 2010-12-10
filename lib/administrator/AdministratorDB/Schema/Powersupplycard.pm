@@ -34,8 +34,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-08 16:36:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vkM8Pg4dMNmNJ0nZptVYcQ
+# Created by DBIx::Class::Schema::Loader v0.04005 @ 2010-12-10 10:34:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OS1izV/vbo50oYu2/pk70g
 
 __PACKAGE__->has_one(
   "entitylink",
