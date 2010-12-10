@@ -142,9 +142,9 @@ sub process_addcluster : Runmode {
 		};
         if($@) {
                 my $error = $@;
-                $self->{'admin'}->addMessage(type => 'error', content => $error);
+                $self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error);
 	} else { 
-		$self->{'admin'}->addMessage(type => 'newop', content => 'new cluster operation adding to execution queue'); 
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new cluster operation adding to execution queue'); 
 	}
     	
     return $closewindow;
@@ -328,8 +328,8 @@ sub process_activatecluster : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'activate cluster operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'activate cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -344,8 +344,8 @@ sub process_deactivatecluster : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'deactivate cluster operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'deactivate cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -359,8 +359,8 @@ sub process_removecluster : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'remove cluster operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'remove cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -390,8 +390,8 @@ sub process_setpubliciptocluster : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new public ip added to cluster.'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added to cluster.'); }
     return $closewindow;
 }
 
@@ -405,8 +405,8 @@ sub process_startcluster : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'start cluster operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'start cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -420,8 +420,8 @@ sub process_stopcluster : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop cluster operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'stop cluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusters');
 }
 
@@ -435,8 +435,8 @@ sub process_removenode : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'stop node operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'stop node operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
 }
 
@@ -457,8 +457,8 @@ sub process_addnode : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'newop', content => 'AddMotherboardInCluster operation adding to execution queue'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue'); }
     $self->redirect('/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
 }
 
@@ -472,8 +472,8 @@ sub process_addcomponent : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'Component added sucessfully'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'Component added sucessfully'); }
    	return $closewindow;
 }
 
@@ -487,8 +487,8 @@ sub process_removecomponent : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'Component removed sucessfully'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'Component removed sucessfully'); }
    	$self->redirect("/cgi/mcsui.cgi/clusters/view_clusterdetails?cluster_id=".$query->param('cluster_id'));
 }
 

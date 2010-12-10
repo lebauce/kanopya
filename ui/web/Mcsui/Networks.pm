@@ -57,8 +57,8 @@ sub process_addpublicip : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'new public ip added.'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added.'); }
     return $closewindow;
 }
 
@@ -80,8 +80,8 @@ sub process_removepublicip : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(type => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(type => 'success', content => 'public ip removed.'); }
+		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed.'); }
     $self->redirect('/cgi/mcsui.cgi/networks/view_publicips');
 }
 

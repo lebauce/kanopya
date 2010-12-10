@@ -113,6 +113,7 @@ sub run {
 	
 	$log->warn("Before New Administrator");
 	my $adm = Administrator->new();
+	$adm->addMessage(from => 'Executor', level => 'info', content => "Kanopia Executor started.");
 	$log->warn("After New Administrator"); 
    	while ($$running) {
    		my $opdata = $adm->getNextOp();
@@ -120,7 +121,7 @@ sub run {
 	   		# start transaction
 	   		my $op = EFactory::newEEntity(data => $opdata);
    			$log->info("New operation (".ref($op).") retrieve ; execution processing");
-   			$adm->addMessage(type => 'info', content => "Executor begin an operation process (".ref($op).")");
+   			$adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
    			$adm->{db}->txn_begin;
    			eval {
    				$op->prepare(internal_cluster => $self->{config}->{cluster});
@@ -133,19 +134,19 @@ sub run {
    					$op->report();
    					# commit transaction
    					$adm->{db}->txn_commit;
-   					$adm->addMessage(type => 'info', content => ref($op)." reported");
+   					$adm->addMessage(from => 'Executor', level => 'info', content => ref($op)." reported");
    					$log->debug("Operation ".ref($op)." reported");
    				} else {
    					# rollback transaction
    					eval { $adm->{db}->txn_rollback; };
-   					$adm->addMessage(type => 'error', content => ref($op)." abording: $error");
+   					$adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
    					$log->error("Error during execution : $error");
    					$op->delete();
    				}
    			} else {
    				# commit transaction
    				$adm->{db}->txn_commit;
-   				$adm->addMessage(type => 'success', content => ref($op)." processing finished");	
+   				$adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");	
    				$op->delete();
    			}
    			
@@ -153,6 +154,7 @@ sub run {
    		else { sleep 5; }
    	}
    	$log->debug("condition become false : $$running"); 
+   	$adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopia Executor stopped");
 }
 
 =head2 execnrun

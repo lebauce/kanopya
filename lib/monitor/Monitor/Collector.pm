@@ -112,7 +112,7 @@ sub _manageHostState {
 				$new_state = 'broken';
 				my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
 				print $mess . "\n";
-				$adm->addMessage( type => "warning", content => $mess );
+				$adm->addMessage(from => 'Monitor', level => "warning", content => $mess );
 			}
 		}
 		
@@ -121,7 +121,7 @@ sub _manageHostState {
 			print "===========> ($host_ip) last state : $state  =>  new state : $new_state \n";
 			$mb->setAttr( name => "motherboard_state", value => $new_state );
 			$mb->save();
-			$adm->addMessage( type => "statechanged", content => "[$host_ip] State changed : $state => $new_state" );
+			$adm->addMessage(from => 'Monitor', level => "info", content => "[$host_ip] State changed : $state => $new_state" );
 			$self->onStateChanged( mb => $mb, last_state => $state, new_state => $new_state );
 		}
 	};
@@ -183,7 +183,7 @@ sub _manageStoppingHost {
 			$new_state = 'broken';
 			my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
 			print $mess . "\n";
-			$adm->addMessage( type => "warning", content => $mess );
+			$adm->addMessage(from => 'Monitor', level => "warning", content => $mess );
 		} 
 		
 		# Update state in DB if changed
@@ -191,7 +191,7 @@ sub _manageStoppingHost {
 			print "===========> ($host_ip) last state : $state  =>  new state : $new_state \n";
 			$host->setAttr( name => "motherboard_state", value => $new_state );
 			$host->save();
-			$adm->addMessage( type => "statechanged", content => "[$host_ip] State changed : $state => $new_state" );
+			$adm->addMessage(from => 'Monitor', level => "info", content => "[$host_ip] State changed : $state => $new_state" );
 		}
 	};
 	if ($@) {
@@ -287,7 +287,7 @@ sub updateHostData {
 					if ( $args{host_state} =~ "up" ) {
 						$log->info( "Unreachable host '$host' (component '$comp') => we stop collecting data.");
 						print "[", threads->tid(), "][$host] $mess\n";
-						$self->{_admin_wrap}->addMessage( type => "warning", content => $mess );
+						$self->{_admin_wrap}->addMessage(from => 'Monitor', level => "warning", content => $mess );
 					} else {
 						print "[", threads->tid(), "][$host] $mess ($args{host_state})\n";
 					}
@@ -296,7 +296,7 @@ sub updateHostData {
 				} else {
 					my $mess = "[$host] Error while collecting data set '$set->{label}' => $error";
 					print $mess . "\n";
-					$self->{_admin_wrap}->addMessage( type => "warning", content => $mess );
+					$self->{_admin_wrap}->addMessage(from => 'Monitor', level => "warning", content => $mess );
 					$error_happened = 1;
 				}
 				next; # continue collecting the other data sets
