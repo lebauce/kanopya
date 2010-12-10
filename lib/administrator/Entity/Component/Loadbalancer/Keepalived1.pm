@@ -195,8 +195,31 @@ sub removeRealserver {
 	return $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
 }
 
+=head2 getConf
+	
+	Desc : This function return the whole configuration to passed to the ui template.
+	return : hash ref 
 
+=cut
 
+sub getConf {
+	my $self = shift;
+	my $keepalived1_conf = {};
+	# TODO retrieve keepalived configuration
+	return $keepalived1_conf;
+}
+
+=head2 setConf
+	
+	Desc : This function save the whole configuration sended by the ui
+	return : hash ref 
+
+=cut
+
+sub setConf {
+	my $self = shift;
+	# TODO register keepalived configuration
+}
 
 # return a data structure to pass to the template processor for ipvsadm file
 sub getTemplateDataIpvsadm {
