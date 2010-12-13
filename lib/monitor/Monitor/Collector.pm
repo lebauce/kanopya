@@ -111,7 +111,7 @@ sub _manageHostState {
 					(( $state eq "stopping" ) && ( $diff_time > $stopping_max_time ) && ( $new_state ne 'down') ) ) {
 				$new_state = 'broken';
 				my $mess = "'$host_ip' is in state '$state' for $diff_time seconds, it's too long (see monitor conf), considered as broken."; 
-				$log->warning($mess);
+				$log->warn($mess);
 				$adm->addMessage(from => 'Monitor', level => "warning", content => $mess );
 			}
 		}
@@ -295,7 +295,7 @@ sub updateHostData {
 					last; # we stop collecting data sets
 				} else {
 					my $mess = "[$host] Error while collecting data set '$set->{label}' => $error";
-					$log->warning($mess);
+					$log->warn($mess);
 					$self->{_admin_wrap}->addMessage(from => 'Monitor', level => "warning", content => $mess );
 					$error_happened = 1;
 				}
@@ -330,7 +330,7 @@ sub updateHostData {
 		
 	}
 	
-	$log->warning("[$host] => some errors happened collecting data") if ($error_happened);
+	$log->warn("[$host] => some errors happened collecting data") if ($error_happened);
 	
 	$log->info("[$host] ##### Collect time : " . (time() - $start_time));
 	
@@ -504,12 +504,14 @@ sub update {
 			while ( my ($set_name, $sets_list) = each %sets ) {
 				
 				if ( $nb_up != scalar @$sets_list ) {
-					$log->warning("During aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.");
+					$log->warn("During aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.");
 					next;
 				}
 				
 				my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
 				my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
+
+				next if ( scalar grep { not defined $_ } values %aggreg_sum );
 
 #				print "\n###############    $cluster_name : $set_name AGGREG mean   ##########\n";
 #				print Dumper \%aggreg_mean;
@@ -521,7 +523,9 @@ sub update {
     			my $mean_rrd_name = $base_rrd_name . "_avg";
     			my $sum_rrd_name = $base_rrd_name . "_total";
 				eval {
+					#print "MEAN: ", Dumper \%aggreg_mean;
 					$self->updateRRD( rrd_name => $mean_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_mean);
+					#print "TOT: ", Dumper \%aggreg_sum;
 					$self->updateRRD( rrd_name => $sum_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $start_time, data => \%aggreg_sum);
 				};
 				if ($@){
@@ -574,7 +578,7 @@ sub update {
 			if ($@) {
 				my $error = $@;
 				if ($error =~ "illegal attempt to update using time") {
-					$log->warning("=> same nodecount update time.");
+					$log->warn("=> same nodecount update time.");
 				}
 				else {
 					die $error;
@@ -639,7 +643,9 @@ sub run {
 		} else {
 			sleep( $self->{_time_step} - $update_duration );
 		}
-
+		
+		# Restart this service (bad trick for avoid memory growth (due to leaks))
+		#`/etc/init.d/kanopya-collector restart`;
 	}
 	
 	$adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopia Collector stopped");

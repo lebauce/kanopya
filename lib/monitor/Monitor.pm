@@ -363,9 +363,8 @@ sub getRRD {
 
 	my $RRDFile = $args{file};
 	# rrd constructor (doesn't create file if not exists)
-	my $rrd = RRDTool::OO->new( file =>  $self->{_rrd_base_dir} . "/". $RRDFile );
+	return RRDTool::OO->new( file =>  $self->{_rrd_base_dir} . "/". $RRDFile );
 
-	return $rrd;
 }
 
 =head2 createRRD
