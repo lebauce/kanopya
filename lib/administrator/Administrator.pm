@@ -61,6 +61,7 @@ use XML::Simple;
 use DateTime;
 use NetworkManager;
 use NodeManager;
+use RulesManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -142,6 +143,9 @@ sub new {
 													  internalnetwork => $self->{config}->{internalnetwork});
 	
 	$self->{manager}->{node} = NodeManager->new(node_rs => $self->{db}->resultset('Node'), adm => $self);
+	
+	$self->{manager}->{rules} = RulesManager->new( schemas=>$self->{db} );
+	
 	$log->info("new Administrator instance");
 	return $self;
 }

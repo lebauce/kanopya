@@ -69,6 +69,7 @@ use XML::Simple;
 use General;
 use AdminWrapper;
 use Data::Dumper;
+use Parse::BooleanLogic;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
@@ -134,7 +135,7 @@ sub manage {
 	
 	my $monitor = $self->{_monitor};
 	
-	my @skip_clusters = ('adm');
+	my @skip_clusters = (); #('adm');
 	
 	my @all_clusters_name = $monitor->getClustersName();
 	
@@ -144,24 +145,25 @@ sub manage {
 			$log->info(" => skip cluster $cluster\n");
 			next;
 		}
-	
-		##########################################################################################################
-		#TODO on peut tester ici si il est cohérent de faire les tests (traps et conditions) pour ce cluster
-		#				-> pas de node starting ou stopping dans le cluster
-		#				-> pas d'operation add ou remove dans la queue
-		#				-> au moins 2 noeuds pour les tests de remove
-		#				-> nombre de noeuds constant depuis un certain temps (conf)
-		# ceci afin d'éviter de faire les récupérations de données et les calculs
-		# Mais du coup on aura pas les infos en continue à stocker et grapher sur les différentes valeurs
-		# Pas forcément très grave, on peut stocker une variable spéciale précisant que l'on pas fait les tests puisque non nécessaire  
-		##########################################################################################################
+		my $cluster_id = $self->{_admin_wrap}->getClusterId( cluster_name => $cluster );
 	
 		eval {
+			my $rules_manager = $self->{_admin_wrap}{_admin}->{manager}{rules};
+			
+			# Solve rules
+			my $rules = $rules_manager->getClusterRules( cluster_id => $cluster_id );
+			$self->solve( rules => $rules, cluster_name => $cluster );
+			
+			# Try to optimize
+			my $optim_conditions = $rules_manager->getClusterOptimConditions( cluster_id => $cluster_id );
+			$self->optimize( condition_tree => $optim_conditions, cluster_name => $cluster );
+			
+			
 			# Detect trap for adding node
-			my $cluster_trapped = $self->detectTraps( cluster_name => $cluster );
+			#my $cluster_trapped = $self->detectTraps( cluster_name => $cluster );
 			
 			# Check conditions for remove node
-			$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
+			#$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
 			
 			# Update graph for this cluster
 			$self->updateGraph( cluster => $cluster );
@@ -176,6 +178,255 @@ sub manage {
 		}
 	}
 
+}
+
+=head2
+	
+	Class : Public
+	
+	Desc : Retrieve the mean value of a monitored var on a defined time laps, for the cluster
+	
+	Args : same as Monitor::getClusterData()
+		
+	Return :
+		undef is the required var is not found
+		else the value
+=cut
+
+sub getValue {
+	my $self = shift;
+	my %args = @_;
+	
+
+	my $cluster_data_aggreg;
+	eval {
+		$cluster_data_aggreg = $self->{_monitor}->getClusterData( 	cluster => $args{cluster},
+																	set => $args{set},
+																	time_laps => $args{time_laps},
+																	percent => $args{percent},
+																	aggregate => $args{aggregate});
+	};
+	if ($@) {
+		my $error = $@;
+		$log->error("=> Error getting data (set '$args{set}' for cluster '$args{cluster}') : $error");
+		return undef;
+	}
+
+	my $value = $cluster_data_aggreg->{ $args{ds} };
+	if (not defined $value) {
+		$log->warn("No value for ds '$args{ds}' in cluster '$args{cluster}' (for last $args{time_laps}sec).  considered as undef.");
+		return undef;
+	}
+	
+	return $value;
+}
+
+=head2 evaluate
+	
+	Class : Public
+	
+	Desc : evaluate a 
+	
+	Args :
+		lval: scalar
+		rval: scalar
+		op: the comp operator string ( 'inf', 'sup' )
+	
+	Return :
+		0 (false or one value undef) or 1 (true)
+=cut
+
+sub evaluate {
+	my $self = shift;
+	my %args = @_;
+	
+	return 0 if ( not defined $args{lval} || not defined $args{rval} );
+	
+	return 1 if (($args{op} eq 'inf' &&  ($args{lval} < $args{rval})) ||
+				($args{op} eq 'sup' &&  ($args{lval} > $args{rval})) ); 
+	
+	return 0;
+}
+
+=head2 checkCondition
+	
+	Class : Public
+	
+	Desc : retrieve value of condition var and evaluate condition
+	
+	Args :
+		condition: hash ref representing a condition
+	
+	Return :
+		0 if condition is false
+		1 if condition is true
+=cut
+
+sub checkCondition {
+	my $self = shift;
+	my %args = @_;
+	my $condition = $args{condition};
+	
+	#$log->debug( join ", ", map { "$_: $condition->{$_}" } keys %$condition );
+	
+	my ($set, $ds) = split ':', $condition->{var};
+	my $var_value = $self->getValue(
+										cluster => $args{cluster_name},
+										set => $set,
+										ds => $ds,
+										time_laps => $condition->{time_laps},
+										percent => $condition->{percent},
+										aggregate => "mean");
+	my $res = $self->evaluate( lval => $var_value, rval => $condition->{value}, op => $condition->{operator} );
+ 	$log->debug("# eval " . $condition->{var} . "($condition->{time_laps})" . " = " . (defined $var_value ? $var_value : "undef") . " ". $condition->{operator} . " " . $condition->{value} .
+ 				" ==> " . ($res > 0 ? "ok" : "fail"));	
+	
+	return $res;
+}
+
+=head2 checkOptimCondition
+	
+	Class : Public
+	
+	Desc : retrieve value of condition var, compute prevision for this value if a node is removed, and evaluate condition
+	
+	Args :
+		condition: hash ref representing a condition
+	
+	Return :
+		0 if condition is false
+		1 if condition is true
+=cut
+
+sub checkOptimCondition {
+	my $self = shift;
+	my %args = @_;
+	my $condition = $args{condition};
+	
+	#$log->debug( join ", ", map { "$_: $condition->{$_}" } keys %$condition );
+	
+	my ($set, $ds) = split ':', $condition->{var};
+	my $var_value = $self->getValue(
+										cluster => $args{cluster_name},
+										set => $set,
+										ds => $ds,
+										time_laps => $condition->{time_laps},
+										percent => $condition->{percent},
+										aggregate => "mean");
+	
+	my $prevision = (defined $var_value && $args{upnode_count} > 1) ? ($var_value + ( $var_value / ( $args{upnode_count} - 1 ))) : undef;
+	my $res = $self->evaluate( lval => $prevision, rval => $condition->{value}, op => $condition->{operator} );
+ 	$log->debug("# eval " . $condition->{var} . " = " . (defined $var_value ? $var_value : "undef") . " ".
+ 				"prevision after optim = " . $prevision . " " . $condition->{operator} . " " . $condition->{value} .
+ 				" ==> " . ($res > 0 ? "ok" : "fail"));	
+	
+	return $res;
+}
+
+=head2 solve
+	
+	Class : Public
+	
+	Desc : Solve each rules (by checking conditions of tree) and call the associated action if the rule is activated
+	
+	
+	Args :
+		cluster_name
+		rules: array ref of rules. A rule is { condition_tree => [...], action => 'action_name' }
+	
+=cut
+
+sub solve {
+	my $self = shift;
+	my %args = @_;
+
+	my $parser = Parse::BooleanLogic->new( operators => [qw(& |)] );
+
+	my $cluster_name = $args{cluster_name};
+
+	my $solver = sub {
+	    my ($condition, $ctx) = @_;
+	    return $self->checkCondition( condition => $condition, cluster_name => $cluster_name );
+	};
+
+	my $ctx = undef;
+	foreach my $rule (@{ $args{rules} }) {
+		$log->info('# rule #');
+		my $result = $parser->solve( $rule->{condition_tree}, $solver, $ctx);
+		if ($result > 0) {
+			$log->info("Rule activated => action : " . $rule->{action});
+			$self->doAction( action => $rule->{action}, cluster_name => $cluster_name );
+		}
+	}
+
+	
+}
+
+=head2 doAction
+	
+	Class : Public
+	
+	Desc : call the action function according to action name
+	
+	Args :
+		action: string: name of a defined action
+		cluster_name: the cluster targetted by the action
+		
+=cut
+
+sub doAction {
+	my $self = shift;
+	my %args = @_;
+	
+	my %actions = ( "add_node" => \&requireAddNode, "remove_node" => \&requireRemoveNode );
+	my $action_sub = $actions{$args{action}};
+	
+	if (not defined $action_sub) {
+		$log->warn("Required action is undefined : '$args{action}'");
+		return;
+	}
+	
+	$action_sub->( $self, cluster => $args{cluster_name} );
+}
+
+=head2 optimize
+	
+	Class : Public
+	
+	Desc : Try to optimize cluster node count by removing node according to optimize conditions
+	
+	Args :
+		cluster_name
+		condition_tree : array ref representing a tree of conditions with separator '|' or '&'
+	
+=cut
+
+sub optimize {
+	my $self = shift;
+	my %args = @_;
+
+	my $cluster_name = $args{cluster_name};
+
+	my $cluster_info = $self->{_monitor}->getClusterHostsInfo( cluster => $cluster_name );
+	my $upnode_count = grep { $_->{state} =~ 'up' } values %$cluster_info;
+	
+	if ( $upnode_count <= 1 ) {
+		$log->info("No node to eventually remove => don't try to optimize node count");
+		return;
+	}
+	
+	my $parser = Parse::BooleanLogic->new( operators => [qw(& |)] );
+	my $solver = sub {
+	    my ($condition, $ctx) = @_;
+	    return $self->checkOptimCondition( condition => $condition, cluster_name => $cluster_name, upnode_count => $upnode_count );
+	};
+
+	my $ctx = undef;
+	my $result = $parser->solve( $args{condition_tree}, $solver, $ctx);
+	if ($result > 0) {
+		$log->info("Can optimize cluster '$cluster_name' => remove node");
+		$self->doAction( action => "remove_node", cluster_name => $cluster_name );
+	}
 }
 
 sub updateGraph {
@@ -426,13 +677,13 @@ sub _canAddNode {
     # Check if there is already a node starting in the cluster #
     if ( 	$self->_isNodeInState( cluster => $cluster, state => 'starting' ) ||
     		$self->_isNodeInState( cluster => $cluster, state => 'locked' ) ) {
-		print " => A node is already starting or locked in cluster '$cluster'\n";
+		$log->info(" => A node is already starting or locked in cluster '$cluster'");
     	return 0;
     }
     
     # Check if there is a corresponding add node operation in operation queue #
     if ( $self->_isOpInQueue( cluster => $cluster, type => 'AddMotherboardInCluster' ) ) {
-    	print " => An operation to add node in cluster '$cluster' is already in queue\n";
+    	$log->info(" => An operation to add node in cluster '$cluster' is already in queue");
     	return 0;
     }
     
@@ -445,7 +696,7 @@ sub requireAddNode {
     
     my $cluster = $args{cluster};
     
-    print "Node required in cluster '$cluster'\n";
+    $log->info("Node required in cluster '$cluster'");
     
     eval {
 	   	if ( $self->_canAddNode( cluster => $cluster ) ) {
@@ -457,7 +708,7 @@ sub requireAddNode {
     };
     if ($@) {
 		my $error = $@;
-		print "=> Error while adding node in cluster '$cluster' : $error\n";
+		$log->error("=> Error while adding node in cluster '$cluster' : $error");
 	}
 }
 
@@ -486,7 +737,7 @@ sub _canRemoveNode {
     if ( 	$self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
     		$self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
     {
-    	print " => An operation to remove node from cluster '$cluster' is already in queue\n";
+    	$log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
     	return 0;
     }
     
@@ -499,7 +750,7 @@ sub requireRemoveNode {
     
     my $cluster = $args{cluster};
     
-    print "Want remove node in cluster '$cluster'\n";
+    $log->info("Want remove node in cluster '$cluster'");
     
     eval {
 	   	if ( $self->_canRemoveNode( cluster => $cluster ) ) {
@@ -511,7 +762,7 @@ sub requireRemoveNode {
     };
    	if ($@) {
 		my $error = $@;
-		print "=> Error while removing node in cluster '$cluster' : $error\n";
+		$log->error("=> Error while removing node in cluster '$cluster' : $error");
 	}
     
 }
@@ -522,7 +773,7 @@ sub addNode {
 	my $self = shift;
     my %args = @_;
     
-    print "====> add node in $args{cluster_name}\n";
+    $log->info("====> add node in $args{cluster_name}");
        
     #my $adm = $args{adm};
     my $adm = $self->{_admin_wrap};
@@ -557,7 +808,7 @@ sub removeNode {
 	my $self = shift;
     my %args = @_;
     
-    print "====> remove node from $args{cluster_name}\n";
+    $log->info("====> remove node from $args{cluster_name}");
     
     my $priority = 1000;
     my $cluster_name = $args{cluster_name};

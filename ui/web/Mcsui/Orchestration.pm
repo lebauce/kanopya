@@ -37,30 +37,45 @@ sub save_orchestrator_settings : Runmode {
 	my $errors = shift;
 	my $query = $self->query();
 	
+	my $cluster_id = $query->param('cluster_id') || 0;
 	my $rules_str = $query->param('rules'); # stringified array of hash
 	my $rules = decode_json $rules_str;
 	
-	#my %rules = map { ('toto' => $_) } @$rules;
-	
-	my $xml_rules = XMLout($rules, RootName => 'rules');
-	
-	return "can't save";
-	return $xml_rules;
-	
-	my @monit_sets = $query->param('collect_sets[]'); # array of set name
-	my @formated_monit_sets = map { { set => $_} } @monit_sets;
-	
-	my $graphs_settings_str = $query->param('graphs_settings'); # stringified array of hash
-	my $graphs_settings = decode_json $graphs_settings_str;
+	my $optim_str = $query->param('optim_conditions'); # stringified array of hash
+	my $optim_cond = decode_json $optim_str;
 		
-	my $conf = $self->getMonitorConf();
+	#return Dumper $rules;
 	
-	$conf->{generate_graph} = { graph => $graphs_settings};
-	$conf->{monitor} = \@formated_monit_sets;
+	my $rules_manager = $self->{'admin'}->{manager}->{rules};
+	eval {
+		$rules_manager->deleteClusterRules( cluster_id => $cluster_id );
+		foreach my $rule (@$rules) {
+			$rules_manager->addClusterRule( cluster_id => $cluster_id,
+	                                		condition_tree => (ref $rule->{condition} eq 'ARRAY') ? $rule->{condition} : [$rule->{condition}],
+	                                		action => $self->actionTranslate( action => $rule->{action} )
+	                                		);
+		}
+		
+		$rules_manager->addClusterOptimConditions( cluster_id => $cluster_id, condition_tree => $optim_cond );
+	};
+	if ($@) {
+		my $error = $@;
+		return "Error while recording rule for cluster $cluster_id\n$error";
+	}
 	
-	my $xml_conf = XMLout($conf, RootName => 'conf');
+	return "Rules saved for cluster $cluster_id ";
+}
+
+sub actionTranslate {
+	my $self = shift;
+	my %args = @_;
 	
-	return "$xml_conf";
+	my %map = ("add_node" => "Add node", "remove_node" => "Remove node");
+	while ( my ($k, $v) = each ( %map ) ) {
+		return $v if $k eq $args{action};
+		return $k if $v eq $args{action};
+	}
+	return "none";
 }
 
 #TODO do this in Monitor
@@ -89,6 +104,7 @@ sub getMonitoredIndicators {
 sub view_orchestrator_settings : StartRunmode {
 	my $self = shift;
 	my $errors = shift;
+	my $query = $self->query();
 	my $tmpl = $self->load_tmpl('Orchestrator/view_orchestrator_settings.tmpl');
 	
 
@@ -99,35 +115,58 @@ sub view_orchestrator_settings : StartRunmode {
 	}	
 	$var_choices = join ",", @choices;
 	
-	my $conf = $self->getOrchestratorConf();
 	my @rules = ();
-	my $traps =  General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
-	foreach my $trap (@$traps) {
-		my $thresholds = General::getAsArrayRef( data => $trap, tag => 'threshold' );
-		foreach my $thresh (@$thresholds) {
-			push @rules, { 	var => $trap->{set} .':'. $thresh->{var}, time_laps => $trap->{time_laps},
-							inf => defined $thresh->{min},
-							value => defined $thresh->{max} ? $thresh->{max} : $thresh->{min},
-							action => 'Add node',
-							
-							var_choices => $var_choices,
-						};
+
+	my $cluster_id = $query->param('cluster_id') || 0;
+	my $rules_manager = $self->{'admin'}->{manager}->{rules};
+	my $cluster_rules = $rules_manager->getClusterRules( cluster_id => $cluster_id );
+	my $op_id = 0;
+	foreach my $rule (@$cluster_rules) {
+		my $condition_tree = $rule->{condition_tree};
+
+		my @conditions = ();
+		$op_id++;
+		my $bin_op;
+		foreach my $cond (@$condition_tree) {
+			if ( ref $cond eq 'HASH' ) {
+				push @conditions, { var => $cond->{var},
+									time_laps => $cond->{time_laps},
+									inf => $cond->{operator} eq 'inf',
+									value => $cond->{value},
+									var_choices => $var_choices,					
+									op_id => $op_id,
+								};
+			} else {
+				$bin_op = {'|' => 'or', '&' => 'and'}->{$cond};
+			}
 		}
+		
+		$conditions[0]{master_row} = 1;
+		$conditions[0]{bin_op} = $bin_op if (defined $bin_op);
+		$conditions[0]{action} = $self->actionTranslate( action => $rule->{action} );
+		$conditions[0]{span} = scalar @conditions;
+		
+		push @rules, { conditions => \@conditions };
 	}
-	my $conditions =  General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
-	foreach my $cond (@$conditions) {
-		my $required = General::getAsArrayRef( data => $cond, tag => 'required' );
-		foreach my $req (@$required) {
-			push @rules, { 	var => $cond->{set} .':'. $req->{var}, time_laps => $cond->{time_laps},
-							inf => defined $req->{max},
-							value => defined $req->{max} ? $req->{max} : $req->{min},
-							action => 'Remove node',
-							
-							var_choices => $var_choices,
-						};
-		}
-	}
+		
 	
+	my @optim_conditions = ();
+	my $optim_condition_tree = $rules_manager->getClusterOptimConditions( cluster_id => $cluster_id );
+	foreach my $cond (@$optim_condition_tree) {
+			if ( ref $cond eq 'HASH' ) {
+				push @optim_conditions, { var => $cond->{var},
+									time_laps => $cond->{time_laps},
+									inf => $cond->{operator} eq 'inf',
+									value => $cond->{value},
+									var_choices => $var_choices,					
+									op_id => 0,
+								};
+			} else {
+				#$bin_op = {'|' => 'or', '&' => 'and'}->{$cond};
+			}
+		}
+	
+	$tmpl->param('OPTIM_CONDITIONS' => \@optim_conditions);
 	
 	$tmpl->param('RULES' => \@rules);
 	$tmpl->param('VAR_CHOICES' => $var_choices);

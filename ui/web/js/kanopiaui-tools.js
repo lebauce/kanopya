@@ -23,6 +23,16 @@ function toggleChoiceMode() {
 	if ($(this).hasClass('new_edit')) {$(this).removeClass('new_edit');}
 }
 
+function loading_start() {
+	$('body').css('cursor','wait');
+	$('.clickable').addClass('unactive_clickable').removeClass('clickable');		
+}
+   
+function loading_stop() {
+   	$('body').css('cursor','auto');	
+   	$('.unactive_clickable').addClass('clickable').removeClass('unactive_clickable');
+}
+   
 /*********************************************
 	Initialize generic behaviors
 *********************************************/

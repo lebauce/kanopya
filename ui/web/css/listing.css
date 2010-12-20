@@ -100,18 +100,19 @@ table#graphchoices, table.set_selectors {
 
 .rulesview td.operator {
 	border: none;
-	background-color: #D99;
+	background-color: #DDD;
 	text-align: center;
-}
-
-.rulesview .selected {
-	background-color: #CFC;
 }
 
 .rulesview .then_col { 
 	width: 50px;	
 	background: url("/images/icons/arrow.png") no-repeat center;
 	border: none;
+}
+
+.rulesview .remove_cond { 
+	width: 10px;	
+	background: url("/images/icons/remove.png") no-repeat top;
 }
 
 .rulesview .then_head { background: none;}
@@ -245,9 +246,9 @@ table.simplelisting td a {
 .bold { font-weight: bold; }
 
 
+table.rulesview tr:hover { background-color:transparent;} /* here to overload simplelisting tr:hover */
 
-
-
+table.rulesview tr.selected {	background-color: #EEE; }
 
 
 

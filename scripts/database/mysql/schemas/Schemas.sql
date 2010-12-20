@@ -436,6 +436,38 @@ CREATE TABLE `component_template_attr` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for orchestrator table `condition`
+--
+
+CREATE TABLE `rulecondition` (
+  `rulecondition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `rulecondition_var` varchar(32) NOT NULL,
+  `rulecondition_time_laps` varchar(32) NOT NULL,
+  `rulecondition_consolidation_func` varchar(32) NOT NULL,
+  `rulecondition_transformation_func` varchar(32) NOT NULL,
+  `rulecondition_operator` varchar(32) NOT NULL,
+  `rulecondition_value` int(8) unsigned NOT NULL,
+  `rule_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`rulecondition_id`),
+  KEY `fk_rulecondition_1` (`rule_id`),
+  CONSTRAINT `fk_rulecondition_1` FOREIGN KEY (`rule_id`) REFERENCES `rule` (`rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for orchestrator table `rule`
+--
+
+CREATE TABLE `rule` (
+  `rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `rule_condition` varchar(32) NOT NULL,
+  `rule_action` varchar(32) NOT NULL,
+  `cluster_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`rule_id`),
+  KEY `fk_rule_1` (`cluster_id`),
+  CONSTRAINT `fk_rule_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Entity tables
 --
 
