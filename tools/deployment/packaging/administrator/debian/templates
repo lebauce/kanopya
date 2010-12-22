@@ -1,55 +1,55 @@
-Template: administrator-1.1/DBLogin
+Template: administrator/DBLogin
 Type: string
 Description: enter your database's username.
 
-Template: administrator-1.1/DBPassword
+Template: administrator/DBPassword
 Type: password
 Description: enter your database user's password.
 
-Template: administrator-1.1/DBPasswordAgain
+Template: administrator/DBPasswordAgain
 Type: password
 Description: please confirm the database user's password.
 
-Template: administrator-1.1/DBPasswordUnmatch
+Template: administrator/DBPasswordUnmatch
 Type: note
 Description: passwords doenst match. Please ensure to enter the same password for validation.
 
-Template: administrator-1.1/DBPort
+Template: administrator/DBPort
 Type: string 
 Description: enter the port number of the database's 
 
-Template: administrator-1.1/InvalidPortNumber
+Template: administrator/InvalidPortNumber
 Type: note
 Description: a port value must be comprised between 1 and 65 535
 
-Template: administrator-1.1/InvalidInternetAddress
+Template: administrator/InvalidInternetAddress
 Type: note
 Description: invalid internet address (ipv4)
 
-Template: administrator-1.1/InvalidNetworkMask
+Template: administrator/InvalidNetworkMask
 Type: note
 Description: the network mask you've given isn't valid
 
-Template: administrator-1.1/IsEmpty
+Template: administrator/IsEmpty
 Type: note
 Description: You can't give a null value to this field
 
-Template: administrator-1.1/Logdir
+Template: administrator/Logdir
 Type: string
 Description: enter the absolute path to the login directory
 
-Template: administrator-1.1/InternalNetworkAddress
+Template: administrator/InternalNetworkAddress
 Type: string 
 Description: enter the address of the MicroCluster's network
 
-Template: administrator-1.1/NotAbsolute
+Template: administrator/NotAbsolute
 Type: note
 Description: the path you entered isn't absolute (it must start with the root location, "/" by default on FHS compatible systems).
 
-Template: administrator-1.1/Gateway
+Template: administrator/Gateway
 Type: string
 Description: enter the address of the network's gateway
 
-Template: administrator-1.1/InternalNetworkMask
+Template: administrator/InternalNetworkMask
 Type: string
 Description: enter the network's mask
