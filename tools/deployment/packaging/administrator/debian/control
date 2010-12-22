@@ -9,7 +9,6 @@ Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/administrator.git;a=summary
 
 Package: administrator
-Architecture: any
+Architecture: all
 Depends: ${perl:Depends}, debconf (>= 0.5) | debconf-2.0
 Description: Administrator allow to manipulate kanopya data object.
-

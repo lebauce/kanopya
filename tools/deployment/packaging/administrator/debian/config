@@ -1,16 +1,348 @@
-#!/bin/sh -e
+#!/bin/bash 
+
+set -e
+
+#Config file for administrator package
+#each answer is required
+#@author: Maxime Demoulin
+#@date: 10/11/2010
 
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
-# Do you like debian?
-db_input medium foo/like_debian || true
-db_go
 
-# Check their answer.
-db_get foo/like_debian
-if [ "$RET" = "false" ]; then
-    # Poor misguided one..
-    db_input high foo/why_debian_is_great || true
-    db_go
+#Ask for database login
+db_input high administrator/DBLogin || true
+db_go
+db_get administrator/DBLogin
+
+if [ -z $RET ]; then
+	ok=0
+	while [ $ok = 0 ]; do 
+		db_input high administrator/IsEmpty || true
+		db_go
+		db_input high administrator/DBLogin || true
+		db_go
+		db_fset administrator/IsEmpty seen false
+		db_get administrator/DBLogin
+		if [ $RET ]; then
+			ok=1
+		fi
+	done 
+fi
+
+pwd_match=0
+while [ $pwd_match = 0 ]; do
+	#Ask for database user's password
+	db_input high administrator/DBPassword || true
+	db_go
+	db_get administrator/DBPassword 
+
+	#we verify if a password has been given
+	if [ -z $RET ]; then
+		ok=0
+		while [ $ok = 0 ]; do 
+			db_input high administrator/IsEmpty || true
+			db_go
+			db_input high administrator/DBPassword || true
+			db_go	
+			db_fset administrator/IsEmpty seen false
+			db_get administrator/DBPassword
+			if [ $RET ]; then
+				ok=1
+			fi
+		done
+	fi
+	DB_PWD="$RET"
+
+	#Once password has been given, we ask for its confirmation
+	db_input high administrator/DBPasswordAgain || true
+	db_go
+	db_get administrator/DBPasswordAgain
+
+	if [ "$RET" != "$DB_PWD" ]; then
+		db_set administrator/DBPassword ""
+		db_input high administrator/DBPasswordUnmatch
+		db_go
+	elif [ "$RET" = "$DB_PWD" ]; then
+		DB_PWD=""
+		pwd_match=1	
+	fi
+done	
+
+#We then ask for the database's port and we verify the validity of port number
+db_input high administrator/DBPort || true
+db_go
+db_get administrator/DBPort
+
+if [ -z $RET ]; then
+	ok=0
+	while [ $ok = 0 ]; do 
+		db_input high administrator/IsEmpty || true
+		db_go
+		db_input high administrator/DBPort || true
+		db_go
+		db_fset administrator/IsEmpty seen false
+		db_get administrator/DBPort
+		if [ $RET ]; then
+			ok=1
+		fi
+	done
+fi
+if [ ! "$RET" -le 65535 -o "$RET" -eq 0 ]; then
+		ok=0
+		while [ $ok = 0 ]; do	
+			db_input high administrator/InvalidPortNumber || true
+			db_go
+			db_input high administrator/DBPort || true
+			db_go
+			db_fset administrator/InvalidPortNumber seen false
+			db_get administrator/DBPort
+			if [ "$RET" -le 65535 -a ! "$RET" -eq 0 ]; then
+				ok=1
+			fi
+		done
+fi
+
+#We now ask for the MicroCluster's network information, i.e network IP address, network mask, and gateway
+db_input high administrator/InternalNetworkAddress || true
+db_go
+db_get administrator/InternalNetworkAddress
+
+if [ -z $RET ]; then
+	ok=0
+	while [ $ok = 0 ]; do
+		db_input high administrator/IsEmpty || true
+		db_go
+		db_input high administrator/InternalNetworkAddress || true
+		db_go
+		db_fset administrator/IsEmpty seen false
+		db_get administrator/InternalNetworkAddress
+		if [ $RET ]; then	
+			ok=1
+		fi
+	done
+fi
+#we validate the format of the ip address
+ip=$RET
+ok=0
+while [ $ok = 0 ]; do
+	if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+		OIFS=$IFS
+		IFS='.'
+		ip=($ip)
+		IFS=$OIFS
+		if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+			ok=1
+		else
+			db_input high administrator/InvalidInternetAddress || true
+			db_go
+			db_input high administrator/InternalNetworkAddress || true
+			db_go
+			db_fset administrator/InvalidInternetAddress seen false
+			db_get administrator/InternalNetworkAddress
+			ip=$RET
+			if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+				OIFS=$IFS
+	                	IFS='.'
+        		        ip=($ip)
+	        	        IFS=$OIFS
+				if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+					ok=1
+				fi
+			fi
+			ip=$RET
+		fi
+	else
+		db_input high administrator/InvalidInternetAddress || true
+		db_go
+		db_input high administrator/InternalNetworkAddress || true
+		db_go
+		db_fset administrator/InvalidInternetAddress seen false
+		db_get administrator/InternalNetworkAddress
+		ip=$RET
+		if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+			OIFS=$IFS
+			IFS='.'
+			ip=($ip)
+			IFS=$OIFS
+			if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+				ok=1
+			fi
+		fi
+	fi
+done
+
+#network mask
+
+db_input high administrator/InternalNetworkMask || true
+db_go
+db_get administrator/InternalNetworkMask || true
+
+if [ -z $RET ]; then
+	ok=0
+	while [ $ok = 0 ]; do
+		db_input high administrator/IsEmpty || true
+		db_go
+		db_input high administrator/InternalNetworkMask || true
+		db_go
+		db_fset administrator/IsEmpty seen false
+		db_get administrator/InternalNetworkMask
+		if [ $RET ]; then	
+			ok=1
+		fi
+	done
+fi
+
+#we verify the format of the mask. It also has to match the format of a valid ipv4 address
+ip=$RET
+ok=0
+while [ $ok = 0 ]; do
+	if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+		OIFS=$IFS
+		IFS='.'
+		ip=($ip)
+		IFS=$OIFS
+		if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+			ok=1
+		else
+			db_input high administrator/InvalidNetworkMask || true
+			db_go
+			db_input high administrator/InternalNetworkMask || true
+			db_go
+			db_fset administrator/InvalidNetworkMask seen false
+			db_get administrator/InternalNetworkMask
+			ip=$RET
+			if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+				OIFS=$IFS
+	                	IFS='.'
+        		        ip=($ip)
+	        	        IFS=$OIFS
+				if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+					ok=1
+				fi
+			fi
+			ip=$RET
+		fi
+	else
+		db_input high administrator/InvalidNetworkMask || true
+		db_go
+		db_input high administrator/InternalNetworkMask || true
+		db_go
+		db_fset administrator/InvalidNetworkMask seen false
+		db_get administrator/InternalNetworkMask
+		ip=$RET
+		if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+			OIFS=$IFS
+			IFS='.'
+			ip=($ip)
+			IFS=$OIFS
+			if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+				ok=1
+			fi
+		fi
+	fi
+done
+
+# and finally we ask for the gateway, which also has to match the format of a valid ipv4 address
+db_input high administrator/Gateway || true
+db_go
+db_get administrator/Gateway || true
+
+if [ -z $RET ]; then
+	ok=0
+	while [ $ok = 0 ]; do
+		db_input high administrator/IsEmpty || true
+		db_go
+		db_input high administrator/Gateway || true
+		db_go
+		db_fset administrator/IsEmpty seen false
+		db_get administrator/Gateway
+		if [ $RET ]; then	
+			ok=1
+		fi
+	done
+fi
+
+ip=$RET
+ok=0
+while [ $ok = 0 ]; do
+	if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+		OIFS=$IFS
+		IFS='.'
+		ip=($ip)
+		IFS=$OIFS
+		if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+			ok=1
+		else
+			db_input high administrator/InvalidInternetAddress || true
+			db_go
+			db_input high administrator/Gateway || true
+			db_go
+			db_fset administrator/InvalidInternetAddress seen false
+			db_get administrator/Gateway
+			ip=$RET
+			if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+				OIFS=$IFS
+				IFS='.'
+				ip=($ip)
+				IFS=$OIFS
+				if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+					ok=1
+				fi
+			fi
+			ip=$RET
+		fi
+	else
+		db_input high administrator/InvalidInternetAddress || true
+		db_go
+		db_input high administrator/Gateway || true
+		db_go
+		db_fset administrator/InvalidInternetAddress seen false
+		db_get administrator/Gateway
+		ip=$RET
+		if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+			OIFS=$IFS
+			IFS='.'
+			ip=($ip)
+			IFS=$OIFS
+			if [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]; then
+				ok=1
+			fi
+		fi
+	fi
+done
+
+#We prompt for a login directory for the microcluster
+db_input high administrator/Logdir || true 
+db_go
+db_get administrator/Logdir 
+
+if [ -z $RET ]; then
+	ok=0
+	while [ $ok = 0 ]; do
+		db_input high administrator/IsEmpty || true
+		db_go
+		db_input high administrator/Logdir || true
+		db_go
+		db_fset administrator/IsEmpty seen false
+		db_get administrator/Logdir
+		if [ $RET ]; then
+			ok=1
+		fi
+	done
+fi
+if [[ ! $RET =~ ^/.* ]]; then
+	ok=0
+	while [ $ok = 0 ]; do
+		db_input high administrator/NotAbsolute || true
+		db_go
+		db_input high administrator/Logdir || true
+		db_go
+		db_fset administrator/NotAbsolute seen false
+		db_get administrator/Logdir
+		if [[ $RET =~ ^/.* ]]; then
+			ok=1
+		fi
+	done
 fi
