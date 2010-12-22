@@ -5,6 +5,7 @@
 </style>
 <script language="Javascript" src="/js/jquery.js"></script>
 <script language="Javascript" src="/js/custom.js"></script>
+<script language="Javascript" src="/js/status.js"></script>
 
 <div id="content">
 
@@ -18,7 +19,7 @@
 		<tr id="X<TMPL_VAR NAME=ID>" class='hidden'>
 			<td><table class="listdetails">
 				<TMPL_LOOP NAME=DETAILS>
-					<tr><td><TMPL_VAR NAME=NAME></td><td id="status<TMPL_VAR NAME=NAME>" class="img<TMPL_VAR NAME=STATUS>">&nbsp;</td></tr>
+					<tr><td><TMPL_VAR NAME=LABEL></td><td id="status<TMPL_VAR NAME=NAME>" class="img<TMPL_VAR NAME=STATUS>">&nbsp;</td></tr>
 				</TMPL_LOOP>
 			</table></td>
 		</tr>
@@ -30,8 +31,6 @@
 
 </div>
 
-<script language="Javascript" src="/js/listingtools.js"></script>
-<script language="Javascript">refresh_status()</script>
 
 <TMPL_INCLUDE NAME="footer.tmpl">
 

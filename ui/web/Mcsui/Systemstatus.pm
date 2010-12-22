@@ -7,20 +7,33 @@ sub setup {
 	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
 }
 
-# Define admin components and services we want display status. They are grouped as we want in ui.
+# Define admin components and services we want display status. They are organized as we want in ui.
 sub adminComponentsDef {
 	return [ 	[
-    				{ id => 'Database', label => 'Database server', comps => [{ name => 'mysql'}] },
-    				{ id => 'Boot', label => 'Boot server', comps => [{ name => 'ntpd'}, { name => 'dhcpd3'}, { name => 'atftpd'}] },
-    				{ id => 'Harddisk', label => 'NAS server', comps => [{ name => 'ietd'}, { name => 'nfsd'}] }
+    				{ id => 'Database', label => 'Database server', comps => [{ label => 'mysql', name => 'mysql'}] },
+    				{ id => 'Boot', label => 'Boot server', comps => [	{ label => 'ntpd', name => 'ntpd'},
+    																	{ label => 'dhcpd3', name => 'dhcpd3'},
+    																	{ label => 'atftpd', name => 'atftpd'}] },
+    				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'},
+    																	{ label => 'nfsd', name => 'nfsd'}] }
     			],[
-    				{ id => 'Monitor', label => 'Monitor', comps => [{ name => 'collector'}, { name => 'grapher'}] },
+    				{ id => 'Monitor', label => 'Monitor', comps => [{ label => 'collector', name => 'kanopya-collector'}, { label => 'grapher', name => 'kanopya-grapher'}] },
     				{ id => 'Planner', label => 'Planner', comps => [] },
-    				{ id => 'Orchestrator', label => 'Orchestrator', comps => [{ name => 'orchestrator'}] },
+    				{ id => 'Orchestrator', label => 'Orchestrator', comps => [{ label => 'orchestrator', name => 'kanopya-orchestrator'}] },
     			],[
-    				{ id => 'Execute', label => 'Executor', comps => [{ name => 'executor'}] },
+    				{ id => 'Execute', label => 'Executor', comps => [{ label => 'executor', name => 'kanopya-executor'}] },
 				]
   			];
+}
+
+sub getStatus {
+   		my $self = shift;
+   		my %args = @_;
+   		
+   		my $grep = `ps aux | grep $args{proc_name}`;
+    	my $ps_count = scalar (split '\n', $grep);
+    	my $status = $ps_count > 2 ? 'Up' : 'Down';
+		return $status;
 }
 
 sub xml_admin_status : Runmode {
@@ -34,9 +47,7 @@ sub xml_admin_status : Runmode {
     	foreach my $def (@$group) {
     		my ($tot, $up) = (0 ,0);
     		foreach my $serv (@{$def->{comps}}) {
-    			my $grep = `ps aux | grep $serv->{name}`;
-    			my $ps_count = scalar (split '\n', $grep);
-    			my $status = $ps_count > 2 ? 'Up' : 'Down';
+				my $status = $self->getStatus( proc_name => $serv->{name});
     			$up++ if ($status eq 'Up');
     			$tot++;
     			$xml .= "<elem id='status$serv->{name}' class='img$status'/>";
@@ -54,7 +65,6 @@ sub view_status : StartRunmode {
     
     my $output = '';
 
-    
     # Check the status of admin components and build the html template var
     my $admin_components = adminComponentsDef;
     my @components_status = ();
@@ -64,12 +74,10 @@ sub view_status : StartRunmode {
     		my @details = ();
     		my ($tot, $up) = (0 ,0);
     		foreach my $serv (@{$def->{comps}}) {
-    			my $grep = `ps aux | grep $serv->{name}`;
-    			my $ps_count = scalar (split '\n', $grep);
-    			my $status = $ps_count > 2 ? 'Up' : 'Down';
+    			my $status = $self->getStatus( proc_name => $serv->{name});
     			$up++ if ($status eq 'Up');
     			$tot++;
-    			push @details, {name => $serv->{name}, status => $status };
+				push @details, {name => $serv->{name}, label => $serv->{label}, status => $status };
     		}
     		push @res_group, {	id => $def->{id}, label => $def->{label}, details => \@details,
     							status => ($tot>0 && $up eq $tot ? 'Up' : ($up>0 ? 'Broken' : 'Down') ) };
