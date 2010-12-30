@@ -43,8 +43,8 @@ package Entity;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
+use Administrator;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -67,17 +67,20 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) {
-		$errmsg = "Entity->new need a data and rightschecker named argument!"; 	 
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
-	}
+#    if ((! exists $args{data} or ! defined $args{data}) ||
+#		(! exists $args{rightschecker} or ! defined $args{rightschecker})) {
+#		$errmsg = "Entity->new need a data and rightschecker named argument!"; 	 
+#		$log->error($errmsg);
+#		throw Mcs::Exception::Internal(error => $errmsg);
+#	}
+	my $adm = Administrator->new();
+	my $rc = $adm->getRightChecker();
+	my $dbix = $adm->getResultset(id=>$id, class=>$class);
     $log->debug("Arguments: ".ref($args{data})." and ".ref($args{rightschecker}));
     
     my $self = {
-    	_rightschecker	=> $args{rightschecker},
-        _dbix			=> $args{data},
+    	_rightschecker	=> $rc,
+        _dbix			=> $dbix,
         _ext_attrs		=> {},
         extension		=> undef
     };

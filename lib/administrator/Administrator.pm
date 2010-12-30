@@ -62,6 +62,7 @@ use DateTime;
 use NetworkManager;
 use NodeManager;
 use RulesManager;
+use MicroClusterManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -146,6 +147,8 @@ sub new {
 	
 	$self->{manager}->{rules} = RulesManager->new( schemas=>$self->{db} );
 	
+	$self->{manager}->{microcluster} = MicroCluster->new( schemas=>$self->{db} );
+	
 	$log->info("new Administrator instance");
 	return $self;
 }
@@ -201,6 +204,23 @@ sub loadConf {
 			":" . $self->{config}->{dbconf}->{port};
 }
 
+#TODO Comment getResultset
+sub getResultset {
+	my $self = shift;
+    my %args = @_;
+    
+    # entity_dbix will contain resultset row integrated into Entity
+    # entity_class is Entity Class
+    my ($entity_dbix, $entity_class);
+
+	if ((! exists $args{class} or ! defined $args{class}) ||
+		(! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Administrator->getResultset need a class and an id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg); 
+	}
+	
+}
 =head2 getEntity
 	
 	Class : Public
@@ -228,7 +248,7 @@ sub getEntity {
 
 	if ((! exists $args{type} or ! defined $args{type}) ||
 		(! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Administrator->_getEntity need a type and an id named argument!";
+		$errmsg = "Administrator->getEntity need a type and an id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
