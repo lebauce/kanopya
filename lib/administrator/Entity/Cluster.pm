@@ -105,6 +105,8 @@ sub get {
    return $self;
 }
 
+
+
 sub checkAttrs {
 	# Remove class
 	shift;
