@@ -502,7 +502,7 @@ CREATE TABLE `entityright` (
   `entityright_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `entityright_consumed_id` int(8) unsigned NOT NULL,
   `entityright_consumer_id` int(8) unsigned NOT NULL,
-  `entityright_rights` int(1) unsigned NOT NULL,
+  `entityright_method` char(64) NOT NULL,
   PRIMARY KEY (`entityright_id`),
   KEY `fk_entityright_1` (`entityright_consumed_id`),
   KEY `fk_entityright_2` (`entityright_consumer_id`),
