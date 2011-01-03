@@ -74,7 +74,7 @@ sub new {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
-	my $rc = $adm->getRightChecker();
+#	my $rc = $adm->getRightChecker();
 	# We create a new DBIx containing new entity (only global attrs)
 	$self->{_dbix} = $adm->_newDbix( table =>  $args{table}, row => $args{attrs} );
 
@@ -93,20 +93,14 @@ sub get {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
-	my $rc = $adm->getRightChecker();
 	my $dbix = $adm->getResultset(id=>$args{id}, table => $args{table});
     $log->debug("Arguments: ".ref($args{id}));
     
     my $self = {
-    	_rightschecker	=> $rc,
         _dbix			=> $dbix,
     };
     bless $self, $class;
     
-    # getting groups where we find this entity (entity already exists)
-#	if($self->{_dbix}->in_storage) {
-#		$self->{_groups} = $self->getGroups;
-#	}
 	return $self;
 }
 

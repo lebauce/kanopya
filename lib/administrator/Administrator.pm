@@ -51,7 +51,6 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use AdministratorDB::Schema;
 use EntityRights;
 use McsExceptions;
@@ -62,7 +61,6 @@ use DateTime;
 use NetworkManager;
 use NodeManager;
 use RulesManager;
-use MicroClusterManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -71,6 +69,20 @@ my $errmsg;
 
 
 my $oneinstance;
+
+my ($schema, $config, $session);
+eval {
+		my $dbi = loadConf();
+		$schema = AdministratorDB::Schema->connect($dbi, $config->{dbconf}->{user}, $config->{dbconf}->{password}, {});
+	};
+	if ($@) {
+		my $error = $@;
+
+	}
+	
+sub authenticate{
+	
+}
 
 =head2 Administrator::new (%args)
 	
@@ -107,7 +119,7 @@ sub new {
 	my $password = $args{password};
 	
 	my %opts = ();
-	my ($schema, $rightschecker);
+
 	my $self = {};
 	
 	bless $self, $class;
@@ -163,32 +175,31 @@ sub new {
 =cut
 
 sub loadConf {
-	my $self = shift;
-	$self->{config} = XMLin("/opt/kanopya/conf/administrator.conf");
-	if (! exists $self->{config}->{internalnetwork}->{ip} ||
-		! defined $self->{config}->{internalnetwork}->{ip} ||
-		! exists $self->{config}->{internalnetwork}->{mask} ||
-		! defined $self->{config}->{internalnetwork}->{mask} ||
-		! exists $self->{config}->{internalnetwork}->{gateway} ||
-		! defined $self->{config}->{internalnetwork}->{gateway})
+	$config = XMLin("/opt/kanopya/conf/administrator.conf");
+	if (! exists $config->{internalnetwork}->{ip} ||
+		! defined $config->{internalnetwork}->{ip} ||
+		! exists $config->{internalnetwork}->{mask} ||
+		! defined $config->{internalnetwork}->{mask} ||
+		! exists $config->{internalnetwork}->{gateway} ||
+		! defined $config->{internalnetwork}->{gateway})
 		{
 			$errmsg = "Administrator->new need internalnetwork definition in config file!";
 			$log->error($errmsg);
 			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	
-	if (! exists $self->{config}->{dbconf}->{name} ||
-		! defined exists $self->{config}->{dbconf}->{name} ||
-		! exists $self->{config}->{dbconf}->{password} ||
-		! defined exists $self->{config}->{dbconf}->{password} ||
-		! exists $self->{config}->{dbconf}->{type} ||
-		! defined exists $self->{config}->{dbconf}->{type} ||
-		! exists $self->{config}->{dbconf}->{host} ||
-		! defined exists $self->{config}->{dbconf}->{host} ||
-		! exists $self->{config}->{dbconf}->{user} ||
-		! defined exists $self->{config}->{dbconf}->{user} ||
-		! exists $self->{config}->{dbconf}->{port} ||
-		! defined exists $self->{config}->{dbconf}->{port})
+	if (! exists $config->{dbconf}->{name} ||
+		! defined exists $config->{dbconf}->{name} ||
+		! exists $config->{dbconf}->{password} ||
+		! defined exists $config->{dbconf}->{password} ||
+		! exists $config->{dbconf}->{type} ||
+		! defined exists $config->{dbconf}->{type} ||
+		! exists $config->{dbconf}->{host} ||
+		! defined exists $config->{dbconf}->{host} ||
+		! exists $config->{dbconf}->{user} ||
+		! defined exists $config->{dbconf}->{user} ||
+		! exists $config->{dbconf}->{port} ||
+		! defined exists $config->{dbconf}->{port})
 		{
 			$errmsg = "Administrator->new need db definition in config file!";
 			$log->error($errmsg);
@@ -196,10 +207,10 @@ sub loadConf {
 		}
 
 	$log->info("Administrator configuration loaded");
-	return "dbi:" . $self->{config}->{dbconf}->{type} .
-			":" . $self->{config}->{dbconf}->{name} .
-			":" . $self->{config}->{dbconf}->{host} .
-			":" . $self->{config}->{dbconf}->{port};
+	return "dbi:" . $config->{dbconf}->{type} .
+			":" . $config->{dbconf}->{name} .
+			":" . $config->{dbconf}->{host} .
+			":" . $config->{dbconf}->{port};
 }
 
 #TODO Comment getResultset
@@ -642,7 +653,6 @@ sub _getDbix {
 	}
 
 	my $dbix;
-#	my $entitylink = lc($args{table})."_entities";
 	eval {
 		$dbix = $self->{db}->resultset( $args{table} )->find(  $args{id}, 
 										{ 	'+columns' => [ {entity_id => "entitylink.entity_id"} ], 
@@ -681,19 +691,14 @@ sub _getDbixFromHash {
 
 	my $dbix;
 	my $entitylink = lc($args{table})."_entities";
-#	my $entitylink = lc($args{table})."_entities";
 	eval {
-#		$log->debug("Search obj with the following hash $args{hash} in the following table : $args{table}");
-#		$log->debug(Dumper $args{hash});
 		my $hash = $args{hash};
 		if (keys(%$hash)){
-#			$log->debug("Hash has keys and value : %$hash when search in $args{table}");
 			$dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
 										{ 	'+columns' => [ "$entitylink.entity_id" ], 
 										join => ["$entitylink"] });
 		}
 		else {
-#			$log->debug("hash is empty : %$hash when search in $args{table}");
 			$dbix = $self->{db}->resultset( $args{table} )->search( undef,
 										{ 	'+columns' => [ "$entitylink.entity_id" ], 
 										join => ["$entitylink"] });
