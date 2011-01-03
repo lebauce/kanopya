@@ -71,6 +71,9 @@ use constant ATTR_DEF => {
 			};
 
 
+sub getEntityTable {
+	return "motherboard";
+}
 
 =head2 checkAttrs
 	
@@ -170,7 +173,38 @@ sub extension {
 	return "motherboarddetails";
 }
 
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Motherboard->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args, table=>"motherboard");
+   $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
+   return $self;
+}
+
 sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "motherboard");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+
+}
+
+sub old_new {
     my $class = shift;
     my %args = @_;
 

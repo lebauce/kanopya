@@ -147,8 +147,6 @@ sub new {
 	
 	$self->{manager}->{rules} = RulesManager->new( schemas=>$self->{db} );
 	
-	$self->{manager}->{microcluster} = MicroCluster->new( schemas=>$self->{db} );
-	
 	$log->info("new Administrator instance");
 	return $self;
 }
@@ -213,13 +211,23 @@ sub getResultset {
     # entity_class is Entity Class
     my ($entity_dbix, $entity_class);
 
-	if ((! exists $args{class} or ! defined $args{class}) ||
-		(! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Administrator->getResultset need a class and an id named argument!";
+	if ((! exists $args{id} or ! defined $args{id}) ||
+		(! exists $args{table} or ! defined $args{table})) { 
+		$errmsg = "Administrator->getResultset need a table and an id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
-	
+	my $entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
+	# Test if Dbix is get
+	if ( defined $entity_dbix ) {
+		# Extension Entity Management
+		return $entity_dbix;
+	} else {
+		$errmsg = "Administrator::getResultset(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+		return undef;
+	}
 }
 =head2 getEntity
 	

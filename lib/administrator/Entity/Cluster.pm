@@ -21,13 +21,14 @@
 package Entity::Cluster;
 
 use strict;
-
+use warnings;
 use base "Entity";
 use lib qw (.. ../../../Common/Lib);
 use McsExceptions;
 use Entity::Component;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -76,6 +77,10 @@ use constant ATTR_DEF => {
 
 
 
+sub getEntityTable {
+	return "cluster";
+}
+
 =head2 checkAttr
 	
 	Desc : This function check if new object data are correct and sort attrs between extended and global
@@ -85,6 +90,20 @@ use constant ATTR_DEF => {
 	return : hashref of hashref : a hashref containing 2 hashref, global attrs and extended ones
 
 =cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Motherboard->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args,  table => "cluster");
+   $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
+   return $self;
+}
 
 sub checkAttrs {
 	# Remove class
@@ -160,8 +179,24 @@ sub checkAttr{
 }
 
 # contructor
-
 sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "cluster");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+
+}
+
+sub old_new {
     my $class = shift;
     my %args = @_;
 
