@@ -47,13 +47,6 @@ use Exception::Class (
 	description => 'Permission denied'
 	}
     
-    );
+);
 
-#$SIG{__DIE__} = \&handle_die;
-
-sub handle_die {
-	my $err = shift;
-	warn("Caught error: ", $err);
-	exit(55);
-}
 1;

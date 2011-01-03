@@ -45,7 +45,6 @@ Administrator is the main object use to create administrator objects
 
 package Administrator;
 
-
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
@@ -55,34 +54,121 @@ use AdministratorDB::Schema;
 use EntityRights;
 use McsExceptions;
 use General;
-use Entity;
 use XML::Simple;
 use DateTime;
 use NetworkManager;
 use NodeManager;
 use RulesManager;
 
+our $VERSION = "1.00";
+
 my $log = get_logger("administrator");
 my $errmsg;
-
-#$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-
 
 my $oneinstance;
 
 my ($schema, $config, $session);
-eval {
-		my $dbi = loadConf();
-		$schema = AdministratorDB::Schema->connect($dbi, $config->{dbconf}->{user}, $config->{dbconf}->{password}, {});
-	};
-	if ($@) {
-		my $error = $@;
 
+=head Administrator::loadConfig
+	Class : Private
+	
+	Desc : This method allow to load configuration from xml file 
+			/opt/kanopya/conf/administrator.conf
+			File Administrator with config hash containing
+
+	return: scalar string : a dbi data_source used for database connection
+=cut
+
+sub loadConfig {
+	$config = XMLin("/opt/kanopya/conf/administrator.conf");
+	if (! exists $config->{internalnetwork}->{ip} ||
+		! defined $config->{internalnetwork}->{ip} ||
+		! exists $config->{internalnetwork}->{mask} ||
+		! defined $config->{internalnetwork}->{mask} ||
+		! exists $config->{internalnetwork}->{gateway} ||
+		! defined $config->{internalnetwork}->{gateway})
+		{
+			$errmsg = "Administrator->new need internalnetwork definition in config file!";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		}
+	
+	if (! exists $config->{dbconf}->{name} ||
+		! defined exists $config->{dbconf}->{name} ||
+		! exists $config->{dbconf}->{password} ||
+		! defined exists $config->{dbconf}->{password} ||
+		! exists $config->{dbconf}->{type} ||
+		! defined exists $config->{dbconf}->{type} ||
+		! exists $config->{dbconf}->{host} ||
+		! defined exists $config->{dbconf}->{host} ||
+		! exists $config->{dbconf}->{user} ||
+		! defined exists $config->{dbconf}->{user} ||
+		! exists $config->{dbconf}->{port} ||
+		! defined exists $config->{dbconf}->{port})
+		{
+			$errmsg = "Administrator::loadConfig need db definition in config file!";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		}
+
+	$log->info("Administrator configuration loaded");
+	return "dbi:" . $config->{dbconf}->{type} .
+			":" . $config->{dbconf}->{name} .
+			":" . $config->{dbconf}->{host} .
+			":" . $config->{dbconf}->{port};
+}
+
+=head Administrator::authenticate (%args)
+
+	Class : Public
+	
+	Desc : 	method used to authenticate user by login/password.
+			! THIS IS THE FIRST METHOD TO CALL AFTER A use Administrator;
+	
+	args : 	login : string scalar : user login
+			password : string scalar : user password
+			
+=cut
+
+sub authenticate {
+	my %args = @_;
+	
+	if(not exists $args{login} or not defined $args{login}) {
+		$errmsg = "Administrator::authenticate need a login named argument!";
+		throw Mcs::Exception::Internal(error => $errmsg); 
+	} elsif(not exists $args{password} or not defined $args{password}) {
+		$errmsg = "Administrator::authenticate need a password named argument!";
+		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 	
-sub authenticate{
+	my $user_data = $schema->resultset('User')->find(
+		{ user_login => $args{login}, user_password => $args{password}}
+	);
 	
+	if(not defined $user_data) {
+		$errmsg = "Authentification failed for login ".$args{login};
+		$log->warn($errmsg);
+	} else {
+			
+	}
 }
+
+
+# Configuration loading and database connection are automaticaly done during
+# module loading.
+
+eval {
+	my $dbi = loadConfig();
+	$schema = AdministratorDB::Schema->connect($dbi, $config->{dbconf}->{user}, $config->{dbconf}->{password}, {});
+};
+	
+if ($@) {
+	my $error = $@;
+	$log->error($error);
+	throw Mcs::Exception::Internal(error => $error);
+}
+	
+
 
 =head2 Administrator::new (%args)
 	
@@ -134,7 +220,7 @@ sub new {
 		# When debug is set, all sql queries are printed
 		#$schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
 		
-		$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
+		#$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
 	};
 	if ($@) {
 		my $error = $@;
@@ -148,7 +234,7 @@ sub new {
 	}
 	
 	$self->{db} = $schema;
-	$self->{_rightschecker} = $rightschecker;		
+	#$self->{_rightschecker} = $rightschecker;		
 	$oneinstance = $self;
 	# Load Manager
 	$self->{manager} = {};
@@ -163,55 +249,7 @@ sub new {
 	return $self;
 }
 
-=head Administrator::loadConf
-	Class : Private
-	
-	Desc : This method allow to load configuration from xml file 
-			/workspace/mcs/Administrator/Conf/administrator.conf
-			File Administrator with config hash containing
-	
-	args: 
-	return: Administrator instance
-=cut
 
-sub loadConf {
-	$config = XMLin("/opt/kanopya/conf/administrator.conf");
-	if (! exists $config->{internalnetwork}->{ip} ||
-		! defined $config->{internalnetwork}->{ip} ||
-		! exists $config->{internalnetwork}->{mask} ||
-		! defined $config->{internalnetwork}->{mask} ||
-		! exists $config->{internalnetwork}->{gateway} ||
-		! defined $config->{internalnetwork}->{gateway})
-		{
-			$errmsg = "Administrator->new need internalnetwork definition in config file!";
-			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-		}
-	
-	if (! exists $config->{dbconf}->{name} ||
-		! defined exists $config->{dbconf}->{name} ||
-		! exists $config->{dbconf}->{password} ||
-		! defined exists $config->{dbconf}->{password} ||
-		! exists $config->{dbconf}->{type} ||
-		! defined exists $config->{dbconf}->{type} ||
-		! exists $config->{dbconf}->{host} ||
-		! defined exists $config->{dbconf}->{host} ||
-		! exists $config->{dbconf}->{user} ||
-		! defined exists $config->{dbconf}->{user} ||
-		! exists $config->{dbconf}->{port} ||
-		! defined exists $config->{dbconf}->{port})
-		{
-			$errmsg = "Administrator->new need db definition in config file!";
-			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-		}
-
-	$log->info("Administrator configuration loaded");
-	return "dbi:" . $config->{dbconf}->{type} .
-			":" . $config->{dbconf}->{name} .
-			":" . $config->{dbconf}->{host} .
-			":" . $config->{dbconf}->{port};
-}
 
 #TODO Comment getResultset
 sub getResultset {
@@ -228,7 +266,7 @@ sub getResultset {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
-	my $entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
+	$entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
 	# Test if Dbix is get
 	if ( defined $entity_dbix ) {
 		# Extension Entity Management
@@ -956,11 +994,6 @@ sub getComponentsListByCategory {
 	}
 	return $list;
 }
-
-
-
-
-
 
 1;
 
