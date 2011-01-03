@@ -1,4 +1,19 @@
 #!/bin/bash -e
+
+#We will install the Perl modules that are only available throug CPAN and not under deb files.
+#Here is the list that executor needs to run correctly:
+#Test::More,
+#Module::Which, that is a prerequisite for:
+#GRID:Machine.
+
+wget "http://search.cpan.org/CPAN/authors/id/F/FE/FERREIRA/Module-Which-0.0207.tar.gz"
+tar xzf Module-Which-0.0207.tar.gz
+cd Module-Which-0.0207/
+perl Makefile.PL INSTALL_BASE=/workspace/tests/Module-Which-0.0207/
+make
+make install
+
+
 wget "http://search.cpan.org/CPAN/authors/id/C/CA/CASIANO/GRID-Machine-0.110.tar.gz"
 tar xzf GRID-Machine-0.110.tar.gz
 cd GRID-Machine-0.110

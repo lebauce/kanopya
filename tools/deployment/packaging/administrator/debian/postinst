@@ -1,3 +1,8 @@
 #!/bin/bash -e
 
 . /usr/share/debconf/confmodule
+
+#During the post install phasis we will create administrator's database
+
+
+
