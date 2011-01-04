@@ -54,8 +54,8 @@ my $errmsg;
 =head2 EntityRights::build (%args)
 
 	desc : instanciate an EntityRights::User/System depending on 
-			$session argument content.
-	args : session : hash ref containing session informations (see Administrator.pm for details)
+			type argument content.
+	args : dbixuser : user entity DBIx::Class::Row 
 		   schema : AdministratorDB::Schema instance
 	return : EntityRights::User or EntityRights::System
 	
@@ -63,20 +63,23 @@ my $errmsg;
 
 sub build {
 	my %args =  @_;
-	if(not exists $args{session} or not defined $args{session}) {
-		$errmsg = "EntityRights::build need a session named argument";
+	if(not exists $args{dbixuser} or not defined $args{dbixuser}) {
+		$errmsg = "EntityRights::build need a dbixuser named argument";
+		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
 	if(not exists $args{schema} or not defined $args{schema}) {
 		$errmsg = "EntityRights::build need a schema named argument";
+		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	if($args{session}->{type} eq 'system') {
-		return EntityRights::System->new(schema => $args{schema});
+	my $entity_id = $args{dbixuser}->get_column('entity_id');
+	if($args{dbixuser}->get_column('user_system')) {
+		return EntityRights::System->new(entity_id => $entity_id, schema => $args{schema});
 	} else {
-		return EntityRights::User->new(schema => $args{schema}, session => $args{session});
+		return EntityRights::User->new(entity_id => $entity_id, schema => $args{schema});
 	}
 }
 

@@ -4,6 +4,7 @@ use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
 use strict;
 use warnings;
+use Administrator;
 
 sub setup {}
 
@@ -30,12 +31,12 @@ sub process_login : Runmode {
 	my $password = $query->param('password');  
 	
 	# here we check if login and password match
-	# user_entity_id = Administrator::loguser($login, $password)
-	
-	# if defined user_entity_id, on cree la session et on redirige sur la page d'acceuil 
-	
-	# TODO manage user session...
-	$self->redirect('/cgi/mcsui.cgi/systemstatus');
+	eval { Administrator::authenticate(login => $login, password => $password); };
+	if($@) { 
+		$self->redirect('/cgi/mcsui.cgi/login'); 
+	} else { 
+		$self->redirect('/cgi/mcsui.cgi/systemstatus');
+	}
 }
 
 

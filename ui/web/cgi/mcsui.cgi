@@ -6,7 +6,7 @@ use CGI::Application::Dispatch;
 use Log::Log4perl;
 
 Log::Log4perl->init('/opt/kanopya/conf/log.conf');
-use Administrator;
+#use Administrator;
 
 
 while(my $q = new CGI::Fast) {

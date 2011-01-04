@@ -65,9 +65,7 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 
-my $oneinstance;
-
-my ($schema, $config, $session);
+my ($schema, $config, $session, $rchecker);
 
 =head Administrator::loadConfig
 	Class : Private
@@ -89,7 +87,7 @@ sub loadConfig {
 		! defined $config->{internalnetwork}->{gateway})
 		{
 			$errmsg = "Administrator->new need internalnetwork definition in config file!";
-			$log->error($errmsg);
+			#$log->error($errmsg);
 			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	
@@ -107,11 +105,11 @@ sub loadConfig {
 		! defined exists $config->{dbconf}->{port})
 		{
 			$errmsg = "Administrator::loadConfig need db definition in config file!";
-			$log->error($errmsg);
+			#$log->error($errmsg);
 			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 
-	$log->info("Administrator configuration loaded");
+	#$log->info("Administrator configuration loaded");
 	return "dbi:" . $config->{dbconf}->{type} .
 			":" . $config->{dbconf}->{name} .
 			":" . $config->{dbconf}->{host} .
@@ -141,15 +139,28 @@ sub authenticate {
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 	
-	my $user_data = $schema->resultset('User')->find(
-		{ user_login => $args{login}, user_password => $args{password}}
-	);
+	#$log->debug("login: ".$args{login}." password: ".$args{password});
+	
+	my $user_data = $schema->resultset('User')->search(
+		{
+			user_login => $args{login}, 
+			user_password => $args{password},
+		},{ 
+			'+columns' => ['user_entities.entity_id'],
+    		join => ['user_entities'] 
+		},
+	
+	)->single;
 	
 	if(not defined $user_data) {
 		$errmsg = "Authentification failed for login ".$args{login};
-		$log->warn($errmsg);
+		throw Mcs::Exception::LoginFailed(error => $errmsg);
+		$session = 0;
 	} else {
-			
+		$log->info("Authentification succeed for login ".$args{login});
+		$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
+		$log->debug("instance retrieved: ".ref($rchecker));
+		$session = 1;
 	}
 }
 
@@ -157,28 +168,27 @@ sub authenticate {
 # Configuration loading and database connection are automaticaly done during
 # module loading.
 
-eval {
-	my $dbi = loadConfig();
-	$schema = AdministratorDB::Schema->connect($dbi, $config->{dbconf}->{user}, $config->{dbconf}->{password}, {});
-};
-	
-if ($@) {
-	my $error = $@;
-	$log->error($error);
-	throw Mcs::Exception::Internal(error => $error);
-}
-	
+{
+	eval {
+		my $dbi = loadConfig();
+		$schema = AdministratorDB::Schema->connect($dbi, $config->{dbconf}->{user}, $config->{dbconf}->{password}, {});
+	};
+		
+	if ($@) {
+		my $error = $@;
+		$log->error($error);
+		throw Mcs::Exception::Internal(error => $error);
+	}
+	$session = 0;
+}	
 
 
 =head2 Administrator::new (%args)
 	
 	Class : Public
 	
-	Desc : Instanciate Administrator object and check user authentication
+	Desc : Instanciate Administrator object ; Administrator::authenticate must have been called
 	
-	args: 
-		login : String : user login to access to administrator
-		password : String : user's password
 	return: Administrator instance
 	
 =cut
@@ -187,24 +197,24 @@ sub new {
 	my $class = shift;
 	my %args = @_;
 	
-	# If Administrator exists return its already existing instance
-	if(defined $oneinstance) { 
-		$log->info("Administrator instance retrieved");	
-		return $oneinstance;
+	if(not $session) {
+		$errmsg = "No valid session registered ;";
+		$errmsg .= " Administrator::authenticate must be call with a valid login/password pair";
+		throw Mcs::Exception::AuthentificationRequired(error => $errmsg);
 	}
 	
 	# Check named arguments
-	if ((! exists $args{login} or ! defined $args{login})||
-		(! exists $args{password} or ! defined $args{password})) { 
-		$errmsg = "Administrator->need a login and password named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg); 
-	}
+	#if ((! exists $args{login} or ! defined $args{login})||
+	#	(! exists $args{password} or ! defined $args{password})) { 
+	#	$errmsg = "Administrator->need a login and password named argument!";
+	#	$log->error($errmsg);
+	#	throw Mcs::Exception::Internal(error => $errmsg); 
+	#}
 	
-	my $login = $args{login};
-	my $password = $args{password};
+	#my $login = $args{login};
+	#my $password = $args{password};
 	
-	my %opts = ();
+	#my %opts = ();
 
 	my $self = {};
 	
@@ -212,40 +222,46 @@ sub new {
 	# Load Administrator config
 	# Add singleton
 	# Catch exception from DB connection
-	eval {
-		my $dbi = $self->loadConf();
-		$log->debug("dbi connection : $dbi, user : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}");
-		$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
+	#eval {
+	#	my $dbi = $self->loadConf();
+	#	$log->debug("dbi connection : $dbi, user : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}");
+	#	$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
 
 		# When debug is set, all sql queries are printed
 		#$schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
 		
 		#$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
-	};
-	if ($@) {
-		my $error = $@;
-		if(ref($error) eq 'Mcs::Exception::LoginFailed') {
-			$log->error("Administrator->new : $error");
-			rethrow $error;
-		} else {
-			$log->error("Administrator->new : Error connecting Database $error");
-			throw Mcs::Exception::DB(error => "$error");
-		} 
-	}
+	#};
+#	if ($@) {
+#		my $error = $@;
+#		if(ref($error) eq 'Mcs::Exception::LoginFailed') {
+#			$log->error("Administrator->new : $error");
+#			rethrow $error;
+#		} else {
+#			$log->error("Administrator->new : Error connecting Database $error");
+#			throw Mcs::Exception::DB(error => "$error");
+#		} 
+#	}
 	
 	$self->{db} = $schema;
-	#$self->{_rightschecker} = $rightschecker;		
-	$oneinstance = $self;
+	$self->{_rightschecker} = $rchecker;		
+	
 	# Load Manager
 	$self->{manager} = {};
-	$self->{manager}->{network} = NetworkManager->new(schemas=>$self->{db},
-													  internalnetwork => $self->{config}->{internalnetwork});
+	$self->{manager}->{network} = NetworkManager->new(
+		schemas => $schema,
+		internalnetwork => $config->{internalnetwork}
+	);
 	
-	$self->{manager}->{node} = NodeManager->new(node_rs => $self->{db}->resultset('Node'), adm => $self);
+	$self->{manager}->{node} = NodeManager->new(
+		node_rs => $schema->resultset('Node'), 
+		adm => $self
+	);
 	
-	$self->{manager}->{rules} = RulesManager->new( schemas=>$self->{db} );
+	$self->{manager}->{rules} = RulesManager->new( schemas => $schema );
 	
-	$log->info("new Administrator instance");
+	$log->info("new Administrator instance with rchecker: ".ref($self->{_rightschecker}));
+	$log->info("Process ID: ".$$);
 	return $self;
 }
 
@@ -399,33 +415,6 @@ sub getEntities {
 	}
 	return  @objs;
 }
-
-
-#sub getEntities {
-#	my $self = shift;
-#    my %args = @_;
-#	
-#	if (! exists $args{type}) { 
-#		throw Mcs::Exception::Internal(error => "Administrator->newOp need a type named argument!"); }
-#	
-#	my @objs = ();
-#	my $rs = $self->_getAllDbix( table => $args{type} );
-#	my $entity_class = $self->_getEntityClass(type => $args{type});
-#	my $extension = $entity_class->extension();
-#	while ( my $raw = $rs->next ) {
-#		my $obj;
-#		if ($extension){
-#			my %attrs;
-#			my $ext_attrs_rs = $raw->search_related( $extension );
-#			while ( my $param = $ext_attrs_rs->next ) {
-#				$attrs{ $param->name } = $param->value;}
-#			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
-#		else {
-#			$obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
-#		push @objs, $obj;
-#	}
-#    return  @objs;
-#}
 
 =head2 countEntities 
 
