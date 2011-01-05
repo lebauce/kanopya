@@ -411,7 +411,7 @@ sub optimize {
 	my $upnode_count = grep { $_->{state} =~ 'up' } values %$cluster_info;
 	
 	if ( $upnode_count <= 1 ) {
-		$log->info("No node to eventually remove => don't try to optimize node count");
+		$log->info("No node to eventually remove in '$cluster_name' => don't try to optimize node count");
 		return;
 	}
 	

@@ -886,7 +886,7 @@ sub graphFromConf {
 #	my $graphs = General::getAsArrayRef( data => $conf->{generate_graph}, tag => 'graph' );
 	my $graphs = $self->{_grapher_options};
 	
-	$log->info(Dumper $graphs);
+	#$log->info(Dumper $graphs);
 	
 	# retrieve custom graph conf
 	my $custom_file = "/tmp/gen_graph_custom.conf";

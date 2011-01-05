@@ -57,8 +57,16 @@ sub signalHandler {
 	$running = 0;
 }
 
+#sub segfaultHandler {
+#	use Devel::StackTrace;
+#  	my $trace = Devel::StackTrace->new;
+#	$log->error("SEGFAULT");
+#	$log->debug( $trace->as_string );
+#	$running = 0;
+#}
+
 $SIG{TERM} = \&signalHandler;
-	
+#$SIG{SEGV} = \&segfaultHandler;
 
 eval	{
 	my $collector = Monitor::Collector->new();

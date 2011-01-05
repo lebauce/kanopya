@@ -29,9 +29,9 @@ my $collector = Monitor::Collector->new();
 
 
 
-
-sub toto {
-	print "YYYEEAAAHHHH !!!!\n";
+# This sub result in a memory leak (for testing)
+sub memLeak {
+	print "Entering sub\n";
     my $t = 2;
     $t = \$t;
 }

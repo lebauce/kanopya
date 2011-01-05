@@ -97,7 +97,7 @@ sub writeConf {
 		#my $xml_conf = XMLout($conf, RootName => 'conf');
 		my $xml_conf = XMLout($config, RootName => 'config');
 		
-		open CONF_FILE, ">$conf_file_path" or die "Can't open configuration file for writing";
+		open CONF_FILE, ">$conf_file_path" or die "Can't open configuration file for writing ($conf_file_path)";
 		print CONF_FILE $xml_conf;
 		close CONF_FILE;
 	};
