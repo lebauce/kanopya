@@ -1,10 +1,19 @@
 package Mcsui::Systemstatus;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
+use CGI::Application::Plugin::Session;
+use CGI::Application::Plugin::Redirect;
 
 sub setup {
 	my $self = shift;
-	$self->{'admin'} = Administrator->new(login => 'admin', password => 'admin');
+	my $eid = $self->session->param('EID');
+	if(not $eid) {
+		$self->session_delete;
+		$self->redirect('/cgi/mcsui.cgi/login/form_login');
+	} else {
+		$ENV{EID} = $eid;
+		$self->{'admin'} = Administrator->new();
+	}
 }
 
 # Define admin components and services we want display status. They are organized as we want in ui.
@@ -38,7 +47,7 @@ sub getStatus {
 
 sub xml_admin_status : Runmode {
 	my $self = shift;
-	     
+	my $session = $self->session;     
     my $admin_components = adminComponentsDef;
     
     # Check the status of admin components and build the xml of status
@@ -89,7 +98,7 @@ sub view_status : StartRunmode {
     $tmpl->param('TITLEPAGE' => "System Status");
 	$tmpl->param('MDASHBOARD' => 1);
 	$tmpl->param('SUBMSYSTEMSTATUS' => 1);
-
+	$tmpl->param('username' => $self->session->param('username'));
 	$tmpl->param('COMPONENTS_STATUS' => \@components_status);
 	$output .= $tmpl->output();
      

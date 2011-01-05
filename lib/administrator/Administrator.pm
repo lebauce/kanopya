@@ -65,7 +65,7 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 
-my ($schema, $config, $session, $rchecker);
+my ($schema, $config, $oneinstance);
 
 =head Administrator::loadConfig
 	Class : Private
@@ -121,7 +121,7 @@ sub loadConfig {
 	Class : Public
 	
 	Desc : 	method used to authenticate user by login/password.
-			! THIS IS THE FIRST METHOD TO CALL AFTER A use Administrator;
+			! THIS IS THE FIRST METHOD TO CALL BEFORE instanciating an Administrator;
 	
 	args : 	login : string scalar : user login
 			password : string scalar : user password
@@ -155,12 +155,10 @@ sub authenticate {
 	if(not defined $user_data) {
 		$errmsg = "Authentification failed for login ".$args{login};
 		throw Mcs::Exception::LoginFailed(error => $errmsg);
-		$session = 0;
 	} else {
 		$log->info("Authentification succeed for login ".$args{login});
-		$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
-		$log->debug("instance retrieved: ".ref($rchecker));
-		$session = 1;
+		#$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
+		$ENV{EID} = $user_data->get_column('entity_id'); 
 	}
 }
 
@@ -179,7 +177,6 @@ sub authenticate {
 		$log->error($error);
 		throw Mcs::Exception::Internal(error => $error);
 	}
-	$session = 0;
 }	
 
 
@@ -197,57 +194,30 @@ sub new {
 	my $class = shift;
 	my %args = @_;
 	
-	if(not $session) {
+	if(not exists $ENV{EID} or not defined $ENV{EID}) {
 		$errmsg = "No valid session registered ;";
 		$errmsg .= " Administrator::authenticate must be call with a valid login/password pair";
 		throw Mcs::Exception::AuthentificationRequired(error => $errmsg);
 	}
 	
-	# Check named arguments
-	#if ((! exists $args{login} or ! defined $args{login})||
-	#	(! exists $args{password} or ! defined $args{password})) { 
-	#	$errmsg = "Administrator->need a login and password named argument!";
-	#	$log->error($errmsg);
-	#	throw Mcs::Exception::Internal(error => $errmsg); 
-	#}
-	
-	#my $login = $args{login};
-	#my $password = $args{password};
-	
-	#my %opts = ();
+	my $checker = EntityRights::build(schema => $schema);
 
-	my $self = {};
-	
-	bless $self, $class;
-	# Load Administrator config
-	# Add singleton
-	# Catch exception from DB connection
-	#eval {
-	#	my $dbi = $self->loadConf();
-	#	$log->debug("dbi connection : $dbi, user : $self->{config}->{dbconf}->{user}, password : $self->{config}->{dbconf}->{password}");
-	#	$schema = AdministratorDB::Schema->connect($dbi, $self->{config}->{dbconf}->{user}, $self->{config}->{dbconf}->{password}, \%opts);
+	if(defined $oneinstance) {
+		$oneinstance->{_rightchecker} = $checker;
+		$log->debug("Administrator instance retrieved with new rightchecker");
+		return $oneinstance;
+	}
 
-		# When debug is set, all sql queries are printed
-		#$schema->storage->debug(1); # or: $ENV{DBIC_TRACE} = 1 in any file
-		
-		#$rightschecker = EntityRights->new( schema => $schema, login => $login, password => $password );
-	#};
-#	if ($@) {
-#		my $error = $@;
-#		if(ref($error) eq 'Mcs::Exception::LoginFailed') {
-#			$log->error("Administrator->new : $error");
-#			rethrow $error;
-#		} else {
-#			$log->error("Administrator->new : Error connecting Database $error");
-#			throw Mcs::Exception::DB(error => "$error");
-#		} 
-#	}
-	
-	$self->{db} = $schema;
-	$self->{_rightschecker} = $rchecker;		
+	$log->debug("Administrator instance created");
+
+	my $self = { 
+		_rightchecker => $checker,
+		db => $schema,
+		manager => {}	
+	};
 	
 	# Load Manager
-	$self->{manager} = {};
+	
 	$self->{manager}->{network} = NetworkManager->new(
 		schemas => $schema,
 		internalnetwork => $config->{internalnetwork}
@@ -260,12 +230,10 @@ sub new {
 	
 	$self->{manager}->{rules} = RulesManager->new( schemas => $schema );
 	
-	$log->info("new Administrator instance with rchecker: ".ref($self->{_rightschecker}));
-	$log->info("Process ID: ".$$);
+	bless $self, $class;
+	$oneinstance = $self;
 	return $self;
 }
-
-
 
 #TODO Comment getResultset
 sub getResultset {
@@ -294,6 +262,7 @@ sub getResultset {
 		return undef;
 	}
 }
+
 =head2 getEntity
 	
 	Class : Public

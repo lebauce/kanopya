@@ -2,16 +2,16 @@ package Mcsui::Login;
 use base 'CGI::Application';
 use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Redirect;
+use CGI::Application::Plugin::Session;
 use strict;
 use warnings;
 use Administrator;
-
-sub setup {}
 
 # login form
 
 sub form_login : StartRunmode {
     my $self = shift;
+    $self->session_delete;
     my $errors = shift;
     my $tmpl = $self->load_tmpl('login.tmpl');
     $tmpl->param($errors) if $errors;
@@ -35,6 +35,9 @@ sub process_login : Runmode {
 	if($@) { 
 		$self->redirect('/cgi/mcsui.cgi/login'); 
 	} else { 
+		$self->session->param('EID', "$ENV{EID}");
+		$self->session->param('username', "$login");
+		$self->session->flush();
 		$self->redirect('/cgi/mcsui.cgi/systemstatus');
 	}
 }
@@ -55,7 +58,7 @@ sub _login_profile {
 
 sub process_logout : Runmode {
 	my $self = shift;
-	# TODO manage user session...
+	$self->session_delete;
 	$self->redirect('/cgi/mcsui.cgi/login/form_login');
 }
 

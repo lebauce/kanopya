@@ -63,11 +63,11 @@ my $errmsg;
 
 sub build {
 	my %args =  @_;
-	if(not exists $args{dbixuser} or not defined $args{dbixuser}) {
-		$errmsg = "EntityRights::build need a dbixuser named argument";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
-	}
+#	if(not exists $args{entity_id} or not defined $args{entity_id}) {
+#		$errmsg = "EntityRights::build need a entity_id named argument";
+#		$log->error($errmsg);
+#		throw Mcs::Exception::Internal(error => $errmsg);
+#	}
 	
 	if(not exists $args{schema} or not defined $args{schema}) {
 		$errmsg = "EntityRights::build need a schema named argument";
@@ -75,11 +75,16 @@ sub build {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	my $entity_id = $args{dbixuser}->get_column('entity_id');
-	if($args{dbixuser}->get_column('user_system')) {
-		return EntityRights::System->new(entity_id => $entity_id, schema => $args{schema});
+	my $user = $args{schema}->resultset('User')->search({ 'user_entities.entity_id' => $ENV{EID}},
+		 { join => ['user_entities'] }
+	)->single;
+	
+	if($user->get_column('user_system')) {
+		$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
+		return EntityRights::System->new(entity_id => $ENV{EID}, schema => $args{schema});
 	} else {
-		return EntityRights::User->new(entity_id => $entity_id, schema => $args{schema});
+		$log->debug("EntityRights build a new EntityRights::User with EID ".$ENV{EID});
+		return EntityRights::User->new(entity_id => $ENV{EID}, schema => $args{schema});
 	}
 }
 
