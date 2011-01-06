@@ -483,19 +483,13 @@ sub getMotherboards{
 	my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{administrator} or ! defined $args{administrator})) { 
-		$errmsg = "Entity::Cluster->getMotherboards need an administrator named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 	my $motherboard_rs = $self->{_dbix}->nodes;
-		
 	my %motherboards;
 	while ( my $node_row = $motherboard_rs->next ) {
 		my $motherboard_row = $node_row->motherboard_id;
 		$log->debug("Nodes found");
 		my $motherboard_id = $motherboard_row->get_column('motherboard_id');
-		$motherboards{$motherboard_id} = $args{administrator}->getEntity (
+		$motherboards{$motherboard_id} = Entity::Motherboard->get (
 						id => $motherboard_id,
 						type => "Motherboard");
 	}
