@@ -86,17 +86,41 @@ sub new {
 	return $self;
 }
 
+=head2 checkperm
 
+	Class: Public
+	
+	Desc: verify permission access method 
 
+	args: 
+		method : scalar (string) : method name to check
+		entity_id : scalar (int) : entity_id of entity concerned
+		
+	return: scalar(int) : 1 if permission granted, 0 otherwise   
 
+=cut
 
-
-
-
-
-
-
-
+sub checkperm {
+	my $self = shift;
+	my %args = @_;
+	
+	if(not exists $args{method} or not defined $args{method}) {
+		$errmsg = "EntityRights::User->checkperm need a method named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	
+	if(not exists $args{entity_id} or not defined $args{entity_id}) {
+		$errmsg = "EntityRights::User->checkperm need a entity_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	
+	
+	my $row = $self->{schema}->resultset('Entityright')->search()
+	
+	
+}
 
 
 1;
