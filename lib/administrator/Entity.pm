@@ -49,6 +49,31 @@ use Administrator;
 my $log = get_logger("administrator");
 my $errmsg;
 
+sub getEntities {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getEntities need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+	
+	$rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
+	$log->debug('resultset count:'.$rs->count());
+	$log->debug( "_getEntityClass with type = $args{type}");
+
+	while ( my $row = $rs->next ) {
+		my $id_name = lc($args{type}) . "_id";
+		my $obj = "Entity::$args{type}"->get(id => $id_name);
+		push @objs, $obj;
+	}
+	return  @objs;
+}
 
 =head2 new
 	

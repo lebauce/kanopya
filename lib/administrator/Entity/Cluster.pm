@@ -104,7 +104,20 @@ sub get {
    return $self;
 }
 
+sub getClusters {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
 
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getEntities need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Cluster");
+}
 
 sub checkAttrs {
 	# Remove class
