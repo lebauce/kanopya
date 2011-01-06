@@ -26,6 +26,8 @@ use warnings;
 use McsExceptions;
 use Entity::Component;
 use Entity::Motherboard;
+use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -77,6 +79,9 @@ use constant ATTR_DEF => {
 			};
 
 
+sub extension {
+	return "clusterdetails";
+}
 
 sub getEntityTable {
 	return "cluster";
@@ -212,21 +217,6 @@ sub new {
 
 }
 
-sub old_new {
-    my $class = shift;
-    my %args = @_;
-
-	if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity::Cluster->new need a data and rightschecker named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $self = $class->SUPER::new( %args );
-    return $self;
-}
-
 =head2 toString
 
 	desc: return a string representation of the entity
@@ -254,13 +244,12 @@ sub getComponents{
 	my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{administrator} or ! defined $args{administrator}) ||
-		(! exists $args{category} or ! defined $args{category})) { 
-		$errmsg = "Entity::Cluster->getComponent need a category and administrator named argument!";
+	if ((! exists $args{category} or ! defined $args{category})) { 
+		$errmsg = "Entity::Cluster->getComponent need a category named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	
+#	my $adm = Administrator->new();
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
 											{ '+columns' => [ "component_id.component_name", 
 															  "component_id.component_category",
@@ -268,15 +257,16 @@ sub getComponents{
 													join => ["component_id"]});
 		
 	my %comps;
-	$log->debug("Category is $args{category} and adm ". ref($args{administrator}));
+	$log->debug("Category is $args{category}");
 	while ( my $comp_instance_row = $comp_instance_rs->next ) {
+		my $comp_category = $comp_instance_row->get_column('component_category');
+		my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
+		my $comp_name = $comp_instance_row->get_column('component_name');
+		my $comp_version = comp_instance_row->get_column('component_version');
 		if (($args{category} eq "all")||
-			($args{category} eq $comp_instance_row->get_column('component_category'))){
+			($args{category} eq $comp_category)){
 			$log->debug("One component instance found with " . ref($comp_instance_row));
-			$comps{$comp_instance_row->get_column('component_instance_id')} = $args{administrator}->getEntity (
-							class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .$comp_instance_row->get_column('component_name') . $comp_instance_row->get_column('component_version'),
-							id => $comp_instance_row->get_column('component_instance_id'),
-							type => "ComponentInstance");
+			$comps{$comp_instance_id} = "Entity::Component::$comp_category::$comp_name"."$comp_version"->get(id =>$comp_instance_id);
 		}
 	}
 	return \%comps;
@@ -298,8 +288,7 @@ sub getComponent{
 	my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{administrator} or ! defined $args{administrator}) ||
-		(! exists $args{name} or ! defined $args{name}) ||
+	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{version} or ! defined $args{version})) { 
 		$errmsg = "Entity::Cluster->getComponent needs a name, version and administrator named argument!";
 		$log->error($errmsg);
@@ -313,21 +302,18 @@ sub getComponent{
 															  "component_id.component_category"], 
 													join => ["component_id"]});
 		
-	my %comps;
-	$log->debug("name is $args{name}, version is $args{version} and adm ". ref($args{administrator}));
-	while ( my $comp_instance_row = $comp_instance_rs->next ) {
-		$log->debug("Component instance found with " . ref($comp_instance_row));
-			return $args{administrator}->getEntity (
-							class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
-										  $comp_instance_row->get_column('component_name') . 
-										  $comp_instance_row->get_column('component_version'),
-							id => $comp_instance_row->get_column('component_instance_id'),
-							type => "ComponentInstance");
-	}
-	# PAS TROUVER NE VEUT PAS DIRE ERREUR.
-#	$errmsg = "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})";
-#	$log->error($errmsg);
-#	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	$log->debug("name is $args{name}, version is $args{version}");
+	my $comp_instance_row = $comp_instance_rs->next;
+	$log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
+	$log->debug("Component instance found with " . ref($comp_instance_row));
+	my $comp_category = $comp_instance_row->get_column('component_category');
+	my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
+	my $comp_name = $comp_instance_row->get_column('component_name');
+	my $comp_version = $comp_instance_row->get_column('component_version');
+	my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+	my $loc = General::getLocFromClass(entityclass=>$class);
+	eval { require $loc; };
+	return "$class"->get(id =>$comp_instance_id);
 }
 
 =head2 getSystemImage
@@ -386,68 +372,14 @@ sub addComponent {
 	my $self = shift;
 	my %args = @_;
 	# check arguments
-	if((! exists $args{administrator} or ! defined $args{administrator}) ||
-	   (! exists $args{component_id} or ! defined $args{component_id})) {
-	   	$errmsg = "Entity::Cluster->addComponent needs administrator and component_id named argument!";
+	if((! exists $args{component_id} or ! defined $args{component_id})) {
+	   	$errmsg = "Entity::Cluster->addComponent needs component_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-
-	my $admin = $args{administrator};
-	my $template_id = undef;
-	if(exists $args{component_template_id} and defined $args{component_template_id}) {
-		$template_id = $args{component_template_id};
-	}
 	
-	# check if component_id is valid
-	my $row = $admin->{db}->resultset('Component')->find($args{component_id});
-	if(not defined $row) {
-		$errmsg = "Entity::Cluster->addComponent : component_id does not exist";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
-	}
-	
-	# check if instance of component_id is not already inserted for  this cluster
-	$row = $admin->{db}->resultset('ComponentInstance')->search(
-		{ component_id => $args{component_id}, 
-		  cluster_id => $self->getAttr(name => 'cluster_id') })->single;
-	if(defined $row) {
-		$errmsg = "Entity::Cluster->addComponent : cluster has already the component with id $args{component_id}";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
-	}
-	
-	# check if component_template_id correspond to component_id
-	if(defined $template_id) {
-		my $row = $admin->{db}->resultset('ComponentTemplate')->find($template_id);
-		if(not defined $row) {
-			$errmsg = "Entity::Cluster->addComponent : component_template_id does not exist";
-			$log->error($errmsg);
-			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
-		} elsif($row->get_column('component_id') != $args{component_id}) {
-			$errmsg = "Entity::Cluster->addComponent : component_template_id does not belongs to component specified by component_id";
-			$log->error($errmsg);
-			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
-		}
-	}
-	
-	# insertion of a new component instance can't use administrator->newEntity method
-	# due to components database schema, so we do it by hand
-	# create component instance record 
-	my $componentinstance = $admin->{db}->resultset('ComponentInstance')->new(
-		{	component_id => $args{component_id},
-			cluster_id => $self->getAttr(name => 'cluster_id'),
-			component_template_id => $template_id
-		}
-	);
-	$componentinstance->insert();
-	# create entity and component_instance_entity	
-	my $entity = $admin->{db}->resultset('Entity')->create(
-		{ "component_instance_entities" => [ {"component_instance_id" => $componentinstance->get_column('component_instance_id')} ] }
-	);
-		
-	
-	
+	my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
+	$componentinstance->save();
 }
 
 =head2 removeComponent

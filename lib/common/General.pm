@@ -71,6 +71,12 @@ sub getClassEEntityFromEntity{
 #TODO Tester si les regexp fonctionne en simulant le use.
 sub getLocFromClass{
 	my %args = @_;
+	
+	   if (! exists $args{entityclass} or ! defined $args{entityclass}) { 
+		$errmsg = "getLocFromClass need a  entityclass named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+    }
 	my $data = $args{entityclass};
 	my $location = $args{entityclass};
     $location =~ s/\:\:/\//g;

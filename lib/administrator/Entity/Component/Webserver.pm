@@ -20,20 +20,45 @@
 # Created 24 aug 2010
 package Entity::Component::Webserver;
 
-use strict;
-
 use base "Entity::Component";
+use strict;
+use warnings;
+use McsExceptions;
+use Data::Dumper;
 
+use Log::Log4perl "get_logger";
+my $log = get_logger("administrator");
+my $errmsg;
 
 # contructor
 
 sub new {
-    my $class = shift;
+	my $class = shift;
     my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+		(! exists $args{component_id} or ! defined $args{component_id})){ 
+		$errmsg = "Entity::Component::Webserver::Apache2->new need a cluster_id and a component_id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	# We create a new DBIx containing new entity
+	my $self = $class->SUPER::new( %args);
 
-    my $self = $class->SUPER::new( %args );
     return $self;
 }
 
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Component::Webserver->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args);
+   return $self;
+}
 
 1;
