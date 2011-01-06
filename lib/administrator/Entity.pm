@@ -106,7 +106,9 @@ sub get {
 
 sub getExtendedAttrs {
 	my %attrs;
-
+	my $self = shift;
+	my %args = @_;
+	
 	if ((! exists $args{ext_table} or ! defined $args{ext_table})) {
 		$errmsg = "Entity->getExtendedAttrs need an ext_table named argument!"; 	 
 		$log->error($errmsg);
