@@ -59,6 +59,8 @@ use DateTime;
 use NetworkManager;
 use NodeManager;
 use RulesManager;
+use EntityRights::User;
+use EntityRights::System;
 
 our $VERSION = "1.00";
 
@@ -179,6 +181,36 @@ sub authenticate {
 	}
 }	
 
+=head2 Administrator::buildEntityRights (%args)
+
+	desc : instanciate an EntityRights::User/System depending on 
+			environment variable $ENV{EID}
+	args : schema : AdministratorDB::Schema instance
+	return : EntityRights::User or EntityRights::System
+	
+=cut
+
+sub buildEntityRights {
+	my %args =  @_;
+	
+	if(not exists $args{schema} or not defined $args{schema}) {
+		$errmsg = "EntityRights::build need a schema named argument";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	
+	my $user = $args{schema}->resultset('User')->search({ 'user_entities.entity_id' => $ENV{EID}},
+		 { join => ['user_entities'] }
+	)->single;
+	
+	if($user->get_column('user_system')) {
+		$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
+		return EntityRights::System->new(entity_id => $ENV{EID}, schema => $args{schema});
+	} else {
+		$log->debug("EntityRights build a new EntityRights::User with EID ".$ENV{EID});
+		return EntityRights::User->new(entity_id => $ENV{EID}, schema => $args{schema});
+	}
+}
 
 =head2 Administrator::new (%args)
 	
@@ -200,7 +232,7 @@ sub new {
 		throw Mcs::Exception::AuthentificationRequired(error => $errmsg);
 	}
 	
-	my $checker = EntityRights::build(schema => $schema);
+	my $checker = buildEntityRights(schema => $schema);
 
 	if(defined $oneinstance) {
 		$oneinstance->{_rightchecker} = $checker;

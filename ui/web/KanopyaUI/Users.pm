@@ -6,6 +6,8 @@ use warnings;
 use Data::FormValidator::Constraints qw( email FV_eq_with );
 use Data::Dumper;
 use Log::Log4perl "get_logger";
+use Entity::User;
+use Entity::Groups;
 
 my $log = get_logger('administrator');
 
@@ -20,7 +22,7 @@ sub view_users : StartRunmode {
     $tmpl->param('mSettings' => 1);
 	$tmpl->param('submUsers' => 1);
 	
-	my @eusers = $self->{'admin'}->getEntities(type => 'User', hash => { user_system => 0 });
+	my @eusers = Entity::User->getUsers(hash => { user_system => 0 });
 	my $users = [];
 	
 	foreach my $user (@eusers) {
@@ -117,7 +119,7 @@ sub view_userdetails : Runmode {
 	
 	my $query = $self->query();
 	my $user_id = $query->param('user_id');
-	my $euser = $self->{'admin'}->getEntity(type => 'User', id => $user_id);
+	my $euser = Entity::User->get(id => $user_id);
 	
 	$tmpl->param('user_id' =>  $user_id);
 	$tmpl->param('user_desc' =>  $euser->getAttr('name' => 'user_desc'));
@@ -130,12 +132,13 @@ sub view_userdetails : Runmode {
 	# password is not retrieved because displayed like ********
 	
 	my $groups = [];
-	while( my $row = $euser->{_groups}->next) {
+	my @egroups = Entity::Groups->getGroupsFromEntity(entity => $euser);
+	foreach my $eg (@egroups) {
 		my $tmp = {};
-		$tmp->{groups_id} = $row->get_column('groups_id');
-		$tmp->{groups_name} = $row->get_column('groups_name');
-		$tmp->{groups_desc} = $row->get_column('groups_desc');
-		$tmp->{groups_system} = $row->get_column('groups_system');
+		$tmp->{groups_id} = $eg->getAttr(name => 'groups_id');
+		$tmp->{groups_name} = $eg->getAttr(name => 'groups_name');
+		$tmp->{groups_desc} = $eg->getAttr(name => 'groups_desc');
+		$tmp->{groups_system} = $eg->getAttr(name => 'groups_system');
 		push(@$groups, $tmp);
 	} 
 	

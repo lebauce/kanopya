@@ -36,6 +36,7 @@ on entities method concerning a user
 =cut
 
 package EntityRights::User;
+use base 'EntityRights';
 
 use strict;
 use warnings;
@@ -86,7 +87,7 @@ sub new {
 	return $self;
 }
 
-=head2 checkperm
+=head2 checkMethodPerm
 
 	Class: Public
 	
@@ -100,7 +101,7 @@ sub new {
 
 =cut
 
-sub checkperm {
+sub checkMethodPerm {
 	my $self = shift;
 	my %args = @_;
 	
@@ -116,11 +117,36 @@ sub checkperm {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
+	my $consumer_ids = SUPER::_getEntityIds(entity_id => $self->{user_entity_id});
+	my $consumed_ids = SUPER::_getEntityIds(entity_id => $args{entity_id});
 	
-	my $row = $self->{schema}->resultset('Entityright')->search()
-	
-	
+	my $row = $self->{_schema}->resultset('Entityright')->search(
+		{
+			entityright_consumer_id => $consumer_ids,
+			entityright_consumed_id => $consumed_ids,
+			entityright_method => $args{method}
+		},
+		#{ select => [
+		#	'entityright_consumer_id',
+		#	'entityright_consumed_id',
+		#	'entityright_method' ],
+		#	order_by => { -desc => ['entityright_rights']},
+		#}
+	)->first;
+	if($row) { 
+		$log->debug("row exists !");
+		return 1;
+	} else {
+		$log->debug("row doesnt exist !");
+		return 0;	
+	}
 }
+
+
+
+
+
+
 
 
 1;

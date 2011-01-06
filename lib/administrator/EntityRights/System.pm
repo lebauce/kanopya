@@ -37,13 +37,12 @@ $session argument content.
 =cut
 
 package EntityRights::System;
+use base 'EntityRights';
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-
 use McsExceptions;
-use Data::Dumper;
 
 our $VERSION = "1.00";
 
@@ -86,6 +85,24 @@ sub new {
 	};
 	bless $self, $class;
 	return $self;
+}
+
+=head2 checkMethodPerm
+
+	Class: Public
+	
+	Desc: verify permission access method 
+
+	args: 
+		method : scalar (string) : method name to check
+		entity_id : scalar (int) : entity_id of entity concerned
+		
+	return: scalar(int) : already 1
+
+=cut
+
+sub checkMethodPerm {
+	return 1;
 }
 
 1;

@@ -27,8 +27,6 @@ Entity::Groups
 
 =head1 SYNOPSIS
 
-
-
 =head1 DESCRIPTION
 
 blablabla
@@ -36,13 +34,17 @@ blablabla
 =cut
 
 package Entity::Groups;
+use base "Entity";
 
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
 use McsExceptions;
+use Administrator;
 use Data::Dumper;
-use base "Entity";
+use Log::Log4perl "get_logger";
+
+
+our $VERSION = "1.00";
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -69,19 +71,119 @@ use constant ATTR_DEF => {
 
 =head2 new
 
-	Class : Private
+	Class: Public
+	desc:  constructor
+	args: 
+	return: Entity::Groups instance 
 	
-	Desc : constructor method
-
 =cut
 
 sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Groups");
+	
+	# Set the extended parameters
+	#$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+}
+
+=head2 get
+
+	Class: public
+	desc: retrieve a stored Entity::Groups instance
+	args:
+		id : scalar(int) : groups id
+	return: Entity::Groups instance 
+
+=cut
+
+sub get {
     my $class = shift;
     my %args = @_;
 
-    my $self = $class->SUPER::new( %args );
-    return $self;
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Groups->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args,  table => "User");
+   #$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
+   return $self;
 }
+
+=head2 getGroups
+
+	Class: public
+	desc: retrieve several Entity::Groups instances
+	args:
+		hash : hashref : where criteria
+	return: @ : array of Entity::Groups instances
+	
+=cut
+
+sub getGroups {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::Groups->getGroups need a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Groups");
+}
+
+=head2 getGroupsFromEntity
+
+	Class: public
+	desc: retrieve Entity::Groups instances that contains the Entity argument
+	args:
+		entity : Entity::* : an Entity instance
+	return: @ : array of Entity::Groups instances
+	
+=cut
+
+sub getGroupsFromEntity {
+	my $class = shift;
+    my %args = @_;
+	my @groups = ();
+    
+	if ((! exists $args{entity} or ! defined $args{entity})) { 
+		$errmsg = "Entity::Groups->getGroups need a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	
+	if(not $args{entity}->{_dbix}->in_storage ) { return @groups; } 
+		
+	my $adm = Administrator->new();
+   	my $mastergroup = ref $args{entity};
+	$mastergroup =~ s/.*\:\://g;
+   	my $groups_rs = $adm->{db}->resultset('Groups')->search({
+		-or => [
+			'ingroups.entity_id' => $args{entity}->{_dbix}->get_column('entity_id'),
+			'groups_name' => $mastergroup ]},
+			
+		{ 	'+columns' => [ 'groups_entities.entity_id' ], 
+			join => [qw/ingroups groups_entities/] }
+	);
+	while(my $row = $groups_rs->next) {
+		push(@groups, $class->SUPER::get(id => $row->get_column('groups_id'), table => 'Groups'));
+	}
+   	return @groups;
+}
+
+
 
 =head2 toString
 
@@ -245,22 +347,15 @@ sub removeEntity {
 
 	Desc : get all entities contained in the group
 	
-	args:
-		administrator
-	return : array of entities 
+	return : @: array of entities 
 
 =cut
 
 sub getEntities {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{administrator} or ! defined $args{administrator}) { 
-		$errmsg = "Entity::Groups->getEntities need administrator named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $admin = $args{administrator};	
+		
+	my $admin = Administrator->new();	
 	my $type = $self->{_dbix}->get_column('groups_type');
 	my $entity_ids = $admin->{db}->resultset('Ingroups')->search(
 		{ groups_id => $self->getAttr('name' => 'groups_id') },
@@ -283,8 +378,6 @@ sub getEntities {
 	
 	Desc : get all entities of the same type not contained in the group
 	
-	args:
-		administrator
 	return : array of entities 
 
 =cut
@@ -292,13 +385,8 @@ sub getEntities {
 sub getExcludedEntities {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{administrator} or ! defined $args{administrator}) { 
-		$errmsg = "Entity::Groups->getEntities need administrator named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 	
-	my $admin = $args{administrator};	
+	my $admin = Administrator->new();	
 	my $type = $self->{_dbix}->get_column('groups_type');
 	my $entity_ids = $admin->{db}->resultset('Ingroups')->search(
 		{ groups_id => $self->getAttr('name' => 'groups_id') },

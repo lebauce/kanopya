@@ -19,16 +19,17 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
 package Entity::Cluster;
+use base "Entity";
 
 use strict;
 use warnings;
-use base "Entity";
 use McsExceptions;
 use Entity::Component;
 use Entity::Motherboard;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
+our $VERSION = "1.00";
 
 my $log = get_logger("administrator");
 my $errmsg;

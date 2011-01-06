@@ -1,46 +1,34 @@
 #!/usr/bin/perl -w
 
 use FindBin qw($Bin);
-use lib "$Bin/../Lib";
+use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->init('../Conf/log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/log.conf');
 
-use Test::More 'no_plan';
-use Administrator;
-use Data::Dumper;
+use Test::More tests => 9;
 
+BEGIN { use_ok('Administrator'); }
+BEGIN {
 
-eval {
-	my $adm = Administrator->new( login => 'thom', password => 'pass' );
-	isa_ok($adm->{_rightschecker}, "EntityRights", '$adm->{_rightschecker}');
-	isa_ok($adm->{_rightschecker}->{_schema}, "AdministratorDB::Schema", '$adm->{_rightschecker}->{_schema}');
-	#$adm->{_rightschecker}->{_schema}->storage->debug(1);
-	
-	my $AdminGroup = $adm->getEntity(type => 'Groups', id => 44 ); # 'admin' group
-	my $UserGroup = $adm->getEntity(type => 'Groups', id => 35); # 'User' group
-	my $tata = $adm->getEntity(type => 'User', id => 19); # 'tata' user
-	
-	# getting rights for tata on UserGroup
-	$rights = $adm->{_rightschecker}->getRights(consumer => $tata, consumed => $UserGroup);	
-	print "rights for tata on UserGroup: $rights\n";
-	
-	# adding write permission for tata on UserGroup
-	$adm->{_rightschecker}->setRights(consumer => $tata, consumed => $UserGroup, rights => 'w');
-	
-	# getting rights for tata on UserGroup
-	$rights = $adm->{_rightschecker}->getRights(consumer => $tata, consumed => $UserGroup);	
-	print "rights for tata on UserGroup: $rights\n";
-	
-	# removing write permission for tata on UserGroup
-	#$adm->{_rightschecker}->setRights(consumer => $tata, consumed => $UserGroup, rights => '');
+Administrator::authenticate(login => 'admin', password => 'admin');
 
-	# getting rights for tata on UserGroup
-	#$rights = $adm->{_rightschecker}->getRights(consumer => $tata, consumed => $UserGroup);	
-	#print "rights for tata on UserGroup: $rights\n";
-	
-};
+ok(exists $ENV{EID}, 'environment variable EID exists');
+ok(defined $ENV{EID}, 'environment variable EID defined');
 
-if($@) {
-	print $@;
+my $adm = new_ok('Administrator' => [], '$adm');
+
+isa_ok($adm->{db}, 'AdministratorDB::Schema',	'$admin->{db}');
+
+isa_ok($adm->{_rightchecker}, 'EntityRights::System',	'for user admin, $adm->{_rightschecker}');
+
+is($adm->{_rightchecker}->{user_entity_id}, $ENV{EID}, 'user_entity_id in EntityRights::System match $ENV{EID}');
+
+can_ok('EntityRights::System', qw(_getEntityIds checkMethodPerm addMethodPerm));
+
+ok($adm->{_rightchecker}->checkMethodPerm(), 'EntityRights::System->checkMethodPerm method always return 1');
+
+#my $entityIds = $adm->{_rightchecker}->_getEntityIds(entity_id => $ENV{EID});
+#foreach my $id (@$entityIds) { print "\t$id\n"; }
+
 }

@@ -30,9 +30,8 @@ EntityRights
 
 =head1 DESCRIPTION
 
-EntityRights provide unique method build which instanciate 
-an EntityRights::User or EntityRights::System depending on
-$session argument content. 
+	Base class for EntityRights::User/System
+	Provide setPerm, _getEntityds and getPerms method
 
 =cut
 
@@ -40,10 +39,7 @@ package EntityRights;
 
 use strict;
 use warnings;
-
 use McsExceptions;
-use EntityRights::User;
-use EntityRights::System;
 use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
@@ -51,42 +47,84 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 EntityRights::build (%args)
+=head2 _getEntityIds
 
-	desc : instanciate an EntityRights::User/System depending on 
-			type argument content.
-	args : dbixuser : user entity DBIx::Class::Row 
-		   schema : AdministratorDB::Schema instance
-	return : EntityRights::User or EntityRights::System
+	Class : Protected
 	
+	Desc : return an array reference containing entity id and its groups entity ids
+	
+	args :
+			entity_id : entity_id about an entity object
+	return : array reference of entity_id 
+
 =cut
 
-sub build {
-	my %args =  @_;
-#	if(not exists $args{entity_id} or not defined $args{entity_id}) {
-#		$errmsg = "EntityRights::build need a entity_id named argument";
-#		$log->error($errmsg);
-#		throw Mcs::Exception::Internal(error => $errmsg);
-#	}
+sub _getEntityIds {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{entity_id} or ! defined $args{entity_id}) { 
+		$errmsg = "EntityRights->_getEntityIds: need an entity_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+
+	my $ids = [];
+	# TODO verifier que l'entity_id fournis exists en base
+	push @$ids, $args{entity_id};
 	
-	if(not exists $args{schema} or not defined $args{schema}) {
-		$errmsg = "EntityRights::build need a schema named argument";
+	# retrieve entity_id of groups containing this entity object
+	my @groups = $self->{schema}->resultset('Groups')->search( 
+		{ 'ingroups.entity_id' => $args{entity_id} },
+		{ 
+			columns => [], 									# use no columns from Groups table
+			'+columns' => [ 'groups_entities.entity_id' ], 	# but add the entity_id column from groups_entity related table
+			join => [qw/ingroups groups_entities/]
+		}
+	);
+	# add entity_id groups to the arrayref
+	foreach my $g (@groups) { push @$ids, $g->get_column('entity_id'); }
+	return $ids;
+}
+
+=head2 addMethodPerm
+
+	Class : public
+	Desc : given a consumer (an Entity::User or Entity::Groups with user type), a consumed (Entity)
+		   and a method, grant the permission to that consumed method for that 
+		   consumer entity 
+	args:
+		consumer : Entity::User instance or Entity::Groups instance
+		consumed : Entity::* instance
+		method   : scalar (string) : method name
+
+=cut
+
+sub addMethodPerm {
+	my $self = shift;
+	my %args = @_;
+	
+	if (! exists $args{consumer} or ! defined $args{consumer}) { 
+		$errmsg = "EntityRights::addMethodPerm need a consumer named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	my $user = $args{schema}->resultset('User')->search({ 'user_entities.entity_id' => $ENV{EID}},
-		 { join => ['user_entities'] }
-	)->single;
-	
-	if($user->get_column('user_system')) {
-		$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
-		return EntityRights::System->new(entity_id => $ENV{EID}, schema => $args{schema});
-	} else {
-		$log->debug("EntityRights build a new EntityRights::User with EID ".$ENV{EID});
-		return EntityRights::User->new(entity_id => $ENV{EID}, schema => $args{schema});
+	if (! exists $args{consumed} or ! defined $args{consumed}) { 
+		$errmsg = "EntityRights::addMethodPerm need a consumed named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
 	}
+	
+	if (! exists $args{method} or ! defined $args{method}) { 
+		$errmsg = "EntityRights::addMethodPerm need a method named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	
+	
 }
+
+
 
 1;
 
