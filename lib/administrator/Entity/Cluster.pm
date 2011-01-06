@@ -23,7 +23,6 @@ package Entity::Cluster;
 use strict;
 use warnings;
 use base "Entity";
-use lib qw (.. ../../../Common/Lib);
 use McsExceptions;
 use Entity::Component;
 use Log::Log4perl "get_logger";
