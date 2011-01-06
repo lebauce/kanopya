@@ -69,7 +69,8 @@ sub getEntities {
 
 	while ( my $row = $rs->next ) {
 		my $id_name = lc($args{type}) . "_id";
-		my $obj = "Entity::$args{type}"->get(id => $id_name);
+		my $id = $row->get_column($id_name);
+		my $obj = "Entity::$args{type}"->get(id => $id);
 		push @objs, $obj;
 	}
 	return  @objs;
