@@ -182,7 +182,7 @@ sub get {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args, table=>"motherboard");
+   my $self = $class->SUPER::get( %args, table=>"Motherboard");
    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
    return $self;
 }
@@ -195,7 +195,7 @@ sub new {
 	my $attrs = $class->checkAttrs(attrs => \%args);
 	
 	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "motherboard");
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboard");
 	
 	# Set the extended parameters
 	$self->{_ext_attrs} = $attrs->{extended};

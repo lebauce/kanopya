@@ -13,42 +13,20 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n
 
 use Test::More 'no_plan';
 use Administrator;
+use Entity::Cluster;
 use Data::Dumper;
 
-my $adm = Administrator->new( login =>'thom', password => 'pass' );
-
-note( "Test Entity management");
+note( "Test Cluster management");
 
 eval {
-	$adm->{db}->txn_begin;
-	
-	#################################################################################################################################
-	
-	# Obj creation
-	my $clust = $adm->newEntity( type => "Cluster", params => { cluster_name => 'myclust', 
-															  cluster_desc => 'myclust',
-															  cluster_min_node => '1',
-															  cluster_max_node => '2',
-															  cluster_priority => '2',
-															  cluster_public_ip => 'pubip',
-															  cluster_public_mask => 'pubmask',
-															  cluster_public_network => 'pubnet',
-															  cluster_public_gateway => 'pubgw',
-															  cluster_active => '1',
-															  systemimage_id => '1',} );
-	isa_ok( $clust, "Entity::Cluster", '$obj');
-	is( $clust->{_dbix}->in_storage , 0, "new obj doesn't add in DB" ); 
-	is( $clust->getAttr( name => 'cluster_active' ), '1', "get value of new cluster" );
-	
-	my $cluster = $adm->getEntity(type => "Cluster", id => 1);
-	my $components = $cluster->getComponents(administrator => $adm, category => "all");
-	$adm->{db}->txn_rollback;
+    Administrator::authenticate( login =>'admin', password => 'admin' );
+    my $cluster = Entity::Cluster->get(id => "1");
+    print "Admin cluster has a id : <" . $cluster->getAttr(name => "cluster_id") . ">\n";
+    my $cluster2 = Entity::Cluster->new(cluster_name => "toto", cluster_min_node => "1", cluster_max_node => "2", cluster_priority => "100", systemimage_id => "1");
+    print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . ">\n";
 };
 if($@) {
-	my $error = $@;
-	
-	$adm->{db}->txn_rollback;
-	
+	my $error = $@;	
 	print Dumper $error;
 };
 

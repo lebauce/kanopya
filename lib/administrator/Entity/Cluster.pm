@@ -95,11 +95,11 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Motherboard->new need an id named argument!";	
+		$errmsg = "Entity::Cluster->new need an id named argument!";	
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args,  table => "cluster");
+   my $self = $class->SUPER::get( %args,  table => "Cluster");
    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
    return $self;
 }
@@ -188,7 +188,7 @@ sub new {
 	my $attrs = $class->checkAttrs(attrs => \%args);
 	
 	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "cluster");
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
 	
 	# Set the extended parameters
 	$self->{_ext_attrs} = $attrs->{extended};
