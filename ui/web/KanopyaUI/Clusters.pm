@@ -3,6 +3,7 @@ use base 'KanopyaUI::CGI';
 
 use strict;
 use warnings;
+use Entity::Cluster;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -19,7 +20,7 @@ sub view_clusters : StartRunmode {
 	$tmpl->param('mClusters' => 1);
 	$tmpl->param('submClusters' => 1);
     
-    my @eclusters = $self->{'admin'}->getEntities(type => 'Cluster', hash => {});
+    my @eclusters = Entity::Cluster->getClusters(hash => {});
     my $clusters = [];
     	
     foreach my $n (@eclusters){
@@ -41,7 +42,7 @@ sub view_clusters : StartRunmode {
 		
 		if($n->getAttr('name' => 'active')) {
 			$tmp->{active} = 1;
-			my $nodes = $n->getMotherboards(administrator => $self->{'admin'});
+			my $nodes = $n->getMotherboards();
 			my $nbnodesup = scalar(keys %$nodes); 
 			if($nbnodesup > 0) {
 				$tmp->{nbnodesup} = $nbnodesup;
@@ -60,6 +61,7 @@ sub view_clusters : StartRunmode {
 }
 
 # cluster creation popup window
+
 sub form_addcluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
