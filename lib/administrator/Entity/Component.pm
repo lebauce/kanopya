@@ -132,4 +132,34 @@ sub toString {
 	my $string = $self->{_dbix}->component_id->get_column('component_name')." ".$self->{_dbix}->component_id->get_column('component_version');
 	return $string;
 }
+
+sub save {
+	my $self = shift;
+	my $data = $self->{_dbix};
+	#TODO check rights
+
+	if ( $data->in_storage ) {
+		# MODIFY existing db obj
+		$data->update;
+		$self->_saveExtendedAttrs();
+	} else {
+		# CREATE
+		my $relation = lc(ref $self);
+		$relation =~ s/.*\:\://g;
+		$log->debug("la relation: $relation");
+		my $newentity = $self->{_dbix}->insert;
+		$log->debug("new entity inserted.");
+		my $adm = Administrator->new();
+		my $row = $adm->{db}->resultset('Entity')->create(
+			{ "component_instance_entities" => [ { "component_instance_id" => $newentity->get_column("component_instance_id")} ] },
+		);
+		$log->debug("new $self inserted with his entity relation.");
+		$self->{_entity_id} = $row->get_column('entity_id');
+		
+		$self->_saveExtendedAttrs();
+		$log->info(ref($self)." saved to database");
+	}
+		
+}
+
 1;

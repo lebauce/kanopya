@@ -42,7 +42,7 @@ sub get {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
    my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
+#   $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
    return $self;
 }
 

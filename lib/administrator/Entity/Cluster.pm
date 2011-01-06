@@ -19,14 +19,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
 package Entity::Cluster;
+use base "Entity";
 
 use strict;
 use warnings;
-use base "Entity";
 use McsExceptions;
 use Entity::Component;
 use Entity::Motherboard;
 use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -77,6 +78,9 @@ use constant ATTR_DEF => {
 			};
 
 
+sub extension {
+	return "clusterdetails";
+}
 
 sub getEntityTable {
 	return "cluster";
@@ -257,10 +261,11 @@ sub getComponents{
 		my $comp_category = $comp_instance_row->get_column('component_category');
 		my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
 		my $comp_name = $comp_instance_row->get_column('component_name');
+		my $comp_version = comp_instance_row->get_column('component_version');
 		if (($args{category} eq "all")||
 			($args{category} eq $comp_category)){
 			$log->debug("One component instance found with " . ref($comp_instance_row));
-			$comps{$comp_instance_id} = "Entity::Component::$comp_category::$comp_name"->get(id =>$comp_instance_id);
+			$comps{$comp_instance_id} = "Entity::Component::$comp_category::$comp_name"."$comp_version"->get(id =>$comp_instance_id);
 		}
 	}
 	return \%comps;
@@ -282,8 +287,7 @@ sub getComponent{
 	my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{administrator} or ! defined $args{administrator}) ||
-		(! exists $args{name} or ! defined $args{name}) ||
+	if ((! exists $args{name} or ! defined $args{name}) ||
 		(! exists $args{version} or ! defined $args{version})) { 
 		$errmsg = "Entity::Cluster->getComponent needs a name, version and administrator named argument!";
 		$log->error($errmsg);
@@ -297,21 +301,18 @@ sub getComponent{
 															  "component_id.component_category"], 
 													join => ["component_id"]});
 		
-	my %comps;
-	$log->debug("name is $args{name}, version is $args{version} and adm ". ref($args{administrator}));
-	while ( my $comp_instance_row = $comp_instance_rs->next ) {
-		$log->debug("Component instance found with " . ref($comp_instance_row));
-			return $args{administrator}->getEntity (
-							class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
-										  $comp_instance_row->get_column('component_name') . 
-										  $comp_instance_row->get_column('component_version'),
-							id => $comp_instance_row->get_column('component_instance_id'),
-							type => "ComponentInstance");
-	}
-	# PAS TROUVER NE VEUT PAS DIRE ERREUR.
-#	$errmsg = "Entity::Cluster->getComponent, no component found with name ($args{name}) and version ($args{version})";
-#	$log->error($errmsg);
-#	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	$log->debug("name is $args{name}, version is $args{version}");
+	my $comp_instance_row = $comp_instance_rs->next;
+	$log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
+	$log->debug("Component instance found with " . ref($comp_instance_row));
+	my $comp_category = $comp_instance_row->get_column('component_category');
+	my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
+	my $comp_name = $comp_instance_row->get_column('component_name');
+	my $comp_version = $comp_instance_row->get_column('component_version');
+	my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+	my $loc = General::getLocFromClass(entityclass=>$class);
+	eval { require $loc; };
+	return "$class"->get(id =>$comp_instance_id);
 }
 
 =head2 getSystemImage

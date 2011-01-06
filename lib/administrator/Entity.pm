@@ -308,6 +308,8 @@ sub getAttr {
 	return $value;
 }
 
+
+
 =head2 save
 	
 	Save entity data in DB afer rights check
@@ -331,7 +333,8 @@ sub save {
 		$log->debug("la relation: $relation");
 		my $newentity = $self->{_dbix}->insert;
 		$log->debug("new entity inserted.");
-		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
+		my $adm = Administrator->new();
+		my $row = $adm->{db}->resultset('Entity')->create(
 			{ "${relation}_entities" => [ { "${relation}_id" => $newentity->get_column("${relation}_id")} ] },
 		);
 		$log->debug("new $self inserted with his entity relation.");
