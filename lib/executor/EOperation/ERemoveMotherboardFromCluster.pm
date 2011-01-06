@@ -200,24 +200,27 @@ sub execute {
 	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
 	
+	
 	my $powersupply_id = $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_powersupply_id");
-	if ($powersupply_id) {
-		my $powersupply = $adm->getPowerSupply(powersupply_id => $powersupply_id);
-		use IO::Socket;
-		my $powersupplycard = $adm->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
-		my $sock = new IO::Socket::INET (
-                                  PeerAddr => $powersupplycard->{powersupplycard_ip},
+    if ($powersupply_id) {
+    	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
+#$adm->getEntity(type => "Powersupplycard",id => $powersupply_id);                                                                                          
+       	use IO::Socket;
+        my $powersupplycard = $adm->getEntity(type => "Powersupplycard",id => $powersupplycard_id);
+#$adm->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});                                                                       
+        my $sock = new IO::Socket::INET (
+                                  PeerAddr => $powersupplycard->getAttr(name => "powersupplycard_ip"),
                                   PeerPort => '1470',
                                   Proto => 'tcp',
                                  );
-		$sock->autoflush(1);
-		die "Could not create socket: $!\n" unless $sock;
-		
-		my $pos = $powersupply->{powersupplyport_id};
-		my $s = "R";
-		$s .= pack "B16", "000000000000000";
-		$s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
-		printf $sock $s;
+        $sock->autoflush(1);
+        die "Could not create socket: $!\n" unless $sock;
+
+        my $pos = $powersupplycard->getMotherboardPort(motherboard_powersupply_id => $powersupply_id);
+        my $s = "R";
+        $s .= pack "B16", "000000000000000";
+        $s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
+        printf $sock $s;
 		close($sock);
 	}
 	
