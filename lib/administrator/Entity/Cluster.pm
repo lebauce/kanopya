@@ -25,6 +25,7 @@ use warnings;
 use base "Entity";
 use McsExceptions;
 use Entity::Component;
+use Entity::Motherboard;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
