@@ -178,7 +178,7 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Motherboard->new need an id named argument!";	
+		$errmsg = "Entity::Motherboard->get need an id named argument!";	
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}

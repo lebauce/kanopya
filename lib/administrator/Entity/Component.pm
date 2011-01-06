@@ -20,19 +20,83 @@
 # Created 3 july 2010
 package Entity::Component;
 
-use strict;
+
 
 use base "Entity";
-
+use McsExceptions;
+use Data::Dumper;
+use strict;
+use warnings;
+use Log::Log4perl "get_logger";
+my $log = get_logger("administrator");
+my $errmsg;
 
 # contructor
 
 sub new {
+	my $class = shift;
+    my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+		(! exists $args{component_id} or ! defined $args{component_id})){ 
+		$errmsg = "Entity::Component->new need a cluster_id and a component_id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $admin = Administrator->new();
+	my $template_id = undef;
+	if(exists $args{component_template_id} and defined $args{component_template_id}) {
+		$template_id = $args{component_template_id};
+	}
+	
+	# check if component_id is valid
+	my $row = $admin->{db}->resultset('Component')->find($args{component_id});
+	if(not defined $row) {
+		$errmsg = "Entity::Component->new : component_id does not exist";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
+	
+	# check if instance of component_id is not already inserted for  this cluster
+	$row = $admin->{db}->resultset('ComponentInstance')->search(
+		{ component_id => $args{component_id}, 
+		  cluster_id => $args{cluster_id} })->single;
+	if(defined $row) {
+		$errmsg = "Entity::Component->new : cluster has already the component with id $args{component_id}";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
+	
+	# check if component_template_id correspond to component_id
+	if(defined $template_id) {
+		my $row = $admin->{db}->resultset('ComponentTemplate')->find($template_id);
+		if(not defined $row) {
+			$errmsg = "Entity::Component->new : component_template_id does not exist";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		} elsif($row->get_column('component_id') != $args{component_id}) {
+			$errmsg = "Entity::Component->new : component_template_id does not belongs to component specified by component_id";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		}
+	}
+	# We create a new DBIx containing new entity
+	my $self = $class->SUPER::new( attrs => \%args, table => "ComponentInstance");
+    return $self;
+}
+
+sub get {
     my $class = shift;
     my %args = @_;
 
-    my $self = $class->SUPER::new( %args );
-    return $self;
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Component->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
+   return $self;
 }
 
 sub getTemplateDirectory {

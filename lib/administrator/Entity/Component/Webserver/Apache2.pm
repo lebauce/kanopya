@@ -21,7 +21,7 @@
 package Entity::Component::Webserver::Apache2;
 use base "Entity::Component::Webserver";
 use strict;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
+use warnings;
 use McsExceptions;
 use Data::Dumper;
 
@@ -31,15 +31,38 @@ my $errmsg;
 
 
 
-# contructor
 
-sub new {
+sub get {
     my $class = shift;
     my %args = @_;
 
-    my $self = $class->SUPER::new( %args );
-    return $self;
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Component::Webserver::Apache2->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
+   $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
+   return $self;
 }
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+		(! exists $args{component_id} or ! defined $args{component_id})){ 
+		$errmsg = "Entity::Component::Webserver::Apache2->new need a cluster_id and a component_id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	# We create a new DBIx containing new entity
+	my $self = $class->SUPER::new( %args);
+
+    return $self;
+
+}
+
 
 
 
