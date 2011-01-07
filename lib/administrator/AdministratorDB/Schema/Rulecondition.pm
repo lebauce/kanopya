@@ -11,40 +11,15 @@ __PACKAGE__->add_columns(
   "rulecondition_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "rulecondition_var",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 32,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 64 },
   "rulecondition_time_laps",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 32,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "rulecondition_consolidation_func",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 32,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "rulecondition_transformation_func",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 32,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "rulecondition_operator",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 32,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
   "rulecondition_value",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "rule_id",
@@ -58,8 +33,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-12-22 17:26:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3ATZUplwmzDBkBr5X9sMKw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-01-07 16:32:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nxQwAOmhOHm/VSe/tX6Drg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

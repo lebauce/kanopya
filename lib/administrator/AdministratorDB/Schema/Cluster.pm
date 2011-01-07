@@ -44,8 +44,18 @@ __PACKAGE__->has_many(
   { "foreign.cluster_id" => "self.cluster_id" },
 );
 __PACKAGE__->has_many(
+  "collects",
+  "AdministratorDB::Schema::Collect",
+  { "foreign.cluster_id" => "self.cluster_id" },
+);
+__PACKAGE__->has_many(
   "component_instances",
   "AdministratorDB::Schema::ComponentInstance",
+  { "foreign.cluster_id" => "self.cluster_id" },
+);
+__PACKAGE__->has_many(
+  "graphs",
+  "AdministratorDB::Schema::Graph",
   { "foreign.cluster_id" => "self.cluster_id" },
 );
 __PACKAGE__->has_many(
@@ -65,8 +75,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-12-22 17:26:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cCo5wIPjCLRnJYXg38Z1SA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-01-07 16:32:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oO+qhEYfc83JCzxoSi7/9A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

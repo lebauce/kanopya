@@ -227,8 +227,9 @@ sub updateHostData {
 	my $error_happened = 0;
 	my %providers = ();
 	eval {
-		#For each set of var defined in conf file
-		foreach my $set ( @{ $self->{_monitored_data} } ) {
+		#For each set of var defined in conf
+		#foreach my $set ( @{ $self->{_monitored_data} } ) {
+		foreach my $set ( @{ $args{sets} } ) {
 
 			#############################################################
 			# Skip this set if associated component is not on this host #
@@ -405,8 +406,6 @@ sub update {
 	
 	my $start_time = time();
 	
-	print "#### UPDATE start : $start_time\n";
-	
 	eval {
 
 		my %hosts_by_cluster = $self->retrieveHostsByCluster();
@@ -416,33 +415,27 @@ sub update {
 			return;
 		}
 		
-		my @all_hosts_info = map { values %$_ } values %hosts_by_cluster;
+		my $monitor_manager = $self->{_admin_wrap}{_admin}->{manager}{monitor};
 		
 		#############################
 		# Update data for each host #
 		#############################
 		my %threads = ();
-		for my $host_info (@all_hosts_info) {
-			# We create a thread for each host to don't block update if a host is unreachable
-			#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
-			my $thr = threads->create( 	'updateHostData',
-										$self,
-										host_ip => $host_info->{ip},
-										host_state => $host_info->{state},
-										components => $host_info->{components} );
-			$threads{$host_info->{ip}} = $thr;
+		while ( my ($cluster_name, $cluster_nodes) = each %hosts_by_cluster ) {
+			my $cluster_id = $self->{_admin_wrap}->getClusterId( cluster_name => $cluster_name );
+			my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster_id );
+			for my $host_info (values %$cluster_nodes) {
+				# We create a thread for each host to don't block update if a host is unreachable
+				#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
+				my $thr = threads->create( 	'updateHostData',
+											$self,
+											host_ip => $host_info->{ip},
+											host_state => $host_info->{state},
+											components => $host_info->{components},
+											sets => $monitored_sets );
+				$threads{$host_info->{ip}} = $thr;
+			}
 		}
-		
-		#########################
-		# Manage stopping hosts	#	
-		#########################
-#		my $adm = $self->{_admin_wrap};
-#		my @stoppingHosts = $adm->getEntities( type => "Motherboard", hash => { motherboard_state => { like => "stopping%" } } );
-#		foreach my $host (@stoppingHosts) {
-#			my $thr = threads->create('_manageStoppingHost', $self, host => $host);
-#			my $host_ip = $host->getAttr( name => "motherboard_internal_ip" );
-#			$threads{$host_ip} = $thr;
-#		}
 		
 
 		############################
@@ -454,28 +447,7 @@ sub update {
 			$hosts_values{ $host_ip } = $ret;
 		}
 		
-		#print "\n###############   ", "HOSTS VALUES", "   ##########\n";
-		#print Dumper \%hosts_values;
-		
-		################################
-		# update hosts state if needed #
-		################################
-	#	my $adm = $self->{_admin};
-	#	for my $host_info (@all_hosts_info) {
-	#		my $host_state = $hosts_state{ $host_info->{ip} };
-	#		if ( $host_info->{state} ne $host_state ) {
-	#				my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_info->{ip} } );
-	#				my $mb = shift @mb_res;
-	#				if ( defined $mb ) {
-	#					$mb->setAttr( name => "motherboard_state", value => $host_state );
-	#					$mb->save();
-	#				} else {
-	#					print "===> Error: can't find motherboard in DB : ip = $host_info->{ip}\n";
-	#				}
-	#		}
-	#	}
-		
-		
+
 		############################################################
 		# update clusters base (nodes count and aggregated values) #
 		############################################################
@@ -498,9 +470,6 @@ sub update {
 				}
 			}
 			
-			#print "\n###############   ", "SETS", "   ##########\n";
-			#print Dumper \%sets;
-			
 			while ( my ($set_name, $sets_list) = each %sets ) {
 				
 				if ( $nb_up != scalar @$sets_list ) {
@@ -512,12 +481,6 @@ sub update {
 				my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
 
 				next if ( scalar grep { not defined $_ } values %aggreg_sum );
-
-#				print "\n###############    $cluster_name : $set_name AGGREG mean   ##########\n";
-#				print Dumper \%aggreg_mean;
-
-				#my @set_def = grep { $_->{label} eq $set_name } @{ $self->{_monitored_data} };
-				#my $set_def = shift @set_def;
     		
     			my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
     			my $mean_rrd_name = $base_rrd_name . "_avg";

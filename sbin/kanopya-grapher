@@ -41,7 +41,7 @@ Grapher allow graphing data for nodes and for cluster, with options defined in c
 
 use strict;
 use warnings;
-use Monitor::Retriever;
+use Monitor::Grapher;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
@@ -61,7 +61,7 @@ $SIG{TERM} = \&signalHandler;
 	
 
 eval	{
-	my $grapher = Monitor::Retriever->new();
+	my $grapher = Monitor::Grapher->new();
 	$log->info("Starting main loop");
 	# enter in the main loop and continue while $$running is true
 	$grapher->run(\$running);
@@ -69,7 +69,7 @@ eval	{
 if ($@) {
 	my $ex = $@;
 	$log->error("error in grapher instanciation: $ex");
-	die "Catch error in Monitoring::Retriever (grapher) instanciation: $ex";
+	die "Catch error in Monitoring::Grapher instanciation: $ex";
 };
 
 $log->info("kanopya-grapher end.");

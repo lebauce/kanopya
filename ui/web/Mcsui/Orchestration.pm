@@ -78,46 +78,23 @@ sub actionTranslate {
 	return "none";
 }
 
-#TODO do this in Monitor
-sub getMonitoredIndicators {
-	my $self = shift;
-	
-	my $config = XMLin("/etc/kanopya/monitor.conf");
-	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
-	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
-	my $conf = shift @conf;
-	
-	my $monit_sets = General::getAsArrayRef( data => $conf, tag => 'monitor' );
-	my $all_sets = General::getAsArrayRef( data => $config, tag => 'set' );
-
-	my %indicators = ();
-	foreach my $set (@$all_sets) {
-		if ( scalar grep { $_->{set} eq $set->{label} } @$monit_sets ) {
-			my @ds_list = map { $_->{label} } @{ General::getAsArrayRef( data => $set, tag => 'ds' ) };
-			$indicators{$set->{label}} = \@ds_list;
-		}
-	}
-
-	return %indicators;
-}
-
 sub view_orchestrator_settings : StartRunmode {
 	my $self = shift;
 	my $errors = shift;
 	my $query = $self->query();
 	my $tmpl = $self->load_tmpl('Orchestrator/view_orchestrator_settings.tmpl');
 	
+	my $cluster_id = $query->param('cluster_id') || 0;
 
-	my %indicators = $self->getMonitoredIndicators;
+	# Build var choice list of all collected set
+	my $sets = $self->{admin}->{manager}{monitor}->getCollectedSets( cluster_id => $cluster_id );
 	my @choices = ();
-	while ( my ($set_name, $ds_list) = each %indicators ) {
-		push( @choices, map { "$set_name:" . $_ } @$ds_list) ;
-	}	
-	$var_choices = join ",", @choices;
+	foreach my $set (@$sets) {
+		push( @choices, map { "$set->{label}:" . $_->{label} } @{ $set->{ds} } );
+	}
+	my $var_choices = join ",", @choices;
 	
 	my @rules = ();
-
-	my $cluster_id = $query->param('cluster_id') || 0;
 	my $rules_manager = $self->{'admin'}->{manager}->{rules};
 	my $cluster_rules = $rules_manager->getClusterRules( cluster_id => $cluster_id );
 	my $op_id = 0;

@@ -354,9 +354,9 @@ CREATE TABLE `message` (
 
 CREATE TABLE `component` (
   `component_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `component_name` varchar(32) NOT NULL,
-  `component_version` varchar(32) NOT NULL,
-  `component_category` varchar(32) NOT NULL,
+  `component_name` char(32) NOT NULL,
+  `component_version` char(32) NOT NULL,
+  `component_category` char(32) NOT NULL,
   PRIMARY KEY (`component_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -412,8 +412,8 @@ CREATE TABLE `component_instance` (
 
 CREATE TABLE `component_template` (
   `component_template_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `component_template_name` varchar(45) NOT NULL,
-  `component_template_directory` varchar(45) NOT NULL,
+  `component_template_name` char(45) NOT NULL,
+  `component_template_directory` char(45) NOT NULL,
   `component_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`component_template_id`),
   UNIQUE KEY `component_template_UNIQUE` (`component_template_name`),
@@ -427,9 +427,9 @@ CREATE TABLE `component_template` (
 
 CREATE TABLE `component_template_attr` (
   `template_component_id` int(8) unsigned NOT NULL,
-  `template_component_attr_file` varchar(45) NOT NULL,
-  `component_template_attr_field` varchar(45) NOT NULL,
-  `component_template_attr_type` varchar(45) NOT NULL,
+  `template_component_attr_file` char(45) NOT NULL,
+  `component_template_attr_field` char(45) NOT NULL,
+  `component_template_attr_type` char(45) NOT NULL,
   PRIMARY KEY (`template_component_id`),
   KEY `fk_component_template_attr_1` (`template_component_id`),
   CONSTRAINT `fk_component_template_attr_1` FOREIGN KEY (`template_component_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -441,11 +441,11 @@ CREATE TABLE `component_template_attr` (
 
 CREATE TABLE `rulecondition` (
   `rulecondition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `rulecondition_var` varchar(32) NOT NULL,
-  `rulecondition_time_laps` varchar(32) NOT NULL,
-  `rulecondition_consolidation_func` varchar(32) NOT NULL,
-  `rulecondition_transformation_func` varchar(32) NOT NULL,
-  `rulecondition_operator` varchar(32) NOT NULL,
+  `rulecondition_var` char(64) NOT NULL,
+  `rulecondition_time_laps` char(32) NOT NULL,
+  `rulecondition_consolidation_func` char(32) NOT NULL,
+  `rulecondition_transformation_func` char(32) NOT NULL,
+  `rulecondition_operator` char(32) NOT NULL,
   `rulecondition_value` int(8) unsigned NOT NULL,
   `rule_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`rulecondition_id`),
@@ -459,13 +459,83 @@ CREATE TABLE `rulecondition` (
 
 CREATE TABLE `rule` (
   `rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `rule_condition` varchar(32) NOT NULL,
-  `rule_action` varchar(32) NOT NULL,
+  `rule_condition` char(128) NOT NULL,
+  `rule_action` char(32) NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`rule_id`),
   KEY `fk_rule_1` (`cluster_id`),
   CONSTRAINT `fk_rule_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Monitor tables
+--
+
+--
+-- Table structure for table `indicatorset`
+--
+
+CREATE TABLE `indicatorset` (
+  `indicatorset_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `indicatorset_name` char(16) NOT NULL,
+  `indicatorset_provider` char(32) NOT NULL,
+  `indicatorset_type` char(32) NOT NULL,
+  `indicatorset_component` char(32),
+  `indicatorset_max` char(128),
+  PRIMARY KEY (`indicatorset_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `indicator`
+--
+
+CREATE TABLE `indicator` (
+  `indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `indicator_name` char(32) NOT NULL,
+  `indicator_oid` char(64) NOT NULL,
+  `indicator_min` int(8) unsigned,
+  `indicator_max` int(8) unsigned,
+  `indicator_color` char(8),
+  `indicatorset_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`indicator_id`),
+  KEY `fk_indicator_1` (`indicatorset_id`),
+  CONSTRAINT `fk_indicator_1` FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `collect`
+--
+
+CREATE TABLE `collect` (
+  `indicatorset_id` int(8) unsigned NOT NULL,
+  `cluster_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`indicatorset_id`, `cluster_id`),
+  KEY `fk_collect_1` (`indicatorset_id`),
+  KEY `fk_collect_2` (`cluster_id`),
+  CONSTRAINT `fk_collect_1` FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_collect_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `graph`
+--
+
+CREATE TABLE `graph` (
+  `indicatorset_id` int(8) unsigned NOT NULL,
+  `cluster_id` int(8) unsigned NOT NULL,
+  `graph_type` char(32) NOT NULL,
+  `graph_percent` int(1) unsigned,
+  `graph_sum` int(1) unsigned,
+  `graph_indicators` char(128), 
+  PRIMARY KEY (`indicatorset_id`, `cluster_id`),
+  KEY `fk_graph_1` (`indicatorset_id`),
+  KEY `fk_graph_2` (`cluster_id`),
+  CONSTRAINT `fk_graph_1` FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_graph_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 --
 -- Entity tables
@@ -502,7 +572,7 @@ CREATE TABLE `entityright` (
   `entityright_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `entityright_consumed_id` int(8) unsigned NOT NULL,
   `entityright_consumer_id` int(8) unsigned NOT NULL,
-  `entityright_rights` int(1) unsigned NOT NULL,
+  `entityright_method` char(64) NOT NULL,
   PRIMARY KEY (`entityright_id`),
   KEY `fk_entityright_1` (`entityright_consumed_id`),
   KEY `fk_entityright_2` (`entityright_consumer_id`),

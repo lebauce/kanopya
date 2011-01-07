@@ -11,26 +11,11 @@ __PACKAGE__->add_columns(
   "template_component_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "template_component_attr_file",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 45,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 45 },
   "component_template_attr_field",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 45,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 45 },
   "component_template_attr_type",
-  {
-    data_type => "VARCHAR",
-    default_value => undef,
-    is_nullable => 0,
-    size => 45,
-  },
+  { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 45 },
 );
 __PACKAGE__->set_primary_key("template_component_id");
 __PACKAGE__->belongs_to(
@@ -40,8 +25,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2010-12-22 17:26:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1/VeE++6tHemARJ4B8k1Sw
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-01-07 16:32:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:u0hHqry5jfVucedkpEMtJw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

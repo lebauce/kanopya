@@ -51,8 +51,8 @@
 		<td></td><td id='nodecount_graph'><img class='autorefresh' src="<TMPL_VAR NAME=NODECOUNT_GRAPH>" alt="kanopya-grapher must be running to see graph"/></td>
 	</tr>
 	<tr>
-		<td id='<TMPL_VAR NAME=CLUSTER_ID>' class='node_selector imgMonitCluster'><TMPL_VAR NAME=CLUSTER_NAME></td>
-		<td id='<TMPL_VAR NAME=CLUSTER_ID>_content' class='content_container'></td>
+		<td id='<TMPL_VAR NAME=CLUSTER_NAME>' class='node_selector imgMonitCluster'><TMPL_VAR NAME=CLUSTER_NAME></td>
+		<td id='<TMPL_VAR NAME=CLUSTER_NAME>_content' class='content_container'></td>
 	</tr>
 	<TMPL_LOOP NAME=NODES>
 		<tr>
@@ -63,7 +63,7 @@
 </table>
 
 <div class="actions">
-<a class="action imgSettings" href="/cgi/mcsui.cgi/monitoring/view_clustermonitoring_settings">settings</a>
+<a class="action imgSettings" href="/cgi/mcsui.cgi/monitoring/view_clustermonitoring_settings?cluster_id=<TMPL_VAR NAME=CLUSTER_ID>">settings</a>
 <p class="italic">Cluster collect and graph settings.</p>
 
 <a class='action imgClock' >Graph period</a>

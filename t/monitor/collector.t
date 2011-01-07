@@ -23,9 +23,8 @@ use Monitor::Collector;
 
 my $collector = Monitor::Collector->new();
 
-        #toto();
-		$collector->updateHostData( host_ip => "127.0.0.1", host_state => "up", components => []);
-        #$collector->update();
+   #$collector->updateHostData( host_ip => "127.0.0.1", host_state => "up", components => []);
+   $collector->update();
 
 
 

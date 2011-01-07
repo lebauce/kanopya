@@ -85,33 +85,15 @@ sub new {
 
 	# Load conf
 	#my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
-	my $config = XMLin("/etc/kanopya/monitor.conf");
-	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
-	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
-	my $conf = shift @conf;
-	
+	my $conf = XMLin("/etc/kanopya/monitor.conf");
+
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_period} = $conf->{period};
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/monitor';
 	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/monitor';
 	$self->{_node_states} = $conf->{node_states};
-	
-	$self->{_grapher_options} = General::getAsArrayRef( data => $conf->{generate_graph}, tag => 'graph' );
-	$self->{_grapher_time_step} = $conf->{generate_graph}{time_step};
 
-	my $all_sets = General::getAsArrayRef( data => $config, tag => 'set' );
-	my $monitored_sets = General::getAsArrayRef( data => $conf, tag => 'monitor' );
-	my @monitored_sets_def = ();
-	foreach my $monit_set (@$monitored_sets) {
-		my @set = grep { $monit_set->{set} eq $_->{label} } @{$all_sets};
-		my $set_def = shift @set;
-		if ( defined $set_def ) {
-			push @monitored_sets_def, $set_def;
-		} else {
-			$log->warning("Conf error: unexisting set '$monit_set->{set}'");
-		}
-	}
-	$self->{_monitored_data} = \@monitored_sets_def;
+	$self->{_grapher_time_step} = $conf->{generate_graph}{time_step};
 
 
 	print "Monitor::new : load conf time = ", time() - $start_time, "\n";
@@ -128,30 +110,11 @@ sub new {
 	mkdir "$self->{_graph_dir}/tmp";
 
 	# Get Administrator
-	my ($login, $password) = ($config->{user}{name}, $config->{user}{password});
+	my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
 	$self->{_admin_wrap} = AdminWrapper->new( login => $login, password => $password );
 	
     return $self;
 }
-
-=head2 _getAdmin
-	
-	Class : Private
-	
-	Desc : instanciate the admin only when necessary
-	
-	Return : Administrator instance
-	
-=cut
-#
-#sub _getAdmin {
-#	my $self = shift;
-#
-#	if (not defined $self->{_admin}) {
-#		$self->{_admin} = Administrator->new( login =>'thom', password => 'pass' );
-#	}
-#	return $self->{_admin};
-#}
 
 sub _mbState {
 	my $self = shift;
@@ -309,18 +272,14 @@ sub aggregate {
 	return %res;
 }
 
-sub getSetDef {
+sub getSetDesc {
 	my $self = shift;
 	my %args = @_;
 	
 	my $set_label = $args{set_label};
 	if ($set_label =~ /(.+)\..+/ ) {$set_label = $1;}
-	my @res = grep { $_->{label} eq $set_label } @{ $self->{_monitored_data} };
-	
-	die "getSetDef() : Undefined set label : '$set_label'\n" if ( 0 == @res );
 		
-	return shift @res;
-		
+	return $self->{_admin_wrap}{_admin}->{manager}{monitor}->getSetDesc( set_name => $set_label );
 }
 
 =head2 rrdName
@@ -392,7 +351,7 @@ sub createRRD {
 
 	my $dsname_list = $args{dsname_list};
 
-	my $set_def = $self->getSetDef( set_label => $args{set_name} );
+	my $set_def = $self->getSetDesc( set_label => $args{set_name} );
 	my $ds_list = General::getAsHashRef( data => $set_def, tag => 'ds', key => 'label');
 
 	my $rrd = $self->getRRD( file => $args{file} );

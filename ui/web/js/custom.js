@@ -5,6 +5,7 @@
  	var save_clustermonitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
  	var save_monitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_monitoring_settings";
 
+ 	commonInit();
  	
  // ------------------------------------------------------------------------------------
  	
@@ -38,6 +39,8 @@
  	
  	$('.select_graph').click( function () {
  				$(this).toggleClass('graphed');
+ 				var id = $(this).siblings('.expander').attr('id');
+ 				$(this).hasClass('graphed') ? $('#X'+id+' .select_ds').addClass('on_graph') : $('#X'+id+' .select_ds').removeClass('on_graph');
  				$(this).siblings('.select_collect').addClass('collected');
  	} ).addClass('clickable');
  	

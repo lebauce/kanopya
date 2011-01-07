@@ -46,6 +46,10 @@ INSERT INTO `user` VALUES
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); 
 INSERT INTO `ingroups` VALUES (@Admin_group, @eid); SET @eid := @eid +1;
 
+INSERT INTO `user` VALUES
+(3,0,'guest','guest','Guest','','guest@somewhere.com',CURRENT_DATE(),NULL,'Guest user with limited permissions.');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
+
 -- processor models
 INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1);
 INSERT INTO `processormodel` VALUES (2,'Intel','Atom D510',2,1.66,1,13,1);
@@ -221,6 +225,30 @@ INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 
 -- dhcpd configuration
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'10.0.0.0','255.255.255.0');
+
+
+-- Monitoring
+INSERT INTO `indicatorset` VALUES 
+(1,'mem','SnmpProvider','GAUGE', null, 'Total'),
+(2,'cpu','SnmpProvider','COUNTER', null, 'User+Idle+Wait+Nice+Syst+Kernel+Interrupt'),
+(3,'apache_stats','ApacheProvider','DERIVE', 'Apache', null),
+(4,'apache_workers','ApacheProvider','GAUGE', 'Apache', null);
+
+INSERT INTO `indicator` VALUES 
+(1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1),
+(2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1),
+(3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1),
+(4,'Cached','.1.3.6.1.4.1.2021.4.15.0',null,null,'FF000066', 1),
+(5,'User','.1.3.6.1.4.1.2021.11.50.0',null,null,'0000FF66', 2),
+(6,'Wait','.1.3.6.1.4.1.2021.11.54.0',null,null,'FF000066', 2),
+(7,'Nice','.1.3.6.1.4.1.2021.11.51.0',null,null,'FFFF0066', 2),
+(8,'Syst','.1.3.6.1.4.1.2021.11.52.0',null,null,'00FFFF66', 2),
+(9,'Kernel','.1.3.6.1.4.1.2021.11.55.0',null,null,'FF00FF66', 2),
+(10,'Interrupt','.1.3.6.1.4.1.2021.11.56.0',null,null,'66666666', 2),
+(11,'Idle','.1.3.6.1.4.1.2021.11.53.0',null,null,'00FF0066', 2),
+(12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3),
+(13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4),
+(14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4);
 
 SET foreign_key_checks=1;
 

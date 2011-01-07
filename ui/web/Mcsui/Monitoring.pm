@@ -57,27 +57,21 @@ sub graphs {
 sub getMonitorConf () {
 	my $self = shift;
 	
-	my $config = XMLin($conf_file_path);
-	my $all_conf = General::getAsArrayRef( data => $config, tag => 'conf' );
-	my @conf = grep { $_->{label} eq $config->{use_conf} } @$all_conf;
-	my $conf = shift @conf;
+	my $conf = XMLin($conf_file_path);
 	return $conf;
 }
 
 sub getMonitoredSets {
 	my $self = shift;
-	
-	my $conf = $self->getMonitorConf();
-	return General::getAsArrayRef( data => $conf, tag => 'monitor' );
+	my %args = @_;
+
+	return $self->{'admin'}{'manager'}{'monitor'}->getCollectedSets( cluster_id => $args{cluster_id} );
 }
 
 sub getAllSets {
 	my $self = shift;
 	
-	my $config = XMLin($conf_file_path);
-	my $sets = General::getAsArrayRef( data => $config, tag => 'set' );
-	
-	return $sets;
+	return $self->{'admin'}{'manager'}{'monitor'}->getIndicatorSets();
 }
 
 #TODO passer par le monitor (et supprimer les bases inutiles) 
@@ -115,7 +109,7 @@ sub view_clustermonitoring : Runmode {
 	my $cluster_id = $self->query()->param('cluster_id');
 	
 	#SETS
-	my @sets = map { { id => $_->{set}, label => $_->{set} } } @{$self->getMonitoredSets()};
+	my @sets = map { { id => $_->{label}, label => $_->{label} } } @{$self->getMonitoredSets( cluster_id => $cluster_id )};
 	$tmpl->param('SETS' => \@sets);
 	
 	#NODES
@@ -131,7 +125,7 @@ sub view_clustermonitoring : Runmode {
 	
 	#CLUSTER
 	$cluster_name = $cluster->getAttr( name => 'cluster_name' );
-	$tmpl->param('CLUSTER_ID' => $cluster_name);
+	$tmpl->param('CLUSTER_ID' => $cluster_id);
 	$tmpl->param('CLUSTER_NAME' => $cluster_name);
 	
 	
@@ -164,7 +158,7 @@ sub xml_graph_list : Runmode {
 	my $cluster_name = $cluster->getAttr( name => 'cluster_name' ); 
 	push @all_ids, $cluster_name;
 	
-	my @sets_name = map { $_->{set} } @{$self->getMonitoredSets()};
+	my @sets_name = map { $_->{label} } @{$self->getMonitoredSets( cluster_id => $cluster_id )};
 	
 	#TODO retrieve from conf
 	my ($graph_dir, $graph_dir_alias, $graph_subdir) = ("/tmp", "/graph", "monitor/graph");
@@ -223,16 +217,24 @@ sub save_clustermonitoring_settings : Runmode {
 	my $errors = shift;
 	my $query = $self->query();
 	
-	my @monit_sets = $query->param('collect_sets[]'); # array of set name
-	my @formated_monit_sets = map { { set => $_} } @monit_sets;
+	my $cluster_id = $query->param('cluster_id');
 	
+	my @monit_sets = $query->param('collect_sets[]'); # array of set name
+
 	my $graphs_settings_str = $query->param('graphs_settings'); # stringified array of hash
 	my $graphs_settings = decode_json $graphs_settings_str;
 		
+	my $res = "conf saved";
 	
-	my $res = $self->writeConf( graphs_settings => $graphs_settings, collect_settings => \@formated_monit_sets );
+	eval {
+		$self->{'admin'}{'manager'}{'monitor'}->collectSets( cluster_id => $cluster_id, sets_name => \@monit_sets );
+		$self->{'admin'}{'manager'}{'monitor'}->graphSettings( cluster_id => $cluster_id, graphs => $graphs_settings );
+	};
+	if ($@) {
+		$res = "Error while saving: $@";
+	}
 	
-	#my $xml_conf = XMLout($conf, RootName => 'conf');
+	#my $res = $self->writeConf( graphs_settings => $graphs_settings, collect_settings => \@formated_monit_sets );
 	
 	return "$res";
 }
@@ -242,9 +244,6 @@ sub save_monitoring_settings : Runmode {
 	my $errors = shift;
 	my $query = $self->query();
 	
-	my $config = XMLin($conf_file_path);
-	
-	#return Dumper $config;
 	return "not implemented yet";
 }
 
@@ -256,7 +255,6 @@ sub view_monitoring_settings : StartRunmode {
 	#TODO put this in Monitor (method for retrieve conf)
 	my $conf = $self->getMonitorConf();
 	
-	my $collect_sets = General::getAsArrayRef( data => $conf, tag => 'monitor' );
 	my $all_sets = $self->getAllSets();
 
 	my @sets = ();
@@ -305,16 +303,15 @@ sub view_clustermonitoring_settings : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $tmpl = $self->load_tmpl('Monitor/view_clustermonitoring_settings.tmpl');
+	my $query = $self->query();
 	
-	#TODO put this in Monitor (method for retrieve conf)
-	my $conf = $self->getMonitorConf();
-	my $collect_sets = General::getAsArrayRef( data => $conf, tag => 'monitor' );
-	my $graphs_settings = General::getAsHashRef( data => $conf->{generate_graph}, tag => 'graph', key => 'set_label' );
+	my $collect_sets = $self->getMonitoredSets( cluster_id => $query->param('cluster_id') );
 	my $all_sets = $self->getAllSets();
 	my @sets = ();
 	foreach $set (@$all_sets) {
 		my @all_ds = ();
-		my $graph_settings = $graphs_settings->{$set->{label}};
+		my $graph_settings = $self->{'admin'}{'manager'}{'monitor'}->getGraphSettings(  cluster_id => $query->param('cluster_id'),
+																						set_name => $set->{label} );
 		my @ds_on_graph = defined $graph_settings ? split(",", $graph_settings->{ds_label}) : ();
 		my $is_graphed = scalar @ds_on_graph;
 		foreach $ds ( @{ General::getAsArrayRef( data => $set, tag => 'ds' ) } ) {
@@ -325,7 +322,7 @@ sub view_clustermonitoring_settings : Runmode {
 		}
 		 
 		push @sets, {	label => $set->{label},
-						collected => scalar ( grep { $_->{set} eq $set->{label} } @$collect_sets ),
+						collected => scalar ( grep { $_->{label} eq $set->{label} } @$collect_sets ),
 						graphed => $is_graphed,
 						is_table => defined $set->{table_oid},
 						
@@ -338,8 +335,8 @@ sub view_clustermonitoring_settings : Runmode {
 					};
 	}
 	$tmpl->param('SETS' => \@sets);
-	
-	$tmpl->param('TITLEPAGE' => "CLuster monitoring settings");
+	$tmpl->param('CLUSTER_ID' => $query->param('cluster_id'));
+	$tmpl->param('TITLEPAGE' => "Cluster monitoring settings");
 	$tmpl->param('MSETTINGS' => 1);
 	$tmpl->param('SUBMMONITOR' => 1);
 	

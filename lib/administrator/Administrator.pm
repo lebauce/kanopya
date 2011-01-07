@@ -62,6 +62,7 @@ use DateTime;
 use NetworkManager;
 use NodeManager;
 use RulesManager;
+use MonitorManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -142,9 +143,9 @@ sub new {
 	$self->{manager}->{network} = NetworkManager->new(schemas=>$self->{db},
 													  internalnetwork => $self->{config}->{internalnetwork});
 	
-	$self->{manager}->{node} = NodeManager->new(node_rs => $self->{db}->resultset('Node'), adm => $self);
-	
+	$self->{manager}->{node} = NodeManager->new(node_rs => $self->{db}->resultset('Node'), adm => $self);	
 	$self->{manager}->{rules} = RulesManager->new( schemas=>$self->{db} );
+	$self->{manager}->{monitor} = MonitorManager->new( schemas=>$self->{db} );
 	
 	$log->info("new Administrator instance");
 	return $self;

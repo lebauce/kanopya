@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::ComponentProvided;
+package AdministratorDB::Schema::Collect;
 
 use strict;
 use warnings;
@@ -6,28 +6,28 @@ use warnings;
 use base 'DBIx::Class';
 
 __PACKAGE__->load_components("+AdministratorDB::EntityBase", "Core");
-__PACKAGE__->table("component_provided");
+__PACKAGE__->table("collect");
 __PACKAGE__->add_columns(
-  "component_id",
+  "indicatorset_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
-  "distribution_id",
+  "cluster_id",
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
 );
-__PACKAGE__->set_primary_key("component_id", "distribution_id");
+__PACKAGE__->set_primary_key("indicatorset_id", "cluster_id");
 __PACKAGE__->belongs_to(
-  "component_id",
-  "AdministratorDB::Schema::Component",
-  { component_id => "component_id" },
+  "indicatorset_id",
+  "AdministratorDB::Schema::Indicatorset",
+  { indicatorset_id => "indicatorset_id" },
 );
 __PACKAGE__->belongs_to(
-  "distribution_id",
-  "AdministratorDB::Schema::Distribution",
-  { distribution_id => "distribution_id" },
+  "cluster_id",
+  "AdministratorDB::Schema::Cluster",
+  { cluster_id => "cluster_id" },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-01-07 16:32:15
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4fwC4NDSNju4tr5pv+pcwQ
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:snCwpD3I8DfU2mkQZxrQ9w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
