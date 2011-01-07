@@ -204,10 +204,10 @@ sub buildEntityRights {
 	)->single;
 	
 	if($user->get_column('user_system')) {
-		$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
+		#$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
 		return EntityRights::System->new(entity_id => $ENV{EID}, schema => $args{schema});
 	} else {
-		$log->debug("EntityRights build a new EntityRights::User with EID ".$ENV{EID});
+		#$log->debug("EntityRights build a new EntityRights::User with EID ".$ENV{EID});
 		return EntityRights::User->new(entity_id => $ENV{EID}, schema => $args{schema});
 	}
 }

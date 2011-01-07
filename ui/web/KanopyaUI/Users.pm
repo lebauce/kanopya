@@ -57,7 +57,7 @@ sub process_adduser : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    my $euser = $self->{admin}->newEntity(type => 'User', params => { 
+    my $euser = Entity::User->new( 
     	user_login => $query->param('login'), 
     	user_password => $query->param('password'),
     	user_firstname => $query->param('firstname'),
@@ -66,12 +66,9 @@ sub process_adduser : Runmode {
     	user_desc => $query->param('desc'),
     	user_creationdate => \"NOW()",
     	user_lastaccess => undef
-    });
-    
+    );
     $euser->save();
-    
     # TODO add this user in the User master group
-    
     return $closewindow;
 }
 
@@ -154,11 +151,11 @@ sub process_deleteuser : Runmode {
 	my $query = $self->query();
 	my $user_id = $query->param('user_id');
 	# TODO verifier qu'il ne s'agit pas du user qui est loggé
-	my $euser = $self->{admin}->getEntity(type => 'User', id => $user_id);
+	my $euser = Entity::User->get(id => $user_id);
 	$euser->delete();
 	# TODO retirer le user des groups auquels il appartient
 	# TODO supprimer tous les droits du user 
-	$self->redirect('/cgi/kanopya.cgi/users/view_usersgroups');
+	$self->redirect('/cgi/kanopya.cgi/users/view_users');
 }
 
 

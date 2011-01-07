@@ -113,7 +113,7 @@ sub get {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args,  table => "User");
+   my $self = $class->SUPER::get( %args,  table => "Groups");
    #$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
    return $self;
 }
@@ -353,8 +353,7 @@ sub removeEntity {
 
 sub getEntities {
 	my $self = shift;
-	my %args = @_;
-		
+			
 	my $admin = Administrator->new();	
 	my $type = $self->{_dbix}->get_column('groups_type');
 	my $entity_ids = $admin->{db}->resultset('Ingroups')->search(
@@ -369,7 +368,9 @@ sub getEntities {
 	$log->debug('NUMBER of ENTITIES FOUND : '.scalar(@$ids));
 	my $field_id = lc($type)."_entities.entity_id";
 	my @entities = ();
-	@entities = $admin->getEntities(type => $type, hash => { "$field_id" => \@$ids });
+	my $module = "Entity/".$type.".pm";
+	eval { require $module; };
+	@entities = $self->SUPER::getEntities(type => $type, hash => { "$field_id" => \@$ids });
 	$log->debug('NUMBER of ENTITIES OBJECTS RETRIEVED : '.scalar(@entities));
 	return @entities;
 }
@@ -400,7 +401,9 @@ sub getExcludedEntities {
 	$log->debug('NUMBER of ENTITIES FOUND : '.scalar(@$ids));
 	my $field_id = lc($type)."_entities.entity_id";
 	my @entities = ();
-	@entities = $admin->getEntities(type => $type, hash => { "$field_id" => { 'NOT IN' => \@$ids }});
+	my $module = "Entity/".$type.".pm";
+	eval { require $module; };
+	@entities = $self->SUPER::getEntities(type => $type, hash => { "$field_id" => { 'NOT IN' => \@$ids }});
 	$log->debug('NUMBER of ENTITIES OBJECTS RETRIEVED : '.scalar(@entities));
 	return @entities;
 }

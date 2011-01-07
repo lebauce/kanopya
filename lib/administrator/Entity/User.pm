@@ -71,7 +71,7 @@ use constant ATTR_DEF => {
 
 =head2 new
 
-	Class: Public
+	Public class method
 	desc:  Constructor
 	args: 
 	return: Entity::User instance 

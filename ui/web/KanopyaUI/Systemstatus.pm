@@ -25,7 +25,7 @@ sub getStatus {
    		my %args = @_;
    		
    		my $grep = `ps aux | grep $args{proc_name}`;
-    	my $ps_count = scalar (split '\n', $grep);
+    	my $ps_count = scalar (split(/\n/, $grep));
     	my $status = $ps_count > 2 ? 'Up' : 'Down';
 		return $status;
 }
@@ -33,7 +33,7 @@ sub getStatus {
 sub xml_admin_status : Runmode {
 	my $self = shift;
 	my $session = $self->session;     
-    my $admin_components = adminComponentsDef;
+    my $admin_components = adminComponentsDef();
     
     # Check the status of admin components and build the xml of status
 	my $xml = "";
@@ -57,10 +57,8 @@ sub xml_admin_status : Runmode {
 sub view_status : StartRunmode {
     my $self = shift;
     
-    my $output = '';
-
     # Check the status of admin components and build the html template var
-    my $admin_components = adminComponentsDef;
+    my $admin_components = adminComponentsDef();
     my @components_status = ();
     foreach my $group (@$admin_components) {
     	my @res_group = ();
@@ -84,10 +82,9 @@ sub view_status : StartRunmode {
 	$tmpl->param('MDASHBOARD' => 1);
 	$tmpl->param('SUBMSYSTEMSTATUS' => 1);
 	$tmpl->param('username' => $self->session->param('username'));
-	$tmpl->param('COMPONENTS_STATUS' => \@components_status);
-	$output .= $tmpl->output();
+	$tmpl->param('COMPONENTS_STATUS' => \@components_status); 
      
-    return $output;   
+    return $tmpl->output(); 
 }
 
 1;

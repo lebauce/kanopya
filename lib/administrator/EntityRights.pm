@@ -89,7 +89,7 @@ sub _getEntityIds {
 =head2 addMethodPerm
 
 	Class : public
-	Desc : given a consumer (an Entity::User or Entity::Groups with user type), a consumed (Entity)
+	Desc : given a consumer_id - User (or Groups with user type) entity id - a consumed_id 
 		   and a method, grant the permission to that consumed method for that 
 		   consumer entity 
 	args:
@@ -103,14 +103,14 @@ sub addMethodPerm {
 	my $self = shift;
 	my %args = @_;
 	
-	if (! exists $args{consumer} or ! defined $args{consumer}) { 
-		$errmsg = "EntityRights::addMethodPerm need a consumer named argument!";
+	if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
+		$errmsg = "EntityRights::addMethodPerm need a consumer_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	if (! exists $args{consumed} or ! defined $args{consumed}) { 
-		$errmsg = "EntityRights::addMethodPerm need a consumed named argument!";
+	if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
+		$errmsg = "EntityRights::addMethodPerm need a consumed_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -121,7 +121,14 @@ sub addMethodPerm {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
+	# TODO verifier que la methode donnée en argument exists sur l'entity
+	# représentée par consumed_id
 	
+	$self->{schema}->resultset('Entityright')->create({
+		entityright_consumer_id => $args{consumer_id},
+		entityright_consumed_id => $args{consumed_id},
+		entityright_method => $args{method}
+	});
 }
 
 

@@ -6,6 +6,7 @@ use warnings;
 use Data::FormValidator::Constraints qw( email FV_eq_with );
 use Data::Dumper;
 use Log::Log4perl "get_logger";
+use Entity::Groups;
 
 my $log = get_logger('administrator');
 
@@ -21,7 +22,7 @@ sub view_groups : StartRunmode {
     $tmpl->param('mSettings' => 1);
 	$tmpl->param('submGroups' => 1);
 	
-	my @egroups = $self->{'admin'}->getEntities(type => 'Groups', hash => { groups_system => 0 });
+	my @egroups = Entity::Groups->getGroups(hash => { groups_system => 0 });
 	my $groups = [];
 	
 	foreach my $group (@egroups) {
@@ -56,15 +57,13 @@ sub process_addgroup : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    my $egroup = $self->{admin}->newEntity(type => 'Groups', params => { 
+    my $egroup = Entity::Groups->new( 
     	groups_name => $query->param('groups_name'), 
     	groups_desc => $query->param('groups_desc'),
     	groups_type => $query->param('groups_type'),
     	groups_system => 0,
-    });
-    
+    );
     $egroup->save();
-    
     return $closewindow;
 }
 
@@ -110,14 +109,14 @@ sub view_groupdetails : Runmode {
 	
 	my $query = $self->query();
 	my $groups_id = $query->param('groups_id');
-	my $egroups = $self->{'admin'}->getEntity(type => 'Groups', id => $groups_id);
+	my $egroups = Entity::Groups->get(id => $groups_id);
 	
 	$tmpl->param('groups_id' =>  $groups_id);
 	$tmpl->param('groups_name' =>  $egroups->getAttr('name' => 'groups_name'));
 	$tmpl->param('groups_desc' =>  $egroups->getAttr('name' => 'groups_desc'));
 	$tmpl->param('groups_type' =>  $egroups->getAttr('name' => 'groups_type'));
 	
-	my @entities = $egroups->getEntities(administrator => $self->{admin});
+	my @entities = $egroups->getEntities();
 	my $content = [];
 	foreach my $e (@entities) {
 		my $tmp = {};
@@ -137,10 +136,8 @@ sub process_deletegroup : Runmode {
 	my $self = shift;
 	my $query = $self->query();
 	my $groups_id = $query->param('groups_id');
-	my $egroups = $self->{admin}->getEntity(type => 'Groups', id => $groups_id);
+	my $egroups = Entity::Groups->get(id => $groups_id);
 	$egroups->delete();
-	# TODO retirer le user des groups auquels il appartient
-	# TODO supprimer tous les droits du user 
 	$self->redirect('/cgi/kanopya.cgi/groups/view_groups');
 }
 
@@ -150,17 +147,16 @@ sub form_appendentity : Runmode {
 	my $self = shift;
 	my $tmpl = $self->load_tmpl('Groups/form_appendentity.tmpl');
 	my $query = $self->query();
-	my $egroups = $self->{admin}->getEntity(type => 'Groups', id => $query->param('groups_id'));
+	my $egroups = Entity::Groups->get(id => $query->param('groups_id'));
 	$tmpl->param('groups_id' => $query->param('groups_id'));
 	$tmpl->param('groups_name' => $egroups->getAttr('name' => 'groups_name'));
 	my $type = $egroups->getAttr('name' => 'groups_type');
 	$tmpl->param('groups_type' => $type);
 	my $entity_list = [];
-	my @entities = $egroups->getExcludedEntities(administrator => $self->{admin});
+	my @entities = $egroups->getExcludedEntities();
 	
 	foreach my $e (@entities) {
 		my $tmp = {};
-		
 		$tmp->{real_id} = $e->getAttr(name => lc($type)."_id");
 		$tmp->{entity_label} = $e->toString();
 		push(@$entity_list, $tmp);
@@ -176,9 +172,12 @@ sub process_appendentity : Runmode {
 	my $query = $self->query();
 	my $groups_id = $query->param('groups_id');
 	my $real_id = $query->param('real_id');
-	my $egroups = $self->{admin}->getEntity(type => 'Groups', id => $groups_id);
+	my $egroups = Entity::Groups->get(id => $groups_id);
 	my $groups_type = $egroups->getAttr('name' => 'groups_type');
-	my $entity = $self->{admin}->getEntity(type => $groups_type, id => $real_id);
+	my $module = "Entity/".$groups_type.".pm";
+	my $class = "Entity::".$groups_type;
+	eval { require $module; };
+	my $entity = $class->get(id => $real_id);
 	$egroups->appendEntity(entity => $entity);
 	return $closewindow;
 }
@@ -190,9 +189,14 @@ sub process_removeentity : Runmode {
 	my $query = $self->query();
 	my $groups_id = $query->param('groups_id');
 	my $real_id = $query->param('real_id');
-	my $egroups = $self->{admin}->getEntity(type => 'Groups', id => $groups_id);
+	my $egroups = Entity::Groups->get(id => $groups_id);
 	my $groups_type = $egroups->getAttr('name' => 'groups_type');
-	my $entity = $self->{admin}->getEntity(type => $groups_type, id => $real_id);
+	
+	my $module = "Entity/".$groups_type.".pm";
+	my $class = "Entity::".$groups_type;
+	eval { require $module; };
+	my $entity = $class->get(id => $real_id);
+	
 	$egroups->removeEntity(entity => $entity);
 	$self->redirect("/cgi/kanopya.cgi/groups/view_groupdetails?groups_id=$groups_id");
 }
