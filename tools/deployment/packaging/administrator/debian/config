@@ -61,10 +61,12 @@ while [ $pwd_match = 0 ]; do
 	db_get administrator/DBPasswordAgain
 
 	if [ "$RET" != "$DB_PWD" ]; then
-		db_set administrator/DBPassword ""
+		db_set administrator/DBPassword "" || true
+		db_set administrator/DBPasswordAgain "" || true
 		db_input high administrator/DBPasswordUnmatch
 		db_go
 	elif [ "$RET" = "$DB_PWD" ]; then
+		db_set administrator/DBPasswordAgain "" || true
 		DB_PWD=""
 		pwd_match=1	
 	fi
