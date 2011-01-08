@@ -18,13 +18,17 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 11 sept 2010
+
 package Entity::User;
 use base "Entity";
 
 use strict;
+use warnings;
 use McsExceptions;
-
 use Log::Log4perl "get_logger";
+
+our $VERSION = "1.00";
+
 my $log = get_logger("administrator");
 my $errmsg;
 
@@ -65,14 +69,78 @@ use constant ATTR_DEF => {
 
 
 
-# contructor 
+=head2 new
+
+	Class: Public
+	desc:  Constructor
+	args: 
+	return: Entity::User instance 
+	
+=cut
 
 sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "User");
+	
+	# Set the extended parameters
+	#$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+}
+
+=head2 get
+
+	Class: public
+	desc: retrieve a stored Entity::User instance
+	args:
+		id : scalar(int) : user id
+	return: Entity::User instance 
+
+=cut
+
+sub get {
     my $class = shift;
     my %args = @_;
 
-    my $self = $class->SUPER::new( %args );
-	return $self;
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::User->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args,  table => "User");
+   #$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
+   return $self;
+}
+
+=head2 getUsers
+
+	Class: public
+	desc: retrieve several Entity::User instances
+	args:
+		hash : hashref : where criteria
+	return: @ : array of Entity::User instances
+	
+=cut
+
+sub getUsers {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::User->getUsers need a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "User");
 }
 
 =head2 toString
@@ -179,10 +247,6 @@ sub checkAttr{
 	}
 
 	# Here check attr value
-}
-
-sub extension {
-	return undef;
 }
 
 1;

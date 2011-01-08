@@ -31,6 +31,7 @@ use General;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
+our $VERSION = "1.00";
 
 my $log = get_logger("administrator");
 my $errmsg;
