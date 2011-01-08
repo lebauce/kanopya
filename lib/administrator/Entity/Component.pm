@@ -19,14 +19,14 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
 package Entity::Component;
-
-
-
 use base "Entity";
-use McsExceptions;
-use Data::Dumper;
+
 use strict;
 use warnings;
+
+use McsExceptions;
+use Data::Dumper;
+use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;

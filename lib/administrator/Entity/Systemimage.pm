@@ -19,11 +19,13 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 17 july 2010
 package Entity::Systemimage;
+use base "Entity";
 
 use strict;
+use warnings;
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use McsExceptions;
-use base "Entity";
+use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -138,29 +140,50 @@ sub checkAttr {
 	# Here check attr value
 }
 
-=head2 new
 
-Desc : This function return new Entity::Systemimage instance
-	args: 
-		data : dbix row data
-		rightschecker : 
-	return : Entity::Systemimage instance
-
-=cut
-
-sub new {
+sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity::Systemimage->new need a data and rightschecker named argument!";
-		$log->error($errmsg);	
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::SystemImage->get need an id named argument!";	
+		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+   my $self = $class->SUPER::get( %args, table=>"Systemimage");
+   return $self;
+}
+
+sub getSystemimages {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getSystemimages need a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Systemimage");
+}
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
 	
-    my $self = $class->SUPER::new( %args );
-	return $self;
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Systemimage");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+
 }
 
 =head2 toString

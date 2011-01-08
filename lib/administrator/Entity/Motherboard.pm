@@ -204,25 +204,7 @@ sub new {
 
 }
 
-sub old_new {
-    my $class = shift;
-    my %args = @_;
 
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker}) ||
-		(! exists $args{ext_attrs} or ! defined $args{ext_attrs})) { 
-		$errmsg = "Entity::Motherboard->new need a data, ext_attrs and rightschecker named argument!";	
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
-	my $ext_attrs = $args{ext_attrs};
-	delete $args{ext_attrs};
-    my $self = $class->SUPER::new( %args );
-	$self->{_ext_attrs} = $ext_attrs;
-	$self->{extension} = $self->extension();
-    return $self;
-}
 
 =head2 toString
 

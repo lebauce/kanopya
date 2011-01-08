@@ -117,7 +117,7 @@ sub getClusters {
     my ($rs, $entity_class);
 
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getEntities need a type and a hash named argument!";
+		$errmsg = "Entity::getClusters need a type and a hash named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -328,12 +328,8 @@ sub getSystemImage {
 	my $self = shift;
     my %args = @_;
 
-	if (! exists $args{administrator} or ! defined $args{administrator}) {
-		$errmsg = "Entity::Cluster->getSystemImage needs an administrator named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	return $args{administrator}->getEntity(type => 'Systemimage', id => $self->getAttr(name => 'systemimage_id'));
+	my $adm = Administrator->new();
+	return Entity::Systemimage->get(id => $self->getAttr(name => 'systemimage_id'));
 }
 
 sub getMasterNodeIp {
