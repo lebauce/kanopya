@@ -389,14 +389,13 @@ sub removeComponent {
 	my $self = shift;
 	my %args = @_;
 	# check arguments
-	if((! exists $args{administrator} or ! defined $args{administrator}) ||
-	   (! exists $args{component_instance_id} or ! defined $args{component_instance_id})) {
-	   	$errmsg = "Entity::Cluster->removeComponent needs administrator and component_instance_id named argument!";
+	if((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) {
+	   	$errmsg = "Entity::Cluster->removeComponent needs a component_instance_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	
-	$args{administrator}->{db}->resultset('ComponentInstance')->find($args{component_instance_id})->delete;
+	my $component_instance = Entity::Component->get(id => $args{component_instance_id});
+	$component_instance->delete;
 	
 }
 
