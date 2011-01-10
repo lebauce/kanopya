@@ -167,6 +167,7 @@ sub checkAttrs {
 				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
+	
 	return {global => \%global_attrs, extended => \%ext_attrs};
 }
 
