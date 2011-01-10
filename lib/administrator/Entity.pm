@@ -119,12 +119,13 @@ sub get {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
-	my $dbix = $adm->getResultset(id=>$args{id}, table => $args{table});
+	my $dbix = $adm->getRow(id=>$args{id}, table => $args{table});
     $log->debug("Arguments: ".ref($args{id}));
     
     my $self = {
         _dbix			=> $dbix,
     };
+    
     bless $self, $class;
     
 	return $self;

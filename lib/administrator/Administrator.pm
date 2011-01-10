@@ -268,7 +268,7 @@ sub new {
 }
 
 #TODO Comment getResultset
-sub getResultset {
+sub getRow {
 	my $self = shift;
     my %args = @_;
     
@@ -283,6 +283,7 @@ sub getResultset {
 		throw Mcs::Exception::Internal(error => $errmsg); 
 	}
 	$entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
+
 	# Test if Dbix is get
 	if ( defined $entity_dbix ) {
 		# Extension Entity Management
@@ -537,7 +538,8 @@ sub newOp {
 
 	my $subclass = $args{type};
 	eval {
-		require "Operation/$subclass.pm";
+		my $class = "Operation/$subclass.pm";
+		require $class;
 	};
 	if ($@) {
 		$errmsg = "Administrator->newOp : Operation type ($args{type}) does not exist when require Operation::$subclass.pm";
@@ -618,7 +620,8 @@ sub getNextOp {
 	# Try to load Operation::$op_type
 	eval {
 		$log->debug("op_type: ".$op_type);
-		require "Operation/$op_type.pm";
+		my $class = "Operation/$op_type.pm";
+		require $class;
 	};
 	if ($@) {
 		$errmsg = "Administrator->newOp : Operation type <$op_type> does not exist!";

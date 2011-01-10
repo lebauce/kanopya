@@ -19,12 +19,13 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 11 aug 2010
 package Entity::Motherboardmodel;
-
-use strict;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
 use base "Entity";
 
+use strict;
+use warnings;
+
+use McsExceptions;
+use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -134,23 +135,49 @@ sub checkAttr{
 
 sub extension { return undef; }
 
-sub new {
+sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity::Motherboardmodel->new need a data and rightschecker named argument!";	
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Motherboardmodel->new need an id named argument!";	
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+   my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
+   return $self;
+}
 
-	my $ext_attrs = $args{ext_attrs};
-	delete $args{ext_attrs};
-    my $self = $class->SUPER::new( %args );
-	$self->{_ext_attrs} = $ext_attrs;
-	$self->{extension} = $self->extension();
+sub getMotherboardmodels {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboardmodels need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Motherboardmodel");
+}
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboardmodel");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
     return $self;
+
 }
 
 =head2 toString

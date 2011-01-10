@@ -118,7 +118,7 @@ sub getClusters {
     my ($rs, $entity_class);
 
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getEntities need a type and a hash named argument!";
+		$errmsg = "Entity::getClusters need a type and a hash named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
@@ -167,6 +167,7 @@ sub checkAttrs {
 				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
+	
 	return {global => \%global_attrs, extended => \%ext_attrs};
 }
 
@@ -329,12 +330,8 @@ sub getSystemImage {
 	my $self = shift;
     my %args = @_;
 
-	if (! exists $args{administrator} or ! defined $args{administrator}) {
-		$errmsg = "Entity::Cluster->getSystemImage needs an administrator named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	return $args{administrator}->getEntity(type => 'Systemimage', id => $self->getAttr(name => 'systemimage_id'));
+	my $adm = Administrator->new();
+	return Entity::Systemimage->get(id => $self->getAttr(name => 'systemimage_id'));
 }
 
 sub getMasterNodeIp {
@@ -393,14 +390,13 @@ sub removeComponent {
 	my $self = shift;
 	my %args = @_;
 	# check arguments
-	if((! exists $args{administrator} or ! defined $args{administrator}) ||
-	   (! exists $args{component_instance_id} or ! defined $args{component_instance_id})) {
-	   	$errmsg = "Entity::Cluster->removeComponent needs administrator and component_instance_id named argument!";
+	if((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) {
+	   	$errmsg = "Entity::Cluster->removeComponent needs a component_instance_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	
-	$args{administrator}->{db}->resultset('ComponentInstance')->find($args{component_instance_id})->delete;
+	my $component_instance = Entity::Component->get(id => $args{component_instance_id});
+	$component_instance->delete;
 	
 }
 
