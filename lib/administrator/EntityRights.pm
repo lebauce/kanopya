@@ -62,6 +62,7 @@ my $errmsg;
 sub _getEntityIds {
 	my $self = shift;
 	my %args = @_;
+	
 	if (! exists $args{entity_id} or ! defined $args{entity_id}) { 
 		$errmsg = "EntityRights->_getEntityIds: need an entity_id named argument!";
 		$log->error($errmsg);
@@ -76,13 +77,16 @@ sub _getEntityIds {
 	my @groups = $self->{schema}->resultset('Groups')->search( 
 		{ 'ingroups.entity_id' => $args{entity_id} },
 		{ 
-			columns => [], 									# use no columns from Groups table
-			'+columns' => [ 'groups_entities.entity_id' ], 	# but add the entity_id column from groups_entity related table
-			join => [qw/ingroups groups_entities/]
+			columns 	=> [], 									# use no columns from Groups table
+			'+columns' 	=> [ 'groups_entities.entity_id' ], 	# but add the entity_id column from groups_entity related table
+			join 		=> [qw/ingroups groups_entities/],
 		}
 	);
 	# add entity_id groups to the arrayref
-	foreach my $g (@groups) { push @$ids, $g->get_column('entity_id'); }
+	foreach my $g (@groups) { 
+		push @$ids, $g->get_column('entity_id');
+	}
+	
 	return $ids;
 }
 

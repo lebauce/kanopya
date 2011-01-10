@@ -68,7 +68,7 @@ sub process_adduser : Runmode {
     	user_lastaccess => undef
     );
     $euser->save();
-    # TODO add this user in the User master group
+    # TODO add initial permission for this user
     return $closewindow;
 }
 

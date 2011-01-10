@@ -6,12 +6,13 @@ use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 use Log::Log4perl qw(:easy);
 Log::Log4perl->init('/opt/kanopya/conf/log.conf');
 
-use Test::More tests => 16;
+use Test::More tests => 17;
 
 BEGIN { 
 	use_ok('Administrator'); 
 	use_ok('Entity::User');
 	use_ok('Entity::Groups');
+	use_ok('Entity::Motherboard');
 }
 
 BEGIN {
@@ -19,8 +20,6 @@ BEGIN {
 print "\n------ system'user ('admin') tests ------\n\n";
 
 Administrator::authenticate(login => 'admin', password => 'admin');
-
-my $guest_user = Entity::User->get(id => 3);
 
 ok(exists $ENV{EID}, 'environment variable EID exists');
 ok(defined $ENV{EID}, 'environment variable EID defined');
@@ -39,6 +38,18 @@ can_ok('EntityRights::System', qw(_getEntityIds checkMethodPerm addMethodPerm));
 
 ok($adm->{_rightchecker}->checkMethodPerm(), 'EntityRights::System->checkMethodPerm method always return 1');
 
+my $guest = Entity::User->get(id => 3);
+my $motherboard = Entity::Motherboard->get(id => 1);
+
+eval {
+	$adm->{_rightchecker}->addMethodPerm(
+		consumer_id => $guest->{_dbix}->get_column('entity_id'), 
+		consumed_id => $motherboard->{_dbix}->get_column('entity_id'),
+		method => 'save'
+	);
+}; if($@) { print $@; }
+
+
 #my $entityIds = $adm->{_rightchecker}->_getEntityIds(entity_id => $ENV{EID});
 #foreach my $id (@$entityIds) { print "\t$id\n"; }
 
@@ -54,10 +65,5 @@ ok(defined $ENV{EID}, 'environment variable EID defined');
 
 isnt($ENV{EID}, $env_eid, "environment variable EID changed during reauthentification");
 isa_ok($adm->{_rightchecker}, 'EntityRights::User',	'for user guest, $adm->{_rightschecker}');
-
-
-$adm->{_rightchecker}->addMethodPerm(consumer_id => $ENV{EID}, consumed_id => 60, method => 'todo');
-
-
 
 }
