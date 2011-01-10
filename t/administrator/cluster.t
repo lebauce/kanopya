@@ -33,15 +33,15 @@ eval {
     note( "Test Cluster management");
 
 
-#    my $cluster = Entity::Cluster->get(id => "1");
-#    print "Admin cluster has a id : <" . $cluster->getAttr(name => "cluster_id") . ">\n";
-#    my $cluster2 = Entity::Cluster->new(cluster_name => "toto", cluster_min_node => "1", cluster_max_node => "2", cluster_priority => "100", systemimage_id => "1");
-#    print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . ">\n";
-#    $cluster2->save();
-#    print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . "> and its id is". $cluster2->getAttr(name => "cluster_id") ."\n";
-#    $cluster2->addComponent(component_id=>2);
-#    my $comp_instance = $cluster2->getComponent(name=>"Apache", version=>2);
-#    print "component instance added, its id is " . $comp_instance->getAttr(name => "component_instance_id") . " and its component id is " . $comp_instance->getAttr(name => "component_id") . "\n";
+    my $cluster = Entity::Cluster->get(id => "1");
+    print "Admin cluster has a id : <" . $cluster->getAttr(name => "cluster_id") . ">\n";
+    my $cluster2 = Entity::Cluster->new(cluster_name => "toto", cluster_min_node => "1", cluster_max_node => "2", cluster_priority => "100", systemimage_id => "1");
+    print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . ">\n";
+    $cluster2->save();
+    print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . "> and its id is". $cluster2->getAttr(name => "cluster_id") ."\n";
+    $cluster2->addComponent(component_id=>2);
+    my $comp_instance = $cluster2->getComponent(name=>"Apache", version=>2);
+    print "component instance added, its id is " . $comp_instance->getAttr(name => "component_instance_id") . " and its component id is " . $comp_instance->getAttr(name => "component_id") . "\n";
     note("Test Cluster.pm pod");
     pod_file_ok( '/opt/kanopya/lib/administrator/Entity/Cluster.pm', 'stuff docs are valid POD' );
 

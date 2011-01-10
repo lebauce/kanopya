@@ -20,7 +20,7 @@
 # Created 24 aug 2010
 =head1 NAME
 
-<Entity::Component::WebServer> – <General class for WebServer component abstraction>
+<Entity::Component::WebServer> <General class for WebServer component abstraction>
 
 =head1 VERSION
 

@@ -20,7 +20,7 @@
 # Created 3 july 2010
 =head1 NAME
 
-<Entity::Component> – <General class for component abstraction>
+<Entity::Component> <General class for component abstraction>
 
 =head1 VERSION
 
@@ -320,5 +320,7 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING.  If not, write to the
 Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA 02110-1301 USA.
+
+=cut
 
 1;
