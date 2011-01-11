@@ -65,13 +65,6 @@ use Data::Dumper;
 
 my $log = get_logger("administrator");
 my $errmsg;
-# contructor
-
-
-
-use Data::Dumper;
-
-
 
 =head2 get
 B<Class>   : Public
@@ -81,7 +74,7 @@ B<args>    :
 B<Return>  : a new Entity::Component::DBserver::Mysql5 from Kanopya Database
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -108,7 +101,7 @@ B<Return>  : a new Entity::Component::DBserver::Mysql5 from parameters.
 B<Comment>  : Like all component, instantiate it creates a new empty component instance.
         You have to populate it with dedicated methods.
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
