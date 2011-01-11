@@ -34,15 +34,23 @@ isa_ok($adm->{_rightchecker}, 'EntityRights::System',	'for user admin, $adm->{_r
 
 is($adm->{_rightchecker}->{user_entity_id}, $ENV{EID}, 'user_entity_id in EntityRights::System match $ENV{EID}');
 
-can_ok('EntityRights::System', qw(_getEntityIds checkMethodPerm addMethodPerm));
+can_ok('EntityRights::System', qw(_getEntityIds checkPerm addPerm));
 
-ok($adm->{_rightchecker}->checkMethodPerm(), 'EntityRights::System->checkMethodPerm method always return 1');
+ok($adm->{_rightchecker}->checkPerm(), 'EntityRights::System->checkPerm method always return 1');
+
+# get all permission methods for an entity
+my $motherboard = Entity::Motherboard->get(id => 1);
+my %perms = $motherboard->getPerms();
+
+
+
+
+
 
 my $guest = Entity::User->get(id => 3);
-my $motherboard = Entity::Motherboard->get(id => 1);
-
+# set permissions method
 eval {
-	$adm->{_rightchecker}->addMethodPerm(
+	$adm->{_rightchecker}->addPerm(
 		consumer_id => $guest->{_dbix}->get_column('entity_id'), 
 		consumed_id => $motherboard->{_dbix}->get_column('entity_id'),
 		method => 'save'
@@ -50,8 +58,7 @@ eval {
 }; if($@) { print $@; }
 
 
-#my $entityIds = $adm->{_rightchecker}->_getEntityIds(entity_id => $ENV{EID});
-#foreach my $id (@$entityIds) { print "\t$id\n"; }
+
 
 
 print "\n------ basic'user ('guest') tests ------\n\n";

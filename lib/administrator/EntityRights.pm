@@ -39,7 +39,7 @@ package EntityRights;
 
 use strict;
 use warnings;
-use McsExceptions;
+use KanopyaExceptions;
 use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
@@ -90,7 +90,7 @@ sub _getEntityIds {
 	return $ids;
 }
 
-=head2 addMethodPerm
+=head2 addPerm
 
 	Class : public
 	Desc : given a consumer_id - User (or Groups with user type) entity id - a consumed_id 
@@ -103,36 +103,39 @@ sub _getEntityIds {
 
 =cut
 
-sub addMethodPerm {
+sub addPerm {
 	my $self = shift;
 	my %args = @_;
 	
 	if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
 		$errmsg = "EntityRights::addMethodPerm need a consumer_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
 		$errmsg = "EntityRights::addMethodPerm need a consumed_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	if (! exists $args{method} or ! defined $args{method}) { 
 		$errmsg = "EntityRights::addMethodPerm need a method named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	# TODO verifier que la methode donnée en argument exists sur l'entity
 	# représentée par consumed_id
 	
-	$self->{schema}->resultset('Entityright')->create({
-		entityright_consumer_id => $args{consumer_id},
-		entityright_consumed_id => $args{consumed_id},
-		entityright_method => $args{method}
-	});
+	$self->{schema}->resultset('Entityright')->find_or_create(
+		{	entityright_consumer_id => $args{consumer_id},
+			entityright_consumed_id => $args{consumed_id},
+			entityright_method => $args{method}
+		},
+		{ key => 'entityright_right' },	
+	);
+	return;
 }
 
 

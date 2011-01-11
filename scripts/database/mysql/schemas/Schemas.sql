@@ -504,6 +504,7 @@ CREATE TABLE `entityright` (
   `entityright_consumer_id` int(8) unsigned NOT NULL,
   `entityright_method` char(64) NOT NULL,
   PRIMARY KEY (`entityright_id`),
+  UNIQUE KEY `entityright_right` (`entityright_consumed_id`,`entityright_consumer_id`,`entityright_method`),
   KEY `fk_entityright_1` (`entityright_consumed_id`),
   KEY `fk_entityright_2` (`entityright_consumer_id`),
   CONSTRAINT `fk_entityright_1` FOREIGN KEY (`entityright_consumed_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,

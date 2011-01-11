@@ -347,6 +347,24 @@ sub save {
 		
 }
 
+=head2 getPerms
+
+	class : public
+
+	desc : return a structure describing method permissions 
+
+	return : hash
+
+=cut
+
+sub getPerms {
+	my $self = shift;
+	
+	print 'ref de $self : '.ref $self."\n";
+	
+	return;
+}
+
 =head2 _saveExtendedAttrs
 
 	add or update extended Attrs on the related table 'ext'

@@ -87,7 +87,7 @@ sub new {
 	return $self;
 }
 
-=head2 checkMethodPerm
+=head2 checkPerm
 
 	Class: Public
 	
@@ -101,7 +101,7 @@ sub new {
 
 =cut
 
-sub checkMethodPerm {
+sub checkPerm {
 	my $self = shift;
 	my %args = @_;
 	

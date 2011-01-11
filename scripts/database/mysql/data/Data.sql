@@ -42,9 +42,13 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); S
 
 -- predefined user
 INSERT INTO `user` VALUES
-(2,0,'admin','admin','Administrator','','admin@somewhere.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
+(2,1,'admin','admin','Administrator','','admin@somewhere.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); 
 INSERT INTO `ingroups` VALUES (@Admin_group, @eid); SET @eid := @eid +1;
+
+INSERT INTO `user` VALUES (3,0,'guest','guest','Guest','','guest@somewhere.com',CURRENT_DATE(),NULL,'Guest user with limited permissions.');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); 
+SET @eid := @eid +1;
 
 -- processor models
 INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1);
