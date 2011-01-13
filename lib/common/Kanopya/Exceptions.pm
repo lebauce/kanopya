@@ -1,4 +1,4 @@
-package KanopyaExceptions;
+package Kanopya::Exceptions;
 use Data::Dumper;
 =head1 NAME
 
@@ -78,11 +78,11 @@ use Exception::Class (
 	isa => 'Kanopya::Exception::Execution',
 	description => 'Operation execution reported',
 	},
-	Kanopya::Exception::AuthentificationRequired => {
+	Kanopya::Exception::AuthenticationRequired => {
 	isa => 'Kanopya::Exception',
-	description => 'Incorrect Login/Password values pair',
+	description => 'Authentication required',
 	},
-	Kanopya::Exception::LoginFailed => {
+	Kanopya::Exception::AuthenticationFailed => {
 	isa => 'Kanopya::Exception',
 	description => 'Incorrect Login/Password values pair',
 	},

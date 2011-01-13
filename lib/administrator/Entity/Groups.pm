@@ -38,7 +38,7 @@ use base "Entity";
 
 use strict;
 use warnings;
-use McsExceptions;
+use Kanopya::Exceptions;
 use Administrator;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -111,7 +111,7 @@ sub get {
     if ((! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Entity::Groups->get need an id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
    my $self = $class->SUPER::get( %args,  table => "Groups");
    #$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
@@ -137,7 +137,7 @@ sub getGroups {
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::Groups->getGroups need a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Groups");
@@ -161,7 +161,7 @@ sub getGroupsFromEntity {
 	if ((! exists $args{entity} or ! defined $args{entity})) { 
 		$errmsg = "Entity::Groups->getGroups need a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	if(not $args{entity}->{_dbix}->in_storage ) { return @groups; } 
@@ -217,7 +217,7 @@ sub checkAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		$errmsg = "Entity::Groups->checkAttrs need an attrs hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
@@ -228,7 +228,7 @@ sub checkAttrs {
 				$errmsg = "Entity::Groups->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
 				$log->error($errmsg);
 				$log->debug("Can't match $attr_def->{$attr}->{pattern} with $attrs->{$attr}");
-				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 			}
 			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
@@ -240,7 +240,7 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Groups->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$attr_def)) {
@@ -248,7 +248,7 @@ sub checkAttrs {
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Groups->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -274,18 +274,18 @@ sub checkAttr{
 		(! exists $args{value})) { 
 		$errmsg = "Entity::Groups->checkAttr need a name and value named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
 		$errmsg = "Entity::Groups->checkAttr detect a null value for a mandatory attr ($args{name})";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Groups->checkAttr invalid attr name : '$args{name}'";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# Here check attr value
@@ -312,7 +312,7 @@ sub appendEntity {
 	if (! exists $args{entity} or ! defined $args{entity}) {  
 		$errmsg = "Entity::Groups->addEntity need an entity named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
 	$self->{_dbix}->ingroups->create({groups_id => $self->getAttr(name => 'groups_id'), entity_id => $entity_id} );
@@ -336,7 +336,7 @@ sub removeEntity {
 	if (! exists $args{entity} or ! defined $args{entity}) {  
 		$errmsg = "Entity::Groups->addEntity need an entity named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
 	$self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();

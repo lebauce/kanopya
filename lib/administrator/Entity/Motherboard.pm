@@ -21,7 +21,7 @@
 package Entity::Motherboard;
 
 use strict;
-use McsExceptions;
+use Kanopya::Exceptions;
 use base "Entity";
 
 use Log::Log4perl "get_logger";
@@ -95,7 +95,7 @@ sub checkAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		$errmsg = "Entity::Motherboard->checkAttrs need an attrs hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
@@ -106,7 +106,7 @@ sub checkAttrs {
 				$errmsg = "Entity::Motherboard->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
 				$log->error($errmsg);
 				$log->debug("Can't match $attr_def->{$attr}->{pattern} with $attrs->{$attr}");
-				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 			}
 			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
@@ -118,7 +118,7 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Motherboard->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$attr_def)) {
@@ -126,7 +126,7 @@ sub checkAttrs {
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Motherboard->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -152,18 +152,18 @@ sub checkAttr{
 		(! exists $args{value})) { 
 		$errmsg = "Entity::Motherboard->checkAttr need a name and value named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
 		$errmsg = "Entity::Motherboard->checkAttr detect a null value for a mandatory attr ($args{name})";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# Here check attr value
@@ -180,7 +180,7 @@ sub get {
     if ((! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Entity::Motherboard->get need an id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
    my $self = $class->SUPER::get( %args, table=>"Motherboard");
    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
@@ -249,7 +249,7 @@ sub getEtcDev {
 	if(! $self->{_dbix}->in_storage) {
 		$errmsg = "Entity::Motherboard->getEtcDev must be called on an already save instance";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Kanopya::Exception(error => $errmsg);
 	}
 	$log->info("retrieve etc attributes");
 	my $etcrow = $self->{_dbix}->etc_device_id;

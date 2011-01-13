@@ -23,7 +23,7 @@ use base "Entity";
 
 use strict;
 use warnings;
-use McsExceptions;
+use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Motherboard;
 use Administrator;
@@ -108,11 +108,19 @@ sub get {
     if ((! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Entity::Cluster->new need an id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args,  table => "Cluster");
-   $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
-   return $self;
+   	
+   	my $admin = Administrator->new();
+   	my $entity_id = $admin->{db}->resultset('Cluster')->find($args{id})->cluster_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
+   	}
+   
+   	my $self = $class->SUPER::get( %args,  table => "Cluster");
+   	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
+   	return $self;
 }
 
 sub getClusters {
@@ -124,11 +132,14 @@ sub getClusters {
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getClusters need a type and a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
 }
+
+sub createCluster {}
+
 
 sub checkAttrs {
 	# Remove class
@@ -140,7 +151,7 @@ sub checkAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}) { 
 		$errmsg = "Entity::Cluster->checkAttrs need an data hash and class named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
@@ -150,7 +161,7 @@ sub checkAttrs {
 				$errmsg = "Entity::Cluster->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
 				$log->error($errmsg);
 				$log->debug("Can't match $struct->{$attr}->{pattern} with $attrs->{$attr}");
-				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 			}
 			if ($struct->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
@@ -160,7 +171,7 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Cluster->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$struct)) {
@@ -168,7 +179,7 @@ sub checkAttrs {
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Cluster->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	
@@ -194,12 +205,12 @@ sub checkAttr{
 		(! exists $args{value} or ! defined $args{value})) { 
 		$errmsg = "Entity::Cluster->checkAttr need a name and value named argument!";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (!exists $struct->{$args{name}}){
 		$errmsg = "Entity::Cluster->checkAttr invalid name";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	# Here check attr value
 }
@@ -252,7 +263,7 @@ sub getComponents{
 	if ((! exists $args{category} or ! defined $args{category})) { 
 		$errmsg = "Entity::Cluster->getComponent need a category named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 #	my $adm = Administrator->new();
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
@@ -297,7 +308,7 @@ sub getComponent{
 		(! exists $args{version} or ! defined $args{version})) { 
 		$errmsg = "Entity::Cluster->getComponent needs a name, version and administrator named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $hash = {'component_id.component_name' => $args{name}, 'component_id.component_version' => $args{version}};
@@ -376,7 +387,7 @@ sub addComponent {
 	if((! exists $args{component_id} or ! defined $args{component_id})) {
 	   	$errmsg = "Entity::Cluster->addComponent needs component_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
@@ -397,7 +408,7 @@ sub removeComponent {
 	if((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) {
 	   	$errmsg = "Entity::Cluster->removeComponent needs a component_instance_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $component_instance = Entity::Component->get(id => $args{component_instance_id});
 	$component_instance->delete;
