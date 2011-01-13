@@ -134,7 +134,7 @@ sub checkAttrs {
 	# Remove class
 	shift;
 	my %args = @_;
-	my (%global_attrs, %ext_attrs, $attr);
+	my (%global_attrs, %ext_attrs);
 	my $struct = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}) { 
@@ -144,7 +144,7 @@ sub checkAttrs {
 	}	
 
 	my $attrs = $args{attrs};
-	foreach $attr (keys(%$attrs)) {
+	foreach my $attr (keys(%$attrs)) {
 		if (exists $struct->{$attr}){
 			if($attrs->{$attr} !~ m/($struct->{$attr}->{pattern})/){
 				$errmsg = "Entity::Cluster->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
@@ -163,7 +163,7 @@ sub checkAttrs {
 			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
-	foreach $attr (keys(%$struct)) {
+	foreach my $attr (keys(%$struct)) {
 		if (($struct->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Cluster->checkAttrs detect a missing attribute $attr !";
@@ -197,7 +197,7 @@ sub checkAttr{
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (!exists $struct->{$args{name}}){
-		$errmsg = "Entity::Cluster->checkAttr invalid name";	
+		$errmsg = "Entity::Cluster->checkAttr invalid name $struct->{$args{name}}";	
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -334,7 +334,6 @@ sub getSystemImage {
 	my $self = shift;
     my %args = @_;
 
-	my $adm = Administrator->new();
 	return Entity::Systemimage->get(id => $self->getAttr(name => 'systemimage_id'));
 }
 
@@ -347,7 +346,7 @@ sub getMasterNodeIp {
 		return $node_ip;
 	} else {
 		$log->debug("No Master node found for this cluster");
-		return undef;
+		return;
 	}
 }
 

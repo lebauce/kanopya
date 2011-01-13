@@ -56,6 +56,7 @@ use Administrator;
 use XML::Simple;
 use Data::Dumper;
 use EFactory;
+use Operation;
 
 my $log = get_logger("executor");
 
@@ -96,7 +97,7 @@ sub _init {
 		(! exists $self->{config}->{user}->{password} ||
 		 ! defined exists $self->{config}->{user}->{password})){ 
 		throw Kanopya::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
-	my $adm = Administrator->authenticate(login => $self->{config}->{user}->{name},
+	my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
 								 password => $self->{config}->{user}->{password});
 	return;
 }

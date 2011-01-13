@@ -40,16 +40,19 @@ eval {
 			 systemimage_id => "1",
 			 cluster_toto => "testextended");
     isa_ok($c1, "Entity::Cluster", $test_instantiation);
-    is ($c1->getAttr(name=>'cluster_toto'), "testextended", $test_instantiation);
+    is ($c1->getAttr(name=>'cluster_toto'), "testextended", 'Access to extended parameter from new cluster');
     $c1->save();
     # Test cluster->get
-    my $c2_id = $c1->getAttr(name=>'cluster_id');
-    my $c2 = Entity::Cluster-> get(id => $c2_id);
-    is ($c1->getAttr(name=>'cluster_toto'), "testextended", $test_instantiation);
+    my $c2 = Entity::Cluster-> get(id => $c1->getAttr(name=>'cluster_id'));
+    is ($c2->getAttr(name=>'cluster_toto'), "testextended", "Get extended attr from a cluster load from db");
     note( "Test Cluster management");
     $c1->delete();
-    
-
+    note("Cluster deleted");
+    $c2->setAttr(name => "cluster_desc", value => "New descrition");
+    is($c2->getAttr(name => 'systemimage_id'), 1,  "Test getAttr from an entity removed from db");
+    print "cluster is changed : " . $c2->{_dbix}->is_changed() . "\n";
+    print "cluster is in storage : " . $c2->{_dbix}->in_storage() . "\n";
+    $c2->save();
 #    my $cluster = Entity::Cluster->get(id => "1");
 #    print "Admin cluster has a id : <" . $cluster->getAttr(name => "cluster_id") . ">\n";
 #    my $cluster2 = Entity::Cluster->new(cluster_name => "toto", cluster_min_node => "1", cluster_max_node => "2", cluster_priority => "100", systemimage_id => "1");
