@@ -75,7 +75,11 @@ use constant ATTR_DEF => {
 			cluster_state			=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
 										is_mandatory	=> 0,
 										is_extended 	=> 0,
-										is_editable		=> 0}
+										is_editable		=> 0},
+			cluster_toto             => {pattern 		=> '^\w*$',
+										is_mandatory	=> 0,
+										is_extended 	=> 1,
+										is_editable		=> 1}
 			};
 
 

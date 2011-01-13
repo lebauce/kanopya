@@ -21,37 +21,37 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 
+
 =head1 NAME
 
-Executor - Executor object
+<Executor> – <Executor main class>
+
+=head1 VERSION
+
+This documentation refers to <Executor> version 1.0.0.
 
 =head1 SYNOPSIS
 
-    use Executor;
-    
-    # Creates executor
-    my $executor = Executor->new();
-    
-    # Create object
-    $executor->newobject($type : String, %ObjectDefinition);
+use <Executor>;
 
 
 =head1 DESCRIPTION
 
-Executor is the main object use to create execution objects
+Executor is the main execution class of executor service
 
 =head1 METHODS
 
 =cut
+
 package Executor;
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
+our $VERSION = '1.00';
 use General;
-use McsExceptions;
+use KanopyaExceptions;
 use Administrator;
 use XML::Simple;
 use Data::Dumper;
@@ -95,8 +95,8 @@ sub _init {
 		 ! defined exists $self->{config}->{user}->{name}) &&
 		(! exists $self->{config}->{user}->{password} ||
 		 ! defined exists $self->{config}->{user}->{password})){ 
-		throw Mcs::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
-	my $adm = Administrator->new(login => $self->{config}->{user}->{name},
+		throw Kanopya::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
+	my $adm = Administrator->authenticate(login => $self->{config}->{user}->{name},
 								 password => $self->{config}->{user}->{password});
 	return;
 }
@@ -111,26 +111,35 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
-	$log->warn("Before New Administrator");
 	my $adm = Administrator->new();
 	$adm->addMessage(from => 'Executor', level => 'info', content => "Kanopia Executor started.");
-	$log->warn("After New Administrator"); 
    	while ($$running) {
-   		my $opdata = $adm->getNextOp();
+   		my $opdata = Operation::getNextOp();
    		if ($opdata){
 	   		# start transaction
-	   		my $op = EFactory::newEEntity(data => $opdata);
+	   		my $op = EFactory::newEOperation(op => $opdata);
    			$log->info("New operation (".ref($op).") retrieve ; execution processing");
    			$adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
    			$adm->{db}->txn_begin;
    			eval {
-   				$op->prepare(internal_cluster => $self->{config}->{cluster});
-   				$op->execute();
-   				$op->finish();
+   			    eval {
+   			        $op->prepare(internal_cluster => $self->{config}->{cluster});
+   			    };
+   			    if ($@) {
+   			        my $error = $@;
+   				    $adm->{db}->txn_rollback;
+   				    $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
+   				    $log->error("Error during operation evaluation : $error");
+   				    $op->delete();
+   			    }
+   			    else {
+   			        $op->execute();
+   				     $op->finish();
+   			    }
    			};
 			if ($@) {
    				my $error = $@;
-   				if($error->isa('Mcs::Exception::Execution::OperationReported')) {
+   				if($error->isa('Kanopya::Exception::Execution::OperationReported')) {
    					$op->report();
    					# commit transaction
    					$adm->{db}->txn_commit;
@@ -170,7 +179,7 @@ sub execnround {
 	my $adm = Administrator->new();
 
    	while ($args{run}) {
-   		my $opdata = $adm->getNextOp();
+   		my $opdata = Operation::getNextOp();
    		if ($opdata){
    				$log->warn("Get Next Operation, its type is ".ref($opdata));
    				my $op = EFactory::newEEntity(data => $opdata);

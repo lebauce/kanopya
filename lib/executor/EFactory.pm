@@ -49,13 +49,37 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
 use General;
-use McsExceptions;
+use KanopyaExceptions;
 use Net::IP qw(:PROC);
 
 my $log = get_logger("executor");
 my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
+sub newEOperation{
+    my %args = @_;
+	
+	if (! exists $args{op} or ! defined $args{op}) { 
+		$errmsg = "EntityFactory::newEOperation need an op named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $data = $args{data};
+	my $class = "EOperation::". $args{op}->getType();
+	$log->debug("GetClassEEntityFromEntity return $class"); 
+	my $location = General::getLocFromClass(entityclass => $class);
+	
+	eval { require $location; };
+    if ($@){
+    	$errmsg = "EFactory->newEOperation : require locaction failed (location is $location)";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+	$log->info("$class instanciated");
+    return $class->new(data => $args{data});
+}
 
 =head2 newEEntity
 
