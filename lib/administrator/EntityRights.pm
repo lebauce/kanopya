@@ -39,7 +39,7 @@ package EntityRights;
 
 use strict;
 use warnings;
-use KanopyaExceptions;
+use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
@@ -66,7 +66,7 @@ sub _getEntityIds {
 	if (! exists $args{entity_id} or ! defined $args{entity_id}) { 
 		$errmsg = "EntityRights->_getEntityIds: need an entity_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $ids = [];

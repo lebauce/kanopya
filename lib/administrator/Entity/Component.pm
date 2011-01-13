@@ -57,7 +57,7 @@ use base "Entity";
 use strict;
 use warnings;
 
-use McsExceptions;
+use Kanopya::Exceptions;
 use Data::Dumper;
 use Administrator;
 use Log::Log4perl "get_logger";
@@ -77,7 +77,7 @@ To save data in DB call save() on returned obj (after modification)
 Like all component, instantiate it creates a new empty component instance.
 You have to populate it with dedicated methods.
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -89,7 +89,7 @@ sub new {
 		(! exists $args{component_id} or ! defined $args{component_id})){ 
 		$errmsg = "Entity::Component->new need a cluster_id and a component_id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $admin = Administrator->new();
@@ -103,7 +103,7 @@ sub new {
 	if(not defined $row) {
 		$errmsg = "Entity::Component->new : component_id does not exist";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 	
 	# check if instance of component_id is not already inserted for  this cluster
@@ -113,7 +113,7 @@ sub new {
 	if(defined $row) {
 		$errmsg = "Entity::Component->new : cluster has already the component with id $args{component_id}";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 	
 	# check if component_template_id correspond to component_id
@@ -122,11 +122,11 @@ sub new {
 		if(not defined $row) {
 			$errmsg = "Entity::Component->new : component_template_id does not exist";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+			throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 		} elsif($row->get_column('component_id') != $args{component_id}) {
 			$errmsg = "Entity::Component->new : component_template_id does not belongs to component specified by component_id";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+			throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 		}
 	}
 	# We create a new DBIx containing new entity
@@ -143,7 +143,7 @@ B<args>    :
 B<Return>  : a new Entity::Component from Kanopya Database
 B<Comment>  : To modify data in DB call save() on returned obj (after modification)
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -154,7 +154,7 @@ sub get {
     if ((! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Entity::Component->get need an id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
    my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
    return $self;
@@ -267,7 +267,7 @@ sub save {
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
-Exception : Mcs::Exception::Internal::IncorrectParam
+Exception : Kanopya::Exception::Internal::IncorrectParam
 
 =head1 CONFIGURATION AND ENVIRONMENT
 

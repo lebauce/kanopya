@@ -42,7 +42,7 @@ use base 'EntityRights';
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use McsExceptions;
+use Kanopya::Exceptions;
 
 our $VERSION = "1.00";
 
@@ -70,13 +70,13 @@ sub new {
 	if(not exists $args{entity_id} or not defined $args{entity_id}) {
 		$errmsg = "EntityRights::User->new need a entity_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	} 
 	
 	if(not exists $args{schema} or not defined $args{schema}) {
 		$errmsg = "EntityRights::User->new need a schema named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $self = { 

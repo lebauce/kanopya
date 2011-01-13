@@ -42,7 +42,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 
-use McsExceptions;
+use Kanopya::Exceptions;
 
 our $VERSION = "1.00";
 
@@ -70,13 +70,13 @@ sub new {
 	if(not exists $args{entity_id} or not defined $args{entity_id}) {
 		$errmsg = "EntityRights::User->new need a entity_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	} 
 	
 	if(not exists $args{schema} or not defined $args{schema}) {
 		$errmsg = "EntityRights::User->new need a schema named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $self = { 
@@ -108,19 +108,19 @@ sub checkPerm {
 	if(not exists $args{method} or not defined $args{method}) {
 		$errmsg = "EntityRights::User->checkperm need a method named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	if(not exists $args{entity_id} or not defined $args{entity_id}) {
 		$errmsg = "EntityRights::User->checkperm need a entity_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
-	my $consumer_ids = SUPER::_getEntityIds(entity_id => $self->{user_entity_id});
-	my $consumed_ids = SUPER::_getEntityIds(entity_id => $args{entity_id});
+	my $consumer_ids = $self->SUPER::_getEntityIds(entity_id => $self->{user_entity_id});
+	my $consumed_ids = $self->SUPER::_getEntityIds(entity_id => $args{entity_id});
 	
-	my $row = $self->{_schema}->resultset('Entityright')->search(
+	my $row = $self->{schema}->resultset('Entityright')->search(
 		{
 			entityright_consumer_id => $consumer_ids,
 			entityright_consumed_id => $consumed_ids,

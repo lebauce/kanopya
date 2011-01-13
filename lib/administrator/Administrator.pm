@@ -52,7 +52,7 @@ use Data::Dumper;
 use NetAddr::IP;
 use AdministratorDB::Schema;
 use EntityRights;
-use McsExceptions;
+use Kanopya::Exceptions;
 use General;
 use XML::Simple;
 use DateTime;
@@ -90,7 +90,7 @@ sub loadConfig {
 		{
 			$errmsg = "Administrator->new need internalnetwork definition in config file!";
 			#$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	
 	if (! exists $config->{dbconf}->{name} ||
@@ -108,7 +108,7 @@ sub loadConfig {
 		{
 			$errmsg = "Administrator::loadConfig need db definition in config file!";
 			#$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 
 	#$log->info("Administrator configuration loaded");
@@ -135,10 +135,10 @@ sub authenticate {
 	
 	if(not exists $args{login} or not defined $args{login}) {
 		$errmsg = "Administrator::authenticate need a login named argument!";
-		throw Mcs::Exception::Internal(error => $errmsg); 
+		throw Kanopya::Exception::Internal(error => $errmsg); 
 	} elsif(not exists $args{password} or not defined $args{password}) {
 		$errmsg = "Administrator::authenticate need a password named argument!";
-		throw Mcs::Exception::Internal(error => $errmsg); 
+		throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
 	
 	#$log->debug("login: ".$args{login}." password: ".$args{password});
@@ -155,10 +155,10 @@ sub authenticate {
 	)->single;
 	
 	if(not defined $user_data) {
-		$errmsg = "Authentification failed for login ".$args{login};
-		throw Mcs::Exception::LoginFailed(error => $errmsg);
+		$errmsg = "Authentication failed for login ".$args{login};
+		throw Kanopya::Exception::AuthenticationFailed(error => $errmsg);
 	} else {
-		$log->info("Authentification succeed for login ".$args{login});
+		$log->info("Authentication succeed for login ".$args{login});
 		#$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
 		$ENV{EID} = $user_data->get_column('entity_id'); 
 	}
@@ -177,7 +177,7 @@ sub authenticate {
 	if ($@) {
 		my $error = $@;
 		$log->error($error);
-		throw Mcs::Exception::Internal(error => $error);
+		throw Kanopya::Exception::Internal(error => $error);
 	}
 }	
 
@@ -196,7 +196,7 @@ sub buildEntityRights {
 	if(not exists $args{schema} or not defined $args{schema}) {
 		$errmsg = "EntityRights::build need a schema named argument";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	my $user = $args{schema}->resultset('User')->search({ 'user_entities.entity_id' => $ENV{EID}},
@@ -229,7 +229,7 @@ sub new {
 	if(not exists $ENV{EID} or not defined $ENV{EID}) {
 		$errmsg = "No valid session registered ;";
 		$errmsg .= " Administrator::authenticate must be call with a valid login/password pair";
-		throw Mcs::Exception::AuthentificationRequired(error => $errmsg);
+		throw Kanopya::Exception::AuthenticationRequired(error => $errmsg);
 	}
 	
 	my $checker = buildEntityRights(schema => $schema);
@@ -280,7 +280,7 @@ sub getRow {
 		(! exists $args{table} or ! defined $args{table})) { 
 		$errmsg = "Administrator->getResultset need a table and an id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg); 
+		throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
 	$entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
 
@@ -291,7 +291,7 @@ sub getRow {
 	} else {
 		$errmsg = "Administrator::getResultset(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 		return undef;
 	}
 }
@@ -325,7 +325,7 @@ sub getEntity {
 		(! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Administrator->getEntity need a type and an id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg); 
+		throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
 	
 	$log->debug( "getEntity( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
@@ -360,7 +360,7 @@ sub getEntity {
 	} else {
 		$errmsg = "Administrator::getEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 }
 
@@ -388,7 +388,7 @@ sub getEntities {
 		(! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Administrator->_getEntityFromHash need a type and a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	$log->debug( "getEntityFromHash( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
@@ -433,7 +433,7 @@ sub countEntities {
 	if (! exists $args{type} or ! defined $args{type}) { 
 		$errmsg = "Administrator->countEntities need a type named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg); 
+		throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
 	my $count = $self->{db}->resultset($args{type})->count;
 	$log->debug("Total number of entities $args{type} : $count");
@@ -463,7 +463,7 @@ sub newEntity {
 		(! exists $args{params} or ! defined $args{params})) { 
 		$errmsg = "Administrator->newEntity need params and type named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg); 
+		throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
 
 	$log->debug("newEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )).")");
@@ -520,7 +520,7 @@ sub newOp {
 		(! exists $args{params} or ! defined $args{params})) {
 			$errmsg = "Administrator->newOp need a priority, params and type named argument!";
 			$log->error($errmsg); 
-			throw Mcs::Exception::Internal(error => $errmsg); 
+			throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
 	#TODO Check if operation is allowed
 	my $rank = $self->_get_lastRank() + 1;
@@ -544,7 +544,7 @@ sub newOp {
 	if ($@) {
 		$errmsg = "Administrator->newOp : Operation type ($args{type}) does not exist when require Operation::$subclass.pm";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $op = "Operation::$subclass"->new(data => $op_data, administrator => $self, params => $args{params});
@@ -626,7 +626,7 @@ sub getNextOp {
 	if ($@) {
 		$errmsg = "Administrator->newOp : Operation type <$op_type> does not exist!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	# Operation instanciation
@@ -652,7 +652,7 @@ sub changeUser {
 	if (! exists $args{user_id} or ! defined $args{user_id}) { 
 		$errmsg = "Administrator->changeUser need a user_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg); 
+		throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
 	my $nextuser = $self->getEntity(type => "User",id => $args{user_id});
 	$self->{_rightschecker}->{_userbackup} = $self->{_rightschecker}->{_user};
@@ -680,7 +680,7 @@ sub _getDbix {
 		(! exists $args{id} or ! defined $args{id})) { 
 			$errmsg = "Administrator->_getDbix need a table and id named argument!";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal(error => $errmsg);
+			throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $dbix;
@@ -691,7 +691,7 @@ sub _getDbix {
 	if ($@) {
 		$errmsg = "Administrator->_getDbix error ".$@;
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	return $dbix;
 }
@@ -717,7 +717,7 @@ sub _getDbixFromHash {
 		(! exists $args{hash} or ! defined $args{hash})) {
 			$errmsg = "Administrator->_getDbixFromHash need a table and hash named argument!";
 			$log->error($errmsg); 
-			throw Mcs::Exception::Internal(error => $errmsg);
+			throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $dbix;
@@ -738,7 +738,7 @@ sub _getDbixFromHash {
 	if ($@) {
 		$errmsg = "Administrator->_getDbix error ".$@;
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error =>  $errmsg);
+		throw Kanopya::Exception::Internal(error =>  $errmsg);
 	}
 	return $dbix;
 }
@@ -762,7 +762,7 @@ sub _getAllDbix {
 	if (! exists $args{table} or ! defined $args{table}) { 
 		$errmsg = "Administrator->_getAllData need a table named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $entitylink = lc($args{table})."_entities";
@@ -792,7 +792,7 @@ sub _newDbix {
 		(! exists $args{row} or ! defined $args{row})) {
 		$errmsg = "Administrator->_newData need a table and row named argument!";
 		$log->error($errmsg);		 
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $new_obj = $self->{db}->resultset($args{table} )->new( $args{row});
@@ -818,7 +818,7 @@ sub _getEntityClass{
 	if (! exists $args{type} or ! defined $args{type}) {
 		$errmsg = "Administrator->_getEntityClass a type named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	if (defined $args{class_path} && exists $args{class_path}){
@@ -830,7 +830,7 @@ sub _getEntityClass{
     if ($@){
     	$errmsg = "Administrator->_getEntityClass type or class_path invalid! (location is $location)";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	return $entity_class;
 }
@@ -841,7 +841,7 @@ sub getNodes {
 	if (! exists $args{cluster_id} or ! defined $args{cluster_id}) {
 		$errmsg = "Administrator->getNodes need a cluster_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $nodes = $self->{db}->resultset('Node')->search({ cluster_id => $args{cluster_id}});
 	my $motherboards = [];
@@ -859,7 +859,7 @@ sub getComponent {
 	if ((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) { 
 		$errmsg = "Administrator->getComponent needs a component_instance_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $comp_instance_row = $self->{db}->resultset("ComponentInstance")->find(
@@ -890,7 +890,7 @@ sub addMessage {
 		(! exists $args{content} or ! defined $args{content})){
 		$errmsg = "Administrator->addMessage need a level, from and content named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	$self->{db}->resultset('Message')->create({
 		user_id => $self->{_rightschecker}->{_user},
