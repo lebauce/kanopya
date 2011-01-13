@@ -38,19 +38,19 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EActivateCluster;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use KanopyaExceptions;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
+
 
 =head2 new
 
@@ -102,7 +102,7 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EActivateCluster->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	my $adm = Administrator->new();
@@ -110,9 +110,25 @@ sub prepare {
 
 	#### Get instance of Cluster Entity
 	$log->info("Load cluster instance");
-	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
+	$self->{_objs}->{cluster} = Entity::Cluster->new(id => $params->{cluster_id});
 	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
+    #### check if system image used is active 
+    $log->debug("checking cluster 's systemimage active value <$args{params}->{cluster_id}>");
+    my $systemimage = Entity::Systemimage->new(id => $self->{_objs}->{cluster}->getAttr(name => 'systemimage_id'));
+    if(not $systemimage->getAttr(name => 'active')) {
+	    	$errmsg = "EOperation::EActivateCluster->prepare : cluster's systemimage is not activated";
+	    	$log->error($errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    
+    # check if cluster is not active
+    $log->debug("checking cluster active value <$args{params}->{cluster_id}>");
+   	if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
+	    	$errmsg = "Operation::ActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
+	    	$log->error($errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 }
 
 sub execute{
