@@ -43,7 +43,7 @@ package Entity;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use McsExceptions;
+use Kanopya::Exceptions;
 use Administrator;
 
 my $log = get_logger("administrator");
@@ -59,7 +59,7 @@ sub getEntities {
 		(! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getEntities need a type and a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
 	
@@ -97,7 +97,7 @@ sub new {
     	(! exists $args{table} or ! defined $args{table})) {
 		$errmsg = "Entity->new need an attrs and table named argument!"; 	 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
 #	my $rc = $adm->getRightChecker();
@@ -116,7 +116,7 @@ sub get {
     	(! exists $args{table} or ! defined $args{table})) {
 		$errmsg = "Entity->get need an id and table named argument!"; 	 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
 	my $dbix = $adm->getRow(id=>$args{id}, table => $args{table});
@@ -139,7 +139,7 @@ sub getExtendedAttrs {
 	if ((! exists $args{ext_table} or ! defined $args{ext_table})) {
 		$errmsg = "Entity->getExtendedAttrs need an ext_table named argument!"; 	 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $ext_attrs_rs = $self->{_dbix}->search_related( $args{ext_table} );
 	if (! defined $ext_attrs_rs){
@@ -235,7 +235,7 @@ sub setAttr {
 		(! exists $args{value})) { 
 		$errmsg = "Entity->setAttr need a name and value named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 		
 	$self->checkAttr(%args);
@@ -266,7 +266,7 @@ sub setAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}) { 
 		$errmsg = "Entity->setAttrs need an attrs hash named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $attrs = $args{attrs};
@@ -292,7 +292,7 @@ sub getAttr {
 	if (! exists $args{name} or ! defined $args{name}) { 
 		$errmsg = "Entity->getAttrs need a name named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	if ( $data->has_column( $args{name} ) ) {
@@ -304,7 +304,7 @@ sub getAttr {
 	} else {
 		$errmsg = "Entity->getAttr no attr name $args{name}!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	return $value;
 }
@@ -359,8 +359,15 @@ sub save {
 
 sub getPerms {
 	my $self = shift;
+	my $class = ref $self;
 	
-	print 'ref de $self : '.ref $self."\n";
+	if($class) { # call on instance
+		#print "call on instance\n";	
+	}
+	else { # call on class
+		#print "call on class\n";
+	}
+	
 	
 	return;
 }
@@ -428,7 +435,7 @@ sub activate {
 	} else {
 		$errmsg = "Entity->activate Entity ". ref($self) . " unable to activate !";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 }
 
