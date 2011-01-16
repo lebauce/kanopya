@@ -19,10 +19,13 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 package Entity::Motherboard;
+use base "Entity";
 
 use strict;
+use warnings;
+
 use Kanopya::Exceptions;
-use base "Entity";
+use Operation;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -50,7 +53,7 @@ use constant ATTR_DEF => {
 			  active					=> {pattern 		=> '^[01]$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_mac_address	=> {pattern 		=> '^.*$',  # mac address format must be lower case
+			  motherboard_mac_address	=> {pattern 		=> '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',  # mac address format must be lower case
 											is_mandatory	=> 1,		# to have udev persistent net rules work
 											is_extended 	=> 0},
 			  motherboard_internal_ip	=> {pattern 		=> '^.*$',
@@ -67,7 +70,10 @@ use constant ATTR_DEF => {
 											is_extended 	=> 0},
 			motherboard_state				=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
 											is_mandatory	=> 0,
-											is_extended 	=> 0}
+											is_extended 	=> 0},
+			motherboard_toto				=> {pattern 		=> '^.*$',
+											is_mandatory	=> 0,
+											is_extended 	=> 1}
 			};
 
 
@@ -89,7 +95,7 @@ sub checkAttrs {
 	# Remove class
 	shift;
 	my %args = @_;
-	my (%global_attrs, %ext_attrs, $attr);
+	my (%global_attrs, %ext_attrs);
 	my $attr_def = ATTR_DEF;
 	#print Dumper $attr_def;
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
@@ -99,7 +105,7 @@ sub checkAttrs {
 	}	
 
 	my $attrs = $args{attrs};
-	foreach $attr (keys(%$attrs)) {
+	foreach my $attr (keys(%$attrs)) {
 		if (exists $attr_def->{$attr}){
 			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
 			if($attrs->{$attr} !~ m/($attr_def->{$attr}->{pattern})/){
@@ -121,7 +127,7 @@ sub checkAttrs {
 			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
-	foreach $attr (keys(%$attr_def)) {
+	foreach my $attr (keys(%$attr_def)) {
 		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Motherboard->checkAttrs detect a missing attribute $attr !";
@@ -204,7 +210,25 @@ sub new {
 
 }
 
+sub activate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    $log->debug("New Operation ActivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
+    Operation->enqueue(priority => 200,
+                   type     => 'ActivateMotherboard',
+                   params   => {motherboard_id => $self->getAttr(name=>'motherboard_id')});
+}
 
+sub deactivate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    $log->debug("New Operation EDeactivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
+    Operation->enqueue(priority => 200,
+                   type     => 'DeactivateMotherboard',
+                   params   => {motherboard_id => $self->getAttr(name=>'motherboard_id')});
+}
 
 =head2 toString
 

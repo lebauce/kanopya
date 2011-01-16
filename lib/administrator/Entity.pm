@@ -143,7 +143,8 @@ sub getExtendedAttrs {
 	}
 	my $ext_attrs_rs = $self->{_dbix}->search_related( $args{ext_table} );
 	if (! defined $ext_attrs_rs){
-		return undef;
+	    print "No extended Attrs\n";
+		return;
 	}
 	while ( my $param = $ext_attrs_rs->next ) {
 		$attrs{ $param->name } = $param->value;
@@ -297,7 +298,7 @@ sub getAttr {
 
 	if ( $data->has_column( $args{name} ) ) {
 		$value = $data->get_column( $args{name} );
-		$log->debug(ref($self) . " getAttr of $args{name} : $value");
+		$log->debug(ref($self) . " getAttr of $args{name} : <$value>");
 	} elsif ( exists $self->{_ext_attrs}{ $args{name} } ) {
 		$value = $self->{_ext_attrs}{ $args{name} };
 		$log->debug(ref($self) . " getAttr (extended) of $args{name} : $value");

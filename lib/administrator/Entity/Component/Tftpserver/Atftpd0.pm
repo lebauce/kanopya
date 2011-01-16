@@ -58,7 +58,7 @@ use base "Entity::Component::Tftpserver";
 use strict;
 use warnings;
 
-use KanopyaExceptions;
+use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 

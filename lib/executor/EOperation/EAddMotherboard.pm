@@ -38,21 +38,24 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EAddMotherboard;
+use base "EOperation";
 
 use strict;
 use warnings;
+
+use Kanopya::Exceptions;
+use EFactory;
+use Template;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
-use EFactory;
+
+use Entity::Motherboard;
+use Entity::Cluster;
+use Entity::Powersupplycard;
 
 my $log = get_logger("executor");
 my $errmsg;
-
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
 
 =head2 new
 
@@ -66,7 +69,6 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -99,7 +101,7 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EAddMotherboard->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$log->debug("After Eoperation prepare and before get Administrator singleton");
 	my $adm = Administrator->new();
@@ -113,9 +115,9 @@ sub prepare {
 
 	## Instanciate Clusters
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 
 	
 	## Get Internal IP
@@ -134,7 +136,7 @@ sub prepare {
 	if ((exists $params->{powersupplycard_id} && defined $params->{powersupplycard_id})&&
 	    ( exists $params->{powersupplyport_number} && defined $params->{powersupplyport_number})){
 		$self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
-		$self->{_objs}->{powersupplycard} = $adm->getEntity(id => $params->{powersupplycard_id}, type => "Powersupplycard");
+		$self->{_objs}->{powersupplycard} = Entity::Powersupplycard->get(id => $params->{powersupplycard_id});
 		$log->debug("Power supply card instanciated with id $params->{powersupplycard_id}");
 		# We delete the motherboard_powersupply_id entry to create properly in execute
 	}
@@ -144,20 +146,18 @@ sub prepare {
 	$log->debug("################## powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");
 	
 	# Instanciate new Motherboard Entity
-	$self->{_objs}->{motherboard} = $adm->newEntity(type => "Motherboard", params => $params);
+	$self->{_objs}->{motherboard} = Entity::Motherboard->new(%$params);
 	
 	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2",
-										 administrator => $adm);
+										 version => "2");
 	$log->debug("Value return by getcomponent ". ref($tmp));
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 	# Instanciate Cluster Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1",
-																					  administrator => $adm));
+																					  version=> "1"));
 	$log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));
 	
 }

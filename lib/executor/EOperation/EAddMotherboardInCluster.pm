@@ -38,23 +38,24 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EAddMotherboardInCluster;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
-use EFactory;
 use String::Random;
 use Date::Simple (':all');
+
+use Kanopya::Exceptions;
+use EFactory;
 use Template;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
+
 
 my $config = {
     INCLUDE_PATH => '/templates/internal/',
@@ -78,7 +79,6 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -119,25 +119,24 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EAddMotherboardInCluster->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	$log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 	$log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
 	# Instanciate bootserver Cluster
-	$self->{bootserver}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{bootserver});
+	$self->{bootserver}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{bootserver});
 	$log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
 	# Instanciate monitor Cluster
-	$self->{monitor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{monitor});
+	$self->{monitor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{monitor});
 	$log->debug("Monitor Cluster get with ref : " . ref($self->{monitor}->{obj}));
 	
 	
@@ -171,41 +170,37 @@ sub prepare {
 
 	#### Get instance of Cluster Entity
 	$log->info("Load cluster instance");
-	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
+	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
 	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
 	#### Get cluster components Entities
 	$log->info("Load cluster component instances");
-	$self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(administrator => $adm, category => "all");
+	$self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
 	$log->debug("Load all component from cluster");
 
 	# Get instance of Motherboard Entity
 	$log->info("Load Motherboard instance");
-	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
+	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
 	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	## Instanciate Component needed (here LVM, ISCSITARGET, DHCP and TFTPD on nas and bootserver cluster)
 	# Instanciate Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2",
-										 administrator => $adm);
+										 version => "2");
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->info("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1",
-																					  administrator => $adm));
+																					  version=> "1"));
 	$log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
 	# Instanciate tftpd component.
 	$self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Atftpd",
-																					  version=> "0",
-																					  administrator => $adm));
+																					  version=> "0"));
 																					  
 	$log->info("Load tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
 	# instanciate dhcpd component.
 	$self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Dhcpd",
-																					  version=> "3",
-																					  administrator => $adm));
+																					  version=> "3"));
 																					  
 	$log->info("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
@@ -220,7 +215,7 @@ sub execute {
 	
 	## Clone system image etc on motherboard etc
 	# Get system image etc
-	my $sysimg_dev = $self->{_objs}->{cluster}->getSystemImage(administrator => $adm)->getDevices();
+	my $sysimg_dev = $self->{_objs}->{cluster}->getSystemImage()->getDevices();
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
 	# copy of systemimage etc source to motherboard etc device
 	$log->info('Cloning system image etc device to the new node');
@@ -284,7 +279,7 @@ sub execute {
 	$self->{nas}->{econtext}->execute(command => $mount_cmd);
 
 	# Get All nodes in cluster
-	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards(administrator => $adm);
+	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
 	# Generate Node configuration
 	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},
@@ -328,7 +323,7 @@ sub execute {
 					 master_node => $masternode);
 
 	# finaly we start the node
-	$self->startNode(adm => $adm);
+	$self->startNode();
 	$self->{_objs}->{motherboard}->save();
 
 }
@@ -338,27 +333,20 @@ sub execute {
 sub startNode {
 	my $self = shift;
 	my %args = @_;
-	if ((! exists $args{adm} or ! defined $args{adm})){
-		$errmsg = "EAddMotherboardInCluster->startNode need an adm named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
-	}
-
+	
 	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
 	if (!$powersupplycard_id) {
 		if(not -e '/usr/sbin/etherwake') {
 			$errmsg = "EOperation::EAddMotherboardInCluster->startNode : /usr/sbin/etherwake not found";
 			$log->error($errmsg);
-			throw Mcs::Exception::Execution(error => $errmsg);
+			throw Kanopya::Exception::Execution(error => $errmsg);
 		}
 		my $command = "/usr/sbin/etherwake ".$self->{_objs}->{motherboard}->getAttr(name => 'motherboard_mac_address');
 		my $result = $self->{econtext}->execute(command => $command);
 	}
 	else {
-	    my $powersupplycard = $args{adm}->getEntity(type=>"Powersupplycard",id=> $powersupplycard_id);
-# = $args{adm}->getPowerSupply(powersupply_id => $powersupply_id);
+	    my $powersupplycard = Entity::Powersupplycard->get(id=> $powersupplycard_id);
 		use IO::Socket;
-#		my $powersupplycard = $args{adm}->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});
 		my $powersupply_ip = $powersupplycard->getAttr(name => "powersupplycard_ip");
 		$log->debug("Start motherboard with power supply which ip is : <$powersupply_ip>");
 		my $sock = new IO::Socket::INET (
@@ -391,7 +379,7 @@ sub generateNodeConf {
 		(! exists $args{nodes} or ! defined $args{nodes})) { 
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateNodeConf need a mount_point named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $initiatorname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname");
 	$log->info("Generate Initiator Conf");
@@ -400,8 +388,8 @@ sub generateNodeConf {
 	$self->generateUdevConf(mount_point=>$args{mount_point});
 	$log->info("Generate Fstab Conf");
 	$self->generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
-	$log->info("Generate Mcs Halt script Conf");
-	$self->generateMcsHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
+	$log->info("Generate Kanopya Halt script Conf");
+	$self->generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
 #	$log->info("Generate Hosts Conf");
 #	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
 	$log->info("Generate Network Conf");
@@ -425,7 +413,7 @@ sub generateInitiatorConf {
 		(! exists $args{initiatorname} or ! defined $args{initiatorname})) { 
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateInitiatorConf need a mount_point and an initiatorname named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$self->{nas}->{econtext}->execute(command=>"echo \"InitiatorName=$args{initiatorname}\" > $args{mount_point}/iscsi/initiatorname.iscsi");
 }
@@ -437,7 +425,7 @@ sub generateUdevConf{
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateUdevConf need a mount_point named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
 	my $tmpfile = $rand->randpattern("cccccccc");
@@ -462,12 +450,11 @@ sub generateFstabConf{
 		(! exists $args{etc_dev} or ! defined $args{etc_dev})){
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateFstabConf need a mount_point, a root_dev and etc_dev named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
 	my $template = Template->new($config);
 	my $tmpfile = $rand->randpattern("cccccccc");
-	my $adm = Administrator->new();
 	my $input = "fstab.tt";
 	
 	$log->debug("Get targetid with the following pattern : " . '%'."$args{root_dev}->{lvname}");
@@ -495,12 +482,10 @@ sub generateFstabConf{
 		$log->debug("Found component of type : " . ref($tmp));
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
 			$log->debug("The cluster component is an Exportclient");
+			#TODO Check if it is an ExportClient and call generic method/
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
 				$log->debug("The cluster component is an Openiscsi2");
 				my $iscsi_export = $components->{$i};
-				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-				#									 						version => "0",
-				#															administrator => $adm);
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
    			}
 		}
@@ -511,22 +496,22 @@ sub generateFstabConf{
 	unlink "/tmp/$tmpfile";
 }
 
-sub generateMcsHalt{
+sub generateKanopyaHalt{
 	my $self = shift;
 	my %args = @_;
 	
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})||
 		(! exists $args{etc_export} or ! defined $args{etc_export})){
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateMcsHalt need a mount_point, a root_dev and etc_dev named argument!";
+		$errmsg = "EOperation::EAddMotherboardInCluster->generateKanopyaHalt need a mount_point, a root_dev and etc_dev named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
 	my $template = Template->new($config);
 	my $tmpfile = $rand->randpattern("cccccccc");
 	my $tmpfile2 = $rand->randpattern("cccccccc");
-	my $input = "McsHalt.tt";
-	my $omitted_file = "mcs_omitted_iscsid";
+	my $input = "KanopyaHalt.tt";
+	my $omitted_file = "Kanopya_omitted_iscsid";
 	#TODO mettre en parametre le port du iscsi du nas!!
 	my $vars = {etc_target		=> $args{etc_export}->{iscsitarget1_target_name},
    	    		nas_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
@@ -535,6 +520,7 @@ sub generateMcsHalt{
    	my $components = $self->{_objs}->{components};
    	foreach my $i (keys %$components) {
 		my $tmp = $components->{$i};
+        #TODO Check if it is an ExportClient and call generic method/
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
 				$log->debug("The cluster component is an Openiscsi2");
@@ -548,16 +534,16 @@ sub generateMcsHalt{
 	}
    	$log->debug(Dumper($vars));
    	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
-    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/mcs_halt");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/init.d/Kanopya_halt");
     unlink "/tmp/$tmpfile";
-    $self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/mcs_halt");
-    $self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_halt $args{mount_point}/rc0.d/S89mcs_halt");
+    $self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/Kanopya_halt");
+    $self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/Kanopya_halt $args{mount_point}/rc0.d/S89Kanopya_halt");
 	
 	$self->{nas}->{econtext}->execute(command=> "cp /templates/internal/$omitted_file /tmp/");
-   	$self->{nas}->{econtext}->send(src => "/tmp/$omitted_file", dest => "$args{mount_point}/init.d/mcs_omitted_iscsid");
+   	$self->{nas}->{econtext}->send(src => "/tmp/$omitted_file", dest => "$args{mount_point}/init.d/Kanopya_omitted_iscsid");
    	unlink "/tmp/$omitted_file";
-   	$self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/mcs_omitted_iscsid");
-   	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/mcs_omitted_iscsid $args{mount_point}/rc0.d/S19mcs_omitted_iscsid");
+   	$self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/Kanopya_omitted_iscsid");
+   	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/Kanopya_omitted_iscsid $args{mount_point}/rc0.d/S19Kanopya_omitted_iscsid");
 }
 
 sub generateHosts {
@@ -568,7 +554,7 @@ sub generateHosts {
 		(! exists $args{nodes} or ! defined $args{nodes})) { 
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateHosts need a mount_point and nodes named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
 	my $tmpfile = $rand->randpattern("cccccccc");
@@ -601,7 +587,7 @@ sub generateNetConf {
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateNetConf need a mount_point named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
 	my $tmpfile = $rand->randpattern("cccccccc");
@@ -613,7 +599,7 @@ sub generateNetConf {
 	#TODO Manage virtual IP for master node
 	my $interfaces = $self->{_objs}->{cluster}->getPublicIps();
 	$log->debug(Dumper($interfaces));
-	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Mcs::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
+	$template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");	
 	unlink "/tmp/$tmpfile"; 
 }
@@ -625,7 +611,7 @@ sub generateBootConf {
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
 		$errmsg = "EOperation::EAddMotherboardInCluster->generateBootConf need a mount_point named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $rand = new String::Random;
 	my $tmpfile = $rand->randpattern("cccccccc");
@@ -633,7 +619,7 @@ sub generateBootConf {
 	# create Template object
 	my $template = Template->new($config);
     my $input = "bootconf.tt";
-	my $adm = Administrator->new();
+#	my $adm = Administrator->new();
 	
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
 	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
@@ -654,15 +640,14 @@ sub generateBootConf {
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
 				my $iscsi_export = $components->{$i};
 				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-				#									 						version => "0",
-				#															administrator => $adm);
+				#									 						version => "0");
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
    			}
 		}
 	}
 
 	$log->debug(Dumper $vars);
-	$template->process($input, $vars, "/tmp/$tmpfile") || throw Mcs::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
+	$template->process($input, $vars, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
 	#TODO problem avec fichier de boot a voir.
     my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
     my $dest = $tftp_conf->{'repository'}.'/'. $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname") . ".conf";

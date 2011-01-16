@@ -51,7 +51,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 our $VERSION = '1.00';
 use General;
-use KanopyaExceptions;
+use Kanopya::Exceptions;
 use Administrator;
 use XML::Simple;
 use Data::Dumper;
@@ -128,10 +128,7 @@ sub run {
    			    };
    			    if ($@) {
    			        my $error = $@;
-   				    $adm->{db}->txn_rollback;
-   				    $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
-   				    $log->error("Error during operation evaluation : $error");
-   				    $op->delete();
+   			        throw $error;
    			    }
    			    else {
    			        $op->execute();
@@ -180,32 +177,44 @@ sub execnround {
 	my $adm = Administrator->new();
 
    	while ($args{run}) {
+   	    $args{run} -= 1;
    		my $opdata = Operation::getNextOp();
    		if ($opdata){
-   				$log->warn("Get Next Operation, its type is ".ref($opdata));
-   				my $op = EFactory::newEEntity(data => $opdata);
+	   		# start transaction
+	   		my $op = EFactory::newEOperation(op => $opdata);
+   			$log->info("New operation (".ref($op).") retrieve ; execution processing");
+   			$adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
+   			$adm->{db}->txn_begin;
    			eval {
-   				$op->prepare(internal_cluster => $self->{config}->{cluster}, internal_net => $self->{config}->{internalnetwork});
-   				$log->info("Operation execution");
-   				$op->execute();
-   				$log->info("Operation finishing");
-   				$op->finish();
-   				$log->info("Operation finished");
+   			    eval {
+   			        $op->prepare(internal_cluster => $self->{config}->{cluster});
+   			    };
+   			    if ($@) {
+   			        my $error = $@;
+   				    $adm->{db}->txn_rollback;
+#   				    $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
+#   				    $log->error("Error during operation evaluation :\n$error");
+   				    $op->delete();
+   			        throw $error;
+   			    }
+   			    else {
+   			        $op->execute();
+   				    $op->finish();
+   			    }
    			};
 			if ($@) {
    				my $error = $@;
-   				$op->cancel();
-   				$log->error("Error during execution : $error");
-   				print Dumper $error;
+                throw $error;
+   			} else {
+   				# commit transaction
+   				$adm->{db}->txn_commit;
+   				$adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");	
+   				$op->delete();
    			}
-   			$args{run}--;
-
-   		} else {
-   			$log->debug('5 secondes waiting before next round');
-   			sleep 20;
-   		
+   			
    		}
-   	} 
+   		else { sleep 5; }
+   	}
 }
 
 

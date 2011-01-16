@@ -4,51 +4,71 @@ use Test::Exception;
 use Test::Pod;
 use Kanopya::Exceptions;
 
-
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/test.log', layout=>'%F %L %p %m%n'});
-
-use_ok ('Administrator');
-use_ok('Entity::Cluster');
 use Data::Dumper;
+
+use_ok('Executor');
+use_ok ('Administrator');
+use_ok('Entity::Motherboard');
+
+
 my $test_instantiation = "Instantiation test";
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'admin' );    
-    
+    my @args = ();
+    note ("Execution begin");
+    my $executor = new_ok("Executor", \@args, "Instantiate an executor");
+
     # Test bad structure cluster
     note("Test Instanciation Error");
-    throws_ok { Entity::Cluster->new(cluster_name => "foo\nbar", 
-				     cluster_min_node => "1", 
-				     cluster_max_node => "2", 
-				     cluster_priority => "100", 
-				     systemimage_id => "1") } qr/checkAttrs detect a wrong value/, 
-    $test_instantiation;
-    throws_ok { Entity::Cluster->new(cluster_name => "foobar", 
-				     cluster_min_node => "1q", 
-				     cluster_max_node => "2", 
-				     cluster_priority => "100", 
-				     systemimage_id => "1") } 'Kanopya::Exception::Internal::WrongValue',
+    throws_ok { Entity::Motherboard->new(
+		    motherboard_mac_address => '70:71tbc:6c:2d:b1', 
+		    kernel_id => 9,
+		    motherboard_serial_number => "Wrong Mac",
+		    motherboardmodel_id => 7,
+		    processormodel_id => 2) } qr/checkAttrs detect a wrong value/, 
     $test_instantiation;
     
     ########################### Test cluster extended
-    note("Test Cluster extended");
-    my $c1 = Entity::Cluster->new(cluster_name => "foobar", 
-			 cluster_min_node => "1", 
-			 cluster_max_node => "2", 
-			 cluster_priority => "100", 
-			 systemimage_id => "1",
-			 cluster_toto => "testextended");
-    isa_ok($c1, "Entity::Cluster", $test_instantiation);
-    is ($c1->getAttr(name=>'cluster_toto'), "testextended", 'Access to extended parameter from new cluster');
-    $c1->save();
-    # Test cluster->get
-    my $c2 = Entity::Cluster-> get(id => $c1->getAttr(name=>'cluster_id'));
-    is ($c2->getAttr(name=>'cluster_toto'), "testextended", "Get extended attr from a cluster load from db");
-    note( "Test Cluster management");
-    $c1->activate();
+    note("Test Motherboard extended");
+    my $m1 = Entity::Motherboard->new(	
+	motherboard_mac_address => '00:00:00:00:00:00', 
+	kernel_id => 9, 
+	motherboard_serial_number => "First Motherboard",
+	motherboardmodel_id => 7,
+	processormodel_id => 2,
+	motherboard_toto => "testextended");
+    my $m2 = Entity::Motherboard->new(	
+	motherboard_mac_address => '00:00:00:00:00:11', 
+	kernel_id => 9, 
+	motherboard_serial_number => "Second Motherboard",
+	motherboardmodel_id => 7,
+	processormodel_id => 2);
 
+
+    isa_ok($m1, "Entity::Motherboard", $test_instantiation);
+    is ($m1->getAttr(name=>'motherboard_toto'), "testextended", 'Access to extended parameter from new motherboard');
     
+    $m1->save();
+#    $m2->save();
+    # Test cluster->get
+    note( "Test Motherboard management");
+    $m1->activate();
+    $executor->execnround(run => 1);
+    my $clone_m1 = Entity::Motherboard->get(id => $m1->getAttr(name=>'motherboard_id'));
+    is ($clone_m1->getAttr(name=>'motherboard_toto'), "testextended", "Get extended attr from a motherboard load from db");
+    is ($clone_m1->getAttr(name=>'active'), 1, "Test if Motherboard is active");
+    $m1->activate();
+    throws_ok { $executor->execnround(run => 1) } 'Kanopya::Exception::Internal',
+    "Activate a second time same motherboard";
+    $m1->deactivate();
+    $executor->execnround(run => 1);
+    is ($m1->getAttr(name=>'active'), undef, "Deactivate Motherboard");
+    $m1->delete();
+    throws_ok { $clone_m1 = Entity::Motherboard->get(id => $m1->getAttr(name=>'motherboard_id'))} 'Kanopya::Exception::Internal',
+    "Try to get a deleted motherboard";
 
 # Ici probleme d instanciation d une meme row dans 2 entity et suppression de l une d elle.
 #    note("Cluster deleted");

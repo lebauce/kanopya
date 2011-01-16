@@ -81,8 +81,10 @@ sub new {
 
 	my $self = { 
 		schema => $args{schema},
-		user_entity_id => $args{entity_id} 
+		user_entity_id => $args{entity_id},
+		user_id => $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id")		
 	};
+	print "User Entity ID <$ENV{EID}> and user id is <" . $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id") . ">\n";
 	bless $self, $class;
 	return $self;
 }

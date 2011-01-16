@@ -48,6 +48,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 
+use Entity::Cluster;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -98,7 +99,7 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
@@ -107,7 +108,7 @@ sub prepare {
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
 	# Instanciate new Cluster Entity
-	$self->{_objs}->{cluster} = $adm->newEntity(type => "Cluster", params => $params);
+	$self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
 		
 }
 

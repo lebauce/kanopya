@@ -23,11 +23,14 @@ use base "Entity";
 
 use strict;
 use warnings;
+
 use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Motherboard;
+use Operation;
 use Administrator;
 use General;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -117,7 +120,6 @@ sub get {
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
    	}
-   
    	my $self = $class->SUPER::get( %args,  table => "Cluster");
    	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
    	return $self;
@@ -138,8 +140,17 @@ sub getClusters {
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
 }
 
-sub createCluster {}
+sub create{}
 
+sub activate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    print "New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id');
+    Operation->enqueue(priority => 200,
+                   type     => 'ActivateCluster',
+                   params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
+}
 
 sub checkAttrs {
 	# Remove class
@@ -425,7 +436,7 @@ sub removeComponent {
 
 sub getMotherboards{
 	my $self = shift;
-    my %args = @_;
+    #my %args = @_;
 
 	my $motherboard_rs = $self->{_dbix}->nodes;
 	my %motherboards;

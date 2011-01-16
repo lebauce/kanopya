@@ -59,7 +59,7 @@ use parent "Entity::Component::Dhcpserver";
 use strict;
 use warnings;
 
-use KanopyaExceptions;
+use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
