@@ -17,7 +17,8 @@ INSERT INTO `groups` VALUES
 (7,'Kernel','Kernel','Kernel master group containing all kernels',1),
 (8,'Systemimage','Systemimage','Systemimage master group containing all system images',1),
 (9,'Operationtype','Operationtype','Operationtype master group containing all operations',1),
-(10,'Powersupply','Powersupply','Powersupply master group  containing all power supply cards',1);
+(10,'Powersupply','Powersupply','Powersupply master group  containing all power supply cards',1),
+(11,'Groups','Groups','Groups master group containing all groups',1);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,3); SET @eid := @eid +1;
@@ -28,17 +29,18 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,7);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,8); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,9); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,10); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
 
 -- predefined groups
 INSERT INTO `groups` VALUES
-(11,'Admin','User','Privileged users for administration tasks',0);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
-SET @Admin_group = 11;
+(12,'Admin','User','Privileged users for administration tasks',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,12); SET @eid := @eid +1;
+SET @Admin_group = 12;
 
 INSERT INTO `groups` VALUES
-(12,'GuestGroup','User','Guest users with limited permissions',0);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,12); SET @eid := @eid +1;
-SET @Guest_group = 12;
+(13,'GuestGroup','User','Guest users with limited permissions',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,13); SET @eid := @eid +1;
+SET @Guest_group = 13;
 
 -- system user
 INSERT INTO `user` VALUES 
