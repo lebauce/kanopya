@@ -267,6 +267,7 @@ sub new {
 	return $self;
 }
 
+
 #TODO Comment getResultset
 sub getRow {
 	my $self = shift;
@@ -278,7 +279,7 @@ sub getRow {
 
 	if ((! exists $args{id} or ! defined $args{id}) ||
 		(! exists $args{table} or ! defined $args{table})) { 
-		$errmsg = "Administrator->getResultset need a table and an id named argument!";
+		$errmsg = "Administrator->getRow need a table and an id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
@@ -289,7 +290,7 @@ sub getRow {
 		# Extension Entity Management
 		return $entity_dbix;
 	} else {
-		$errmsg = "Administrator::getResultset(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
+		$errmsg = "Administrator::getRow(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 		return;

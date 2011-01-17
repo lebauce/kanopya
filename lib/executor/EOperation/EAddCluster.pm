@@ -38,21 +38,21 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EAddCluster;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
 use EFactory;
+
+use Entity::Cluster;
 
 my $log = get_logger("executor");
 my $errmsg;
-
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
 
 =head2 new
 
@@ -99,7 +99,7 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
@@ -108,7 +108,7 @@ sub prepare {
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
 	# Instanciate new Cluster Entity
-	$self->{_objs}->{cluster} = $adm->newEntity(type => "Cluster", params => $params);
+	$self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
 		
 }
 

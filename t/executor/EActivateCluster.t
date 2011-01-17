@@ -10,26 +10,12 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/test.log', layout=>'%F %L 
 
 use_ok ('Administrator');
 use_ok('Entity::Cluster');
+use_ok('Executor');
 use Data::Dumper;
 my $test_instantiation = "Instantiation test";
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'admin' );    
-    
-    # Test bad structure cluster
-    note("Test Instanciation Error");
-    throws_ok { Entity::Cluster->new(cluster_name => "foo\nbar", 
-				     cluster_min_node => "1", 
-				     cluster_max_node => "2", 
-				     cluster_priority => "100", 
-				     systemimage_id => "1") } qr/checkAttrs detect a wrong value/, 
-    $test_instantiation;
-    throws_ok { Entity::Cluster->new(cluster_name => "foobar", 
-				     cluster_min_node => "1q", 
-				     cluster_max_node => "2", 
-				     cluster_priority => "100", 
-				     systemimage_id => "1") } 'Kanopya::Exception::Internal::WrongValue',
-    $test_instantiation;
     
     ########################### Test cluster extended
     note("Test Cluster extended");
@@ -37,17 +23,13 @@ eval {
 			 cluster_min_node => "1", 
 			 cluster_max_node => "2", 
 			 cluster_priority => "100", 
-			 systemimage_id => "1",
-			 cluster_toto => "testextended");
+			 systemimage_id => "1");
     isa_ok($c1, "Entity::Cluster", $test_instantiation);
-    is ($c1->getAttr(name=>'cluster_toto'), "testextended", 'Access to extended parameter from new cluster');
     $c1->save();
     # Test cluster->get
-    my $c2 = Entity::Cluster-> get(id => $c1->getAttr(name=>'cluster_id'));
-    is ($c2->getAttr(name=>'cluster_toto'), "testextended", "Get extended attr from a cluster load from db");
     note( "Test Cluster management");
     $c1->activate();
-
+    
     
 
 # Ici probleme d instanciation d une meme row dans 2 entity et suppression de l une d elle.

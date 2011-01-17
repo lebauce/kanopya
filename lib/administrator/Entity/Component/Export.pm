@@ -59,7 +59,7 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
-use KanopyaExceptions;
+use Kanopya::Exceptions;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -132,7 +132,7 @@ sub get {
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
-Exception : Mcs::Exception::Internal::IncorrectParam
+Exception : Kanopya::Exception::Internal::IncorrectParam
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
@@ -145,7 +145,7 @@ This module depends of
 
 =over
 
-=item KanopyaException module used to throw exceptions managed by handling programs
+=item Kanopya::Exception module used to throw exceptions managed by handling programs
 
 =item Entity::Component module which is its mother class implementing global component method
 

@@ -38,20 +38,24 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EActivateSystemimage;
+use base "EOperation";
 
 use strict;
 use warnings;
+
+use Template;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use McsExceptions;
+
+use Kanopya::Exceptions;
 use EFactory;
-use Template;
+use Entity::Cluster;
+use Entity::Systemimage;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
+
 
 =head2 new
 
@@ -105,19 +109,18 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EActivateSystemimage->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	$log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 	$log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
 		
 	#### Get Internal IP
@@ -137,14 +140,13 @@ sub prepare {
 	
 	#### Get instance of Systemimage Entity
 	$log->info("Load systemimage instance");
-	$self->{_objs}->{systemimage} = $adm->getEntity(type => "Systemimage", id => $params->{systemimage_id});
+	$self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
 	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
 	## Instanciate Component needed (here ISCSITARGET on nas )
 	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1",
-																					  administrator => $adm));
+																					  version=> "1"));
 	$log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
 
 
@@ -155,7 +157,6 @@ sub execute{
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	$log->debug("After EOperation exec and before new Adm");
-	my $adm = Administrator->new();
 	
 	## Update export to allow to motherboard to boot with this systemimage
 	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name'));

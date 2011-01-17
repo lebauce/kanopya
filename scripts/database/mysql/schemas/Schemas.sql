@@ -99,7 +99,7 @@ CREATE TABLE `motherboarddetails` (
   `value` char(255) DEFAULT NULL,
   PRIMARY KEY (`motherboard_id`,`name`),
   KEY `fk_motherboarddetails_1` (`motherboard_id`),
-  CONSTRAINT `fk_motherboarddetails_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_motherboarddetails_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

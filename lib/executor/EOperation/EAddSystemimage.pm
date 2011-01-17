@@ -38,21 +38,20 @@ It allows to implement System image creation operation
 
 =cut
 package EOperation::EAddSystemimage;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
-use EFactory;
 
+use EFactory;
+use Kanopya::Exceptions;
+
+our $VERSION = '1.00';
 my $log = get_logger("executor");
 my $errmsg;
-
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
@@ -98,7 +97,7 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EAddSystemimage->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $adm = Administrator->new();
@@ -110,9 +109,9 @@ sub prepare {
 
 	## Instanciate Clusters
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 
 	## Get Internal IP
 	# Get Internal Ip address of Master node of cluster Executor
@@ -125,7 +124,7 @@ sub prepare {
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
 	# Get distribution from param
-	$self->{_objs}->{distribution} = $adm->getEntity(type => 'Distribution', id => $params->{distribution_id});
+	$self->{_objs}->{distribution} = Entity::Distribution->get(id => $params->{distribution_id});
 	
 	# Instanciate new Systemimage Entity
 	$self->{_objs}->{systemimage} = $adm->newEntity(type => "Systemimage", params => $params);

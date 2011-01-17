@@ -40,6 +40,7 @@ package EOperation;
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib "..";
@@ -111,7 +112,6 @@ sub prepare {
 	$log->debug("Change user by user_id : $self->{userid}");	
 	my $adm = Administrator->new();
 	#$adm->changeUser(user_id => $self->{userid});
-	$log->debug("Change user effective : New user is $adm->{_rightschecker}->{_user}");
 }
 
 sub execute {}
