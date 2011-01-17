@@ -9,15 +9,19 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/test.log', layout=>'%F %L %p %m%n'});
 
 use_ok ('Administrator');
+use_ok ('Executor');
 use_ok('Entity::Cluster');
 use Data::Dumper;
 my $test_instantiation = "Instantiation test";
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'admin' );    
-    
+    my @args = ();
+    note ("Execution begin");
+    my $executor = new_ok("Executor", \@args, "Instantiate an executor");
     # Test bad structure cluster
     note("Test Instanciation Error");
+
     throws_ok { Entity::Cluster->new(cluster_name => "foo\nbar", 
 				     cluster_min_node => "1", 
 				     cluster_max_node => "2", 
@@ -43,10 +47,22 @@ eval {
     is ($c1->getAttr(name=>'cluster_toto'), "testextended", 'Access to extended parameter from new cluster');
     $c1->save();
     # Test cluster->get
-    my $c2 = Entity::Cluster-> get(id => $c1->getAttr(name=>'cluster_id'));
-    is ($c2->getAttr(name=>'cluster_toto'), "testextended", "Get extended attr from a cluster load from db");
     note( "Test Cluster management");
     $c1->activate();
+    $executor->execnround(run => 1);
+
+    my $c2 = Entity::Cluster-> get(id => $c1->getAttr(name=>'cluster_id'));
+    is ($c2->getAttr(name=>'cluster_toto'), "testextended", "Get extended attr from a cluster load from db");
+    is ($c2->getAttr(name=>'active'), 1, "Test if cluster is active");
+    $c1->activate();
+    throws_ok { $executor->execnround(run => 1) } 'Kanopya::Exception::Internal',
+    "Activate a second time same cluster";
+    $c1->deactivate();
+    $executor->execnround(run => 1);
+    is ($c1->getAttr(name=>'active'), undef, "Deactivate Cluster");
+    $c1->delete();
+    throws_ok { $c2 = Entity::Cluster->get(id => $c1->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
+    "Try to get a deleted cluster";
 
     
 

@@ -23,35 +23,35 @@ use base "Entity";
 
 use strict;
 use warnings;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+
+use Kanopya::Exceptions;
 use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	systemimage_name => { pattern => 'm//s',
+	systemimage_name => { pattern => '^[1-9a-zA-Z]*$',
 						  is_mandatory => 1,
 						  is_extended => 0 },
 	
-	systemimage_desc => { pattern => 'm//m',
+	systemimage_desc => { pattern => '^\w*$',
 						  is_mandatory => 1,
 						  is_extended => 0 },
 	
-	distribution_id => { pattern => 'm//s',
+	distribution_id => { pattern => '^\d*$',
 						 is_mandatory => 1,
 						 is_extended => 0 },
 						 
-	etc_device_id => { pattern => 'm//s',
+	etc_device_id => { pattern => '^\d*$',
 						 is_mandatory => 0,
 						 is_extended => 0 },
 	
-	root_device_id => { pattern => 'm//s',
+	root_device_id => { pattern => '^\d*$',
 						 is_mandatory => 0,
 						 is_extended => 0 },		
 						 
-	active => { pattern => 'm//s',
+	active => { pattern => '^[01]$',
 				is_mandatory => 0,
 				is_extended => 0 },		
 };
@@ -72,20 +72,26 @@ sub checkAttrs {
 	# Remove class
 	shift;
 	my %args = @_;
-	my (%global_attrs, %ext_attrs, $attr);
+	my (%global_attrs, %ext_attrs);
 	my $attr_def = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		$errmsg = "Entity::Systemimage->checkAttrs need attrs named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
-	foreach $attr (keys(%$attrs)) {
+	foreach my $attr (keys(%$attrs)) {
 		if (exists $attr_def->{$attr}){
 			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
-			#TODO Check param with regexp in pattern field of struct
+			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
+			if($attrs->{$attr} !~ m/($attr_def->{$attr}->{pattern})/){
+				$errmsg = "Entity::Systemimage->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
+				$log->error($errmsg);
+				$log->debug("Can't match $attr_def->{$attr}->{pattern} with $attrs->{$attr}");
+				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+			}
 			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
 			}
@@ -96,15 +102,15 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Systemimage->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
-	foreach $attr (keys(%$attr_def)) {
+	foreach my $attr (keys(%$attr_def)) {
 		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Systemimage->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	
@@ -130,12 +136,12 @@ sub checkAttr {
 		(! exists $args{value} or ! defined $args{value})) { 
 		$errmsg = "Entity::Systemimage->checkAttr need a name and value named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Systemimage->checkAttr invalid name"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	# Here check attr value
 }
@@ -148,7 +154,7 @@ sub get {
     if ((! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Entity::SystemImage->get need an id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
    my $self = $class->SUPER::get( %args, table=>"Systemimage");
    return $self;
@@ -163,7 +169,7 @@ sub getSystemimages {
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getSystemimages need a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Systemimage");
@@ -186,6 +192,26 @@ sub new {
 
 }
 
+sub activate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    print "New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id');
+    Operation->enqueue(priority => 200,
+                   type     => 'ActivateSystemimage',
+                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
+}
+
+sub deactivate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    print "New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id');
+    Operation->enqueue(priority => 200,
+                   type     => 'DeactivateSystemimage',
+                   params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
+}
+
 =head2 toString
 
 	desc: return a string representation of the entity
@@ -198,7 +224,7 @@ sub toString {
 	return $string;
 }
 
-=head getDevices 
+=head2 getDevices 
 
 get etc and root device attributes for this systemimage
 
@@ -209,7 +235,7 @@ sub getDevices {
 	if(! $self->{_dbix}->in_storage) {
 		$errmsg = "Entity::Systemimage->getDevices must be called on an already save instance";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Kanopya::Exception(error => $errmsg);
 	}
 	$log->info("retrieve etc and root devices attributes");
 	my $etcrow = $self->{_dbix}->etc_device_id;
@@ -240,7 +266,7 @@ sub getDevices {
 	return $devices;
 }
 
-=head getInstalledComponents
+=head2 getInstalledComponents
 
 get components installed on this systemimage
 return array ref containing hash ref 
@@ -252,7 +278,7 @@ sub getInstalledComponents {
 	if(! $self->{_dbix}->in_storage) {
 		$errmsg = "Entity::Systemimage->getComponents must be called on an already save instance";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Kanopya::Exception(error => $errmsg);
 	}
 	my $components = [];
 	my $search = $self->{_dbix}->component_installeds->search(undef, 

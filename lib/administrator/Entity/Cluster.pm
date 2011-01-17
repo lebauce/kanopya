@@ -108,13 +108,15 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Cluster->new need an id named argument!";	
+   	my $admin = Administrator->new();
+    if ((! exists $args{id} or ! defined $args{id}) or
+        (!$admin->{db}->resultset('Cluster')->find($args{id}))) { 
+		$errmsg = "Entity::Cluster->new need an existing id named argument!";	
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
    	
-   	my $admin = Administrator->new();
+
    	my $entity_id = $admin->{db}->resultset('Cluster')->find($args{id})->cluster_entities->first->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
@@ -149,6 +151,15 @@ sub activate{
     print "New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id');
     Operation->enqueue(priority => 200,
                    type     => 'ActivateCluster',
+                   params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
+}
+sub deactivate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    print "New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id');
+    Operation->enqueue(priority => 200,
+                   type     => 'DeactivateCluster',
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
 }
 

@@ -38,26 +38,29 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EDeactivateCluster;
+use base "EOperation";
+
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
+use Entity::Cluster;
+use Entity::Systemimage;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
+
 
 =head2 new
 
     my $op = EOperation::EDeactivateCluster->new();
 
-	# Operation::EDeactivateCluster->new creates a new DeactivateCluster operation.
-	# RETURN : EOperation::EDeactivateCluster : Operation deactivate cluster on execution side
+    # Operation::EDeactivateCluster->new creates a new DeactivateCluster operation.
+    # RETURN : EOperation::EDeactivateCluster : Operation activate cluster on execution side
 
 =cut
 
@@ -74,15 +77,29 @@ sub new {
 
 =head2 _init
 
-	$op->_init();
-	# This private method is used to define some hash in Operation
+    $op->_init();
+    # This private method is used to define some hash in Operation
 
 =cut
 
 sub _init {
-	my $self = shift;
-	$self->{_objs} = {};
-	return;
+    my $self = shift;
+    $self->{_objs} = {};
+    return;
+}
+
+sub checkOp{
+    my $self = shift;
+	my %args = @_;
+    
+    
+    # check if cluster is active
+    $log->debug("checking cluster active value <$args{params}->{cluster_id}>");
+   	if(! $self->{_objs}->{cluster}->getAttr(name => 'active')) {
+	    	$errmsg = "EOperation::EDeactivateCluster->new : cluster $args{params}->{cluster_id} is already active";
+	    	$log->error($errmsg);
+	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
 }
 
 =head2 prepare
@@ -99,19 +116,39 @@ sub prepare {
 
 	$log->info("Operation preparation");
 
+    # Check if internal_cluster exists
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EDeactivateCluster->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-
-	my $adm = Administrator->new();
+    
+    # Get Operation parameters
 	my $params = $self->_getOperation()->getParams();
+    $self->{_objs} = {};
 
-	#### Get instance of Cluster Entity
-	$log->info("Load cluster instance");
-	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
-	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
+ 	# Cluster instantiation
+    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
+    eval {
+    	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EDeactivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+    ### Check Parameters and context
+    eval {
+        $self->checkOp(params => $params);
+    };
+    if ($@) {
+        my $error = $@;
+		$errmsg = "Operation DeactivateCluster failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
 
 }
 
@@ -119,11 +156,9 @@ sub execute{
 	my $self = shift;
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
-	my $adm = Administrator->new();
 	
 	
-	# set cluster inactive in db
+	# set cluster active in db
 	$self->{_objs}->{cluster}->setAttr(name => 'active', value => 0);
 	$self->{_objs}->{cluster}->save();
 		

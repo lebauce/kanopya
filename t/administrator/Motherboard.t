@@ -16,7 +16,7 @@ use_ok('Entity::Motherboard');
 my $test_instantiation = "Instantiation test";
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'admin' );    
+    Administrator::authenticate( login =>'admin', password => 'admin' );
     my @args = ();
     note ("Execution begin");
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
@@ -24,25 +24,25 @@ eval {
     # Test bad structure cluster
     note("Test Instanciation Error");
     throws_ok { Entity::Motherboard->new(
-		    motherboard_mac_address => '70:71tbc:6c:2d:b1', 
+		    motherboard_mac_address => '70:71tbc:6c:2d:b1',
 		    kernel_id => 9,
 		    motherboard_serial_number => "Wrong Mac",
 		    motherboardmodel_id => 7,
-		    processormodel_id => 2) } qr/checkAttrs detect a wrong value/, 
+		    processormodel_id => 2) } qr/checkAttrs detect a wrong value/,
     $test_instantiation;
-    
+
     ########################### Test cluster extended
     note("Test Motherboard extended");
-    my $m1 = Entity::Motherboard->new(	
-	motherboard_mac_address => '00:00:00:00:00:00', 
-	kernel_id => 9, 
+    my $m1 = Entity::Motherboard->new(
+	motherboard_mac_address => '00:00:00:00:00:00',
+	kernel_id => 9,
 	motherboard_serial_number => "First Motherboard",
 	motherboardmodel_id => 7,
 	processormodel_id => 2,
 	motherboard_toto => "testextended");
-    my $m2 = Entity::Motherboard->new(	
-	motherboard_mac_address => '00:00:00:00:00:11', 
-	kernel_id => 9, 
+    my $m2 = Entity::Motherboard->new(
+	motherboard_mac_address => '00:00:00:00:00:11',
+	kernel_id => 9,
 	motherboard_serial_number => "Second Motherboard",
 	motherboardmodel_id => 7,
 	processormodel_id => 2);
@@ -50,7 +50,7 @@ eval {
 
     isa_ok($m1, "Entity::Motherboard", $test_instantiation);
     is ($m1->getAttr(name=>'motherboard_toto'), "testextended", 'Access to extended parameter from new motherboard');
-    
+
     $m1->save();
 #    $m2->save();
     # Test cluster->get
@@ -95,7 +95,7 @@ eval {
 
 };
 if($@) {
-	my $error = $@;	
+	my $error = $@;
 	print Dumper $error;
 };
 
