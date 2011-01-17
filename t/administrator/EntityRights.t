@@ -6,7 +6,7 @@ use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 use Log::Log4perl qw(:easy);
 Log::Log4perl->init('/opt/kanopya/conf/log.conf');
 
-use Test::More tests => 18;
+use Test::More tests => 28;
 use Test::Exception;
 
 BEGIN { 
@@ -42,23 +42,48 @@ isnt($ENV{EID}, $user_admin_eid, "environment variable EID changed during reauth
 isa_ok($adm->{_rightchecker}, 'EntityRights::User',	'for user guest, $adm->{_rightschecker}');
 is($adm->{_rightchecker}->{user_entity_id}, $ENV{EID}, 'user_entity_id in EntityRights::User match $ENV{EID}');
 
-print "\n------ Permission checking tests ------\n\n";
+print "\n------ 'Guest' user Initial Permissions checking tests ------\n\n";
 
-isnt($adm->{_rightchecker}->checkPerm(entity_id => 61, method => 'get'), 1, 'guest user cant retrieve entity main cluster');
-my $cluster;
-throws_ok { $cluster = Entity::Cluster->get(id => 1); } "Kanopya::Exception", 'Kanopya::Exception::Permission::Denied thrown';
+my $eguest_user;
+my $ecluster;
+
+lives_ok { $eguest_user = Entity::User->get(id => 3) } 'Permission granted for guest user to retrieve Entity::User with id 3';
+lives_ok { 
+	$eguest_user->setAttr(name => 'user_desc', value => 'another description'); 
+	$eguest_user->update();
+} 'Permission granted for guest user to update entity user with id 3';
+
+throws_ok { $eguest_user->delete() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to delete Entity::User with id 3';
+
+throws_ok { $ecluster = Entity::Cluster->get(id => 1) } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to retrieve Entity::Cluster with id 1';
+throws_ok { Entity::Cluster->create() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to create an Entity::Cluster';
+
+print "\n------ 'Admin' user Initial Permissions checking tests ------\n\n";
 
 Administrator::authenticate(login => 'admin', password => 'admin');
 $adm = Administrator->new();
-is($adm->{_rightchecker}->checkPerm(entity_id => 61, method => 'get'), 1, 'admin user can retrieve entity main cluster');
-lives_ok { $cluster = Entity::Cluster->get(id => 1) } 'No exception thrown';
+lives_ok { $ecluster = Entity::Cluster->get(id => 1) } 'Permission granted for admin user to retrieve Entity::Cluster with id 1';
+lives_ok { Entity::Cluster->create() } 'Permission granted for admin user to create an Entity::Cluster';
 
-# tester que guest ne peut pas créer de cluster 
-# tester que admin peut créer un cluster
-# ajouter le droit à guest de créer un cluster
-# tester que guest peut créer un cluster
+print "\n------ 'Guest' user Permissions setting tests ------\n\n";
 
+lives_ok { 
+	$ecluster->addPerm(method => 'get', entity_id => $eguest_user->{_entity_id}) 
+} "Permission granted for admin user to add 'get' permission on Entity::Cluster with id 1 for user guest";
 
+lives_ok { 
+	Entity::Cluster->addPerm(method => 'create', entity_id => $eguest_user->{_entity_id})
+} "Permission granted for admin user to add 'create' permission on Entity::Cluster class for user guest";
+
+Administrator::authenticate(login => 'guest', password => 'guest');
+$adm = Administrator->new();
+lives_ok { $ecluster = Entity::Cluster->get(id => 1) } 'Permission granted for guest user to retrieve Entity::Cluster with id 1';
+lives_ok { Entity::Cluster->create() } 'Permission granted for guest user to create an Entity::Cluster';
+
+throws_ok { 
+	$ecluster = Entity::Cluster->get(id => 1);
+	$ecluster->addPerm(method => 'delete', entity_id => $eguest_user->{_entity_id}) 
+} "Kanopya::Exception::Permission::Denied", "Permission denied for guest user to add 'delete' permission on Entity::Cluster with id 1";
 
 
 

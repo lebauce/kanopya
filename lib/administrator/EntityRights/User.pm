@@ -106,13 +106,13 @@ sub checkPerm {
 	my %args = @_;
 	
 	if(not exists $args{method} or not defined $args{method}) {
-		$errmsg = "EntityRights::User->checkperm need a method named argument!";
+		$errmsg = "EntityRights::User->checkPerm need a method named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	if(not exists $args{entity_id} or not defined $args{entity_id}) {
-		$errmsg = "EntityRights::User->checkperm need a entity_id named argument!";
+		$errmsg = "EntityRights::User->checkPerm need a entity_id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}

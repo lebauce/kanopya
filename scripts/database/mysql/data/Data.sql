@@ -35,6 +35,11 @@ INSERT INTO `groups` VALUES
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
 SET @Admin_group = 11;
 
+INSERT INTO `groups` VALUES
+(12,'GuestGroup','User','Guest users with limited permissions',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,12); SET @eid := @eid +1;
+SET @Guest_group = 12;
+
 -- system user
 INSERT INTO `user` VALUES 
 (1,1,'executer','executer','executer','executer',NULL,CURRENT_DATE(),NULL,'executer');
@@ -48,6 +53,8 @@ INSERT INTO `ingroups` VALUES (@Admin_group, @eid); SET @eid := @eid +1;
 
 INSERT INTO `user` VALUES (3,0,'guest','guest','Guest','','guest@somewhere.com',CURRENT_DATE(),NULL,'Guest user with limited permissions.');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); 
+INSERT INTO `ingroups` VALUES (@Guest_group, @eid); 
+SET @guest_user_eid = @eid;
 SET @eid := @eid +1;
 
 -- processor models
@@ -225,6 +232,11 @@ INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 
 -- dhcpd configuration
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'10.0.0.0','255.255.255.0');
+
+
+-- initial permissions for user guest
+INSERT INTO `entityright` VALUES (1, @guest_user_eid, @guest_user_eid, 'get');
+INSERT INTO `entityright` VALUES (2, @guest_user_eid, @guest_user_eid, 'update');
 
 SET foreign_key_checks=1;
 

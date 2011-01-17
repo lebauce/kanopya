@@ -292,7 +292,7 @@ sub getRow {
 		$errmsg = "Administrator::getResultset(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
-		return undef;
+		return;
 	}
 }
 
@@ -603,7 +603,7 @@ sub getNextOp {
 	# if no other operation to Operation::$subclassbe treated, return undef
 	if(! defined $op_data) { 
 		$log->info("No operation left in the queue");
-		return undef;
+		return;
 	}
 	# Get the operation type
 	my $op_type = $op_data->get_column('type');

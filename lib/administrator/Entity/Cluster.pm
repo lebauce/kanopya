@@ -82,6 +82,123 @@ use constant ATTR_DEF => {
 										is_editable		=> 1}
 			};
 
+=head2 get
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Cluster->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   	
+   	my $admin = Administrator->new();
+   	# Entity::Cluster->get method concerns an existing cluster so we retrieve this cluster'entity_id
+   	my $entity_id = $admin->{db}->resultset('Cluster')->find($args{id})->cluster_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
+   	}
+   
+   	my $self = $class->SUPER::get( %args,  table => "Cluster");
+   	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
+   	return $self;
+}
+
+=head2 
+
+=cut
+
+sub getClusters {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getClusters need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Cluster");
+}
+
+=head2 create
+
+=cut
+
+sub create {
+	my $class = shift;
+	my %args = @_;
+	
+	# TODO tester la validite des arguments
+	
+	my $admin = Administrator->new();
+	# Entity::Cluster->create method doesnt concern existing entity so we retrieve entity_id of Cluster master group
+	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'Cluster' })->groups_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new cluster");
+   	}
+	# TODO creation implementation 
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+}
+
+=head2 update
+
+=cut
+
+sub update {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# update method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
+   	}
+	# TODO update implementation
+}
+
+=head2 delete
+
+=cut
+
+sub delete {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# delete method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
+   	}
+	# TODO delete implementation
+}
+
+
 
 sub extension {
 	return "clusterdetails";
@@ -101,51 +218,11 @@ sub getEntityTable {
 
 =cut
 
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Cluster->new need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-   	
-   	my $admin = Administrator->new();
-   	my $entity_id = $admin->{db}->resultset('Cluster')->find($args{id})->cluster_entities->first->get_column('entity_id');
-   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
-   	}
-   
-   	my $self = $class->SUPER::get( %args,  table => "Cluster");
-   	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
-   	return $self;
-}
-
-sub getClusters {
-	my $class = shift;
-    my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getClusters need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Cluster");
-}
-
-sub createCluster {}
-
-
 sub checkAttrs {
 	# Remove class
 	shift;
 	my %args = @_;
-	my (%global_attrs, %ext_attrs, $attr);
+	my (%global_attrs, %ext_attrs);
 	my $struct = ATTR_DEF;
 
 	if (! exists $args{attrs} or ! defined $args{attrs}) { 
@@ -155,7 +232,7 @@ sub checkAttrs {
 	}	
 
 	my $attrs = $args{attrs};
-	foreach $attr (keys(%$attrs)) {
+	foreach my $attr (keys(%$attrs)) {
 		if (exists $struct->{$attr}){
 			if($attrs->{$attr} !~ m/($struct->{$attr}->{pattern})/){
 				$errmsg = "Entity::Cluster->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
@@ -174,7 +251,7 @@ sub checkAttrs {
 			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
-	foreach $attr (keys(%$struct)) {
+	foreach my $attr (keys(%$struct)) {
 		if (($struct->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Cluster->checkAttrs detect a missing attribute $attr !";
@@ -213,24 +290,6 @@ sub checkAttr{
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	# Here check attr value
-}
-
-# contructor
-sub new {
-	my $class = shift;
-    my %args = @_;
-
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-
 }
 
 =head2 toString
@@ -358,7 +417,7 @@ sub getMasterNodeIp {
 		return $node_ip;
 	} else {
 		$log->debug("No Master node found for this cluster");
-		return undef;
+		return;
 	}
 }
 
@@ -369,7 +428,7 @@ sub getMasterNodeId {
 		my $id = $node_instance_rs->motherboard_id->get_column('motherboard_id');
 		return $id;
 	} else {
-		return undef;
+		return;
 	}
 }
 

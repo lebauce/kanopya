@@ -124,11 +124,11 @@ sub get {
     
     my $self = {
         _dbix			=> $dbix,
+        _entity_id		=> $dbix->get_column('entity_id'),
     };
     
     bless $self, $class;
-    
-	return $self;
+    return $self;
 }
 
 sub getExtendedAttrs {
@@ -321,20 +321,19 @@ sub getAttr {
 sub save {
 	my $self = shift;
 	my $data = $self->{_dbix};
-	#TODO check rights
-
+	
 	if ( $data->in_storage ) {
 		# MODIFY existing db obj
 		$data->update;
 		$self->_saveExtendedAttrs();
 	} else {
 		# CREATE
+		my $adm = Administrator->new();
 		my $relation = lc(ref $self);
 		$relation =~ s/.*\:\://g;
 		$log->debug("la relation: $relation");
 		my $newentity = $self->{_dbix}->insert;
 		$log->debug("new entity inserted.");
-		my $adm = Administrator->new();
 		my $row = $adm->{db}->resultset('Entity')->create(
 			{ "${relation}_entities" => [ { "${relation}_id" => $newentity->get_column("${relation}_id")} ] },
 		);
@@ -372,6 +371,62 @@ sub getPerms {
 	return;
 }
 
+=head2 addPerm
+
+=cut
+
+sub addPerm {
+	my $self = shift;
+	my %args = @_;
+	my $class = ref $self;
+	
+	if (! exists $args{method} or ! defined $args{method}) { 
+		$errmsg = "Entity::addPerm need a method named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	if (! exists $args{entity_id} or ! defined $args{entity_id}) { 
+		$errmsg = "Entity::addPerm need a entity_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	my $adm = Administrator->new();
+   	
+	if($class) {
+		# addPerm call from an instance of type $class
+	  	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'setPerm');
+   	   	if(not $granted) {
+   			throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{entity_id}");
+   		}
+   		# 
+		$adm->{_rightchecker}->addPerm(
+			consumer_id => $args{entity_id}, 
+			consumed_id => $self->{_entity_id}, 
+			method 		=> $args{method},
+		);
+	}
+	else {
+		# addPerm call from class $self
+		my @list = split(/::/, "$self");
+		my $mastergroup = pop(@list);
+		my $entity_id = $adm->{db}->resultset('Groups')->find({ groups_name => $mastergroup })->groups_entities->first->get_column('entity_id');
+		my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'setPerm');
+   	   	if(not $granted) {
+   			throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{id}");
+   		}
+		
+		$adm->{_rightchecker}->addPerm(
+			consumer_id => $args{entity_id}, 
+			consumed_id => $entity_id, 
+			method 		=> $args{method},
+		);
+	
+	}
+}
+
+
 =head2 _saveExtendedAttrs
 
 	add or update extended Attrs on the related table 'ext'
@@ -402,6 +457,10 @@ sub _saveExtendedAttrs {
 sub delete {
 	my $self = shift;
 	my $data = $self->{_dbix};
+
+	my $adm = Administrator->new();
+	
+
 
 	my $relation = lc(ref $self);
 	$relation =~ s/.*\:\://g;

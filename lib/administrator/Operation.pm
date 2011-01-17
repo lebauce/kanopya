@@ -43,7 +43,7 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 
-use KanopyaExceptions;
+use Kanopya::Exceptions;
 
 my $log = get_logger("administrator");
 our $VERSION = '1.00';
