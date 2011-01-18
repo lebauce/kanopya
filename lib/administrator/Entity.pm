@@ -206,8 +206,9 @@ sub getAttrs {
 =head2 asString
 
 	Return a string with the entity class name an all of its data
-
+	
 =cut
+
 
 sub asString {
 	my $self = shift;
@@ -296,9 +297,14 @@ sub getAttr {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
-	if ( $data->has_column( $args{name} ) ) {
-		$value = $data->get_column( $args{name} );
-		$log->debug(ref($self) . " getAttr of $args{name} : <$value>");
+    if ( $data->has_column( $args{name} ) ) {
+        $value = $data->get_column( $args{name} );
+        if (defined $args{name}){
+            $log->debug(ref($self) . " getAttr of $args{name} : <$value>");
+            }
+        else {
+            $log->debug(ref($self) . " getAttr of $args{name}  return undef");
+        }
 	} elsif ( exists $self->{_ext_attrs}{ $args{name} } ) {
 		$value = $self->{_ext_attrs}{ $args{name} };
 		$log->debug(ref($self) . " getAttr (extended) of $args{name} : $value");

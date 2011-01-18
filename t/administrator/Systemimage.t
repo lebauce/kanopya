@@ -34,28 +34,35 @@ eval {
     my $s1 = Entity::Systemimage->new(
 		    systemimage_name => 'MySystemImageTest',
 		    systemimage_desc => 'Testnowhitespace',
-		    distribution_id => 1,
-		    etc_device_id => 5,
-		    root_device_id => 6,);
-
+		    distribution_id => 1);
     isa_ok($s1, "Entity::Systemimage", $test_instantiation);
 
-    $s1->save();
-#    $m2->save();
-    # Test cluster->get
-    note( "Test Motherboard management");
-    $s1->activate();
+    note( "Test Systemimage creation");
+    $s1->create();
     $executor->execnround(run => 1);
-    my $clone_s1 = Entity::Systemimage->get(id => $s1->getAttr(name=>'systemimage_id'));
+    my $clone_s1 = Entity::Systemimage->getSystemimage(hash => {systemimage_name => 'MySystemImageTest'});
+    isa_ok($clone_s1, "Entity::Systemimage", $test_instantiation);
+
+    note( "Test Systemimage activation");
+    $clone_s1->activate();
+    $executor->execnround(run => 1);
+    $clone_s1 = Entity::Systemimage->get(id => $clone_s1->getAttr(name=>'systemimage_id'));
     is ($clone_s1->getAttr(name=>'active'), 1, "Test if SystemImage is active");
-    $s1->activate();
+
+    note( "Test Systemimage activation Error");
+    $clone_s1->activate();
     throws_ok { $executor->execnround(run => 1) } 'Kanopya::Exception::Internal',
     "Activate a second time same systemimage";
-    $s1->deactivate();
+
+    note( "Test Systemimage deactivation");
+    $clone_s1 = Entity::Systemimage->get(id => $clone_s1->getAttr(name=>'systemimage_id'));
+    $clone_s1->deactivate();
     $executor->execnround(run => 1);
-    is ($s1->getAttr(name=>'active'), undef, "Deactivate Systemimage");
-    $s1->delete();
-    throws_ok { $clone_s1 = Entity::Systemimage->get(id => $s1->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
+    $clone_s1 = Entity::Systemimage->get(id => $clone_s1->getAttr(name=>'systemimage_id'));
+    is ($clone_s1->getAttr(name=>'active'), 0, "Deactivate Systemimage");
+
+    $clone_s1->delete();
+    throws_ok { $clone_s1 = Entity::Systemimage->get(id => $clone_s1->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
     "Try to get a deleted motherboard";
     note("Test Systemimage.pm pod");
     pod_file_ok( '/opt/kanopya/lib/administrator/Entity/Systemimage.pm', 'stuff docs are valid POD' );

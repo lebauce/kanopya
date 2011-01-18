@@ -27,6 +27,8 @@ use warnings;
 use Kanopya::Exceptions;
 use Administrator;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
+
 my $log = get_logger("administrator");
 my $errmsg;
 
@@ -163,8 +165,6 @@ sub get {
 sub getSystemimages {
 	my $class = shift;
     my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
 
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getSystemimages need a hash named argument!";
@@ -174,6 +174,30 @@ sub getSystemimages {
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Systemimage");
 }
+
+sub getSystemimage {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getSystemimage need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @clusters = $class->SUPER::getEntities( %args,  type => "Systemimage");
+    return pop @clusters;
+}
+
+sub create{
+    my $self = shift;
+    
+    my %params = $self->getAttrs();
+    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
+    Operation->enqueue(priority => 200,
+                   type     => 'AddSystemimage',
+                   params   => \%params);
+}
+
 
 sub new {
 	my $class = shift;

@@ -39,19 +39,19 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 use constant ATTR_DEF => {
-			cluster_name			=> {pattern			=> '^\w*$',
-										is_mandatory	=> 1,
-										is_extended		=> 0,
-										is_editable		=> 0},
-			cluster_desc			=> {pattern			=> '\w*', # Impossible to check char used because of \n doesn't match with \w
-										is_mandatory	=> 0,
-										is_extended 	=> 0,
-										is_editable		=> 1},
-			cluster_type			=> {pattern			=> '^.*$',
-										is_mandatory	=> 0,
-										is_extended		=> 0,
-										is_editable		=> 0},
-			cluster_min_node		=> {pattern 		=> '^\d*$',
+    cluster_name    =>  {pattern                => '^\w*$',
+                                        is_mandatory      => 1,
+                                        is_extended         => 0,
+                                        is_editable           => 0},
+    cluster_desc    =>  {pattern                   => '\w*', # Impossible to check char used because of \n doesn't match with \w
+                                      is_mandatory        => 0,
+                                      is_extended          => 0,
+                                      is_editable            => 1},
+    cluster_type             =>  {pattern                    => '^.*$',
+                                               is_mandatory	=> 0,
+                                               is_extended		=> 0,
+                                               is_editable		=> 0},
+    cluster_min_node    => {pattern 		=> '^\d*$',
 										is_mandatory	=> 1,
 										is_extended 	=> 0,
 										is_editable		=> 1},
@@ -138,17 +138,39 @@ sub getClusters {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
 }
 
-sub create{}
+sub getCluster {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getClusters need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
+    return pop @clusters;
+}
+
+sub create{
+    my $self = shift;
+    
+    my %params = $self->getAttrs();
+    $log->debug("New Operation AddCluster with attrs : " . %params);
+    Operation->enqueue(priority => 200,
+                   type     => 'AddCluster',
+                   params   => \%params);
+}
 
 sub activate{
     my $self = shift;
     
     my  $adm = Administrator->new();
-    print "New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id');
+    $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(priority => 200,
                    type     => 'ActivateCluster',
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
@@ -157,7 +179,7 @@ sub deactivate{
     my $self = shift;
     
     my  $adm = Administrator->new();
-    print "New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id');
+    $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(priority => 200,
                    type     => 'DeactivateCluster',
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
@@ -390,7 +412,7 @@ sub getMasterNodeId {
 		my $id = $node_instance_rs->motherboard_id->get_column('motherboard_id');
 		return $id;
 	} else {
-		return undef;
+		return;
 	}
 }
 

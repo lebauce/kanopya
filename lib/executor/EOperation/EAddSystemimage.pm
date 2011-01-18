@@ -48,6 +48,9 @@ use Data::Dumper;
 
 use EFactory;
 use Kanopya::Exceptions;
+use Entity::Distribution;
+use Entity::Cluster;
+use Entity::Systemimage;
 
 our $VERSION = '1.00';
 my $log = get_logger("executor");
@@ -83,6 +86,7 @@ sub _init {
 	return;
 }
 
+
 =head2 prepare
 
 	$op->prepare();
@@ -107,6 +111,30 @@ sub prepare {
 	$self->{nas} = {};
 	$self->{executor} = {};
 
+    #### Create new systemimage instance
+	$log->info("Create new systemimage instance");
+    eval {
+	   $self->{_objs}->{systemimage} = Entity::Systemimage->new(%$params);
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddSystemimage->prepare : wrong param during systemimage instantiation\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+
+    # Get distribution from param
+	eval {
+	   $self->{_objs}->{distribution} = Entity::Distribution->get(id => $params->{distribution_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddSystemimage->prepare : wrong wrong distribution_id <$params->{distribution_id}>\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
 	## Instanciate Clusters
 	# Instanciate nas Cluster 
 	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
@@ -122,12 +150,6 @@ sub prepare {
 	## Instanciate context 
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-
-	# Get distribution from param
-	$self->{_objs}->{distribution} = Entity::Distribution->get(id => $params->{distribution_id});
-	
-	# Instanciate new Systemimage Entity
-	$self->{_objs}->{systemimage} = $adm->newEntity(type => "Systemimage", params => $params);
 		
 	## Instanciate Component needed (here LVM on nas cluster)
 	# Instanciate Cluster Storage component.

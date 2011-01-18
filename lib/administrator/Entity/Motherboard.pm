@@ -28,6 +28,7 @@ use Kanopya::Exceptions;
 use Operation;
 
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
@@ -210,6 +211,32 @@ sub new {
 
 }
 
+sub getMotherboards {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboards need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Motherboard");
+}
+
+sub getMotherboard {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboard need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
+    return pop @Motherboards;
+}
+
 sub activate{
     my $self = shift;
     
@@ -228,6 +255,16 @@ sub deactivate{
     Operation->enqueue(priority => 200,
                    type     => 'DeactivateMotherboard',
                    params   => {motherboard_id => $self->getAttr(name=>'motherboard_id')});
+}
+
+sub create{
+    my $self = shift;
+    
+    my %params = $self->getAttrs();
+    $log->debug("New Operation AddMotherboard with attrs : " . Dumper(%params));
+    Operation->enqueue(priority => 200,
+                   type     => 'AddMotherboard',
+                   params   => \%params);
 }
 
 =head2 toString
