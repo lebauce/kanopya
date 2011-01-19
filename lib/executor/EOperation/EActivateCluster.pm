@@ -48,6 +48,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Cluster;
 use Entity::Systemimage;
+use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;

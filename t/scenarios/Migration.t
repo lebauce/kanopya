@@ -75,7 +75,7 @@ eval {
     note( "Test Cluster Activation");
     $c2->activate();
     $executor->execnround(run => 1);
-    my $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
+    $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
     is ($c2->getAttr(name=>'active'), 1, "Activate Cluster");
 
 
