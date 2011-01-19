@@ -50,6 +50,8 @@ use Date::Simple (':all');
 
 use Kanopya::Exceptions;
 use EFactory;
+use Entity::Cluster;
+use Entity::Motherboard;
 use Template;
 
 my $log = get_logger("executor");
@@ -124,6 +126,30 @@ sub prepare {
 
 	my $params = $self->_getOperation()->getParams();
 
+ 	# Cluster instantiation
+    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
+    eval {
+    	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddMotherboardInCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+ 	# Motherboard instantiation
+    $log->debug("checking Motherboard existence with id <$params->{motherboard_id}>");
+    eval {
+    	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddMotherboardInCluster->prepare : motherboard_id $params->{motherboard_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 
@@ -168,20 +194,10 @@ sub prepare {
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
 
-	#### Get instance of Cluster Entity
-	$log->info("Load cluster instance");
-	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
-	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
-
 	#### Get cluster components Entities
 	$log->info("Load cluster component instances");
 	$self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
 	$log->debug("Load all component from cluster");
-
-	# Get instance of Motherboard Entity
-	$log->info("Load Motherboard instance");
-	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
-	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 	
 	## Instanciate Component needed (here LVM, ISCSITARGET, DHCP and TFTPD on nas and bootserver cluster)
 	# Instanciate Storage component.
@@ -525,9 +541,6 @@ sub generateKanopyaHalt{
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
 				$log->debug("The cluster component is an Openiscsi2");
 				my $iscsi_export = $components->{$i};
-				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-				#									 						version => "0",
-				#															administrator => $adm);
 				$vars->{data_exports} = $iscsi_export->getExports();
    			}
 		}

@@ -213,8 +213,6 @@ sub getEntityTable {
 sub getCluster {
 	my $class = shift;
     my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
 
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getClusters need a type and a hash named argument!";
@@ -229,17 +227,36 @@ sub create{
     my $self = shift;
     
     my %params = $self->getAttrs();
-    $log->debug("New Operation AddCluster with attrs : " . %params);
+    $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(priority => 200,
                    type     => 'AddCluster',
                    params   => \%params);
 >>>>>>> 50a6a1e9ba0af58bdfb11464b55a8d99a5b0f1ee
 }
 
+sub addMotherboard{
+    my $self = shift;
+    my %args = @_;
+    my %params;
+
+	if ((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) { 
+		$errmsg = "Entity::Cluster->addMotherboard need a motherboard_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+    
+    $params{'motherboard_id'} = $args{'motherboard_id'};
+    $params{'cluster_id'} = $self->getAttr(name => 'cluster_id');
+    print Dumper %params;
+    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
+    Operation->enqueue(priority => 200,
+                   type     => 'AddMotherboardInCluster',
+                   params   => \%params);
+}
+
 sub activate{
     my $self = shift;
     
-    my  $adm = Administrator->new();
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(priority => 200,
                    type     => 'ActivateCluster',
@@ -247,8 +264,7 @@ sub activate{
 }
 sub deactivate{
     my $self = shift;
-    
-    my  $adm = Administrator->new();
+
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(priority => 200,
                    type     => 'DeactivateCluster',
