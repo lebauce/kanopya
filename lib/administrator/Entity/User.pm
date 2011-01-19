@@ -67,6 +67,18 @@ use constant ATTR_DEF => {
 										is_editable		=> 0},	
 };
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new user',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing user',
+			update		=> 'save changes applied on a user',
+			delete 		=> 'delete a user',
+		}, 
+	};
+}
 
 =head2 get
 
@@ -89,15 +101,22 @@ sub get {
 	}
   	
   	my $admin = Administrator->new();
-   	# Entity::User->get method concerns an existing user so we retrieve this user'entity_id
-   	my $entity_id = $admin->{db}->resultset('User')->find($args{id})->user_entities->first->get_column('entity_id');
+   	my $dbix_user = $admin->{db}->resultset('User')->find($args{id});
+   	if(not defined $dbix_user) {
+	   	$errmsg = "Entity::User->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	}   	
+   	
+   	my $entity_id = $dbix_user->user_entities->first->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get user with id $args{id}");
+   		$errmsg = "Permission denied to get user with id $args{id}";
+   		$log->error($errmsg);
+   		throw Kanopya::Exception::Permission::Denied(error => $errmsg);
    	}
   	
   	my $self = $class->SUPER::get( %args,  table => "User");
-   	#$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
    	return $self;
 }
 
@@ -135,13 +154,14 @@ sub create {
 	my %args = @_;
 			
 	my $admin = Administrator->new();
-	# Entity::Cluster->create method doesnt concern existing entity so we retrieve entity_id of Cluster master group
-	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'Cluster' })->groups_entities->first->get_column('entity_id');
+	# Entity::User->create method doesnt concern existing entity so we retrieve entity_id of User master group
+	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'User' })->groups_entities->first->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new cluster");
    	}
-   	#TODO creation implementation
+   	my $user = $class->new(%args);
+   	$user->save();
 }
 
 =head2 new
@@ -194,9 +214,11 @@ sub delete {
 	# delete method concerns an existing entity so we use his entity_id
    	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
    	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
+   		throw Kanopya::Exception::Permission::Denied(
+   			error => "Permission denied to delete user with id ".$self->getAttr(name =>'user_id')
+   		);
    	}
-	# TODO delete implementation
+	$self->SUPER::delete();
 }
 
 =head2 toString

@@ -4,7 +4,7 @@ use base 'KanopyaUI::CGI';
 use strict;
 use warnings;
 
-my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
+
 
 # models listing
 
@@ -92,7 +92,7 @@ sub process_addprocessormodel : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new processor model created'); }
-    return  $closewindow;
+    return $self->close_window();
 }
 
 sub _addprocessormodel_profile {
@@ -153,7 +153,7 @@ sub process_addmotherboardmodel : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new motherboard model created'); }
-    return  $closewindow;
+    return $self->close_window();
 }
 
 sub _addmotherboardmodel_profile {

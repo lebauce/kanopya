@@ -11,8 +11,11 @@
 	</TMPL_LOOP>
 </table>
 <div class="actions">
+<TMPL_IF NAME=can_create>
 <a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/users/form_adduser', 'create a user', 600, 400,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a user</a>
 <p class="italic">Create a new user.</p>
+</TMPL_IF>
+&nbsp;
 </div>
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">

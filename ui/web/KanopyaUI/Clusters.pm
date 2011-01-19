@@ -4,11 +4,13 @@ use base 'KanopyaUI::CGI';
 use strict;
 use warnings;
 use Entity::Cluster;
+use Entity::Motherboard;
+use Entity::Systemimage;
+use Entity::Kernel;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
-my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
 
 # clusters listing page
 
@@ -19,6 +21,7 @@ sub view_clusters : StartRunmode {
     $tmpl->param('titlepage' => "Clusters - Clusters");
 	$tmpl->param('mClusters' => 1);
 	$tmpl->param('submClusters' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
     
     my @eclusters = Entity::Cluster->getClusters(hash => {});
     my $clusters = [];
@@ -66,10 +69,10 @@ sub form_addcluster : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $tmpl = $self->load_tmpl('Clusters/form_addcluster.tmpl');
-	
-	my @ekernels = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
-	my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
-	my @emotherboards = $self->{'admin'}->getEntities(type => 'Motherboard', hash => {});
+		
+	my @ekernels = Entity::Kernel->getKernels(hash => {});
+	my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});
+	my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
 	
 	my $count = scalar @emotherboards;
 	my $c =[];
@@ -133,16 +136,16 @@ sub process_addcluster : Runmode {
 				systemimage_id => $query->param('systemimage_id')
 			};
 			if($query->param('kernel_id') ne '0') { $params->{kernel_id} = $query->param('kernel_id'); }
-			$self->{'admin'}->newOp(type =>"AddCluster", priority => '100', params => $params);
+			$self->{adm}->newOp(type =>"AddCluster", priority => '100', params => $params);
 		};
         if($@) {
                 my $error = $@;
-                $self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error);
+                $self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error);
 	} else { 
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new cluster operation adding to execution queue'); 
+		$self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'new cluster operation adding to execution queue'); 
 	}
     	
-    return $closewindow;
+    return $self->close_window();
 }
 
 # cluster details page
@@ -151,10 +154,11 @@ sub view_clusterdetails : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $tmpl = $self->load_tmpl('Clusters/view_clusterdetails.tmpl');
-	 # header / menu variables
+	# header / menu variables
 	$tmpl->param('titlepage' => "Cluster's overview");
 	$tmpl->param('mClusters' => 1);
 	$tmpl->param('submClusters' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	# actions visibility
 	$tmpl->param('link_delete' => 0);
@@ -163,8 +167,9 @@ sub view_clusterdetails : Runmode {
 	$tmpl->param('link_addnode' => 0);
 	
 	my $query = $self->query();
-	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
-	my $cluster_id = $ecluster->getAttr(name => 'cluster_id');
+	my $cluster_id = $query->param('cluster_id');
+	my $ecluster = Entity::Cluster->get(id => $cluster_id);
+	
 		
 	$tmpl->param('cluster_id' => $cluster_id);
 	$tmpl->param('cluster_name' => $ecluster->getAttr(name => 'cluster_name'));
@@ -183,14 +188,14 @@ sub view_clusterdetails : Runmode {
 	
 	my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
 	if($systemimage_id) {
-		my $esystemimage = $self->{'admin'}->getEntity(type =>'Systemimage', id => $systemimage_id);
+		my $esystemimage = $self->{adm}->getEntity(type =>'Systemimage', id => $systemimage_id);
 		$tmpl->param('systemimage_name' =>  $esystemimage->getAttr(name => 'systemimage_name'));
 		$tmpl->param('systemimage_active' => $esystemimage->getAttr('name' => 'active'));		 
 	}
 	
 	my $kernel_id = $ecluster->getAttr(name =>'kernel_id');
 	if($kernel_id) {
-		my $ekernel = $self->{'admin'}->getEntity(type =>'Kernel', id => $kernel_id);
+		my $ekernel = $self->{adm}->getEntity(type =>'Kernel', id => $kernel_id);
 		$tmpl->param('kernel' => $ekernel->getAttr(name => 'kernel_version'));
 	} else {
 		$tmpl->param('kernel' => 'no specific kernel');
@@ -202,7 +207,7 @@ sub view_clusterdetails : Runmode {
 	
 	# state info
 	
-	my $motherboards = $ecluster->getMotherboards(administrator => $self->{'admin'});
+	my $motherboards = $ecluster->getMotherboards(administrator => $self->{adm});
 	my $nbnodesup = scalar(keys(%$motherboards)); 
 	my $nodes = [];
 	
@@ -228,7 +233,7 @@ sub view_clusterdetails : Runmode {
 	
 	# components list
 	
-	my $components = $ecluster->getComponents(administrator => $self->{'admin'}, category => 'all');
+	my $components = $ecluster->getComponents(administrator => $self->{adm}, category => 'all');
 	my $comps = [];
 			
 	while( my ($instance_id, $comp) = each %$components) {
@@ -287,10 +292,10 @@ sub form_addcomponenttocluster : Runmode {
 	my $tmpl = $self->load_tmpl('Clusters/form_addcomponenttocluster.tmpl');
 	my $query = $self->query();
 	my $cluster_id = $query->param('cluster_id');
-	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $cluster_id);
-	my $esystemimage = $self->{'admin'}->getEntity(type =>'Systemimage', id => $ecluster->getAttr(name => 'systemimage_id'));
+	my $ecluster = $self->{adm}->getEntity(type => 'Cluster', id => $cluster_id);
+	my $esystemimage = $self->{adm}->getEntity(type =>'Systemimage', id => $ecluster->getAttr(name => 'systemimage_id'));
 	my $systemimage_components = $esystemimage->getInstalledComponents();
-	my $cluster_components = $ecluster->getComponents(administrator => $self->{'admin'}, category => 'all');
+	my $cluster_components = $ecluster->getComponents(administrator => $self->{adm}, category => 'all');
 	my $components = [];
 	#$log->debug(Dumper $systemimage_components);
 	 
@@ -317,14 +322,14 @@ sub process_activatecluster : Runmode {
         
     my $query = $self->query();
     eval {
-    $self->{'admin'}->newOp(type => "ActivateCluster", priority => '100', params => { 
+    $self->{adm}->newOp(type => "ActivateCluster", priority => '100', params => { 
 		cluster_id => $query->param('cluster_id'), 
 		});
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'activate cluster operation adding to execution queue'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'activate cluster operation adding to execution queue'); }
     $self->redirect('/cgi/kanopya.cgi/clusters/view_clusters');
 }
 
@@ -333,14 +338,14 @@ sub process_deactivatecluster : Runmode {
         
     my $query = $self->query();
     eval {
-    $self->{'admin'}->newOp(type => "DeactivateCluster", priority => '100', params => { 
+    $self->{adm}->newOp(type => "DeactivateCluster", priority => '100', params => { 
 		cluster_id => $query->param('cluster_id'), 
 		});
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'deactivate cluster operation adding to execution queue'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'deactivate cluster operation adding to execution queue'); }
     $self->redirect('/cgi/kanopya.cgi/clusters/view_clusters');
 }
 
@@ -348,14 +353,14 @@ sub process_removecluster : Runmode {
     my $self = shift;
     my $query = $self->query();
     eval {
-    $self->{'admin'}->newOp(type => "RemoveCluster", priority => '100', params => { 
+    $self->{adm}->newOp(type => "RemoveCluster", priority => '100', params => { 
 		cluster_id => $query->param('cluster_id'), 
 		});
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'remove cluster operation adding to execution queue'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'remove cluster operation adding to execution queue'); }
     $self->redirect('/cgi/kanopya.cgi/clusters/view_clusters');
 }
 
@@ -378,30 +383,30 @@ sub process_setpubliciptocluster : Runmode {
 	my $self = shift;
     my $query = $self->query();
     eval {
-    	$self->{admin}->{manager}->{network}->setClusterPublicIP(
+    	$self->{adm}->{manager}->{network}->setClusterPublicIP(
     		publicip_id => $query->param('publicip_id'),
     		cluster_id => $query->param('cluster_id'),
     	);
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added to cluster.'); }
-    return $closewindow;
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added to cluster.'); }
+    return $self->close_window();
 }
 
 sub process_startcluster : Runmode {
 	my $self = shift;
 	my $query = $self->query();
     eval {
-	    $self->{'admin'}->newOp(type => "StartCluster", priority => '100', 
+	    $self->{adm}->newOp(type => "StartCluster", priority => '100', 
 	    	params => { cluster_id => $query->param('cluster_id') } 
 		);
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'start cluster operation adding to execution queue'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'start cluster operation adding to execution queue'); }
     $self->redirect('/cgi/kanopya.cgi/clusters/view_clusters');
 }
 
@@ -409,14 +414,14 @@ sub process_stopcluster : Runmode {
 	my $self = shift;
 	my $query = $self->query();
     eval {
-	    $self->{'admin'}->newOp(type => "StopCluster", priority => '100', 
+	    $self->{adm}->newOp(type => "StopCluster", priority => '100', 
 	    	params => { cluster_id => $query->param('cluster_id') } 
 		);
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'stop cluster operation adding to execution queue'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'stop cluster operation adding to execution queue'); }
     $self->redirect('/cgi/kanopya.cgi/clusters/view_clusters');
 }
 
@@ -424,14 +429,14 @@ sub process_removenode : Runmode {
 	my $self = shift;
 	my $query = $self->query();
     eval {
-	    $self->{'admin'}->newOp(type => "StopNode", priority => '100', 
+	    $self->{adm}->newOp(type => "StopNode", priority => '100', 
 	    	params => { cluster_id => $query->param('cluster_id'), motherboard_id => $query->param('motherboard_id') } 
 		);
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'stop node operation adding to execution queue'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'stop node operation adding to execution queue'); }
     $self->redirect('/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
 }
 
@@ -446,14 +451,14 @@ sub process_addnode : Runmode {
 	    	throw Mcs::Exception::Internal(error => $errmsg);
 	    }
 	    my $motherboard = pop @free_motherboards;
-	    $self->{'admin'}->newOp(type => "AddMotherboardInCluster", priority => '100', 
+	    $self->{adm}->newOp(type => "AddMotherboardInCluster", priority => '100', 
 	    	params => { cluster_id => $query->param('cluster_id'), motherboard_id => $motherboard->getAttr(name => 'motherboard_id') } 
 		);
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue'); }
     $self->redirect('/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
 }
 
@@ -461,29 +466,29 @@ sub process_addcomponent : Runmode {
 	my $self = shift;
 	my $query = $self->query();
 	eval {
-	    my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
-	    $ecluster->addComponent(administrator => $self->{'admin'}, component_id => $query->param('component_id'));
+	    my $ecluster = $self->{adm}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+	    $ecluster->addComponent(administrator => $self->{adm}, component_id => $query->param('component_id'));
 	    
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'Component added sucessfully'); }
-   	return $closewindow;
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'Component added sucessfully'); }
+   	return $self->close_window();
 }
 
 sub process_removecomponent : Runmode {
 	my $self = shift;
 	my $query = $self->query();
 	eval {
-	    my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
-	    $ecluster->removeComponent(administrator => $self->{'admin'}, component_instance_id => $query->param('component_instance_id'));
+	    my $ecluster = $self->{adm}->getEntity(type => 'Cluster', id => $query->param('cluster_id'));
+	    $ecluster->removeComponent(administrator => $self->{adm}, component_instance_id => $query->param('component_instance_id'));
 	    
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'Component removed sucessfully'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'Component removed sucessfully'); }
    	$self->redirect("/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id=".$query->param('cluster_id'));
 }
 

@@ -188,9 +188,21 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args, table=>"Motherboard");
-   $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
-   return $self;
+   
+   	my $admin = Administrator->new();
+   	my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
+   	if(not defined $motherboard) {
+   		
+   	} 
+   	my $entity_id = $motherboard->motherboard_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get groups with id $args{id}");
+   	}
+   
+   	my $self = $class->SUPER::get( %args, table=>"Motherboard");
+   	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
+   	return $self;
 }
 
 sub new {

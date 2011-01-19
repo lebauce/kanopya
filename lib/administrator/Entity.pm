@@ -70,7 +70,13 @@ sub getEntities {
 	while ( my $row = $rs->next ) {
 		my $id_name = lc($args{type}) . "_id";
 		my $id = $row->get_column($id_name);
-		my $obj = "Entity::$args{type}"->get(id => $id);
+		my $obj;
+		eval { $obj = "Entity::$args{type}"->get(id => $id); };
+		if($@) { 
+			if(Kanopya::Exception::Permission::Denied->caught()) {
+				next;
+			} 
+		}
 		push @objs, $obj;
 	}
 	return  @objs;
@@ -108,6 +114,10 @@ sub new {
     return $self;
 }
 
+=head2 get 
+
+=cut
+
 sub get {
     my $class = shift;
     my %args = @_;
@@ -131,6 +141,42 @@ sub get {
     return $self;
 }
 
+=head2 getMasterGroupName
+
+	Class : public
+	desc : retrieve the master group name associated with this entity
+	return : scalar : master group name
+
+=cut
+
+sub getMasterGroupName {
+	my $self = shift;
+	my $class = ref $self || $self;
+	my @array = split(/::/, "$class");
+	my $mastergroup = pop(@array);
+	return $mastergroup;
+}
+
+=head2 getMasterGroupEid
+
+	Class : public
+	
+	desc : return entity_id of entity master group
+	TO BE CALLED ONLY ON CHILD CLASS/INSTANCE
+	return : scalar : entity_id
+
+=cut
+
+sub getMasterGroupEid {
+	my $self = shift;
+	my $adm = Administrator->new();
+	my $mastergroup = $self->getMasterGroupName();
+	my $eid = $adm->{db}->resultset('Groups')->find({ groups_name => $mastergroup })->groups_entities->first->get_column('entity_id');
+	return $eid;
+}
+
+
+
 sub getExtendedAttrs {
 	my %attrs;
 	my $self = shift;
@@ -143,7 +189,7 @@ sub getExtendedAttrs {
 	}
 	my $ext_attrs_rs = $self->{_dbix}->search_related( $args{ext_table} );
 	if (! defined $ext_attrs_rs){
-	    print "No extended Attrs\n";
+	    $log->debug("No extended Attrs");
 		return;
 	}
 	while ( my $param = $ext_attrs_rs->next ) {
@@ -170,8 +216,7 @@ sub getGroups {
 	my $self = shift;
 	if( not $self->{_dbix}->in_storage ) { return undef; } 
 	#$log->debug("======> GetGroups call <======");
-	my $mastergroup = ref $self;
-	$mastergroup =~ s/.*\:\://g;
+	my $mastergroup = $self->getMasterGroupEid();
 	my $groups = $self->{_rightschecker}->{_schema}->resultset('Groups')->search({
 		-or => [
 			'ingroups.entity_id' => $self->{_dbix}->get_column('entity_id'),
@@ -310,8 +355,6 @@ sub getAttr {
 	return $value;
 }
 
-
-
 =head2 save
 	
 	Save entity data in DB afer rights check
@@ -353,23 +396,43 @@ sub save {
 
 	desc : return a structure describing method permissions 
 
-	return : hash
+	return : hash ref
 
 =cut
 
 sub getPerms {
 	my $self = shift;
 	my $class = ref $self;
+	my $adm = Administrator->new();
+	my $granted_methods = {};
 	
-	if($class) { # call on instance
-		#print "call on instance\n";	
+	if($class) { # called on instance
+		my $instancemethod = $class->methods()->{instance};
+		foreach my $method (keys %$instancemethod) {
+			my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => $method);
+			if($granted) {
+				$granted_methods->{$method} = 1;
+			} 
+			else {
+				$granted_methods->{$method} = 0;
+			}
+		}
 	}
-	else { # call on class
-		#print "call on class\n";
+	else { # called on class
+		my $classmethod = $self->methods()->{class};
+		my $mastergroupeid = $self->getMasterGroupEid();
+		foreach my $method (keys %$classmethod) {
+			my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $method);
+			if($granted) {
+				$granted_methods->{$method} = 1;
+			} 
+			else {
+				$granted_methods->{$method} = 0;
+			}
+		}
 	}
-	
-	
-	return;
+		
+	return $granted_methods;
 }
 
 =head2 addPerm

@@ -5,8 +5,6 @@ use Data::Dumper;
 use strict;
 use warnings;
 
-my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
-
 # motherboards listing page
 
 sub view_motherboards : StartRunmode {
@@ -154,7 +152,7 @@ sub process_addmotherboard : Runmode {
 		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new motherboard operation adding to execution queue'); }
     
-    return $closewindow;
+    return $self->closewindow();
 }
 
 # fields verification function to used with form_addmotherboard

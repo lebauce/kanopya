@@ -108,19 +108,19 @@ sub addPerm {
 	my %args = @_;
 	
 	if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
-		$errmsg = "EntityRights::addMethodPerm need a consumer_id named argument!";
+		$errmsg = "EntityRights::addPerm need a consumer_id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
-		$errmsg = "EntityRights::addMethodPerm need a consumed_id named argument!";
+		$errmsg = "EntityRights::addPerm need a consumed_id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	if (! exists $args{method} or ! defined $args{method}) { 
-		$errmsg = "EntityRights::addMethodPerm need a method named argument!";
+		$errmsg = "EntityRights::addPerm need a method named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
@@ -137,7 +137,6 @@ sub addPerm {
 	);
 	return;
 }
-
 
 
 1;

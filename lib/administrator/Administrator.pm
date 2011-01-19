@@ -236,7 +236,7 @@ sub new {
 
 	if(defined $oneinstance) {
 		$oneinstance->{_rightchecker} = $checker;
-		$log->debug("Administrator instance retrieved with new rightchecker");
+		#$log->debug("Administrator instance retrieved with new rightchecker");
 		return $oneinstance;
 	}
 

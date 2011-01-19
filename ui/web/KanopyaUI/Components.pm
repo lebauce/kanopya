@@ -31,9 +31,9 @@ sub form_configurecomponent : Runmode {
 	my $errors = shift;
 	my $query = $self->query();
 	my $component_instance_id = $query->param('component_instance_id'); 
-	my $component = $self->{'admin'}->getComponent(component_instance_id=>$component_instance_id);
+	my $component = $self->{adm}->getComponent(component_instance_id=>$component_instance_id);
 	my $cluster_id = $component->getAttr(name=>'cluster_id');
-	my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id=>$cluster_id);
+	my $ecluster = $self->{adm}->getEntity(type => 'Cluster', id=>$cluster_id);
 	my $componentdetail = $component->getComponentAttr();
 	my $tmplfile = 'Components/form_'.lc($componentdetail->{component_name}).$componentdetail->{component_version}.'.tmpl';
 	my $tmpl =$self->load_tmpl($tmplfile);
@@ -63,7 +63,7 @@ sub process_configurecomponent : Runmode {
 	my $output = '';
 	
 	my $component_instance_id = $query->param('component_instance_id'); 
-	my $component = $self->{'admin'}->getComponent(component_instance_id=>$component_instance_id);
+	my $component = $self->{adm}->getComponent(component_instance_id=>$component_instance_id);
 	my $cluster_id = $query->param('cluster_id'); 
 	my $cname = quotemeta(lc($query->param('component_name')));
 	# quotemeta : Returns the value of EXPR with all non-"word" characters backslashed

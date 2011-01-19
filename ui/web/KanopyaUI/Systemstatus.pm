@@ -87,4 +87,7 @@ sub view_status : StartRunmode {
     return $tmpl->output(); 
 }
 
+sub permission_denied : runmode {
+	return "you dont have permission to access to this page";
+}
 1;

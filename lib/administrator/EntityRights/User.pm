@@ -135,10 +135,10 @@ sub checkPerm {
 		#}
 	)->first;
 	if($row) { 
-		$log->debug("row exists !");
+		#$log->debug("row exists !");
 		return 1;
 	} else {
-		$log->debug("row doesnt exist !");
+		#$log->debug("row doesnt exist !");
 		return 0;	
 	}
 }

@@ -3,6 +3,7 @@
 use FindBin qw($Bin);
 use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 
+use Data::Dumper;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->init('/opt/kanopya/conf/log.conf');
 
@@ -85,9 +86,16 @@ throws_ok {
 	$ecluster->addPerm(method => 'delete', entity_id => $eguest_user->{_entity_id}) 
 } "Kanopya::Exception::Permission::Denied", "Permission denied for guest user to add 'delete' permission on Entity::Cluster with id 1";
 
+#my $masterclustergroups_eid = $adm->{db}->resultset('Groups')->find({ groups_name => 'Cluster' })->groups_entities->first->get_column('entity_id');
+#my %granted_methods = $adm->{_rightchecker}->getPerms(consumer_id => $user_guest_eid, consumed_id => $masterclustergroups_eid); 
+#print "\ngranted methods for user guest on Entity::Cluster class : ";
+#foreach my $method (keys %granted_methods) {
+#	print $method." ";
+#}
+#print "\n";
 
-
-
+print Dumper(Entity::User->getPerms());
+print Dumper($eguest_user->getPerms());
 
 
 }
