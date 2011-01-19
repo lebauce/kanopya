@@ -90,20 +90,24 @@ use constant ATTR_DEF => {
 =cut
 
 sub get {
-    my $class = shift;
+	my $class = shift;
     my %args = @_;
-
-   	my $admin = Administrator->new();
-    if ((! exists $args{id} or ! defined $args{id}) or
-        (!$admin->{db}->resultset('Cluster')->find($args{id}))) {
-		$errmsg = "Entity::Cluster->new need an existing id named argument!";
+    
+    if (! exists $args{id} or ! defined $args{id}) {
+		$errmsg = "Entity::Cluster->new need an id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
    	my $admin = Administrator->new();
-   	# Entity::Cluster->get method concerns an existing cluster so we retrieve this cluster'entity_id
-   	my $entity_id = $admin->{db}->resultset('Cluster')->find($args{id})->cluster_entities->first->get_column('entity_id');
+   	my $dbix_cluster = $admin->{db}->resultset('Cluster')->find($args{id});
+   	if(not defined $dbix_cluster) {
+	   	$errmsg = "Entity::Cluster->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	}   	
+   	
+   	my $entity_id = $dbix_cluster->cluster_entities->first->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
@@ -129,27 +133,6 @@ sub getClusters {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
-}
-
-
-=head2 create
-
-=cut
-
-sub create {
-	my $class = shift;
-	my %args = @_;
-
-	# TODO tester la validite des arguments
-
-	my $admin = Administrator->new();
-	# Entity::Cluster->create method doesnt concern existing entity so we retrieve entity_id of Cluster master group
-	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'Cluster' })->groups_entities->first->get_column('entity_id');
-   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new cluster");
-   	}
-	# TODO creation implementation
 }
 
 =head2 new
@@ -220,15 +203,23 @@ sub getCluster {
     return pop @clusters;
 }
 
-sub create{
+sub create {
     my $self = shift;
 
+	my $admin = Administrator->new();
+	my $mastergroup_eid = $self->getMasterGroupEid();
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
+   	}
+	
     my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
-    Operation->enqueue(priority => 200,
-                   type     => 'AddCluster',
-                   params   => \%params);
-
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'AddCluster',
+        params   => \%params,
+    );
 }
 
 sub addMotherboard{

@@ -57,14 +57,14 @@ lives_ok {
 throws_ok { $eguest_user->delete() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to delete Entity::User with id 3';
 
 throws_ok { $ecluster = Entity::Cluster->get(id => 1) } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to retrieve Entity::Cluster with id 1';
-throws_ok { Entity::Cluster->create() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to create an Entity::Cluster';
+#throws_ok { Entity::Cluster->create() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to create an Entity::Cluster';
 
 print "\n------ 'Admin' user Initial Permissions checking tests ------\n\n";
 
 Administrator::authenticate(login => 'admin', password => 'admin');
 $adm = Administrator->new();
 lives_ok { $ecluster = Entity::Cluster->get(id => 1) } 'Permission granted for admin user to retrieve Entity::Cluster with id 1';
-lives_ok { Entity::Cluster->create() } 'Permission granted for admin user to create an Entity::Cluster';
+#lives_ok { Entity::Cluster->create() } 'Permission granted for admin user to create an Entity::Cluster';
 
 print "\n------ 'Guest' user Permissions setting tests ------\n\n";
 
@@ -79,7 +79,7 @@ lives_ok {
 Administrator::authenticate(login => 'guest', password => 'guest');
 $adm = Administrator->new();
 lives_ok { $ecluster = Entity::Cluster->get(id => 1) } 'Permission granted for guest user to retrieve Entity::Cluster with id 1';
-lives_ok { Entity::Cluster->create() } 'Permission granted for guest user to create an Entity::Cluster';
+#lives_ok { Entity::Cluster->create() } 'Permission granted for guest user to create an Entity::Cluster';
 
 throws_ok { 
 	$ecluster = Entity::Cluster->get(id => 1);
