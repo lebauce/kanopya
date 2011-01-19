@@ -60,8 +60,7 @@ sub process_adduser : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    eval {
-	    Entity::User->create( 
+    my $euser = Entity::User->new( 
 	    	user_login => $query->param('login'), 
 	    	user_password => $query->param('password'),
 	    	user_firstname => $query->param('firstname'),
@@ -70,9 +69,9 @@ sub process_adduser : Runmode {
 	    	user_desc => $query->param('desc'),
 	    	user_creationdate => \"NOW()",
 	    	user_lastaccess => undef
-	    );
-    };
-    if($@) {
+	);
+    eval { $euser->create(); }
+	if($@) {
     	my $exception = $@;
 		if(Kanopya::Exception::Permission::Denied->caught()) {
 			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);

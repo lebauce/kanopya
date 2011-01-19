@@ -145,25 +145,6 @@ sub getUsers {
    	return $class->SUPER::getEntities( %args,  type => "User");
 }
 
-=head2 create
-
-=cut
-
-sub create {
-	my $class = shift;
-	my %args = @_;
-			
-	my $admin = Administrator->new();
-	# Entity::User->create method doesnt concern existing entity so we retrieve entity_id of User master group
-	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'User' })->groups_entities->first->get_column('entity_id');
-   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new cluster");
-   	}
-   	my $user = $class->new(%args);
-   	$user->save();
-}
-
 =head2 new
 
 	Public class method
@@ -187,6 +168,24 @@ sub new {
 	#$self->{_ext_attrs} = $attrs->{extended};
 
     return $self;
+}
+
+=head2 create
+
+=cut
+
+sub create {
+	my $self = shift;
+	my %args = @_;
+			
+	my $admin = Administrator->new();
+	my $mastergroup_eid = $self->getMasterGroupEid();
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
+   	}
+   	
+   	$self->save();
 }
 
 =head2 update
