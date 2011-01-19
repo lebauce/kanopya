@@ -85,7 +85,7 @@ sub new {
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
-    # check if motherboard_id exist
+    # checkclient if motherboard_id exist
     $log->debug("checking motherboard existence with id <$args{params}->{motherboard_id}>");
     $row = $admin->{db}->resultset('Motherboard')->find($args{params}->{motherboard_id});
     if(! defined $row) {

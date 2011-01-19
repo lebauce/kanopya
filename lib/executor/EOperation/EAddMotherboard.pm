@@ -180,9 +180,9 @@ sub prepare {
 	## Put in lowcase mac address
 	$params->{motherboard_mac_address} = lc($params->{motherboard_mac_address});
 	## When powersupply is used, we save value in Operation to use %$params to instantiate motherboard
-	$log->debug("powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");	
 	if ((exists $params->{powersupplycard_id} && defined $params->{powersupplycard_id})&&
 	    ( exists $params->{powersupplyport_number} && defined $params->{powersupplyport_number})){
+    	$log->debug("powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");
 		$self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
         eval {
 		  $self->{_objs}->{powersupplycard} = Entity::Powersupplycard->get(id => $params->{powersupplycard_id});
