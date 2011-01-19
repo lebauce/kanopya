@@ -70,10 +70,10 @@ my $config = {
 
 =head2 new
 
-    my $op = EOperation::EAddMotherboard->new();
+    my $op = EOperation::EAddMotherboardInCluster->new();
 
-	# Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-	# RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
+	# Operation::EAddMotherboardInCluster->new creates a new AddMotheboardInCluster operation.
+	# RETURN : EOperation::EAddMotherboardInCluster : Operation add motherboard in a cluster
 
 =cut
 

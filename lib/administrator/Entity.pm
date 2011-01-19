@@ -203,7 +203,7 @@ sub getExtendedAttrs {
 =cut 
 
 sub extension {
-	return undef;
+	return;
 }
 
 =head2 getGroups
@@ -214,7 +214,7 @@ return groups resultset where this entity appears (only on an already saved enti
 
 sub getGroups {
 	my $self = shift;
-	if( not $self->{_dbix}->in_storage ) { return undef; } 
+	if( not $self->{_dbix}->in_storage ) { return; } 
 	#$log->debug("======> GetGroups call <======");
 	my $mastergroup = $self->getMasterGroupEid();
 	my $groups = $self->{_rightschecker}->{_schema}->resultset('Groups')->search({

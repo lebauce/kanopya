@@ -38,20 +38,25 @@ It allows to implement System image cloning operation
 
 =cut
 package EOperation::ECloneSystemimage;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use String::Random;
+use Date::Simple (':all');
+
+use Kanopya::Exceptions;
 use EFactory;
+use Entity::Cluster;
+use Entity::Motherboard;
+use Template;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
 
 =head2 new
 
@@ -83,6 +88,20 @@ sub _init {
 	return;
 }
 
+sub checkOp{
+    my $self = shift;
+	my %args = @_;
+    
+    
+    # check if systemimage is not active
+    $log->debug("checking source systemimage active value <$args{params}->{systemimage_id}>");
+   	if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+	    	$errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is already active";
+	    	$log->error($errmsg);
+	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+}
+
 =head2 prepare
 
 	$op->prepare();
@@ -97,21 +116,50 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "ECloneSystemimage->prepare need an internal_cluster named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
-	my $adm = Administrator->new();
-	my $op_params = $self->_getOperation()->getParams();
+	my $params = $self->_getOperation()->getParams();
 
 	$self->{_objs} = {};
 	$self->{nas} = {};
 	$self->{executor} = {};
 
+    #### Get instance of Systemimage Entity
+	$log->info("Load systemimage instance");
+    eval {
+	   $self->{_objs}->{systemimage_source} = Entity::Systemimage->get(id => $params->{systemimage_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+	delete $params->{systemimage_id};
+	$params->{distribution_id} = $self->{_objs}->{systemimage_source}->getAttr(name => 'distribution_id');
+
+
+    #### Create new systemimage instance
+	$log->info("Create new systemimage instance");
+    eval {
+	   $self->{_objs}->{systemimage} = Entity::Systemimage->new(%$params);
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddSystemimage->prepare : wrong param during systemimage creation\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+	
+
 	## Instanciate Clusters
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 
 	## Get Internal IP
 	# Get Internal Ip address of Master node of cluster Executor
@@ -123,14 +171,6 @@ sub prepare {
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 
-	# Get distribution from param
-	$self->{_objs}->{systemimage_source} = $adm->getEntity(type => 'Systemimage', id => $op_params->{systemimage_id});
-	delete $op_params->{systemimage_id};
-
-	# Instanciate new Systemimage Entity
-	$op_params->{distribution_id} = $self->{_objs}->{systemimage_source}->getAttr(name => 'distribution_id');
-	$self->{_objs}->{systemimage} = $adm->newEntity(type => "Systemimage", params => $op_params);
-		
 	## Instanciate Component needed (here LVM on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
