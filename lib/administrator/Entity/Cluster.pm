@@ -39,19 +39,19 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 use constant ATTR_DEF => {
-			cluster_name			=> {pattern			=> '^\w*$',
-										is_mandatory	=> 1,
-										is_extended		=> 0,
-										is_editable		=> 0},
-			cluster_desc			=> {pattern			=> '\w*', # Impossible to check char used because of \n doesn't match with \w
-										is_mandatory	=> 0,
-										is_extended 	=> 0,
-										is_editable		=> 1},
-			cluster_type			=> {pattern			=> '^.*$',
-										is_mandatory	=> 0,
-										is_extended		=> 0,
-										is_editable		=> 0},
-			cluster_min_node		=> {pattern 		=> '^\d*$',
+    cluster_name    =>  {pattern                => '^\w*$',
+                                        is_mandatory      => 1,
+                                        is_extended         => 0,
+                                        is_editable           => 0},
+    cluster_desc    =>  {pattern                   => '\w*', # Impossible to check char used because of \n doesn't match with \w
+                                      is_mandatory        => 0,
+                                      is_extended          => 0,
+                                      is_editable            => 1},
+    cluster_type             =>  {pattern                    => '^.*$',
+                                               is_mandatory	=> 0,
+                                               is_extended		=> 0,
+                                               is_editable		=> 0},
+    cluster_min_node    => {pattern 		=> '^\d*$',
 										is_mandatory	=> 1,
 										is_extended 	=> 0,
 										is_editable		=> 1},
@@ -93,12 +93,14 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Cluster->new need an id named argument!";	
+   	my $admin = Administrator->new();
+    if ((! exists $args{id} or ! defined $args{id}) or
+        (!$admin->{db}->resultset('Cluster')->find($args{id}))) { 
+		$errmsg = "Entity::Cluster->new need an existing id named argument!";	
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   	
+
    	my $admin = Administrator->new();
    	# Entity::Cluster->get method concerns an existing cluster so we retrieve this cluster'entity_id
    	my $entity_id = $admin->{db}->resultset('Cluster')->find($args{id})->cluster_entities->first->get_column('entity_id');
@@ -126,10 +128,10 @@ sub getClusters {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
 }
 
+<<<<<<< HEAD
 
 =head2 create
 
@@ -207,15 +209,49 @@ sub extension {
 
 sub getEntityTable {
 	return "cluster";
+=======
+sub getCluster {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getClusters need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
+    return pop @clusters;
+}
+
+sub create{
+    my $self = shift;
+    
+    my %params = $self->getAttrs();
+    $log->debug("New Operation AddCluster with attrs : " . %params);
+    Operation->enqueue(priority => 200,
+                   type     => 'AddCluster',
+                   params   => \%params);
+>>>>>>> 50a6a1e9ba0af58bdfb11464b55a8d99a5b0f1ee
 }
 
 sub activate{
     my $self = shift;
     
     my  $adm = Administrator->new();
-    print "New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id');
+    $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(priority => 200,
                    type     => 'ActivateCluster',
+                   params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
+}
+sub deactivate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
+    Operation->enqueue(priority => 200,
+                   type     => 'DeactivateCluster',
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
 }
 

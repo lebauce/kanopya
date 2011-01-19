@@ -51,6 +51,9 @@ use Data::Dumper;
 
 use Entity::Motherboard;
 use Entity::Cluster;
+use Entity::Kernel;
+use Entity::Motherboardmodel;
+use Entity::Processormodel;
 use Entity::Powersupplycard;
 
 my $log = get_logger("executor");
@@ -87,6 +90,68 @@ sub _init {
 	return;
 }
 
+sub checkOp{
+    my $self = shift;
+	my %args = @_;
+    
+   # check if kernel_id exist
+    $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
+    eval {
+		  Entity::Kernel->get(id => $self->{_objs}->{motherboard}->getAttr(name=>'kernel_id'));
+        };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddMotherboard->prepare : Wrong kernel_id attribute detected <". $self->{_objs}->{motherboard}->getAttr(name=>'kernel_id') .">\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+    
+    # check if motherboard_model_id exist
+    $log->debug("checking motherboard model existence with id <".$self->{_objs}->{motherboard}->getAttr(name=>'motherboardmodel_id').">");
+    eval {
+		  Entity::Motherboardmodel->get(id => $self->{_objs}->{motherboard}->getAttr(name=>'motherboardmodel_id'));
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddMotherboard->prepare : Wrong motherboardmodel_id attribute detected <". $self->{_objs}->{motherboard}->getAttr(name=>'motherboardmodel_id') .">\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+    
+    # check if processor_model_id exist
+    $log->debug("checking processor model existence with id <".$self->{_objs}->{motherboard}->getAttr(name=>'processormodel_id').">");
+    eval {
+		 Entity::Processormodel->get(id => $self->{_objs}->{motherboard}->getAttr(name=>'processormodel_id'));
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddMotherboard->prepare : Wrong processormodel_id attribute detected <". $self->{_objs}->{motherboard}->getAttr(name=>'processormodel_id') .">\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+    
+    # check mac address unicity
+    $log->debug("checking unicity of mac address <$args{params}->{motherboard_mac_address}>");
+    if (defined Entity::Motherboard->getMotherboard(hash => {motherboard_mac_address => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_mac_address')})){
+    	$errmsg = "Operation::AddMotherboard->new : motherboard_mac_address ". $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_mac_address') ." already exist";
+    	$log->error($errmsg);
+    	throw Mcs::Exception::Internal(error => $errmsg);
+    }
+    
+    if (defined $self->{_objs}->{powersupplyport_number}){
+    # Check power supply
+    # Search if there is a power supply defined
+        if ($self->{_objs}->{powersupplycard}->isPortUsed(powersupplyport_number => $self->{_objs}->{powersupplyport_number})){
+			$errmsg = "Operation::AddMotherboard->new : This power supply port is already recorded!";
+    		$log->error($errmsg);
+    		throw Mcs::Exception::Internal(error => $errmsg);
+        }
+    }
+}
+
 =head2 prepare
 
 	$op->prepare();
@@ -111,47 +176,71 @@ sub prepare {
 	$self->{nas} = {};
 	$self->{executor} = {};
 	
+	# First review params 
+	## Put in lowcase mac address
 	$params->{motherboard_mac_address} = lc($params->{motherboard_mac_address});
+	## When powersupply is used, we save value in Operation to use %$params to instantiate motherboard
+	$log->debug("powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");	
+	if ((exists $params->{powersupplycard_id} && defined $params->{powersupplycard_id})&&
+	    ( exists $params->{powersupplyport_number} && defined $params->{powersupplyport_number})){
+		$self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
+        eval {
+		  $self->{_objs}->{powersupplycard} = Entity::Powersupplycard->get(id => $params->{powersupplycard_id});
+        };
+        if($@) {
+           my $err = $@;
+    	   $errmsg = "EOperation::EAddMotherboard->prepare : Wrong powersupplycard_id attribute detected <$params->{powersupplycard_id}>\n" . $err;
+    	   $log->error($errmsg);
+    	   throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        }
+		$log->debug("Power supply card instanciated with id $params->{powersupplycard_id}");
+		# We delete the motherboard_powersupply_id entry to create properly in execute
+	}
+    if (defined $params->{powersupplycard_id}){delete $params->{powersupplycard_id};}
+    if (defined $params->{powersupplyport_number}){delete $params->{powersupplyport_number};}
 
+	# Instanciate new Motherboard Entity
+    $log->debug("checking motherboard validity with params" . Dumper %$params);
+    eval {
+    	$self->{_objs}->{motherboard} = Entity::Motherboard->new(%$params);
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EAddMotherboard->prepare : Wrong motherboard attributes detected\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    
+    eval {
+        $self->checkOp(params => $params);
+    };
+    if ($@) {
+        my $error = $@;
+		$errmsg = "Operation EAddMotherboard failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    
 	## Instanciate Clusters
 	# Instanciate nas Cluster 
 	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	# Instanciate executor Cluster
 	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
-
 	
 	## Get Internal IP
 	# Get Internal Ip address of Master node of cluster Executor
 	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
 	# Get Internal Ip address of Master node of cluster nas
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	
-	
+		
 	## Instanciate context 
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-
-	$log->debug("powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");
-	# Load the powersupply_id in specific variable
-	if ((exists $params->{powersupplycard_id} && defined $params->{powersupplycard_id})&&
-	    ( exists $params->{powersupplyport_number} && defined $params->{powersupplyport_number})){
-		$self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
-		$self->{_objs}->{powersupplycard} = Entity::Powersupplycard->get(id => $params->{powersupplycard_id});
-		$log->debug("Power supply card instanciated with id $params->{powersupplycard_id}");
-		# We delete the motherboard_powersupply_id entry to create properly in execute
-	}
-	delete $params->{powersupplycard_id};
-	delete $params->{powersupplyport_number};
-
-	$log->debug("################## powersupplyport_number <$params->{powersupplyport_number}> powersupplycard_id <$params->{powersupplycard_id}>");
-	
-	# Instanciate new Motherboard Entity
-	$self->{_objs}->{motherboard} = Entity::Motherboard->new(%$params);
 	
 	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
 	# Instanciate Cluster Storage component.
-	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2");
+	my $tmp = $self->{nas}->{obj}->getComponent(name       => "Lvm",
+	                                            version    => "2");
 	$log->debug("Value return by getcomponent ". ref($tmp));
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));

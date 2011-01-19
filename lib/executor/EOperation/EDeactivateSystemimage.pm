@@ -38,17 +38,18 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EDeactivateSystemimage;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
 use EFactory;
 use Template;
+use Entity::Cluster;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -89,6 +90,20 @@ sub _init {
 	return;
 }
 
+sub checkOp{
+    my $self = shift;
+	my %args = @_;
+    
+    
+    # check if systemimage is not active
+    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
+   	if(!$self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+	    	$errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is already active";
+	    	$log->error($errmsg);
+	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+}
+
 =head2 prepare
 
 	$op->prepare(internal_cluster => \%internal_clust);
@@ -106,19 +121,42 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EDeactivateSystemimage->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
+
+#### Get instance of Systemimage Entity
+	$log->info("Load systemimage instance");
+    eval {
+	   $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EDeactivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+
+    ### Check Parameters and context
+    eval {
+        $self->checkOp(params => $params);
+    };
+    if ($@) {
+        my $error = $@;
+		$errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    } 
 
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	$log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 	$log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
 		
 	#### Get Internal IP
@@ -136,16 +174,10 @@ sub prepare {
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 	$log->debug("Get econtext for nas with ip ($nas_ip) and ref " . ref($self->{nas}->{econtext}));
 	
-	#### Get instance of Systemimage Entity
-	$log->info("Load systemimage instance");
-	$self->{_objs}->{systemimage} = $adm->getEntity(type => "Systemimage", id => $params->{systemimage_id});
-	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
-
 	## Instanciate Component needed (here ISCSITARGET on nas )
 	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1",
-																					  administrator => $adm));
+																					  version=> "1"));
 	$log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
 
 }

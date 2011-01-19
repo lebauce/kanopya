@@ -92,6 +92,20 @@ sub _init {
 	return;
 }
 
+sub checkOp{
+    my $self = shift;
+	my %args = @_;
+    
+    
+    # check if systemimage is not active
+    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
+   	if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+	    	$errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is already active";
+	    	$log->error($errmsg);
+	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+}
+
 =head2 prepare
 
 	$op->prepare(internal_cluster => \%internal_clust);
@@ -113,6 +127,30 @@ sub prepare {
 	}
 
 	my $params = $self->_getOperation()->getParams();
+
+    #### Get instance of Systemimage Entity
+	$log->info("Load systemimage instance");
+    eval {
+	   $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+
+    ### Check Parameters and context
+    eval {
+        $self->checkOp(params => $params);
+    };
+    if ($@) {
+        my $error = $@;
+		$errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }    
 
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
@@ -138,11 +176,7 @@ sub prepare {
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
 	$log->debug("Get econtext for nas with ip ($nas_ip) and ref " . ref($self->{nas}->{econtext}));
 	
-	#### Get instance of Systemimage Entity
-	$log->info("Load systemimage instance");
-	$self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
-	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
-
+	
 	## Instanciate Component needed (here ISCSITARGET on nas )
 	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
