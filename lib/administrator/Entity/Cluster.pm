@@ -95,8 +95,8 @@ sub get {
 
    	my $admin = Administrator->new();
     if ((! exists $args{id} or ! defined $args{id}) or
-        (!$admin->{db}->resultset('Cluster')->find($args{id}))) { 
-		$errmsg = "Entity::Cluster->new need an existing id named argument!";	
+        (!$admin->{db}->resultset('Cluster')->find($args{id}))) {
+		$errmsg = "Entity::Cluster->new need an existing id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -113,7 +113,7 @@ sub get {
    	return $self;
 }
 
-=head2 
+=head2
 
 =cut
 
@@ -123,7 +123,7 @@ sub getClusters {
 	my @objs = ();
     my ($rs, $entity_class);
 
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
+	if ((! exists $args{hash} or ! defined $args{hash})) {
 		$errmsg = "Entity::getClusters need a type and a hash named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
@@ -131,7 +131,6 @@ sub getClusters {
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
 }
 
-<<<<<<< HEAD
 
 =head2 create
 
@@ -140,9 +139,9 @@ sub getClusters {
 sub create {
 	my $class = shift;
 	my %args = @_;
-	
+
 	# TODO tester la validite des arguments
-	
+
 	my $admin = Administrator->new();
 	# Entity::Cluster->create method doesnt concern existing entity so we retrieve entity_id of Cluster master group
 	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'Cluster' })->groups_entities->first->get_column('entity_id');
@@ -150,7 +149,7 @@ sub create {
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new cluster");
    	}
-	# TODO creation implementation 
+	# TODO creation implementation
 }
 
 =head2 new
@@ -163,10 +162,10 @@ sub new {
 
 	# Check attrs ad throw exception if attrs missed or incorrect
 	my $attrs = $class->checkAttrs(attrs => \%args);
-	
+
 	# We create a new DBIx containing new entity (only global attrs)
 	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
-	
+
 	# Set the extended parameters
 	$self->{_ext_attrs} = $attrs->{extended};
 
@@ -207,14 +206,12 @@ sub extension {
 	return "clusterdetails";
 }
 
-sub getEntityTable {
-	return "cluster";
-=======
+
 sub getCluster {
 	my $class = shift;
     my %args = @_;
 
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
+	if ((! exists $args{hash} or ! defined $args{hash})) {
 		$errmsg = "Entity::getClusters need a type and a hash named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
@@ -225,13 +222,13 @@ sub getCluster {
 
 sub create{
     my $self = shift;
-    
+
     my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(priority => 200,
                    type     => 'AddCluster',
                    params   => \%params);
->>>>>>> 50a6a1e9ba0af58bdfb11464b55a8d99a5b0f1ee
+
 }
 
 sub addMotherboard{
@@ -239,12 +236,12 @@ sub addMotherboard{
     my %args = @_;
     my %params;
 
-	if ((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) { 
+	if ((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) {
 		$errmsg = "Entity::Cluster->addMotherboard need a motherboard_id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-    
+
     $params{'motherboard_id'} = $args{'motherboard_id'};
     $params{'cluster_id'} = $self->getAttr(name => 'cluster_id');
     print Dumper %params;
@@ -256,7 +253,7 @@ sub addMotherboard{
 
 sub activate{
     my $self = shift;
-    
+
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(priority => 200,
                    type     => 'ActivateCluster',
@@ -272,9 +269,9 @@ sub deactivate{
 }
 
 =head2 checkAttr
-	
+
 	Desc : This function check if new object data are correct and sort attrs between extended and global
-	args: 
+	args:
 		class : String : Real class to check
 		data : hashref : Entity data to be checked
 	return : hashref of hashref : a hashref containing 2 hashref, global attrs and extended ones
@@ -288,11 +285,11 @@ sub checkAttrs {
 	my (%global_attrs, %ext_attrs);
 	my $struct = ATTR_DEF;
 
-	if (! exists $args{attrs} or ! defined $args{attrs}) { 
+	if (! exists $args{attrs} or ! defined $args{attrs}) {
 		$errmsg = "Entity::Cluster->checkAttrs need an data hash and class named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}	
+	}
 
 	my $attrs = $args{attrs};
 	foreach my $attr (keys(%$attrs)) {
@@ -322,14 +319,14 @@ sub checkAttrs {
 				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
-	
+
 	return {global => \%global_attrs, extended => \%ext_attrs};
 }
 
 =head2 checkAttr
-	
+
 	Desc : This function check new object attribute
-	args: 
+	args:
 		name : String : Attribute name
 		value : String : Attribute value
 	return : No return value only throw exception if error
@@ -340,15 +337,15 @@ sub checkAttr{
 	my $self = shift;
 	my %args = @_;
 	my $struct = ATTR_DEF;
-	
+
 	if ((! exists $args{name} or ! defined $args{name}) ||
-		(! exists $args{value} or ! defined $args{value})) { 
+		(! exists $args{value} or ! defined $args{value})) {
 		$errmsg = "Entity::Cluster->checkAttr need a name and value named argument!";
-		$log->error($errmsg);	
+		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (!exists $struct->{$args{name}}){
-		$errmsg = "Entity::Cluster->checkAttr invalid name $struct->{$args{name}}";	
+		$errmsg = "Entity::Cluster->checkAttr invalid name $struct->{$args{name}}";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -368,10 +365,10 @@ sub toString {
 }
 
 =head2 getComponents
-	
+
 	Desc : This function get components used in a cluster. This function allows to select
 			category of components or all of them.
-	args: 
+	args:
 		administrator : Administrator : Administrator object to instanciate all components
 		category : String : Component category
 	return : a hashref of components, it is indexed on component_instance_id
@@ -382,18 +379,18 @@ sub getComponents{
 	my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{category} or ! defined $args{category})) { 
+	if ((! exists $args{category} or ! defined $args{category})) {
 		$errmsg = "Entity::Cluster->getComponent need a category named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 #	my $adm = Administrator->new();
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
-											{ '+columns' => [ "component_id.component_name", 
+											{ '+columns' => [ "component_id.component_name",
 															  "component_id.component_category",
-															  "component_id.component_version"], 
+															  "component_id.component_version"],
 													join => ["component_id"]});
-		
+
 	my %comps;
 	$log->debug("Category is $args{category}");
 	while ( my $comp_instance_row = $comp_instance_rs->next ) {
@@ -411,10 +408,10 @@ sub getComponents{
 }
 
 =head2 getComponent
-	
+
 	Desc : This function get component used in a cluster. This function allows to select
 			a particular component with its name and version.
-	args: 
+	args:
 		administrator : Administrator : Administrator object to instanciate all components
 		name : String : Component name
 		version : String : Component version
@@ -427,19 +424,19 @@ sub getComponent{
     my %args = @_;
 
 	if ((! exists $args{name} or ! defined $args{name}) ||
-		(! exists $args{version} or ! defined $args{version})) { 
+		(! exists $args{version} or ! defined $args{version})) {
 		$errmsg = "Entity::Cluster->getComponent needs a name, version and administrator named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	
+
 	my $hash = {'component_id.component_name' => $args{name}, 'component_id.component_version' => $args{version}};
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
 											{ '+columns' => [ "component_id.component_name",
 															  "component_id.component_version",
-															  "component_id.component_category"], 
+															  "component_id.component_category"],
 													join => ["component_id"]});
-		
+
 	$log->debug("name is $args{name}, version is $args{version}");
 	my $comp_instance_row = $comp_instance_rs->next;
 	$log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
@@ -455,9 +452,9 @@ sub getComponent{
 }
 
 =head2 getSystemImage
-	
+
 	Desc : This function return the cluster's system image.
-	args: 
+	args:
 		administrator : Administrator : Administrator object to instanciate all components
 	return : a system image instance
 
@@ -510,7 +507,7 @@ sub addComponent {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	
+
 	my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
 	$componentinstance->save();
 }
@@ -533,13 +530,13 @@ sub removeComponent {
 	}
 	my $component_instance = Entity::Component->get(id => $args{component_instance_id});
 	$component_instance->delete;
-	
+
 }
 
 =head2 getMotherboards
-	
+
 	Desc : This function get motherboards executing the cluster.
-	args: 
+	args:
 		administrator : Administrator : Administrator object to instanciate all components
 	return : a hashref of motherboard, it is indexed on motherboard_id
 
@@ -564,7 +561,7 @@ sub getMotherboards{
 
 sub getPublicIps {
 	my $self = shift;
-  
+
 	my $publicip_rs = $self->{_dbix}->publicips;
 	my $i =0;
 	my @pub_ip =();
