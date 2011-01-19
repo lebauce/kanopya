@@ -41,11 +41,11 @@
 <table id="Xsettings" class="detailspart">
 <tr><td class="italic" colspan="4"><TMPL_VAR NAME=motherboard_desc></td>
 <td class="actions" rowspan="9">
-<a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/clusters/form_editcluster?cluster_id=<TMPL_VAR NAME=cluster_id>', 'edit cluster', 800, 400, '');">edit</a><br />
+<a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/motherboards/form_editmotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>', 'edit motherboard', 800, 400, '');">edit</a><br />
 <span class="desc">Modify these global parameters.</span><br /><br />
 <TMPL_IF NAME=link_delete>
-<a class="imgRemove" href="/cgi/kanopya.cgi/clusters/process_deletecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">delete</a><br />
-<span class="desc">Delete this cluster.</span><br /><br />
+<a class="imgRemove" href="/cgi/kanopya.cgi/motherboard/process_deletemotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>">delete</a><br />
+<span class="desc">Delete this motherboard.</span><br /><br />
 </TMPL_IF>
 </td><tr/>
 <tr><td colspan="4">&nbsp;</td></tr>

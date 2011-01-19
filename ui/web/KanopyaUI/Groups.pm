@@ -18,6 +18,7 @@ sub view_groups : StartRunmode {
     $tmpl->param('titlepage' => "Settings - Groups");
     $tmpl->param('mSettings' => 1);
 	$tmpl->param('submGroups' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	my @egroups = Entity::Groups->getGroups(hash => { groups_system => 0 });
 	my $groups = [];
@@ -31,7 +32,6 @@ sub view_groups : StartRunmode {
 		push(@$groups, $tmp);
 	}
 	$tmpl->param('groups_list' => $groups);
-	
 	return $tmpl->output();
 }
 
@@ -60,8 +60,16 @@ sub process_addgroup : Runmode {
     	groups_type => $query->param('groups_type'),
     	groups_system => 0,
     );
-    $egroup->save();
-    return $self->close_window();
+    eval { $egroup->create(); };
+	if($@) {
+    	my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	}
+	else { return $self->close_window(); }
 }
 
 # function profile for form_addgroup (see ValidateRM module)
@@ -99,32 +107,45 @@ sub groupsname_used {
 
 sub view_groupdetails : Runmode {
 	my $self = shift;
-    my $tmpl =  $self->load_tmpl('Groups/view_groupdetails.tmpl');
-    $tmpl->param('titlepage' => "Groups - Group details");
-    $tmpl->param('mSettings' => 1);
-	$tmpl->param('submGroups' => 1);
-	
+    	
 	my $query = $self->query();
 	my $groups_id = $query->param('groups_id');
-	my $egroups = Entity::Groups->get(id => $groups_id);
-	
-	$tmpl->param('groups_id' =>  $groups_id);
-	$tmpl->param('groups_name' =>  $egroups->getAttr('name' => 'groups_name'));
-	$tmpl->param('groups_desc' =>  $egroups->getAttr('name' => 'groups_desc'));
-	$tmpl->param('groups_type' =>  $egroups->getAttr('name' => 'groups_type'));
-	
-	my @entities = $egroups->getEntities();
-	my $content = [];
-	foreach my $e (@entities) {
-		my $tmp = {};
-		$tmp->{content_id} = $e->getAttr('name' => lc($tmpl->param('groups_type')).'_id');
-		$tmp->{content_label} = $e->toString();
-		$tmp->{groups_id} = $groups_id;
-		push(@$content, $tmp) 
+	my $egroups = eval { Entity::Groups->get(id => $groups_id) };
+	if($@) {
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{admin}->addMessage(from => 'Administrator', level => 'warning', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else {
+			$exception->rethrow();
+		}
 	}
-	$tmpl->param('content_list' => $content);
-	$tmpl->param('content_count' => scalar(@$content)+1);
-	return $tmpl->output();
+	else {
+		my $tmpl =  $self->load_tmpl('Groups/view_groupdetails.tmpl');
+	    $tmpl->param('titlepage' => "Groups - Group details");
+	    $tmpl->param('mSettings' => 1);
+		$tmpl->param('submGroups' => 1);
+		$tmpl->param('username' => $self->session->param('username'));
+		
+		$tmpl->param('groups_id' =>  $groups_id);
+		$tmpl->param('groups_name' =>  $egroups->getAttr('name' => 'groups_name'));
+		$tmpl->param('groups_desc' =>  $egroups->getAttr('name' => 'groups_desc'));
+		$tmpl->param('groups_type' =>  $egroups->getAttr('name' => 'groups_type'));
+		
+		my @entities = $egroups->getEntities();
+		my $content = [];
+		foreach my $e (@entities) {
+			my $tmp = {};
+			$tmp->{content_id} = $e->getAttr('name' => lc($tmpl->param('groups_type')).'_id');
+			$tmp->{content_label} = $e->toString();
+			$tmp->{groups_id} = $groups_id;
+			push(@$content, $tmp) 
+		}
+		$tmpl->param('content_list' => $content);
+		$tmpl->param('content_count' => scalar(@$content)+1);
+		return $tmpl->output();
+	}
 }
 
 # deletegroup processing 
@@ -198,6 +219,10 @@ sub process_removeentity : Runmode {
 	$self->redirect("/cgi/kanopya.cgi/groups/view_groupdetails?groups_id=$groups_id");
 }
 
+# edituser form
 
+sub form_editgroup : Runmode {
+	return "TODO";
+}
 
 1;

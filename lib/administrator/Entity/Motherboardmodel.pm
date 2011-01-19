@@ -42,7 +42,127 @@ use constant ATTR_DEF => {
 	processormodel_id => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
 };
 
+=head2 get
 
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Motherboardmodel->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
+   return $self;
+}
+
+=head2 getMotherboardmodels
+
+=cut
+
+sub getMotherboardmodels {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboardmodels need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Motherboardmodel");
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboardmodel");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+}
+
+=head2 create
+
+=cut
+
+sub create {}
+
+=head2 update
+
+=cut 
+
+sub update {}
+
+=head2 delete
+
+=cut
+
+sub delete {}
+
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('motherboardmodel_name')." ".$self->{_dbix}->get_column('motherboardmodel_brand');
+	return $string;
+}
+
+=head2 checkAttr
+	
+	Desc : This function check new object attribute
+	args: 
+		name : String : Attribute name
+		value : String : Attribute value
+	return : No return value only throw exception if error
+
+=cut
+
+sub checkAttr{
+	my $self = shift;
+	my %args = @_;
+	my $attr_def = ATTR_DEF;
+
+	if ((! exists $args{name} or ! defined $args{name}) ||
+		(! exists $args{value})) { 
+		$errmsg = "Entity::Motherboardmodel->checkAttr need a name and value named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
+		$errmsg = "Entity::Motherboardmodel->checkAttr detect a null value for a mandatory attr ($args{name})";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
+
+	if (!exists $attr_def->{$args{name}}){
+		$errmsg = "Entity::Motherboardmodel->checkAttr invalid attr name : '$args{name}'";
+		$log->error($errmsg);	
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+
+	# Here check attr value
+}
 
 =head2 checkAttrs
 	
@@ -95,101 +215,6 @@ sub checkAttrs {
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
 	return {global => \%global_attrs, extended => \%ext_attrs};
-}
-
-=head2 checkAttr
-	
-	Desc : This function check new object attribute
-	args: 
-		name : String : Attribute name
-		value : String : Attribute value
-	return : No return value only throw exception if error
-
-=cut
-
-sub checkAttr{
-	my $self = shift;
-	my %args = @_;
-	my $attr_def = ATTR_DEF;
-
-	if ((! exists $args{name} or ! defined $args{name}) ||
-		(! exists $args{value})) { 
-		$errmsg = "Entity::Motherboardmodel->checkAttr need a name and value named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
-		$errmsg = "Entity::Motherboardmodel->checkAttr detect a null value for a mandatory attr ($args{name})";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
-	}
-
-	if (!exists $attr_def->{$args{name}}){
-		$errmsg = "Entity::Motherboardmodel->checkAttr invalid attr name : '$args{name}'";
-		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
-	# Here check attr value
-}
-
-sub extension { return undef; }
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Motherboardmodel->new need an id named argument!";	
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-   my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
-   return $self;
-}
-
-sub getMotherboardmodels {
-	my $class = shift;
-    my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getMotherboardmodels need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Motherboardmodel");
-}
-
-sub new {
-	my $class = shift;
-    my %args = @_;
-
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboardmodel");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-
-}
-
-=head2 toString
-
-	desc: return a string representation of the entity
-
-=cut
-
-sub toString {
-	my $self = shift;
-	my $string = $self->{_dbix}->get_column('motherboardmodel_name')." ".$self->{_dbix}->get_column('motherboardmodel_brand');
-	return $string;
 }
 
 1;

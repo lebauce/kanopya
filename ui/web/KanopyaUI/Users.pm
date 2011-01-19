@@ -67,10 +67,8 @@ sub process_adduser : Runmode {
 	    	user_lastname => $query->param('lastname'),
 	    	user_email => $query->param('email'),
 	    	user_desc => $query->param('desc'),
-	    	user_creationdate => \"NOW()",
-	    	user_lastaccess => undef
 	);
-    eval { $euser->create(); }
+    eval { $euser->create(); };
 	if($@) {
     	my $exception = $@;
 		if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -191,6 +189,12 @@ sub process_deleteuser : Runmode {
 		else { $exception->rethrow(); }
 	}
 	else { $self->redirect('/cgi/kanopya.cgi/users/view_users'); }
+}
+
+# edituser form
+
+sub form_edituser : Runmode {
+	return "TODO";
 }
 
 1;

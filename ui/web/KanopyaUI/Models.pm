@@ -3,8 +3,8 @@ use base 'KanopyaUI::CGI';
 
 use strict;
 use warnings;
-
-
+use Entity::Motherboardmodel;
+use Entity::Processormodel;
 
 # models listing
 
@@ -14,9 +14,10 @@ sub view_models : StartRunmode {
     $tmpl->param('titlepage' => "Hardaware - Models");
 	$tmpl->param('mHardware' => 1);
 	$tmpl->param('submModels' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
     
-    my @eprocessormodels = $self->{admin}->getEntities(type => 'Processormodel', hash => {});
-    my @emotherboardmodels = $self->{admin}->getEntities(type => 'Motherboardmodel', hash => {});
+    my @eprocessormodels = Entity::Processormodel->getProcessormodels(hash => {});
+    my @emotherboardmodels = Entity::Motherboardmodel->getMotherboardmodels(hash => {});
     my $processormodels = [];
     my $motherboardmodels = [];
     
@@ -51,8 +52,7 @@ sub view_models : StartRunmode {
 	} 
 	$tmpl->param('processormodels_list' => $processormodels);
 	$tmpl->param('motherboardmodels_list' => $motherboardmodels);
-		    
-    return $tmpl->output();
+	return $tmpl->output();
 }
 
 # processor model 
@@ -62,7 +62,6 @@ sub form_addprocessormodel : Runmode {
     my $errors = shift;
     my $tmpl =  $self->load_tmpl('Models/form_addprocessormodel.tmpl');
     $tmpl->param($errors) if $errors;
-	
 	return $tmpl->output();
 }
 
@@ -73,26 +72,28 @@ sub process_addprocessormodel : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    eval {
-		my $procmodel = $self->{admin}->newEntity( type => 'Processormodel', params => {
-			processormodel_brand => $query->param('brand'),
-			processormodel_name => $query->param('name'),
-			processormodel_core_num => $query->param('coresnum'),
-			processormodel_clock_speed => $query->param('clockspeed'),
-			processormodel_fsb => $query->param('fsb'),
-			processormodel_l2_cache => $query->param('l2cache'),
-			processormodel_max_consumption => $query->param('consumption'),
-			processormodel_max_tdp => $query->param('tdp'),
-			processormodel_64bits => $query->param('is64bits'),
-			processormodel_cpu_flags => $query->param('cpuflags'),
-		});
-		$procmodel->save();
-    };
-    if($@) { 
-		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new processor model created'); }
-    return $self->close_window();
+    my $procmodel = Entity::Processormodel->new(
+		processormodel_brand => $query->param('brand'),
+		processormodel_name => $query->param('name'),
+		processormodel_core_num => $query->param('coresnum'),
+		processormodel_clock_speed => $query->param('clockspeed'),
+		processormodel_fsb => $query->param('fsb'),
+		processormodel_l2_cache => $query->param('l2cache'),
+		processormodel_max_consumption => $query->param('consumption'),
+		processormodel_max_tdp => $query->param('tdp'),
+		processormodel_64bits => $query->param('is64bits'),
+		processormodel_cpu_flags => $query->param('cpuflags'),
+	);
+    eval { $procmodel->create(); };
+   	if($@) {
+    	my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	}
+	else { return $self->close_window(); }
 }
 
 sub _addprocessormodel_profile {
@@ -113,7 +114,7 @@ sub form_addmotherboardmodel : Runmode {
     my $tmpl =  $self->load_tmpl('Models/form_addmotherboardmodel.tmpl');
 	$tmpl->param($errors) if $errors;
 	
-	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});
+	my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});
 	my $pmodels = [];
 	foreach my $x (@processormodels){
 		my $tmp = {
@@ -123,7 +124,6 @@ sub form_addmotherboardmodel : Runmode {
 		push (@$pmodels, $tmp);
 	}
 	$tmpl->param('processormodels_list' => $pmodels);
-	
 	return $tmpl->output();
 }
 
@@ -134,26 +134,27 @@ sub process_addmotherboardmodel : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    eval {
-		my $mothmodel = $self->{admin}->newEntity( type => 'Motherboardmodel', params => {
-			motherboardmodel_brand => $query->param('brand'),
-			motherboardmodel_name => $query->param('name'),
-			motherboardmodel_chipset => $query->param('chipset'),
-			motherboardmodel_processor_num => $query->param('procnum'),
-			motherboardmodel_consumption => $query->param('consumption'),
-			motherboardmodel_iface_num => $query->param('ifacenum'),
-			motherboardmodel_ram_slot_num => $query->param('ramslotnum'),
-			motherboardmodel_ram_max => $query->param('rammax'),
-			processormodel_id => $query->param('processorid') ne '0' ? $query->param('processorid') : undef,
-			
-		});
-		$mothmodel->save();
-    };
-    if($@) { 
-		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new motherboard model created'); }
-    return $self->close_window();
+    my $mothmodel = Entity::Motherboardmodel->new(
+		motherboardmodel_brand => $query->param('brand'),
+		motherboardmodel_name => $query->param('name'),
+		motherboardmodel_chipset => $query->param('chipset'),
+		motherboardmodel_processor_num => $query->param('procnum'),
+		motherboardmodel_consumption => $query->param('consumption'),
+		motherboardmodel_iface_num => $query->param('ifacenum'),
+		motherboardmodel_ram_slot_num => $query->param('ramslotnum'),
+		motherboardmodel_ram_max => $query->param('rammax'),
+		processormodel_id => $query->param('processorid') ne '0' ? $query->param('processorid') : undef,
+	);
+    eval { $mothmodel->create(); };
+    if($@) {
+    	my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	}
+	else { return $self->close_window(); }
 }
 
 sub _addmotherboardmodel_profile {
