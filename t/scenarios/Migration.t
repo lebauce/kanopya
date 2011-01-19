@@ -1,3 +1,4 @@
+#!/usr/bin/perl -w
 use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
@@ -7,12 +8,13 @@ use Kanopya::Exceptions;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/test.log', layout=>'%F %L %p %m%n'});
 
-use_ok ('Administrator');
-use_ok ('Executor');
-use_ok('Entity::Cluster');
-use_ok('Entity::Motherboard');
-use_ok('Entity::Systemimage');
-
+BEGIN{
+    use_ok ('Administrator');
+    use_ok ('Executor');
+    use_ok('Entity::Cluster');
+    use_ok('Entity::Motherboard');
+    use_ok('Entity::Systemimage');
+}
 use Data::Dumper;
 my $test_instantiation = "Instantiation test";
 
@@ -87,6 +89,7 @@ eval {
     # Test Motherboard Migration
     note( "Test Motherboard Migration");
     $c2->addMotherboard(motherboard_id => $m2->getAttr(name => 'motherboard_id'));
+    $executor->execnround(run => 1);
 
     # Test Motherboard Deactivation
     note( "Test Motherboard Deactivation");
