@@ -127,6 +127,9 @@ sub addClusterRule {
 	
 	Class : Public
 	
+	Args: cluster_id: int
+		  (optional) action: get only rules with this action
+		  
 	Desc : delete all rules for cluster
 	
 	Args : cluster_id: int
@@ -137,7 +140,10 @@ sub deleteClusterRules {
 	my $self = shift;
 	my %args = @_;
 	
-	my $rules = $self->{db}->resultset('Rule')->search( { cluster_id => $args{cluster_id} } );
+	my %search = ( cluster_id => $args{cluster_id} );
+	$search{rule_action} = ( defined $args{action} ) ? $args{action} : { 'not in' => "optim" };
+	
+	my $rules = $self->{db}->resultset('Rule')->search( \%search );
 	$rules->delete;
 	
 	$log->debug("Rules deleted for cluster " . $args{cluster_id} );	
@@ -146,6 +152,7 @@ sub deleteClusterRules {
 =head getClusterRules
 
 	Args: cluster_id: int
+		  (optional) action: get only rules with this action
 	
 	return list of rules for cluster
 
@@ -202,6 +209,13 @@ sub addClusterOptimConditions {
 	my %args = @_;
 	
 	$self->addClusterRule( cluster_id => $args{cluster_id}, condition_tree => $args{condition_tree}, action => "optim" );	
+}
+
+sub deleteClusterOptimConditions {
+	my $self = shift;
+	my %args = @_;
+	
+	$self->deleteClusterRules( cluster_id => $args{cluster_id}, action => "optim" );
 }
 
 1;

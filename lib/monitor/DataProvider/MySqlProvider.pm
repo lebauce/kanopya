@@ -31,6 +31,9 @@ use strict;
 use warnings;
 use DBI;
 
+use Log::Log4perl "get_logger";
+my $log = get_logger("monitor");
+
 =head2 new
 	
 	Class : Public
@@ -100,7 +103,7 @@ sub retrieveData {
 		if (exists $status{$oid}) {
 			$values{$name} = $status{$oid};
 		} else {
-			print "## Warning: '$oid' not found in MySql status.\n";
+			$log->warn("oid '$oid' not found in MySql status.");
 			$values{$name} = undef;
 		}
 	}

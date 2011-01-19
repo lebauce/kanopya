@@ -61,7 +61,8 @@ sub getData {
 	$rrd->fetch_start( start => time() - $args{time_laps} );
 	$rrd->fetch_skip_undef();
 
-	# retrieve array of ds name ordered like in rrd (db column)	
+	# retrieve array of ds name ordered like in rrd (db column)
+	# WARN we directly access class hash, breaking encapsulation
 	my $ds_names = $rrd->{fetch_ds_names};
 	
 	my @max_def = $args{max_def} ? @{ $args{max_def} } : @$ds_names; 
@@ -196,7 +197,7 @@ sub getClusterData {
 	return \%cluster_data;
 }
 
-#TODO now we store cluster data, so retrieve this data from rrd
+#DEPRECATED now we store cluster data, so retrieve this data directly from rrd (see getClusterData)
 sub getClusterData_OLD {
 	my $self = shift;
 	my %args = @_;
@@ -207,7 +208,6 @@ sub getClusterData_OLD {
 	my %hosts_data = ();
 	my $hosts = $self->getClusterHostsInfo( cluster => $args{cluster} );
 	
-	print "\n###############   Get Cluster Data   #############\n";
 	my $up;
 	#foreach my $host (@$hosts) { 
 	while ( my ($hostname, $host_info) = each %$hosts ) {
@@ -221,8 +221,6 @@ sub getClusterData_OLD {
 		}
 	}
 	
-	print Dumper \%hosts_data;
-	
 	die "No node 'up' in cluster '$args{cluster}'" if ( not defined $up );
 	
 	if ( defined $aggregate ) {
@@ -232,10 +230,7 @@ sub getClusterData_OLD {
 	} else {
 		$res = \%hosts_data;
 	}
-	
-	print "\n###############   ", "res", "   ##########\n";
-	print Dumper $res;
-	
+
 	return $res;
 }
 

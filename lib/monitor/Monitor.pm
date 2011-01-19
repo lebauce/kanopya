@@ -44,7 +44,6 @@ package Monitor;
 
 #TODO Modulariser: Collector, DataProvider (snmp, generator,...), DataStorage (rrd, ...), DataManipulator, Grapher, ...
 #TODO use Mcs::Exception
-#TODO remplacer les prints par des logs
 #TODO renommer correctement ex: $host représente des fois $host_name ou $host_ip
 
 use strict;
@@ -79,24 +78,18 @@ sub new {
 	my $self = {};
 	bless $self, $class;
 
-	my $start_time = time();
-
 	$log->info("NEW");
 
 	# Load conf
-	#my $config = XMLin("/workspace/mcs/Monitor/Conf/monitor.conf");
 	my $conf = XMLin("/etc/kanopya/monitor.conf");
 
-	$self->{_time_step} = $conf->{time_step};
-	$self->{_period} = $conf->{period};
+	$self->{_time_step	 } = $conf->{time_step};
+	$self->{_period		 } = $conf->{period};
 	$self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/monitor';
-	$self->{_graph_dir} = $conf->{graph_dir} || '/tmp/monitor';
-	$self->{_node_states} = $conf->{node_states};
+	$self->{_graph_dir	 } = $conf->{graph_dir} || '/tmp/monitor';
+	$self->{_node_states } = $conf->{node_states};
 
 	$self->{_grapher_time_step} = $conf->{generate_graph}{time_step};
-
-
-	print "Monitor::new : load conf time = ", time() - $start_time, "\n";
 
 	# Create monitor dirs if needed
 	for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
@@ -345,9 +338,7 @@ sub createRRD {
 	my $self = shift;
 	my %args = @_;
 
-	print "\n##############################################################################\n";
 	$log->info("## CREATE RRD : '$args{file}' ##");
-	print "\n##############################################################################\n";
 
 	my $dsname_list = $args{dsname_list};
 
@@ -452,12 +443,10 @@ sub updateRRD {
 		# TODO check the error
 		else {
 			$log->info("=> update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n (Reason: $error)");
-			#print "	(Reason: $error)\n";
 			my @dsname_list = keys %{ $args{data} };
 			$rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type}, set_name => $args{set_name} );
 			$rrd->update( time => $time, values =>  $args{data} );
 		}
-		#print "Warning : unexisting RRD file or set definition changed in conf => nothing will be done until you rebuild the corresponding set ($rrdfile_name).\n";
 	} 
 
 	################################################
@@ -467,7 +456,6 @@ sub updateRRD {
 	if ( $args{ds_type} eq 'GAUGE' ) {
 		%stored_values = %{ $args{data} };
 	} else {
-		#print "==> TIME = $time, start = " . ($time - ($self->{_time_step} / 2)) . "\n";
 		#TODO check if we really retrieve the last value in all cases
 		$rrd->fetch_start( start => $time - $self->{_time_step} );
 		my ($t, @values) = $rrd->fetch_next();

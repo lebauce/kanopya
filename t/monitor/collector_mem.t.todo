@@ -24,10 +24,15 @@ use Monitor::Collector;
 my $collector = Monitor::Collector->new();
     leaks_cmp_ok{
         #toto();
-		$collector->updateHostData( host_ip => "127.0.0.1", host_state => "up", components => []);
+		# $collector->updateHostData( host_ip => "127.0.0.1", host_state => "up", components => []);
         #$collector->update();
     } '<', 1;
 
+
+my $adm = Administrator->new( login => "admin", password => "admin" );
+leaks_cmp_ok{
+	$adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => "127.0.0.1" } );
+} '<', 1;
 
 
 sub toto {

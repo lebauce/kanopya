@@ -27,6 +27,8 @@ package ApacheProvider;
 
 use strict;
 use warnings;
+use Log::Log4perl "get_logger";
+my $log = get_logger("monitor");
 
 =head2 new
 	
@@ -108,9 +110,7 @@ sub retrieveData {
 		else
 		{
 			$value = undef;
-			
-			# TODO autre
-			print "## Warning: '$oid' not found in Apache status.\n";
+			$log->warn("oid '$oid' not found in Apache status.");
 		}
 		$values{$name} = $value;
 	}

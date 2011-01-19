@@ -10,9 +10,9 @@ use lib qw(/opt/kanopya/lib/monitor/ /opt/kanopya/lib/administrator/ /opt/kanopy
 
 
 
+use Devel::Gladiator qw(walk_arena arena_ref_counts arena_table);
 
-
-
+use Devel::Size qw( size total_size );
 
 
 
@@ -27,6 +27,10 @@ my $collector = Monitor::Collector->new();
    $collector->update();
 
 
+ print arena_table();
+
+
+print "TOTAL SIZE: " . total_size($collector);
 
 # This sub result in a memory leak (for testing)
 sub memLeak {

@@ -177,9 +177,9 @@ sub graphTable {
 		# mv graph file from tmp dir to graph_dir
 		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
 		
-		print "table => $graph_filename\n";
+		$log->info("table => $graph_filename");
 	} else {
-		print "info: nothing to graph in the table '$set_name'\n";
+		$log->info("info: nothing to graph in the table '$set_name'");
 	}
 	
 }
@@ -305,7 +305,6 @@ sub graphNode {
 	
 	if ( -e "$self->{_graph_dir}/tmp/$graph_filename") {	
 		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;	
-		#print " => $graph_filename\n";
 	} else {
 		$log->error("graph not generated '$graph_filename'");
 		return undef;
@@ -404,9 +403,6 @@ sub graphPercent {
 	my $total_op = join( ",", @max_def);
 	for (my $i=1; $i < @max_def; ++$i) { $total_op .= ",+" };
 	
-	#print "#### TOTAL op : $total_op\n";
-	
-	
 	# Add total graph
 	push @graph_params, (
 								draw   => {
@@ -437,8 +433,7 @@ sub graphPercent {
 	my $res = $rrd->graph( @graph_params );
 
 	if ( -e "$self->{_graph_dir}/tmp/$graph_filename") {	
-		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;	
-		print " => $graph_filename\n";
+		`mv $self->{_graph_dir}/tmp/$graph_filename $self->{_graph_dir}`;
 	} else {
 		$log->error("graph not generated '$graph_filename'");
 		return undef;

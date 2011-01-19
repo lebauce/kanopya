@@ -27,6 +27,8 @@ package VirtualProvider;
 
 use strict;
 use warnings;
+use Log::Log4perl "get_logger";
+my $log = get_logger("monitor");
 
 =head2 new
 	
@@ -94,9 +96,7 @@ sub retrieveData {
 			else
 			{
 				$load = undef;
-
-				# TODO autre
-				print "## Warning: LOAD not found in virtual nodes file for '$ip'.\n";
+				$log->warn("LOAD not found in virtual nodes file for '$ip'.");
 			}
 			
 			while ( my ($name, $oid) = each %$var_map ) {
@@ -138,8 +138,7 @@ sub compute {
 		return $load;
 	}
 	
-	print "Error: no definition to compute virtual var '$args{var}'\n";
-	return undef;
+	die "Error: no definition to compute virtual var '$args{var}'";
 }
 
 # destructor

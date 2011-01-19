@@ -43,22 +43,9 @@ Orchestrator is the main object for mc management politic.
 package Orchestrator;
 
 ###############################################################################################################
-#TODO Remove node from cluster
-#		- Le cluster doit vérifier l'ensemble des conditions spécifiées
-#				=> 2 types possibles de conditions:
-#						- seuil sur valeur
-#						- seuil de performance voulu après le retrait du noeud (permet de supprimer des noeud plus rapidemment sans attendre un seuil bas)						
-#		- Il n'y a pas eu d'ajout d'un noeud dans le cluster depuis un certain laps de temps (conf)
-
-
-#TODO 	les moyennes remontées par le monitor sont calculées par rapport à l'ensemble des nodes 'up' (logique)
-#		On pourrait prendre en compte les nodes 'starting' ce qui fausserais les moyennes courantes mais nous donnerais une idée de la charge une fois le noeud 'up' (prévision) (?)
-    
 #WARN l'orchestrator considère actuellement que les noeuds sont homogènes et ne prend pas en compte les spécificités de chaque carte
 #TODO Prendre en compte les spécificités des cartes dans les algos, faire un système de notation pour le choix des cartes à ajouter/supprimer
 #TODO Percent option. WARN: avg % != % avg
-
-#TODO log
 #TODO use mcs exception
 ###############################################################################################################
 
@@ -131,19 +118,17 @@ sub new {
 sub manage {
 	my $self = shift;
 	
-	print "Manage\n";
-	
 	my $monitor = $self->{_monitor};
 	
 	my @skip_clusters = (); #('adm');
 	
 	my @all_clusters_name = $monitor->getClustersName();
 	
+	CLUSTER:
 	for my $cluster (@all_clusters_name) {
-		print "# CLUSTER: $cluster\n";
 		if ( scalar grep { $_ eq $cluster } @skip_clusters ) {
 			$log->info(" => skip cluster $cluster\n");
-			next;
+			next CLUSTER;
 		}
 		my $cluster_id = $self->{_admin_wrap}->getClusterId( cluster_name => $cluster );
 	
@@ -157,13 +142,6 @@ sub manage {
 			# Try to optimize
 			my $optim_conditions = $rules_manager->getClusterOptimConditions( cluster_id => $cluster_id );
 			$self->optimize( condition_tree => $optim_conditions, cluster_name => $cluster );
-			
-			
-			# Detect trap for adding node
-			#my $cluster_trapped = $self->detectTraps( cluster_name => $cluster );
-			
-			# Check conditions for remove node
-			#$self->checkRemoveConditions( cluster_name => $cluster ) if (not $cluster_trapped);
 			
 			# Update graph for this cluster
 			$self->updateGraph( cluster => $cluster );
@@ -209,13 +187,13 @@ sub getValue {
 	if ($@) {
 		my $error = $@;
 		$log->error("=> Error getting data (set '$args{set}' for cluster '$args{cluster}') : $error");
-		return undef;
+		return;
 	}
 
 	my $value = $cluster_data_aggreg->{ $args{ds} };
 	if (not defined $value) {
 		$log->warn("No value for ds '$args{ds}' in cluster '$args{cluster}' (for last $args{time_laps}sec).  considered as undef.");
-		return undef;
+		return;
 	}
 	
 	return $value;
@@ -437,148 +415,6 @@ sub updateGraph {
 	$self->graph( cluster => $cluster, op => 'remove' );
 }
 
-sub checkRemoveConditions {
-	my $self = shift;
-	my %args = @_;
-	
-	my $cluster = $args{cluster_name};
-	my $monitor = $self->{_monitor};
-	
-	my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster );
-	my $upnode_count = grep { $_->{state} =~ 'up' } values %$cluster_info;
-	
-	if ( $upnode_count <= 1 ) {
-		print "No node to eventually remove => don't check remove conditions\n";
-		return;
-	}
-	
-	#TODO vérifier que le nombre de noeud est constant depuis un certains temps (ne pas remove un node si on en a ajouté un rescemment)
-	
-	#TODO si il y a un node starting/broken alors return ? sauf si on l'a déjà testé en amont
-	
-	my $required_failed = 0;
-	my $one_required_ok = 0;
-	my %values = ();
-	for my $cond ( @{ $self->{_conditions} } ) {
-		print "	# CONDITIONS on '$cond->{set}' (laps: $cond->{time_laps})\n";
-		my $cluster_data_aggreg;
-		eval {
-			$cluster_data_aggreg = $monitor->getClusterData( 	cluster => $cluster,
-																set => $cond->{set},
-																time_laps => $cond->{time_laps},
-																percent => $cond->{percent},
-																aggregate => "mean");
-		};
-		if ($@) {
-			my $error = $@;
-			print "=> Error getting data (set '$cond->{set}' for cluster '$cluster') : $error\n";
-			next;
-		}
-		
-		foreach my $required ( @{ General::getAsArrayRef( data => $cond, tag => 'required' ) }) {
-			
-			my $value = $cluster_data_aggreg->{ $required->{var} };
-			if (not defined $value) {
-				print "Warning: no value for var '$required->{var}' in cluster '$cluster' (for last $cond->{time_laps}sec). required ignored.\n";
-				next;
-			}
-			
-			###################################################################
-			# Compute prevision for this value if we remove a node
-			# Based on mean value so we consider all nodes have the same current load
-			#TODO is it good ? 
-			###################################################################
-			my $prevision = $value + ( $value / ( $upnode_count - 1 ));
-			
-			$values{ $required->{var} . "_" . $cond->{time_laps} } = $prevision;
-			
-			print "				=> REQUIRED : ($required->{var} current = $value prevision = $prevision ", defined $required->{max}?" max : $required->{max}":" min : $required->{min}" ," )\n";
-			
-			if ( 	( defined $required->{max} && $prevision < $required->{max} )
-				|| 	( defined $required->{min} && $prevision > $required->{min} ) ) {
-				print "				======> ok\n";
-				$one_required_ok = 1;
-			} else {
-				print "				======> failed\n";
-				$required_failed = 1;
-			}
-			
-		} # end required
-	} # end conditions
-	
-	# Store values
-	if ( scalar keys %values ) {
-		$self->updateRRD( cluster => $cluster, op => 'remove', time => time(), values => \%values  )
-	}
-	
-	# Required remove node if all conditions are ok
-	if ( $required_failed == 0 && $one_required_ok != 0 ) {
-		print "========> REQUIRED REMOVE NODE\n\n";
-		$self->requireRemoveNode( cluster => $cluster );
-	}
-	
-}
-
-sub detectTraps {
-	my $self = shift;
-	my %args = @_;
-	
-	my $cluster = $args{cluster_name};
-	my $monitor = $self->{_monitor};
-	
-	my %values = ();
-	my $cluster_trapped = 0;
-	for my $trap_def ( @{ $self->{_traps} } ) {
-#		if ($cluster_trapped) {
-#			print " ==> skip\n";
-#			last;
-#		}
-		print "	# TRAPS on '$trap_def->{set}' (laps: $trap_def->{time_laps})\n";
-		my $cluster_data_aggreg;
-		eval {
-			$cluster_data_aggreg = $monitor->getClusterData( 	cluster => $cluster,
-																set => $trap_def->{set},
-																time_laps => $trap_def->{time_laps},
-																percent => $trap_def->{percent},
-																aggregate => "mean");
-		};
-		if ($@) {
-			my $error = $@;
-			print "=> Error getting data (set '$trap_def->{set}' for cluster '$cluster') : $error\n";
-			next;
-		}
-		foreach my $threshold ( @{ General::getAsArrayRef( data => $trap_def, tag => 'threshold' ) }) {
-			
-			my $value = $cluster_data_aggreg->{ $threshold->{var} };
-			if (not defined $value) {
-				print "Warning: no value for var '$threshold->{var}' in cluster '$cluster' (for last $trap_def->{time_laps}sec). Trap ignored.\n";
-				next;
-			}
-			
-			$values{  $threshold->{var} . "_" . $trap_def->{time_laps} } = $value;
-			
-			print "		# THRESHOLD  : $threshold->{var} ", defined $threshold->{max}?"max=$threshold->{max}":"min=$threshold->{min}", " value=$value\n";
-			if ( 	( defined $threshold->{max} && $value > $threshold->{max} )
-				|| 	( defined $threshold->{min} && $value < $threshold->{min} ) ) {
-				print "				======> TRAP!  ($cluster: $threshold->{var} = $value ", defined $threshold->{max}?"> $threshold->{max}":"< $threshold->{min}" ," )\n";
-				$cluster_trapped = 1;
-				#last;		
-			}
-		} # end threshold
-	} #end traps
-	
-	# Store values
-	if ( scalar keys %values ) {
-		$self->updateRRD( cluster => $cluster, op => 'add', time => time(), values => \%values  )
-	}
-
-	# Require add if trapped
-	if ( $cluster_trapped ) {
-		$self->requireAddNode( cluster => $cluster );
-	}
-				
-	return $cluster_trapped;
-}
 
 =head2 _isNodeInState
 	
@@ -940,7 +776,7 @@ sub updateRRD {
 	};
 	if ($@) {
 		my $error = $@;
-		print "Info: conf changed ($error)\n";
+		$log->Info("Info: conf changed ($error)");
 		my $rrd = $self->getRRD( cluster => $args{cluster}, op => $args{op}, force_create => 1 );
 		$rrd->update( time => $args{time}, values => $args{values} );
 	}
@@ -957,7 +793,7 @@ sub getRRD {
 	if ( -e $rrd_file && not defined $args{force_create} ) {
 		$rrd = RRDTool::OO->new( file =>  $rrd_file );
 	} else {
-		print "info: create orchestrator rrd for cluster '$cluster'\n";
+		$log->info("info: create orchestrator rrd for cluster '$cluster'");
 		$rrd = $self->createRRD( file => $rrd_file, op => $args{op} );
 	}
 	return $rrd;

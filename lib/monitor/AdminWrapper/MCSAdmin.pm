@@ -18,8 +18,6 @@ sub new {
     return $self;
 }
 
-#TODO AUTOLOAD
-
 sub getEntities { my $self = shift; return ($self->{_admin})->getEntities( @_ ); }
 sub getOperations { my $self = shift; return ($self->{_admin})->getOperations( @_ ); }
 sub newOp { my $self = shift; return ($self->{_admin})->newOp( @_ ); }
@@ -96,12 +94,8 @@ sub retrieveHostsByCluster {
 
 			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };
 		}
-		#$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \@mb_ip;
 		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
 	}	
-	
-	#use Data::Dumper;
-	#print Dumper \%hosts_by_cluster;
 
 	return %hosts_by_cluster;
 }
@@ -122,6 +116,3 @@ sub getClustersName {
 
 __END__
 
-sub AUTOLOAD {
-	print "==========> AUTOLOAD : $AUTOLOAD\n";
-}
