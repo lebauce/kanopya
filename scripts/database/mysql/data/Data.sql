@@ -17,8 +17,9 @@ INSERT INTO `groups` VALUES
 (7,'Kernel','Kernel','Kernel master group containing all kernels',1),
 (8,'Systemimage','Systemimage','Systemimage master group containing all system images',1),
 (9,'Operationtype','Operationtype','Operationtype master group containing all operations',1),
-(10,'Powersupply','Powersupply','Powersupply master group  containing all power supply cards',1);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,1); SET @eid := @eid +1;
+(10,'Powersupply','Powersupply','Powersupply master group  containing all power supply cards',1),
+(11,'Groups','Groups','Groups master group containing all groups',1);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,1); SET @MasterUserGroup_eid = @eid; SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,4); SET @eid := @eid +1;
@@ -28,12 +29,18 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,7);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,8); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,9); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,10); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
 
 -- predefined groups
 INSERT INTO `groups` VALUES
-(11,'Admin','User','Privileged users for administration tasks',0);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
-SET @Admin_group = 11;
+(12,'Admin','User','Privileged users for administration tasks',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,12); SET @eid := @eid +1;
+SET @Admin_group_id = 12;
+
+INSERT INTO `groups` VALUES
+(13,'GuestGroup','User','Guest users with limited permissions',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,13); SET @GuestGroup_eid = @eid; SET @eid := @eid +1;
+SET @Guest_group_id = 13;
 
 -- system user
 INSERT INTO `user` VALUES 
@@ -44,10 +51,12 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); S
 INSERT INTO `user` VALUES
 (2,1,'admin','admin','Administrator','','admin@somewhere.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); 
-INSERT INTO `ingroups` VALUES (@Admin_group, @eid); SET @eid := @eid +1;
+INSERT INTO `ingroups` VALUES (@Admin_group_id, @eid); SET @eid := @eid +1;
 
 INSERT INTO `user` VALUES (3,0,'guest','guest','Guest','','guest@somewhere.com',CURRENT_DATE(),NULL,'Guest user with limited permissions.');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); 
+INSERT INTO `ingroups` VALUES (@Guest_group_id, @eid); 
+SET @guest_user_eid = @eid;
 SET @eid := @eid +1;
 
 -- processor models
@@ -225,6 +234,13 @@ INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 
 -- dhcpd configuration
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com', '137.194.2.16','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'10.0.0.0','255.255.255.0');
+
+
+-- initial permissions for user guest
+INSERT INTO `entityright` VALUES (1, @guest_user_eid, @guest_user_eid, 'get');
+INSERT INTO `entityright` VALUES (2, @guest_user_eid, @guest_user_eid, 'update');
+INSERT INTO `entityright` VALUES (3, @MasterUserGroup_eid, @guest_user_eid, 'get');
+INSERT INTO `entityright` VALUES (4, @GuestGroup_eid, @guest_user_eid, 'get');
 
 SET foreign_key_checks=1;
 

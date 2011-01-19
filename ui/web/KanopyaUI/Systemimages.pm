@@ -4,8 +4,6 @@ use base 'KanopyaUI::CGI';
 use strict;
 use warnings;
 
-my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
-
 # system images listing page
 
 sub view_systemimages : StartRunmode {
@@ -110,7 +108,7 @@ sub process_addsystemimage : Runmode {
 		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
 	} 	
 		
-    return $closewindow;
+    return $self->close_window();
 }
 
 # systemimage details page

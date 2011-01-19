@@ -68,32 +68,6 @@ use constant ATTR_DEF => {
 										is_editable		=> 0},
 };
 
-
-=head2 new
-
-	Class: Public
-	desc:  constructor
-	args: 
-	return: Entity::Groups instance 
-	
-=cut
-
-sub new {
-	my $class = shift;
-    my %args = @_;
-
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Groups");
-	
-	# Set the extended parameters
-	#$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-}
-
 =head2 get
 
 	Class: public
@@ -113,9 +87,23 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args,  table => "Groups");
-   #$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
-   return $self;
+	
+	my $admin = Administrator->new();
+   	my $dbix_groups = $admin->{db}->resultset('Groups')->find($args{id});
+   	if(not defined $dbix_groups) {
+	   	$errmsg = "Entity::Groups->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	}   
+   	# Entity::Groups->get method concerns an existing groups so we retrieve this groups'entity_id
+   	my $entity_id = $dbix_groups->groups_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get group with id $args{id}");
+   	}
+	
+   	my $self = $class->SUPER::get( %args,  table => "Groups");
+   	return $self;
 }
 
 =head2 getGroups
@@ -143,6 +131,49 @@ sub getGroups {
    	return $class->SUPER::getEntities( %args,  type => "Groups");
 }
 
+=head2 create
+
+=cut
+
+sub create {
+	my $class = shift;
+	my %args = @_;
+			
+	my $admin = Administrator->new();
+	# Entity::Groups->create method doesnt concern existing entity so we retrieve entity_id of Groups master group
+	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'Groups' })->groups_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new group");
+   	}
+   	#TODO creation implementation
+}
+
+=head2 new
+
+	Class: Public
+	desc:  constructor
+	args: 
+	return: Entity::Groups instance 
+	
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Groups");
+	
+	# Set the extended parameters
+	#$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+}
+
 =head2 getGroupsFromEntity
 
 	Class: public
@@ -159,7 +190,7 @@ sub getGroupsFromEntity {
 	my @groups = ();
     
 	if ((! exists $args{entity} or ! defined $args{entity})) { 
-		$errmsg = "Entity::Groups->getGroups need a hash named argument!";
+		$errmsg = "Entity::Groups->getGroups need an entity named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
@@ -178,12 +209,23 @@ sub getGroupsFromEntity {
 			join => [qw/ingroups groups_entities/] }
 	);
 	while(my $row = $groups_rs->next) {
-		push(@groups, $class->SUPER::get(id => $row->get_column('groups_id'), table => 'Groups'));
+		eval {
+			my $group = $class->get(id => $row->get_column('groups_id'));
+			push(@groups, $group);	
+		};
+		if($@) {
+			my $exception = $@;
+			if(Kanopya::Exception::Permission::Denied->caught()) {
+				next;
+			}
+			else {
+				$exception->rethrow();
+			} 
+		}
+		
 	}
    	return @groups;
 }
-
-
 
 =head2 toString
 

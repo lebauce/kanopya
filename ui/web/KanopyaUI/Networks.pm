@@ -1,9 +1,6 @@
 package KanopyaUI::Networks;
 use base 'KanopyaUI::CGI';
 
-use Data::Dumper;
-
-my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
 
 sub view_publicips : StartRunmode {
     my $self = shift;
@@ -53,7 +50,7 @@ sub process_addpublicip : Runmode {
 		my $error = $@;
 		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
 	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added.'); }
-    return $closewindow;
+    return $self->close_window();
 }
 
 sub _addpublicip_profile {

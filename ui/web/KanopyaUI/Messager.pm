@@ -9,7 +9,7 @@ sub view_messages : StartRunmode {
  	my $query = $self->query();
     
     my $userid = $query->param('userid');
-    my @messages = $self->{'admin'}->getMessages();
+    my @messages = $self->{adm}->getMessages();
     
     my $tmpl = $self->load_tmpl('Messages/view_messages.tmpl');
     my $counter = 0;
@@ -19,9 +19,7 @@ sub view_messages : StartRunmode {
     }
     
     $tmpl->param(messages_list => \@messages);
-   	
-   
-	return $tmpl->output();
+   	return $tmpl->output();
 }
 
 

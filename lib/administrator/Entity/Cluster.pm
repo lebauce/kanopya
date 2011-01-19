@@ -85,22 +85,7 @@ use constant ATTR_DEF => {
 										is_editable		=> 1}
 			};
 
-
-sub extension {
-	return "clusterdetails";
-}
-
-sub getEntityTable {
-	return "cluster";
-}
-
-=head2 checkAttr
-	
-	Desc : This function check if new object data are correct and sort attrs between extended and global
-	args: 
-		class : String : Real class to check
-		data : hashref : Entity data to be checked
-	return : hashref of hashref : a hashref containing 2 hashref, global attrs and extended ones
+=head2 get
 
 =cut
 
@@ -115,8 +100,9 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   	
 
+   	my $admin = Administrator->new();
+   	# Entity::Cluster->get method concerns an existing cluster so we retrieve this cluster'entity_id
    	my $entity_id = $admin->{db}->resultset('Cluster')->find($args{id})->cluster_entities->first->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
@@ -126,6 +112,10 @@ sub get {
    	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
    	return $self;
 }
+
+=head2 
+
+=cut
 
 sub getClusters {
 	my $class = shift;
@@ -141,6 +131,85 @@ sub getClusters {
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
 }
 
+<<<<<<< HEAD
+
+=head2 create
+
+=cut
+
+sub create {
+	my $class = shift;
+	my %args = @_;
+	
+	# TODO tester la validite des arguments
+	
+	my $admin = Administrator->new();
+	# Entity::Cluster->create method doesnt concern existing entity so we retrieve entity_id of Cluster master group
+	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'Cluster' })->groups_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new cluster");
+   	}
+	# TODO creation implementation 
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+}
+
+=head2 update
+
+=cut
+
+sub update {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# update method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
+   	}
+	# TODO update implementation
+}
+
+=head2 delete
+
+=cut
+
+sub delete {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# delete method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
+   	}
+	# TODO delete implementation
+}
+
+sub extension {
+	return "clusterdetails";
+}
+
+sub getEntityTable {
+	return "cluster";
+=======
 sub getCluster {
 	my $class = shift;
     my %args = @_;
@@ -162,6 +231,7 @@ sub create{
     Operation->enqueue(priority => 200,
                    type     => 'AddCluster',
                    params   => \%params);
+>>>>>>> 50a6a1e9ba0af58bdfb11464b55a8d99a5b0f1ee
 }
 
 sub addMotherboard{
@@ -200,6 +270,16 @@ sub deactivate{
                    type     => 'DeactivateCluster',
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
 }
+
+=head2 checkAttr
+	
+	Desc : This function check if new object data are correct and sort attrs between extended and global
+	args: 
+		class : String : Real class to check
+		data : hashref : Entity data to be checked
+	return : hashref of hashref : a hashref containing 2 hashref, global attrs and extended ones
+
+=cut
 
 sub checkAttrs {
 	# Remove class
@@ -273,24 +353,6 @@ sub checkAttr{
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	# Here check attr value
-}
-
-# contructor
-sub new {
-	my $class = shift;
-    my %args = @_;
-
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-
 }
 
 =head2 toString

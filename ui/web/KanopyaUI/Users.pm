@@ -11,8 +11,6 @@ use Entity::Groups;
 
 my $log = get_logger('administrator');
 
-my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
-
 # users listing page
 
 sub view_users : StartRunmode {
@@ -21,6 +19,7 @@ sub view_users : StartRunmode {
     $tmpl->param('titlepage' => "Settings - Groups");
     $tmpl->param('mSettings' => 1);
 	$tmpl->param('submUsers' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	my @eusers = Entity::User->getUsers(hash => { user_system => 0 });
 	my $users = [];
@@ -34,7 +33,11 @@ sub view_users : StartRunmode {
 		push(@$users, $tmp);
 	}
 	$tmpl->param('users_list' => $users);
-		
+	
+	my $granted_methods = Entity::User->getPerms();
+	if($granted_methods->{create}) {
+		$tmpl->param('can_create' => 1);
+	}
 	return $tmpl->output();
 }
 
@@ -57,19 +60,27 @@ sub process_adduser : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    my $euser = Entity::User->new( 
-    	user_login => $query->param('login'), 
-    	user_password => $query->param('password'),
-    	user_firstname => $query->param('firstname'),
-    	user_lastname => $query->param('lastname'),
-    	user_email => $query->param('email'),
-    	user_desc => $query->param('desc'),
-    	user_creationdate => \"NOW()",
-    	user_lastaccess => undef
-    );
-    $euser->save();
-    # TODO add initial permission for this user
-    return $closewindow;
+    eval {
+	    Entity::User->create( 
+	    	user_login => $query->param('login'), 
+	    	user_password => $query->param('password'),
+	    	user_firstname => $query->param('firstname'),
+	    	user_lastname => $query->param('lastname'),
+	    	user_email => $query->param('email'),
+	    	user_desc => $query->param('desc'),
+	    	user_creationdate => \"NOW()",
+	    	user_lastaccess => undef
+	    );
+    };
+    if($@) {
+    	my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	}
+	else { return $self->close_window(); }
 }
 
 # function profile for form_adduser (see ValidateRM module)
@@ -109,39 +120,56 @@ sub login_used {
 
 sub view_userdetails : Runmode {
 	my $self = shift;
-    my $tmpl =  $self->load_tmpl('Users/view_userdetails.tmpl');
-    $tmpl->param('titlepage' => "Users - User details");
-    $tmpl->param('mSettings' => 1);
-	$tmpl->param('submUsers' => 1);
-	
+    
 	my $query = $self->query();
 	my $user_id = $query->param('user_id');
-	my $euser = Entity::User->get(id => $user_id);
-	
-	$tmpl->param('user_id' =>  $user_id);
-	$tmpl->param('user_desc' =>  $euser->getAttr('name' => 'user_desc'));
-	$tmpl->param('user_firstname' =>  $euser->getAttr('name' => 'user_firstname'));
-	$tmpl->param('user_lastname' =>  $euser->getAttr('name' => 'user_lastname'));
-	$tmpl->param('user_email' =>  $euser->getAttr('name' => 'user_email'));
-	$tmpl->param('user_login' =>  $euser->getAttr('name' => 'user_login'));
-	$tmpl->param('user_creationdate' =>  $euser->getAttr('name' => 'user_creationdate'));
-	$tmpl->param('user_lastaccess' =>  $euser->getAttr('name' => 'user_lastaccess'));
-	# password is not retrieved because displayed like ********
-	
-	my $groups = [];
-	my @egroups = Entity::Groups->getGroupsFromEntity(entity => $euser);
-	foreach my $eg (@egroups) {
-		my $tmp = {};
-		$tmp->{groups_id} = $eg->getAttr(name => 'groups_id');
-		$tmp->{groups_name} = $eg->getAttr(name => 'groups_name');
-		$tmp->{groups_desc} = $eg->getAttr(name => 'groups_desc');
-		$tmp->{groups_system} = $eg->getAttr(name => 'groups_system');
-		push(@$groups, $tmp);
-	} 
-	
-	$tmpl->param('groups_list' => $groups);
-	
-	return $tmpl->output();
+	my $euser = eval { Entity::User->get(id => $user_id) };
+	if($@) {
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{admin}->addMessage(from => 'Administrator', level => 'warning', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else {
+			$exception->rethrow();
+		}
+	}
+	else {
+		my $tmpl =  $self->load_tmpl('Users/view_userdetails.tmpl');
+	    $tmpl->param('titlepage' => "Users - User details");
+	    $tmpl->param('mSettings' => 1);
+		$tmpl->param('submUsers' => 1);
+		$tmpl->param('username' => $self->session->param('username'));
+		
+		$tmpl->param('user_id' =>  $user_id);
+		$tmpl->param('user_desc' =>  $euser->getAttr('name' => 'user_desc'));
+		$tmpl->param('user_firstname' =>  $euser->getAttr('name' => 'user_firstname'));
+		$tmpl->param('user_lastname' =>  $euser->getAttr('name' => 'user_lastname'));
+		$tmpl->param('user_email' =>  $euser->getAttr('name' => 'user_email'));
+		$tmpl->param('user_login' =>  $euser->getAttr('name' => 'user_login'));
+		$tmpl->param('user_creationdate' =>  $euser->getAttr('name' => 'user_creationdate'));
+		$tmpl->param('user_lastaccess' =>  $euser->getAttr('name' => 'user_lastaccess'));
+		# password is not retrieved because displayed like ********
+		
+		my $groups = [];
+		my @egroups = Entity::Groups->getGroupsFromEntity(entity => $euser);
+		foreach my $eg (@egroups) {
+			my $tmp = {};
+			$tmp->{groups_id} = $eg->getAttr(name => 'groups_id');
+			$tmp->{groups_name} = $eg->getAttr(name => 'groups_name');
+			$tmp->{groups_desc} = $eg->getAttr(name => 'groups_desc');
+			$tmp->{groups_system} = $eg->getAttr(name => 'groups_system');
+			push(@$groups, $tmp);
+		} 
+		$tmpl->param('groups_list' => $groups);
+		
+		my $granted_methods = $euser->getPerms();
+		$log->debug(Dumper $granted_methods);
+		if($granted_methods->{update}) { $tmpl->param('can_update' => 1); }
+		if($granted_methods->{delete}) { $tmpl->param('can_delete' => 1); }
+			
+		return $tmpl->output();
+	}
 }
 
 # deleteuser processing
@@ -151,12 +179,19 @@ sub process_deleteuser : Runmode {
 	my $query = $self->query();
 	my $user_id = $query->param('user_id');
 	# TODO verifier qu'il ne s'agit pas du user qui est loggé
-	my $euser = Entity::User->get(id => $user_id);
-	$euser->delete();
-	# TODO retirer le user des groups auquels il appartient
-	# TODO supprimer tous les droits du user 
-	$self->redirect('/cgi/kanopya.cgi/users/view_users');
+	eval {
+		my $euser = Entity::User->get(id => $user_id);
+		$euser->delete();
+	};
+	if($@) {
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	}
+	else { $self->redirect('/cgi/kanopya.cgi/users/view_users'); }
 }
-
 
 1;

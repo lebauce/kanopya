@@ -10,10 +10,12 @@
 <table id="Xidentity" class="detailspart">
 <tr><td class="italic" colspan="4"><TMPL_VAR NAME=user_desc></td>
 <td class="actions" rowspan="7">
+<TMPL_IF NAME=can_update>
 <a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/systemimages/form_edituser?user_id=<TMPL_VAR NAME=user_id>', 'edit user', 800, 400, '');">edit</a><br />
-<span class="desc">Modify these parameters.</span><br /><br />
+<span class="desc">Modify these parameters.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_delete>
 <a class="imgRemove" href="/cgi/kanopya.cgi/users/process_deleteuser?user_id=<TMPL_VAR NAME=user_id>">delete</a><br />
-<span class="desc">Delete this user.</span><br />
+<span class="desc">Delete this user.</span><br /></TMPL_IF>
 
 </td><tr/>
 <tr><td colspan="4">&nbsp;</td></tr>

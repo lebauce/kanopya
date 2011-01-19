@@ -13,7 +13,7 @@ sub view_distributions : StartRunmode {
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submDistributions' => 1);
 
-    my @edistributions = $self->{'admin'}->getEntities(type => 'Distribution', hash => {});
+    my @edistributions = $self->{adm}->getEntities(type => 'Distribution', hash => {});
     my $distributions = [];
     
     foreach my $m (@edistributions) {
@@ -44,7 +44,7 @@ sub view_distributiondetails : Runmode {
 	$tmpl->param('submDistributions' => 1);
 	
 	my $query = $self->query();
-	my $edistribution = $self->{'admin'}->getEntity(type => 'Distribution', id => $query->param('distribution_id'));
+	my $edistribution = $self->{adm}->getEntity(type => 'Distribution', id => $query->param('distribution_id'));
 	
 	$tmpl->param('distribution_id' => $edistribution->getAttr(name => 'distribution_id'));
 	$tmpl->param('distribution_name' => $edistribution->getAttr(name => 'distribution_name'));

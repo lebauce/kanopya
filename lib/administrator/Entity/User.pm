@@ -67,7 +67,102 @@ use constant ATTR_DEF => {
 										is_editable		=> 0},	
 };
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new user',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing user',
+			update		=> 'save changes applied on a user',
+			delete 		=> 'delete a user',
+		}, 
+	};
+}
 
+=head2 get
+
+	Class: public
+	desc: retrieve a stored Entity::User instance
+	args:
+		id : scalar(int) : user id
+	return: Entity::User instance 
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::User->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+  	
+  	my $admin = Administrator->new();
+   	my $dbix_user = $admin->{db}->resultset('User')->find($args{id});
+   	if(not defined $dbix_user) {
+	   	$errmsg = "Entity::User->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	}   	
+   	
+   	my $entity_id = $dbix_user->user_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		$errmsg = "Permission denied to get user with id $args{id}";
+   		$log->error($errmsg);
+   		throw Kanopya::Exception::Permission::Denied(error => $errmsg);
+   	}
+  	
+  	my $self = $class->SUPER::get( %args,  table => "User");
+   	return $self;
+}
+
+=head2 getUsers
+
+	Class: public
+	desc: retrieve several Entity::User instances
+	args:
+		hash : hashref : where criteria
+	return: @ : array of Entity::User instances
+	
+=cut
+
+sub getUsers {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::User->getUsers need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "User");
+}
+
+=head2 create
+
+=cut
+
+sub create {
+	my $class = shift;
+	my %args = @_;
+			
+	my $admin = Administrator->new();
+	# Entity::User->create method doesnt concern existing entity so we retrieve entity_id of User master group
+	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'User' })->groups_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new cluster");
+   	}
+   	my $user = $class->new(%args);
+   	$user->save();
+}
 
 =head2 new
 
@@ -94,53 +189,36 @@ sub new {
     return $self;
 }
 
-=head2 get
-
-	Class: public
-	desc: retrieve a stored Entity::User instance
-	args:
-		id : scalar(int) : user id
-	return: Entity::User instance 
+=head2 update
 
 =cut
 
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::User->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-   my $self = $class->SUPER::get( %args,  table => "User");
-   #$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
-   return $self;
+sub update {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# update method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
+   	}
+	# TODO update implementation
 }
 
-=head2 getUsers
+=head2 delete
 
-	Class: public
-	desc: retrieve several Entity::User instances
-	args:
-		hash : hashref : where criteria
-	return: @ : array of Entity::User instances
-	
 =cut
 
-sub getUsers {
-	my $class = shift;
-    my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::User->getUsers need a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
+sub delete {
+	my $self = shift;
 	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "User");
+	# delete method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(
+   			error => "Permission denied to delete user with id ".$self->getAttr(name =>'user_id')
+   		);
+   	}
+	$self->SUPER::delete();
 }
 
 =head2 toString
@@ -169,7 +247,7 @@ sub checkAttrs {
 	# Remove class
 	shift;
 	my %args = @_;
-	my (%global_attrs, %ext_attrs, $attr);
+	my (%global_attrs, %ext_attrs);
 	my $attr_def = ATTR_DEF;
 	#print Dumper $attr_def;
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
@@ -179,7 +257,7 @@ sub checkAttrs {
 	}	
 
 	my $attrs = $args{attrs};
-	foreach $attr (keys(%$attrs)) {
+	foreach my $attr (keys(%$attrs)) {
 		if (exists $attr_def->{$attr}){
 			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
 			if($attrs->{$attr} !~ m/($attr_def->{$attr}->{pattern})/){
@@ -201,7 +279,7 @@ sub checkAttrs {
 			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
-	foreach $attr (keys(%$attr_def)) {
+	foreach my $attr (keys(%$attr_def)) {
 		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::User->checkAttrs detect a missing attribute $attr !";

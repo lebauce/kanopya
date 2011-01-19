@@ -5,12 +5,12 @@ use CGI::Application::Plugin::AutoRunmode;
 use CGI::Application::Plugin::Session;
 use CGI::Application::Plugin::Redirect;
 
+
 use Administrator;
 
 sub cgiapp_init {
 	my $self = shift;
 }
-
 
 sub cgiapp_prerun {
 	my $self = shift;
@@ -20,8 +20,12 @@ sub cgiapp_prerun {
 		$self->redirect('/cgi/kanopya.cgi/login/form_login');
 	} else {
 		$ENV{EID} = $eid;
-		$self->{'admin'} = Administrator->new();
+		$self->{adm} = Administrator->new();
 	}
+}
+
+sub close_window {
+	return "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
 }
 
 1;

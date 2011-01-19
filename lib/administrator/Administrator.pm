@@ -236,7 +236,7 @@ sub new {
 
 	if(defined $oneinstance) {
 		$oneinstance->{_rightchecker} = $checker;
-		$log->debug("Administrator instance retrieved with new rightchecker");
+		#$log->debug("Administrator instance retrieved with new rightchecker");
 		return $oneinstance;
 	}
 
@@ -604,7 +604,7 @@ sub getNextOp {
 	# if no other operation to Operation::$subclassbe treated, return undef
 	if(! defined $op_data) { 
 		$log->info("No operation left in the queue");
-		return undef;
+		return;
 	}
 	# Get the operation type
 	my $op_type = $op_data->get_column('type');

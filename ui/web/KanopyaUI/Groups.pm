@@ -10,9 +10,6 @@ use Entity::Groups;
 
 my $log = get_logger('administrator');
 
-my $closewindow = "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
-
-
 # groups listing page
 
 sub view_groups : StartRunmode {
@@ -64,7 +61,7 @@ sub process_addgroup : Runmode {
     	groups_system => 0,
     );
     $egroup->save();
-    return $closewindow;
+    return $self->close_window();
 }
 
 # function profile for form_addgroup (see ValidateRM module)
@@ -179,7 +176,7 @@ sub process_appendentity : Runmode {
 	eval { require $module; };
 	my $entity = $class->get(id => $real_id);
 	$egroups->appendEntity(entity => $entity);
-	return $closewindow;
+	return $self->close_window();
 }
 
 # removeentity processing
