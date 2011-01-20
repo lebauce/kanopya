@@ -72,11 +72,14 @@ sub getEntities {
 		my $id = $row->get_column($id_name);
 		my $obj;
 		eval { $obj = "Entity::$args{type}"->get(id => $id); };
-		if($@) { 
+		if($@) {
+			my $exception = $@; 
 			if(Kanopya::Exception::Permission::Denied->caught()) {
 				next;
 			} 
+			else { $exception->rethrow(); } 
 		}
+		
 		push @objs, $obj;
 	}
 	return  @objs;

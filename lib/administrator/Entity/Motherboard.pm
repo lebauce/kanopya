@@ -193,12 +193,14 @@ sub get {
    	my $admin = Administrator->new();
    	my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
    	if(not defined $motherboard) {
-   		
+   		$errmsg = "Entity::Motherboard->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
    	} 
    	my $entity_id = $motherboard->motherboard_entities->first->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get groups with id $args{id}");
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard with id $args{id}");
    	}
    
    	my $self = $class->SUPER::get( %args, table=>"Motherboard");
@@ -209,16 +211,7 @@ sub get {
 sub new {
 	my $class = shift;
     my %args = @_;
-    my ($powersupplyport_number, $powersupplycard_id);
 
-    if ((! exists $args{powersupplyport_number} or ! defined $args{powersupplyport_number})){
-        $powersupplyport_number = $args{powersupplyport_number};
-        delete $args{powersupplyport_number};
-    }
-     if ((! exists $args{powersupplycard_id} or ! defined $args{powersupplycard_id})){
-        $powersupplycard_id = $args{powersupplycard_id};  
-        delete $args{powersupplycard_id};
-    }
 	# Check attrs ad throw exception if attrs missed or incorrect
 	my $attrs = $class->checkAttrs(attrs => \%args);
 	
@@ -227,8 +220,6 @@ sub new {
 	
 	# Set the extended parameters
 	$self->{_ext_attrs} = $attrs->{extended};
-    $self->{powersupplyport_number}= $powersupplyport_number;
-    $self->{powersupplycard_id}= $powersupplycard_id;
     return $self;
 
 }
@@ -288,11 +279,6 @@ sub create {
     my $self = shift;
     
     my %params = $self->getAttrs();
-    if ((! exists $self->{powersupplyport_number} or ! defined $self->{powersupplyport_number}) ||
-    (! exists $self->{powersupplycard_id} or ! defined $self->{powersupplycard_id})) {
-        $params{powersupplyport_number} = $self->{powersupplyport_number};
-        $params{powersupplycard_id} = $self->{powersupplycard_id};
-    }
     $log->debug("New Operation AddMotherboard with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
                    type     => 'AddMotherboard',

@@ -68,6 +68,21 @@ use constant ATTR_DEF => {
 										is_editable		=> 0},
 };
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new group',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing group',
+			update		=> 'save changes applied on a group',
+			delete 		=> 'delete a group',
+			appendEntity => 'add an element to group',
+			removeEntity => 'remove an element from a group',
+		}, 
+	};
+}
+
 =head2 get
 
 	Class: public
