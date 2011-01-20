@@ -69,7 +69,11 @@ sub view_motherboards : StartRunmode {
     	push (@$motherboards, $tmp);
     }
 		
-    $tmpl->param('motherboards_list' => $motherboards);       
+    $tmpl->param('motherboards_list' => $motherboards);
+    
+    my $methods = Entity::Motherboard->getPerms();
+    if($methods->{create}) { $tmpl->param('can_create' => 1); }
+          
     return $tmpl->output();	
 }
 
@@ -143,17 +147,20 @@ sub process_addmotherboard : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    my $motherboard = Entity::Motherboard->new(     
-		motherboard_mac_address => $query->param('mac_address'), 
+    my %params = (
+    	motherboard_mac_address => $query->param('mac_address'), 
 		kernel_id => $query->param('kernel'), , 
 		motherboard_serial_number => $query->param('serial_number'), 
 		motherboardmodel_id => $query->param('motherboard_model'), 
 		processormodel_id => $query->param('cpu_model'), 
 		motherboard_desc => $query->param('desc'),
-		powersupplycard_id =>  $query->param('powersupplycard_id') ne "none" ? $query->param('powersupplycard_id') : undef,
-		powersupplyport_number => $query->param('powersupplyport_number'),
 	);
-    eval { $motherboard->create() };
+	if($query->param('powersupplycard_id') ne "none") {
+		$params{powersupplycard_id} = $query->param('powersupplycard_id'),
+		$params{powersupplyport_number} => $query->param('powersupplyport_number'),
+    }
+    my $motherboard = Entity::Motherboard->new(%params);     
+	eval { $motherboard->create() };
     if($@) { 
 		my $exception = $@;
 		if(Kanopya::Exception::Permission::Denied->caught()) {

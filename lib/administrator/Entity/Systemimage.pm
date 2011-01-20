@@ -58,7 +58,163 @@ use constant ATTR_DEF => {
 				is_extended => 0 },		
 };
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new system image',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing system image',
+			update		=> 'save changes applied on a system image',
+			remove 		=> 'delete a system image',
+		}, 
+	};
+}
 
+=head2 get
+
+	Class: public
+	desc: retrieve a stored Entity::Systemimage instance
+	args:
+		id : scalar(int) : user id
+	return: Entity::Systemimage instance 
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::SystemImage->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   	
+   	my $adm = Administrator->new();
+   	my $dbix_systemimage = $adm->{db}->resultset('Systemimage')->find($args{id});
+   	if(not defined $dbix_systemimage) {
+	   	$errmsg = "Entity::Systemiamge->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	}   	
+   	
+   	my $entity_id = $dbix_systemimage->systemimage_entities->first->get_column('entity_id');
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		$errmsg = "Permission denied to get system image with id $args{id}";
+   		$log->error($errmsg);
+   		throw Kanopya::Exception::Permission::Denied(error => $errmsg);
+   	}
+   	
+   	my $self = $class->SUPER::get( %args, table=>"Systemimage");
+   	return $self;
+}
+
+=head2 getSystemimages
+
+	Class: public
+	desc: retrieve several Entity::Systemimage instances
+	args:
+		hash : hashref : where criteria
+	return: @ : array of Entity::Systemimage instances
+	
+=cut
+
+sub getSystemimages {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getSystemimage need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Systemimage");
+}
+
+sub getSystemimage {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getSystemimage need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @systemimages = $class->SUPER::getEntities( %args,  type => "Systemimage");
+    return pop @systemimages;
+}
+
+=head2 new
+
+	Public class method
+	desc:  Constructor
+	args: 
+	return: Entity::Systemimage instance 
+	
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Systemimage");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+    return $self;
+}
+
+=head2 create
+
+=cut
+
+sub create {
+    my $self = shift;
+    my %params = $self->getAttrs();
+    my $admin = Administrator->new();
+	my $mastergroup_eid = $self->getMasterGroupEid();
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
+   	}
+    
+    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'AddSystemimage',
+        params   => \%params,
+    );
+}
+
+=head2 update
+
+=cut
+
+sub update {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# update method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
+   	}
+	# TODO update implementation
+}
+
+=head2 remove
+
+=cut
+
+sub remove {
+	#TODO implementation
+}
 
 =head2 checkAttrs
 	
@@ -149,55 +305,6 @@ sub checkAttr {
 }
 
 
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::SystemImage->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-   my $self = $class->SUPER::get( %args, table=>"Systemimage");
-   return $self;
-}
-
-sub getSystemimages {
-	my $class = shift;
-    my %args = @_;
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getSystemimages need a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Systemimage");
-}
-
-sub getSystemimage {
-	my $class = shift;
-    my %args = @_;
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getSystemimage need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-   	my @clusters = $class->SUPER::getEntities( %args,  type => "Systemimage");
-    return pop @clusters;
-}
-
-sub create{
-    my $self = shift;
-    
-    my %params = $self->getAttrs();
-    $log->debug("New Operation CreateSystemimage with attrs : " . Dumper(%params));
-    Operation->enqueue(priority => 200,
-                   type     => 'AddSystemimage',
-                   params   => \%params);
-}
-
 sub clone {
     my $self = shift;
     my %args = @_;
@@ -220,23 +327,6 @@ sub clone {
                    type     => 'CloneSystemimage',
                    params   => \%args);
        
-}
-
-sub new {
-	my $class = shift;
-    my %args = @_;
-
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Systemimage");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-
 }
 
 sub activate{

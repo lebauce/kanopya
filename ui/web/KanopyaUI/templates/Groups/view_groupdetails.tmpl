@@ -10,10 +10,12 @@
 <table id="Xdescription" class="detailspart">
 <tr><td class="italic" colspan="2"><TMPL_VAR NAME=groups_desc></td>
 <td class="actions" rowspan="5">
+<TMPL_IF NAME=can_update>
 <a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/groups/form_editgroup?groups_id=<TMPL_VAR NAME=groups_id>', 'edit group', 800, 400, '');">edit</a><br />
-<span class="desc">Modify name or description of this group.</span><br /><br />
+<span class="desc">Modify name or description of this group.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_delete>
 <a class="imgRemove" href="/cgi/kanopya.cgi/groups/process_deletegroup?groups_id=<TMPL_VAR NAME=groups_id>">delete</a><br />
-<span class="desc">Delete this group.</span><br />
+<span class="desc">Delete this group.</span><br /></TMPL_IF>
 </td><tr/>
 <tr><td colspan="2">&nbsp;</td></tr>
 <tr><td class="label">Group name :</td><td><TMPL_VAR NAME=groups_name></td></tr>
@@ -25,12 +27,13 @@
 <table id="Xcontents" class="detailspart">
 <tr><td colspan="2">&nbsp;</td>
 <td class="actions" rowspan="<TMPL_VAR NAME=content_count>">
+<TMPL_IF NAME=can_appendEntity>
 <a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/groups/form_appendentity?groups_id=<TMPL_VAR NAME=groups_id>', 'append an element ot a group', 500, 200, '');">append</a><br />
-<span class="desc">append an element (<TMPL_VAR NAME=groups_type>) to this group.</span><br /><br />
+<span class="desc">append an element (<TMPL_VAR NAME=groups_type>) to this group.</span><br /><br /></TMPL_IF>
 </td></tr>
 <TMPL_LOOP NAME=content_list>
 <tr><td class="label2"><span class="bold"><TMPL_VAR NAME=content_label></span></td>
-<td class="action"><TMPL_UNLESS NAME=groups_system><a class="imgRemove" href="/cgi/kanopya.cgi/groups/process_removeentity?groups_id=<TMPL_VAR NAME=groups_id>&real_id=<TMPL_VAR NAME=content_id>">remove</a></TMPL_UNLESS>
+<td class="action"><TMPL_IF NAME=can_removeEntity><TMPL_UNLESS NAME=groups_system><a class="imgRemove" href="/cgi/kanopya.cgi/groups/process_removeentity?groups_id=<TMPL_VAR NAME=groups_id>&real_id=<TMPL_VAR NAME=content_id>">remove</a></TMPL_UNLESS></TMPL_IF>
 </td></tr>
 </TMPL_LOOP>
 </table>

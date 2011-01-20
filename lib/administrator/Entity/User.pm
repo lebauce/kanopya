@@ -75,7 +75,7 @@ sub methods {
 		instance 	=> {
 			get			=> 'retrieve an existing user',
 			update		=> 'save changes applied on a user',
-			delete 		=> 'delete a user',
+			remove 		=> 'delete a user',
 		}, 
 	};
 }
@@ -203,11 +203,11 @@ sub update {
 	# TODO update implementation
 }
 
-=head2 delete
+=head2 remove
 
 =cut
 
-sub delete {
+sub remove {
 	my $self = shift;
 	my $adm = Administrator->new();
 	# delete method concerns an existing entity so we use his entity_id

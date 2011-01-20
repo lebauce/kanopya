@@ -24,7 +24,7 @@ use base "Entity";
 use strict;
 use warnings;
 
-use McsExceptions;
+use Kanopya::Exceptions;
 use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -42,6 +42,19 @@ use constant ATTR_DEF => {
 	processormodel_id => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
 };
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new motherboard model',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing motherboard model',
+			update		=> 'save changes applied on a motherboard model',
+			remove 		=> 'delete a motherboard model',
+		}, 
+	};
+}
+
 =head2 get
 
 =cut
@@ -55,8 +68,21 @@ sub get {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
-   return $self;
+	
+	my $adm = Administrator->new();
+   	my $motherboardmodel = $adm->{db}->resultset('Motherboardmodel')->find($args{id});
+   	if(not defined $motherboardmodel) {
+   		$errmsg = "Entity::Motherboardmodel->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	} 
+   	my $entity_id = $motherboardmodel->motherboardmodel_entities->first->get_column('entity_id');
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard model with id $args{id}");
+   	}
+  	my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
+   	return $self;
 }
 
 =head2 getMotherboardmodels
@@ -66,13 +92,11 @@ sub get {
 sub getMotherboardmodels {
 	my $class = shift;
     my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
 
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getMotherboardmodels need a type and a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Motherboardmodel");
@@ -110,11 +134,11 @@ sub create {}
 
 sub update {}
 
-=head2 delete
+=head2 remove
 
 =cut
 
-sub delete {}
+sub remove {}
 
 =head2 toString
 

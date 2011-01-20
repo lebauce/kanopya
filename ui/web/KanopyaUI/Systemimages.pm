@@ -3,6 +3,7 @@ use base 'KanopyaUI::CGI';
 
 use strict;
 use warnings;
+use Entity::Systemimage;
 
 # system images listing page
 
@@ -12,8 +13,9 @@ sub view_systemimages : StartRunmode {
     $tmpl->param('titlepage' => "Systems - System images");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submSystemimages' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	    
-    my @esystemimages = $self->{'admin'}->getEntities(type => 'Systemimage', hash => {});
+    my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});
     my $systemimages =[];
    
 	foreach my $s (@esystemimages) {

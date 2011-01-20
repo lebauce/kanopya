@@ -24,7 +24,7 @@ use base "Entity";
 use strict;
 use warnings;
 
-use McsExceptions;
+use Kanopya::Exceptions;
 use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -44,6 +44,93 @@ use constant ATTR_DEF => {
 };
 
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new processor model',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing processor model',
+			update		=> 'save changes applied on a processor model',
+			remove 		=> 'delete a processor model',
+		}, 
+	};
+}
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Processormodel->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $adm = Administrator->new();
+   	my $processormodel = $adm->{db}->resultset('Processormodel')->find($args{id});
+   	if(not defined $processormodel) {
+   		$errmsg = "Entity::Processormodel->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	} 
+   	my $entity_id = $processormodel->processormodel_entities->first->get_column('entity_id');
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get processor model with id $args{id}");
+   	}
+	
+   my $self = $class->SUPER::get( %args, table=>"Processormodel");
+   return $self;
+}
+
+sub getProcessormodels {
+	my $class = shift;
+    my %args = @_;
+	
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getProcessormodels need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Processormodel");
+}
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Processormodel");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+
+}
+
+=head2 create
+
+=cut
+
+sub create {}
+
+=head2 update
+
+=cut
+
+sub update {}
+
+=head2 remove
+
+=cut 
+
+sub remove {}
 
 =head2 checkAttrs
 	
@@ -135,51 +222,6 @@ sub checkAttr{
 }
 
 sub extension { return; }
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Processormodel->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-   my $self = $class->SUPER::get( %args, table=>"Processormodel");
-   return $self;
-}
-
-sub getProcessormodels {
-	my $class = shift;
-    my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getProcessormodels need a hash named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Processormodel");
-}
-
-sub new {
-	my $class = shift;
-    my %args = @_;
-
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Processormodel");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-
-}
 
 =head2 toString
 

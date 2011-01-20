@@ -31,6 +31,9 @@ sub view_models : StartRunmode {
 		$h->{pmodel_l2cache} = $p->getAttr(name => 'processormodel_l2_cache');
 		$h->{pmodel_tdp} = $p->getAttr(name => 'processormodel_max_tdp');
 		$h->{pmodel_is64} = $p->getAttr(name => 'processormodel_64bits');
+		my $methods = $p->getPerms();
+		if($methods->{update}) { $h->{can_update} = 1; }
+		if($methods->{delete}) { $h->{can_delete} = 1; }
 					
 		push @$processormodels, $h;
 	}
@@ -47,11 +50,18 @@ sub view_models : StartRunmode {
 		$h->{mmodel_ramslotnum} = $p->getAttr(name => 'motherboardmodel_ram_slot_num');
 		$h->{mmodel_rammax} = $p->getAttr(name => 'motherboardmodel_ram_max');
 		#$h->{PROCID} = $p->getAttr(name => 'processormodel_id');
+		my $methods = $p->getPerms();
+		if($methods->{update}) { $h->{can_update} = 1; }
+		if($methods->{delete}) { $h->{can_delete} = 1; }
 			
 		push @$motherboardmodels, $h;
 	} 
 	$tmpl->param('processormodels_list' => $processormodels);
 	$tmpl->param('motherboardmodels_list' => $motherboardmodels);
+	my $methods = Entity::Processormodel->getPerms();
+	if($methods->{create}) { $tmpl->param('can_createprocessormodel' => 1); }
+	$methods = Entity::Motherboardmodel->getPerms();
+	if($methods->{create}) { $tmpl->param('can_createmotherboardmodel' => 1); }
 	return $tmpl->output();
 }
 

@@ -52,7 +52,76 @@ use constant ATTR_DEF => {
 				is_extended => 0 },		
 };
 
+sub methods {}
 
+=head2 get
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::PowerSupplyCard->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args,  table => "Powersupplycard");
+   return $self;
+}
+
+=head2 getPowerSupplyCards
+
+=cut
+
+sub getPowerSupplyCards {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getPowerSupplyCards need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Powersupplycard");
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Powersupplycard");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+
+}
+
+=head2 update
+
+=cut
+
+sub update {}
+
+=head2 remove
+
+=cut
+
+sub remove {}
 
 =head2 checkAttrs
 	
@@ -134,51 +203,6 @@ sub checkAttr {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	# Here check attr value
-}
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::PowerSupplyCard->new need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-   my $self = $class->SUPER::get( %args,  table => "Powersupplycard");
-   return $self;
-}
-
-sub getPowerSupplyCards {
-	my $class = shift;
-    my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getPowerSupplyCards need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Powersupplycard");
-}
-
-sub new {
-	my $class = shift;
-    my %args = @_;
-
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Powersupplycard");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-
 }
 
 =head2 toString

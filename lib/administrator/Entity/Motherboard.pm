@@ -78,9 +78,115 @@ use constant ATTR_DEF => {
 			};
 
 
-sub getEntityTable {
-	return "motherboard";
+sub methods {}
+
+=head2 get
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Motherboard->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   
+   	my $admin = Administrator->new();
+   	my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
+   	if(not defined $motherboard) {
+   		$errmsg = "Entity::Motherboard->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	} 
+   	my $entity_id = $motherboard->motherboard_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard with id $args{id}");
+   	}
+   
+   	my $self = $class->SUPER::get( %args, table=>"Motherboard");
+   	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
+   	return $self;
 }
+
+=head2 getMotherboards
+
+=cut 
+
+sub getMotherboards {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboards need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Motherboard");
+}
+
+sub getMotherboard {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboard need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
+    return pop @Motherboards;
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboard");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+    return $self;
+
+}
+
+=head2 create
+
+=cut
+
+sub create {
+    my $self = shift;
+    
+    my %params = $self->getAttrs();
+    $log->debug("New Operation AddMotherboard with attrs : " . Dumper(%params));
+    Operation->enqueue(priority => 200,
+                   type     => 'AddMotherboard',
+                   params   => \%params);
+}
+
+=head2 update
+
+=cut
+
+sub update {}
+
+=head2 remove
+
+=cut
+
+sub remove {}
 
 =head2 checkAttrs
 	
@@ -180,88 +286,15 @@ sub extension {
 	return "motherboarddetails";
 }
 
-sub get {
-    my $class = shift;
-    my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Motherboard->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-   
-   	my $admin = Administrator->new();
-   	my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
-   	if(not defined $motherboard) {
-   		
-   	} 
-   	my $entity_id = $motherboard->motherboard_entities->first->get_column('entity_id');
-   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get groups with id $args{id}");
-   	}
-   
-   	my $self = $class->SUPER::get( %args, table=>"Motherboard");
-   	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
-   	return $self;
-}
 
-sub new {
-	my $class = shift;
-    my %args = @_;
-    my ($powersupplyport_number, $powersupplycard_id);
 
-    if ((! exists $args{powersupplyport_number} or ! defined $args{powersupplyport_number})){
-        $powersupplyport_number = $args{powersupplyport_number};
-        delete $args{powersupplyport_number};
-    }
-     if ((! exists $args{powersupplycard_id} or ! defined $args{powersupplycard_id})){
-        $powersupplycard_id = $args{powersupplycard_id};  
-        delete $args{powersupplycard_id};
-    }
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboard");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
-    $self->{powersupplyport_number}= $powersupplyport_number;
-    $self->{powersupplycard_id}= $powersupplycard_id;
-    return $self;
 
-}
 
-sub update {}
 
-sub delete {}
 
-sub getMotherboards {
-	my $class = shift;
-    my %args = @_;
 
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getMotherboards need a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Motherboard");
-}
 
-sub getMotherboard {
-	my $class = shift;
-    my %args = @_;
-
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getMotherboard need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-   	my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
-    return pop @Motherboards;
-}
 
 
 sub activate{
@@ -284,20 +317,7 @@ sub deactivate{
                    params   => {motherboard_id => $self->getAttr(name=>'motherboard_id')});
 }
 
-sub create {
-    my $self = shift;
-    
-    my %params = $self->getAttrs();
-    if ((! exists $self->{powersupplyport_number} or ! defined $self->{powersupplyport_number}) ||
-    (! exists $self->{powersupplycard_id} or ! defined $self->{powersupplycard_id})) {
-        $params{powersupplyport_number} = $self->{powersupplyport_number};
-        $params{powersupplycard_id} = $self->{powersupplycard_id};
-    }
-    $log->debug("New Operation AddMotherboard with attrs : " . Dumper(%params));
-    Operation->enqueue(priority => 200,
-                   type     => 'AddMotherboard',
-                   params   => \%params);
-}
+
 
 =head2 toString
 

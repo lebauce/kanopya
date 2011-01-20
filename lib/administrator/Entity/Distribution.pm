@@ -39,6 +39,12 @@ use constant ATTR_DEF => {
 	root_device_id => {pattern => "//", is_mandatory => 1, is_extended => 0}
 };
 
+sub methods {}
+
+=head2 get
+
+=cut
+
 sub get {
     my $class = shift;
     my %args = @_;
@@ -51,6 +57,10 @@ sub get {
    my $self = $class->SUPER::get( %args,  table => "Distribution");
    return $self;
 }
+
+=head2 getDistributions
+
+=cut
 
 sub getDistributions {
 	my $class = shift;
@@ -66,6 +76,10 @@ sub getDistributions {
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Distribution");
 }
+
+=head2 new
+
+=cut
 
 sub new {
 	my $class = shift;
