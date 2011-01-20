@@ -53,18 +53,18 @@ use constant ATTR_DEF => {
 										is_mandatory	=> 1,
 										is_extended		=> 0,
 										is_editable		=> 0},
-			user_email			=> {pattern			=> '^*$',
+			user_email			=> {pattern			=> '\w*$',
 										is_mandatory	=> 1,
 										is_extended		=> 0,
 										is_editable		=> 1},	
 			user_creationdate	=> {pattern			=> '^*$',
-										is_mandatory	=> 1,
+										is_mandatory	=> 0,
 										is_extended		=> 0,
 										is_editable		=> 0},
 			user_lastaccess		=> {pattern			=> '^\w*$',
-										is_mandatory	=> 1,
+										is_mandatory	=> 0,
 										is_extended		=> 0,
-										is_editable		=> 0},	
+										is_editable		=> 1},	
 };
 
 sub methods {
@@ -160,7 +160,7 @@ sub new {
 
 	# Check attrs ad throw exception if attrs missed or incorrect
 	my $attrs = $class->checkAttrs(attrs => \%args);
-	
+		
 	# We create a new DBIx containing new entity (only global attrs)
 	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "User");
 	
@@ -176,8 +176,6 @@ sub new {
 
 sub create {
 	my $self = shift;
-	my %args = @_;
-			
 	my $admin = Administrator->new();
 	my $mastergroup_eid = $self->getMasterGroupEid();
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
@@ -185,6 +183,8 @@ sub create {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
    	}
    	
+   	$self->{_dbix}->user_creationdate(\'NOW()');
+   	$self->{_dbix}->user_lastaccess(undef);
    	$self->save();
 }
 

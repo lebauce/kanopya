@@ -136,17 +136,14 @@ sub getGroups {
 =cut
 
 sub create {
-	my $class = shift;
-	my %args = @_;
-			
+	my $self = shift;
 	my $admin = Administrator->new();
-	# Entity::Groups->create method doesnt concern existing entity so we retrieve entity_id of Groups master group
-	my $entity_id = $admin->{db}->resultset('Groups')->find({ groups_name => 'Groups' })->groups_entities->first->get_column('entity_id');
-   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'create');
+	my $mastergroup_eid = $self->getMasterGroupEid();
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
    	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new group");
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new groups");
    	}
-   	#TODO creation implementation
+ 	$self->save();  	
 }
 
 =head2 new
@@ -198,9 +195,8 @@ sub getGroupsFromEntity {
 	if(not $args{entity}->{_dbix}->in_storage ) { return @groups; } 
 		
 	my $adm = Administrator->new();
-   	my $mastergroup = ref $args{entity};
-	$mastergroup =~ s/.*\:\://g;
-   	my $groups_rs = $adm->{db}->resultset('Groups')->search({
+   	my $mastergroup = $args{entity}->getMasterGroupName();
+	my $groups_rs = $adm->{db}->resultset('Groups')->search({
 		-or => [
 			'ingroups.entity_id' => $args{entity}->{_dbix}->get_column('entity_id'),
 			'groups_name' => $mastergroup ]},
@@ -218,11 +214,8 @@ sub getGroupsFromEntity {
 			if(Kanopya::Exception::Permission::Denied->caught()) {
 				next;
 			}
-			else {
-				$exception->rethrow();
-			} 
+			else { $exception->rethrow(); } 
 		}
-		
 	}
    	return @groups;
 }
@@ -410,8 +403,6 @@ sub getEntities {
 	$log->debug('NUMBER of ENTITIES FOUND : '.scalar(@$ids));
 	my $field_id = lc($type)."_entities.entity_id";
 	my @entities = ();
-	my $module = "Entity/".$type.".pm";
-	eval { require $module; };
 	@entities = $self->SUPER::getEntities(type => $type, hash => { "$field_id" => \@$ids });
 	$log->debug('NUMBER of ENTITIES OBJECTS RETRIEVED : '.scalar(@entities));
 	return @entities;

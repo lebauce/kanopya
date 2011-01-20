@@ -4,6 +4,13 @@ use base 'KanopyaUI::CGI';
 use Data::Dumper;
 use strict;
 use warnings;
+use Entity::Motherboard;
+use Entity::Kernel;
+use Entity::Cluster;
+use Entity::Processormodel;
+use Entity::Motherboardmodel;
+use Entity::Powersupplycard;
+
 
 # motherboards listing page
 
@@ -13,9 +20,10 @@ sub view_motherboards : StartRunmode {
     # header / menu variables
     $tmpl->param('titlepage' => "Hardware - Motherboards");
 	$tmpl->param('mHardware' => 1);
-    $tmpl->param('submMotherboards' => 1);  
+    $tmpl->param('submMotherboards' => 1);
+    $tmpl->param('username' => $self->session->param('username'));  
  
-    my @emotherboards = $self->{'admin'}->getEntities(type => 'Motherboard', hash => {});
+    my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
     my $motherboards = [];
 
     foreach my $m (@emotherboards) {
@@ -29,7 +37,7 @@ sub view_motherboards : StartRunmode {
 		
 		$tmp->{motherboard_id} = $m->getAttr(name => 'motherboard_id');
 		
-		my $emodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $m->getAttr(name => 'motherboardmodel_id'));
+		my $emodel = Entity::Motherboardmodel->get(id => $m->getAttr(name => 'motherboardmodel_id'));
 		$tmp->{motherboard_model} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
 		my $state = $m->getAttr(name => 'motherboard_state');
 		$tmp->{motherboard_mac} = $m->getAttr(name => 'motherboard_mac_address');
@@ -39,12 +47,12 @@ sub view_motherboards : StartRunmode {
  		 
 		if($tmp->{active}) {
 			if($state =~ /up/) {
-				my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $m->getClusterId());
+				my $ecluster = Entity::Cluster->get(id => $m->getClusterId());
 				$tmp->{cluster_name} =$ecluster->getAttr('name' => 'cluster_name');
 				$tmp->{state_up} = 1;
 				$tmp->{link_activity} = 1;
 			} elsif($state =~ /starting/)  {
-				my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $m->getClusterId());
+				my $ecluster = Entity::Cluster->get(id => $m->getClusterId());
 				$tmp->{cluster_name} =$ecluster->getAttr('name' => 'cluster_name');
 				$tmp->{state_starting} = 1;
 			} elsif($state =~ /stopping/)  {
@@ -75,10 +83,10 @@ sub form_addmotherboard : Runmode {
     
 	$tmpl->param($errors) if $errors;
 
-	my @motherboardmodels = $self->{'admin'}->getEntities(type => 'Motherboardmodel', hash => {});
-	my @processormodels = $self->{'admin'}->getEntities(type => 'Processormodel', hash => {});
-	my @kernel = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
-	my @powersupplycards = $self->{'admin'}->getEntities(type => 'Powersupplycard', hash => {});
+	my @motherboardmodels = Entity::Motherboardmodel->getMotherboardmodels(hash => {});
+	my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});
+	my @kernel = Entity::Kernel->getKernels(hash => {});
+	my @powersupplycards = Entity::Powersupplycard->getPowerSupplyCards(hash => {});
 	
 	my $mmodels = [];
 	foreach my $x (@motherboardmodels){
@@ -135,8 +143,7 @@ sub process_addmotherboard : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    eval {
-    $self->{'admin'}->newOp(type => "AddMotherboard", priority => '100', params => { 
+    my $motherboard = Entity::Motherboard->new(     
 		motherboard_mac_address => $query->param('mac_address'), 
 		kernel_id => $query->param('kernel'), , 
 		motherboard_serial_number => $query->param('serial_number'), 
@@ -145,14 +152,17 @@ sub process_addmotherboard : Runmode {
 		motherboard_desc => $query->param('desc'),
 		powersupplycard_id =>  $query->param('powersupplycard_id') ne "none" ? $query->param('powersupplycard_id') : undef,
 		powersupplyport_number => $query->param('powersupplyport_number'),
-		 });
-    };
+	);
+    eval { $motherboard->create() };
     if($@) { 
-		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new motherboard operation adding to execution queue'); }
-    
-    return $self->closewindow();
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	}
+    else { return $self->close_window(); }
 }
 
 # fields verification function to used with form_addmotherboard
@@ -178,6 +188,7 @@ sub view_motherboarddetails : Runmode {
 	$tmpl->param('titlepage' => "Motherboard's overview");
 	$tmpl->param('mHardware' => 1);
 	$tmpl->param('submMotherboards' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	# actions visibility
 	#$tmpl->param('link_delete' => 0);
@@ -191,10 +202,10 @@ sub view_motherboarddetails : Runmode {
 	$tmpl->param('state_stopping' => 0);
 	
 	my $query = $self->query();
-	my $emotherboard = $self->{'admin'}->getEntity(type => 'Motherboard', id => $query->param('motherboard_id'));
-	my $emmodel = $self->{'admin'}->getEntity(type => 'Motherboardmodel', id => $emotherboard->getAttr(name => 'motherboardmodel_id'));
-	my $epmodel = $self->{'admin'}->getEntity(type => 'Processormodel', id => $emotherboard->getAttr(name => 'processormodel_id'));
-	my $ekernel = $self->{'admin'}->getEntity(type => 'Kernel', id => $emotherboard->getAttr(name => 'kernel_id'));
+	my $emotherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+	my $emmodel = Entity::Motherboardmodel->get(id => $emotherboard->getAttr(name => 'motherboardmodel_id'));
+	my $epmodel = Entity::Processormodel->get(id => $emotherboard->getAttr(name => 'processormodel_id'));
+	my $ekernel = Entity::Kernel->get(id => $emotherboard->getAttr(name => 'kernel_id'));
 	
 	$tmpl->param('motherboard_id' => $emotherboard->getAttr('name' => 'motherboard_id'));
 	$tmpl->param('motherboard_hostname' => $emotherboard->getAttr('name' => 'motherboard_hostname'));
@@ -213,12 +224,12 @@ sub view_motherboarddetails : Runmode {
 	
 		my $state = $emotherboard->getAttr('name' => 'motherboard_state');
 		if($state =~ /up/) {
-			my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $emotherboard->getClusterId());
+			my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
 			$tmpl->param('cluster_name' => $ecluster->getAttr('name' => 'cluster_name'));
 			$tmpl->param('state_up' => 1);
 			 
 		} elsif($state =~ /starting/) {
-			my $ecluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $emotherboard->getClusterId());
+			my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
 			$tmpl->param('cluster_name' => $ecluster->getAttr('name' => 'cluster_name'));
 			$tmpl->param('state_starting' => 1);
 			
@@ -242,50 +253,56 @@ sub view_motherboarddetails : Runmode {
 
 sub process_activatemotherboard : Runmode {
     my $self = shift;
-        
     my $query = $self->query();
     eval {
-    $self->{'admin'}->newOp(type => "ActivateMotherboard", priority => '100', params => { 
-		motherboard_id => $query->param('motherboard_id'), 
-		});
+    	my $motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+     	$motherboard->activate();
     };
     if($@) { 
-		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'activate motherboard operation adding to execution queue'); }
-    $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards');
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	} 
+	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
 }
 
 sub process_deactivatemotherboard : Runmode {
     my $self = shift;
-        
     my $query = $self->query();
     eval {
-    $self->{'admin'}->newOp(type => "DeactivateMotherboard", priority => '100', params => { 
-		motherboard_id => $query->param('motherboard_id'), 
-		});
+    	my $motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+     	$motherboard->deactivate();
     };
     if($@) { 
-		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'deactivate motherboard operation adding to execution queue'); }
-    $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards');
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	} 
+	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
 }
 
 sub process_removemotherboard : Runmode {
     my $self = shift;
-        
     my $query = $self->query();
     eval {
-    $self->{'admin'}->newOp(type => "RemoveMotherboard", priority => '100', params => { 
-		motherboard_id => $query->param('motherboard_id'), 
-		});
+    	my $motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+     	$motherboard->delete();
     };
     if($@) { 
-		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'remove motherboard operation adding to execution queue'); }
-    $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards');
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	} 
+	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
 }
 
 1;
