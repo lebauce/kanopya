@@ -134,7 +134,7 @@ sub checkOp{
 
     
     # check mac address unicity
-    $log->debug("checking unicity of mac address <$args{params}->{motherboard_mac_address}>");
+    $log->debug("checking unicity of mac address <".$self->{_objs}->{motherboard}->getAttr(name=>'motherboard_mac_address'). ">");
     if (defined Entity::Motherboard->getMotherboard(hash => {motherboard_mac_address => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_mac_address')})){
     	$errmsg = "Operation::AddMotherboard->new : motherboard_mac_address ". $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_mac_address') ." already exist";
     	$log->error($errmsg);

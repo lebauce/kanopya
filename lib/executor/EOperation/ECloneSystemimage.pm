@@ -95,11 +95,33 @@ sub checkOp{
     
     # check if systemimage is not active
     $log->debug("checking source systemimage active value <$args{params}->{systemimage_id}>");
-   	if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is already active";
+   	if($self->{_objs}->{systemimage_source}->getAttr(name => 'active')) {
+	    	$errmsg = "EOperation::ECloneSystemimage->checkop : systemimage $args{params}->{systemimage_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    
+    # check if systemimage name does not already exist
+    $log->debug("checking unicity of systemimage_name <".$self->{_objs}->{systemimage}->getAttr(name=>'systemimage_name').">");
+    if (defined Entity::Systemimage->getSystemimage(hash => {systemimage_name => $self->{_objs}->{systemimage}->getAttr(name=>'systemimage_name')})){
+    	$errmsg = "Operation::ECloneSystemimage->prepare : systemimage_name ". $self->{_objs}->{systemimage}->getAttr(name=>'systemimage_name') ." already exist";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+	
+	
+	# check if vg has enough free space
+    my $sysimg = $self->{_objs}->{systemimage_source};
+    my $devices = $sysimg->getDevices;
+    my $neededsize = $devices->{etc}->{lvsize} + $devices->{root}->{lvsize};
+    $log->debug("Size needed for systemimage devices : $neededsize M"); 
+    $log->debug("Freespace left : $devices->{etc}->{vgfreespace} M");
+    if($neededsize > $devices->{etc}->{vgfreespace}) {
+    	$errmsg = "EOperation::ECloneSystemimage->prepare : not enough freespace on vg $devices->{etc}->{vgname} ($devices->{etc}->{vgfreespace} M left)";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    
 }
 
 =head2 prepare
@@ -153,7 +175,17 @@ sub prepare {
     	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
-	
+
+    ### Check Parameters and context
+    eval {
+        $self->checkOp(params => $params);
+    };
+    if ($@) {
+        my $error = $@;
+		$errmsg = "Operation CloneSystemimage failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }	
 
 	## Instanciate Clusters
 	# Instanciate nas Cluster 
@@ -174,8 +206,7 @@ sub prepare {
 	## Instanciate Component needed (here LVM on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2",
-										 administrator => $adm);
+										 version => "2");
 	
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	
@@ -184,7 +215,6 @@ sub prepare {
 sub execute {
 	my $self = shift;
 	$self->SUPER::execute();
-	my $adm = Administrator->new();
 		
 	my $devs = $self->{_objs}->{systemimage_source}->getDevices();
 	my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');

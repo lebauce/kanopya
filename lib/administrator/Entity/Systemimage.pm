@@ -313,6 +313,39 @@ sub checkAttr {
 
 
 
+sub create{
+    my $self = shift;
+    
+    my %params = $self->getAttrs();
+    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%params));
+    Operation->enqueue(priority => 200,
+                   type     => 'CloneSystemimage',
+                   params   => \%params);
+}
+
+
+sub clone {
+    my $self = shift;
+    my %args = @_;
+
+    if (! exists $args{systemimage_name} or ! defined $args{systemimage_name}) {
+    	$errmsg = "Entity::Systemimage->clone needs a new_systemimage_name parameter!";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    my $sysimg_id = $self->getAttr(name => 'systemimage_id');
+    if (! defined $sysimg_id) {
+    	$errmsg = "Entity::Systemimage->clone needs a distribution_id parameter!";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    $args{systemimage_id} = $sysimg_id;
+    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
+    Operation->enqueue(priority => 200,
+                   type     => 'AddSystemimage',
+                   params   => \%args);
+       
+}
 
 
 
