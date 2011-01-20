@@ -75,7 +75,10 @@ eval {
     $executor->execnround(run => 1);
     $clone_m1 = Entity::Motherboard->get(id => $clone_m1->getAttr(name=>'motherboard_id'));
     is ($clone_m1->getAttr(name=>'active'), 0, "Deactivate Motherboard");
-    $clone_m1->delete();
+
+
+    $clone_m1->remove();
+    $executor->execnround(run => 1);
     throws_ok { $clone_m1 = Entity::Motherboard->get(id => $clone_m1->getAttr(name=>'motherboard_id'))} 'Kanopya::Exception::Internal',
     "Try to get a deleted motherboard";
 

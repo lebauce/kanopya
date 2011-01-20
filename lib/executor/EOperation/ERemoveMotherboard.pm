@@ -38,20 +38,22 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::ERemoveMotherboard;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw (/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
 use EFactory;
+
+use Entity::Cluster;
+use Entity::Motherboard;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
 
 =head2 new
 
@@ -84,6 +86,21 @@ sub _init {
 	return;
 }
 
+sub checkOp{
+    my $self = shift;
+	my %args = @_;
+	
+    # check if motherboard is not active
+    $log->debug("checking motherboard active value <$args{params}->{motherboard_id}>");
+   	if($self->{_objs}->{motherboard}->getAttr(name => 'active')) {
+	    	$errmsg = "EOperation::EActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
+	    	$log->error($errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+}
+
+
 =head2 prepare
 
 	$op->prepare();
@@ -101,18 +118,38 @@ sub prepare {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$log->debug("After Eoperation prepare and before get Administrator singleton");
-	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
 	$self->{_objs} = {};
 	$self->{nas} = {};
 	$self->{executor} = {};
 
+    # Instantiate motherboard and so check if exists
+    $log->debug("checking motherboard existence with id <$params->{motherboard_id}>");
+    eval {
+    	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+    };
+    if($@) {
+    	$errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+	
+    eval {
+        $self->checkOp(params => $params);
+    };
+    if ($@) {
+        my $error = $@;
+		$errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
 	## Instanciate Clusters
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 
 	## Get Internal IP
 	# Get Internal Ip address of Master node of cluster Executor
@@ -124,16 +161,11 @@ sub prepare {
 	## Instanciate context 
 	# Get context for nas
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-
-
-	# Instanciate new Motherboard Entity
-	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
 		
 	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
 	# Instanciate Cluster Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2",
-										 administrator => $adm);
+										 version => "2");
 	$log->debug("Value return by getcomponent ". ref($tmp));
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	
@@ -142,11 +174,11 @@ sub prepare {
 sub execute{
 	my $self = shift;
 	$self->SUPER::execute();
-	my $adm = Administrator->new();
 	my ($powersupplycard,$powersupplyid);
+
 	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
 	if ($powersupplycard_id) {
-		$powersupplycard = $adm->getEntity(id => $powersupplycard_id, type => "Powersupplycard");
+		$powersupplycard = Entity::Powersupplycard(id => $powersupplycard_id);
 		$powersupplyid = $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id');
 	}
 	$self->{_objs}->{component_storage}->removeDisk(name => $self->{_objs}->{motherboard}->getEtcName(), econtext => $self->{nas}->{econtext});

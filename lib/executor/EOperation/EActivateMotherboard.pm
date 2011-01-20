@@ -49,6 +49,7 @@ use Kanopya::Exceptions;
 use EFactory;
 
 use Entity::Cluster;
+use Entity::Motherboard;
 
 my $log = get_logger("executor");
 my $errmsg;

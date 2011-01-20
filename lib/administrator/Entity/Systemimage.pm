@@ -213,7 +213,14 @@ sub update {
 =cut
 
 sub remove {
-	#TODO implementation
+    my $self = shift;
+    
+    $log->debug("New Operation RemoveSystemimage with systemimage_id : <".$self->getAttr(name=>"systemimage_id").">");
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'RemoveSystemimage',
+        params   => {systemimage_id => $self->getAttr(name=>"systemimage_id")},
+    );
 }
 
 =head2 checkAttrs

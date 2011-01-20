@@ -67,8 +67,9 @@ eval {
     my $clone_s2 = Entity::Systemimage->getSystemimage(hash => {systemimage_name => 'Systemimagecloned'});
     isa_ok($clone_s2, "Entity::Systemimage", $test_instantiation);
 
-    $s2->delete();
-    $clone_s2->delete();
+    $s2->remove();
+    $clone_s2->remove();
+    $executor->execnround(run => 2);
 
     throws_ok { $s2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
     "Try to get a deleted motherboard";
