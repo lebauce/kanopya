@@ -85,6 +85,8 @@ use constant ATTR_DEF => {
 										is_editable		=> 1}
 			};
 
+sub methods {}
+
 =head2 get
 
 =cut
@@ -117,7 +119,7 @@ sub get {
    	return $self;
 }
 
-=head2
+=head2 getClusters
 
 =cut
 
@@ -133,6 +135,19 @@ sub getClusters {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
    	return $class->SUPER::getEntities( %args,  type => "Cluster");
+}
+
+sub getCluster {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) {
+		$errmsg = "Entity::getClusters need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
+    return pop @clusters;
 }
 
 =head2 new
@@ -155,53 +170,9 @@ sub new {
     return $self;
 }
 
-=head2 update
+=head2 create
 
 =cut
-
-sub update {
-	my $self = shift;
-	my $adm = Administrator->new();
-	# update method concerns an existing entity so we use his entity_id
-   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-   	}
-	# TODO update implementation
-}
-
-=head2 delete
-
-=cut
-
-sub delete {
-	my $self = shift;
-	my $adm = Administrator->new();
-	# delete method concerns an existing entity so we use his entity_id
-   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
-   	}
-	# TODO delete implementation
-}
-
-sub extension {
-	return "clusterdetails";
-}
-
-
-sub getCluster {
-	my $class = shift;
-    my %args = @_;
-
-	if ((! exists $args{hash} or ! defined $args{hash})) {
-		$errmsg = "Entity::getClusters need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-   	my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
-    return pop @clusters;
-}
 
 sub create {
     my $self = shift;
@@ -220,6 +191,40 @@ sub create {
         type     => 'AddCluster',
         params   => \%params,
     );
+}
+
+=head2 update
+
+=cut
+
+sub update {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# update method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
+   	}
+	# TODO update implementation
+}
+
+=head2 remove
+
+=cut
+
+sub remove {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# delete method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
+   	}
+	# TODO delete implementation
+}
+
+sub extension {
+	return "clusterdetails";
 }
 
 sub addMotherboard{

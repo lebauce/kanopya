@@ -76,7 +76,7 @@ sub methods {
 		instance 	=> {
 			get			=> 'retrieve an existing group',
 			update		=> 'save changes applied on a group',
-			delete 		=> 'delete a group',
+			remove 		=> 'delete a group',
 			appendEntity => 'add an element to group',
 			removeEntity => 'remove an element from a group',
 		}, 
@@ -146,21 +146,6 @@ sub getGroups {
    	return $class->SUPER::getEntities( %args,  type => "Groups");
 }
 
-=head2 create
-
-=cut
-
-sub create {
-	my $self = shift;
-	my $admin = Administrator->new();
-	my $mastergroup_eid = $self->getMasterGroupEid();
-   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new groups");
-   	}
- 	$self->save();  	
-}
-
 =head2 new
 
 	Class: Public
@@ -184,6 +169,29 @@ sub new {
 	#$self->{_ext_attrs} = $attrs->{extended};
 
     return $self;
+}
+
+=head2 create
+
+=cut
+
+sub create {
+	my $self = shift;
+	my $admin = Administrator->new();
+	my $mastergroup_eid = $self->getMasterGroupEid();
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new groups");
+   	}
+ 	$self->save();  	
+}
+
+=head2 remove
+
+=cut
+
+sub remove {
+	#TODO implementation
 }
 
 =head2 getGroupsFromEntity

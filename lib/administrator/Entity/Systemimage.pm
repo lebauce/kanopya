@@ -66,7 +66,7 @@ sub methods {
 		instance 	=> {
 			get			=> 'retrieve an existing system image',
 			update		=> 'save changes applied on a system image',
-			delete 		=> 'delete a system image',
+			remove 		=> 'delete a system image',
 		}, 
 	};
 }
@@ -208,14 +208,13 @@ sub update {
 	# TODO update implementation
 }
 
+=head2 remove
 
+=cut
 
-
-
-
-
-
-
+sub remove {
+	#TODO implementation
+}
 
 =head2 checkAttrs
 	
@@ -305,25 +304,6 @@ sub checkAttr {
 	# Here check attr value
 }
 
-
-
-
-
-
-
-
-
-sub create{
-    my $self = shift;
-    
-    my %params = $self->getAttrs();
-    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%params));
-    Operation->enqueue(priority => 200,
-                   type     => 'CloneSystemimage',
-                   params   => \%params);
-}
-
-
 sub clone {
     my $self = shift;
     my %args = @_;
@@ -346,9 +326,6 @@ sub clone {
                    params   => \%args);
        
 }
-
-
-
 
 sub activate{
     my $self = shift;

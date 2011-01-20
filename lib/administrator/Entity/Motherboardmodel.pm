@@ -50,7 +50,7 @@ sub methods {
 		instance 	=> {
 			get			=> 'retrieve an existing motherboard model',
 			update		=> 'save changes applied on a motherboard model',
-			delete 		=> 'delete a motherboard model',
+			remove 		=> 'delete a motherboard model',
 		}, 
 	};
 }
@@ -134,11 +134,11 @@ sub create {}
 
 sub update {}
 
-=head2 delete
+=head2 remove
 
 =cut
 
-sub delete {}
+sub remove {}
 
 =head2 toString
 
