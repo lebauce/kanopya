@@ -22,15 +22,15 @@ eval {
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
 
     # Test bad structure cluster
-    note("Test Instanciation Error");
+    note("Test Systemimage Instanciation Error");
     throws_ok { Entity::Systemimage->new(
 		    systemimage_name => 'MySystemImage Test',
 		    systemimage_desc => 'Test whitespace in name',
 		    distribution_id => 1) } qr/checkAttrs detect a wrong value/,
     $test_instantiation;
 
-    ########################### Test cluster extended
-    note("Test Motherboard extended");
+    ########################### Test Systemimage instanciation
+    note("Test Systemimage instanciation");
     my $s1 = Entity::Systemimage->new(
 		    systemimage_name => 'MySystemImageTest',
 		    systemimage_desc => 'Testnowhitespace',
@@ -62,9 +62,14 @@ eval {
     is ($s2->getAttr(name=>'active'), 0, "Deactivate Systemimage");
 
     note("Test Systemimage clone");
-    $s2->clone();
+    $s2->clone(systemimage_name => "Systemimagecloned", systemimage_desc=>"Systemimagecloned");
+    $executor->execnround(run => 1);
+    my $clone_s2 = Entity::Systemimage->getSystemimage(hash => {systemimage_name => 'Systemimagecloned'});
+    isa_ok($clone_s2, "Entity::Systemimage", $test_instantiation);
 
     $s2->delete();
+    $clone_s2->delete();
+
     throws_ok { $s2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
     "Try to get a deleted motherboard";
     note("Test Systemimage.pm pod");

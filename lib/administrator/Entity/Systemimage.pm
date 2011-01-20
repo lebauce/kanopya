@@ -192,9 +192,9 @@ sub create{
     my $self = shift;
     
     my %params = $self->getAttrs();
-    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%params));
+    $log->debug("New Operation CreateSystemimage with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
-                   type     => 'CloneSystemimage',
+                   type     => 'AddSystemimage',
                    params   => \%params);
 }
 
@@ -202,8 +202,9 @@ sub clone {
     my $self = shift;
     my %args = @_;
 
-    if (! exists $args{systemimage_name} or ! defined $args{systemimage_name}) {
-    	$errmsg = "Entity::Systemimage->clone needs a new_systemimage_name parameter!";
+    if ((! exists $args{systemimage_name} or ! defined $args{systemimage_name})||
+        (! exists $args{systemimage_desc} or ! defined $args{systemimage_desc})) {
+    	$errmsg = "Entity::Systemimage->clone needs a systemimage_name and systemimage_desc parameter!";
     	$log->error($errmsg);
     	throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -214,9 +215,9 @@ sub clone {
     	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     $args{systemimage_id} = $sysimg_id;
-    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%params));
+    $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
     Operation->enqueue(priority => 200,
-                   type     => 'AddSystemimage',
+                   type     => 'CloneSystemimage',
                    params   => \%args);
        
 }
@@ -242,7 +243,7 @@ sub activate{
     my $self = shift;
     
     my  $adm = Administrator->new();
-    print "New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id');
+    $log->debug("New Operation ActivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
     Operation->enqueue(priority => 200,
                    type     => 'ActivateSystemimage',
                    params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
@@ -252,7 +253,7 @@ sub deactivate{
     my $self = shift;
     
     my  $adm = Administrator->new();
-    print "New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id');
+    $log->debug("New Operation DeactivateSystemimage with systemimage_id : " . $self->getAttr(name=>'systemimage_id'));
     Operation->enqueue(priority => 200,
                    type     => 'DeactivateSystemimage',
                    params   => {systemimage_id => $self->getAttr(name=>'systemimage_id')});
