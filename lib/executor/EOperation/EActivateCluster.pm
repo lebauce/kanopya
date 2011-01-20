@@ -93,7 +93,7 @@ sub checkOp{
 	my %args = @_;
     
     # check if system image used is active 
-    $log->debug("checking cluster 's systemimage active value <$args{params}->{cluster_id}>");
+    $log->debug("checking if systemimage of the cluster <$args{params}->{cluster_id}> is active");
     my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name => 'systemimage_id'));
     if(not $systemimage->getAttr(name => 'active')) {
 	    	$errmsg = "EOperation::EActivateCluster->new : cluster's systemimage is not activated";
