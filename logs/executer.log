@@ -83,3 +83,19 @@
 '
 2011/01/20 13:01:11 DEBUG> Local.pm:122 EContext::Local::execute - Command stderr is : 'File descriptor 10 (socket:[176574]) leaked on vgs invocation. Parent PID 25365: sh
 '
+2011/01/21 11:36:02 INFO> kanopya-executor:66 main::__ANON__ - Starting main loop
+2011/01/21 11:36:02 DEBUG> EFactory.pm:70 EFactory::newEOperation - EOperation class is EOperation::ERemoveCluster
+2011/01/21 11:36:02 INFO> EFactory.pm:80 EFactory::newEOperation - EOperation::ERemoveCluster instanciated
+2011/01/21 11:36:02 DEBUG> ERemoveCluster.pm:69 EOperation::ERemoveCluster::new - Class is : EOperation::ERemoveCluster
+2011/01/21 11:36:02 DEBUG> EOperation.pm:77 EOperation::new - Class is : EOperation::ERemoveCluster
+2011/01/21 11:36:02 INFO> Executor.pm:122 Executor::run - New operation (EOperation::ERemoveCluster) retrieve ; execution processing
+2011/01/21 11:36:03 DEBUG> EOperation.pm:110 EOperation::prepare - Class is : Operation=HASH(0x48182d8)
+2011/01/21 11:36:03 DEBUG> EOperation.pm:112 EOperation::prepare - Change user by user_id : 1
+2011/01/21 11:36:03 DEBUG> ERemoveCluster.pm:123 EOperation::ERemoveCluster::prepare - checking cluster existence with id <7>
+2011/01/21 11:36:03 DEBUG> ERemoveCluster.pm:93 EOperation::ERemoveCluster::checkOp - checking cluster active value <7>
+2011/01/21 11:36:03 DEBUG> EFactory.pm:142 EFactory::newEContext - ip_source & ip_destination are the same, using EContext::Local
+2011/01/21 11:36:03 INFO> Local.pm:80 EContext::Local::new - new EContext::Local instance
+2011/01/21 11:36:03 DEBUG> Local.pm:115 EContext::Local::execute - Command execute is : <rm -rf /clusters/foobar>
+2011/01/21 11:36:03 DEBUG> Local.pm:121 EContext::Local::execute - Command stdout is : ''
+2011/01/21 11:36:03 DEBUG> Local.pm:122 EContext::Local::execute - Command stderr is : ''
+2011/01/21 11:36:03 DEBUG> ERemoveCluster.pm:159 EOperation::ERemoveCluster::execute - Execution : rm -rf /clusters/foobar

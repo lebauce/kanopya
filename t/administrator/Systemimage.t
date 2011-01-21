@@ -72,7 +72,7 @@ eval {
     $executor->execnround(run => 2);
 
     throws_ok { $s2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
-    "Try to get a deleted motherboard";
+    "Try to get a deleted system image";
     note("Test Systemimage.pm pod");
     pod_file_ok( '/opt/kanopya/lib/administrator/Entity/Systemimage.pm', 'stuff docs are valid POD' );
 

@@ -220,7 +220,14 @@ sub remove {
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this entity");
    	}
-	# TODO delete implementation
+    my %params;
+    $params{'cluster_id'}= $self->getAttr(name =>"cluster_id");
+    $log->debug("New Operation Remove Cluster with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'RemoveCluster',
+        params   => \%params,
+    );
 }
 
 sub extension {
