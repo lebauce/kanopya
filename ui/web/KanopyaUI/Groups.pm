@@ -29,11 +29,12 @@ sub view_groups : StartRunmode {
 		$tmp->{groups_name} = $group->getAttr('name' => 'groups_name'); 
 		$tmp->{groups_desc} = $group->getAttr('name' => 'groups_desc');
 		$tmp->{groups_type} = $group->getAttr('name' => 'groups_type');
+		$tmp->{groups_size} = $group->getSize();
 		push(@$groups, $tmp);
 	}
 	$tmpl->param('groups_list' => $groups);
 	my $methods = Entity::Groups->getPerms();
-	if($methods->{create}) { $tmpl->param('can_create') => 1); }
+	if($methods->{create}) { $tmpl->param('can_create' => 1); }
 	return $tmpl->output();
 }
 
@@ -143,16 +144,15 @@ sub view_groupdetails : Runmode {
 			$tmp->{content_id} = $e->getAttr('name' => lc($tmpl->param('groups_type')).'_id');
 			$tmp->{content_label} = $e->toString();
 			$tmp->{groups_id} = $groups_id;
-			if($granted_methods->{removeEntity}) { 
-				$tmpl->{can_removeEntity} = 1; 
-			}
+			$tmp->{can_removeEntity} = $granted_methods->{removeEntity}; 
+						
 			push(@$content, $tmp) 
 		}
 		$tmpl->param('content_list' => $content);
 		$tmpl->param('content_count' => scalar(@$content)+1);
 				
 		if($granted_methods->{update}) { $tmpl->param('can_update' => 1); }
-		if($granted_methods->{delete}) { $tmpl->param('can_delete' => 1); }
+		if($granted_methods->{remove}) { $tmpl->param('can_delete' => 1); }
 		if($granted_methods->{appendEntity}) { $tmpl->param('can_appendEntity' => 1); }
 		return $tmpl->output();
 	}

@@ -163,7 +163,7 @@ sub view_userdetails : Runmode {
 		my $granted_methods = $euser->getPerms();
 		$log->debug(Dumper $granted_methods);
 		if($granted_methods->{update}) { $tmpl->param('can_update' => 1); }
-		if($granted_methods->{delete}) { $tmpl->param('can_delete' => 1); }
+		if($granted_methods->{remove}) { $tmpl->param('can_delete' => 1); }
 			
 		return $tmpl->output();
 	}
