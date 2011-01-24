@@ -92,8 +92,8 @@ sub getEntities {
 	Desc : This method instanciate Entity.
 	
 	Args :
-		rightschecker : Rightschecker : Object use to check write and update entity_id
-		data : DBIx class: object data
+		Attrs : Hash ref : This is a hash ref on attributes used for the new entity
+		Table : String : This is the database table storing the entity (often corresponding to Entity type)
 	Return : Entity, this class could not be instanciated !!
 	
 =cut
@@ -106,7 +106,7 @@ sub new {
     	(! exists $args{table} or ! defined $args{table})) {
 		$errmsg = "Entity->new need an attrs and table named argument!"; 	 
 		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $adm = Administrator->new();
 #	my $rc = $adm->getRightChecker();

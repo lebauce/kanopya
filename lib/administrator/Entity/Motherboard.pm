@@ -32,6 +32,41 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+=head2 Motherboard Attributes
+
+motherboardmodel_id : Int : Identifier of motherboard model.
+processormodel_id : Int : Identifier of motherboard processor model
+kernel_id : Int : kernel identifier which will be used by motherboard if non specified by cluster
+motherboard_serial_number : String : This is the serial number attributed to motherboard
+motherboard_mac_address : String : This is the main network interface mac address of the motherboard
+
+motherboard_powersupply_id : Int : Facultative identifier to know which powersupplycard and port is used.
+Powersupplyid is created during motherboard creation.
+motherboard_desc :  String : This is a free field to enter a description of motherboard. It is generally used to 
+specify owner, team, ...
+
+active : Int : This is an internal parameter used to activate or deactivate resources on Kanopya System
+motherboard_internal_ip : String : This another internally manage attribute, it allow to save internal ip of 
+a motherboard when it is in a cluster
+motherboard_hostname : Hostname is also internally managed. Motherboard hostname will be generated from the mac address
+It is generated when a motherboard is added into a cluster
+motherboard_initiatorname : This attributes is generated when a motherboard is added in a cluster and allow to connect
+to internal storage to get the systemimage
+etc_device_id : Int : This parameter corresponding to lv storage and iscsitarget generated 
+when a motherboard is configured to be migrated into a cluster
+motherboard_state : String : This parameter is internally managed, it allows to follow migration step.
+It could be :
+- WaitingStart
+- Starting
+- ReadyStart
+- Up
+
+- WaitingStop
+- ReadyStop
+- Stopping
+- Down
+=cut
+
 use constant ATTR_DEF => {
 			  motherboardmodel_id	=>	{pattern			=> '^\d*$',
 											is_mandatory	=> 1,
