@@ -38,13 +38,14 @@ It allows to implement Component in cluster addition operation
 
 =cut
 package Operation::AddComponentToCluster;
+use base "Operation";
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use base "Operation";
+
 use Data::Dumper;
 
 

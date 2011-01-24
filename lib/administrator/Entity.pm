@@ -119,6 +119,15 @@ sub new {
 
 =head2 get 
 
+	Class : Public
+	
+	Desc : This method load an Entity from database.
+	
+	Args :
+		id : Scalar (Int) : Entity identifier (not entity_id) related to a specific table (second arg)
+		table : Scalar (String) : Entity searched table name
+	Return : Entity, this class could not be instanciated !!
+
 =cut
 
 sub get {
