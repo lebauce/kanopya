@@ -109,6 +109,7 @@ sub get {
    	}   	
    	
    	my $entity_id = $dbix_user->user_entities->first->get_column('entity_id');
+   	$log->debug("checking get permission on entity_id : $entity_id");
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		$errmsg = "Permission denied to get user with id $args{id}";
@@ -133,9 +134,7 @@ sub get {
 sub getUsers {
 	my $class = shift;
     my %args = @_;
-	my @objs = ();
-    my ($rs, $entity_class);
-
+	
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::User->getUsers need a hash named argument!";
 		$log->error($errmsg);
