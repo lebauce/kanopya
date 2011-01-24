@@ -56,6 +56,7 @@ sub save_orchestrator_settings : Runmode {
 	                                		);
 		}
 		
+		$rules_manager->deleteClusterOptimConditions( cluster_id => $cluster_id );
 		$rules_manager->addClusterOptimConditions( cluster_id => $cluster_id, condition_tree => $optim_cond );
 	};
 	if ($@) {
