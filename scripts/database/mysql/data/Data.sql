@@ -59,10 +59,6 @@ INSERT INTO `ingroups` VALUES (@Guest_group_id, @eid);
 SET @guest_user_eid = @eid;
 SET @eid := @eid +1;
 
-INSERT INTO `user` VALUES
-(3,0,'guest','guest','Guest','','guest@somewhere.com',CURRENT_DATE(),NULL,'Guest user with limited permissions.');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); SET @eid := @eid +1;
-
 -- processor models
 INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1);
 INSERT INTO `processormodel` VALUES (2,'Intel','Atom D510',2,1.66,1,13,1);
