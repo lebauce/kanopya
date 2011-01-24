@@ -45,7 +45,7 @@ use Monitor::Grapher;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
-Log::Log4perl->init('/opt/kanopya/conf/log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/monitor-log.conf');
 my $log = get_logger("grapher");
 
 
