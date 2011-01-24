@@ -42,6 +42,7 @@ package Entity;
 
 use strict;
 use warnings;
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
 use Administrator;
@@ -66,12 +67,13 @@ sub getEntities {
 	$rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
 	$log->debug('resultset count:'.$rs->count());
 	$log->debug( "_getEntityClass with type = $args{type}");
+	
+	my $id_name = lc($args{type}) . "_id";
+	$entity_class = "Entity::$args{type}";
 
 	while ( my $row = $rs->next ) {
-		my $id_name = lc($args{type}) . "_id";
 		my $id = $row->get_column($id_name);
-		my $obj;
-		eval { $obj = "Entity::$args{type}"->get(id => $id); };
+		my $obj = eval { $entity_class->get(id => $id); }; 
 		if($@) {
 			my $exception = $@; 
 			if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -79,8 +81,7 @@ sub getEntities {
 			} 
 			else { $exception->rethrow(); } 
 		}
-		
-		push @objs, $obj;
+		else { push @objs, $obj; }
 	}
 	return  @objs;
 }
@@ -440,7 +441,7 @@ sub getPerms {
 			}
 		}
 	}
-		
+	$log->debug(Dumper $granted_methods);	
 	return $granted_methods;
 }
 

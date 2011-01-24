@@ -14,7 +14,6 @@ BEGIN {
 	use_ok('Administrator'); 
 	use_ok('Entity::User');
 	use_ok('Entity::Groups');
-	use_ok('Entity::Cluster');
 }
 
 BEGIN {
@@ -25,6 +24,7 @@ Administrator::authenticate(login => 'guest', password => 'guest');
 my $adm = Administrator->new();
 
 my $eguest_user;
+my $eguest_groups;
 my $ecluster;
 
 lives_ok { $eguest_user = Entity::User->get(id => 3) } 'Permission granted for guest user to retrieve Entity::User with id 3';
@@ -33,7 +33,7 @@ lives_ok {
 	$eguest_user->update();
 } 'Permission granted for guest user to update entity user with id 3';
 
-throws_ok { $eguest_user->delete() } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to delete Entity::User with id 3';
+throws_ok { $eguest_user->remove() } "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to delete Entity::User with id 3';
 
 throws_ok {
 	my $euser = Entity::User->new( 
@@ -45,7 +45,20 @@ throws_ok {
 	    	user_desc => 'toto',
 	);
 	$euser->create();
-} "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to create new Entity::User';
+} "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to create new Entity::User';
+
+lives_ok { $eguest_groups = Entity::Groups->get(id => 13) } 'Permission granted for guest user to get entity groups with id 13';
+
+throws_ok {
+	my $egroups = Entity::Groups->new( 
+	    	groups_name => 'mygroup', 
+	    	groups_type => 'user',
+	    	groups_desc => 'mydescription',
+	    	groups_system => 0,
+	);
+	$egroups->create();
+} "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to create new Entity::Groups';
+
 
 
 #throws_ok { $ecluster = Entity::Cluster->get(id => 1) } "Kanopya::Exception::Permission::Denied", 'Permission denied for guest user to retrieve Entity::Cluster with id 1';

@@ -52,7 +52,7 @@ sub view_models : StartRunmode {
 		#$h->{PROCID} = $p->getAttr(name => 'processormodel_id');
 		my $methods = $p->getPerms();
 		if($methods->{update}) { $h->{can_update} = 1; }
-		if($methods->{delete}) { $h->{can_delete} = 1; }
+		if($methods->{remove}) { $h->{can_delete} = 1; }
 			
 		push @$motherboardmodels, $h;
 	} 
