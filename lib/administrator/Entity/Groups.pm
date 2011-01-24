@@ -27,8 +27,6 @@ Entity::Groups
 
 =head1 SYNOPSIS
 
-
-
 =head1 DESCRIPTION
 
 blablabla
@@ -36,13 +34,17 @@ blablabla
 =cut
 
 package Entity::Groups;
+use base "Entity";
 
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
-use McsExceptions;
+use Kanopya::Exceptions;
+use Administrator;
 use Data::Dumper;
-use base "Entity";
+use Log::Log4perl "get_logger";
+
+
+our $VERSION = "1.00";
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -66,21 +68,179 @@ use constant ATTR_DEF => {
 										is_editable		=> 0},
 };
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new group',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing group',
+			update		=> 'save changes applied on a group',
+			remove 		=> 'delete a group',
+			appendEntity => 'add an element to group',
+			removeEntity => 'remove an element from a group',
+		}, 
+	};
+}
 
-=head2 new
+=head2 get
 
-	Class : Private
-	
-	Desc : constructor method
+	Class: public
+	desc: retrieve a stored Entity::Groups instance
+	args:
+		id : scalar(int) : groups id
+	return: Entity::Groups instance 
 
 =cut
 
-sub new {
+sub get {
     my $class = shift;
     my %args = @_;
 
-    my $self = $class->SUPER::new( %args );
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Groups->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $admin = Administrator->new();
+   	my $dbix_groups = $admin->{db}->resultset('Groups')->find($args{id});
+   	if(not defined $dbix_groups) {
+	   	$errmsg = "Entity::Groups->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	}   
+   	# Entity::Groups->get method concerns an existing groups so we retrieve this groups'entity_id
+   	my $entity_id = $dbix_groups->groups_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get group with id $args{id}");
+   	}
+	
+   	my $self = $class->SUPER::get( %args,  table => "Groups");
+   	return $self;
+}
+
+=head2 getGroups
+
+	Class: public
+	desc: retrieve several Entity::Groups instances
+	args:
+		hash : hashref : where criteria
+	return: @ : array of Entity::Groups instances
+	
+=cut
+
+sub getGroups {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::Groups->getGroups need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Groups");
+}
+
+=head2 new
+
+	Class: Public
+	desc:  constructor
+	args: 
+	return: Entity::Groups instance 
+	
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Groups");
+	
+	# Set the extended parameters
+	#$self->{_ext_attrs} = $attrs->{extended};
+
     return $self;
+}
+
+=head2 create
+
+=cut
+
+sub create {
+	my $self = shift;
+	my $admin = Administrator->new();
+	my $mastergroup_eid = $self->getMasterGroupEid();
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new groups");
+   	}
+ 	$self->save();  	
+}
+
+=head2 remove
+
+=cut
+
+sub remove {
+	#TODO implementation
+}
+
+=head2 getGroupsFromEntity
+
+	Class: public
+	desc: retrieve Entity::Groups instances that contains the Entity argument
+	args:
+		entity : Entity::* : an Entity instance
+	return: @ : array of Entity::Groups instances
+	
+=cut
+
+sub getGroupsFromEntity {
+	my $class = shift;
+    my %args = @_;
+	my @groups = ();
+    
+	if ((! exists $args{entity} or ! defined $args{entity})) { 
+		$errmsg = "Entity::Groups->getGroups need an entity named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	if(not $args{entity}->{_dbix}->in_storage ) { return @groups; } 
+		
+	my $adm = Administrator->new();
+   	my $mastergroup = $args{entity}->getMasterGroupName();
+	my $groups_rs = $adm->{db}->resultset('Groups')->search({
+		-or => [
+			'ingroups.entity_id' => $args{entity}->{_dbix}->get_column('entity_id'),
+			'groups_name' => $mastergroup ]},
+			
+		{ 	'+columns' => [ 'groups_entities.entity_id' ], 
+			join => [qw/ingroups groups_entities/] }
+	);
+	while(my $row = $groups_rs->next) {
+		eval {
+			my $group = $class->get(id => $row->get_column('groups_id'));
+			push(@groups, $group);	
+		};
+		if($@) {
+			my $exception = $@;
+			if(Kanopya::Exception::Permission::Denied->caught()) {
+				next;
+			}
+			else { $exception->rethrow(); } 
+		}
+	}
+   	return @groups;
 }
 
 =head2 toString
@@ -115,7 +275,7 @@ sub checkAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		$errmsg = "Entity::Groups->checkAttrs need an attrs hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
@@ -126,7 +286,7 @@ sub checkAttrs {
 				$errmsg = "Entity::Groups->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
 				$log->error($errmsg);
 				$log->debug("Can't match $attr_def->{$attr}->{pattern} with $attrs->{$attr}");
-				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 			}
 			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
@@ -138,7 +298,7 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Groups->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$attr_def)) {
@@ -146,7 +306,7 @@ sub checkAttrs {
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Groups->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -172,18 +332,18 @@ sub checkAttr{
 		(! exists $args{value})) { 
 		$errmsg = "Entity::Groups->checkAttr need a name and value named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
 		$errmsg = "Entity::Groups->checkAttr detect a null value for a mandatory attr ($args{name})";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Groups->checkAttr invalid attr name : '$args{name}'";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# Here check attr value
@@ -210,7 +370,7 @@ sub appendEntity {
 	if (! exists $args{entity} or ! defined $args{entity}) {  
 		$errmsg = "Entity::Groups->addEntity need an entity named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
 	$self->{_dbix}->ingroups->create({groups_id => $self->getAttr(name => 'groups_id'), entity_id => $entity_id} );
@@ -234,7 +394,7 @@ sub removeEntity {
 	if (! exists $args{entity} or ! defined $args{entity}) {  
 		$errmsg = "Entity::Groups->addEntity need an entity named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
 	$self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();
@@ -245,22 +405,14 @@ sub removeEntity {
 
 	Desc : get all entities contained in the group
 	
-	args:
-		administrator
-	return : array of entities 
+	return : @: array of entities 
 
 =cut
 
 sub getEntities {
 	my $self = shift;
-	my %args = @_;
-	if (! exists $args{administrator} or ! defined $args{administrator}) { 
-		$errmsg = "Entity::Groups->getEntities need administrator named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $admin = $args{administrator};	
+			
+	my $admin = Administrator->new();	
 	my $type = $self->{_dbix}->get_column('groups_type');
 	my $entity_ids = $admin->{db}->resultset('Ingroups')->search(
 		{ groups_id => $self->getAttr('name' => 'groups_id') },
@@ -274,7 +426,7 @@ sub getEntities {
 	$log->debug('NUMBER of ENTITIES FOUND : '.scalar(@$ids));
 	my $field_id = lc($type)."_entities.entity_id";
 	my @entities = ();
-	@entities = $admin->getEntities(type => $type, hash => { "$field_id" => \@$ids });
+	@entities = $self->SUPER::getEntities(type => $type, hash => { "$field_id" => \@$ids });
 	$log->debug('NUMBER of ENTITIES OBJECTS RETRIEVED : '.scalar(@entities));
 	return @entities;
 }
@@ -283,8 +435,6 @@ sub getEntities {
 	
 	Desc : get all entities of the same type not contained in the group
 	
-	args:
-		administrator
 	return : array of entities 
 
 =cut
@@ -292,13 +442,8 @@ sub getEntities {
 sub getExcludedEntities {
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{administrator} or ! defined $args{administrator}) { 
-		$errmsg = "Entity::Groups->getEntities need administrator named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 	
-	my $admin = $args{administrator};	
+	my $admin = Administrator->new();	
 	my $type = $self->{_dbix}->get_column('groups_type');
 	my $entity_ids = $admin->{db}->resultset('Ingroups')->search(
 		{ groups_id => $self->getAttr('name' => 'groups_id') },
@@ -312,7 +457,9 @@ sub getExcludedEntities {
 	$log->debug('NUMBER of ENTITIES FOUND : '.scalar(@$ids));
 	my $field_id = lc($type)."_entities.entity_id";
 	my @entities = ();
-	@entities = $admin->getEntities(type => $type, hash => { "$field_id" => { 'NOT IN' => \@$ids }});
+	my $module = "Entity/".$type.".pm";
+	eval { require $module; };
+	@entities = $self->SUPER::getEntities(type => $type, hash => { "$field_id" => { 'NOT IN' => \@$ids }});
 	$log->debug('NUMBER of ENTITIES OBJECTS RETRIEVED : '.scalar(@entities));
 	return @entities;
 }

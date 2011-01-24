@@ -19,13 +19,14 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
 package Entity::Distribution;
+use base "Entity";
 
 use strict;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
-use base "Entity";
-use Data::Dumper;
+use warnings;
 
+use McsExceptions;
+use Data::Dumper;
+use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -38,27 +39,63 @@ use constant ATTR_DEF => {
 	root_device_id => {pattern => "//", is_mandatory => 1, is_extended => 0}
 };
 
-=head new
+sub methods {}
+
+=head2 get
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Distribution->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args,  table => "Distribution");
+   return $self;
+}
+
+=head2 getDistributions
+
+=cut
+
+sub getDistributions {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getDistributions need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Distribution");
+}
+
+=head2 new
 
 =cut
 
 sub new {
-    my $class = shift;
+	my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity::Distribution->new need a data and rightschecker named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Distribution");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
 
-	my $ext_attrs = $args{ext_attrs};
-	delete $args{ext_attrs};
-    my $self = $class->SUPER::new( %args );
-	$self->{_ext_attrs} = $ext_attrs;
-	$self->{extension} = $self->extension();
     return $self;
+
 }
 
 =head getDevices 

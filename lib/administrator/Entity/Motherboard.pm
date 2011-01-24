@@ -19,14 +19,53 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 package Entity::Motherboard;
-
-use strict;
-use McsExceptions;
 use base "Entity";
 
+use strict;
+use warnings;
+
+use Kanopya::Exceptions;
+use Operation;
+
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
+
+=head2 Motherboard Attributes
+
+motherboardmodel_id : Int : Identifier of motherboard model.
+processormodel_id : Int : Identifier of motherboard processor model
+kernel_id : Int : kernel identifier which will be used by motherboard if non specified by cluster
+motherboard_serial_number : String : This is the serial number attributed to motherboard
+motherboard_mac_address : String : This is the main network interface mac address of the motherboard
+
+motherboard_powersupply_id : Int : Facultative identifier to know which powersupplycard and port is used.
+Powersupplyid is created during motherboard creation.
+motherboard_desc :  String : This is a free field to enter a description of motherboard. It is generally used to 
+specify owner, team, ...
+
+active : Int : This is an internal parameter used to activate or deactivate resources on Kanopya System
+motherboard_internal_ip : String : This another internally manage attribute, it allow to save internal ip of 
+a motherboard when it is in a cluster
+motherboard_hostname : Hostname is also internally managed. Motherboard hostname will be generated from the mac address
+It is generated when a motherboard is added into a cluster
+motherboard_initiatorname : This attributes is generated when a motherboard is added in a cluster and allow to connect
+to internal storage to get the systemimage
+etc_device_id : Int : This parameter corresponding to lv storage and iscsitarget generated 
+when a motherboard is configured to be migrated into a cluster
+motherboard_state : String : This parameter is internally managed, it allows to follow migration step.
+It could be :
+- WaitingStart
+- Starting
+- ReadyStart
+- Up
+
+- WaitingStop
+- ReadyStop
+- Stopping
+- Down
+=cut
 
 use constant ATTR_DEF => {
 			  motherboardmodel_id	=>	{pattern			=> '^\d*$',
@@ -50,7 +89,7 @@ use constant ATTR_DEF => {
 			  active					=> {pattern 		=> '^[01]$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
-			  motherboard_mac_address	=> {pattern 		=> '^.*$',  # mac address format must be lower case
+			  motherboard_mac_address	=> {pattern 		=> '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',  # mac address format must be lower case
 											is_mandatory	=> 1,		# to have udev persistent net rules work
 											is_extended 	=> 0},
 			  motherboard_internal_ip	=> {pattern 		=> '^.*$',
@@ -67,10 +106,131 @@ use constant ATTR_DEF => {
 											is_extended 	=> 0},
 			motherboard_state				=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
 											is_mandatory	=> 0,
-											is_extended 	=> 0}
+											is_extended 	=> 0},
+			motherboard_toto				=> {pattern 		=> '^.*$',
+											is_mandatory	=> 0,
+											is_extended 	=> 1}
 			};
 
 
+sub methods {}
+
+=head2 get
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Motherboard->get need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   
+   	my $admin = Administrator->new();
+   	my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
+   	if(not defined $motherboard) {
+   		$errmsg = "Entity::Motherboard->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	} 
+   	my $entity_id = $motherboard->motherboard_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard with id $args{id}");
+   	}
+   
+   	my $self = $class->SUPER::get( %args, table=>"Motherboard");
+   	$self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
+   	return $self;
+}
+
+=head2 getMotherboards
+
+=cut 
+
+sub getMotherboards {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboards need a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Motherboard");
+}
+
+sub getMotherboard {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboard need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+   	my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
+    return pop @Motherboards;
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboard");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+    return $self;
+
+}
+
+=head2 create
+
+=cut
+
+sub create {
+    my $self = shift;
+    
+    my %params = $self->getAttrs();
+    $log->debug("New Operation AddMotherboard with attrs : " . Dumper(%params));
+    Operation->enqueue(priority => 200,
+                   type     => 'AddMotherboard',
+                   params   => \%params);
+}
+
+=head2 update
+
+=cut
+
+sub update {}
+
+=head2 remove
+
+=cut
+
+sub remove {
+    my $self = shift;
+    
+    $log->debug("New Operation RemoveMotherboard with systemimage_id : <".$self->getAttr(name=>"motherboard_id").">");
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'RemoveMotherboard',
+        params   => {motherboard_id => $self->getAttr(name=>"motherboard_id")},
+    );
+}
 
 =head2 checkAttrs
 	
@@ -86,24 +246,24 @@ sub checkAttrs {
 	# Remove class
 	shift;
 	my %args = @_;
-	my (%global_attrs, %ext_attrs, $attr);
+	my (%global_attrs, %ext_attrs);
 	my $attr_def = ATTR_DEF;
 	#print Dumper $attr_def;
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		$errmsg = "Entity::Motherboard->checkAttrs need an attrs hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
-	foreach $attr (keys(%$attrs)) {
+	foreach my $attr (keys(%$attrs)) {
 		if (exists $attr_def->{$attr}){
 			$log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
 			if($attrs->{$attr} !~ m/($attr_def->{$attr}->{pattern})/){
 				$errmsg = "Entity::Motherboard->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
 				$log->error($errmsg);
 				$log->debug("Can't match $attr_def->{$attr}->{pattern} with $attrs->{$attr}");
-				throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 			}
 			if ($attr_def->{$attr}->{is_extended}){
 				$ext_attrs{$attr} = $attrs->{$attr};
@@ -115,15 +275,15 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Motherboard->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
-	foreach $attr (keys(%$attr_def)) {
+	foreach my $attr (keys(%$attr_def)) {
 		if (($attr_def->{$attr}->{is_mandatory}) &&
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Motherboard->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -149,18 +309,18 @@ sub checkAttr{
 		(! exists $args{value})) { 
 		$errmsg = "Entity::Motherboard->checkAttr need a name and value named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
 		$errmsg = "Entity::Motherboard->checkAttr detect a null value for a mandatory attr ($args{name})";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# Here check attr value
@@ -170,25 +330,38 @@ sub extension {
 	return "motherboarddetails";
 }
 
-sub new {
-    my $class = shift;
-    my %args = @_;
 
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker}) ||
-		(! exists $args{ext_attrs} or ! defined $args{ext_attrs})) { 
-		$errmsg = "Entity::Motherboard->new need a data, ext_attrs and rightschecker named argument!";	
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 
-	my $ext_attrs = $args{ext_attrs};
-	delete $args{ext_attrs};
-    my $self = $class->SUPER::new( %args );
-	$self->{_ext_attrs} = $ext_attrs;
-	$self->{extension} = $self->extension();
-    return $self;
+
+
+
+
+
+
+
+
+
+sub activate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    $log->debug("New Operation ActivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
+    Operation->enqueue(priority => 200,
+                   type     => 'ActivateMotherboard',
+                   params   => {motherboard_id => $self->getAttr(name=>'motherboard_id')});
 }
+
+sub deactivate{
+    my $self = shift;
+    
+    my  $adm = Administrator->new();
+    $log->debug("New Operation EDeactivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
+    Operation->enqueue(priority => 200,
+                   type     => 'DeactivateMotherboard',
+                   params   => {motherboard_id => $self->getAttr(name=>'motherboard_id')});
+}
+
+
 
 =head2 toString
 
@@ -210,7 +383,7 @@ sub getEtcName {
 	return "etc_". $mac;
 }
 
-=head getMacName
+=head2 getMacName
 
 return Mac address with separator : replaced by _
 
@@ -223,7 +396,7 @@ sub getMacName {
 }
 
 
-=head getEtcDev
+=head2 getEtcDev
 
 get etc attributes used by this motherboard
 
@@ -233,7 +406,7 @@ sub getEtcDev {
 	if(! $self->{_dbix}->in_storage) {
 		$errmsg = "Entity::Motherboard->getEtcDev must be called on an already save instance";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Kanopya::Exception(error => $errmsg);
 	}
 	$log->info("retrieve etc attributes");
 	my $etcrow = $self->{_dbix}->etc_device_id;
@@ -285,7 +458,7 @@ sub getPowerSupplyCardId {
 	if (defined $row) {
 		return $row->get_column('powersupplycard_id');}
 	else {
-		return undef;
+		return;
 	}
 }
 1;

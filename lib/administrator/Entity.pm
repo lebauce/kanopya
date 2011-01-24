@@ -43,12 +43,47 @@ package Entity;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
+use Administrator;
 
 my $log = get_logger("administrator");
 my $errmsg;
 
+sub getEntities {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getEntities need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+	
+	$rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
+	$log->debug('resultset count:'.$rs->count());
+	$log->debug( "_getEntityClass with type = $args{type}");
+
+	while ( my $row = $rs->next ) {
+		my $id_name = lc($args{type}) . "_id";
+		my $id = $row->get_column($id_name);
+		my $obj;
+		eval { $obj = "Entity::$args{type}"->get(id => $id); };
+		if($@) {
+			my $exception = $@; 
+			if(Kanopya::Exception::Permission::Denied->caught()) {
+				next;
+			} 
+			else { $exception->rethrow(); } 
+		}
+		
+		push @objs, $obj;
+	}
+	return  @objs;
+}
 
 =head2 new
 	
@@ -57,37 +92,122 @@ my $errmsg;
 	Desc : This method instanciate Entity.
 	
 	Args :
-		rightschecker : Rightschecker : Object use to check write and update entity_id
-		data : DBIx class: object data
+		Attrs : Hash ref : This is a hash ref on attributes used for the new entity
+		Table : String : This is the database table storing the entity (often corresponding to Entity type)
 	Return : Entity, this class could not be instanciated !!
 	
 =cut
 
 sub new {
+	my $class = shift;
+    my %args = @_;
+	my $self = {};
+    if ((! exists $args{attrs} or ! defined $args{attrs}) ||
+    	(! exists $args{table} or ! defined $args{table})) {
+		$errmsg = "Entity->new need an attrs and table named argument!"; 	 
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+#	my $rc = $adm->getRightChecker();
+	# We create a new DBIx containing new entity (only global attrs)
+	$self->{_dbix} = $adm->_newDbix( table =>  $args{table}, row => $args{attrs} );
+
+    bless $self, $class;
+    return $self;
+}
+
+=head2 get 
+
+	Class : Public
+	
+	Desc : This method load an Entity from database.
+	
+	Args :
+		id : Scalar (Int) : Entity identifier (not entity_id) related to a specific table (second arg)
+		table : Scalar (String) : Entity searched table name
+	Return : Entity, this class could not be instanciated !!
+
+=cut
+
+sub get {
     my $class = shift;
     my %args = @_;
     
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) {
-		$errmsg = "Entity->new need a data and rightschecker named argument!"; 	 
+    if ((! exists $args{id} or ! defined $args{id}) ||
+    	(! exists $args{table} or ! defined $args{table})) {
+		$errmsg = "Entity->get need an id and table named argument!"; 	 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-    $log->debug("Arguments: ".ref($args{data})." and ".ref($args{rightschecker}));
+	my $adm = Administrator->new();
+	my $dbix = $adm->getRow(id=>$args{id}, table => $args{table});
+    $log->debug("Arguments: ".ref($args{id}));
     
     my $self = {
-    	_rightschecker	=> $args{rightschecker},
-        _dbix			=> $args{data},
-        _ext_attrs		=> {},
-        extension		=> undef
+        _dbix			=> $dbix,
+        _entity_id		=> $dbix->get_column('entity_id'),
     };
-    bless $self, $class;
     
-    # getting groups where we find this entity (entity already exists)
-	if($self->{_dbix}->in_storage) {
-		$self->{_groups} = $self->getGroups;
+    bless $self, $class;
+    return $self;
+}
+
+=head2 getMasterGroupName
+
+	Class : public
+	desc : retrieve the master group name associated with this entity
+	return : scalar : master group name
+
+=cut
+
+sub getMasterGroupName {
+	my $self = shift;
+	my $class = ref $self || $self;
+	my @array = split(/::/, "$class");
+	my $mastergroup = pop(@array);
+	return $mastergroup;
+}
+
+=head2 getMasterGroupEid
+
+	Class : public
+	
+	desc : return entity_id of entity master group
+	TO BE CALLED ONLY ON CHILD CLASS/INSTANCE
+	return : scalar : entity_id
+
+=cut
+
+sub getMasterGroupEid {
+	my $self = shift;
+	my $adm = Administrator->new();
+	my $mastergroup = $self->getMasterGroupName();
+	my $eid = $adm->{db}->resultset('Groups')->find({ groups_name => $mastergroup })->groups_entities->first->get_column('entity_id');
+	return $eid;
+}
+
+
+
+sub getExtendedAttrs {
+	my %attrs;
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{ext_table} or ! defined $args{ext_table})) {
+		$errmsg = "Entity->getExtendedAttrs need an ext_table named argument!"; 	 
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	return $self;
+	my $ext_attrs_rs = $self->{_dbix}->search_related( $args{ext_table} );
+	if (! defined $ext_attrs_rs){
+	    $log->debug("No extended Attrs");
+		return;
+	}
+	while ( my $param = $ext_attrs_rs->next ) {
+		$attrs{ $param->name } = $param->value;
+	}
+	return \%attrs
 }
 
 =head extension
@@ -95,7 +215,7 @@ sub new {
 =cut 
 
 sub extension {
-	return undef;
+	return;
 }
 
 =head2 getGroups
@@ -106,10 +226,9 @@ return groups resultset where this entity appears (only on an already saved enti
 
 sub getGroups {
 	my $self = shift;
-	if( not $self->{_dbix}->in_storage ) { return undef; } 
+	if( not $self->{_dbix}->in_storage ) { return; } 
 	#$log->debug("======> GetGroups call <======");
-	my $mastergroup = ref $self;
-	$mastergroup =~ s/.*\:\://g;
+	my $mastergroup = $self->getMasterGroupEid();
 	my $groups = $self->{_rightschecker}->{_schema}->resultset('Groups')->search({
 		-or => [
 			'ingroups.entity_id' => $self->{_dbix}->get_column('entity_id'),
@@ -144,8 +263,9 @@ sub getAttrs {
 =head2 asString
 
 	Return a string with the entity class name an all of its data
-
+	
 =cut
+
 
 sub asString {
 	my $self = shift;
@@ -174,7 +294,7 @@ sub setAttr {
 		(! exists $args{value})) { 
 		$errmsg = "Entity->setAttr need a name and value named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 		
 	$self->checkAttr(%args);
@@ -205,7 +325,7 @@ sub setAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}) { 
 		$errmsg = "Entity->setAttrs need an attrs hash named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	my $attrs = $args{attrs};
@@ -231,19 +351,24 @@ sub getAttr {
 	if (! exists $args{name} or ! defined $args{name}) { 
 		$errmsg = "Entity->getAttrs need a name named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
-	if ( $data->has_column( $args{name} ) ) {
-		$value = $data->get_column( $args{name} );
-		$log->debug(ref($self) . " getAttr of $args{name} : $value");
+    if ( $data->has_column( $args{name} ) ) {
+        $value = $data->get_column( $args{name} );
+        if (defined $args{name}){
+            $log->debug(ref($self) . " getAttr of $args{name} : <$value>");
+            }
+        else {
+            $log->debug(ref($self) . " getAttr of $args{name}  return undef");
+        }
 	} elsif ( exists $self->{_ext_attrs}{ $args{name} } ) {
 		$value = $self->{_ext_attrs}{ $args{name} };
 		$log->debug(ref($self) . " getAttr (extended) of $args{name} : $value");
 	} else {
 		$errmsg = "Entity->getAttr no attr name $args{name}!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	return $value;
 }
@@ -258,20 +383,20 @@ sub getAttr {
 sub save {
 	my $self = shift;
 	my $data = $self->{_dbix};
-	#TODO check rights
-
+	
 	if ( $data->in_storage ) {
 		# MODIFY existing db obj
 		$data->update;
 		$self->_saveExtendedAttrs();
 	} else {
 		# CREATE
+		my $adm = Administrator->new();
 		my $relation = lc(ref $self);
 		$relation =~ s/.*\:\://g;
 		$log->debug("la relation: $relation");
 		my $newentity = $self->{_dbix}->insert;
 		$log->debug("new entity inserted.");
-		my $row = $self->{_rightschecker}->{_schema}->resultset('Entity')->create(
+		my $row = $adm->{db}->resultset('Entity')->create(
 			{ "${relation}_entities" => [ { "${relation}_id" => $newentity->get_column("${relation}_id")} ] },
 		);
 		$log->debug("new $self inserted with his entity relation.");
@@ -282,6 +407,107 @@ sub save {
 	}
 		
 }
+
+=head2 getPerms
+
+	class : public
+
+	desc : return a structure describing method permissions 
+
+	return : hash ref
+
+=cut
+
+sub getPerms {
+	my $self = shift;
+	my $class = ref $self;
+	my $adm = Administrator->new();
+	my $granted_methods = {};
+	
+	if($class) { # called on instance
+		my $instancemethod = $class->methods()->{instance};
+		foreach my $method (keys %$instancemethod) {
+			my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => $method);
+			if($granted) {
+				$granted_methods->{$method} = 1;
+			} 
+			else {
+				$granted_methods->{$method} = 0;
+			}
+		}
+	}
+	else { # called on class
+		my $classmethod = $self->methods()->{class};
+		my $mastergroupeid = $self->getMasterGroupEid();
+		foreach my $method (keys %$classmethod) {
+			my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $method);
+			if($granted) {
+				$granted_methods->{$method} = 1;
+			} 
+			else {
+				$granted_methods->{$method} = 0;
+			}
+		}
+	}
+		
+	return $granted_methods;
+}
+
+=head2 addPerm
+
+=cut
+
+sub addPerm {
+	my $self = shift;
+	my %args = @_;
+	my $class = ref $self;
+	
+	if (! exists $args{method} or ! defined $args{method}) { 
+		$errmsg = "Entity::addPerm need a method named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	if (! exists $args{entity_id} or ! defined $args{entity_id}) { 
+		$errmsg = "Entity::addPerm need a entity_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	my $adm = Administrator->new();
+   	
+	if($class) {
+		# addPerm call from an instance of type $class
+	  	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'setPerm');
+   	   	if(not $granted) {
+   			throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{entity_id}");
+   		}
+   		# 
+		$adm->{_rightchecker}->addPerm(
+			consumer_id => $args{entity_id}, 
+			consumed_id => $self->{_entity_id}, 
+			method 		=> $args{method},
+		);
+	}
+	else {
+		# addPerm call from class $self
+		my @list = split(/::/, "$self");
+		my $mastergroup = pop(@list);
+		my $entity_id = $adm->{db}->resultset('Groups')->find({ groups_name => $mastergroup })->groups_entities->first->get_column('entity_id');
+		my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'setPerm');
+   	   	if(not $granted) {
+   			throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{id}");
+   		}
+		
+		$adm->{_rightchecker}->addPerm(
+			consumer_id => $args{entity_id}, 
+			consumed_id => $entity_id, 
+			method 		=> $args{method},
+		);
+	
+	}
+}
+
 
 =head2 _saveExtendedAttrs
 
@@ -313,6 +539,10 @@ sub _saveExtendedAttrs {
 sub delete {
 	my $self = shift;
 	my $data = $self->{_dbix};
+
+	my $adm = Administrator->new();
+	
+
 
 	my $relation = lc(ref $self);
 	$relation =~ s/.*\:\://g;
@@ -346,7 +576,7 @@ sub activate {
 	} else {
 		$errmsg = "Entity->activate Entity ". ref($self) . " unable to activate !";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 }
 

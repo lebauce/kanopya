@@ -19,12 +19,13 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 7 july 2010
 package Entity::Kernel;
-
-use strict;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
 use base "Entity";
 
+use strict;
+use warnings;
+
+use McsExceptions;
+use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -36,7 +37,76 @@ use constant ATTR_DEF => {
 
 };
 
+sub methods {}
 
+=head2 get
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Kernel->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   my $self = $class->SUPER::get( %args,  table => "Kernel");
+   return $self;
+}
+
+=head2 getKernels
+
+=cut
+
+sub getKernels {
+	my $class = shift;
+    my %args = @_;
+	my @objs = ();
+    my ($rs, $entity_class);
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getKernels need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Kernel");
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Kernel");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+
+}
+
+=head2 update
+
+=cut
+
+sub update {}
+
+=head2 remove
+
+=cut
+
+sub remove {}
 
 =head2 checkAttrs
 	
@@ -129,24 +199,11 @@ sub checkAttr{
 
 sub extension { return undef; }
 
-sub new {
-    my $class = shift;
-    my %args = @_;
 
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity::Kernel->new need a data and rightschecker named argument!";	
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 
-	my $ext_attrs = $args{ext_attrs};
-	delete $args{ext_attrs};
-    my $self = $class->SUPER::new( %args );
-	$self->{_ext_attrs} = $ext_attrs;
-	$self->{extension} = $self->extension();
-    return $self;
-}
+
+
+
 
 =head2 toString
 

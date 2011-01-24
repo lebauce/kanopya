@@ -19,12 +19,13 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 11 aug 2010
 package Entity::Motherboardmodel;
-
-use strict;
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
 use base "Entity";
 
+use strict;
+use warnings;
+
+use Kanopya::Exceptions;
+use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -41,7 +42,151 @@ use constant ATTR_DEF => {
 	processormodel_id => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
 };
 
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new motherboard model',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing motherboard model',
+			update		=> 'save changes applied on a motherboard model',
+			remove 		=> 'delete a motherboard model',
+		}, 
+	};
+}
 
+=head2 get
+
+=cut
+
+sub get {
+    my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Motherboardmodel->new need an id named argument!";	
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $adm = Administrator->new();
+   	my $motherboardmodel = $adm->{db}->resultset('Motherboardmodel')->find($args{id});
+   	if(not defined $motherboardmodel) {
+   		$errmsg = "Entity::Motherboardmodel->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	} 
+   	my $entity_id = $motherboardmodel->motherboardmodel_entities->first->get_column('entity_id');
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard model with id $args{id}");
+   	}
+  	my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
+   	return $self;
+}
+
+=head2 getMotherboardmodels
+
+=cut
+
+sub getMotherboardmodels {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{hash} or ! defined $args{hash})) { 
+		$errmsg = "Entity::getMotherboardmodels need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+   	return $class->SUPER::getEntities( %args,  type => "Motherboardmodel");
+}
+
+=head2 new
+
+=cut
+
+sub new {
+	my $class = shift;
+    my %args = @_;
+
+	# Check attrs ad throw exception if attrs missed or incorrect
+	my $attrs = $class->checkAttrs(attrs => \%args);
+	
+	# We create a new DBIx containing new entity (only global attrs)
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboardmodel");
+	
+	# Set the extended parameters
+	$self->{_ext_attrs} = $attrs->{extended};
+
+    return $self;
+}
+
+=head2 create
+
+=cut
+
+sub create {}
+
+=head2 update
+
+=cut 
+
+sub update {}
+
+=head2 remove
+
+=cut
+
+sub remove {}
+
+=head2 toString
+
+	desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+	my $self = shift;
+	my $string = $self->{_dbix}->get_column('motherboardmodel_name')." ".$self->{_dbix}->get_column('motherboardmodel_brand');
+	return $string;
+}
+
+=head2 checkAttr
+	
+	Desc : This function check new object attribute
+	args: 
+		name : String : Attribute name
+		value : String : Attribute value
+	return : No return value only throw exception if error
+
+=cut
+
+sub checkAttr{
+	my $self = shift;
+	my %args = @_;
+	my $attr_def = ATTR_DEF;
+
+	if ((! exists $args{name} or ! defined $args{name}) ||
+		(! exists $args{value})) { 
+		$errmsg = "Entity::Motherboardmodel->checkAttr need a name and value named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
+		$errmsg = "Entity::Motherboardmodel->checkAttr detect a null value for a mandatory attr ($args{name})";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+	}
+
+	if (!exists $attr_def->{$args{name}}){
+		$errmsg = "Entity::Motherboardmodel->checkAttr invalid attr name : '$args{name}'";
+		$log->error($errmsg);	
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+
+	# Here check attr value
+}
 
 =head2 checkAttrs
 	
@@ -94,75 +239,6 @@ sub checkAttrs {
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
 	return {global => \%global_attrs, extended => \%ext_attrs};
-}
-
-=head2 checkAttr
-	
-	Desc : This function check new object attribute
-	args: 
-		name : String : Attribute name
-		value : String : Attribute value
-	return : No return value only throw exception if error
-
-=cut
-
-sub checkAttr{
-	my $self = shift;
-	my %args = @_;
-	my $attr_def = ATTR_DEF;
-
-	if ((! exists $args{name} or ! defined $args{name}) ||
-		(! exists $args{value})) { 
-		$errmsg = "Entity::Motherboardmodel->checkAttr need a name and value named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
-		$errmsg = "Entity::Motherboardmodel->checkAttr detect a null value for a mandatory attr ($args{name})";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
-	}
-
-	if (!exists $attr_def->{$args{name}}){
-		$errmsg = "Entity::Motherboardmodel->checkAttr invalid attr name : '$args{name}'";
-		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
-	# Here check attr value
-}
-
-sub extension { return undef; }
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{rightschecker} or ! defined $args{rightschecker})) { 
-		$errmsg = "Entity::Motherboardmodel->new need a data and rightschecker named argument!";	
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
-	my $ext_attrs = $args{ext_attrs};
-	delete $args{ext_attrs};
-    my $self = $class->SUPER::new( %args );
-	$self->{_ext_attrs} = $ext_attrs;
-	$self->{extension} = $self->extension();
-    return $self;
-}
-
-=head2 toString
-
-	desc: return a string representation of the entity
-
-=cut
-
-sub toString {
-	my $self = shift;
-	my $string = $self->{_dbix}->get_column('motherboardmodel_name')." ".$self->{_dbix}->get_column('motherboardmodel_brand');
-	return $string;
 }
 
 1;

@@ -1,7 +1,7 @@
 function refresh_status() {
 	var xhr = new XMLHttpRequest();
 	//if (document.getElementById("admin_status") == null) return;
-	xhr.open("GET", "http://127.0.0.1/cgi/mcsui.cgi/systemstatus/xml_admin_status");
+	xhr.open("GET", "/cgi/kanopya.cgi/systemstatus/xml_admin_status");
 	xhr.overrideMimeType('text/xml');
 	xhr.onreadystatechange = function() {
 	  if (xhr.readyState == 4 && xhr.status == 200) {

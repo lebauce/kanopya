@@ -34,6 +34,10 @@ use Exception::Class (
 	isa => 'Mcs::Exception::Execution',
 	description => 'Operation execution reported',
 	},
+	Mcs::Exception::AuthentificationRequired => {
+	isa => 'Mcs::Exception',
+	description => 'Incorrect Login/Password values pair',
+	},
 	Mcs::Exception::LoginFailed => {
 	isa => 'Mcs::Exception',
 	description => 'Incorrect Login/Password values pair',
@@ -47,13 +51,6 @@ use Exception::Class (
 	description => 'Permission denied'
 	}
     
-    );
+);
 
-#$SIG{__DIE__} = \&handle_die;
-
-sub handle_die {
-	my $err = shift;
-	warn("Caught error: ", $err);
-	exit(55);
-}
 1;
