@@ -72,38 +72,12 @@ eval {
     is ($c2->getAttr(name=>'active'), 0, "Deactivate Cluster");
 
     # Cluster delete
-    $c2->delete();
-    eval { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))};
-    if ($@){
-	my $err = $@;
-	print $err->trace->as_string();
-    }
-#    throws_ok { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
-#    "Try to get a deleted cluster";
-
-
-# Ici probleme d instanciation d une meme row dans 2 entity et suppression de l une d elle.
-#    note("Cluster deleted");
-#    $c2->setAttr(name => "cluster_desc", value => "New descrition");
-#    is($c2->getAttr(name => 'systemimage_id'), 1,  "Test getAttr from an entity removed from db");
-#    print "cluster is changed : " . $c2->{_dbix}->is_changed() . "\n";
-#    print "cluster is in storage : " . $c2->{_dbix}->in_storage() . "\n";
-#    $c2->save();
-
-
-
-
-#    my $cluster = Entity::Cluster->get(id => "1");
-#    print "Admin cluster has a id : <" . $cluster->getAttr(name => "cluster_id") . ">\n";
-#    my $cluster2 = Entity::Cluster->new(cluster_name => "toto", cluster_min_node => "1", cluster_max_node => "2", cluster_priority => "100", systemimage_id => "1");
-#    print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . ">\n";
-#    $cluster2->save();
- #   print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . "> and its id is". $cluster2->getAttr(name => "cluster_id") ."\n";
-#    $cluster2->addComponent(component_id=>2);
-#    my $comp_instance = $cluster2->getComponent(name=>"Apache", version=>2);
-#    print "component instance added, its id is " . $comp_instance->getAttr(name => "component_instance_id") . " and its component id is " . $comp_instance->getAttr(name => "component_id") . "\n";
-#    note("Test Cluster.pm pod");
-#    pod_file_ok( '/opt/kanopya/lib/administrator/Entity/Cluster.pm', 'stuff docs are valid POD' );
+    $c2->remove();
+    $executor->execnround(run => 1); 
+    throws_ok { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
+    "Try to get a deleted cluster";
+    note("Test Cluster.pm pod");
+    pod_file_ok( '/opt/kanopya/lib/administrator/Entity/Cluster.pm', 'stuff docs are valid POD' );
 
 };
 if($@) {

@@ -38,20 +38,21 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::ERemoveMotherboardFromCluster;
+use base "EOperation";
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
+use Entity::Cluster;
+use Entity::Systemimage;
 use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = '1.00';
 
 =head2 new
 
@@ -82,6 +83,18 @@ sub _init {
 	return;
 }
 
+sub checkOp{
+    my $self = shift;
+	my %args = @_;
+    
+    if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
+		my $msg = "Node is still in stopping state.";
+		$log->error($msg);
+		throw Mcs::Exception::Execution::OperationReported(error => $msg);
+	}
+ 
+}
+
 =head2 prepare
 
 	$op->prepare();
@@ -102,31 +115,56 @@ sub prepare {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	my $adm = Administrator->new();
+
 	my $params = $self->_getOperation()->getParams();
 	
-	# Get instance of Motherboard Entity
-	$log->info("Load Motherboard instance");
-	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
-	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
-	
-	
-	if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
-		my $msg = "Node is still in stopping state.";
-		$log->error($msg);
-		throw Mcs::Exception::Execution::OperationReported(error => $msg);
-	}
+# Instantiate motherboard and so check if exists
+    $log->debug("checking motherboard existence with id <$params->{motherboard_id}>");
+    eval {
+    	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+    };
+    if($@) {
+    	$errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+ 	# Cluster instantiation
+    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
+    eval {
+    	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+	#### Get cluster components Entities
+	$log->info("Load cluster component instances");
+	$self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
+	$log->debug("Load all component from cluster");
+    
+	eval {
+        $self->checkOp(params => $params);
+    };
+    if ($@) {
+        my $error = $@;
+		$errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
 		
 	#### Instanciate Clusters
 	$log->info("Get Internal Clusters");
 	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{nas});
+	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
 	$log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 	# Instanciate executor Cluster
-	$self->{executor}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{executor});
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 	$log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
 	# Instanciate bootserver Cluster
-	$self->{bootserver}->{obj} = $adm->getEntity(type => "Cluster", id => $args{internal_cluster}->{bootserver});
+	$self->{bootserver}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{bootserver});
 	$log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
 	
 	
@@ -154,40 +192,25 @@ sub prepare {
 	# Get context for executor
 	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
-
-	my $cluster_id = $params->{cluster_id};
-	#### Get instance of Cluster Entity
-	$log->info("Load cluster instance");
-	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $cluster_id);
-	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
-
-	#### Get cluster components Entities
-	$log->info("Load cluster component instances");
-	$self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(administrator => $adm, category => "all");
-	$log->debug("Load all component from cluster");
 	
 	## Instanciate Component needed (here LVM, ISCSITARGET, DHCP and TFTPD on nas and bootserver cluster)
 	# Instanciate Storage component.
 	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2",
-										 administrator => $adm);
+										 version => "2");
 	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 	$log->info("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
 	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1",
-																					  administrator => $adm));
+																					  version=> "1"));
 	$log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
 	# Instanciate tftpd component.
 	$self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Atftpd",
-																					  version=> "0",
-																					  administrator => $adm));
+																					  version=> "0"));
 																					  
 	$log->info("Load tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
 	# instanciate dhcpd component.
 	$self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Dhcpd",
-																					  version=> "3",
-																					  administrator => $adm));
+																					  version=> "3"));
 																					  
 	$log->info("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
@@ -299,14 +322,63 @@ sub execute {
 	$self->{_objs}->{motherboard}->save();
 }
 
+=head1 DIAGNOSTICS
 
-1;
+Exceptions are thrown when mandatory arguments are missing.
+Exception : Kanopya::Exception::Internal::IncorrectParam
 
-__END__
+=head1 CONFIGURATION AND ENVIRONMENT
+
+This module need to be used into Kanopya environment. (see Kanopya presentation)
+This module is a part of Administrator package so refers to Administrator configuration
+
+=head1 DEPENDENCIES
+
+This module depends of 
+
+=over
+
+=item KanopyaException module used to throw exceptions managed by handling programs
+
+=item Entity::Component module which is its mother class implementing global component method
+
+=back
+
+=head1 INCOMPATIBILITIES
+
+None
+
+=head1 BUGS AND LIMITATIONS
+
+There are no known bugs in this module.
+
+Please report problems to <Maintainer name(s)> (<contact address>)
+
+Patches are welcome.
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+<HederaTech Dev Team> (<dev@hederatech.com>)
+
+=head1 LICENCE AND COPYRIGHT
+
+Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING.  If not, write to the
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA 02110-1301 USA.
 
 =cut
+
+1;

@@ -186,7 +186,16 @@ sub update {}
 
 =cut
 
-sub remove {}
+sub remove {
+    my $self = shift;
+    
+    $log->debug("New Operation RemoveMotherboard with systemimage_id : <".$self->getAttr(name=>"motherboard_id").">");
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'RemoveMotherboard',
+        params   => {motherboard_id => $self->getAttr(name=>"motherboard_id")},
+    );
+}
 
 =head2 checkAttrs
 	
@@ -339,7 +348,7 @@ sub getEtcName {
 	return "etc_". $mac;
 }
 
-=head getMacName
+=head2 getMacName
 
 return Mac address with separator : replaced by _
 
@@ -352,7 +361,7 @@ sub getMacName {
 }
 
 
-=head getEtcDev
+=head2 getEtcDev
 
 get etc attributes used by this motherboard
 

@@ -94,9 +94,9 @@ sub checkOp{
     
     
     # check if systemimage is not active
-    $log->debug("checking source systemimage active value <$args{params}->{systemimage_id}>");
+    $log->debug("checking source systemimage active value <".$self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id').">");
    	if($self->{_objs}->{systemimage_source}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::ECloneSystemimage->checkop : systemimage $args{params}->{systemimage_id} is already active";
+	    	$errmsg = "EOperation::ECloneSystemimage->checkop : systemimage <".$self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id')."> is already active";
 	    	$log->error($errmsg);
 	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
