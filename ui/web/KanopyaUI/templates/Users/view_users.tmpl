@@ -1,0 +1,21 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<div id="content">
+<table class="simplelisting">
+	<caption>Users</caption>
+	<TMPL_LOOP NAME=users_list>
+	<td><span class="bold"><TMPL_VAR NAME=user_firstname> <TMPL_VAR NAME=user_lastname></span></td>
+	<td><a class="imgManage" href="/cgi/kanopya.cgi/users/view_userdetails?user_id=<TMPL_VAR NAME=user_id>">details</a></td>
+	</tr>
+	</TMPL_LOOP>
+</table>
+<div class="actions">
+<TMPL_IF NAME=can_create>
+<a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/users/form_adduser', 'create a user', 600, 400,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a user</a>
+<p class="italic">Create a new user.</p>
+</TMPL_IF>
+&nbsp;
+</div>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

@@ -1,0 +1,19 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<div id="content">
+<table class="simplelisting">
+	<caption>Groups</caption>
+	<TMPL_LOOP NAME=groups_list>
+	<td><span class="bold"><TMPL_VAR NAME=groups_name></span> (<TMPL_VAR NAME=groups_type> : <TMPL_VAR NAME=groups_size>) <span class="italic"><TMPL_VAR NAME=groups_desc></span></td>
+	<td><a class="imgManage" href="/cgi/kanopya.cgi/groups/view_groupdetails?groups_id=<TMPL_VAR NAME=groups_id>">details</a></td>
+	</tr>
+	</TMPL_LOOP>
+</table>
+<div class="actions">
+<TMPL_IF NAME=can_create>
+<a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/groups/form_addgroup', 'create a group', 600, 400,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a group</a>
+<p class="italic">Create a new group.</p></TMPL_IF>&nbsp;
+</div>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

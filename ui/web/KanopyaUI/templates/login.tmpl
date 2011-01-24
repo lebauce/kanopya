@@ -1,0 +1,25 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Microcluster Web Interface : login</title>
+		<link href="/css/login.css" rel="stylesheet" type="text/css" media="screen" />
+	</head>
+<body>
+<div id="container">
+	<img id="biglogo" src="/images/biglogo.png" type="image/png" />
+	<h2>Microcluster Administrator Access</h2>
+	<form method="POST" action="/cgi/kanopya.cgi/login/process_login">
+	<table>
+		<tr><td class="label">login:</td><td><input type="text" name="login" maxlength="12" size="12"/><TMPL_VAR NAME=err_login></td></tr>
+		<tr><td class="label">password:</td><td><input type="password" name="password" maxlength="12" size="12"/><TMPL_VAR NAME=err_password></li></td></tr>
+		<tr><td colspan="2"><br /></td></tr>
+		<tr><td class="button" colspan="2"><input type="submit" name="loguser" value="ok" /></td></tr>
+	</table>
+	
+	
+	<div class="small">Hedera Technology</div>
+</div>
+</body>
+</html>
+<TMPL_IF NAME=some_errors></TMPL_IF>

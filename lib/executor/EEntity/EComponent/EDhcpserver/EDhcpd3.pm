@@ -73,7 +73,7 @@ sub generate {
 	# create Template object
 	my $template = Template->new($config);
     my $input = "dhcpd.conf.tt";
-    my $data = $self->_getEntity()->getTemplateData();
+    my $data = $self->_getEntity()->getConf();
 	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EDhcpserver::EDhcpd3->generate : error during template generation : $template->error;";

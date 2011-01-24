@@ -1,0 +1,22 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<div id="content">
+<TMPL_LOOP NAME=systemimages_list>
+<table class="listing">
+<tr><td colspan="3"><h1><TMPL_VAR NAME=systemimage_name></h1></td></tr>
+<tr><td><TMPL_VAR NAME=distribution></td><td>
+<TMPL_IF NAME=active>Active<TMPL_ELSE>Deactivated</TMPL_IF></td><td class="toright">
+<a class="imgManage" href="/cgi/kanopya.cgi/systemimages/view_systemimagedetails?systemimage_id=<TMPL_VAR NAME=systemimage_id>">details</a></td></tr>
+<tr><td class="italic" colspan="3"><TMPL_VAR NAME=systemimage_desc></td></tr>
+</table>
+</TMPL_LOOP>
+
+<div class="actions">
+<a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/systemimages/form_addsystemimage', 'create a new system image', 700, 280,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a system image</a>
+<p class="italic">Create a new system image.</p>
+</div>
+
+
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

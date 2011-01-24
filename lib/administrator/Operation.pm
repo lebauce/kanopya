@@ -40,49 +40,133 @@ package Operation;
 
 use strict;
 use warnings;
-use lib qw(/workspace/mcs/Common/Lib);
+
 use Log::Log4perl "get_logger";
 
-use McsExceptions;
+use Kanopya::Exceptions;
 
 my $log = get_logger("administrator");
+our $VERSION = '1.00';
 my $errmsg;
 
-=head2 new
+sub enqueue {
+    my $class = shift;
+    my %args = @_;
+	if ((! exists $args{priority} or ! defined $args{priority}) ||
+		(! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{params} or ! defined $args{params})) {
+			$errmsg = "Operation->enqueue need a priority, params and type named argument!";
+			$log->error($errmsg); 
+			throw Kanopya::Exception::Internal(error => $errmsg); 
+	}
+    my $op = Operation->new(%args);
+    $op->save();
+}
+
+sub new {
+    my $class = shift;
+	my %args = @_;
+	my $self = {};
+	if ((! exists $args{priority} or ! defined $args{priority}) ||
+		(! exists $args{type} or ! defined $args{type}) ||
+		(! exists $args{params} or ! defined $args{params})) {
+			$errmsg = "Operation->new need a priority, params and type named argument!";
+			$log->error($errmsg); 
+			throw Kanopya::Exception::Internal(error => $errmsg); 
+	}
+	my $adm = Administrator->new();
+	
+	my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef; 
+	my $execution_rank = $adm->_get_lastRank() + 1;
+	my $user_id = $adm->{_rightchecker}->{user_id};
+	
+	$self->{_dbix} = $adm->_newDbix( table => 'Operation', row => { 	type => $args{type},
+																	execution_rank => $execution_rank,
+																	user_id => $user_id,
+																	priority => $args{priority},
+																	creation_date => \"CURRENT_DATE()",
+																	creation_time => \"CURRENT_TIME()",
+																	hoped_execution_time => $hoped_execution_time
+																	});
+    $self->{_params} = $args{params};
+	bless $self, $class;
+
+    return $self;
+}
+
+=head2 get
 	
 	Class : Public
 	
 	Desc : This method instanciate Operation.
 	
 	Args :
-		rightschecker : Rightschecker : Object use to check write and update entity_id
 		data : DBIx class: object data
 		params : hashref : Operation parameters
 	Return : Operation, this class could not be instanciated !!
 	
 =cut
 
-sub new {
+sub get {
     my $class = shift;
     my %args = @_;
-    
-    if ((! exists $args{data} or ! defined $args{data}) ||
-		(! exists $args{administrator} or ! defined $args{administrator})||
-		(! exists $args{params} or ! defined $args{params})) { 
-		$errmsg = "Operation->new need a data, params and administrator named argument!"; 
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+	my $self = {};
+	if ((! exists $args{id} or ! defined $args{id})) {
+			$errmsg = "Operation->get need an id named argument!";
+			$log->error($errmsg); 
+			throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
-    
-    # Here Check if users can execution this operation (We have the rightschecker)
-
-    my $self = {
-		_rightschecker => $args{administrator}->{_rightschecker},
-        _dbix => $args{data},
-        _params => $args{params},
-    };
+	my $adm = Administrator->new();
+	$self->{_dbix} = $adm->{db}->resultset( "Operation" )->find(  $args{id});
+#	$self->{_dbix} = $adm->getRow(id=>$args{id}, table => "Operation");
+	# Get Operation parameters
+	my $params_rs = $self->{_dbix}->operation_parameters;
+	my %params;
+	while ( my $param = $params_rs->next ) {
+		$params{ $param->name } = $param->value;
+	}
+	$self->{_params} = \%params;
+	$log->debug("Parameters get <" . %params . ">");
     bless $self, $class;
     return $self;
+
+}
+
+=head2 getNextOp
+	
+	Class : Public
+	
+	Desc : This method return next operation to execute
+
+	Returns the concrete Operation with the execution_rank min 
+	
+=cut
+
+sub getNextOp {
+	my $adm = Administrator->new();
+	# Get all operation
+	my $all_ops = $adm->_getDbixFromHash( table => 'Operation', hash => {});
+	$log->debug("Get Operation $all_ops");
+	
+	# Choose the next operation to be treated :
+	# if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
+	# unless operation is not execute at this moment
+	$log->error("Time is : ", time);
+	my $opdata = $all_ops->search( 
+		{ -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
+		{ order_by => { -asc => 'execution_rank' }}   
+	)->next();
+	if (! defined $opdata){
+	    $log->info("No operation in queue");
+	    return;
+	}
+	my $op = Operation->get(id => $opdata->get_column("operation_id"));
+	return $op;
+}
+
+sub getType{
+    my $self = shift;
+    return $self->{_dbix}->get_column('type');
 }
 
 =head2 delete
@@ -123,7 +207,7 @@ sub getAttr {
 	if (! exists $args{attr_name} or ! defined $args{attr_name}) { 
 		$errmsg = "Operation->getAttr need an attr_name named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
 	if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
@@ -132,7 +216,7 @@ sub getAttr {
 	} else {
 		$errmsg = "Operation->getAttr : Wrong value asked!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	return $value;
 }
@@ -190,7 +274,7 @@ sub setHopedExecutionTime {
 	if (! exists $args{value} or ! defined $args{value}) { 
 		$errmsg = "Operation->setHopedExecutionTime need a value named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $t = time + $args{value};
 	$self->{_dbix}->set_column('hoped_execution_time', $t);
