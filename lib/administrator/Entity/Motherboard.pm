@@ -113,7 +113,18 @@ use constant ATTR_DEF => {
 			};
 
 
-sub methods {}
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new motherboard',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing motherboard',
+			update		=> 'save changes applied on a motherboard',
+			remove 		=> 'delete a motherboard',
+		}, 
+	};
+}
 
 =head2 get
 

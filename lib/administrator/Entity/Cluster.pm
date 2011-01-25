@@ -85,7 +85,20 @@ use constant ATTR_DEF => {
 										is_editable		=> 1}
 			};
 
-sub methods {}
+sub methods {
+	return {
+		class 		=> {
+			create => 'create and save a new cluster',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing cluster',
+			update		=> 'save changes applied on a cluster',
+			remove 		=> 'delete a cluster',
+			addNode		=> 'add a node to this cluster',
+			removeNode	=> 'remove a node from this cluster'
+		}, 
+	};
+}
 
 =head2 get
 
@@ -230,31 +243,9 @@ sub remove {
     );
 }
 
-sub extension {
-	return "clusterdetails";
-}
+sub extension { return "clusterdetails"; }
 
-sub addMotherboard{
-    my $self = shift;
-    my %args = @_;
-    my %params;
-
-	if ((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) {
-		$errmsg = "Entity::Cluster->addMotherboard need a motherboard_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-
-    $params{'motherboard_id'} = $args{'motherboard_id'};
-    $params{'cluster_id'} = $self->getAttr(name => 'cluster_id');
-    print Dumper %params;
-    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
-    Operation->enqueue(priority => 200,
-                   type     => 'AddMotherboardInCluster',
-                   params   => \%params);
-}
-
-sub activate{
+sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
@@ -262,7 +253,8 @@ sub activate{
                    type     => 'ActivateCluster',
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
 }
-sub deactivate{
+
+sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
@@ -378,7 +370,7 @@ sub toString {
 
 =cut
 
-sub getComponents{
+sub getComponents {
 	my $self = shift;
     my %args = @_;
 
@@ -398,13 +390,20 @@ sub getComponents{
 	$log->debug("Category is $args{category}");
 	while ( my $comp_instance_row = $comp_instance_rs->next ) {
 		my $comp_category = $comp_instance_row->get_column('component_category');
+		$log->debug("Component category: $comp_category");
 		my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
+		$log->debug("Component instance id: $comp_instance_id");
 		my $comp_name = $comp_instance_row->get_column('component_name');
-		my $comp_version = comp_instance_row->get_column('component_version');
+		$log->debug("Component name: $comp_name");
+		my $comp_version = $comp_instance_row->get_column('component_version');
+		$log->debug("Component version: $comp_version");
 		if (($args{category} eq "all")||
 			($args{category} eq $comp_category)){
 			$log->debug("One component instance found with " . ref($comp_instance_row));
-			$comps{$comp_instance_id} = "Entity::Component::$comp_category::$comp_name"."$comp_version"->get(id =>$comp_instance_id);
+			my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+			my $loc = General::getLocFromClass(entityclass=>$class);
+			eval { require $loc; };
+			$comps{$comp_instance_id} = $class->get(id =>$comp_instance_id);
 		}
 	}
 	return \%comps;
@@ -545,7 +544,7 @@ sub removeComponent {
 
 =cut
 
-sub getMotherboards{
+sub getMotherboards {
 	my $self = shift;
     #my %args = @_;
 
@@ -578,4 +577,55 @@ sub getPublicIps {
 	}
 	return \@pub_ip;
 }
+
+=head2 addNode
+
+=cut
+
+sub addNode {
+	my $self = shift;
+	my %args = @_;
+	if((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) {
+	   	$errmsg = "Entity::Cluster->addNode needs motherboard_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+		
+	my $adm = Administrator->new();
+	# addNode method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addNode');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
+   	}
+    my %params = {
+    	cluster_id => $self->getAttr(name =>"cluster_id"),
+    	motherboard_id => $args{motherboard_id}, 
+    };
+    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'AddMotherboardInCluster',
+        params   => \%params,
+    );
+}
+
+=head2 removeNode 
+
+=cut
+
+sub removeNode {}
+
+=head2 start
+
+=cut
+
+sub start {}
+
+=head2 stop 
+
+=cut
+
+sub stop {}
+
+
 1;

@@ -3,6 +3,7 @@ use base 'KanopyaUI::CGI';
 
 use strict;
 use warnings;
+use Entity::Component;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -18,7 +19,7 @@ sub view_components : StartRunmode {
 	$tmpl->param('submComponents' => 1);
 	
 	my $components = [];
-	$components = $self->{admin}->getComponentsListByCategory();
+	$components = Entity::Component->getComponentsByCategory();
 	
 	$tmpl->param('components_list' => $components);
 	return $tmpl->output();

@@ -3,6 +3,7 @@ use base 'KanopyaUI::CGI';
 
 use strict;
 use warnings;
+use Entity::Distribution;
 
 # distributions listing page
 
@@ -13,7 +14,7 @@ sub view_distributions : StartRunmode {
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submDistributions' => 1);
 
-    my @edistributions = $self->{adm}->getEntities(type => 'Distribution', hash => {});
+    my @edistributions = Entity::Distribution->getDistributions(hash => {});
     my $distributions = [];
     
     foreach my $m (@edistributions) {
@@ -44,7 +45,7 @@ sub view_distributiondetails : Runmode {
 	$tmpl->param('submDistributions' => 1);
 	
 	my $query = $self->query();
-	my $edistribution = $self->{adm}->getEntity(type => 'Distribution', id => $query->param('distribution_id'));
+	my $edistribution = Entity::Distribution->get(id => $query->param('distribution_id'));
 	
 	$tmpl->param('distribution_id' => $edistribution->getAttr(name => 'distribution_id'));
 	$tmpl->param('distribution_name' => $edistribution->getAttr(name => 'distribution_name'));

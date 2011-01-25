@@ -37,7 +37,17 @@ use constant ATTR_DEF => {
 
 };
 
-sub methods {}
+sub methods {	
+	return {
+		class 		=> {
+			create => 'create and save a new kernel',
+		},
+		instance 	=> {
+			get			=> 'retrieve an existing kernel',
+			remove 		=> 'delete a kernel',
+		}, 
+	};
+}
 
 =head2 get
 
@@ -95,12 +105,6 @@ sub new {
     return $self;
 
 }
-
-=head2 update
-
-=cut
-
-sub update {}
 
 =head2 remove
 
@@ -196,14 +200,6 @@ sub checkAttr{
 
 	# Here check attr value
 }
-
-sub extension { return undef; }
-
-
-
-
-
-
 
 =head2 toString
 

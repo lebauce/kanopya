@@ -39,7 +39,17 @@ use constant ATTR_DEF => {
 	root_device_id => {pattern => "//", is_mandatory => 1, is_extended => 0}
 };
 
-sub methods {}
+sub methods {
+	return {
+		class => {
+			create => 'create and save a new distribution',
+		},
+		instance => {
+			get => 'retrieve an existing distribution',
+			
+		},
+	};
+}
 
 =head2 get
 

@@ -3,6 +3,7 @@ use base 'KanopyaUI::CGI';
 
 use strict;
 use warnings;
+use Entity::Kernel;
 
 # kernels listing page
 
@@ -13,7 +14,7 @@ sub view_kernels : StartRunmode {
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submKernels' => 1);
 
-    my @ekernels = $self->{'admin'}->getEntities(type => 'Kernel', hash => {});
+    my @ekernels = Entity::Kernel->getKernels(hash => {});
     my $kernels = [];
     
     foreach my $m (@ekernels) {
