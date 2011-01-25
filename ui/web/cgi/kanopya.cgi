@@ -5,7 +5,7 @@ use CGI::Fast();
 use CGI::Application::Dispatch;
 use Log::Log4perl;
 
-Log::Log4perl->init('/opt/kanopya/conf/log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
 use Administrator;
 
 while(my $q = new CGI::Fast) {
