@@ -40,7 +40,7 @@ package Operation;
 
 use strict;
 use warnings;
-
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 use Kanopya::Exceptions;
@@ -126,7 +126,7 @@ sub get {
 		$params{ $param->name } = $param->value;
 	}
 	$self->{_params} = \%params;
-	$log->debug("Parameters get <" . %params . ">");
+	$log->debug("Parameters ", Dumper (%params));
     bless $self, $class;
     return $self;
 
@@ -146,21 +146,22 @@ sub getNextOp {
 	my $adm = Administrator->new();
 	# Get all operation
 	my $all_ops = $adm->_getDbixFromHash( table => 'Operation', hash => {});
-	$log->debug("Get Operation $all_ops");
+	#$log->debug("Get Operation $all_ops");
 	
 	# Choose the next operation to be treated :
 	# if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
 	# unless operation is not execute at this moment
-	$log->error("Time is : ", time);
+	#$log->error("Time is : ", time);
 	my $opdata = $all_ops->search( 
 		{ -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
 		{ order_by => { -asc => 'execution_rank' }}   
 	)->next();
 	if (! defined $opdata){
-	    $log->info("No operation in queue");
+	    #$log->info("No operation in queue");
 	    return;
 	}
 	my $op = Operation->get(id => $opdata->get_column("operation_id"));
+	$log->info("Operation execution: ".$op->getAttr(attr_name => 'type'));
 	return $op;
 }
 
