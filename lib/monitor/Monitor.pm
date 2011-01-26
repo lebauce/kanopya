@@ -50,7 +50,8 @@ use strict;
 use warnings;
 use RRDTool::OO;
 use XML::Simple;
-use AdminWrapper;
+use Administrator;
+use Entity::Cluster;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -103,8 +104,9 @@ sub new {
 	mkdir "$self->{_graph_dir}/tmp";
 
 	# Get Administrator
-	my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
-	$self->{_admin_wrap} = AdminWrapper->new( login => $login, password => $password );
+	my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});	
+	Administrator::authenticate( login => $login, password => $password );
+	$self->{_admin} = Administrator->new();
 	
     return $self;
 }
@@ -138,14 +140,36 @@ sub _mbState {
 
 sub retrieveHostsByCluster {
 	my $self = shift;
-	
-	return ($self->{_admin_wrap})->retrieveHostsByCluster();
+
+	my %hosts_by_cluster;
+
+	my $adm = $self->{_admin};
+	my @clusters = Entity::Cluster->getClusters( hash => { } );
+	foreach my $cluster (@clusters) {
+		my $components = $cluster->getComponents(category => 'all');
+		my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
+
+		my %mb_info;
+		foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
+			my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
+			my $mb_ip = $mb->getAttr( name => "motherboard_internal_ip" );
+			my $mb_state = $mb->getAttr( name => "motherboard_state" );
+
+			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };
+		}
+		$hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
+	}	
+
+	return %hosts_by_cluster;
 }
 
 sub getClustersName {
 	my $self = shift;
 
-	return ($self->{_admin_wrap})->getClustersName();
+	my @clusters = Entity::Cluster->getClusters( hash => { } );
+	my @clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
+	
+	return @clustersName;	
 }
 
 
@@ -272,7 +296,7 @@ sub getSetDesc {
 	my $set_label = $args{set_label};
 	if ($set_label =~ /(.+)\..+/ ) {$set_label = $1;}
 		
-	return $self->{_admin_wrap}{_admin}->{manager}{monitor}->getSetDesc( set_name => $set_label );
+	return $self->{_admin}->{manager}{monitor}->getSetDesc( set_name => $set_label );
 }
 
 =head2 rrdName

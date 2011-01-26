@@ -5,7 +5,7 @@ use warnings;
 use threads;
 #use threads::shared;
 use Net::Ping;
-
+use Entity::Motherboard;
 use Data::Dumper;
 
 use base "Monitor";
@@ -28,7 +28,7 @@ sub onStateChanged {
 	my $self = shift;
 	my %args = @_;	
 	my ($mb, $last_state, $new_state) = ($args{mb}, $args{last_state}, $args{new_state});
-	my $adm = $self->{_admin_wrap};
+	my $adm = $self->{_admin};
 	
 	if ( $last_state eq 'starting' && $new_state eq 'up') {
 		$adm->newOp(
@@ -66,17 +66,15 @@ sub _manageHostState {
 	
 	my $starting_max_time = $self->{_node_states}{starting_max_time};
 	my $stopping_max_time = $self->{_node_states}{stopping_max_time};
-	my $adm = $self->{_admin_wrap};
+	my $adm = $self->{_admin};
 	my $reachable = $args{reachable};
 	my $host_ip = $args{host};
 
 	eval {
-		
-		#TODO 	On peut éviter de refaire une requête si on conserve l'état lors de la recupération des hosts au début
-		#		Mais risque de ne plus être à jour..
-		
 		# Retrieve motherboard
-		my @mb_res = $adm->getEntities( type => "Motherboard", hash => { motherboard_internal_ip => $host_ip } );	
+		# TODO keep the motherboard ID and get it with this id! (ip can be not unique)
+		my @mb_res = Entity::Motherboard->getMotherboards( hash => { motherboard_internal_ip => $host_ip } );
+		die "Several motherboards with ip '$host_ip', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
 		my $mb = shift @mb_res;
 		die "motherboard '$host_ip' no more in DB" if (not defined $mb);
 
@@ -151,8 +149,6 @@ sub updateHostData {
 
 	my $start_time = time();
 
-	#$self->{_admin_wrap} = AdminWrapper->new( );
-
 	my $host = $args{host_ip};
 
 	my %all_values = ();
@@ -219,14 +215,14 @@ sub updateHostData {
 					my $mess = "Can not reach component '$comp' on $host";
 					if ( $args{host_state} =~ "up" ) {
 						$log->info( "Unreachable host '$host' (component '$comp') => we stop collecting data.");
-						$self->{_admin_wrap}->addMessage(from => 'Monitor', level => "warning", content => $mess );
+						$self->{_admin}->addMessage(from => 'Monitor', level => "warning", content => $mess );
 					}
 					$host_reachable = 0;
 					last SET; # we stop collecting data sets
 				} else {
 					my $mess = "[$host] Error while collecting data set '$set->{label}' => $error";
 					$log->warn($mess);
-					$self->{_admin_wrap}->addMessage(from => 'Monitor', level => "warning", content => $mess );
+					$self->{_admin}->addMessage(from => 'Monitor', level => "warning", content => $mess );
 					$error_happened = 1;
 				}
 				next SET; # continue collecting the other data sets
@@ -420,14 +416,15 @@ sub update {
 			return;
 		}
 		
-		my $monitor_manager = $self->{_admin_wrap}{_admin}->{manager}{monitor};
+		my $monitor_manager = $self->{_admin}->{manager}{monitor};
 		
 		#############################
 		# Update data for each host #
 		#############################
 		my %threads = ();
 		while ( my ($cluster_name, $cluster_nodes) = each %hosts_by_cluster ) {
-			my $cluster_id = $self->{_admin_wrap}->getClusterId( cluster_name => $cluster_name );
+			#TODO keep cluster id from the beginning (get by name is not really good)
+			my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster_name } )->getAttr( name => "cluster_id");
 			my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster_id );
 			for my $host_info (values %$cluster_nodes) {
 				# We create a thread for each host to don't block update if a host is unreachable
@@ -470,6 +467,9 @@ sub update {
 	if ($@) {
 		my $error = $@;
 		$log->error( $error );
+		if ($error->can('trace')) {
+			$log->error( $error->trace->as_string );
+		}
 	}
 
 	#find_cycle($self);	
@@ -509,7 +509,7 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
-	my $adm = $self->{_admin_wrap};
+	my $adm = $self->{_admin};
 	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopia Collector started.");
 	
 	while ( $$running ) {

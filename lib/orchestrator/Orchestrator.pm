@@ -54,7 +54,8 @@ use warnings;
 use Monitor::Retriever;
 use XML::Simple;
 use General;
-use AdminWrapper;
+use Administrator;
+use Entity::Cluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
 use Log::Log4perl "get_logger";
@@ -100,7 +101,8 @@ sub new {
 	
 	# Get Administrator
 	my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
-	$self->{_admin_wrap} = AdminWrapper->new( login => $login, password => $password );
+	Administrator::authenticate( login => $login, password => $password );
+	$self->{_admin} = Administrator->new();
 	$self->{_monitor} = Monitor::Retriever->new( );
 	
     return $self;
@@ -130,10 +132,12 @@ sub manage {
 			$log->info(" => skip cluster $cluster\n");
 			next CLUSTER;
 		}
-		my $cluster_id = $self->{_admin_wrap}->getClusterId( cluster_name => $cluster );
-	
+
 		eval {
-			my $rules_manager = $self->{_admin_wrap}{_admin}->{manager}{rules};
+			#TODO keep cluster id from the beginning (get by name is not really good)
+			my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
+		
+			my $rules_manager = $self->{_admin}->{manager}{rules};
 			
 			# Solve rules
 			my $rules = $rules_manager->getClusterRules( cluster_id => $cluster_id );
@@ -472,9 +476,11 @@ sub _isOpInQueue {
     my $cluster = $args{cluster};
     my $type = $args{type};
     
-	my $adm = $self->{_admin_wrap};
-	
-	my $cluster_id = $adm->getClusterId( cluster_name => $cluster );
+	my $adm = $self->{_admin};
+
+	#TODO keep cluster id from the beginning (get by name is not really good)
+	my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
+		
 	
 	foreach my $op ( @{ $adm->getOperations() } ) {
     	if ($op->{'TYPE'} eq $type) {
@@ -604,39 +610,35 @@ sub requireRemoveNode {
 }
 
 
+sub getClusterByName {
+	my $self = shift;
+    my %args = @_;
+
+   	my @cluster = Entity::Cluster->getClusters( hash => { cluster_name => $args{cluster_name} } );
+   	die "More than one cluster with the name '$args{cluster_name}'" if ( 1 < @cluster);
+   	die "Cluster with name '$args{cluster_name}' no longer exists" if ( 0 == @cluster);
+   	return pop @cluster;
+}
 
 sub addNode {
 	my $self = shift;
     my %args = @_;
     
     $log->info("====> add node in $args{cluster_name}");
-       
-    #my $adm = $args{adm};
-    my $adm = $self->{_admin_wrap};
     
-    my $priority = 1000;
-    
-	my @free_motherboards = $adm->getEntities(type => 'Motherboard', hash => { active => 1, motherboard_state => 'down'});
+	my @free_motherboards = Entity::Motherboard->getMotherboards( hash => { active => 1, motherboard_state => 'down'} );
 	
 	die "No free motherboard to add in cluster '$args{cluster_name}'" if ( scalar @free_motherboards == 0 );
 	
 	#TODO  Select the best node ?
 	my $motherboard = pop @free_motherboards;
 	
- 	my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $args{cluster_name} } );
-   	my $cluster = pop @cluster;
+    my $cluster = $self->getClusterByName( cluster_name => $args{cluster_name} );
     
 	############################################
 	# Enqueue the add motherboard operation
 	############################################
-#	$adm->newOp(type => 'AddMotherboardInCluster',
-#				priority => $priority,
-#				params => {
-#					cluster_id => $cluster->getAttr(name => "cluster_id"),
-#					motherboard_id => $motherboard->getAttr(name => 'motherboard_id')
-#				}
-#	);
-	$adm->opAdd( cluster => $cluster, motherboard => $motherboard, priority => $priority );
+	$cluster->addNode( motherboard_id => $motherboard->getAttr(name => 'motherboard_id') );
 
 }
 
@@ -646,39 +648,30 @@ sub removeNode {
     
     $log->info("====> remove node from $args{cluster_name}");
     
-    my $priority = 1000;
     my $cluster_name = $args{cluster_name};
-    
-    my $adm = $self->{_admin_wrap};
     
     #TODO Find the best node to remove (notation system)
     my $monitor = $self->{_monitor};
     my $cluster_info = $monitor->getClusterHostsInfo( cluster => $cluster_name );
     my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
   
-    my @cluster =  $adm->getEntities(type => 'Cluster', hash => { cluster_name => $cluster_name } );
-    my $cluster = pop @cluster;
-    my $master_node_ip = $adm->getClusterMasterNodeIp( cluster => $cluster );
+	my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
+    my $master_node_ip = $cluster->getMasterNodeIp();
     
     my $node_to_remove = shift @up_nodes;
     ($node_to_remove = shift @up_nodes) if ($node_to_remove->{ip} eq $master_node_ip);
-    die "No up node to remove in cluster '$cluster_name'. This error should never happen!" if ( not defined $node_to_remove );
-    my @mb =  $adm->getEntities(type => 'Motherboard', hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
-    my $mb_to_remove = pop @mb;
-    die "Motherboard '$node_to_remove->{ip}' no more in DB. This error should never happen!" if ( not defined $mb_to_remove );
-
+    die "No up node to remove in cluster '$cluster_name'." if ( not defined $node_to_remove );
+    
+	# TODO keep the motherboard ID and get it with this id! (ip can be not unique)
+	my @mb_res = Entity::Motherboard->getMotherboards( hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
+	die "Several motherboards with ip '$node_to_remove->{ip}', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
+	my $mb_to_remove = shift @mb_res;
+	die "motherboard '$node_to_remove->{ip}' no more in DB" if (not defined $mb_to_remove);
     
     ############################################
 	# Enqueue the remove motherboard operation
 	############################################
-#	$adm->newOp(type => 'RemoveMotherboardFromCluster',
-#				priority => $priority,
-#				params => {
-#					cluster_id => $cluster->getAttr(name => "cluster_id"),
-#					motherboard_id => $mb_to_remove->getAttr(name => 'motherboard_id')
-#				}
-#	);
-	$adm->opRemove( cluster => $cluster, motherboard => $mb_to_remove, priority => $priority );
+	$cluster->removeNode( motherboard_id => $mb_to_remove->getAttr(name => 'motherboard_id') );
 }
 
 =head2 _storeTime
@@ -966,8 +959,7 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
-	my $adm = $self->{_admin_wrap};
-	$adm->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopia Orchestrator started.");
+	$self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopia Orchestrator started.");
 	
 	while ( $$running ) {
 
@@ -985,7 +977,7 @@ sub run {
 
 	}
 	
-	$adm->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopia Orchestrator stopped");
+	$self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopia Orchestrator stopped");
 }
 
 1;
