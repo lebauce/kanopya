@@ -39,7 +39,7 @@ sub save_orchestrator_settings : Runmode {
 		
 	#return Dumper $rules;
 	
-	my $rules_manager = $self->{'admin'}->{manager}->{rules};
+	my $rules_manager = $self->{'adm'}->{manager}->{rules};
 	eval {
 		$rules_manager->deleteClusterRules( cluster_id => $cluster_id );
 		foreach my $rule (@$rules) {
@@ -81,7 +81,7 @@ sub view_orchestrator_settings : StartRunmode {
 	my $cluster_id = $query->param('cluster_id') || 0;
 
 	# Build var choice list of all collected set
-	my $sets = $self->{admin}->{manager}{monitor}->getCollectedSets( cluster_id => $cluster_id );
+	my $sets = $self->{adm}->{manager}{monitor}->getCollectedSets( cluster_id => $cluster_id );
 	my @choices = ();
 	foreach my $set (@$sets) {
 		push( @choices, map { "$set->{label}:" . $_->{label} } @{ $set->{ds} } );
@@ -89,7 +89,7 @@ sub view_orchestrator_settings : StartRunmode {
 	my $var_choices = join ",", @choices;
 	
 	my @rules = ();
-	my $rules_manager = $self->{'admin'}->{manager}->{rules};
+	my $rules_manager = $self->{'adm'}->{manager}->{rules};
 	my $cluster_rules = $rules_manager->getClusterRules( cluster_id => $cluster_id );
 	my $op_id = 0;
 	foreach my $rule (@$cluster_rules) {

@@ -1,12 +1,14 @@
 package KanopyaUI::Monitoring;
 use base 'KanopyaUI::CGI';
 
+use Entity::Cluster;
+use Entity::Motherboard;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use XML::Simple;
 use JSON;
 
-my $log = get_logger("administrator");
+my $log = get_logger("webui");
 
 my $conf_file_path = "/etc/kanopya/monitor.conf";
 
@@ -59,13 +61,13 @@ sub getMonitoredSets {
 	my $self = shift;
 	my %args = @_;
 
-	return $self->{'admin'}{'manager'}{'monitor'}->getCollectedSets( cluster_id => $args{cluster_id} );
+	return $self->{'adm'}{'manager'}{'monitor'}->getCollectedSets( cluster_id => $args{cluster_id} );
 }
 
 sub getAllSets {
 	my $self = shift;
 	
-	return $self->{'admin'}{'manager'}{'monitor'}->getIndicatorSets();
+	return $self->{'adm'}{'manager'}{'monitor'}->getIndicatorSets();
 }
 
 #TODO passer par le monitor (et supprimer les bases inutiles) 
@@ -107,8 +109,8 @@ sub view_clustermonitoring : Runmode {
 	$tmpl->param('SETS' => \@sets);
 	
 	#NODES
-	my $cluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $cluster_id);
-	my $motherboards = $cluster->getMotherboards(administrator => $self->{'admin'});
+	my $cluster = Entity::Cluster->get( id => $cluster_id );
+	my $motherboards = $cluster->getMotherboards();
 	my $masterId = $cluster->getMasterNodeId();
 	my @nodes = map { { id => $_->getAttr(name=>'motherboard_id'),
 						name => $_->getAttr(name=>'motherboard_internal_ip'),
@@ -146,8 +148,8 @@ sub xml_graph_list : Runmode {
 	my $period = $query->param('period') || "hour";
 	
 	my $cluster_id = $query->param('cluster_id');
-	my $cluster = $self->{'admin'}->getEntity(type => 'Cluster', id => $cluster_id);
-	my $motherboards = $cluster->getMotherboards(administrator => $self->{'admin'});
+	my $cluster = Entity::Cluster->get( id => $cluster_id );
+	my $motherboards = $cluster->getMotherboards();
 	my @all_ids = keys %$motherboards;
 	my $cluster_name = $cluster->getAttr( name => 'cluster_name' ); 
 	push @all_ids, $cluster_name;
@@ -213,6 +215,8 @@ sub save_clustermonitoring_settings : Runmode {
 	
 	my $cluster_id = $query->param('cluster_id');
 	
+	$log->info("Save monitoring settings for cluster $cluster_id");
+	
 	my @monit_sets = $query->param('collect_sets[]'); # array of set name
 
 	my $graphs_settings_str = $query->param('graphs_settings'); # stringified array of hash
@@ -221,8 +225,8 @@ sub save_clustermonitoring_settings : Runmode {
 	my $res = "conf saved";
 	
 	eval {
-		$self->{'admin'}{'manager'}{'monitor'}->collectSets( cluster_id => $cluster_id, sets_name => \@monit_sets );
-		$self->{'admin'}{'manager'}{'monitor'}->graphSettings( cluster_id => $cluster_id, graphs => $graphs_settings );
+		$self->{'adm'}{'manager'}{'monitor'}->collectSets( cluster_id => $cluster_id, sets_name => \@monit_sets );
+		$self->{'adm'}{'manager'}{'monitor'}->graphSettings( cluster_id => $cluster_id, graphs => $graphs_settings );
 	};
 	if ($@) {
 		$res = "Error while saving: $@";
@@ -304,7 +308,7 @@ sub view_clustermonitoring_settings : Runmode {
 	my @sets = ();
 	foreach $set (@$all_sets) {
 		my @all_ds = ();
-		my $graph_settings = $self->{'admin'}{'manager'}{'monitor'}->getGraphSettings(  cluster_id => $query->param('cluster_id'),
+		my $graph_settings = $self->{'adm'}{'manager'}{'monitor'}->getGraphSettings(  cluster_id => $query->param('cluster_id'),
 																						set_name => $set->{label} );
 		my @ds_on_graph = defined $graph_settings ? split(",", $graph_settings->{ds_label}) : ();
 		my $is_graphed = scalar @ds_on_graph;
