@@ -14,6 +14,7 @@ sub view_publicips : StartRunmode {
 	$tmpl->param('submNetworks' => 1);
 	$tmpl->param('USERID' => 1234);
 	$tmpl->param('PUBLICIPS' => $publicips);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	$output .= $tmpl->output();
         

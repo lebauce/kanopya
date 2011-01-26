@@ -13,6 +13,7 @@ sub view_distributions : StartRunmode {
 	$tmpl->param('titlepage' => "Systems - Distributions");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submDistributions' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 
     my @edistributions = Entity::Distribution->getDistributions(hash => {});
     my $distributions = [];
@@ -43,6 +44,7 @@ sub view_distributiondetails : Runmode {
 	$tmpl->param('titlepage' => "Distribution's overview");
 	$tmpl->param('mSystems' => 1);
 	$tmpl->param('submDistributions' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	my $query = $self->query();
 	my $edistribution = Entity::Distribution->get(id => $query->param('distribution_id'));
