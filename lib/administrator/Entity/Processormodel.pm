@@ -35,12 +35,12 @@ use constant ATTR_DEF => {
 	processormodel_name => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
  	processormodel_core_num => { pattern => 'm//s', is_mandatory => 0, is_extended => 0},
  	processormodel_clock_speed => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-  	processormodel_fsb => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
+  	#processormodel_fsb => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
   	processormodel_l2_cache => { pattern => 'm//s', is_mandatory => 1, is_extended	=> 0},
-  	processormodel_max_consumption => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
+  	#processormodel_max_consumption => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
   	processormodel_max_tdp => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
   	processormodel_64bits => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-	processormodel_cpu_flags => { pattern => 'm//s', is_mandatory => 1, is_extended	=> 0},		
+	#processormodel_cpu_flags => { pattern => 'm//s', is_mandatory => 1, is_extended	=> 0},		
 };
 
 
@@ -118,7 +118,17 @@ sub new {
 
 =cut
 
-sub create {}
+sub create {
+	my $self = shift;
+	my $adm = Administrator->new();
+	my $mastergroup_eid = $self->getMasterGroupEid();
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new processor model");
+   	}
+   	
+   	$self->save();
+}
 
 =head2 update
 
@@ -130,7 +140,16 @@ sub update {}
 
 =cut 
 
-sub remove {}
+sub remove {
+	my $self = shift;
+	my $adm = Administrator->new();
+	# delete method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this processor model");
+   	}
+	$self->SUPER::delete();
+}
 
 =head2 checkAttrs
 	

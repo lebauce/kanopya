@@ -305,7 +305,7 @@ sub process_removemotherboard : Runmode {
     my $query = $self->query();
     eval {
     	my $motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
-     	$motherboard->delete();
+     	$motherboard->remove();
     };
     if($@) { 
 		my $exception = $@;

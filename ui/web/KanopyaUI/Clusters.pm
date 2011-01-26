@@ -309,7 +309,7 @@ sub process_removecluster : Runmode {
 	}
 	else {	
 		$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'cluster removing adding to execution queue'); 
-		$self->redirect('/cgi/kanopya.cgi/systemimages/view_clusters');
+		$self->redirect('/cgi/kanopya.cgi/clusters/view_clusters');
 	} 
 }
 
@@ -418,7 +418,7 @@ sub process_activatecluster : Runmode {
 		}
 	else {	
 		$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'cluster activation adding to execution queue'); 
-		$self->redirect('/cgi/kanopya.cgi/systemimages/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
+		$self->redirect('/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
 	} 
 }    
 
@@ -441,7 +441,7 @@ sub process_deactivatecluster : Runmode {
 		}
 	else {	
 		$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'cluster activation adding to execution queue'); 
-		$self->redirect('/cgi/kanopya.cgi/systemimages/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
+		$self->redirect('/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
 	}
 }
 
@@ -565,7 +565,7 @@ sub process_addnode : Runmode {
 	    else {
 	        my $motherboard = pop @free_motherboards;
 	     	$ecluster->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id')); 
-	    	$self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue'); }
+	    	$self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue');
 	    }
     };
     if($@) { 
