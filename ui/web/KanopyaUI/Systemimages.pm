@@ -259,6 +259,10 @@ sub process_deactivatesystemimage : Runmode {
 	} 
 }
 
+# TODO form_installcomponent popup window
 
+sub form_installcomponent : Runmode {
+	return "TODO";
+}
 
 1;

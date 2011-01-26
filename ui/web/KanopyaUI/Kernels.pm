@@ -13,6 +13,7 @@ sub view_kernels : StartRunmode {
 	$tmpl->param('titlepage' => "Systems - Kernels");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submKernels' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 
     my @ekernels = Entity::Kernel->getKernels(hash => {});
     my $kernels = [];

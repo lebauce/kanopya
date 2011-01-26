@@ -9,7 +9,7 @@ use Log::Log4perl "get_logger";
 use Entity::User;
 use Entity::Groups;
 
-my $log = get_logger('administrator');
+my $log = get_logger('webui');
 
 # users listing page
 

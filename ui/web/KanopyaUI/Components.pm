@@ -7,7 +7,7 @@ use Entity::Component;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("webui");
 
 # components listing available 
 
@@ -17,6 +17,7 @@ sub view_components : StartRunmode {
 	$tmpl->param('titlepage' => "Systems - Components");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submComponents' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	my $components = [];
 	$components = Entity::Component->getComponentsByCategory();

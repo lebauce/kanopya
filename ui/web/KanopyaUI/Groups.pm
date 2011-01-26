@@ -8,7 +8,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Entity::Groups;
 
-my $log = get_logger('administrator');
+my $log = get_logger('webui');
 
 # groups listing page
 
