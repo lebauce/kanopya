@@ -76,6 +76,7 @@ sub methods {
 			get			=> 'retrieve an existing user',
 			update		=> 'save changes applied on a user',
 			remove 		=> 'delete a user',
+			setperm		=> 'edit permission on this user',
 		}, 
 	};
 }
