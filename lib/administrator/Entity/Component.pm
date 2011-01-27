@@ -160,6 +160,31 @@ sub get {
    return $self;
 }
 
+=head2 delete
+B<Class>   : Public
+B<Desc>    : This method allows to delete a component
+B<args>    : None
+B<Return>  : Nothing
+B<Comment>  : Delete Components
+B<throws>  : Nothing
+	
+=cut
+
+sub delete {
+	my $self = shift;
+	my $data = $self->{_dbix};
+	
+	my $entity_rs = $data->related_resultset( "component_instance_entities" );
+	$log->debug("First Deletion of entity link : component_instance_entities");
+	# J'essaie de supprimer dans la table entity
+	my $real_entity_rs = $entity_rs->related_resultset("entity_id");
+	$real_entity_rs->delete;
+
+	$log->debug("Finally delete the dbix itself");
+	$data->delete;
+}
+
+
 =head2 getTemplateDirectory
 B<Class>   : Public
 B<Desc>    : This method return this component instance Template dir from database.
