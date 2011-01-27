@@ -1,9 +1,9 @@
  $(document).ready(function(){
  
   	var url_params = window.location.href.split('?')[1];
- 	var content_link = "/cgi/mcsui.cgi/monitoring/xml_graph_list?" + url_params;
- 	var save_clustermonitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
- 	var save_monitoring_settings_link = "/cgi/mcsui.cgi/monitoring/save_monitoring_settings";
+ 	var content_link = "/cgi/kanopya.cgi/monitoring/xml_graph_list?" + url_params;
+ 	var save_clustermonitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
+ 	var save_monitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_monitoring_settings";
 
  	commonInit();
  	

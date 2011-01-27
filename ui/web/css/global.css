@@ -20,6 +20,10 @@ img#ivy1 {
 	z-index: -1;
 }
 
+div#infologin {
+	float: right;
+}
+
 /* mainmenu */
 
 #menu {
@@ -131,6 +135,9 @@ div#submenu li a.current { background-color: #548e29; color: #EEF2BE; font-weigh
 
 #submenu ul li a:hover { background-color: #548e29; color: #EEF2BE; }
 
+
+
+
 /* middle content */
 
 #content {
@@ -187,7 +194,7 @@ div#footer {
 .imgTux { background-image: url("/images/icons/tux.png"); }
 .imgSystemimage { background-image: url("/images/icons/systemimage.png"); }
 .imgNetwork { background-image: url("/images/icons/network.png"); }
-.imgRights { background-image: url("/images/icons/rights.png"); }
+.imgPermission { background-image: url("/images/icons/permission.png"); }
 .imgListing { background-image: url("/images/icons/list.png"); }
 .imgCluster { background-image: url("/images/icons/cluster.png"); }
 .imgEye { background-image: url("/images/icons/eye.png"); }

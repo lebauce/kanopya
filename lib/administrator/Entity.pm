@@ -143,7 +143,7 @@ sub get {
 	}
 	my $adm = Administrator->new();
 	my $dbix = $adm->getRow(id=>$args{id}, table => $args{table});
-    $log->debug("Arguments: ".ref($args{id}));
+    $log->debug("Named arguments: id = <$args{id}> , table = <$args{table}>");
     
     my $self = {
         _dbix			=> $dbix,

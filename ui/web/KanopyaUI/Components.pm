@@ -3,10 +3,11 @@ use base 'KanopyaUI::CGI';
 
 use strict;
 use warnings;
+use Entity::Component;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("administrator");
+my $log = get_logger("webui");
 
 # components listing available 
 
@@ -16,9 +17,10 @@ sub view_components : StartRunmode {
 	$tmpl->param('titlepage' => "Systems - Components");
     $tmpl->param('mSystems' => 1);
 	$tmpl->param('submComponents' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	my $components = [];
-	$components = $self->{admin}->getComponentsListByCategory();
+	$components = Entity::Component->getComponentsByCategory();
 	
 	$tmpl->param('components_list' => $components);
 	return $tmpl->output();

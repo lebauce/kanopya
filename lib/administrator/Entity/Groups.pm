@@ -46,7 +46,7 @@ use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
 
-my $log = get_logger("administrator");
+my $log = get_logger("webui");
 my $errmsg;
 
 use constant ATTR_DEF => {
@@ -368,15 +368,36 @@ sub getExcludedEntities {
 	my $entities_rs = $self->{_dbix}->ingroups;
 	my $ids = [];
 	my $idfield = lc($type)."_id";
+	my $systemfield = lc($type)."_system";
 	
+	# retrieve groups elements ids 
 	while(my $row = $entities_rs->next) {
 		my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->get_column('entity_id')})->first;
 		push @$ids, $concret->get_column("$idfield");
 	}	
 	
-	
-	
+	# get (if granted) elements not already in the group 
 	my @objs = ();
+	my $where_clause = { "$idfield" => { -not_in => $ids }};
+	# don't include system element
+	if($adm->{db}->resultset($type)->result_source->has_column("$systemfield")) {
+		$where_clause->{"$systemfield"} = 0;
+	}
+	
+	#$log->debug(Dumper $where_clause);
+	
+	$entities_rs = $adm->{db}->resultset($type)->search($where_clause);
+	while(my $row = $entities_rs->next) {
+		my $entity = eval { $entity_class->get(id => $row->get_column("$idfield")); };
+		if($@) {
+			my $exception = $@;
+			if(Kanopya::Exception::Permission::Denied->caught()) {
+				next;
+			} 
+			else { $exception->rethrow(); }
+		}
+		else { push @objs, $entity; }	
+	}
 	
 	return @objs;
 }

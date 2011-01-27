@@ -1,0 +1,55 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/permissions.css);</style>
+<div id="content">
+<h2>Permissions</h2>
+<select>
+<option>cluster</option>
+<option>motherboard</option>
+<option>system image</option>
+<option>...</option>
+</select>
+<hr />
+<table id="permissions">
+<tr>
+<td class="c1" rowspan="2">for :</td>
+<td><input type="radio" name="consumer"/>a Users'Group</td>
+<td><select>
+	<option>usergroup1</option>
+	<option>usergroup2</option>
+	<option>usergroup3</option>
+</select>
+</td>
+<td class="c1" rowspan="2">on :</td>
+<td><input type="radio" name="consumed"/>a Clusters'Group</td>
+<td><select>
+	<option>clustergroup1</option>
+	<option>clustergroup2</option>
+	<option>clustergroup3</option>
+</select>
+</td>
+<td rowspan="2"><input id="viewset" type="button" value="view / set permissions" onclick="javascript:openform('/cgi/kanopya.cgi/permissions/form_permissionsettings', '', 700, 480,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')"/></td>
+</tr>
+<tr>
+<td><input type="radio" name="consumer"/>a User</td>
+<td><select>
+	<option>toto</option>
+	<option>titi</option>
+	<option>tata</option>
+	<option>tutu</option>
+</select>
+</td>
+<td><input type="radio" name="consumed"/>a Cluster</td>
+<td><select>
+	<option>cluster1</option>
+	<option>cluster2</option>
+	<option>cluster3</option>
+</select>
+</td>
+</tr>
+</table>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
+
+
+

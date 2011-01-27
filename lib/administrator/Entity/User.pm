@@ -76,6 +76,7 @@ sub methods {
 			get			=> 'retrieve an existing user',
 			update		=> 'save changes applied on a user',
 			remove 		=> 'delete a user',
+			setperm		=> 'edit permission on this user',
 		}, 
 	};
 }
@@ -210,7 +211,7 @@ sub remove {
 	my $self = shift;
 	my $adm = Administrator->new();
 	# delete method concerns an existing entity so we use his entity_id
-   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'delete');
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(
    			error => "Permission denied to delete user with id ".$self->getAttr(name =>'user_id')

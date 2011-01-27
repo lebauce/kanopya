@@ -258,6 +258,8 @@ sub view_motherboarddetails : Runmode {
 	return $tmpl->output();
 }
 
+# motherboard activation processing
+
 sub process_activatemotherboard : Runmode {
     my $self = shift;
     my $query = $self->query();
@@ -276,6 +278,8 @@ sub process_activatemotherboard : Runmode {
 	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
 }
 
+# motherboard deactivation processing
+
 sub process_deactivatemotherboard : Runmode {
     my $self = shift;
     my $query = $self->query();
@@ -291,15 +295,17 @@ sub process_deactivatemotherboard : Runmode {
 		}
 		else { $exception->rethrow(); }
 	} 
-	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
+	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboarddetails?motherboard_id='.$query->param('motherboard_id')) }
 }
+
+# motherboard deletion processing
 
 sub process_removemotherboard : Runmode {
     my $self = shift;
     my $query = $self->query();
     eval {
     	my $motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
-     	$motherboard->delete();
+     	$motherboard->remove();
     };
     if($@) { 
 		my $exception = $@;

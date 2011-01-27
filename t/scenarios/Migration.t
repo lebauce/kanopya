@@ -88,7 +88,7 @@ eval {
 
     # Test Motherboard Migration
     note( "Test Motherboard Migration");
-    $c2->addMotherboard(motherboard_id => $m2->getAttr(name => 'motherboard_id'));
+    $c2->addNode(motherboard_id => $m2->getAttr(name => 'motherboard_id'));
     $executor->execnround(run => 1);
 
     # Test Motherboard Deactivation

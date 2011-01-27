@@ -471,7 +471,7 @@ sub graphCluster {
 	my $required_set = $args{required_set} || "all";
 	my $required_ds = $args{required_indicators} || "all";
 	
-	my $monitManager = $self->{_admin_wrap}{_admin}->{manager}{monitor};
+	my $monitManager = $self->{_admin}->{manager}{monitor};
 	my $sets = ($required_set eq "all") ? $monitManager->getIndicatorSets() : [$monitManager->getSetDesc( set_name => $required_set )]; 
 	
 	my %res = ();
@@ -550,7 +550,7 @@ sub graphNodes {
 	my $required_set = $args{required_set} || "all";
 	my $required_ds = $args{required_indicators} || "all";
 	
-	my $monitManager = $self->{_admin_wrap}{_admin}->{manager}{monitor};
+	my $monitManager = $self->{_admin}->{manager}{monitor};
 	my $sets = ($required_set eq "all") ? $monitManager->getIndicatorSets() : [$monitManager->getSetDesc( set_name => $required_set )]; 
 	
 	my %res; #the hash containing filename of all generated graph (host => { set_label => "file.png" })
@@ -611,8 +611,9 @@ sub graphFromConf {
 
 	while ( my ($cluster_name, $cluster_nodes) = each %hosts_by_cluster ) {
 		eval {
-			my $cluster_id = $self->{_admin_wrap}->getClusterId( cluster_name => $cluster_name );
-			my $graphs_settings = $self->{_admin_wrap}{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
+			#TODO keep cluster id from the beginning (get by name is not really good)
+			my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster_name } )->getAttr( name => "cluster_id");
+			my $graphs_settings = $self->{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
 			
 			my @nodes_ip = map { $_->{ip} } values %$cluster_nodes;
 			
@@ -771,7 +772,7 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
-	my $adm = $self->{_admin_wrap};
+	my $adm = $self->{_admin};
 	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopia Grapher started.");
 	
 	while ( $$running ) {

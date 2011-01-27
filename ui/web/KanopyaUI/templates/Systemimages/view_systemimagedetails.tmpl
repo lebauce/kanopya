@@ -28,7 +28,7 @@
 <a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/systemimages/form_editsystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>', 'edit systemimage', 800, 400, '');">edit</a><br />
 <span class="desc">Modify these global parameters.</span><br /><br />
 <TMPL_IF NAME=link_delete>
-<a class="imgRemove" href="/cgi/kanopya.cgi/systemimage/process_deletesystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>">delete</a><br />
+<a class="imgRemove" href="/cgi/kanopya.cgi/systemimages/process_removesystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>">delete</a><br />
 <span class="desc">Delete this system image.</span><br />
 </TMPL_IF>
 </td><tr/>
@@ -55,8 +55,8 @@
 <TMPL_ELSE>
 <tr><td colspan="2">no defined component.</td>
 <td class="actions">
-<a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/clusters/form_addcomponent?cluster_id=<TMPL_VAR NAME=cluster_id>', 'Add a component', 500, 200, '');">add a component</a><br />
-<span class="desc">Add a new component to this cluster.</span><br /><br />
+<a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/systemimages/form_installcomponent?systemimage_id=<TMPL_VAR NAME=systemimage_id>', 'Install a component', 500, 200, '');">Install a component</a><br />
+<span class="desc">Install a new component to this system image.</span><br /><br />
 </td></tr>
 </TMPL_IF>
 </table>

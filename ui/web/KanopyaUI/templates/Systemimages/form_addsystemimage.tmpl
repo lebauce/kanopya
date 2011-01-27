@@ -13,7 +13,7 @@
 	<span style="color: red"><TMPL_VAR NAME=ERR_SYSTEMIMAGE_NAME></span></td>
 </tr>
 <tr>
-	<td class="label">from a distribution :<input type="radio" name="type" value="distribution" onClick="Duplicate()" checked="checked" /></td>
+	<td class="label">from a distribution :<input type="radio" name="source" value="distribution" checked="checked" /></td>
 	<td>
 	<select id="duplicate" name="distribution_id">
 	<TMPL_LOOP NAME=DISTRIBUTION>
@@ -22,7 +22,7 @@
 	</td>
 </tr>
 <tr>
-	<td class="label">clone a system image :<input type="radio" name="type" value="systemimage" onClick="Clone()" /></td>
+	<td class="label">clone a system image :<input type="radio" name="source" value="systemimage" /></td>
 	<td>
 	<select name="systemimage_id">
 	<TMPL_LOOP NAME=SYSTEMIMAGE>

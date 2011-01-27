@@ -1,7 +1,7 @@
 $(document).ready(function(){
   
   	var url_params = window.location.href.split('?')[1];
-  	var save_orchestrator_settings_link = "/cgi/mcsui.cgi/orchestration/save_orchestrator_settings?" + url_params;
+  	var save_orchestrator_settings_link = "/cgi/kanopya.cgi/orchestration/save_orchestrator_settings?" + url_params;
   
   	commonInit();
   

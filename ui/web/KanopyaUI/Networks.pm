@@ -6,7 +6,7 @@ sub view_publicips : StartRunmode {
     my $self = shift;
     my $tmpl =  $self->load_tmpl('Networks/view_publicips.tmpl');
     my $output = '';
-    my $publicips = $self->{'admin'}->{manager}->{network}->getPublicIPs();
+    my $publicips = $self->{adm}->{manager}->{network}->getPublicIPs();
 #    my $publicips = $self->{'admin'}->getPublicIPs();
    
     $tmpl->param('titlepage' => "Public IPs View");
@@ -14,6 +14,7 @@ sub view_publicips : StartRunmode {
 	$tmpl->param('submNetworks' => 1);
 	$tmpl->param('USERID' => 1234);
 	$tmpl->param('PUBLICIPS' => $publicips);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	$output .= $tmpl->output();
         
@@ -40,7 +41,7 @@ sub process_addpublicip : Runmode {
     
     my $query = $self->query();
     eval {
-    	$self->{admin}->{manager}->{network}->newPublicIP(
+    	$self->{adm}->{manager}->{network}->newPublicIP(
     		ip_address => $query->param('ip_address'),
     		ip_mask => $query->param('ip_mask'),
     		gateway => $query->param('gateway') ne '' ? $query->param('gateway') : undef, 
@@ -48,8 +49,8 @@ sub process_addpublicip : Runmode {
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added.'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added.'); }
     return $self->close_window();
 }
 
@@ -67,12 +68,12 @@ sub process_removepublicip : Runmode {
 	my $self = shift;
 	my $query = $self->query();
     eval {
-    	$self->{admin}->{manager}->{network}->delPublicIP(publicip_id => $query->param('publicip_id'));
+    	$self->{adm}->{manager}->{network}->delPublicIP(publicip_id => $query->param('publicip_id'));
     };
     if($@) { 
 		my $error = $@;
-		$self->{'admin'}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{'admin'}->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed.'); }
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed.'); }
     $self->redirect('/cgi/kanopya.cgi/networks/view_publicips');
 }
 

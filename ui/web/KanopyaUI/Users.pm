@@ -9,7 +9,7 @@ use Log::Log4perl "get_logger";
 use Entity::User;
 use Entity::Groups;
 
-my $log = get_logger('administrator');
+my $log = get_logger('webui');
 
 # users listing page
 
@@ -164,6 +164,7 @@ sub view_userdetails : Runmode {
 		$log->debug(Dumper $granted_methods);
 		if($granted_methods->{update}) { $tmpl->param('can_update' => 1); }
 		if($granted_methods->{remove}) { $tmpl->param('can_delete' => 1); }
+		if($granted_methods->{setperm}) { $tmpl->param('can_setperm' => 1); }
 			
 		return $tmpl->output();
 	}

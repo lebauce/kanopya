@@ -185,6 +185,28 @@ sub delete {
 }
 
 
+sub getComponentsByCategory {
+	my $class = shift;
+	my $adm = Administrator->new();
+	my $components = $adm->{db}->resultset('Component')->search({}, 
+	{ order_by => { -asc => [qw/component_category component_name component_version/]}}
+	);
+	my $list = [];
+	my $currentindex = -1;
+	my $currentcategory = '';
+	while(my $c = $components->next) {
+		my $category = $c->get_column('component_category');
+		my $tmp = { name => $c->get_column('component_name'), version => $c->get_column('component_version')};
+		if($currentcategory ne $category) { 
+			$currentcategory = $category; 
+			$currentindex++; 
+			$list->[$currentindex] = {category => "$category", components => []};
+		} 
+		push @{$list->[$currentindex]->{components}}, $tmp;
+	}
+	return $list;
+}
+
 =head2 getTemplateDirectory
 B<Class>   : Public
 B<Desc>    : This method return this component instance Template dir from database.
@@ -289,6 +311,8 @@ sub save {
 	}
 		
 }
+
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

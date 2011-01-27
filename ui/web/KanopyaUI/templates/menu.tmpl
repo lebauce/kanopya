@@ -35,6 +35,8 @@
 		</li>
 		<li><a class="imgGroups<TMPL_IF NAME="submGroups"> current</TMPL_IF>" href="/cgi/kanopya.cgi/groups">Groups</a>
 		</li>
+		<li><a class="imgPermission<TMPL_IF NAME="submPermissions"> current</TMPL_IF>" href="/cgi/kanopya.cgi/permissions">Permissions</a>
+		</li>
 		</TMPL_IF>
 		
 		<TMPL_IF NAME="mHardware">
@@ -66,7 +68,6 @@
 		</li>
 		</TMPL_IF>
 		<li id="messagelauncher"><a class="imgMessage" href="javascript:openform('/cgi/kanopya.cgi/messager/view_messages?userid=<TMPL_VAR NAME=USERID>','messages', 800,400, 'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no');">messages</a></li>
-		<li id="operationslauncher"><a class="imgOperation">operations</a></li>
 	</ul>
 </div>
 
