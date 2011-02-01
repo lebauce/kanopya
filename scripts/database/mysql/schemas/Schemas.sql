@@ -31,7 +31,7 @@ CREATE TABLE `processormodel` (
   `processormodel_max_tdp` int(2) unsigned NOT NULL,
   `processormodel_64bits` int(1) unsigned NOT NULL,
   PRIMARY KEY (`processormodel_id`),
-  UNIQUE KEY `processormodel_UNIQUE` (`processormodel_id`)
+  UNIQUE KEY `processormodel_name_UNIQUE` (`processormodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -746,8 +746,8 @@ CREATE TABLE `motherboardmodel_entity` (
   PRIMARY KEY (`entity_id`,`motherboardmodel_id`),
   UNIQUE KEY `fk_motherboardmodel_entity_1` (`entity_id`),
   UNIQUE KEY `fk_motherboardmodel_entity_2` (`motherboardmodel_id`),
-  CONSTRAINT `fk_motherboardmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboardmodel_entity_2` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_motherboardmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_motherboardmodel_entity_2` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
