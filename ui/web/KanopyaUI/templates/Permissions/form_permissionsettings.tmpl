@@ -5,26 +5,21 @@
 <body>
 <style type="text/css">@import url(/css/form.css);</style>
 <div class="title">Permissions settings for user bidule on cluster truc</div>
-
 <hr />
+<form name="" method="POST" action="/cgi/kanopya.cgi/permissions/process_permissionsettings">
 <table>
-<tr><td><input type="checkbox"/></td><td>create new clusters</td></tr>
-<tr><td><input type="checkbox"/></td><td>view cluster(s)</td></tr>
-<tr><td><input type="checkbox"/></td><td>modify general informations</td></tr>
-<tr><td><input type="checkbox"/></td><td>delete</td></tr>
-<tr><td><input type="checkbox"/></td><td>activate</td></tr>
-<tr><td><input type="checkbox"/></td><td>deactivate</td></tr>
-<tr><td><input type="checkbox"/></td><td>start</td></tr>
-<tr><td><input type="checkbox"/></td><td>stop</td></tr>
-<tr><td><input type="checkbox"/></td><td>add node</td></tr>
-<tr><td><input type="checkbox"/></td><td>remove node</td></tr>
-<tr><td><input type="checkbox"/></td><td>add component</td></tr>
-<tr><td><input type="checkbox"/></td><td>remove component</td></tr>
-<tr><td><input type="checkbox"/></td><td>add component</td></tr>
+<TMPL_LOOP NAME=methods>
+<tr><td><input type="checkbox" name="methods" value="<TMPL_VAR NAME=method>" <TMPL_VAR NAME=checked>/></td>
+<td><span style="font-weight: bold;"><TMPL_VAR NAME=method></span> - <span style="font-style: italic;"><TMPL_VAR NAME=description></span></td></tr>
+</TMPL_LOOP>
 </table>
 <div class="buttons">
 <input type="submit" value="apply"/>
 <input type="button" value="cancel" onclick="javascript:window.close()"/>
+<input type="hidden" name="consumer_id" value="<TMPL_VAR NAME=consumer_id>"/>
+<input type="hidden" name="consumed_id" value="<TMPL_VAR NAME=consumed_id>"/>
+<input type="hidden" name="consumed_type" value="<TMPL_VAR NAME=consumed_type>"/>
+</form>
 </div>
 </form> 
 </body>	

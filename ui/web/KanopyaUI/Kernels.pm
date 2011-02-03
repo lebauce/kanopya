@@ -20,10 +20,13 @@ sub view_kernels : StartRunmode {
     
     foreach my $m (@ekernels) {
 		my $tmp = {};
+		my $methods = $m->getPerms();
 		$tmp->{kernel_id} = $m->getAttr(name => 'kernel_id');
 		$tmp->{kernel_name} = $m->getAttr(name => 'kernel_name');
 		$tmp->{kernel_version} = $m->getAttr(name => 'kernel_version');
 		$tmp->{kernel_desc} = $m->getAttr(name => 'kernel_desc');
+		if($methods->{'setperm'}->{'granted'}) { $tmp->{can_setperm} = 1; }
+		
 		push (@$kernels, $tmp);
     }
 

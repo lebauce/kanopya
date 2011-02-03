@@ -13,7 +13,10 @@
 	<td class="right"><TMPL_VAR NAME=mmodel_ifacenum></td>
 	<td class="right"><TMPL_VAR NAME=mmodel_ramslotnum></td>
 	<td class="right"><TMPL_VAR NAME=mmodel_rammax> Go</td>
-	<td><TMPL_IF NAME=can_update><a class="imgEdit">edit</a></TMPL_IF><TMPL_IF NAME=can_delete><br /><a class="imgRemove">remove</a></TMPL_IF></td>
+	<td><TMPL_IF NAME=can_update><a class="imgEdit">edit</a></TMPL_IF>
+	<TMPL_IF NAME=can_delete><br /><a class="imgRemove" href="/cgi/kanopya.cgi/models/process_deletemotherboardmodel?motherboardmodel_id=<TMPL_VAR NAME=mmodel_id>">remove</a></TMPL_IF>
+	<TMPL_IF NAME=can_setperm><br /><a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Motherboardmodel&id=<TMPL_VAR NAME=mmodel_id>">permissions</a></TMPL_IF>
+	</td>
 	</tr>
 	</TMPL_LOOP>
 </table>
@@ -27,7 +30,10 @@
 	<td class="right"><TMPL_VAR NAME=pmodel_l2cache> Mo</td>
 	<td class="right"><TMPL_VAR NAME=pmodel_tdp> W</td>
 	<td><TMPL_IF NAME=pmodel_is64>yes<TMPL_ELSE>no</TMPL_IF></td>
-	<td><TMPL_IF NAME=can_update><a class="imgEdit">edit</a></TMPL_IF><TMPL_IF NAME=can_delete><br /><a class="imgRemove">remove</a></TMPL_IF></td>
+	<td><TMPL_IF NAME=can_update><a class="imgEdit">edit</a></TMPL_IF>
+	<TMPL_IF NAME=can_delete><br /><a class="imgRemove" href="/cgi/kanopya.cgi/models/process_deleteprocessormodel?processormodel_id=<TMPL_VAR NAME=pmodel_id>">remove</a></TMPL_IF>
+	<TMPL_IF NAME=can_setperm><br /><a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Processormodel&id=<TMPL_VAR NAME=pmodel_id>">permissions</a></TMPL_IF>
+	</td>
 	</tr>
 	</TMPL_LOOP>
 </table>

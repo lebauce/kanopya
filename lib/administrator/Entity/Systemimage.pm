@@ -60,14 +60,27 @@ use constant ATTR_DEF => {
 
 sub methods {
 	return {
-		class 		=> {
-			create => 'create and save a new system image',
+		'create'	=> {'description' => 'create a new system image', 
+						'perm_holder' => 'mastergroup',
 		},
-		instance 	=> {
-			get			=> 'retrieve an existing system image',
-			update		=> 'save changes applied on a system image',
-			remove 		=> 'delete a system image',
-		}, 
+		'get'		=> {'description' => 'view this system image', 
+						'perm_holder' => 'entity',
+		},
+		'update'	=> {'description' => 'save changes applied on this system image', 
+						'perm_holder' => 'entity',
+		},
+		'remove'	=> {'description' => 'delete this system image', 
+						'perm_holder' => 'entity',
+		},
+		'activate'=> {'description' => 'activate this system image', 
+						'perm_holder' => 'entity',
+		},
+		'deactivate'=> {'description' => 'deactivate this system image', 
+						'perm_holder' => 'entity',
+		},
+		'setperm'	=> {'description' => 'set permissions on this system image', 
+						'perm_holder' => 'entity',
+		},
 	};
 }
 
@@ -310,7 +323,6 @@ sub checkAttr {
 	}
 	# Here check attr value
 }
-
 
 sub clone {
     my $self = shift;

@@ -24,6 +24,7 @@ sub view_clusters : StartRunmode {
 	$tmpl->param('username' => $self->session->param('username'));
     
     my @eclusters = Entity::Cluster->getClusters(hash => {});
+    my $methods = Entity::Cluster->getPerms();
     my $clusters = [];
     	
     foreach my $n (@eclusters){
@@ -45,8 +46,7 @@ sub view_clusters : StartRunmode {
 		
 		if($n->getAttr('name' => 'active')) {
 			$tmp->{active} = 1;
-			my $nodes = $n->getMotherboards();
-			my $nbnodesup = scalar(keys %$nodes); 
+			my $nbnodesup = $n->getCurrentNodesCount(); 
 			if($nbnodesup > 0) {
 				$tmp->{nbnodesup} = $nbnodesup;
 				$tmp->{link_activity} = 1;
@@ -159,23 +159,25 @@ sub view_clusterdetails : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $tmpl = $self->load_tmpl('Clusters/view_clusterdetails.tmpl');
+	
 	# header / menu variables
 	$tmpl->param('titlepage' => "Cluster's overview");
 	$tmpl->param('mClusters' => 1);
 	$tmpl->param('submClusters' => 1);
 	$tmpl->param('username' => $self->session->param('username'));
-	
+
+	my $query = $self->query();
+	my $cluster_id = $query->param('cluster_id');
+	my $ecluster = Entity::Cluster->get(id => $cluster_id);
+	my $methods = $ecluster->getPerms();
+
 	# actions visibility
 	$tmpl->param('link_delete' => 0);
 	$tmpl->param('link_activate' => 0);
 	$tmpl->param('link_start' => 0);
 	$tmpl->param('link_addnode' => 0);
+	if($methods->{'setperm'}->{'granted'}) { $tmpl->param('can_setperm' => 1); }
 	
-	my $query = $self->query();
-	my $cluster_id = $query->param('cluster_id');
-	my $ecluster = Entity::Cluster->get(id => $cluster_id);
-	
-		
 	$tmpl->param('cluster_id' => $cluster_id);
 	$tmpl->param('cluster_name' => $ecluster->getAttr(name => 'cluster_name'));
 	$tmpl->param('cluster_desc' => $ecluster->getAttr(name => 'cluster_desc'));
@@ -211,7 +213,6 @@ sub view_clusterdetails : Runmode {
 	$tmpl->param('nbpublicips' => scalar(@$publicips)+1);
 	
 	# state info
-	
 	my $motherboards = $ecluster->getMotherboards(administrator => $self->{adm});
 	my $nbnodesup = scalar(keys(%$motherboards)); 
 	my $nodes = [];
@@ -237,7 +238,6 @@ sub view_clusterdetails : Runmode {
 	}
 	
 	# components list
-	
 	my $components = $ecluster->getComponents(category => 'all');
 	my $comps = [];
 			

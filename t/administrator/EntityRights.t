@@ -5,9 +5,9 @@ use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 
 use Data::Dumper;
 use Log::Log4perl qw(:easy);
-Log::Log4perl->init('/opt/kanopya/conf/log.conf');
+Log::Log4perl->easy_init();
 
-use Test::More tests => 28;
+use Test::More tests => 4;
 use Test::Exception;
 
 BEGIN { 
@@ -27,37 +27,42 @@ my $eguest_user;
 my $eguest_groups;
 my $ecluster;
 
-lives_ok { $eguest_user = Entity::User->get(id => 3) } 'Permission granted for guest user to retrieve Entity::User with id 3';
-lives_ok { 
-	$eguest_user->setAttr(name => 'user_desc', value => 'another description'); 
-	$eguest_user->update();
-} 'Permission granted for guest user to update entity user with id 3';
+print Dumper (Entity::User->getPerms());
+$eguest_user = Entity::User->get(id => 3);
+print Dumper ($eguest_user->getPerms());
 
-throws_ok { $eguest_user->remove() } "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to delete Entity::User with id 3';
 
-throws_ok {
-	my $euser = Entity::User->new( 
-	    	user_login => 'toto', 
-	    	user_password => 'toto',
-	    	user_firstname => 'toto',
-	    	user_lastname => 'toto',
-	    	user_email => 'toto@toto.fr',
-	    	user_desc => 'toto',
-	);
-	$euser->create();
-} "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to create new Entity::User';
-
-lives_ok { $eguest_groups = Entity::Groups->get(id => 13) } 'Permission granted for guest user to get entity groups with id 13';
-
-throws_ok {
-	my $egroups = Entity::Groups->new( 
-	    	groups_name => 'mygroup', 
-	    	groups_type => 'user',
-	    	groups_desc => 'mydescription',
-	    	groups_system => 0,
-	);
-	$egroups->create();
-} "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to create new Entity::Groups';
+#lives_ok { $eguest_user = Entity::User->get(id => 3) } 'Permission granted for guest user to retrieve Entity::User with id 3';
+#lives_ok { 
+#	$eguest_user->setAttr(name => 'user_desc', value => 'another description'); 
+#	$eguest_user->update();
+#} 'Permission granted for guest user to update entity user with id 3';
+#
+#throws_ok { $eguest_user->remove() } "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to delete Entity::User with id 3';
+#
+#throws_ok {
+#	my $euser = Entity::User->new( 
+#	    	user_login => 'toto', 
+#	    	user_password => 'toto',
+#	    	user_firstname => 'toto',
+#	    	user_lastname => 'toto',
+#	    	user_email => 'toto@toto.fr',
+#	    	user_desc => 'toto',
+#	);
+#	$euser->create();
+#} "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to create new Entity::User';
+#
+#lives_ok { $eguest_groups = Entity::Groups->get(id => 13) } 'Permission granted for guest user to get entity groups with id 13';
+#
+#throws_ok {
+#	my $egroups = Entity::Groups->new( 
+#	    	groups_name => 'mygroup', 
+#	    	groups_type => 'user',
+#	    	groups_desc => 'mydescription',
+#	    	groups_system => 0,
+#	);
+#	$egroups->create();
+#} "Kanopya::Exception::Permission::Denied", 'Permission DENIED for guest user to create new Entity::Groups';
 
 
 

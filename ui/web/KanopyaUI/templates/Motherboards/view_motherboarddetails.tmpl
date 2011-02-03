@@ -10,16 +10,13 @@
 <table id="Xstate" class="detailspart">
 <tr><TMPL_IF NAME=active><td>Active</td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
 <td class="actions" rowspan="2">
-<TMPL_IF NAME=link_activate>
+<TMPL_IF NAME=can_activate>
 <a class="imgActivate" href="/cgi/kanopya.cgi/motherboards/process_activatemotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>">activate</a><br />
-<span class="desc">Activate this motherboard.</span><br /><br />
-<a class="imgRemove" href="/cgi/kanopya.cgi/motherboards/process_removemotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>">delete</a><br />
-<span class="desc">Delete this motherboard.</span><br /><br />
-<TMPL_ELSE>
-<TMPL_IF NAME=state_down>
+<span class="desc">Activate this motherboard.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_deactivate>
 <a class="imgDeactivate" href="/cgi/kanopya.cgi/motherboards/process_deactivatemotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>">deactivate</a><br />
 <span class="desc">Deactivate this motherboard.</span><br /><br />
-</TMPL_IF></TMPL_IF>
+</TMPL_IF>
 </td></tr>
 <tr>
 <TMPL_IF NAME=active>
@@ -41,24 +38,27 @@
 <table id="Xsettings" class="detailspart">
 <tr><td class="italic" colspan="4"><TMPL_VAR NAME=motherboard_desc></td>
 <td class="actions" rowspan="9">
+<TMPL_IF NAME=can_update>
 <a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/motherboards/form_editmotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>', 'edit motherboard', 800, 400, '');">edit</a><br />
-<span class="desc">Modify these global parameters.</span><br /><br />
-<TMPL_IF NAME=link_delete>
+<span class="desc">Modify these global parameters.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_delete>
 <a class="imgRemove" href="/cgi/kanopya.cgi/motherboard/process_deletemotherboard?motherboard_id=<TMPL_VAR NAME=motherboard_id>">delete</a><br />
-<span class="desc">Delete this motherboard.</span><br /><br />
-</TMPL_IF>
+<span class="desc">Delete this motherboard.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_setperm>
+<a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Motherboard&id=<TMPL_VAR NAME=motherboard_id>">permissions</a><br />
+<span class="desc">View/set permissiosn for this motherboard.</span><br /><br /></TMPL_IF>
 </td><tr/>
 <tr><td colspan="4">&nbsp;</td></tr>
-<tr><td class="label">Model :</td><td><TMPL_VAR NAME=motherboard_model></td>
+<tr><td class="label">Model :</td><td><TMPL_IF NAME=motherboard_model><TMPL_VAR NAME=motherboard_model><TMPL_ELSE>-</TMPL_IF></td>
 <td class="label">MAC address :</td><td><TMPL_VAR NAME=motherboard_mac></td></tr>
-<tr><td class="label">Processor :</td><td><TMPL_VAR NAME=processor_model></td>
+<tr><td class="label">Processor :</td><td><TMPL_IF NAME=processor_model><TMPL_VAR NAME=processor_model><TMPL_ELSE>-</TMPL_IF></td>
 <td class="label">Internal IP :</td><td><TMPL_VAR NAME=motherboard_ip></td></tr>
 <tr><td class="label">S/N :</td><td><TMPL_VAR NAME=motherboard_sn></td></tr>
 <tr><td class="label">Power Supply Card :</td><td><TMPL_IF NAME=motherboard_powersupply>
 <TMPL_VAR NAME=motherboard_powersupply> <TMPL_ELSE>none</TMPL_IF>
 </td></tr>
 <tr><td colspan="2">&nbsp;</td></tr>
-<tr><td class="label">Kernel :</td><td><TMPL_VAR NAME=motherboard_kernel></td></tr>
+<tr><td class="label">Kernel :</td><td><TMPL_IF NAME=motherboard_kernel><TMPL_VAR NAME=motherboard_kernel><TMPL_ELSE>-</TMPL_IF></td></tr>
 </table>
 
 

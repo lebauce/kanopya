@@ -37,23 +37,18 @@ sub view_motherboards : StartRunmode {
 		
 		$tmp->{motherboard_id} = $m->getAttr(name => 'motherboard_id');
 		
-		my $emodel = Entity::Motherboardmodel->get(id => $m->getAttr(name => 'motherboardmodel_id'));
-		$tmp->{motherboard_model} = $emodel->getAttr(name =>'motherboardmodel_brand')." ".$emodel->getAttr(name => 'motherboardmodel_name');
+		$tmp->{motherboard_label} = $m->toString();
 		my $state = $m->getAttr(name => 'motherboard_state');
-		$tmp->{motherboard_mac} = $m->getAttr(name => 'motherboard_mac_address');
+		#$tmp->{motherboard_mac} = $m->getAttr(name => 'motherboard_mac_address');
 		$tmp->{motherboard_hostname} = $m->getAttr(name => 'motherboard_hostname');
 		$tmp->{motherboard_ip} = $m->getAttr(name => 'motherboard_internal_ip');
 		$tmp->{active} = $m->getAttr(name => 'active');
  		 
 		if($tmp->{active}) {
 			if($state =~ /up/) {
-				my $ecluster = Entity::Cluster->get(id => $m->getClusterId());
-				$tmp->{cluster_name} =$ecluster->getAttr('name' => 'cluster_name');
 				$tmp->{state_up} = 1;
 				$tmp->{link_activity} = 1;
 			} elsif($state =~ /starting/)  {
-				my $ecluster = Entity::Cluster->get(id => $m->getClusterId());
-				$tmp->{cluster_name} =$ecluster->getAttr('name' => 'cluster_name');
 				$tmp->{state_starting} = 1;
 			} elsif($state =~ /stopping/)  {
 				$tmp->{state_stopping} = 1;
@@ -72,7 +67,7 @@ sub view_motherboards : StartRunmode {
     $tmpl->param('motherboards_list' => $motherboards);
     
     my $methods = Entity::Motherboard->getPerms();
-    if($methods->{create}) { $tmpl->param('can_create' => 1); }
+    if($methods->{'create'}->{'granted'}) { $tmpl->param('can_create' => 1); }
           
     return $tmpl->output();	
 }
@@ -196,11 +191,7 @@ sub view_motherboarddetails : Runmode {
 	$tmpl->param('mHardware' => 1);
 	$tmpl->param('submMotherboards' => 1);
 	$tmpl->param('username' => $self->session->param('username'));
-	
-	# actions visibility
-	#$tmpl->param('link_delete' => 0);
-	$tmpl->param('link_activate' => 0);
-	
+		
 	# motherboard state
 	$tmpl->param('state_up' => 0);
 	$tmpl->param('state_down' => 0);
@@ -210,41 +201,53 @@ sub view_motherboarddetails : Runmode {
 	
 	my $query = $self->query();
 	my $emotherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
-	my $emmodel = Entity::Motherboardmodel->get(id => $emotherboard->getAttr(name => 'motherboardmodel_id'));
-	my $epmodel = Entity::Processormodel->get(id => $emotherboard->getAttr(name => 'processormodel_id'));
-	my $ekernel = Entity::Kernel->get(id => $emotherboard->getAttr(name => 'kernel_id'));
-	
 	$tmpl->param('motherboard_id' => $emotherboard->getAttr('name' => 'motherboard_id'));
 	$tmpl->param('motherboard_hostname' => $emotherboard->getAttr('name' => 'motherboard_hostname'));
 	$tmpl->param('motherboard_desc' => $emotherboard->getAttr('name' => 'motherboard_desc'));
-	$tmpl->param('motherboard_model' => $emmodel->getAttr(name =>'motherboardmodel_brand')." ".$emmodel->getAttr(name => 'motherboardmodel_name'));
-	$tmpl->param('processor_model' => $epmodel->getAttr(name =>'processormodel_brand')." ".$epmodel->getAttr(name => 'processormodel_name'));
 	$tmpl->param('motherboard_mac' => $emotherboard->getAttr('name' => 'motherboard_mac_address'));
 	$tmpl->param('motherboard_ip' => $emotherboard->getAttr('name' => 'motherboard_internal_ip'));
 	$tmpl->param('motherboard_sn' => $emotherboard->getAttr('name' => 'motherboard_serial_number'));
 	$tmpl->param('motherboard_powersupply' => $emotherboard->getAttr('name' => 'motherboard_powersupply_id'));
-	$tmpl->param('motherboard_kernel' => $ekernel->getAttr('name' => 'kernel_name'));
+		
+	my $methods = $emotherboard->getPerms();
+	if($methods->{'setperm'}->{'granted'}) { $tmpl->param('can_setperm' => 1); }
+	
+	eval {
+		my $emmodel = Entity::Motherboardmodel->get(id => $emotherboard->getAttr(name => 'motherboardmodel_id'));
+		$tmpl->param('motherboard_model' => $emmodel->getAttr(name =>'motherboardmodel_brand')." ".$emmodel->getAttr(name => 'motherboardmodel_name'));
+	};
+	eval {
+		my $epmodel = Entity::Processormodel->get(id => $emotherboard->getAttr(name => 'processormodel_id'));
+		$tmpl->param('processor_model' => $epmodel->getAttr(name =>'processormodel_brand')." ".$epmodel->getAttr(name => 'processormodel_name'));
+	};
+	eval {
+		my $ekernel = Entity::Kernel->get(id => $emotherboard->getAttr(name => 'kernel_id'));
+		$tmpl->param('motherboard_kernel' => $ekernel->getAttr('name' => 'kernel_name'));
+	};
 	
 	if($emotherboard->getAttr('name' => 'active')) {
 		$tmpl->param('active' => 1);
-		$tmpl->param('link_activate' => 0);
-	
 		my $state = $emotherboard->getAttr('name' => 'motherboard_state');
 		if($state =~ /up/) {
-			my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
-			$tmpl->param('cluster_name' => $ecluster->getAttr('name' => 'cluster_name'));
 			$tmpl->param('state_up' => 1);
+			eval {
+				my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
+				$tmpl->param('cluster_name' => $ecluster->getAttr('name' => 'cluster_name'));
+			};
 			 
 		} elsif($state =~ /starting/) {
-			my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
-			$tmpl->param('cluster_name' => $ecluster->getAttr('name' => 'cluster_name'));
 			$tmpl->param('state_starting' => 1);
+			eval {
+				my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
+				$tmpl->param('cluster_name' => $ecluster->getAttr('name' => 'cluster_name'));
+			};
 			
 		} elsif($state =~ /stopping/) {
 			$tmpl->param('state_stopping' => 1);
 			
 		} elsif($state =~ /down/) {
 			$tmpl->param('state_down' => 1);
+			if($methods->{'deactivate'}->{'granted'}) { $tmpl->param('can_deactivate' => 1); }
 			
 		} elsif($state =~ /broken/) {
 			$tmpl->param('state_broken' => 1);
@@ -252,7 +255,8 @@ sub view_motherboarddetails : Runmode {
 		}
 	} else {
 		$tmpl->param('active' => 0);
-		$tmpl->param('link_activate' => 1);
+		if($methods->{'activate'}->{'granted'}) { $tmpl->param('can_activate' => 1); }
+		if($methods->{'remove'}->{'granted'}) { $tmpl->param('can_delete' => 1); }
 	}
 		
 	return $tmpl->output();

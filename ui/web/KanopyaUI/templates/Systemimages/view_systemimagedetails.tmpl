@@ -10,10 +10,10 @@
 <table id="Xstate" class="detailspart">
 <tr><TMPL_IF NAME=active><td>Active</td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
 <td class="actions">
-<TMPL_IF NAME=link_activate>
+<TMPL_IF NAME=can_activate>
 <a class="imgActivate" href="/cgi/kanopya.cgi/systemimages/process_activatesystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>">activate</a><br />
-<span class="desc">Activate this system image.</span><br />
-<TMPL_ELSE>
+<span class="desc">Activate this system image.</span><br /></TMPL_IF>
+<TMPL_IF NAME=can_deactivate>
 <a class="imgDeactivate" href="/cgi/kanopya.cgi/systemimages/process_deactivatesystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>">deactivate</a><br />
 <span class="desc">Deactivate this system image.</span><br />
 </TMPL_IF>
@@ -25,15 +25,18 @@
 <table id="Xsettings" class="detailspart">
 <tr><td class="italic" colspan="2"><TMPL_VAR NAME=systemimage_desc></td>
 <td class="actions" rowspan="4">
+<TMPL_IF NAME=can_update>
 <a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/systemimages/form_editsystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>', 'edit systemimage', 800, 400, '');">edit</a><br />
-<span class="desc">Modify these global parameters.</span><br /><br />
-<TMPL_IF NAME=link_delete>
+<span class="desc">Modify these global parameters.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_delete>
 <a class="imgRemove" href="/cgi/kanopya.cgi/systemimages/process_removesystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>">delete</a><br />
-<span class="desc">Delete this system image.</span><br />
-</TMPL_IF>
+<span class="desc">Delete this system image.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_setperm>
+<a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Systemimage&id=<TMPL_VAR NAME=systemimage_id>">permissions</a><br />
+<span class="desc">View/set permissions on this system image.</span><br /></TMPL_IF>
 </td><tr/>
 <tr><td colspan="2">&nbsp;</td></tr>
-<tr><td class="label">Distribution :</td><td><TMPL_VAR NAME=distribution></td></tr>
+<tr><td class="label">Distribution :</td><td><TMPL_IF NAME=distribution><TMPL_VAR NAME=distribution><TMPL_ELSE>-</TMPL_IF></td></tr>
 </table>
 
 <hr/>
@@ -49,8 +52,7 @@
 </td></tr>
 <TMPL_LOOP NAME=components_list>
 <tr><td class="label2"><span class="bold"><TMPL_VAR NAME=component_name><TMPL_VAR NAME=component_version></span> - <TMPL_VAR NAME=component_category></td>
-<td class="action"><TMPL_IF NAME=link_remove><a class="imgRemove" href="<TMPL_VAR NAME=component_id>">remove</a></TMPL_IF>
-</td></tr>
+<td class="action"></td></tr>
 </TMPL_LOOP>
 <TMPL_ELSE>
 <tr><td colspan="2">no defined component.</td>

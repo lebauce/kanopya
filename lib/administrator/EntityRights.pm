@@ -138,6 +138,92 @@ sub addPerm {
 	return;
 }
 
+=head2 updatePerms
+
+	desc : update all permissions methods 
+	args: consumer_id, consumed_id, methods list
+	
+=cut
+
+sub updatePerms {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
+		$errmsg = "EntityRights::addPerm need a consumer_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
+		$errmsg = "EntityRights::addPerm need a consumed_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	if (! exists $args{methods} or ! defined $args{methods}) { 
+		$errmsg = "EntityRights::addPerm need a methods named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	my $methods = $args{methods};
+	# we remove actuals perms not in methods argument
+	my $actualperms = $self->{schema}->resultset('Entityright')->search(
+		{	entityright_consumer_id => $args{consumer_id},
+			entityright_consumed_id => $args{consumed_id},
+			entityright_method => { -not_in => $methods },
+		},
+	)->delete_all;
+	
+	# we add new method perms if not already exists
+	foreach my $m (@$methods) {
+		$self->{schema}->resultset('Entityright')->find_or_create(
+			{	entityright_consumer_id => $args{consumer_id},
+				entityright_consumed_id => $args{consumed_id},
+				entityright_method => $m,
+			},
+			{ key => 'entityright_right' }
+		);
+	}
+}
+
+=head2 getGrantedMethods
+
+	desc : given a consumer entity (user or user's group) and a consumed entity,
+		   return an array containing all granted methods for that consumer on this consumed. 
+	args: consumer_id, consumed_id
+	return : array of scalar (string methods name)
+
+=cut 
+
+sub getGrantedMethods {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
+		$errmsg = "EntityRights::getGrantedMethods need a consumer_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
+		$errmsg = "EntityRights::getGrantedMethods need a consumed_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	my @methods = ();
+	my $resultset = $self->{schema}->resultset('Entityright')->search(
+		{ entityright_consumer_id => $args{consumer_id},
+		  entityright_consumed_id => $args{consumed_id},
+		},
+		{ columns => ['entityright_method']}
+	);
+	while(my $row = $resultset->next) {
+		push @methods, $row->get_column('entityright_method');
+	}
+	return @methods;
+}
+
 
 1;
 

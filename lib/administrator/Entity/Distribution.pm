@@ -41,12 +41,11 @@ use constant ATTR_DEF => {
 
 sub methods {
 	return {
-		class => {
-			create => 'create and save a new distribution',
+		'get'		=> {'description' => 'view this distribution', 
+						'perm_holder' => 'entity',
 		},
-		instance => {
-			get => 'retrieve an existing distribution',
-			
+		'setperm'	=> {'description' => 'set permissions on this distribution', 
+						'perm_holder' => 'entity',
 		},
 	};
 }
@@ -64,8 +63,25 @@ sub get {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args,  table => "Distribution");
-   return $self;
+	
+	my $adm = Administrator->new();
+   	my $dbix_distribution = $adm->{db}->resultset('Distribution')->find($args{id});
+   	if(not defined $dbix_distribution) {
+	   	$errmsg = "Entity::Distribution->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	}   	
+   	
+   	my $entity_id = $dbix_distribution->distribution_entities->first->get_column('entity_id');
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		$errmsg = "Permission denied to get distribution with id $args{id}";
+   		$log->error($errmsg);
+   		throw Kanopya::Exception::Permission::Denied(error => $errmsg);
+   	}
+   	
+   	my $self = $class->SUPER::get( %args,  table => "Distribution");
+   	return $self;
 }
 
 =head2 getDistributions

@@ -413,7 +413,9 @@ sub save {
 
 	class : public
 
-	desc : return a structure describing method permissions 
+	desc : return a structure describing method permissions for the current authenticated user.
+		If called on a class, return methods permissions holded by mastergroup only.
+		Else return all methods permissions. 
 
 	return : hash ref
 
@@ -423,35 +425,26 @@ sub getPerms {
 	my $self = shift;
 	my $class = ref $self;
 	my $adm = Administrator->new();
-	my $granted_methods = {};
-	
-	if($class) { # called on instance
-		my $instancemethod = $class->methods()->{instance};
-		foreach my $method (keys %$instancemethod) {
-			my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => $method);
-			if($granted) {
-				$granted_methods->{$method} = 1;
-			} 
-			else {
-				$granted_methods->{$method} = 0;
-			}
+	my $mastergroupeid = $self->getMasterGroupEid();
+	my $methods = $self->methods();
+	my $granted;
+		
+	foreach my $m (keys %$methods) {
+		
+		if($methods->{$m}->{'perm_holder'} eq 'mastergroup') {
+			$granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $m);	
+			$methods->{$m}->{'granted'} = $granted;
+		}
+		elsif($class and $methods->{$m}->{'perm_holder'} eq 'entity') {
+			$granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => $m);	
+			$methods->{$m}->{'granted'} = $granted;
+		}
+		else {
+			delete $methods->{$m};
 		}
 	}
-	else { # called on class
-		my $classmethod = $self->methods()->{class};
-		my $mastergroupeid = $self->getMasterGroupEid();
-		foreach my $method (keys %$classmethod) {
-			my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroupeid, method => $method);
-			if($granted) {
-				$granted_methods->{$method} = 1;
-			} 
-			else {
-				$granted_methods->{$method} = 0;
-			}
-		}
-	}
-	$log->debug(Dumper $granted_methods);	
-	return $granted_methods;
+	$log->debug(Dumper $methods);	
+	return $methods;
 }
 
 =head2 addPerm

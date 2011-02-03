@@ -4,16 +4,16 @@
 <div id="content">
 <TMPL_LOOP NAME=motherboards_list>
 <table class="listing">
-<tr><td colspan="3"><h1><TMPL_VAR NAME=motherboard_model> - <TMPL_VAR NAME=motherboard_mac></h1></td></tr>
+<tr><td colspan="3"><h1><TMPL_VAR NAME=motherboard_label></h1></td></tr>
 <tr><td><TMPL_VAR NAME=motherboard_hostname></td><td>
 <TMPL_IF NAME=active>Active<TMPL_ELSE>Deactivated</TMPL_IF></td><td class="toright">
 <a class="imgManage" href="/cgi/kanopya.cgi/motherboards/view_motherboarddetails?motherboard_id=<TMPL_VAR NAME=motherboard_id>">details</a></td></tr>
 <tr><td><TMPL_VAR NAME=motherboard_ip></td>
 <TMPL_IF NAME=active>
-<TMPL_IF NAME=state_up><td><span class="state imgUp">Up on <TMPL_VAR NAME=cluster_name> cluster</span></td></TMPL_IF>
+<TMPL_IF NAME=state_up><td><span class="state imgUp">Up</span></td></TMPL_IF>
 <TMPL_IF NAME=state_down><td><span class="state imgDown">Unused</span></td></TMPL_IF>
 <TMPL_IF NAME=state_starting><td><span class="state imgDown">Stopping...</span></td></TMPL_IF>
-<TMPL_IF NAME=state_stopping><td><span class="state imgDown">Starting... on <TMPL_VAR NAME=cluster_name> cluster<</span></td></TMPL_IF>
+<TMPL_IF NAME=state_stopping><td><span class="state imgDown">Starting...</span></td></TMPL_IF>
 <TMPL_IF NAME=state_broken><td><span class="state imgWarning">unknown</span></td></TMPL_IF>
 </TMPL_IF>
 <td class="toright">
