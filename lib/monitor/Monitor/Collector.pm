@@ -230,7 +230,8 @@ sub updateHostData {
 
 			#############################################
 			# Store new values in the corresponding RRD #
-			#############################################			
+			#############################################
+			# we loop because updates_values can be rows of table
 			while ( my ($index, $values) = each %$update_values) { 
 				# Log value of indicators
 				$log->debug( "[" . threads->tid() . "][$host](" . $retrieve_set_time . "s) '$set->{label}' => "
@@ -244,7 +245,8 @@ sub updateHostData {
 				$all_values{ $set_name } = \%stored_values;
 			}
 			
-		}
+		} #END FOREACH SET
+		
 		# Update host state
 		$self->_manageHostState( host => $host, reachable => $host_reachable );
 	};
