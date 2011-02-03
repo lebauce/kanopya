@@ -43,9 +43,10 @@ Executor is the main object use to create execution objects
 
 =cut
 package General;
-use lib ".";
-use McsExceptions;
+
+use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
+
 my $log = get_logger("executor");
 my $errmsg;
 
@@ -57,7 +58,7 @@ sub getClassEEntityFromEntity{
 	if(! exists($args{entity})) {
 		$errmsg = "Try to get Eentity class from object not entity : ". ref($args{entity});
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	}
 		 
 	my $entityclass = ref($args{entity});
@@ -75,7 +76,7 @@ sub getLocFromClass{
 	   if (! exists $args{entityclass} or ! defined $args{entityclass}) { 
 		$errmsg = "getLocFromClass need a  entityclass named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	my $data = $args{entityclass};
 	my $location = $args{entityclass};
@@ -89,7 +90,7 @@ sub getClassEntityFromType{
     if (! exists $args{type} or ! defined $args{type}) { 
 		$errmsg = "getClassEntityFromType need a  type named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
     }
 		
     

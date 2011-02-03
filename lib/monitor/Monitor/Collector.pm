@@ -244,7 +244,8 @@ sub updateHostData {
 				$all_values{ $set_name } = \%stored_values;
 			}
 			
-		}
+		} #END FOREACH SET
+		
 		# Update host state
 		$self->_manageHostState( host => $host, reachable => $host_reachable );
 	};
