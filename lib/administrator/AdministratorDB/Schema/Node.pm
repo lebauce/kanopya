@@ -16,8 +16,12 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "master_node",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 1 },
+  "master_state",
+  { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 20 },
 );
 __PACKAGE__->set_primary_key("node_id");
+__PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "motherboard_id"]);
+__PACKAGE__->add_unique_constraint("fk_node_2", ["motherboard_id"]);
 __PACKAGE__->belongs_to(
   "cluster_id",
   "AdministratorDB::Schema::Cluster",
@@ -30,8 +34,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-01-24 15:03:49
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xPRHmXebQDlwjPH5L1weaA
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-02-03 09:52:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:aFyKUqKJCosfIwG2T2SSIA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
