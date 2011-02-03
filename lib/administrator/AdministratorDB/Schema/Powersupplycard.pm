@@ -14,7 +14,7 @@ __PACKAGE__->add_columns(
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 64 },
   "powersupplycard_ip",
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 15 },
-  "powersupplycard_model_id",
+  "powersupplycardmodel_id",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 8 },
   "powersupplycard_mac_address",
   { data_type => "CHAR", default_value => undef, is_nullable => 0, size => 32 },
@@ -27,6 +27,11 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Powersupply",
   { "foreign.powersupplycard_id" => "self.powersupplycard_id" },
 );
+__PACKAGE__->belongs_to(
+  "powersupplycardmodel_id",
+  "AdministratorDB::Schema::Powersupplycardmodel",
+  { "powersupplycardmodel_id" => "powersupplycardmodel_id" },
+);
 __PACKAGE__->has_many(
   "powersupplycard_entities",
   "AdministratorDB::Schema::PowersupplycardEntity",
@@ -34,8 +39,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-02-03 09:52:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4dtMo+NP9r/4TR2KDtF1Fg
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-02-03 13:34:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZwpdmBAQqDChMulJiw5Kjg
 
 __PACKAGE__->has_one(
   "entitylink",

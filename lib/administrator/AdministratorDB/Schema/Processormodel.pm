@@ -26,7 +26,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 1 },
 );
 __PACKAGE__->set_primary_key("processormodel_id");
-__PACKAGE__->add_unique_constraint("processormodel_UNIQUE", ["processormodel_id"]);
+__PACKAGE__->add_unique_constraint("processormodel_name_UNIQUE", ["processormodel_name"]);
 __PACKAGE__->has_many(
   "motherboards",
   "AdministratorDB::Schema::Motherboard",
@@ -44,8 +44,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-02-03 09:52:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fvHuC27XCE6CJsUfc67dyQ
+# Created by DBIx::Class::Schema::Loader v0.04006 @ 2011-02-03 13:34:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UYXU+Tz+5V7uZGlZVz0gQg
 
 __PACKAGE__->has_one(
   "entitylink",
