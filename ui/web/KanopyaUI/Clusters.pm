@@ -59,6 +59,8 @@ sub view_clusters : StartRunmode {
     }	
    
 	$tmpl->param('clusters_list' => $clusters);
+	my $methods = Entity::Cluster->getPerms();
+	if($methods->{'create'}->{'granted'}) { $tmpl->param('can_create' => 1); }
 	  
     return $tmpl->output();
 }
