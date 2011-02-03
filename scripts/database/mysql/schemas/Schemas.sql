@@ -189,10 +189,11 @@ CREATE TABLE `node` (
   `cluster_id` int(8) unsigned NOT NULL,
   `motherboard_id` int(8) unsigned NOT NULL,
   `master_node` int(1) unsigned DEFAULT NULL,
+  `master_state` char(20),
   PRIMARY KEY (`node_id`),
-  KEY `cluster_id` (`cluster_id`,`motherboard_id`),
+  UNIQUE `cluster_id` (`cluster_id`,`motherboard_id`),
+  UNIQUE `fk_node_2` (`motherboard_id`),
   KEY `fk_node_1` (`cluster_id`),
-  KEY `fk_node_2` (`motherboard_id`),
   CONSTRAINT `fk_node_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_node_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

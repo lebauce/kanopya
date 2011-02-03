@@ -119,9 +119,9 @@ sub methods {
 			create => 'create and save a new motherboard',
 		},
 		instance 	=> {
-			get			=> 'retrieve an existing motherboard',
-			update		=> 'save changes applied on a motherboard',
-			remove 		=> 'delete a motherboard',
+			get			=> 'retrieve this motherboard',
+			update		=> 'modify this motherboard',
+			remove 		=> 'delete this motherboard',
 		}, 
 	};
 }

@@ -201,7 +201,7 @@ INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1,'Admin motherboard'
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
-INSERT INTO `node` VALUES (1,1,1,1);
+INSERT INTO `node` VALUES (1,1,1,1,'in');
 
 -- components templates
 INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/components/mcsapache2', 2);

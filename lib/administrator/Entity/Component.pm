@@ -160,6 +160,31 @@ sub get {
    return $self;
 }
 
+=head2 delete
+B<Class>   : Public
+B<Desc>    : This method allows to delete a component
+B<args>    : None
+B<Return>  : Nothing
+B<Comment>  : Delete Components
+B<throws>  : Nothing
+	
+=cut
+
+sub delete {
+	my $self = shift;
+	my $data = $self->{_dbix};
+	
+	my $entity_rs = $data->related_resultset( "component_instance_entities" );
+	$log->debug("First Deletion of entity link : component_instance_entities");
+	# J'essaie de supprimer dans la table entity
+	my $real_entity_rs = $entity_rs->related_resultset("entity_id");
+	$real_entity_rs->delete;
+
+	$log->debug("Finally delete the dbix itself");
+	$data->delete;
+}
+
+
 sub getComponentsByCategory {
 	my $class = shift;
 	my $adm = Administrator->new();
@@ -287,23 +312,6 @@ sub save {
 		
 }
 
-=head2 delete
-
-=cut
-
-sub delete {
-	my $self = shift;
-	my $data = $self->{_dbix};
-	
-	my $entity_rs = $data->related_resultset( "component_instance_entities" );
-	$log->debug("First Deletion of entity link : component_instance_entities");
-	# J'essaie de supprimer dans la table entity
-	my $real_entity_rs = $entity_rs->related_resultset("entity_id");
-	$real_entity_rs->delete;
-	
-	$log->debug("Finally delete the dbix itself");
-	$data->delete;
-}
 
 =head1 DIAGNOSTICS
 

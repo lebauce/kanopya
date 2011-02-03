@@ -164,6 +164,7 @@ sub view_userdetails : Runmode {
 		$log->debug(Dumper $granted_methods);
 		if($granted_methods->{update}) { $tmpl->param('can_update' => 1); }
 		if($granted_methods->{remove}) { $tmpl->param('can_delete' => 1); }
+		if($granted_methods->{setperm}) { $tmpl->param('can_setperm' => 1); }
 			
 		return $tmpl->output();
 	}
