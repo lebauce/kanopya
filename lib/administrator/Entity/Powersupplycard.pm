@@ -43,7 +43,7 @@ use constant ATTR_DEF => {
 						 is_mandatory => 1,
 						 is_extended => 0 },
 						 
-	powersupplycard_model_id => { pattern => 'm//s',
+	powersupplycardmodel_id => { pattern => 'm//s',
 						 is_mandatory => 0,
 						 is_extended => 0 },
 						 

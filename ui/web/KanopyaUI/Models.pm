@@ -11,7 +11,7 @@ use Entity::Processormodel;
 sub view_models : StartRunmode {
     my $self = shift;
     my $tmpl = $self->load_tmpl('Models/view_models.tmpl');
-    $tmpl->param('titlepage' => "Hardaware - Models");
+    $tmpl->param('titlepage' => "Hardware - Models");
 	$tmpl->param('mHardware' => 1);
 	$tmpl->param('submModels' => 1);
 	$tmpl->param('username' => $self->session->param('username'));

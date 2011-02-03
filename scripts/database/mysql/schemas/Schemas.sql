@@ -34,6 +34,20 @@ CREATE TABLE `processormodel` (
   UNIQUE KEY `processormodel_name_UNIQUE` (`processormodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+--
+-- Table structure for table `powersupplycardmodel`
+--
+
+CREATE TABLE `powersupplycardmodel` (
+  `powersupplycardmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `powersupplycardmodel_brand` char(64) NOT NULL,
+  `powersupplycardmodel_name` char(32) NOT NULL,
+  `powersupplycardmodel_slotscount` int(2) unsigned NOT NULL,
+  PRIMARY KEY (`powersupplycardmodel_id`),
+  UNIQUE KEY `powersupplycardmodel_name_UNIQUE` (`powersupplycardmodel_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `motherboardmodel`
 --
@@ -122,10 +136,12 @@ CREATE TABLE `powersupplycard` (
   `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `powersupplycard_name` char(64) NOT NULL,
   `powersupplycard_ip` char(15) DEFAULT NULL,
-  `powersupplycard_model_id` int(8),
+  `powersupplycardmodel_id` int(8) unsigned DEFAULT NULL,
   `powersupplycard_mac_address` char(32) NOT NULL,
   `active` int(1),
-  PRIMARY KEY (`powersupplycard_id`)
+  PRIMARY KEY (`powersupplycard_id`),
+  KEY `fk_powersupplycardmodel` (`powersupplycardmodel_id`),
+  CONSTRAINT `fk_powersupplycardmodel` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -763,6 +779,20 @@ CREATE TABLE `processormodel_entity` (
   UNIQUE KEY `fk_processormodel_entity_2` (`processormodel_id`),
   CONSTRAINT `fk_processormodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_processormodel_entity_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `powersupplycardmodel_entity`
+--
+
+CREATE TABLE `powersupplycardmodel_entity` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `powersupplycardmodel_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`powersupplycardmodel_id`),
+  UNIQUE KEY `fk_powersupplycardmodel_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_powersupplycardmodel_entity_2` (`powersupplycardmodel_id`),
+  CONSTRAINT `fk_powersupplycardmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_powersupplycardmodel_entity_2` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
