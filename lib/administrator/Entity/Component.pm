@@ -160,6 +160,36 @@ sub get {
    return $self;
 }
 
+=head2 getInstance
+
+=cut
+
+sub getInstance {
+	my $class = shift;
+    my %args = @_;
+
+    if ((! exists $args{id} or ! defined $args{id})) { 
+		$errmsg = "Entity::Component->getInstance need an id named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+   
+   	my $adm = Administrator->new;
+   	my $comp_instance_row = $adm->{db}->resultset("ComponentInstance")->find(
+		{ component_instance_id => $args{id} }, 
+		{ '+columns' => [ "component_id.component_name",
+						  "component_id.component_version",
+						  "component_id.component_category"], 
+		join => ["component_id"]}
+	);
+   	
+   	$class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
+					$comp_instance_row->get_column('component_name') . 
+					$comp_instance_row->get_column('component_version'); 
+   	my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
+   	return $self;
+}
+
 =head2 delete
 B<Class>   : Public
 B<Desc>    : This method allows to delete a component
