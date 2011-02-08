@@ -189,6 +189,66 @@ sub getNodeState {
 	return $self->{_dbix}->nodelink->get_column('node_state');
 }
 
+=head2 Entity::Motherboard->becomeNode (%args)
+	
+	Class : Public
+	
+	Desc : Create a new node instance in db from motherboard linked to cluster (in params).
+	
+	args: 
+		cluster_id : Int : Cluster identifier
+		master_node : Int : 0 or 1 to say if the motherboard is the master node
+	return: Node identifier
+	
+=cut
+
+sub becomeNode{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
+		(! exists $args{master_node} or ! defined $args{master_node})){
+		$errmsg = "Entity::Motherboard->becomeNode need a cluster_id and a master_node named argument!";
+		$log->error($errmsg);	
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+    my $adm = Administrator->new();
+	my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
+											motherboard_id =>$self->getAttr(name=>'motherboard_id'),
+											master_node => $args{master_node}});
+	return $res->get_column("node_id");
+}
+
+=head2 Entity::Motherboard->notNode (%args)
+	
+	Class : Public
+	
+	Desc : Remove a node instance for a dedicated motherboard.
+	
+	args: 
+		cluster_id : Int : Cluster identifier
+	
+=cut
+
+sub notNode{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})){
+		$errmsg = "Entity::Motherboard->notNode need a cluster_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	$args{'motherboard_id'} = $self->getAttr(name =>"motherboard_id");
+	my $row = $self->{_node_rs}->search(\%args)->first;
+	if(not defined $row) {
+		$errmsg = "Entity::Motherboard->notNode : node representing motherboard $args{'motherboard_id'} and cluster $args{cluster_id} not found!";
+		$log->error($errmsg);
+		throw Mcs::Exception::DB(error => $errmsg);
+	}
+	$row->delete;
+}
+
 =head2 getMotherboards
 
 =cut 

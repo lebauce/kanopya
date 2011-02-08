@@ -57,6 +57,7 @@ use Administrator;
 use Entity::Cluster;
 use Entity::Motherboard;
 use Data::Dumper;
+use Operation;
 
 use Net::Ping;
 use IO::Socket;
@@ -241,7 +242,12 @@ sub motherboardStarted{
         }
     $args{motherboard}->setAttr(name=>"motherboard_state", value => "up");
     $args{motherboard}->save();
-    #Update cluster ?
+    my %params;
+    $params{cluster_id} = $args{motherboard}->getClusterId();
+    $params{motherboard_id} = $args{motherboard}->getAttr(name=>"motherboard_id");
+    Operation->enqueue(priority => 200,
+                   type     => 'PostStartNode',
+                   params   => \%params);
 }
 
 ################################### NODE STATES METHOD PART

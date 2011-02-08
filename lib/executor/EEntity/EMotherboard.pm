@@ -39,9 +39,12 @@ EMotherboard is the execution class of motherboard entities
 package EEntity::EMotherboard;
 use base "EEntity";
 
+use Entity::Powersupplycard;
+
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
+use IO::Socket;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -76,7 +79,48 @@ sub _init {
 	return;
 }
 
-
+sub start {
+    my $self = shift;
+	my %args = @_;
+	
+    if ((! exists $args{econtext} or ! defined $args{econtext})){
+		$errmsg = "EEntity::EMotherboard->start need a econtext named argument!";
+		$log->error($errmsg);	
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $powersupplycard_id = $self->_getEntity()->getPowerSupplyCardId();
+	if (!$powersupplycard_id) {
+		if(not -e '/usr/sbin/etherwake') {
+			$errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
+			$log->error($errmsg);
+			throw Kanopya::Exception::Execution(error => $errmsg);
+		}
+		my $command = "/usr/sbin/etherwake ".$self->_getEntity()->getAttr(name => 'motherboard_mac_address');
+		my $result = $args{econtext}->execute(command => $command);
+	}
+	else {
+	    my $powersupplycard = Entity::Powersupplycard->get(id=> $powersupplycard_id);
+		my $powersupply_ip = $powersupplycard->getAttr(name => "powersupplycard_ip");
+		$log->debug("Start motherboard with power supply which ip is : <$powersupply_ip>");
+		my $sock = new IO::Socket::INET (
+                                  PeerAddr => $powersupply_ip,
+                                  PeerPort => '1470',
+                                  Proto => 'tcp',
+                                 );
+		$sock->autoflush(1);
+		die "Could not create socket: $!\n" unless $sock;
+	    my $powersupply_port_number = $powersupplycard->getMotherboardPort(motherboard_powersupply_id=> $self->{_objs}->{motherboard}->getAttr(name => "motherboard_powersupply_id"));
+		my $pos = $powersupply_port_number;
+		my $s = "R";
+		$s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
+		$s .= pack "B16", "000000000000000";
+		printf $sock $s;
+		close($sock);
+	}
+	my $state = "starting:".time;
+	$self->_getEntity()->setAttr(name => 'motherboard_state', value => $state);
+	$self->_getEntity()->save();
+}
 
 1;
 
