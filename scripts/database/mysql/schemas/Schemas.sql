@@ -205,7 +205,7 @@ CREATE TABLE `node` (
   `cluster_id` int(8) unsigned NOT NULL,
   `motherboard_id` int(8) unsigned NOT NULL,
   `master_node` int(1) unsigned DEFAULT NULL,
-  `master_state` char(20),
+  `node_state` char(20),
   PRIMARY KEY (`node_id`),
   UNIQUE `cluster_id` (`cluster_id`,`motherboard_id`),
   UNIQUE `fk_node_2` (`motherboard_id`),

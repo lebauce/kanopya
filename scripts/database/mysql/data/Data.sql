@@ -115,7 +115,9 @@ INSERT INTO `operationtype` VALUES
 (21,'AddComponentToCluster'),
 (22,'RemoveComponentFromCluster'),
 (23,'StopNode'),
-(24,'UpdateClusterNodeStarted');
+(24,'UpdateClusterNodeStarted'),
+(25,'PreStartNode'),
+(26,'StartNode');
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,2); SET @eid := @eid +1;

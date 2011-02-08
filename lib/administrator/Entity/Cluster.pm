@@ -634,14 +634,15 @@ sub addNode {
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
    	}
-    my %params = {
+    my %params = (
     	cluster_id => $self->getAttr(name =>"cluster_id"),
     	motherboard_id => $args{motherboard_id}, 
-    };
+    );
     $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
     Operation->enqueue(
     	priority => 200,
-        type     => 'AddMotherboardInCluster',
+#        type     => 'AddMotherboardInCluster',
+        type     => 'PreStartNode',
         params   => \%params,
     );
 }
@@ -656,7 +657,25 @@ sub removeNode {}
 
 =cut
 
-sub start {}
+sub start {
+	my $self = shift;
+	
+	my $adm = Administrator->new();
+	# addNode method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
+   	}
+    my %params = (
+    	cluster_id => $self->getAttr(name =>"cluster_id"),
+    );
+    $log->debug("New Operation startCluster with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'StartCluster',
+        params   => \%params,
+    );
+}
 
 =head2 stop 
 

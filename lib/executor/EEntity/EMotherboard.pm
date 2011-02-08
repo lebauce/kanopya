@@ -1,5 +1,4 @@
-#!/usr/bin/perl -w
-# kanopya-orchestrator.pl - This is the main script to run kanopya orchestration rules engine.
+# EMotherboard.pm - Abstract class of EMotherboards object
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -24,55 +23,62 @@
 
 =head1 NAME
 
-kanopya-orchestrator - Orchestrator
+EMotherboard - execution class of motherboard entities
 
-=head1 SYNOPSIS	    
+=head1 SYNOPSIS
 
-	$ ./kanopya-orchestrator
+
 
 =head1 DESCRIPTION
 
-Orchestrator is the main script to run orchestration rules engine.
-Orchestrator detect valid conditions and apply associated action.
+EMotherboard is the execution class of motherboard entities
 
 =head1 METHODS
 
 =cut
+package EEntity::EMotherboard;
+use base "EEntity";
 
 use strict;
 use warnings;
-use Orchestrator;
 use Log::Log4perl "get_logger";
 
-Log::Log4perl->init('/etc/kanopya/orchestrator-log.conf');
-my $log = get_logger("orchestrator");
+my $log = get_logger("executor");
+my $errmsg;
 
+=head2 new
 
-my $running = 1;
+    my comp = EMotherboard->new();
 
-sub signalHandler {
-	my $sig = shift;
-	$log->info($sig." received : stopping main loop");
-	$running = 0;
+EMotherboard::new creates a new component object.
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+    
+    my $self = $class->SUPER::new(%args);
+	$self->_init();
+    
+    return $self;
 }
 
-$SIG{TERM} = \&signalHandler;
-	
+=head2 _init
 
-eval	{
-	my $orchestrator = Orchestrator->new();
-	$log->info("Starting main loop");
-	# enter in the main loop and continue while $$running is true
-	$orchestrator->run(\$running);
-};
-if ($@) {
-	my $ex = $@;
-	$log->error("error in orchestrator instanciation: $ex");
-	die "Catch error in Orchestrator instanciation: $ex";
-};
+EMotherboard::_init is a private method used to define internal parameters.
 
-$log->info("kanopya-orchestrator end.");
+=cut
 
+sub _init {
+	my $self = shift;
+
+	return;
+}
+
+
+
+1;
 
 __END__
 

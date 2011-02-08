@@ -89,6 +89,12 @@ __PACKAGE__->has_many(
 # You can replace this text with custom content, and it will be preserved on regeneration
 
 __PACKAGE__->has_one(
+  "nodelink",
+  "AdministratorDB::Schema::Node",
+  { "foreign.motherboard_id" => "self.motherboard_id" },
+);
+
+__PACKAGE__->has_one(
   "entitylink",
   "AdministratorDB::Schema::MotherboardEntity",
   { "foreign.motherboard_id" => "self.motherboard_id" },
