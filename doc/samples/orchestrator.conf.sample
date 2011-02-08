@@ -1,0 +1,3 @@
+<config time_step='20' rrd_base_dir='/var/cache/mcs/orchestrator/base' graph_dir='/tmp/orchestrator/graph'>
+	<user name="admin" password="admin" />
+</config>
