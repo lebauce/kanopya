@@ -1,0 +1,6 @@
+samples/* etc/kanopya/samples
+sbin/* opt/kanopya/sbin
+lib/* opt/kanopya/lib/executor
+init/* etc/init.d
+templates/* opt/kanopya/templates
+t/* opt/kanopya/t/executor
