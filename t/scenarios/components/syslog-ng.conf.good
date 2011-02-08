@@ -1,0 +1,57 @@
+
+# set some global options.
+options { long_hostnames(off);
+	  flush_lines(0);
+	  use_dns(no);
+	  use_fqdn(no);
+          owner("root");
+	  group("adm");
+	  perm(0640);
+	  stats_freq(0);
+          bad_hostname("^gconfd");
+	  create_dirs(yes);
+};
+
+# Entry: source, destination or filter
+
+source src_two { 
+   
+      driver1(param1);
+   
+};
+
+source src_one { 
+   
+      driver1(param1);
+   
+      driver2(parm1 param2);
+   
+};
+
+destination dest_one { 
+   
+      driver1(param1);
+   
+      driver2(parm1 param2);
+   
+};
+
+
+# log
+
+log {
+    
+    source( src_two ); 
+    
+    destination( dest_one ); 
+    
+};
+
+log {
+    
+    source( src_one ); 
+    
+    destination( dest_one ); 
+    
+};
+

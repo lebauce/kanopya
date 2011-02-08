@@ -281,7 +281,7 @@ sub addnetwork_routes {
 	unlink "/tmp/$tmpfile";		
 }
 
-sub updateNodeStarted{
+sub postStartNode{
 	my $self = shift;
 	my %args = @_;
 	

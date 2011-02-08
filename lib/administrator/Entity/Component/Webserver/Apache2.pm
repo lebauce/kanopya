@@ -87,7 +87,7 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
+   my $self = $class->SUPER::get( %args);
    return $self;
 }
 
@@ -346,6 +346,11 @@ sub setConf {
 		
 	}	
 }
+
+sub getNetConf{
+    return {80=>'tcp'};
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

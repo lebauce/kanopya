@@ -641,7 +641,8 @@ sub addNode {
     $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
     Operation->enqueue(
     	priority => 200,
-        type     => 'AddMotherboardInCluster',
+#        type     => 'AddMotherboardInCluster',
+        type     => 'PreStartNode',
         params   => \%params,
     );
 }

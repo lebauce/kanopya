@@ -317,7 +317,6 @@ sub execute {
 	my $components = $self->{_objs}->{components};
 	$log->info('Processing cluster components configuration for this node');
 	foreach my $i (keys %$components) {
-		
 		my $tmp = EFactory::newEEntity(data => $components->{$i});
 		$log->debug("component is ".ref($tmp));
 		$tmp->addNode(motherboard => $self->{_objs}->{motherboard}, 

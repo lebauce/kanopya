@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use List::Util qw(sum);
 use XML::Simple;
+use DateTime::Format::Strptime;
 #use General;
 
 use Data::Dumper;
@@ -55,8 +56,6 @@ sub _timeLaps {
 	} elsif ( defined $args{time_range} ) {
 		my @range = split ",", $args{time_range};
 		# TODO check validity of range 
-		
-		use DateTime::Format::Strptime;
 		
 		#my $time_zone = 'Europe/Paris';
 		my $time_zone = 'local';

@@ -81,7 +81,7 @@ my ($schema, $config, $oneinstance);
 =cut
 
 sub loadConfig {
-	$config = XMLin("/opt/kanopya/conf/administrator.conf");
+	$config = XMLin("/etc/kanopya/administrator.conf");
 	if (! exists $config->{internalnetwork}->{ip} ||
 		! defined $config->{internalnetwork}->{ip} ||
 		! exists $config->{internalnetwork}->{mask} ||
@@ -270,7 +270,7 @@ sub new {
 }
 
 
-#TODO Comment getResultset
+#TODO Comment getRow
 sub getRow {
 	my $self = shift;
     my %args = @_;
