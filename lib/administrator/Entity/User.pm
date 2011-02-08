@@ -69,15 +69,21 @@ use constant ATTR_DEF => {
 
 sub methods {
 	return {
-		class 		=> {
-			create => 'create and save a new user',
+		'create'	=> {'description' => 'create a new user', 
+						'perm_holder' => 'mastergroup',
 		},
-		instance 	=> {
-			get			=> 'retrieve an existing user',
-			update		=> 'save changes applied on a user',
-			remove 		=> 'delete a user',
-			setperm		=> 'edit permission on this user',
-		}, 
+		'get'		=> {'description' => 'view this user', 
+						'perm_holder' => 'entity',
+		},
+		'update'	=> {'description' => 'save changes applied on this user', 
+						'perm_holder' => 'entity',
+		},
+		'remove'	=> {'description' => 'delete this user', 
+						'perm_holder' => 'entity',
+		},
+		'setperm'	=> {'description' => 'set permissions on this user', 
+						'perm_holder' => 'entity',
+		},
 	};
 }
 

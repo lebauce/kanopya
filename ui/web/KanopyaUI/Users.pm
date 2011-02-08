@@ -34,8 +34,8 @@ sub view_users : StartRunmode {
 	}
 	$tmpl->param('users_list' => $users);
 	
-	my $granted_methods = Entity::User->getPerms();
-	if($granted_methods->{create}) {
+	my $methods = Entity::User->getPerms();
+	if($methods->{'create'}->{'granted'}) {
 		$tmpl->param('can_create' => 1);
 	}
 	return $tmpl->output();
@@ -160,11 +160,11 @@ sub view_userdetails : Runmode {
 		} 
 		$tmpl->param('groups_list' => $groups);
 		
-		my $granted_methods = $euser->getPerms();
-		$log->debug(Dumper $granted_methods);
-		if($granted_methods->{update}) { $tmpl->param('can_update' => 1); }
-		if($granted_methods->{remove}) { $tmpl->param('can_delete' => 1); }
-		if($granted_methods->{setperm}) { $tmpl->param('can_setperm' => 1); }
+		my $methods = $euser->getPerms();
+		$log->debug(Dumper $methods);
+		if($methods->{'update'}->{'granted'}) { $tmpl->param('can_update' => 1); }
+		if($methods->{'remove'}->{'granted'}) { $tmpl->param('can_delete' => 1); }
+		if($methods->{'setperm'}->{'granted'}) { $tmpl->param('can_setperm' => 1); }
 			
 		return $tmpl->output();
 	}

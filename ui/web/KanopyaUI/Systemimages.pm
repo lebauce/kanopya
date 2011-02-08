@@ -24,13 +24,17 @@ sub view_systemimages : StartRunmode {
 		$tmp->{systemimage_id} = $s->getAttr(name => 'systemimage_id');
 		$tmp->{systemimage_name} = $s->getAttr(name => 'systemimage_name');
 		$tmp->{systemimage_desc} = $s->getAttr(name => 'systemimage_desc');
-		my $edistro = Entity::Distribution->get(id => $s->getAttr(name => 'distribution_id'));
-		$tmp->{distribution} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
+		eval {
+			my $edistro = Entity::Distribution->get(id => $s->getAttr(name => 'distribution_id'));
+			$tmp->{distribution} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
+		};
 		$tmp->{active} = $s->getAttr(name => 'active');
 		push (@$systemimages, $tmp);
     }		
 	$tmpl->param('systemimages_list' => $systemimages);
-
+	my $methods = Entity::Systemimage->getPerms();
+	if($methods->{'create'}->{'granted'}) { $tmpl->param('can_create' => 1); }
+	
 	return $tmpl->output();
 }
 
@@ -151,31 +155,33 @@ sub view_systemimagedetails : Runmode {
 	$tmpl->param('username' => $self->session->param('username'));
 	
 	# actions visibility
-	$tmpl->param('link_delete' => 0);
-	$tmpl->param('link_activate' => 0);
 
 	my $query = $self->query();
 	my $esystemimage = Entity::Systemimage->get(id => $query->param('systemimage_id'));
 	
+	my $methods = $esystemimage->getPerms();
+	if($methods->{'setperm'}->{'granted'}) { $tmpl->param('can_setperm' => 1); }
+	
 	$tmpl->param('systemimage_id' => $esystemimage->getAttr(name => 'systemimage_id'));
 	$tmpl->param('systemimage_name' => $esystemimage->getAttr(name => 'systemimage_name'));
 	$tmpl->param('systemimage_desc' => $esystemimage->getAttr(name => 'systemimage_desc'));
-		
-	my $edistro = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
-	$tmpl->param('distribution' => $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version'));
 	
+	eval {	
+		my $edistro = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
+		$tmpl->param('distribution' => $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version'));
+	};
 	if(not $esystemimage->getAttr(name => 'active')) {
-		$tmpl->param('link_activate' => 1);
-		$tmpl->param('link_delete' => 1);
+		if($methods->{'activate'}->{'granted'}) { $tmpl->param('can_activate' => 1); }
+		if($methods->{'remove'}->{'granted'}) { $tmpl->param('can_delete' => 1); }
 	} else {
+		if($methods->{'deactivate'}->{'granted'}) { $tmpl->param('can_deactivate' => 1); }
 		$tmpl->param('active' => 1);
 	}
 	
-	my $link_remove = $tmpl->param('active') ? 0 : 1;
 	my $components_list = $esystemimage->getInstalledComponents();
 	my $nb = scalar(@$components_list);
 	foreach my $c (@$components_list) {
-		$c->{link_remove} = $link_remove;
+		delete $c->{component_id};
 	}
 	$tmpl->param('components_list' => $components_list);
 	$tmpl->param('components_count' => $nb + 1);

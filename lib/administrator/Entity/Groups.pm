@@ -70,18 +70,30 @@ use constant ATTR_DEF => {
 
 sub methods {
 	return {
-		class 		=> {
-			create => 'create and save a new group',
+		'create'	=> {'description' => 'create a new group', 
+						'perm_holder' => 'mastergroup',
 		},
-		instance 	=> {
-			get			=> 'retrieve an existing group',
-			update		=> 'save changes applied on a group',
-			remove 		=> 'delete a group',
-			appendEntity => 'add an element to group',
-			removeEntity => 'remove an element from a group',
+		'get'		=> {'description' => 'view this group', 
+						'perm_holder' => 'entity',
+		},
+		'update'	=> {'description' => 'save changes applied on this group', 
+						'perm_holder' => 'entity',
+		},
+		'remove'	=> {'description' => 'delete this group', 
+						'perm_holder' => 'entity',
+		},
+		'setperm'	=> {'description' => 'set permission on this group', 
+						'perm_holder' => 'entity',
+		},
+		'appendEntity' => {'description' => 'add an element to group',
+							'perm_holder' => 'entity',
+		},					
+		'removeEntity' => {'description' => 'remove an element from a group',
+							'perm_holder' => 'entity',
 		}, 
 	};
 }
+
 
 =head2 get
 

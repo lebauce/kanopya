@@ -46,15 +46,22 @@ use constant ATTR_DEF => {
 
 sub methods {
 	return {
-		class 		=> {
-			create => 'create and save a new processor model',
+		'create'	=> {'description' => 'create a new processor model', 
+						'perm_holder' => 'mastergroup',
 		},
-		instance 	=> {
-			get			=> 'retrieve an existing processor model',
-			update		=> 'save changes applied on a processor model',
-			remove 		=> 'delete a processor model',
-		}, 
-	};
+		'get'		=> {'description' => 'view this processor model', 
+						'perm_holder' => 'entity',
+		},
+		'update'	=> {'description' => 'save changes applied on this processor model', 
+						'perm_holder' => 'entity',
+		},
+		'remove'	=> {'description' => 'delete this processor model', 
+						'perm_holder' => 'entity',
+		},
+		'setperm'	=> {'description' => 'set permissions on this processor model', 
+						'perm_holder' => 'entity',
+		},
+	}; 
 }
 
 sub get {

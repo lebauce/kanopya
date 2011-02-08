@@ -115,14 +115,27 @@ use constant ATTR_DEF => {
 
 sub methods {
 	return {
-		class 		=> {
-			create => 'create and save a new motherboard',
+		'create'	=> {'description' => 'create a new motherboard', 
+						'perm_holder' => 'mastergroup',
 		},
-		instance 	=> {
-			get			=> 'retrieve this motherboard',
-			update		=> 'modify this motherboard',
-			remove 		=> 'delete this motherboard',
-		}, 
+		'get'		=> {'description' => 'view this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		'update'	=> {'description' => 'save changes applied on this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		'remove'	=> {'description' => 'delete this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		'activate'=> {'description' => 'activate this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		'deactivate'=> {'description' => 'deactivate this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		'setperm'	=> {'description' => 'set permissions on this motherboard', 
+						'perm_holder' => 'entity',
+		},
 	};
 }
 

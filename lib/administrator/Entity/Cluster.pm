@@ -87,16 +87,39 @@ use constant ATTR_DEF => {
 
 sub methods {
 	return {
-		class 		=> {
-			create => 'create and save a new cluster',
+		'create'	=> {'description' => 'create a new cluster', 
+						'perm_holder' => 'mastergroup',
 		},
-		instance 	=> {
-			get			=> 'retrieve an existing cluster',
-			update		=> 'save changes applied on a cluster',
-			remove 		=> 'delete a cluster',
-			addNode		=> 'add a node to this cluster',
-			removeNode	=> 'remove a node from this cluster'
-		}, 
+		'get'		=> {'description' => 'view this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'update'	=> {'description' => 'save changes applied on this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'remove'	=> {'description' => 'delete this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'addNode'	=> {'description' => 'add a node to this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'removeNode'=> {'description' => 'remove a node from this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'activate'=> {'description' => 'activate this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'deactivate'=> {'description' => 'deactivate this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'start'=> {'description' => 'start this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'stop'=> {'description' => 'stop this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'setperm'	=> {'description' => 'set permissions on this cluster', 
+						'perm_holder' => 'entity',
+		},
 	};
 }
 
@@ -554,12 +577,26 @@ sub getMotherboards {
 		my $motherboard_row = $node_row->motherboard_id;
 		$log->debug("Nodes found");
 		my $motherboard_id = $motherboard_row->get_column('motherboard_id');
-		$motherboards{$motherboard_id} = Entity::Motherboard->get (
+		eval { $motherboards{$motherboard_id} = Entity::Motherboard->get (
 						id => $motherboard_id,
-						type => "Motherboard");
+						type => "Motherboard") };
 	}
 	return \%motherboards;
 }
+
+=head2 getCurrentNodesCount
+
+	class : public
+	desc : return the current nodes count of the cluster
+
+=cut
+
+sub getCurrentNodesCount {
+	my $self = shift;
+	return $self->{_dbix}->nodes->count;
+}
+
+
 
 sub getPublicIps {
 	my $self = shift;
@@ -601,7 +638,7 @@ sub addNode {
     	cluster_id => $self->getAttr(name =>"cluster_id"),
     	motherboard_id => $args{motherboard_id}, 
     );
-    $log->debug("New Operation AddMotherboardInCluster with attrs : " . Dumper %params ."\n");
+    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
     Operation->enqueue(
     	priority => 200,
 #        type     => 'AddMotherboardInCluster',
@@ -620,7 +657,25 @@ sub removeNode {}
 
 =cut
 
-sub start {}
+sub start {
+	my $self = shift;
+	
+	my $adm = Administrator->new();
+	# addNode method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
+   	}
+    my %params = (
+    	cluster_id => $self->getAttr(name =>"cluster_id"),
+    );
+    $log->debug("New Operation startCluster with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'StartCluster',
+        params   => \%params,
+    );
+}
 
 =head2 stop 
 

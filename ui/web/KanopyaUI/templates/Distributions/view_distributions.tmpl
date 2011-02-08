@@ -7,6 +7,9 @@
 <tr><td colspan="2"><h1 class="distribution img<TMPL_VAR NAME=distribution_name>"><TMPL_VAR NAME=distribution_name> <TMPL_VAR NAME=distribution_version></h1></td></tr>
 <tr><td></td><td class="toright">
 <a class="imgManage" href="/cgi/kanopya.cgi/distributions/view_distributiondetails?distribution_id=<TMPL_VAR NAME=distribution_id>">details</a></td></tr>
+<TMPL_IF NAME=can_setperm>
+<tr><td></td><td class="toright"><a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Distribution&id=<TMPL_VAR NAME=distribution_id>">permissions</a></td></tr>
+</TMPL_IF>
 <tr><td class="italic" colspan="3"><TMPL_VAR NAME=distribution_desc></td></tr>
 </table>
 </TMPL_LOOP>

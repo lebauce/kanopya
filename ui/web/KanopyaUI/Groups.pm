@@ -34,7 +34,7 @@ sub view_groups : StartRunmode {
 	}
 	$tmpl->param('groups_list' => $groups);
 	my $methods = Entity::Groups->getPerms();
-	if($methods->{create}) { $tmpl->param('can_create' => 1); }
+	if($methods->{'create'}->{'granted'}) { $tmpl->param('can_create' => 1); }
 	return $tmpl->output();
 }
 
@@ -136,7 +136,7 @@ sub view_groupdetails : Runmode {
 		$tmpl->param('groups_desc' =>  $egroups->getAttr('name' => 'groups_desc'));
 		$tmpl->param('groups_type' =>  $egroups->getAttr('name' => 'groups_type'));
 		
-		my $granted_methods = $egroups->getPerms();
+		my $methods = $egroups->getPerms();
 		my @entities = $egroups->getEntities();
 		my $content = [];
 		foreach my $e (@entities) {
@@ -144,16 +144,16 @@ sub view_groupdetails : Runmode {
 			$tmp->{content_id} = $e->getAttr('name' => lc($tmpl->param('groups_type')).'_id');
 			$tmp->{content_label} = $e->toString();
 			$tmp->{groups_id} = $groups_id;
-			$tmp->{can_removeEntity} = $granted_methods->{removeEntity}; 
+			$tmp->{can_removeEntity} = $methods->{'removeEntity'}->{'granted'}; 
 						
 			push(@$content, $tmp) 
 		}
 		$tmpl->param('content_list' => $content);
 		$tmpl->param('content_count' => scalar(@$content)+1);
 				
-		if($granted_methods->{update}) { $tmpl->param('can_update' => 1); }
-		if($granted_methods->{remove}) { $tmpl->param('can_delete' => 1); }
-		if($granted_methods->{appendEntity}) { $tmpl->param('can_appendEntity' => 1); }
+		if($methods->{'update'}->{'granted'}) { $tmpl->param('can_update' => 1); }
+		if($methods->{'remove'}->{'granted'}) { $tmpl->param('can_delete' => 1); }
+		if($methods->{'appendEntity'}->{'granted'}) { $tmpl->param('can_appendEntity' => 1); }
 		return $tmpl->output();
 	}
 }

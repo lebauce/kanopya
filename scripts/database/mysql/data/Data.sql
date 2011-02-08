@@ -17,8 +17,10 @@ INSERT INTO `groups` VALUES
 (7,'Kernel','Kernel','Kernel master group containing all kernels',1),
 (8,'Systemimage','Systemimage','Systemimage master group containing all system images',1),
 (9,'Operationtype','Operationtype','Operationtype master group containing all operations',1),
-(10,'Powersupply','Powersupply','Powersupply master group  containing all power supply cards',1),
-(11,'Groups','Groups','Groups master group containing all groups',1);
+(10,'Powersupplycardmodel','Powersupplycardmodel','Powersupplycardmodel master group  containing all powersupply card models',1),
+(11,'Powersupplycard','Powersupplycard','Powersupplycard master group  containing all power supply cards',1),
+(12,'Groups','Groups','Groups master group containing all groups',1);
+
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,1); SET @MasterUserGroup_eid = @eid; SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,3); SET @eid := @eid +1;
@@ -30,17 +32,18 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,8);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,9); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,10); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,12); SET @eid := @eid +1;
 
 -- predefined groups
 INSERT INTO `groups` VALUES
-(12,'Admin','User','Privileged users for administration tasks',0);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,12); SET @eid := @eid +1;
-SET @Admin_group_id = 12;
+(13,'Admin','User','Privileged users for administration tasks',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,13); SET @eid := @eid +1;
+SET @Admin_group_id = 13;
 
 INSERT INTO `groups` VALUES
-(13,'GuestGroup','User','Guest users with limited permissions',0);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,13); SET @GuestGroup_eid = @eid; SET @eid := @eid +1;
-SET @Guest_group_id = 13;
+(14,'GuestGroup','User','Guest users with limited permissions',0);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,14); SET @GuestGroup_eid = @eid; SET @eid := @eid +1;
+SET @Guest_group_id = 14;
 
 -- system user
 INSERT INTO `user` VALUES 
@@ -66,6 +69,10 @@ INSERT INTO `processormodel` VALUES (3,'VIA Nano','L2200',2,1.6,1,13,1);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
+
+-- powersupplycard models
+INSERT INTO `powersupplycardmodel` VALUES (1,'Hederatech','notresupermodeldecarte',12);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- motherboard models
 INSERT INTO `motherboardmodel` VALUES (1,'INTEL','DG945GCLF2','945GC',1,42,1,1,2,1);
@@ -171,7 +178,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
 -- Power Supply Card
-INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',NULL,'00:30:f9:05:8b:6e',1);
+INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',1,'00:30:f9:05:8b:6e',1);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- Power Supply

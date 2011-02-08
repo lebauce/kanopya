@@ -20,10 +20,12 @@ sub view_distributions : StartRunmode {
     
     foreach my $m (@edistributions) {
 		my $tmp = {};
+		my $methods = $m->getPerms();
 		$tmp->{distribution_id} = $m->getAttr(name => 'distribution_id');
 		$tmp->{distribution_name} = $m->getAttr(name => 'distribution_name');
 		$tmp->{distribution_version} = $m->getAttr(name => 'distribution_version');
 		$tmp->{distribution_desc} = $m->getAttr(name => 'distribution_desc');
+		if($methods->{'setperm'}->{'granted'}) { $tmp->{'can_setperm'} = 1; }
 		#$tmp->{COMPONENTS} = $m->getProvidedComponents();
 			   
 		push (@$distributions, $tmp);
