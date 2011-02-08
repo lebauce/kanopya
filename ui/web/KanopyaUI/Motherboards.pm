@@ -78,9 +78,7 @@ sub form_addmotherboard : Runmode {
     my $self = shift;
     my $errors = shift;
     my $tmpl =  $self->load_tmpl('Motherboards/form_addmotherboard.tmpl');
-    
-    
-	$tmpl->param($errors) if $errors;
+    $tmpl->param($errors) if $errors;
 
 	my @motherboardmodels = Entity::Motherboardmodel->getMotherboardmodels(hash => {});
 	my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});

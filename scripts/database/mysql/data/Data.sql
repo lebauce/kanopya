@@ -71,7 +71,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
 
 -- powersupplycard models
-INSERT INTO `powersupplycardmodel` VALUES (1,'Hederatech','notresupermodeldecarte',12);
+INSERT INTO `powersupplycardmodel` VALUES (1,'HEDERATECH','notresupermodeldecarte',12);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- motherboard models

@@ -1,0 +1,20 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<div id="content">
+<TMPL_LOOP NAME=powersupplycards_list>
+<table class="listing">
+<tr><td colspan="3"><h1><TMPL_VAR NAME=powersupplycard_name></h1></td></tr>
+<tr><td><TMPL_VAR NAME=powersupplycard_ip></td><td>
+<TMPL_IF NAME=active>Active<TMPL_ELSE>Deactivated</TMPL_IF></td><td class="toright">
+<a class="imgManage" href="/cgi/kanopya.cgi/powersupplycards/view_powersupplycarddetails?powersupplycard_id=<TMPL_VAR NAME=powersupplycard_id>">details</a></td></tr>
+<tr><td class="italic" colspan="3"><TMPL_VAR NAME=powersupplycard_desc></td></tr>
+</table>
+</TMPL_LOOP>
+<div class="actions">
+<TMPL_IF NAME=can_create>
+<a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/powersupplycards/form_addpowersupplycard', 'add a new power supply card', 800, 380,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">add a new power supply card</a>
+<p class="italic">add a new power supply card.</p></TMPL_IF>&nbsp;
+</div>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

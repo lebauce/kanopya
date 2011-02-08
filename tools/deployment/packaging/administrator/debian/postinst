@@ -1,8 +1,5 @@
 #!/bin/bash -e
 
-. /usr/share/debconf/confmodule
-
-#During the post install phasis we will create administrator's database
-
-
-
+#We will install the Perl modules that are only available throug CPAN and not under deb files.
+cpan -i GRID::Machine 
+cpan -i Module:Which

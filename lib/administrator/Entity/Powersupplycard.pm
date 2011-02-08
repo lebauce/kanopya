@@ -52,7 +52,31 @@ use constant ATTR_DEF => {
 				is_extended => 0 },		
 };
 
-sub methods {}
+sub methods {
+	return {
+		'create'	=> {'description' => 'create a new power supply card', 
+						'perm_holder' => 'mastergroup',
+		},
+		'get'		=> {'description' => 'view this power supply card', 
+						'perm_holder' => 'entity',
+		},
+		'update'	=> {'description' => 'save changes applied on this power supply card', 
+						'perm_holder' => 'entity',
+		},
+		'remove'	=> {'description' => 'delete this power supply card', 
+						'perm_holder' => 'entity',
+		},
+		'activate'=> {'description' => 'activate this power supply card', 
+						'perm_holder' => 'entity',
+		},
+		'deactivate'=> {'description' => 'deactivate this power supply card', 
+						'perm_holder' => 'entity',
+		},
+		'setperm'	=> {'description' => 'set permissions on this power supply card', 
+						'perm_holder' => 'entity',
+		},
+	};
+}
 
 =head2 get
 
@@ -67,8 +91,22 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-   my $self = $class->SUPER::get( %args,  table => "Powersupplycard");
-   return $self;
+	
+	my $admin = Administrator->new();
+   	my $powersupplycard = $admin->{db}->resultset('Powersupplycard')->find($args{id});
+   	if(not defined $powersupplycard) {
+   		$errmsg = "Entity::Powersupplycard->get : id <$args{id}> not found !";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   	} 
+   	my $entity_id = $powersupplycard->powersupplycard_entities->first->get_column('entity_id');
+   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get power supply card with id $args{id}");
+   	}
+   
+   	my $self = $class->SUPER::get( %args,  table => "Powersupplycard");
+   	return $self;
 }
 
 =head2 getPowerSupplyCards
