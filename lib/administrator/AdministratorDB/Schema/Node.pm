@@ -16,7 +16,7 @@ __PACKAGE__->add_columns(
   { data_type => "INT", default_value => undef, is_nullable => 0, size => 8 },
   "master_node",
   { data_type => "INT", default_value => undef, is_nullable => 1, size => 1 },
-  "master_state",
+  "node_state",
   { data_type => "CHAR", default_value => undef, is_nullable => 1, size => 20 },
 );
 __PACKAGE__->set_primary_key("node_id");

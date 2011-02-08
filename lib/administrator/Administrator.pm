@@ -270,7 +270,7 @@ sub new {
 }
 
 
-#TODO Comment getResultset
+#TODO Comment getRow
 sub getRow {
 	my $self = shift;
     my %args = @_;

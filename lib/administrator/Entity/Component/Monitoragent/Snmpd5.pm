@@ -154,6 +154,20 @@ sub setConf {
 		$self->{_dbix}->snmpd5s->update($conf);
 	}
 }
+
+=head2 getNetConf
+B<Class>   : Public
+B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port
+B<args>    : None
+B<Return>  : hash ref containing network configuration with following format : {port => protocol}
+B<Comment>  : None
+B<throws>  : Nothing
+=cut
+
+sub getNetConf {
+    return {161=> 'udp'};
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

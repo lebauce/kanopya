@@ -1,4 +1,4 @@
-# EAddMotherboardInCluster.pm - Operation class implementing Cluster creation operation
+# EStartNode.pm - Operation class implementing Cluster creation operation
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EEntity::Operation::EStartNode - Operation class implementing Motherboard creation operation
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EAddMotherboardInCluster;
+package EOperation::EStartNode;
 use base "EOperation";
 
 use strict;
@@ -70,10 +70,10 @@ my $config = {
 
 =head2 new
 
-    my $op = EOperation::EAddMotherboardInCluster->new();
+    my $op = EOperation::EStartNode->new();
 
-	# Operation::EAddMotherboardInCluster->new creates a new AddMotheboardInCluster operation.
-	# RETURN : EOperation::EAddMotherboardInCluster : Operation add motherboard in a cluster
+	# Operation::EStartNode->new creates a new AddMotheboardInCluster operation.
+	# RETURN : EOperation::EStartNode : Operation add motherboard in a cluster
 
 =cut
 
@@ -119,7 +119,7 @@ sub prepare {
 	$log->info("Operation preparation");
 
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EAddMotherboardInCluster->prepare need an internal_cluster named argument!";
+		$errmsg = "EStartNode->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -133,7 +133,7 @@ sub prepare {
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EAddMotherboardInCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+    	$errmsg = "EOperation::EStartNode->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
     	$log->error($errmsg);
     	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -145,7 +145,7 @@ sub prepare {
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EAddMotherboardInCluster->prepare : motherboard_id $params->{motherboard_id} does not find\n" . $err;
+    	$errmsg = "EOperation::EStartNode->prepare : motherboard_id $params->{motherboard_id} does not find\n" . $err;
     	$log->error($errmsg);
     	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -352,7 +352,7 @@ sub startNode {
 	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
 	if (!$powersupplycard_id) {
 		if(not -e '/usr/sbin/etherwake') {
-			$errmsg = "EOperation::EAddMotherboardInCluster->startNode : /usr/sbin/etherwake not found";
+			$errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
 			$log->error($errmsg);
 			throw Kanopya::Exception::Execution(error => $errmsg);
 		}
@@ -392,7 +392,7 @@ sub generateNodeConf {
 		(! exists $args{etc_dev} or ! defined $args{etc_dev}) ||
 		(! exists $args{etc_export} or ! defined $args{etc_export})||
 		(! exists $args{nodes} or ! defined $args{nodes})) { 
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateNodeConf need a mount_point named argument!";
+		$errmsg = "EOperation::EStartNode->generateNodeConf need a mount_point named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -426,7 +426,7 @@ sub generateInitiatorConf {
 	
 	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
 		(! exists $args{initiatorname} or ! defined $args{initiatorname})) { 
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateInitiatorConf need a mount_point and an initiatorname named argument!";
+		$errmsg = "EOperation::EStartNode->generateInitiatorConf need a mount_point and an initiatorname named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -438,7 +438,7 @@ sub generateUdevConf{
 	my %args = @_;
 	
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateUdevConf need a mount_point named argument!";
+		$errmsg = "EOperation::EStartNode->generateUdevConf need a mount_point named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -463,7 +463,7 @@ sub generateFstabConf{
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})||
 		(! exists $args{root_dev} or ! defined $args{root_dev})||
 		(! exists $args{etc_dev} or ! defined $args{etc_dev})){
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateFstabConf need a mount_point, a root_dev and etc_dev named argument!";
+		$errmsg = "EOperation::EStartNode->generateFstabConf need a mount_point, a root_dev and etc_dev named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -517,7 +517,7 @@ sub generateKanopyaHalt{
 	
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})||
 		(! exists $args{etc_export} or ! defined $args{etc_export})){
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateKanopyaHalt need a mount_point, a root_dev and etc_dev named argument!";
+		$errmsg = "EOperation::EStartNode->generateKanopyaHalt need a mount_point, a root_dev and etc_dev named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -564,7 +564,7 @@ sub generateHosts {
 	
 	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
 		(! exists $args{nodes} or ! defined $args{nodes})) { 
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateHosts need a mount_point and nodes named argument!";
+		$errmsg = "EOperation::EStartNode->generateHosts need a mount_point and nodes named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -597,7 +597,7 @@ sub generateNetConf {
 	my %args = @_;
 	
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateNetConf need a mount_point named argument!";
+		$errmsg = "EOperation::EStartNode->generateNetConf need a mount_point named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -621,7 +621,7 @@ sub generateBootConf {
 	my %args = @_;
 	
 	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-		$errmsg = "EOperation::EAddMotherboardInCluster->generateBootConf need a mount_point named argument!";
+		$errmsg = "EOperation::EStartNode->generateBootConf need a mount_point named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}

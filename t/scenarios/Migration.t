@@ -36,14 +36,15 @@ eval {
     $m1->create();
     $executor->execnround(run => 1);
     my $m2 = Entity::Motherboard->getMotherboard(hash => {motherboard_mac_address => $m1->getAttr(name=>'motherboard_mac_address')});
+
     isa_ok($m2, "Entity::Motherboard", "Motherboard creation");
 
     # Test Systemimage creation
     note( "Test Systemimage creation");
     my $s1 = Entity::Systemimage->new(
-		    systemimage_name => 'MySystemImageTest',
-		    systemimage_desc => 'Testnowhitespace',
-		    distribution_id => 1);
+	systemimage_name => 'MySystemImageTest',
+	systemimage_desc => 'Testnowhitespace',
+	distribution_id => 1);
     isa_ok($s1, "Entity::Systemimage", $test_instantiation);
     $s1->create();
     $executor->execnround(run => 1);
@@ -62,13 +63,13 @@ eval {
     my $c1 = Entity::Cluster->new(cluster_name => "foobar", 
                                   cluster_min_node => "1",
 				  cluster_max_node => "2",
-				  cluster_priority => "100",
+			  cluster_priority => "100",
 				  systemimage_id => $s2->getAttr(name=>"systemimage_id"));
 
-    isa_ok($c1, "Entity::Cluster", $test_instantiation);
-    $c1->create();
+   isa_ok($c1, "Entity::Cluster", $test_instantiation);
+   $c1->create();
     $executor->execnround(run => 1);
-    my $c2 = Entity::Cluster->getCluster(hash => {'cluster_name'=>'foobar'});
+   my $c2 = Entity::Cluster->getCluster(hash => {'cluster_name'=>'foobar'});
     isa_ok($c2, "Entity::Cluster", "Cluster creation");
 
     # Test Cluster Activation
@@ -77,7 +78,6 @@ eval {
     $executor->execnround(run => 1);
     $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
     is ($c2->getAttr(name=>'active'), 1, "Activate Cluster");
-
 
     # Test Motherboard Activation
     note( "Test Motherboard Activation");
@@ -89,7 +89,7 @@ eval {
     # Test Motherboard Migration
     note( "Test Motherboard Migration");
     $c2->addNode(motherboard_id => $m2->getAttr(name => 'motherboard_id'));
-    $executor->execnround(run => 1);
+    $executor->execnround(run => 2);
 
     # Test Motherboard Deactivation
     note( "Test Motherboard Deactivation");
@@ -106,13 +106,33 @@ eval {
     $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
     is ($c2->getAttr(name=>'active'), 0, "Deactivate Cluster");
 
+    # Test Systemimage Deactivation
+    note( "Test Systemimage Deactivation");
+    $s2->deactivate();
+    $executor->execnround(run => 1);
+    $s2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'));
+    is ($s2->getAttr(name=>'active'), 0, "Test if SystemImage is unactive");
+
     # Cluster delete
-    $c2->delete();
-    $m2->delete();
+    note( "Test Cluster Deletion");
+    $c2->remove();
+    $executor->execnround(run => 1);
+    throws_ok { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
+      "Try to get a deleted Cluster";
+
+    # Motherboard delete
+    note( "Test Motherboard Deletion");
+    $m2->remove();
+    $executor->execnround(run => 1);
     throws_ok { $m2 = Entity::Motherboard->get(id => $m2->getAttr(name=>'motherboard_id'))} 'Kanopya::Exception::Internal',
     "Try to get a deleted motherboard";
-    throws_ok { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'motherboard_id'))} 'Kanopya::Exception::Internal',
-      "Try to get a deleted Cluster";
+
+    # Systemimage delete
+    note( "Test Systemimage Deletion");
+    $s2->remove();
+    $executor->execnround(run => 1);
+    throws_ok { $m2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
+    "Try to get a deleted Systemimage";
   };
 if($@) {
   my $error = $@;

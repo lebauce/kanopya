@@ -158,6 +158,24 @@ sub get {
    	return $self;
 }
 
+sub setNodeState {
+    my $self = shift;
+	my %args = @_;
+	# check arguments
+	if((! exists $args{state} or ! defined $args{state})) {
+	   	$errmsg = "Entity::Motherboard->setNodeState needs a state named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$self->{_dbix}->nodelink->update({'node_state' => $args{state}});
+}
+
+sub getNodeState {
+    my $self = shift;
+
+	return $self->{_dbix}->nodelink->get_column('node_state');
+}
+
 =head2 getMotherboards
 
 =cut 
@@ -355,7 +373,6 @@ sub extension {
 sub activate{
     my $self = shift;
     
-    my  $adm = Administrator->new();
     $log->debug("New Operation ActivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
     Operation->enqueue(priority => 200,
                    type     => 'ActivateMotherboard',
@@ -365,7 +382,6 @@ sub activate{
 sub deactivate{
     my $self = shift;
     
-    my  $adm = Administrator->new();
     $log->debug("New Operation EDeactivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
     Operation->enqueue(priority => 200,
                    type     => 'DeactivateMotherboard',

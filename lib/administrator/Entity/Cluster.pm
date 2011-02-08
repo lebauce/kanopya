@@ -597,14 +597,15 @@ sub addNode {
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
    	}
-    my %params = {
+    my %params = (
     	cluster_id => $self->getAttr(name =>"cluster_id"),
     	motherboard_id => $args{motherboard_id}, 
-    };
-    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
+    );
+    $log->debug("New Operation AddMotherboardInCluster with attrs : " . Dumper %params ."\n");
     Operation->enqueue(
     	priority => 200,
-        type     => 'AddMotherboardInCluster',
+#        type     => 'AddMotherboardInCluster',
+        type     => 'PreStartNode',
         params   => \%params,
     );
 }

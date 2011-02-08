@@ -120,6 +120,7 @@ sub addNode {}
 sub removeNode {}
 sub stopNode {}
 sub updateNodeStarted {}
+sub preStartNode{};
 1;
 
 __END__
