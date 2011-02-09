@@ -118,7 +118,9 @@ INSERT INTO `operationtype` VALUES
 (24,'UpdateClusterNodeStarted'),
 (25,'PreStartNode'),
 (26,'StartNode'),
-(26,'PostStartNode');
+(27,'PreStopNode'),
+(28,'PostStopNode'),
+(29,'PostStartNode');
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,2); SET @eid := @eid +1;
