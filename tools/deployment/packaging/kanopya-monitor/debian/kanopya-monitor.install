@@ -1,0 +1,5 @@
+sbin/* opt/kanopya/sbin
+samples/* etc/kanopya/samples/
+init/* etc/init.d
+lib/* opt/kanopya/lib/monitor
+t/* opt/kanopya/t/monitor

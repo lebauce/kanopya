@@ -1,0 +1,6 @@
+libcommon/* opt/kanopya/lib/common
+lib/* opt/kanopya/lib/administrator
+logs/ opt/kanopya
+t/* opt/kanopya/t/administrator
+tcommon/* opt/kanopya/t/common
+samples/* etc/kanopya/samples

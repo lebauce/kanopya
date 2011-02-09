@@ -1,0 +1,5 @@
+samples/* etc/kanopya/samples
+sbin/* opt/kanopya/sbin
+lib/* opt/kanopya/lib/orchestrator
+t/* opt/kanopya/t/orchestrator
+init/* etc/init.d
