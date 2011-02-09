@@ -219,6 +219,37 @@ sub becomeNode{
 	return $res->get_column("node_id");
 }
 
+=head2 Entity::Motherboard->becomeNode (%args)
+	
+	Class : Public
+	
+	Desc : Create a new node instance in db from motherboard linked to cluster (in params).
+	
+	args: 
+		cluster_id : Int : Cluster identifier
+		master_node : Int : 0 or 1 to say if the motherboard is the master node
+	return: Node identifier
+	
+=cut
+
+sub stopToBeNode{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})){
+		$errmsg = "NodeManager->delNode need a cluster_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	my $row = $self->{_dbix}->nodelink;
+	if(not defined $row) {
+		$errmsg = "Entity::Motherboard->stopToBeNode : node representing motherboard ".$self->getAttr(name=>"motherboard_mac_address")." and cluster $args{cluster_id} not found!";
+		$log->error($errmsg);
+		throw Mcs::Exception::DB(error => $errmsg);
+	}
+	$row->delete;
+}
+
 =head2 Entity::Motherboard->notNode (%args)
 	
 	Class : Public

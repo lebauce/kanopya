@@ -640,8 +640,7 @@ sub addNode {
     	motherboard_id => $args{motherboard_id}, 
     );
     $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
-    $self->setAttr(cluster_state => "up");
-    $self->save();
+
     Operation->enqueue(
     	priority => 200,
 #        type     => 'AddMotherboardInCluster',

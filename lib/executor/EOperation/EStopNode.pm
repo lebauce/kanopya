@@ -38,20 +38,21 @@ Component is an abstract class of operation objects
 
 =cut
 package EOperation::EStopNode;
+use base "EOperation";
+
+use Kanopya::Exceptions;
+use EFactory;
+use Entity::Cluster;
+use Entity::Motherboard;
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
-use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
@@ -86,18 +87,26 @@ sub prepare {
 
 	$log->info("Operation preparation");
 
-	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
 
 	# Get instance of Motherboard Entity
 	$log->info("Load Motherboard instance");
-	$self->{_objs}->{motherboard} = $adm->getEntity(type => "Motherboard", id => $params->{motherboard_id});
+	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
 	
 	# Get instance of Cluster Entity
 	$log->info("Load cluster instance");
-	$self->{_objs}->{cluster} = $adm->getEntity(type => "Cluster", id => $params->{cluster_id});
+	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
 	
-	$self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(administrator => $adm, category => "all");
+	$self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(category => "all");
+	
+    # Get context for executor
+	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
+    # Get node context
+	$self->{node_econtext} = EFactory::newEContext(ip_source => "127.0.0.1",
+	                                               ip_destination => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_internal_ip'));
+	$log->debug("Get econtext for motherboard with ref ". ref($self->{node_econtext}));
+
 }
 
 sub execute {
@@ -110,31 +119,18 @@ sub execute {
 	my $components = $self->{_objs}->{components};
 	$log->info('Processing cluster components configuration for this node');
 	foreach my $i (keys %$components) {
-		
 		my $tmp = EFactory::newEEntity(data => $components->{$i});
 		$log->debug("component is ".ref($tmp));
 		$tmp->stopNode(motherboard => $self->{_objs}->{motherboard}, 
 						cluster => $self->{_objs}->{cluster} );
 	}
-	
-	
-	## halt the node
-	my $motherboard_econtext = EFactory::newEContext(
-		ip_source => "127.0.0.1", 
-		ip_destination => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_internal_ip')
-	);
-	my $command = 'halt';
-	my $result = $motherboard_econtext->execute(command => $command);
-	my $state = 'stopping:'.time;
-	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
-	
-	#$adm->removeNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
-	#				 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
-	
-	
+	# finaly we halt the node
+	my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
+	$emotherboard->halt(node_econtext =>$self->{node_econtext});
+
+	$self->{_objs}->{motherboard}->setNodeState(state=>"goingout");
 	$self->{_objs}->{motherboard}->save();
-	
-	## add RemoveMotherboardFromCluster operation for this node
+
 }
 
 1;
