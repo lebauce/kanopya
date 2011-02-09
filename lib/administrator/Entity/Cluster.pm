@@ -664,19 +664,17 @@ sub start {
 	my $self = shift;
 	
 	my $adm = Administrator->new();
-	# addNode method concerns an existing entity so we use his entity_id
+	# start method concerns an existing entity so we use his entity_id
    	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
    	}
-    my %params = (
-    	cluster_id => $self->getAttr(name =>"cluster_id"),
-    );
-    $log->debug("New Operation startCluster with attrs : " . %params);
+    
+    $log->debug("New Operation StartCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(
     	priority => 200,
         type     => 'StartCluster',
-        params   => \%params,
+        params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
     );
 }
 

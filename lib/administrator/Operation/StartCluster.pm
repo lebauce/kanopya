@@ -36,18 +36,19 @@ It allows to implement Cluster start operation
 
 =cut
 package Operation::StartCluster;
+use base "Operation";
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
-use base "Operation";
+use Entity::Cluster;
+use Entity::Systemimage;
+use Entity::Motherboard;
 
 my $log = get_logger("administrator");
 my $errmsg;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = "1.00";
 
 =head2 new
 
@@ -67,7 +68,7 @@ sub new {
      
 	# check if cluster exist in db
     $log->debug("checking cluster existence with id <$args{params}->{cluster_id}>");
-    my $cluster = $admin->getEntity(type => 'Cluster', id => $args{params}->{cluster_id});
+    my $cluster = Entity::Cluster->get(id => $args{params}->{cluster_id});
     
     # check if cluster is active and down
     if($cluster->getAttr(name => 'active') == 0 or $cluster->getAttr(name => 'cluster_state') ne 'down') {
@@ -77,7 +78,7 @@ sub new {
     }
     
     # check if systemimage is active
-    my $systemimage = $admin->getEntity(type => 'Systemimage', id => $cluster->getAttr(name => 'systemimage_id'));
+    my $systemimage = Entity::Systemimage->get(id => $cluster->getAttr(name => 'systemimage_id'));
     if($systemimage->getAttr(name => 'active') == 0) {
     	my $errmsg = "Operation::StartCluster->new : cluster's systemimage is not active ; activate it to start the cluster";
     	$log->error($errmsg);
