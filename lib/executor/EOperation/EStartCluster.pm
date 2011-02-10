@@ -117,7 +117,7 @@ sub execute {
 	$log->info('getting minimum number of nodes to start');
 	my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');	
 	$log->info('getting free motherboards');
-	my @free_motherboards = Entity::Motherboard->get(hash => { active => 1, motherboard_state => 'down'});
+	my @free_motherboards = Entity::Motherboard->getMotherboards(hash => { active => 1, motherboard_state => 'down'});
 	
 	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
 	
