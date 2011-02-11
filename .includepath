@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<includepath>
-  <includepathentry path="${resource_loc:/Kanopya/lib/orchestrator}" />
-  <includepathentry path="${resource_loc:/Kanopya/lib/monitor}" />
-  <includepathentry path="${resource_loc:/Kanopya/lib/executor}" />
-  <includepathentry path="${resource_loc:/Kanopya/lib/common}" />
-  <includepathentry path="${resource_loc:/Kanopya/lib/administrator}" />
-</includepath>
-

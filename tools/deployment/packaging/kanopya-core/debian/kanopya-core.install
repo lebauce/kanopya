@@ -1,6 +1,7 @@
-samples/* etc/kanopya/samples
+conf/executor.conf etc/kanopya/samples/executor.conf.sample
+conf/executor-log.conf etc/kanopya/samples/executor-log.conf.sample
 sbin/* opt/kanopya/sbin
-lib/* opt/kanopya/lib/executor
+lib/executor/* opt/kanopya/lib/executor
 init/* etc/init.d
 templates/* opt/kanopya/templates
-t/* opt/kanopya/t/executor
+t/executor/* opt/kanopya/t/executor
