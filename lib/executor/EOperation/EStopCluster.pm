@@ -38,19 +38,16 @@ It allows to implement cluster stopping operation
 
 =cut
 package EOperation::EStopCluster;
+use base "EOperation";
 
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
-use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
-
+use Entity::Cluster;
 my $log = get_logger("executor");
 my $errmsg;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = "1.00";
 
 =head2 new
 
@@ -99,7 +96,7 @@ sub prepare {
 	$self->{_objs} = {};
 	
 	# Get cluster to start from param
-	$self->{_objs}->{cluster} = $adm->getEntity(type => 'Cluster', id => $params->{cluster_id});
+	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
 		
 }
 
@@ -123,13 +120,7 @@ sub execute {
 		# we stop only nodes with 'up' state 
 		#TODO gerer les nodes dans un autre état
 		if($node->getAttr(name => 'motherboard_state') ne 'up') { next; }
-		$adm->newOp(type => 'StopNode',
-					priority => $priority,
-					params => {
-						cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
-						motherboard_id => $node->getAttr(name => 'motherboard_id')
-					}
-		);
+		$self->{_objs}->{cluster}->removeNode(motherboard_id => $node->getAttr(name => 'motherboard_id'));
 	} 	
 	
 	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down');
