@@ -3,8 +3,9 @@
 # microcluster chroot environment to customize system image
 use strict;
 use warnings;
-use lib qw(/workspace/mcs/Administrator/Lib);
+use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 use Administrator;
+use Entity::Systemimage;
 
 my ($sysimg_name) = @ARGV;
 if(not defined $sysimg_name) {
@@ -13,9 +14,17 @@ if(not defined $sysimg_name) {
 	exit 1;
 } 
 
+Administrator::authenticate(login => 'admin', password => 'admin');
+
 my $admin = Administrator->new(login => 'admin', password => 'admin');
-my @systemimages = $admin->getEntities(type => 'Systemimage', hash => {systemimage_name => $sysimg_name});
-my $systemimage = $systemimages[0];
+my @systemimages = Entity::Systemimage->getSystemimages(hash => {systemimage_name => $sysimg_name});
+if(not scalar @systemimages) {
+	die("System image $sysimg_name not found !\n");
+} elsif(scalar @systemimages > 1) {
+	die("BUG : several system images found with name $sysimg_name !\n");
+} 
+
+my $systemimage = pop @systemimages;
 my $devices = $systemimage->getDevices();
 my $root_device = "/dev/".$devices->{root}->{vgname}."/".$devices->{root}->{lvname};
 my $etc_device = "/dev/".$devices->{etc}->{vgname}."/".$devices->{etc}->{lvname};
