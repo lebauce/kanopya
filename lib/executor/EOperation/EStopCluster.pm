@@ -106,9 +106,10 @@ sub execute {
 	my $adm = Administrator->new();
 	
 	$log->info("getting cluster's nodes");
-	my $nodes = $adm->{manager}->{node}->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));	
+	my $motherboards = $self->{_objs}->{cluster}->getMotherboards();
+#	my $nodes = $adm->{manager}->{node}->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));	
 	
-	if(not scalar @$nodes) {
+	if(not scalar keys %$motherboards) {
 		$errmsg = "EStopCluster->execute : this cluster with id $self->{_objs}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
@@ -116,11 +117,11 @@ sub execute {
 	
 	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
 	
-	foreach my $node (@$nodes) {
+	foreach my $mb_id (keys %$motherboards) {
 		# we stop only nodes with 'up' state 
 		#TODO gerer les nodes dans un autre état
-		if($node->getAttr(name => 'motherboard_state') ne 'up') { next; }
-		$self->{_objs}->{cluster}->removeNode(motherboard_id => $node->getAttr(name => 'motherboard_id'));
+		if($motherboards->{$mb_id}->getAttr(name => 'motherboard_state') ne 'up') { next; }
+		$self->{_objs}->{cluster}->removeNode(motherboard_id => $mb_id);
 	} 	
 	
 	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down');
