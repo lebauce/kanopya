@@ -344,7 +344,8 @@ sub save {
 	}
 		
 }
-
+sub readyNodeAddition{return 1;}
+sub readyNodeRemoving{return 1;}
 
 =head1 DIAGNOSTICS
 

@@ -198,6 +198,11 @@ sub setConf {
 	}
 	
 }
+
+sub getNetConf {
+    return {514=> 'udp'};
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
