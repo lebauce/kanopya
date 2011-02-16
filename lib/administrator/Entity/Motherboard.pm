@@ -293,7 +293,7 @@ sub getMotherboards {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	my $adm = Administrator->new();
+	
    	return $class->SUPER::getEntities( %args,  type => "Motherboard");
 }
 
@@ -308,6 +308,18 @@ sub getMotherboard {
 	}
    	my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
     return pop @Motherboards;
+}
+
+sub getFreeMotherboards {
+	my $class = shift;
+	my @motherboards = $class->getMotherboards(hash => {active => 1, motherboard_state => 'down'});
+	my @free;
+	foreach my $m (@motherboards) {
+		if(not $m->{_dbix}->nodelink) {
+			push @free, $m;
+		}
+	}
+	return @free;
 }
 
 =head2 new
