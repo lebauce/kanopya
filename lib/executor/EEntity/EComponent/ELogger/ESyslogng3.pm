@@ -31,7 +31,7 @@ sub configureNode {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $template_path = $args{template_path} || "/templates/components/mcsyslogng";
+	my $template_path = $args{template_path} || "/templates/components/mcssyslogng";
 	
 	my $config = {
 	    INCLUDE_PATH => $template_path, #$self->_getEntity()->getTemplateDirectory(),
