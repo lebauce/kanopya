@@ -115,14 +115,15 @@ sub checkNodeUp {
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    
+    if ($args{motherboard}->getAttr(name => "motherboard_state") ne "up"){
+        return 0;
+    }
+   
     my $components= $args{cluster}->getComponents(category => "all");
     my $protoToTest;
     my $node_available = 1;    
 
-
-    if ($args{motherboard}->getNodeState() eq "pregoingin"){
-        return 0;
-    }
     my $node_ip = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
    	foreach my $i (keys %$components) {
    	    print "Browse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
