@@ -14,17 +14,17 @@ options { long_hostnames(off);
 
 # Entry: source, destination or filter
 
-source src_two { 
-   
-      driver1(param1);
-   
-};
-
 source src_one { 
    
       driver1(param1);
    
       driver2(parm1 param2);
+   
+};
+
+source src_two { 
+   
+      driver1(param1);
    
 };
 

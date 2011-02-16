@@ -138,9 +138,11 @@ sub getConf {
 	   		my $param_rs = $entry_row->syslogng3_entry_params;
 			my @params = ();
 			while (my $param_row = $param_rs->next) {
-				push @params, { 'content' => $param_row->get_column('syslogng3_entry_param_content') } ;
+				push @params, {
+								'content' => $param_row->get_column('syslogng3_entry_param_content') } ;
 			}
-			push @entries, { 	type => $entry_row->get_column('syslogng3_entry_type'),
+			push @entries, { 
+								type => $entry_row->get_column('syslogng3_entry_type'),
 								name => $entry_row->get_column('syslogng3_entry_name'),
 								params => \@params };
 	   	}
@@ -151,7 +153,8 @@ sub getConf {
 	   		my $log_param_rs = $log_row->syslogng3_log_params;
 	   		my @log_params = ();
 	   		while (my $log_param_row = $log_param_rs->next){
-				push @log_params, { type => $log_param_row->get_column('syslogng3_log_param_entrytype'),
+				push @log_params, { 
+									type => $log_param_row->get_column('syslogng3_log_param_entrytype'),
 									name => $log_param_row->get_column('syslogng3_log_param_entryname') };
 	   		
 	   		}
@@ -168,7 +171,7 @@ sub getConf {
 sub setConf {
 	my $self = shift;
 	my ($conf) = @_;
-
+	
 	# delete old conf		
 	my $conf_row = $self->{_dbix}->syslogng3s->first();
 	$conf_row->delete() if (defined $conf_row); 
@@ -177,26 +180,29 @@ sub setConf {
 	$conf_row = $self->{_dbix}->syslogng3s->create( {} );
 	
 	# Store entries
-	foreach my $entry_type ('source', 'destination', 'filter') {
-		while ( my ($entry_name, $entry_params) = each %{ $conf->{$entry_type} }) {
-			my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry_name,
-																	syslogng3_entry_type => $entry_type } );
-			foreach my $param (@$entry_params) {
+	foreach my $entry (@{ $conf->{entries} }) {
+		my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry->{entry_name},
+																syslogng3_entry_type => $entry->{entry_type} } );
+			foreach my $param (@{ $entry->{params} }) {
 				$entry_row->syslogng3_entry_params->create( { syslogng3_entry_param_content => $param->{content} } );
 			}	
-		}
-	}
+	} 
 	
 	# Store logs
-	foreach my $log_params ( @{ $conf->{log} }) {
+	foreach my $log ( @{ $conf->{logs} }) {
 		my $log_row = $conf_row->syslogng3_logs->create( {} );
-		foreach my $param (@$log_params) {
+		foreach my $param (@{ $log->{log_params} }) {
 			$log_row->syslogng3_log_params->create( { syslogng3_log_param_entrytype => $param->{type},
 													  syslogng3_log_param_entryname => $param->{name} });
 		}
 	}
 	
 }
+
+sub getNetConf {
+    return {514=> 'udp'};
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

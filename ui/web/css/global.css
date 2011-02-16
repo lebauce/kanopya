@@ -224,6 +224,20 @@ div#footer {
 
 /*.imgSnmp { background: url("/images/icons/snmp.png") no-repeat center;}*/
 
+.iconAction {
+	padding-left: 32px; 
+	background-repeat: no-repeat;
+}
+
+.iconAction:hover {
+	cursor: pointer;
+}
+
+.linkAction:hover {
+	cursor: pointer;
+	color:  #115911;
+}
+
 #submenu li ul { display: none; }
 
 #submenu ul li a {

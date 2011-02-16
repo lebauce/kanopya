@@ -97,7 +97,7 @@ sub new {
     	throw Mcs::Exception::Network(error => $errmsg);	
     }
     $p->close();
-    
+    $log->debug("Remote econtext ssh instanciate");
     # TODO better checking with is_operative
    	#my $host = "root\@$args{ip}";
    	# to verify if connection to $host can be done,

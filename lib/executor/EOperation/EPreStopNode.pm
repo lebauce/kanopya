@@ -160,27 +160,14 @@ sub execute {
 	foreach my $i (keys %$components) {		
 		my $tmp = EFactory::newEEntity(data => $components->{$i});
 		$log->debug("component is ".ref($tmp));
-		my $ret = $tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
+		$tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
 							cluster => $self->{_objs}->{cluster});
-		if ($ret) {
-		    $self->{cluster_need_wait} = 1;
-		}
 	}
-	#TODO Manage component needing node addition preparation
-
 }
 
 sub finish {
     my $self = shift;
-    if (! $self->{cluster_need_wait}){
-	   $log->debug("EPreStopNode->finish before enqueueing new operation");
-	   Operation->enqueue(
-    	    priority => 200,
-            type     => 'StopNode',
-            params   => {cluster_id => $self->{_objs}->{cluster}->getAttr(name=>'cluster_id'),
-                         motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_id')},
-                         );
-    }
+    $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingout");
 }
 
 1;

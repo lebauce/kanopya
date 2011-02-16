@@ -60,6 +60,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Data::Dumper;
 use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -185,8 +186,10 @@ sub getInstance {
    	
    	$class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
 					$comp_instance_row->get_column('component_name') . 
-					$comp_instance_row->get_column('component_version'); 
-   	my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
+					$comp_instance_row->get_column('component_version');
+	my $class_loc = General::getLocFromClass( entityclass => $class);
+	require $class_loc; 				 
+   	my $self = $class->get( %args, table=>"ComponentInstance");
    	return $self;
 }
 
@@ -341,7 +344,8 @@ sub save {
 	}
 		
 }
-
+sub readyNodeAddition{return 1;}
+sub readyNodeRemoving{return 1;}
 
 =head1 DIAGNOSTICS
 

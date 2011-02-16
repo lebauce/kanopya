@@ -115,14 +115,15 @@ sub checkNodeUp {
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    
+    if ($args{motherboard}->getAttr(name => "motherboard_state") ne "up"){
+        return 0;
+    }
+   
     my $components= $args{cluster}->getComponents(category => "all");
     my $protoToTest;
     my $node_available = 1;    
 
-
-    if ($args{motherboard}->getNodeState() eq "pregoingin"){
-        return 0;
-    }
     my $node_ip = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
    	foreach my $i (keys %$components) {
    	    print "Browse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
@@ -238,7 +239,12 @@ sub motherboardStopped{
         }
     $args{motherboard}->setAttr(name=>"motherboard_state", value => "down");
     $args{motherboard}->save();
-    # REmove motherboard from clusteR ?
+    my %params;
+    $params{cluster_id} = $args{motherboard}->getClusterId();
+    $params{motherboard_id} = $args{motherboard}->getAttr(name=>"motherboard_id");
+    Operation->enqueue(priority => 200,
+                   type     => 'PostStopNode',
+                   params   => \%params);
 }
 
 sub motherboardStarted{
@@ -361,6 +367,37 @@ sub testPreGoingInNode {
     }
 }
 
+sub testPreGoingOutNode {
+    my %args = @_;
+    
+    if ((!defined $args{cluster} or !exists $args{cluster})||
+        (!defined $args{motherboard} or !exists $args{motherboard})){
+            $errmsg = "StateManager::testPreGoingOutNode need a cluster and motherboard named argument!";	
+		    $log->error($errmsg);
+		    throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    my $components= $args{cluster}->getComponents(category => "all");
+    my $protoToTest;
+    my $cluster_ready = 1;
+
+   	foreach my $i (keys %$components) {
+        $cluster_ready = $components->{$i}->readyNodeRemoving(motherboard_id => $args{motherboard}->getAttr(name => "motherboard_id")) && $cluster_ready;
+   	    $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
+	}
+
+    if ($cluster_ready) {
+    $log->debug("StateManager::testPreGoingOutNode before enqueueing StopNode with motherboard_id <" .
+                $args{motherboard}->getAttr(name=>'motherboard_id')."> and cluster_id <" .
+                $args{cluster}->getAttr(name=>'cluster_id').">");
+	Operation->enqueue(
+    	priority => 200,
+        type     => 'StopNode',
+        params   => {cluster_id => $args{cluster}->getAttr(name=>'cluster_id'),
+                     motherboard_id => $args{motherboard}->getAttr(name=>'motherboard_id')},
+                     );
+    }
+}
+
 sub testGoingInNode {
     #TODO Test how long node going in cluster
 }
@@ -415,6 +452,7 @@ sub updateNodeStatus {
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    # state pregoingout is impossible when node is not available (it has to be repaired before)
     my %actions = (0 => { in        => \&nodeBroken,
                           goingin  => \&testGoingInNode,
                           pregoingin => \&testPreGoingInNode,
@@ -424,6 +462,7 @@ sub updateNodeStatus {
                    1 => { broken    => \&nodeRepaired,
                           in        => sub {},
                           goingin  => \&nodeIn,
+                          pregoingout => \&testPreGoingOutNode,
                           goingout  => \&testGoingOutNode});
    my $node_state = $args{motherboard}->getNodeState();
    print "Node state is $node_state and service status is $args{services_available}\n";
