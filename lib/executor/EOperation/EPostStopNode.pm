@@ -226,9 +226,10 @@ sub execute {
 	# We stop motherboard (to update powersupply)
 	my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
 	$emotherboard->stop();
-	
-	$adm->{manager}->{node}->delNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
-					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+
+    $self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+#	$adm->{manager}->{node}->delNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
+#					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 	
 	## Remove Motherboard in the dhcp
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
@@ -298,7 +299,7 @@ sub execute {
 	
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();
-	$self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+
 
 }
 
