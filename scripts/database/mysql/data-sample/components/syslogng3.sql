@@ -46,7 +46,7 @@ INSERT INTO `syslogng3_entry_param` ( `syslogng3_entry_param_content`, `syslogng
 
 INSERT INTO `syslogng3_entry` VALUES (2, 's_all_local', 'source', 1);
 INSERT INTO `syslogng3_entry_param` ( `syslogng3_entry_param_content`, `syslogng3_entry_id`) VALUES
-       ('internal()', 2), ('unix-stream("/dev/log")', 2), ('file("/proc/kmsg" program_override("kernel"))', 2);
+       ('internal()', 2), ('unix-stream(\"/dev/log\")', 2), ('file(\"/proc/kmsg\" program_override(\"kernel\"))', 2);
 
 INSERT INTO `syslogng3_entry` VALUES (3, 'd_net', 'destination', 1);
 INSERT INTO `syslogng3_entry` VALUES (4, 'd_local', 'destination', 1);

@@ -8,6 +8,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Entity::Cluster;
 use Entity::Component;
+use JSON;
 
 my $log = get_logger("webui");
 
@@ -81,16 +82,46 @@ sub process_configurecomponent : Runmode {
 		}
 		
 		my @items = split(/-/, $field);
-		if(scalar(@items) == 1) { 
-			$conf->{$items[0]} = $query->param($field); 
-		} else { 
-			if(not exists $conf->{$items[0]}) { $conf->{$items[0]} = []; }
-			elsif(not scalar(@{$conf->{$items[0]}})) { $conf->{$items[0]}[$items[1]] = {}; }
-			$conf->{$items[0]}[$items[1]]->{$items[2]} = $query->param($field);
+		my $elem = $conf;
+		for (my $i = 0; $i <= @items-2; $i += 2) {
+	    		if (not defined $elem->{$items[$i]}[$items[$i+1]] ) { $elem->{$items[$i]}[$items[$i+1]] = {}; }
+	    		$elem = $elem->{$items[$i]}[$items[$i+1]];
 		}
+		$elem->{$items[-1]} = $query->param($field);
+		
+#		if(scalar(@items) == 1) { 
+#			$conf->{$items[0]} = $query->param($field); 
+#		} else {
+#			if(not exists $conf->{$items[0]}) { $conf->{$items[0]} = []; }
+#			elsif(not scalar(@{$conf->{$items[0]}})) { $conf->{$items[0]}[$items[1]] = {}; }
+#			$conf->{$items[0]}[$items[1]]->{$items[2]} = $query->param($field);
+#		}
 	} 
 	#$output .= Dumper($conf)."<br /><br />";
 	$component->setConf($conf);
 	$self->redirect("/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id=".$cluster_id);
 }
 
+
+sub process_configurecomponent_from_json : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $query = $self->query();
+	
+	my $component_instance_id = $query->param('component_instance_id'); 
+	my $component = Entity::Component->getInstance(id=>$component_instance_id);
+	my $cluster_id = $query->param('cluster_id');
+	
+	my $conf_str = $query->param('conf'); # stringified conf
+	my $conf = decode_json $conf_str;
+	
+	my $msg = "conf saved";
+	eval {
+		$component->setConf($conf);
+	};
+	if ($@) {
+		$msg = "Error: $@";
+	}
+
+	return $msg;
+}
