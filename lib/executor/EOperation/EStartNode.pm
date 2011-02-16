@@ -294,8 +294,7 @@ sub execute {
 	my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mount_cmd);
 
-	# Get All nodes in cluster
-	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
+	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();	
 	# Generate Node configuration
 	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},
@@ -303,13 +302,7 @@ sub execute {
 					 		etc_export	=> $node_etc_export,
 					 		nodes		=> $clust_nodes);
 	
-	my $masternode;
-	$log->debug("Node Number in cluster is : ".scalar (keys(%$clust_nodes)));
-	if (scalar (keys(%$clust_nodes))) {
-		$masternode = 0;
-	} else {
-		$masternode =1;
-	}
+
 	
 	#TODO  component migrate (node, exec context?)
 	my $components = $self->{_objs}->{components};
@@ -330,8 +323,8 @@ sub execute {
 	$self->{nas}->{econtext}->execute(command => $rmdir_cmd);
 
 	# Create node instance
-	$self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-                          					  master_node => $masternode);
+#	$self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+#                          					  master_node => $masternode);
     $self->{_objs}->{motherboard}->setNodeState(state=>"goingin");
 	$self->{_objs}->{motherboard}->save();
 	
