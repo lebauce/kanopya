@@ -160,7 +160,7 @@ sub execute {
 	foreach my $i (keys %$components) {		
 		my $tmp = EFactory::newEEntity(data => $components->{$i});
 		$log->debug("component is ".ref($tmp));
-		my $ret = $tmp->preStartNode(motherboard => $self->{_objs}->{motherboard}, 
+		my $ret = $tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
 							cluster => $self->{_objs}->{cluster});
 		if ($ret) {
 		    $self->{cluster_need_wait} = 1;
