@@ -124,7 +124,7 @@ sub execute {
 		$self->{_objs}->{cluster}->removeNode(motherboard_id => $mb_id);
 	} 	
 	
-	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down');
+	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping');
 	$self->{_objs}->{cluster}->save();
 }
 
