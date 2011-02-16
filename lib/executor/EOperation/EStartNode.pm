@@ -294,8 +294,7 @@ sub execute {
 	my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mount_cmd);
 
-	# Get All nodes in cluster
-	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
+	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();	
 	# Generate Node configuration
 	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},
@@ -303,15 +302,7 @@ sub execute {
 					 		etc_export	=> $node_etc_export,
 					 		nodes		=> $clust_nodes);
 	
-	
-	my $masternode;
-	$log->debug("Node Number in cluster is : ".scalar (keys(%$clust_nodes)));
-	if (scalar (keys(%$clust_nodes))) {
-		$masternode = 0;
-	} else {
-		$masternode =1;
-	}
-	
+
 	
 	#TODO  component migrate (node, exec context?)
 	my $components = $self->{_objs}->{components};
@@ -324,7 +315,6 @@ sub execute {
 							cluster => $self->{_objs}->{cluster},
 							econtext => $self->{nas}->{econtext});
 	}
-	
 
 	# Umount Motherboard etc to populate it
 	my $umount_cmd = "umount /mnt/$node_dev->{etc}->{lvname}";
@@ -333,54 +323,14 @@ sub execute {
 	$self->{nas}->{econtext}->execute(command => $rmdir_cmd);
 
 	# Create node instance
-	$adm->{manager}->{node}->addNode(motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_id"),
-					 cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-					 master_node => $masternode);
-
-	# finaly we start the node
-	$self->startNode();
+#	$self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+#                          					  master_node => $masternode);
+    $self->{_objs}->{motherboard}->setNodeState(state=>"goingin");
 	$self->{_objs}->{motherboard}->save();
-
-}
-
-
-
-sub startNode {
-	my $self = shift;
-	my %args = @_;
 	
-	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
-	if (!$powersupplycard_id) {
-		if(not -e '/usr/sbin/etherwake') {
-			$errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
-			$log->error($errmsg);
-			throw Kanopya::Exception::Execution(error => $errmsg);
-		}
-		my $command = "/usr/sbin/etherwake ".$self->{_objs}->{motherboard}->getAttr(name => 'motherboard_mac_address');
-		my $result = $self->{econtext}->execute(command => $command);
-	}
-	else {
-	    my $powersupplycard = Entity::Powersupplycard->get(id=> $powersupplycard_id);
-		use IO::Socket;
-		my $powersupply_ip = $powersupplycard->getAttr(name => "powersupplycard_ip");
-		$log->debug("Start motherboard with power supply which ip is : <$powersupply_ip>");
-		my $sock = new IO::Socket::INET (
-                                  PeerAddr => $powersupply_ip,
-                                  PeerPort => '1470',
-                                  Proto => 'tcp',
-                                 );
-		$sock->autoflush(1);
-		die "Could not create socket: $!\n" unless $sock;
-	    my $powersupply_port_number = $powersupplycard->getMotherboardPort(motherboard_powersupply_id=> $self->{_objs}->{motherboard}->getAttr(name => "motherboard_powersupply_id"));
-		my $pos = $powersupply_port_number;
-		my $s = "R";
-		$s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
-		$s .= pack "B16", "000000000000000";
-		printf $sock $s;
-		close($sock);
-	}
-	my $state = "starting:".time;
-	$self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => $state);
+	# finaly we start the node
+	my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
+	$emotherboard->start(econtext =>$self->{econtext});
 }
 
 sub generateNodeConf {

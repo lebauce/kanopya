@@ -42,15 +42,16 @@ package EOperation::EStartCluster;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
 use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+
+use Kanopya::Exceptions;
+use Entity::Cluster;
+use Entity::Motherboard;
 
 my $log = get_logger("executor");
 my $errmsg;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+our $VERSION = "1.00";
 
 =head2 new
 
@@ -105,7 +106,7 @@ sub prepare {
 	$self->{_objs} = {};
 	
 	# Get cluster to start from param
-	$self->{_objs}->{cluster} = $adm->getEntity(type => 'Cluster', id => $params->{cluster_id});
+	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
 }
 
 sub execute {
@@ -116,20 +117,14 @@ sub execute {
 	$log->info('getting minimum number of nodes to start');
 	my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');	
 	$log->info('getting free motherboards');
-	my @free_motherboards = $adm->getEntities(type => 'Motherboard', hash => { active => 1, motherboard_state => 'down'});
+	my @free_motherboards = Entity::Motherboard->getMotherboards(hash => { active => 1, motherboard_state => 'down'});
 	
 	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
 	
 
 	for(my $i=0 ; $i < $nodes_to_start ; $i++) {
 		my $motherboard = pop @free_motherboards;
-		$adm->newOp(type => 'AddMotherboardInCluster',
-					priority => $priority,
-					params => {
-						cluster_id => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
-						motherboard_id => $motherboard->getAttr(name => 'motherboard_id')
-					}
-		);
+		$self->{_objs}->{cluster}->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id'));
 	} 	
 	
 	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'up');

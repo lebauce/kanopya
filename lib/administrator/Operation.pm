@@ -59,6 +59,32 @@ sub enqueue {
 			$log->error($errmsg); 
 			throw Kanopya::Exception::Internal(error => $errmsg); 
 	}
+	my $params = $args{params};
+	my @hash_keys = keys %$params;
+	foreach my $key (@hash_keys) {
+	    if (! defined $params->{$key}){
+	        $errmsg = "Operation->enqueue needs defined params";
+			$log->error($errmsg); 
+			throw Kanopya::Exception::Internal(error => $errmsg);
+	    }
+	}
+	my $adm = Administrator->new();
+	my $same_op_rs = $adm->{db}->resultset('Operation')->search({type => $args{type}});
+	if ($same_op_rs->count){
+	    $log->debug("Same operation type detected, building where clause");
+#TODO Check if operation exists with same params.
+#        my %where_params;
+#        foreach my $param (keys %$params){
+
+#            $where_params{$param} = $params->{$param};
+#        }
+#	    my $same_op_with_same_args_rs = $same_op_rs->search_related("operation_parameters", {-or=>$params});
+#	    if ($same_op_with_same_args_rs->count){
+#	        $errmsg = "Operation->enqueue : Operation already in list";
+#			$log->error($errmsg); 
+#			throw Kanopya::Exception::Internal(error => $errmsg);
+#	    }
+	}
     my $op = Operation->new(%args);
     $op->save();
 }

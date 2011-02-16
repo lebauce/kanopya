@@ -1,0 +1,14 @@
+Source: kanopya-monitor
+Section: admin
+Priority: optional
+Maintainer: Hedera Dev Team <dev@hederatech.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.4
+Homepage: <http://hederatech.org>
+Vcs-Git: git://git.kanopya.org/mcs/executor.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/executor.git;a=summary
+
+Package: kanopya-monitor
+Architecture: all
+Depends: ${perl:Depends}, openssh-server, snmpd, libkanopya-perl, libsnmp-perl, librrdtool-oo-perl, libdatetime-format-strptime-perl
+Description: The monitor analyze cluster's life cycle 

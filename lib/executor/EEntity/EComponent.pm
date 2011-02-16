@@ -120,7 +120,12 @@ sub addNode {}
 sub removeNode {}
 sub stopNode {}
 sub postStartNode {}
-sub preStartNode{};
+sub preStartNode{}
+sub preStopNode{return 0;}
+sub postStopNode{}
+sub readyNodeAddition{return 1;}
+sub readyNodeRemoving{return 1;}
+
 1;
 
 __END__

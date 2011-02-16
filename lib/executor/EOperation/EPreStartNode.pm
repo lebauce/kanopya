@@ -169,13 +169,18 @@ sub execute {
 
 sub finish {
     my $self = shift;
-	$log->debug("EPreStartNode->finish before enqueueing new operation");
-	Operation->enqueue(
-    	priority => 200,
-        type     => 'StartNode',
-        params   => {cluster_id => $self->{_objs}->{cluster}->getAttr(name=>'cluster_id'),
-                     motherboard_id => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_id')},
-                     );
+    my $masternode;
+
+	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
+		$masternode = 0;
+	} else {
+		$masternode =1;
+	}
+    
+	$self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+                          					  master_node => $masternode);
+    $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingin");
+	$self->{_objs}->{motherboard}->save();
 }
 
 1;

@@ -27,6 +27,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Motherboard;
+use Entity::Systemimage;
 use Operation;
 use Administrator;
 use General;
@@ -639,6 +640,7 @@ sub addNode {
     	motherboard_id => $args{motherboard_id}, 
     );
     $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
+
     Operation->enqueue(
     	priority => 200,
 #        type     => 'AddMotherboardInCluster',
@@ -651,7 +653,33 @@ sub addNode {
 
 =cut
 
-sub removeNode {}
+sub removeNode {
+	my $self = shift;
+	my %args = @_;
+	if((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) {
+	   	$errmsg = "Entity::Cluster->addNode needs motherboard_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+		
+	my $adm = Administrator->new();
+	# removeNode method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeNode');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a node from this cluster");
+   	}
+    my %params = (
+    	cluster_id => $self->getAttr(name =>"cluster_id"),
+    	motherboard_id => $args{motherboard_id}, 
+    );
+    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
+
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'PreStopNode',
+        params   => \%params,
+    );
+}
 
 =head2 start
 
@@ -661,19 +689,17 @@ sub start {
 	my $self = shift;
 	
 	my $adm = Administrator->new();
-	# addNode method concerns an existing entity so we use his entity_id
+	# start method concerns an existing entity so we use his entity_id
    	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
    	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
    	}
-    my %params = (
-    	cluster_id => $self->getAttr(name =>"cluster_id"),
-    );
-    $log->debug("New Operation startCluster with attrs : " . %params);
+    
+    $log->debug("New Operation StartCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(
     	priority => 200,
         type     => 'StartCluster',
-        params   => \%params,
+        params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
     );
 }
 
@@ -681,7 +707,23 @@ sub start {
 
 =cut
 
-sub stop {}
+sub stop {
+	my $self = shift;
+	
+	my $adm = Administrator->new();
+	# stop method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'stop');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to stop this cluster");
+   	}
+    
+    $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'StopCluster',
+        params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
+    );
+}
 
 
 1;

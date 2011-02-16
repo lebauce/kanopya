@@ -89,50 +89,50 @@ eval {
     # Test Motherboard Migration
     note( "Test Motherboard Migration");
     $c2->addNode(motherboard_id => $m2->getAttr(name => 'motherboard_id'));
-    $executor->execnround(run => 2);
+#    $executor->execnround(run => 2);
 
-    # Test Motherboard Deactivation
-    note( "Test Motherboard Deactivation");
-    $m2->deactivate();
-    $executor->execnround(run => 1);
-    $m2 = Entity::Motherboard->get(id => $m2->getAttr(name=>'motherboard_id'));
-    is ($m2->getAttr(name=>'active'), 0, "Deactivate Motherboard");
-
-
-    # Test Cluster Deactivation
-    note( "Test Cluster Deactivation");
-    $c2->deactivate();
-    $executor->execnround(run => 1);
-    $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
-    is ($c2->getAttr(name=>'active'), 0, "Deactivate Cluster");
-
-    # Test Systemimage Deactivation
-    note( "Test Systemimage Deactivation");
-    $s2->deactivate();
-    $executor->execnround(run => 1);
-    $s2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'));
-    is ($s2->getAttr(name=>'active'), 0, "Test if SystemImage is unactive");
-
-    # Cluster delete
-    note( "Test Cluster Deletion");
-    $c2->remove();
-    $executor->execnround(run => 1);
-    throws_ok { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
-      "Try to get a deleted Cluster";
-
-    # Motherboard delete
-    note( "Test Motherboard Deletion");
-    $m2->remove();
-    $executor->execnround(run => 1);
-    throws_ok { $m2 = Entity::Motherboard->get(id => $m2->getAttr(name=>'motherboard_id'))} 'Kanopya::Exception::Internal',
-    "Try to get a deleted motherboard";
-
-    # Systemimage delete
-    note( "Test Systemimage Deletion");
-    $s2->remove();
-    $executor->execnround(run => 1);
-    throws_ok { $m2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
-    "Try to get a deleted Systemimage";
+#    # Test Motherboard Deactivation
+#    note( "Test Motherboard Deactivation");
+#    $m2->deactivate();
+#    $executor->execnround(run => 1);
+#    $m2 = Entity::Motherboard->get(id => $m2->getAttr(name=>'motherboard_id'));
+#    is ($m2->getAttr(name=>'active'), 0, "Deactivate Motherboard");
+#
+#
+#    # Test Cluster Deactivation
+#    note( "Test Cluster Deactivation");
+#    $c2->deactivate();
+#    $executor->execnround(run => 1);
+#    $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
+#    is ($c2->getAttr(name=>'active'), 0, "Deactivate Cluster");
+#
+#    # Test Systemimage Deactivation
+#    note( "Test Systemimage Deactivation");
+#    $s2->deactivate();
+#    $executor->execnround(run => 1);
+#    $s2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'));
+#    is ($s2->getAttr(name=>'active'), 0, "Test if SystemImage is unactive");
+#
+#    # Cluster delete
+#    note( "Test Cluster Deletion");
+#    $c2->remove();
+#    $executor->execnround(run => 1);
+#    throws_ok { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
+#      "Try to get a deleted Cluster";
+#
+#    # Motherboard delete
+#    note( "Test Motherboard Deletion");
+#    $m2->remove();
+#    $executor->execnround(run => 1);
+#    throws_ok { $m2 = Entity::Motherboard->get(id => $m2->getAttr(name=>'motherboard_id'))} 'Kanopya::Exception::Internal',
+#    "Try to get a deleted motherboard";
+#
+#    # Systemimage delete
+#    note( "Test Systemimage Deletion");
+#    $s2->remove();
+#    $executor->execnround(run => 1);
+#    throws_ok { $m2 = Entity::Systemimage->get(id => $s2->getAttr(name=>'systemimage_id'))} 'Kanopya::Exception::Internal',
+#    "Try to get a deleted Systemimage";
   };
 if($@) {
   my $error = $@;
