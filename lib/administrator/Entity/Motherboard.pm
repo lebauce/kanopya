@@ -210,7 +210,7 @@ sub becomeNode{
 		(! exists $args{master_node} or ! defined $args{master_node})){
 		$errmsg = "Entity::Motherboard->becomeNode need a cluster_id and a master_node named argument!";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
     my $adm = Administrator->new();
 	my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
@@ -239,13 +239,13 @@ sub stopToBeNode{
 	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})){
 		$errmsg = "NodeManager->delNode need a cluster_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $row = $self->{_dbix}->nodelink;
 	if(not defined $row) {
 		$errmsg = "Entity::Motherboard->stopToBeNode : node representing motherboard ".$self->getAttr(name=>"motherboard_mac_address")." and cluster $args{cluster_id} not found!";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$row->delete;
 }
@@ -268,14 +268,14 @@ sub notNode{
 	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})){
 		$errmsg = "Entity::Motherboard->notNode need a cluster_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	$args{'motherboard_id'} = $self->getAttr(name =>"motherboard_id");
 	my $row = $self->{_node_rs}->search(\%args)->first;
 	if(not defined $row) {
 		$errmsg = "Entity::Motherboard->notNode : node representing motherboard $args{'motherboard_id'} and cluster $args{cluster_id} not found!";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$row->delete;
 }
@@ -293,7 +293,7 @@ sub getMotherboards {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	my $adm = Administrator->new();
+	
    	return $class->SUPER::getEntities( %args,  type => "Motherboard");
 }
 
@@ -308,6 +308,18 @@ sub getMotherboard {
 	}
    	my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
     return pop @Motherboards;
+}
+
+sub getFreeMotherboards {
+	my $class = shift;
+	my @motherboards = $class->getMotherboards(hash => {active => 1, motherboard_state => 'down'});
+	my @free;
+	foreach my $m (@motherboards) {
+		if(not $m->{_dbix}->nodelink) {
+			push @free, $m;
+		}
+	}
+	return @free;
 }
 
 =head2 new
