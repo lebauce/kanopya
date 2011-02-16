@@ -452,16 +452,17 @@ sub updateNodeStatus {
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    # state pregoingout is impossible when node is not available (it has to be repaired before)
     my %actions = (0 => { in        => \&nodeBroken,
                           goingin  => \&testGoingInNode,
                           pregoingin => \&testPreGoingInNode,
                           broken    => sub {},
-                          pregoingout => \&testPreGoingOutNode,
                           goingout  => \&nodeOut},
                    # state PreGoingIn is not possible when node is available
                    1 => { broken    => \&nodeRepaired,
                           in        => sub {},
                           goingin  => \&nodeIn,
+                          pregoingout => \&testPreGoingOutNode,
                           goingout  => \&testGoingOutNode});
    my $node_state = $args{motherboard}->getNodeState();
    print "Node state is $node_state and service status is $args{services_available}\n";
