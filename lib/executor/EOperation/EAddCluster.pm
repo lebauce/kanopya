@@ -108,11 +108,11 @@ sub prepare {
     
     # Cluster instantiation
     eval {
-    	$self->{_objs}->{cluster} = $self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
+    	$self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+    	$errmsg = "EOperation::EAddCluster->prepare : cluster_id $params->{cluster_name} does not find\n" . $err;
     	$log->error($errmsg);
     	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
