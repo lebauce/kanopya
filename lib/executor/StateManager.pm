@@ -48,16 +48,19 @@ package StateManager;
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-our $VERSION = '1.00';
+
 use General;
 use Kanopya::Exceptions;
-use XML::Simple;
+use Operation;
+use EFactory;
 use Administrator;
 use Entity::Cluster;
 use Entity::Motherboard;
+
+use XML::Simple;
 use Data::Dumper;
-use Operation;
+use Log::Log4perl "get_logger";
+our $VERSION = '1.00';
 
 use Net::Ping;
 use IO::Socket;
@@ -154,6 +157,7 @@ sub checkMotherboardUp {
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    
 	my $p = Net::Ping->new();
 	my $pingable = $p->ping($args{ip});
 	$p->close();
@@ -176,16 +180,17 @@ sub run {
         # First Check Motherboard Status
         my @motherboards = Entity::Motherboard->getMotherboards(hash => {motherboard_state => {'!=','down'}});
 #   	    my @moth_index = keys %$motherboards;
-   	    foreach my $mb (@motherboards) {
-		  eval {
-		  	my $pingable = checkMotherboardUp(ip => $mb->getAttr( name => 'motherboard_internal_ip' ));
-		    updateMotherboardStatus(pingable => $pingable, motherboard=>$mb);
-		  };
-		  if($@) {
-		  	my $exception = $@;
-		  	if(Kanopya::Exception::OperationAlreadyEnqueued->caught()) { next; }
-		  	else { $exception->rethrow(); }
-		  }
+		foreach my $mb (@motherboards) {
+			eval {
+		  		my $emotherboard = EFactory::newEEntity(data => $mb);
+	      		my $is_up = $emotherboard->checkUp();
+		  		updateMotherboardStatus(pingable => $is_up, motherboard=>$mb);
+		  	};
+		  	if($@) {
+		  		my $exception = $@;
+		  		if(Kanopya::Exception::OperationAlreadyEnqueued->caught()) { next; }
+		  		else { $exception->rethrow(); }
+		  	}
    	    }
 
         # Second Check node status
@@ -309,7 +314,11 @@ sub nodeOut{
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
         }
+<<<<<<< HEAD
     #$args{motherboard}->setNodeState(state => "out");
+=======
+#    $args{motherboard}->setNodeState(state => "out");
+>>>>>>> ba3e4cac8d1cab85a3c4419300b77e9bb50ffcf8
 
 }
 

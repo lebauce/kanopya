@@ -45,6 +45,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use IO::Socket;
+use Net::Ping;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -164,6 +165,17 @@ sub stop {
 		close($sock);
 	}
 
+}
+
+sub checkUp {
+    my $self = shift;
+    
+    my $ip = $self->_getEntity()->getAttr(name=>"motherboard_internal_ip");
+    
+	my $p = Net::Ping->new();
+	my $pingable = $p->ping($ip);
+	$p->close();
+	return $pingable;
 }
 
 1;
