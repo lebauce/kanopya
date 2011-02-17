@@ -313,16 +313,10 @@ sub nodeOut{
             $errmsg = "StateManager::nodeOut need a motherboard named argument!";	
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-<<<<<<< HEAD
-    #$args{motherboard}->setNodeState(state => "out");
-=======
-#    $args{motherboard}->setNodeState(state => "out");
->>>>>>> ba3e4cac8d1cab85a3c4419300b77e9bb50ffcf8
-
+    }
 }
 
-sub nodeIn{
+sub nodeIn {
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
             $errmsg = "StateManager::nodeIn need a motherboard named argument!";	
