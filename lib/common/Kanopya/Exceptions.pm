@@ -93,6 +93,10 @@ use Exception::Class (
 	Kanopya::Exception::Permission::Denied => {
 	isa => 'Kanopya::Exception::Permission',
 	description => 'Permission denied'
+	},
+	Kanopya::Exception::OperationAlreadyEnqueued => {
+	isa => 'Kanopya::Exception',
+	description => 'Operation already enqueued' 	
 	}
     
 );

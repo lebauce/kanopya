@@ -294,7 +294,7 @@ sub nodeOut{
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
         }
-    $args{motherboard}->setNodeState(state => "out");
+#    $args{motherboard}->setNodeState(state => "out");
 
 }
 

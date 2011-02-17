@@ -69,24 +69,33 @@ sub enqueue {
 	    }
 	}
 	my $adm = Administrator->new();
-	my $same_op_rs = $adm->{db}->resultset('Operation')->search({type => $args{type}});
-	if ($same_op_rs->count){
-	    $log->debug("Same operation type detected, building where clause");
-#TODO Check if operation exists with same params.
-#        my %where_params;
-#        foreach my $param (keys %$params){
-
-#            $where_params{$param} = $params->{$param};
-#        }
-#	    my $same_op_with_same_args_rs = $same_op_rs->search_related("operation_parameters", {-or=>$params});
-#	    if ($same_op_with_same_args_rs->count){
-#	        $errmsg = "Operation->enqueue : Operation already in list";
-#			$log->error($errmsg); 
-#			throw Kanopya::Exception::Internal(error => $errmsg);
-#	    }
+	my $nbparams = scalar(@hash_keys);
+	my $whereclause = [];
+	while( my ($key, $value) = each %{$args{params}}) {
+		$log->debug("key $key value $value");
+		push @$whereclause, {name => $key, value =>$value};
 	}
-    my $op = Operation->new(%args);
-    $op->save();
+		
+	my $op_rs = $adm->{db}->resultset('Operation')->search(
+		{	type => $args{type}, 
+			-or => $whereclause,
+		},
+		{ 	select => [{ count => 'operation_parameters.operation_id', -as => 'mycount'}],
+			join => 'operation_parameters',
+			group_by => 'operation_parameters.operation_id',
+			having => { 'mycount' => $nbparams }
+		}
+	);
+	my @rows = $op_rs->all;
+	if(scalar(@rows)) {
+		$errmsg = "An operation with exactly same parameters already enqueued !";
+		throw Kanopya::Exception::OperationAlreadyEnqueued(error => $errmsg);
+	}
+	
+	#$log->debug("-------------------> total count : ".(scalar(@rows)));
+	   
+    my $operation = Operation->new(%args);
+    $operation->save();
 }
 
 sub new {
