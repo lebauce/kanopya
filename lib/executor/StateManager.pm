@@ -48,16 +48,19 @@ package StateManager;
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-our $VERSION = '1.00';
+
 use General;
 use Kanopya::Exceptions;
-use XML::Simple;
+use Operation;
+use EFactory;
 use Administrator;
 use Entity::Cluster;
 use Entity::Motherboard;
+
+use XML::Simple;
 use Data::Dumper;
-use Operation;
+use Log::Log4perl "get_logger";
+our $VERSION = '1.00';
 
 use Net::Ping;
 use IO::Socket;
@@ -154,6 +157,7 @@ sub checkMotherboardUp {
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    
 	my $p = Net::Ping->new();
 	my $pingable = $p->ping($args{ip});
 	$p->close();
@@ -177,7 +181,9 @@ sub run {
         my @motherboards = Entity::Motherboard->getMotherboards(hash => {motherboard_state => {'!=','down'}});
 #   	    my @moth_index = keys %$motherboards;
    	    foreach my $mb (@motherboards) {
-		  my $pingable = checkMotherboardUp(ip => $mb->getAttr( name => 'motherboard_internal_ip' ));
+ 	      my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
+	      my $is_up = $emotherboard->checkUp();
+	      $emotherboard->updateStatus(is_up => $is_up);
 		  updateMotherboardStatus(pingable => $pingable, motherboard=>$mb);
    	    }
 

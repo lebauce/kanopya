@@ -227,10 +227,7 @@ sub execute {
 	my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
 	$emotherboard->stop();
 
-    $self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
-    	
-
-    $self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+     $self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 	if (!$self->{_objs}->{cluster}->getCurrentNodesCount ()){
        $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down');
 	   $self->{_objs}->{cluster}->save();

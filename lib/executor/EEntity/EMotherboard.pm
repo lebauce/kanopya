@@ -166,6 +166,21 @@ sub stop {
 
 }
 
+sub checkUp {
+    my $self = shift;
+    my %args = @_;
+    if ((!defined $args{ip} or !exists $args{ip})){
+            $errmsg = "StateManager::checkMotherboardUp need an ip named argument!";	
+		    $log->error($errmsg);
+		    throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    
+	my $p = Net::Ping->new();
+	my $pingable = $p->ping($args{ip});
+	$p->close();
+	return $pingable;
+}
+
 1;
 
 __END__
