@@ -567,6 +567,17 @@ sub getEtcDev {
 	return $devices;
 }
 
+sub getInternalIP {
+    my $self = shift;
+
+    if($self->{_dbix}->)
+}
+
+sub setNewInternalIP{
+    my $self = shift;
+    
+}
+
 sub generateHostname {
 #	my $self = shift;
 #	my $mac = $self->getAttr(name => 'motherboard_mac_address');	
