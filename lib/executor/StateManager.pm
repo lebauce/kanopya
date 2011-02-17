@@ -181,10 +181,10 @@ sub run {
         my @motherboards = Entity::Motherboard->getMotherboards(hash => {motherboard_state => {'!=','down'}});
 #   	    my @moth_index = keys %$motherboards;
    	    foreach my $mb (@motherboards) {
- 	      my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
+ 	      my $emotherboard = EFactory::newEEntity(data => $mb);
 	      my $is_up = $emotherboard->checkUp();
-	      $emotherboard->updateStatus(is_up => $is_up);
-		  updateMotherboardStatus(pingable => $pingable, motherboard=>$mb);
+	     # $emotherboard->updateStatus(is_up => $is_up);
+		  updateMotherboardStatus(pingable => $is_up, motherboard=>$mb);
    	    }
 
         # Second Check node status

@@ -45,6 +45,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use IO::Socket;
+use Net::Ping;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -168,15 +169,11 @@ sub stop {
 
 sub checkUp {
     my $self = shift;
-    my %args = @_;
-    if ((!defined $args{ip} or !exists $args{ip})){
-            $errmsg = "StateManager::checkMotherboardUp need an ip named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    my $ip = $self->_getEntity()->getAttr(name=>"motherboard_internal_ip");
     
 	my $p = Net::Ping->new();
-	my $pingable = $p->ping($args{ip});
+	my $pingable = $p->ping($ip);
 	$p->close();
 	return $pingable;
 }
