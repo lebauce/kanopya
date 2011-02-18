@@ -570,7 +570,7 @@ sub getEtcDev {
 sub getInternalIP {
     my $self = shift;
 
-    if($self->{_dbix}->)
+#    if($self->{_dbix}->)
 }
 
 sub setNewInternalIP{
