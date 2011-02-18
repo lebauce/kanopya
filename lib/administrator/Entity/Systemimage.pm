@@ -437,7 +437,7 @@ sub getInstalledComponents {
 		throw Kanopya::Exception(error => $errmsg);
 	}
 	my $components = [];
-	my $search = $self->{_dbix}->component_installed->search(undef, 
+	my $search = $self->{_dbix}->components_installed->search(undef, 
 		{ '+columns' => [ 'component.component_id', 
 						'component.component_name', 
 						'component.component_version', 

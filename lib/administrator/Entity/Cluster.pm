@@ -405,10 +405,10 @@ sub getComponents {
 	}
 #	my $adm = Administrator->new();
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
-											{ '+columns' => [ "component_id.component_name",
-															  "component_id.component_category",
-															  "component_id.component_version"],
-													join => ["component_id"]});
+											{ '+columns' => [ "component.component_name",
+															  "component.component_category",
+															  "component.component_version"],
+													join => ["component"]});
 
 	my %comps;
 	$log->debug("Category is $args{category}");
@@ -575,7 +575,7 @@ sub getMotherboards {
 	my $motherboard_rs = $self->{_dbix}->nodes;
 	my %motherboards;
 	while ( my $node_row = $motherboard_rs->next ) {
-		my $motherboard_row = $node_row->motherboard_id;
+		my $motherboard_row = $node_row->motherboard;
 		$log->debug("Nodes found");
 		my $motherboard_id = $motherboard_row->get_column('motherboard_id');
 		eval { $motherboards{$motherboard_id} = Entity::Motherboard->get (
