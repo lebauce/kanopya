@@ -150,7 +150,10 @@ sub vgSpaceUpdate {
 		throw Mcs::Exception::Execution(error => $errmsg);
 	}
 	my $freespace = $ret->{stdout};
-	$freespace =~ 's/\s*//';
+	chomp $freespace;
+	$freespace =~ s/^[ \t]+//;
+	$freespace =~ s/,\d*$//;
+
 	return $self->_getEntity()->vgSizeUpdate(lvm2_vg_freespace => $freespace, lvm2_vg_id => $args{lvm2_vg_id});
 }
 

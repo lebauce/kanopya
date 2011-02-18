@@ -252,6 +252,7 @@ sub prepare {
 }
 
 sub execute{
+	
 	my $self = shift;
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
@@ -272,8 +273,9 @@ sub execute{
 													size => "52M",
 													filesystem => "ext3",
 													econtext => $self->{nas}->{econtext});
+	
 	$self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
-
+	
 	if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
 		(exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})){
 			
