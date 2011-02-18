@@ -78,8 +78,8 @@ sub _getEntityIds {
 		{ 'ingroups.entity_id' => $args{entity_id} },
 		{ 
 			columns 	=> [], 									# use no columns from Groups table
-			'+columns' 	=> [ 'groups_entities.entity_id' ], 	# but add the entity_id column from groups_entity related table
-			join 		=> [qw/ingroups groups_entities/],
+			'+columns' 	=> [ 'groups_entity.entity_id' ], 	# but add the entity_id column from groups_entity related table
+			join 		=> [qw/ingroups groups_entity/],
 		}
 	);
 	# add entity_id groups to the arrayref

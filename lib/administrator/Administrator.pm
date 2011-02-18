@@ -149,8 +149,8 @@ sub authenticate {
 			user_login => $args{login}, 
 			user_password => $args{password},
 		},{ 
-			'+columns' => ['user_entities.entity_id'],
-    		join => ['user_entities'] 
+			'+columns' => ['user_entity.entity_id'],
+    		join => ['user_entity'] 
 		},
 	
 	)->single;
@@ -200,8 +200,8 @@ sub buildEntityRights {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
-	my $user = $args{schema}->resultset('User')->search({ 'user_entities.entity_id' => $ENV{EID}},
-		 { join => ['user_entities'] }
+	my $user = $args{schema}->resultset('User')->search({ 'user_entity.entity_id' => $ENV{EID}},
+		 { join => ['user_entity'] }
 	)->single;
 	
 	if($user->get_column('user_system')) {
@@ -724,7 +724,7 @@ sub _getDbixFromHash {
 	}
 
 	my $dbix;
-	my $entitylink = lc($args{table})."_entities";
+	my $entitylink = lc($args{table})."_entity";
 	eval {
 		my $hash = $args{hash};
 		if (keys(%$hash)){
@@ -768,7 +768,7 @@ sub _getAllDbix {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
-	my $entitylink = lc($args{table})."_entities";
+	my $entitylink = lc($args{table})."_entity";
 	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
 		join => ["$entitylink"]});
 }

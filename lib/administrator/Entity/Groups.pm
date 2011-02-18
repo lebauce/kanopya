@@ -116,14 +116,14 @@ sub get {
 	}
 	
 	my $admin = Administrator->new();
-   	my $dbix_groups = $admin->{db}->resultset('Groups')->find($args{id});
+   	my $dbix_groups = $admin->{db}->resultset('Group')->find($args{id});
    	if(not defined $dbix_groups) {
 	   	$errmsg = "Entity::Groups->get : id <$args{id}> not found !";	
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
    	}   
    	# Entity::Groups->get method concerns an existing groups so we retrieve this groups'entity_id
-   	my $entity_id = $dbix_groups->groups_entities->first->get_column('entity_id');
+   	my $entity_id = $dbix_groups->entitylink->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		$errmsg = "Permission denied to get group with id $args{id}";
@@ -131,7 +131,7 @@ sub get {
    		throw Kanopya::Exception::Permission::Denied(error => $errmsg);
    	}
 	
-   	my $self = $class->SUPER::get( %args,  table => "Groups");
+   	my $self = $class->SUPER::get( %args,  table => "Group");
    	return $self;
 }
 
@@ -157,7 +157,7 @@ sub getGroups {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Groups");
+   	return $class->SUPER::getEntities( %args,  type => "Group");
 }
 
 =head2 new
@@ -177,7 +177,7 @@ sub new {
 	my $attrs = $class->checkAttrs(attrs => \%args);
 	
 	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Groups");
+	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Group");
 	
 	# Set the extended parameters
 	#$self->{_ext_attrs} = $attrs->{extended};
@@ -250,13 +250,13 @@ sub getGroupsFromEntity {
 		
 	my $adm = Administrator->new();
    	my $mastergroup = $args{entity}->getMasterGroupName();
-	my $groups_rs = $adm->{db}->resultset('Groups')->search({
+	my $groups_rs = $adm->{db}->resultset('Group')->search({
 		-or => [
 			'ingroups.entity_id' => $args{entity}->{_dbix}->get_column('entity_id'),
 			'groups_name' => $mastergroup ]},
 			
-		{ 	'+columns' => [ 'groups_entities.entity_id' ], 
-			join => [qw/ingroups groups_entities/] }
+		{ 	'+columns' => [ 'groups_entity.entity_id' ], 
+			join => [qw/ingroups groups_entity/] }
 	);
 	while(my $row = $groups_rs->next) {
 		eval {

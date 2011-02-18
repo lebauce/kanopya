@@ -184,7 +184,7 @@ sub getMasterGroupEid {
 	my $self = shift;
 	my $adm = Administrator->new();
 	my $mastergroup = $self->getMasterGroupName();
-	my $eid = $adm->{db}->resultset('Groups')->find({ groups_name => $mastergroup })->groups_entities->first->get_column('entity_id');
+	my $eid = $adm->{db}->resultset('Group')->find({ groups_name => $mastergroup })->entitylink->get_column('entity_id');
 	return $eid;
 }
 
@@ -235,8 +235,8 @@ sub getGroups {
 			'ingroups.entity_id' => $self->{_dbix}->get_column('entity_id'),
 			'groups_name' => $mastergroup ]},
 			
-		{ 	'+columns' => [ 'groups_entities.entity_id' ], 
-			join => [qw/ingroups groups_entities/] }
+		{ 	'+columns' => [ 'groups_entity.entity_id' ], 
+			join => [qw/ingroups groups_entity/] }
 	);
 	return $groups;
 }
@@ -392,14 +392,23 @@ sub save {
 	} else {
 		# CREATE
 		my $adm = Administrator->new();
-		my $relation = lc(ref $self);
+		my $relation = ref $self;
 		$relation =~ s/.*\:\://g;
+		my $lcrelation = lc(ref $self);
+		$lcrelation =~ s/.*\:\://g;
 		$log->debug("la relation: $relation");
-		my $newentity = $self->{_dbix}->insert;
-		$log->debug("new entity inserted.");
-		my $row = $adm->{db}->resultset('Entity')->create(
-			{ "${relation}_entities" => [ { "${relation}_id" => $newentity->get_column("${relation}_id")} ] },
-		);
+		
+		my $concret = $self->{_dbix}->insert;
+		
+		my $entity = $adm->{db}->resultset('Entity')->create({});
+		my $row = $adm->{db}->resultset("${relation}Entity")->create({
+			entity_id => $entity->get_column('entity_id'),
+			"${lcrelation}_id" => $concret->get_column("${lcrelation}_id"),
+		});
+		
+		#my $row = $adm->{db}->resultset('Entity')->create(
+		#	{ "${relation}_entity" => { "${relation}_id" => $newentity->get_column("${relation}_id")} },
+		#);
 		$log->debug("new $self inserted with his entity relation.");
 		$self->{_entity_id} = $row->get_column('entity_id');
 		
@@ -487,7 +496,7 @@ sub addPerm {
 		# addPerm call from class $self
 		my @list = split(/::/, "$self");
 		my $mastergroup = pop(@list);
-		my $entity_id = $adm->{db}->resultset('Groups')->find({ groups_name => $mastergroup })->groups_entities->first->get_column('entity_id');
+		my $entity_id = $adm->{db}->resultset('Groups')->find({ groups_name => $mastergroup })->groups_entity->first->get_column('entity_id');
 		my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'setPerm');
    	   	if(not $granted) {
    			throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{id}");
@@ -542,11 +551,11 @@ sub delete {
 	$relation =~ s/.*\:\://g;
 	$log->debug("Delete Entity which type is " . ref($self));
 	
-	my $entity_rs = $data->related_resultset( $relation . "_entities" );
-	$log->debug("First Deletion of entity link : " . $relation . "_entities");
+	my $entity_row = $data->entitylink;
+	$log->debug("First Deletion of entity link : " . $relation . "_entity");
 	# J'essaie de supprimer dans la table entity
-	my $real_entity_rs = $entity_rs->related_resultset("entity_id");
-	$real_entity_rs->delete;
+	my $real_entity_row = $entity_row->entity;
+	$real_entity_row->delete;
 	$log->debug("Delete extension");
 	# Delete extended Attrs (cascade delete)
 	my $extension = $self->extension();

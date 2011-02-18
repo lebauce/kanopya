@@ -173,7 +173,7 @@ sub getConf {
 	$data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
 	$data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
 	$data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');;
-	$data->{server_ip} = $cluster->search_related("nodes", { master_node => 1 })->single->motherboard_id->get_column('motherboard_internal_ip');
+	$data->{server_ip} = $cluster->search_related("nodes", { master_node => 1 })->single->motherboard->get_column('motherboard_internal_ip');
 	
 	my $subnets = $dhcpd3->dhcpd3_subnets;
 	my @data_subnets = ();
@@ -185,7 +185,7 @@ sub getConf {
 				ip_address => $host->get_column('dhcpd3_hosts_ipaddr'), 
 				mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
 				hostname => $host->get_column('dhcpd3_hosts_hostname'), 
-				kernel_version => $host->kernel_id->get_column('kernel_version')
+				kernel_version => $host->kernel->get_column('kernel_version')
 			};
 		}
 		push @data_subnets, {
