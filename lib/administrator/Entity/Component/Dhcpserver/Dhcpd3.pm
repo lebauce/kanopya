@@ -167,7 +167,7 @@ B<throws>  : None
 # return a data structure to pass to the template processor 
 sub getConf {
 	my $self = shift;
-	my $cluster = $self->{_dbix}->cluster_id;
+	my $cluster = $self->{_dbix}->cluster;
 	my $dhcpd3 =  $self->{_dbix}->dhcpd3s->first();
 	my $data = {};
 	$data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
