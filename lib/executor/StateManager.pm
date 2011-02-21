@@ -129,19 +129,20 @@ sub checkNodeUp {
 
     my $node_ip = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
    	foreach my $i (keys %$components) {
-   	    print "Browse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
+   	    print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
 		if ($components->{$i}->can("getNetConf")) {
 		    #TODO Call a method on component which test if component is ready to receive a new node.
 		    my $protoToTest = $components->{$i}->getNetConf();
-		    print "Component with a netConf, its proto is %$protoToTest \n";
             foreach my $j (keys %$protoToTest) {
-                print "Test port <$j> of motherboard <$node_ip> with protocol <" . $protoToTest->{$j} ."> for component " . $components->{$i}->getComponentAttr()->{component_name} ."\n";
+                print "\tTest port <$j> of motherboard <$node_ip> with protocol <" . $protoToTest->{$j} ."> for component " . $components->{$i}->getComponentAttr()->{component_name};
                 my $sock = new
                         IO::Socket::INET(PeerAddr=>$node_ip,PeerPort=>$j,Proto=>$protoToTest->{$j});
                 if(! $sock) {
+                    print ", service is not available\n";
                     $node_available = 0;
                     last; 
                 }
+                print ", service is available\n";
                 close $sock or die "close: $!";
             }
 	   }
@@ -195,9 +196,8 @@ sub run {
 
         # Second Check node status
    	    my @clusters = Entity::Cluster->getClusters(hash=>{cluster_state => {'!=' => 'down'}});
-   	    print "First cluster get is <" . $clusters[0]->getAttr(name=>'cluster_name'). ">\n";
    	    foreach my $cluster (@clusters) {
-   	    print "cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n";
+   	        print "cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n";
    	        my $motherboards = $cluster->getMotherboards();
    	        my @moth_index = keys %$motherboards;
    	        foreach my $mb (@moth_index) {
