@@ -114,15 +114,19 @@ sub execute {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
-	
+	my $master_node_id =  $self->{_objs}->{cluster}->getMasterNodeId();
 	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
 	
 	foreach my $mb_id (keys %$motherboards) {
+	    if ($master_node_id == $mb_id){
+	        next;
+	    }
 		# we stop only nodes with 'up' state 
 		#TODO gerer les nodes dans un autre état
 		if($motherboards->{$mb_id}->getAttr(name => 'motherboard_state') ne 'up') { next; }
 		$self->{_objs}->{cluster}->removeNode(motherboard_id => $mb_id);
-	} 	
+	}
+	$self->{_objs}->{cluster}->removeNode(motherboard_id => $master_node_id);
 	
 	#$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping');
 	#$self->{_objs}->{cluster}->save();
