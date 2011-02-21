@@ -333,9 +333,10 @@ sub save {
 		my $newentity = $self->{_dbix}->insert;
 		$log->debug("new entity inserted.");
 		my $adm = Administrator->new();
-		my $row = $adm->{db}->resultset('Entity')->create(
-			{ "entitylink" => { "component_instance" => $newentity->get_column("component_instance_id")}  },
-		);
+		my $row = $adm->{db}->resultset('Entity')->create({});
+		my $row_entity = $adm->{db}->resultset("ComponentInstanceEntity")->create({
+			entity_id => $row->get_column('entity_id'),
+			"component_instance_id" => $newentity->get_column("component_instance_id")});
 		$log->debug("new $self inserted with his entity relation.");
 		$self->{_entity_id} = $row->get_column('entity_id');
 		
