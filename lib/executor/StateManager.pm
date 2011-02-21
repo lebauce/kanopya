@@ -475,7 +475,8 @@ sub updateNodeStatus {
                           goingin  => \&testGoingInNode,
                           pregoingin => \&testPreGoingInNode,
                           broken    => sub {},
-                          goingout  => \&nodeOut},
+                          goingout  => \&nodeOut,
+                          pregoingout => \&testPreGoingOutNode},
                    # state PreGoingIn is not possible when node is available
                    1 => { broken    => \&nodeRepaired,
                           in        => sub {},
