@@ -196,7 +196,7 @@ sub getValue {
 
 	my $value = $cluster_data_aggreg->{ $args{ds} };
 	if (not defined $value) {
-		$log->warn("No value for ds '$args{ds}' in cluster '$args{cluster}' (for last $args{time_laps}sec).  considered as undef.");
+		$log->warn("No value of '$args{set}:$args{ds}' for cluster '$args{cluster}' (for last $args{time_laps}sec, maybe time step is too small).  considered as undef.");
 		return;
 	}
 	
