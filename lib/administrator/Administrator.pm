@@ -931,8 +931,8 @@ sub getOperations {
 	my $self = shift;
 	my $Operations = $self->{db}->resultset('Operation')->search(undef, { 
 		order_by => { -desc => [qw/execution_rank creation_date creation_time/] },
-		'+columns' => [ 'user_id.user_login' ],
-		join => [ 'user_id' ]
+		'+columns' => [ 'user.user_login' ],
+		join => [ 'user' ]
 	});
 	
 	my $arr = [];
