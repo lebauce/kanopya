@@ -248,7 +248,7 @@ sub updateHostData {
 		} #END FOREACH SET
 		
 		# Update host state
-		$self->_manageHostState( host => $host, reachable => $host_reachable );
+		#$self->_manageHostState( host => $host, reachable => $host_reachable );
 	};
 	if ($@) {
 		my $error = $@;
