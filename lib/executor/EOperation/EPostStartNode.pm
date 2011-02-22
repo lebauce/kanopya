@@ -160,6 +160,18 @@ sub execute {
 
 }
 
+#sub finish {
+#    my $self = shift;
+#    my $masternode;
+#
+#	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
+#		$masternode = 0;
+#	} else {
+#		$masternode =1;
+#	}
+#    
+#	$self->{_objs}->{motherboard}->becomeMasterNode(master_node => $masternode);
+#}
 1;
 __END__
 

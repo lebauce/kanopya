@@ -594,7 +594,12 @@ sub getMotherboards {
 
 sub getCurrentNodesCount {
 	my $self = shift;
-	return $self->{_dbix}->nodes->count;
+	my $nodes = $self->{_dbix}->nodes;
+	if ($nodes) {
+	return $nodes->count;}
+	else {
+	    return 0;
+	}
 }
 
 

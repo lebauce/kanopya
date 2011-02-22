@@ -144,6 +144,15 @@ sub prepare {
 	$log->info("Load Motherboard instance");
 	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
 	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+
+    my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
+    my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
+    if (! $master_node_id){
+        $errmsg = "No master node when motherboard <$params->{motherboard_id}> migrating, pls wait...";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
 }
 
 sub execute {
