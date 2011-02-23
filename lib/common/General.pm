@@ -46,6 +46,8 @@ package General;
 
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
+use strict;
+use warnings;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -53,7 +55,7 @@ my $errmsg;
 sub getClassEEntityFromEntity{
 	my %args = @_;
 	my $data = $args{entity};
-	$log->debug("Try to get Eentity class from object". ref($data));
+#	$log->debug("Try to get Eentity class from object". ref($data));
 	
 	if(! exists($args{entity})) {
 		$errmsg = "Try to get Eentity class from object not entity : ". ref($args{entity});
@@ -65,7 +67,7 @@ sub getClassEEntityFromEntity{
 	my $class = $entityclass;
 	$class =~s/\:\:/\:\:E/g;
     $class = "E".$class;
-    $log->debug("$class retrieved from ".ref($args{entity}));
+#    $log->debug("$class retrieved from ".ref($args{entity}));
     return $class;
 }
 

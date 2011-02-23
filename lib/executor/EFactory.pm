@@ -67,7 +67,7 @@ sub newEOperation{
 	}
 	my $data = $args{op};
 	my $class = "EOperation::E". $args{op}->getType();
-	$log->debug("EOperation class is $class"); 
+#	$log->debug("EOperation class is $class"); 
 	my $location = General::getLocFromClass(entityclass => $class);
 	
 	eval { require $location; };
@@ -77,7 +77,7 @@ sub newEOperation{
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
-	$log->info("$class instanciated");
+#	$log->info("$class instanciated");
     return $class->new(data => $args{op});
 }
 
@@ -97,7 +97,7 @@ sub newEEntity {
 	}
 	my $data = $args{data};
 	my $class = General::getClassEEntityFromEntity(entity => $data);
-	$log->debug("GetClassEEntityFromEntity return $class"); 
+#	$log->debug("GetClassEEntityFromEntity return $class"); 
 	my $location = General::getLocFromClass(entityclass => $class);
 	
 	eval { require $location; };
@@ -107,7 +107,7 @@ sub newEEntity {
     	throw Mcs::Exception::Internal(error => $errmsg);
     }
     
-	$log->info("$class instanciated");
+#	$log->info("$class instanciated");
     return $class->new(data => $args{data});
 }
 
