@@ -147,7 +147,7 @@ sub prepare {
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
-    if (! $master_node_id){
+    if (! $master_node_id && $node_count){
         $errmsg = "No master node when motherboard <$params->{motherboard_id}> migrating, pls wait...";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
