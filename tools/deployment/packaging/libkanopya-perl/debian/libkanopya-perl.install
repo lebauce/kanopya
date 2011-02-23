@@ -1,6 +1,7 @@
 lib/common/* opt/kanopya/lib/common
 lib/administrator/* opt/kanopya/lib/administrator
-logs/* opt/kanopya
+logs/* opt/kanopya/logs
 t/administrator/* opt/kanopya/t/administrator
 t/common/* opt/kanopya/t/common
 conf/administrator.conf etc/kanopya/samples/administrator.conf.sample
+conf/components.conf etc/kanopya/samples/components.conf.sample
