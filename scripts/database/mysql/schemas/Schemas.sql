@@ -85,25 +85,23 @@ CREATE TABLE `motherboard` (
   `active` int(1) unsigned NOT NULL,
   `motherboard_mac_address` char(18) NOT NULL,
   `motherboard_initiatorname` char(64) DEFAULT NULL,
-  `ipv4_internal_id` int(8) unsigned DEFAULT NULL,
+  `motherboard_internal_ip` char(15) DEFAULT NULL,
   `motherboard_hostname` char(32) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `motherboard_state` char(32) NOT NULL DEFAULT 'down', 
   PRIMARY KEY (`motherboard_id`),
-  UNIQUE KEY `ipv4_internal_id_UNIQUE` (`ipv4_internal_id`),
+  UNIQUE KEY `motherboard_internal_ip_UNIQUE` (`motherboard_internal_ip`),
   UNIQUE KEY `motherboard_mac_address_UNIQUE` (`motherboard_mac_address`),
   KEY `fk_motherboard_1` (`motherboardmodel_id`),
   KEY `fk_motherboard_2` (`processormodel_id`),
   KEY `fk_motherboard_3` (`kernel_id`),
   KEY `fk_motherboard_4` (`etc_device_id`),
   KEY `fk_motherboard_5` (`motherboard_powersupply_id`),
-  KEY `fk_motherboard_6` (`ipv4_internal_id`),
   CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_6` FOREIGN KEY (`ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -315,6 +313,16 @@ CREATE TABLE `ipv4_public` (
   CONSTRAINT `fk_ipv4_public_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `publicip` (
+  `publicip_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `ip_address` char(39) NOT NULL,
+  `ip_mask` char(39) NOT NULL,
+  `gateway` char(39) DEFAULT NULL,
+  `cluster_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`publicip_id`),
+  KEY `fk_publicip_1` (`cluster_id`),
+  CONSTRAINT `fk_publicip_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 --
 -- Table structure for table `ipv4_route`
 --
@@ -327,6 +335,15 @@ CREATE TABLE `ipv4_route` (
   PRIMARY KEY (`ipv4_route_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `route` (
+  `route_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `publicip_id` int(8) unsigned NOT NULL,
+  `ip_destination` char(39) NOT NULL,
+  `gateway` char(39) DEFAULT NULL,
+  PRIMARY KEY (`route_id`),
+  KEY `fk_route_1` (`publicip_id`),
+  CONSTRAINT `fk_route_1` FOREIGN KEY (`publicip_id`) REFERENCES `publicip` (`publicip_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `cluster_ipv4_route`
