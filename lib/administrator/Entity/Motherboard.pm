@@ -221,13 +221,7 @@ sub becomeNode{
 
 sub becomeMasterNode{
     my $self = shift;
-    	my %args = @_;
-	
-	if ((! exists $args{master_node} or ! defined $args{master_node})){
-		$errmsg = "Entity::Motherboard->becomeMasterNode need a master_node named argument!";
-		$log->error($errmsg);	
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
+
 	my $row = $self->{_dbix}->node;
 	if(not defined $row) {
 		$errmsg = "Entity::Motherboard->becomeMasterNode :Motherboard ".$self->getAttr(name=>"motherboard_mac_address")." is not a node!";
