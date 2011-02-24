@@ -1,5 +1,5 @@
-conf/executor.conf etc/kanopya/samples/executor.conf.sample
-conf/executor-log.conf etc/kanopya/samples/executor-log.conf.sample
+conf/executor.conf etc/kanopya/samples/
+conf/executor-log.conf etc/kanopya/samples/
 sbin/* opt/kanopya/sbin
 lib/executor/* opt/kanopya/lib/executor
 init/* etc/init.d
