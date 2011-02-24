@@ -181,7 +181,7 @@ sub getProvidedComponents {
 		throw Mcs::Exception(error => $errmsg);
 	}
 	my $components = [];
-	my $search = $self->{_dbix}->component_provided->search(undef, 
+	my $search = $self->{_dbix}->components_provided->search(undef, 
 		{ '+columns' => [ 'component.component_id', 
 						'component.component_name', 
 						'component.component_version', 
