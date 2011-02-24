@@ -234,7 +234,7 @@ sub becomeMasterNode{
 		$log->error($errmsg);
 		throw Kanopya::Exception::DB(error => $errmsg);
 	}
-	$row->update(master_node => 1);
+	$row->update({master_node => 1});
 }
 
 =head2 Entity::Motherboard->stopToBeNode (%args)
