@@ -97,6 +97,11 @@ print "done\n";
 #TEMPORARY: we make www-data owner of /opt/kanopya/logs
 system ("chown -R www-data.www-data /opt/kanopya/logs");
 
+#Then we create the logging directory
+print "creating the logging directory...";
+system ("mkdir $kanopya_logdir");
+print "done\n";
+
 #We then create the administrator.conf file, and place it under /etc/kanopya/administrator.conf
 print "creating administrator.conf...";
 my $administrator_conf = "/etc/kanopya/administrator.conf";
@@ -130,9 +135,4 @@ print "done\n";
 print "populating the database...";
 my $resetdb = "/opt/kanopya/scripts/database/mysql/sbin/resetdb.sh";
 system("sh $resetdb");
-print "done\n";
-
-#Then we create the logging directory
-print "creating the logging directory...";
-system ("mkdir $kanopya_logdir");
 print "done\n";
