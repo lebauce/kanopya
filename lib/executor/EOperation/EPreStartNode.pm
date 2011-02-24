@@ -178,16 +178,16 @@ sub execute {
 
 sub finish {
     my $self = shift;
-    my $masternode;
+#    my $masternode;
 
-	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
-		$masternode = 0;
-	} else {
-		$masternode =1;
-	}
+#	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
+#		$masternode = 0;
+#	} else {
+#		$masternode =1;
+#	}
     
 	$self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-                          					  master_node => $masternode);
+                          					  master_node => 0);
     $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingin");
 #	$self->{_objs}->{motherboard}->save();
 }
