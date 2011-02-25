@@ -65,7 +65,7 @@ sub getEntities {
 	my $adm = Administrator->new();
 	
 	$rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
-	$log->debug('resultset count:'.$rs->count());
+#	$log->debug('resultset count:'.$rs->count());
 	$log->debug( "_getEntityClass with type = $args{type}");
 	
 	my $id_name = lc($args{type}) . "_id";

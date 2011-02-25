@@ -2,5 +2,4 @@
 
 #we install the apache virtual host config for kanopya web ui
 cp /opt/kanopya/ui/web/virtualhost.conf /etc/apache2/sites-available/default || true
-service apache2 restart
-chown -R www-data.www-data /opt/kanopya/ui/web/
+service apache2 restart || true

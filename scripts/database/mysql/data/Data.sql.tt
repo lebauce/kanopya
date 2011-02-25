@@ -234,8 +234,12 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALU
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,5); SET @eid := @eid +1;
 
 -- main vg storage from only one pv
-INSERT INTO `lvm2_vg` VALUES (1,1,'vg1',65610,134190);
-INSERT INTO `lvm2_pv` VALUES (1,1,'/dev/sda4');
+INSERT INTO `lvm2_vg` VALUES (1,1,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_total_size %]');
+SET @pvid := 1;
+[% FOREACH pv = kanopya_pvs %]
+INSERT INTO `lvm2_pv` VALUES (@pvid,1,'[% pv %]');
+SET @pvid := @pvid +1;
+[% END %] 
 
 -- distribution device for Debian 5.0
 INSERT INTO `lvm2_lv` VALUES (1,1,'etc_Debian_5.0',52,0,'ext3');

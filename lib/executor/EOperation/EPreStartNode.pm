@@ -147,7 +147,7 @@ sub prepare {
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
-    if (! $master_node_id){
+    if (! $master_node_id && $node_count){
         $errmsg = "No master node when motherboard <$params->{motherboard_id}> migrating, pls wait...";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
@@ -178,16 +178,16 @@ sub execute {
 
 sub finish {
     my $self = shift;
-    my $masternode;
+#    my $masternode;
 
-	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
-		$masternode = 0;
-	} else {
-		$masternode =1;
-	}
+#	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
+#		$masternode = 0;
+#	} else {
+#		$masternode =1;
+#	}
     
 	$self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-                          					  master_node => $masternode);
+                          					  master_node => 0);
     $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingin");
 #	$self->{_objs}->{motherboard}->save();
 }
