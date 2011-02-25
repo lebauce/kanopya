@@ -318,4 +318,9 @@ sub setHopedExecutionTime {
 	$log->debug("hoped_execution_time updated with value : $t");
 }
 
+sub setProcessing {
+	my $self = shift;
+	$self->{_dbix}->update({'execution_rank' => 0});
+}
+
 1;
