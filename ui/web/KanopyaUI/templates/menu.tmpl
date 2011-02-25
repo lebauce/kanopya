@@ -17,13 +17,13 @@
 	<ul><TMPL_IF NAME="mDashboard">
 		<li><a class="imgEye<TMPL_IF NAME="submSystemstatus"> current</TMPL_IF>" href="/cgi/kanopya.cgi/systemstatus">Status</a>
 		</li>
+		<li><a class="imgExecute<TMPL_IF NAME="submExecutor"> current</TMPL_IF>" href="/cgi/kanopya.cgi/executor">Operations Queue</a>
+		</li>
 		<li><a class="imgLog<TMPL_IF NAME="submLogs"> current</TMPL_IF>" href="">Logs</a>
 		</li></TMPL_IF>
 		
 		<TMPL_IF NAME="mSettings">
 		<li><a class="imgDatabase<TMPL_IF NAME="submAdministrator"> current</TMPL_IF>" href="">Administrator</a>
-		</li>
-		<li><a class="imgExecute<TMPL_IF NAME="submExecutor"> current</TMPL_IF>" href="">Executor</a>
 		</li>
 		<li><a class="imgMonitor<TMPL_IF NAME="submMonitor"> current</TMPL_IF>" href="/cgi/kanopya.cgi/monitoring">Monitor</a>
 		</li>
