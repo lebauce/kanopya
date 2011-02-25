@@ -12,6 +12,22 @@ use JSON;
 
 my $log = get_logger("webui");
 
+# translate all special characters to be not interpreted as html
+# For a multilevel conf structure
+# This allow special char in configuration input
+
+sub _deepEscapeHtml {
+	my $data = shift;
+	
+	while( my ($key, $value) = each %$data) {
+		if (ref $value eq "ARRAY") {
+			foreach (@$value) { _deepEscapeHtml( $_ ); }
+		} else {
+			$data->{$key} = CGI::escapeHTML( $value );	
+		}
+	}
+}
+
 # components listing available 
 
 sub view_components : StartRunmode {
@@ -44,6 +60,7 @@ sub form_configurecomponent : Runmode {
 	my $tmpl =$self->load_tmpl($tmplfile);
 		
 	my $config = $component->getConf();
+	_deepEscapeHtml( $config );
 	while( my ($key, $value) = each %$config) {
 		$tmpl->param($key => $value);	
 	}
@@ -109,18 +126,20 @@ sub process_configurecomponent_from_json : Runmode {
 	my $query = $self->query();
 	
 	my $component_instance_id = $query->param('component_instance_id'); 
+	
 	my $component = Entity::Component->getInstance(id=>$component_instance_id);
-	my $cluster_id = $query->param('cluster_id');
 	
 	my $conf_str = $query->param('conf'); # stringified conf
 	my $conf = decode_json $conf_str;
+	
+	foreach ('cluster_id', 'component_name', 'component_instance_id') { delete $conf->{$_}; }
 	
 	my $msg = "conf saved";
 	eval {
 		$component->setConf($conf);
 	};
 	if ($@) {
-		$msg = "Error: $@";
+		$msg = "Error while saving:\n $@";
 	}
 
 	return $msg;

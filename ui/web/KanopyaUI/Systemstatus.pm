@@ -8,15 +8,13 @@ sub adminComponentsDef {
     				{ id => 'Boot', label => 'Boot server', comps => [	{ label => 'ntpd', name => 'ntpd'},
     																	{ label => 'dhcpd3', name => 'dhcpd3'},
     																	{ label => 'atftpd', name => 'atftpd'}] },
-    				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'},
-    																	{ label => 'nfsd', name => 'nfsd'}] }
+    			],[
+    				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'}] },
+    				{ id => 'Execute', label => 'Executor', comps => [{ label => 'executor', name => 'kanopya-executor'}] },
     			],[
     				{ id => 'Monitor', label => 'Monitor', comps => [{ label => 'collector', name => 'kanopya-collector'}, { label => 'grapher', name => 'kanopya-grapher'}] },
-    				{ id => 'Planner', label => 'Planner', comps => [] },
     				{ id => 'Orchestrator', label => 'Orchestrator', comps => [{ label => 'orchestrator', name => 'kanopya-orchestrator'}] },
-    			],[
-    				{ id => 'Execute', label => 'Executor', comps => [{ label => 'executor', name => 'kanopya-executor'}] },
-				]
+    			]
   			];
 }
 

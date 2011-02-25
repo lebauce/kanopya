@@ -16,4 +16,19 @@ function refresh_status() {
 	setTimeout('refresh_status()', 5000);
 }
 
-refresh_status();
+function change_timeline( period ) {
+	var graph_name = "graph_consumption_" + period + ".png";
+	document.getElementById( "conso_graph" ).src = "/graph/monitor/graph/" + graph_name;
+}
+
+
+$(document).ready(function(){
+
+	$("#default_timeline").click();
+	refresh_status();
+
+
+	$("#conso_graph").error( function () { $("#img_div").hide(); $("#load_error_div").show(); } );
+	$("#conso_graph").load( function () { $("#img_div").show(); $("#load_error_div").hide(); } );
+	
+});

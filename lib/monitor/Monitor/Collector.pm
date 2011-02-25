@@ -464,7 +464,10 @@ sub update {
 									  collect_time => $start_time, 
 									  );
 		}
-			
+		
+		# Update total consumption
+		$self->updateConsumption();
+		
 	};
 	if ($@) {
 		my $error = $@;
@@ -477,6 +480,33 @@ sub update {
 	#find_cycle($self);	
 }
 
+
+sub updateConsumption {
+	my $self = shift;
+	
+	# RRD for microcluster consumption
+	my $rrd_file = "$self->{_rrd_base_dir}/total_consumption.rrd";
+	my $rrd = RRDTool::OO->new( file =>  $rrd_file );
+	if ( not -e $rrd_file ) {	
+		$log->info("Info: create total consumption rrd");
+		$rrd->create( 	'step' => $self->{_time_step},
+						'archive' => { rows => $self->{_period} / $self->{_time_step} },
+						'archive' => { 	rows => $self->{_period} / $self->{_time_step},
+										cpoints => 10,
+										cfunc => "AVERAGE" },
+						'data_source' => { 	name => 'consumption', type => 'GAUGE' },
+					);
+	}
+	
+	my $consumption = 0;
+	my @up_motherboards = Entity::Motherboard->getMotherboards( hash => { motherboard_state => 'up'} );
+	for (@up_motherboards) {
+		my %model = $_->getModel();
+		$consumption += $model{motherboardmodel_consumption};
+	}
+	
+	$rrd->update( time => time(), values => { 'consumption' => $consumption } );
+}
 
 =head2 run
 	

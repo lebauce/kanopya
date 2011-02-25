@@ -255,27 +255,16 @@ sub getConf {
 	my $lineindb = $self->{_dbix}->apache2s->first;
 	if(defined $lineindb) {
 		my %dbconf = $lineindb->get_columns();
-		$apache2_conf->{apache2_id} = $dbconf{apache2_id};
-		$apache2_conf->{apache2_serverroot} = $dbconf{apache2_serverroot};
-		$apache2_conf->{apache2_loglevel} = $dbconf{apache2_loglevel};
-		$apache2_conf->{apache2_ports} = $dbconf{apache2_ports};
-		$apache2_conf->{apache2_sslports} = $dbconf{apache2_sslports};
-		$apache2_conf->{apache2_phpsession_dir} = $dbconf{apache2_phpsession_dir};
-		
+		$apache2_conf = \%dbconf;
+
 		my $virtualhost_rs = $lineindb->apache2_virtualhosts;
-		my $index = 0;
+		my @tab_virtualhosts = ();
 		while (my $virtualhost_row = $virtualhost_rs->next){
 			my %virtualhost = $virtualhost_row->get_columns();
-			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_id} = $virtualhost{apache2_virtualhost_id};
-			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_servername} = $virtualhost{apache2_virtualhost_servername};
-			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_sslenable} = $virtualhost{apache2_virtualhost_sslenable};
-			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_serveradmin} = $virtualhost{apache2_virtualhost_serveradmin};
-			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_documentroot} = $virtualhost{apache2_virtualhost_documentroot};
-			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_log} = $virtualhost{apache2_virtualhost_log};
-			$apache2_conf->{apache2_virtualhosts}[$index]->{apache2_virtualhost_errorlog} = $virtualhost{apache2_virtualhost_errorlog};
-			
-			$index += 1;
+			delete $virtualhost{'apache2_id'};
+			push @tab_virtualhosts, \%virtualhost;
 		}
+		$apache2_conf->{apache2_virtualhosts} = \@tab_virtualhosts;
 		$log->debug("APACHE2 configuration exists in db: ".Dumper $apache2_conf);
 		
 	}
@@ -327,6 +316,8 @@ sub setConf {
 		# old configuration -> update
 		 $self->{_dbix}->apache2s->update($conf);
 		 my $virtualhosts_indb = $self->{_dbix}->apache2s->first()->apache2_virtualhosts;
+		 
+		 # update existing virtual hosts
 		 while(my $vhost_indb = $virtualhosts_indb->next) {
 		 	my $found = 0;
 		 	my $vhost_data;
@@ -343,7 +334,14 @@ sub setConf {
 		 		$vhost_indb->delete();
 		 	}
 		 }
-		
+		 
+		 # create new virtual hosts
+		foreach	my $vh (@$virtualhosts) {
+			if ($vh->{apache2_virtualhost_id} == 0) {
+					$vh->{apache2_virtualhost_id} = undef;
+					$virtualhosts_indb->create($vh);
+			}
+		}
 	}	
 }
 

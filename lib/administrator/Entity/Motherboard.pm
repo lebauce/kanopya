@@ -602,4 +602,14 @@ sub getPowerSupplyCardId {
 		return;
 	}
 }
+
+sub getModel {
+	my $self = shift;
+	my $model_row = $self->{_dbix}->motherboardmodel;
+	if ( defined $model_row ) {
+		return $model_row->get_columns();
+	}
+	return;
+}
+
 1;
