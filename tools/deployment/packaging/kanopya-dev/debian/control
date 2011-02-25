@@ -10,5 +10,5 @@ Vcs-Git: git://git.kanopya.org/mcs/executor.git
 
 Package: kanopya-dev
 Architecture: all
-Depends: libkanopya-perl 
+Depends: libkanopya-perl, libterm-readkey-perl
 Description: The dev package contains the database's scripts.
