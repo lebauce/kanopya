@@ -26,7 +26,7 @@
 		<table class="entry_array_value" id="params">
 			<TMPL_LOOP NAME=params>
 				<tr class="elem_params" name="param">
-					<td><input class="param_simple_value" type="text" name="content" value="<TMPL_VAR NAME=content>"/></td>
+					<td><input class="param_simple_value" type="text" size="50" name="content" value="<TMPL_VAR NAME=content>"/></td>
 					<td><a class="remove_param imgRemove iconAction" /></td>
 				</tr>
 			</TMPL_LOOP>
@@ -35,7 +35,7 @@
 	</li>
 </TMPL_LOOP>
 </ul>
-<a class="add_entries linkAction" >Add entry</a>
+<a class="add_entries imgAdding iconAction" >Add entry</a>
 
 <hr />
 <h3>Output configuration</h3>
@@ -45,8 +45,13 @@
 		<td>
 		<table class="log_array_value" id="log_params">
 		<TMPL_LOOP NAME=params>
-			<tr class="elem_log_params" name="log_param" ><td>
-				<input class="log_param_simple_value" type="text" name="type" value="<TMPL_VAR NAME=type>"/>
+			<tr class="elem_log_params" name="log_param" >
+			<td>
+				<select class="log_param_simple_value" name="type" selected_value="<TMPL_VAR NAME=type>">
+					<option value="source">source</option>
+					<option value="destination">destination</option>
+					<option value="filter">filter</option>
+				</select>
 				: <input class="log_param_simple_value" type="text" name="name" value="<TMPL_VAR NAME=name>"/>
 			</td>
 			<td><a class="remove_log_param imgRemove iconAction"></a></td>
@@ -59,7 +64,7 @@
 </TMPL_LOOP>
 </table>
 <br/>
-<a class="add_logs linkAction" >Add log</a>
+<a class="add_logs imgAdding iconAction" >Add log</a>
 
 <hr />
 <div class="right">
@@ -81,7 +86,7 @@
 		<a class="remove_entry imgRemove iconAction" ></a>
 		<table class="entry_array_value" id="params">
 				<tr class="elem_params" name="param">
-					<td><input class="param_simple_value" type="text" name="content" value="driver(params)"/></td>
+					<td><input class="param_simple_value" type="text" size="50" name="content" value="driver(params)"/></td>
 					<td><a class="remove_param imgRemove iconAction" /></td>
 				</tr>
 		</table>
@@ -94,7 +99,11 @@
 		<td>
 		<table class="log_array_value" id="log_params">
 			<tr class="elem_log_params" name="log_param" ><td>
-				<input class="log_param_simple_value" type="text" name="type" value="type"/>
+				<select class="log_param_simple_value" name="type">
+					<option value="source">source</option>
+					<option value="destination">destination</option>
+					<option value="filter">filter</option>
+				</select>
 				: <input class="log_param_simple_value" type="text" name="name" value="name"/>
 			</td>
 			<td><a class="remove_log_param imgRemove iconAction"></a></td>

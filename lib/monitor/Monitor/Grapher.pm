@@ -661,6 +661,17 @@ sub graphFromConf {
 											
 	} # foreach cluster
 	
+	# Graph Total Consumption
+	eval {
+		foreach my $laps (@time_laps) {
+			$self->graphConsumption(time_laps => $laps,
+									time_range => $time_range);
+		}
+	};
+	if ($@) {
+			my $error = $@;
+			$log->error("Error generating consumption graph : $error");
+	}
 }
 
 =head2 graphNodeCount
@@ -735,6 +746,69 @@ sub graphNodeCount {
 									color => "FF0000".$alpha,
 									legend => "broken",
 		  						},
+					);
+					
+	`mv $self->{_graph_dir}/tmp/$graph_file $self->{_graph_dir}`;
+	
+	return ($self->{_graph_dir}, $graph_file);
+}
+
+sub graphConsumption {
+	my $self = shift;
+	my %args = @_;
+	
+	my $alpha = "66";
+	
+	my $cluster = $args{cluster};
+    
+    my ($time_start, $time_end, $time_suffix) = $self->_timeLaps( time_laps => $args{time_laps}, time_range => $args{time_range} );
+    
+    my $graph_file = "graph_consumption" . (defined $time_suffix ? "_$time_suffix" : "") . ".png";
+	my $graph_file_path = "$self->{_graph_dir}/tmp/$graph_file";
+	
+	# get rrd     
+	my $rrd = RRDTool::OO->new( file => "$self->{_rrd_base_dir}/total_consumption.rrd" );
+	
+	$rrd->graph( 	'image' => $graph_file_path,
+					'vertical_label' => 'Watt',
+					#'title' => "Energy Consumption",
+					'start' => $time_start,
+					'end' => $time_end,
+					#color => { back => "#69B033" },
+					
+					color => $self->{_graph_color},
+					font => $self->{_graph_title_font},
+					width => $self->{_graph_width},
+					height => $self->{_graph_height},
+					
+					draw => 	{
+									type => 'line',
+									dsname => 'consumption',
+									name => 'conso',
+									color => "00FF00".$alpha,
+									#legend => "energy consumption",
+		  						},
+  					'draw' => {
+				        type      => "hidden",
+				        name      => "last_conso",
+				        vdef      => "conso,LAST"
+				     },
+  					
+  					'draw' => {
+				        type      => "hidden",
+				        name      => "avg_conso",
+				        vdef      => "conso,AVERAGE"
+				     },
+				     				
+				   	'gprint' => {
+				        draw      => "last_conso",
+				        format    => 'Current = %lf W',
+				      },
+				      
+					'gprint' => {
+				        draw      => "avg_conso",
+				        format    => 'Average = %lf W',
+				      },
 					);
 					
 	`mv $self->{_graph_dir}/tmp/$graph_file $self->{_graph_dir}`;

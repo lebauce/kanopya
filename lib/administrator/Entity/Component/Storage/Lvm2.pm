@@ -184,6 +184,28 @@ sub lvRemove{
 	$log->info("lvm2 logical volume $args{lvm2_lv_name} deleted from database");
 }
 
+sub getConf {
+	my $self = shift;
+
+	my $conf = {};
+	my $lineindb = $self->{_dbix}->lvm2_vgs->first;
+	if(defined $lineindb) {
+		my %dbconf = $lineindb->get_columns();
+		$conf = \%dbconf;
+		
+		my $lv_rs = $lineindb->lvm2_lvs;
+		my @tab_lv = ();
+		while (my $lv_row = $lv_rs->next){
+			my %lv = $lv_row->get_columns();
+			delete $lv{'lvm2_vg_id'};
+			push @tab_lv, \%lv;
+		}
+		$conf->{lvm2_lvs} = \@tab_lv;
+	}
+	
+	return $conf;
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

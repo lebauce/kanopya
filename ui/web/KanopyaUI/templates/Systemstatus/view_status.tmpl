@@ -10,6 +10,7 @@
 <div id="content">
 
 <div id="admin_status">
+<h3>System status</h3>
 <TMPL_LOOP NAME=COMPONENTS_STATUS>
 	<table class="status">
 	<TMPL_LOOP NAME=GROUP>
@@ -28,6 +29,18 @@
 </TMPL_LOOP>
 </div>
 
+<hr />
+<h3>Energy consumption</h3>
+
+<div id="img_div">
+<input id="default_timeline" type="radio" name="timeline" value="hourly" onclick="change_timeline('hour')" >hourly</input>
+<input type="radio" name="timeline" value="daily" onclick="change_timeline('day')" >daily</input>
+<br/>
+<img id="conso_graph" class='autorefresh' src="" alt="kanopya-grapher must be running to see graph"/>
+</div>
+<div class="hidden" id="load_error_div">
+Kanopya monitoring must be running to see graph.
+</div>
 
 </div>
 

@@ -271,7 +271,7 @@ sub getAttrs {
 sub asString {
 	my $self = shift;
 	
-	my %h = $self->getAllAttrs;
+	my %h = $self->getAttrs;
 	my @s = map { "$_ => $h{$_}, " } keys %h;
 	return ref $self, " ( ",  @s,  " )";
 }
