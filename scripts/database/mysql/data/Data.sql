@@ -121,8 +121,10 @@ INSERT INTO `operationtype` VALUES
 (27,'PreStopNode'),
 (28,'PostStopNode'),
 (29,'PostStartNode'),
-(30,'InstallComponentInSystemImage'),
-(31,'CreateSharedDisk');
+(30,'InstallComponentOnSystemImage'),
+(31,'UploadComponentOnDistribution'),
+(32,'CreateLogicalVolume'),
+(33,'CreateExport');
 
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;

@@ -1,4 +1,4 @@
-# EInstallComponentInSystemImage.pm - Operation class implementing Cluster activation operation
+# EInstallComponentOnSystemImage.pm - Operation class implementing component installation on systemimage
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-EOperation::EInstallComponentInSystemImage - Operation class implementing cluster activation operation
+EOperation::EInstallComponentOnSystemImage - Operation class implementing component installation on systemimage
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EInstallComponentInSystemImage;
+package EOperation::EInstallComponentOnSystemImage;
 use base "EOperation";
 
 use strict;
@@ -57,9 +57,9 @@ our $VERSION = '1.00';
 
 =head2 new
 
-    my $op = EOperation::EInstallComponentInSystemImage->new();
+    my $op = EOperation::EInstallComponentOnSystemImage->new();
 
-    # Operation::EInstallComponentInSystemImage->new creates a new ActivateCluster operation.
+    # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
     # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
 
 =cut
@@ -150,10 +150,7 @@ sub execute{
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	
-	
-	# set cluster active in db
-	$self->{_objs}->{cluster}->setAttr(name => 'active', value => 1);
-	$self->{_objs}->{cluster}->save();
+
 		
 }
 
