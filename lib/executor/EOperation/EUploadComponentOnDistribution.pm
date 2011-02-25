@@ -68,7 +68,6 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -107,11 +106,9 @@ sub prepare {
 	my %args = @_;
 	$self->SUPER::prepare();
 
-	$log->info("Operation preparation");
-
     # Check if internal_cluster exists
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EInstallComponentInSystemImage->prepare need an internal_cluster named argument!";
+		$errmsg = "EUploadComponentOnDistribution->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -119,11 +116,19 @@ sub prepare {
     # Get Operation parameters
 	my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
-
- 	# Cluster instantiation
-    #TODO Get Systemimage
-
-
+    eval {
+        $self->{_objs}->{distribution} = Entity::Distribution->get(id => $params->{distribution_id});
+        };
+    if($@) {
+        my $err = $@;
+    	$errmsg = "EOperation::EUploadComponentOnDistribution->prepare : distribution_id $params->{distribution_id} does not find\n" . $err;
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    
+    $self->{_path} = $params->{path};
+    
+#TODO test if tarball is good and contains good element
 
     if($@) {
         my $err = $@;
