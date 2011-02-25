@@ -268,7 +268,48 @@ sub process_deactivatesystemimage : Runmode {
 # TODO form_installcomponent popup window
 
 sub form_installcomponent : Runmode {
-	return "TODO";
+	my $self = shift;
+	my $errors = shift;
+	my $tmpl =$self->load_tmpl('Systemimages/form_installcomponent.tmpl');
+	$tmpl->param($errors) if $errors;
+	my $query = $self->query;
+	$tmpl->param('systemimage_id' => $query->param('systemimage_id'));
+	
+	return $tmpl->output();
+}
+
+sub _installcomponent_profile {
+	return {
+		required => 'componentfile',
+		msgs => {
+				any_errors => 'some_errors',
+				prefix => 'err_'
+		},
+	};
+}
+
+sub process_installcomponent : Runmode {
+	my $self = shift;
+	use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
+    my ($results, $err_page) = $self->check_rm('form_installcomponent', '_installcomponent_profile');
+    return $err_page if $err_page;
+	my $query = $self->query();
+	eval {
+		my $esystemimage = Entity::Systemimage->get(id => $query->param('systemimage_id'));
+		$esystemimage->installComponent();
+	};
+	if($@) {
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');	
+		}
+		else { $exception->rethrow(); }
+	}
+	else {	
+		$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'new component installation added to execution queue'); 
+		return $self->close_window();
+	} 		
 }
 
 1;
