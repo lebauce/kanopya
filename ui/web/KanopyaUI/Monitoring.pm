@@ -101,6 +101,10 @@ sub view_clustermonitoring : Runmode {
 	my $self = shift;
 	my $errors = shift;
 	my $tmpl = $self->load_tmpl('Monitor/view_clustermonitoring.tmpl');
+	$tmpl->param('titlepage' => "Clusters - Clusters");
+	$tmpl->param('mClusters' => 1);
+	$tmpl->param('submClusters' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
 	
 	my $cluster_id = $self->query()->param('cluster_id');
 	
