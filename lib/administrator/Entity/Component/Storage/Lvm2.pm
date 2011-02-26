@@ -218,6 +218,20 @@ sub getConf {
 	return $conf;
 }
 
+sub setConf {
+	my $self = shift;
+	my ($conf) = @_;
+
+	my $vg_id = $conf->{lvm2_vg_id};
+	for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
+		$self->createLogicalVolume(	vg_id => $vg_id,
+									disk_name => $new_lv->{lvm2_lv_name},
+									size => $new_lv->{lvm2_lv_size},
+									filesystem => $new_lv->{lvm2_lv_filesystem});
+	}
+
+}
+
 sub createLogicalVolume {
     my $self = shift;
     my %args = @_;
