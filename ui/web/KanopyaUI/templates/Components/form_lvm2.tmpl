@@ -18,24 +18,39 @@
 
 <hr />
 <h3>Logical volumes</h3>
-	<table>
+	<table class="conf_array_value" id="lvm2_lvs">
 		<tr><th>Name</th><th>Size</th><th>Free space</th><th>File system</th></tr>
 		<TMPL_LOOP NAME=lvm2_lvs>
 			<tr>
-				<td><TMPL_VAR NAME=lvm2_lv_name></td>
-				<td><TMPL_VAR NAME=lvm2_lv_size></td>
-				<td><TMPL_VAR NAME=lvm2_lv_freespace></td>
-				<td><TMPL_VAR NAME=lvm2_lv_filesystem></td>
+				<td><input type="text" value="<TMPL_VAR NAME=lvm2_lv_name>" disabled/></td>
+				<td><input type="text" value="<TMPL_VAR NAME=lvm2_lv_size>" disabled/></td>
+				<td><input type="text" value="<TMPL_VAR NAME=lvm2_lv_freespace>" disabled/></td>
+				<td><input type="text" value="<TMPL_VAR NAME=lvm2_lv_filesystem>" disabled/></td>
 				<td class="hidden"><TMPL_VAR NAME=lvm2_lv_id></td>
 			</tr>
 		</TMPL_LOOP>
 	</table>
-
+<a class="add_lvm2_lvs imgAdding iconAction" >Add logical volume</a>
 <hr />
+
 <div class="right">
-<input type="button" value="ok" onclick="javascript:document.location='/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=cluster_id>'"/>
+<input id="save_button" type="button" value="create"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=cluster_id>'"/>
 </div>
 </form>
+</div>
+
+<div class="hidden" id="models">
+	<table>
+		<tr class="elem_lvm2_lvs" name="lv">
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_name" value=""/></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_size" value="" /></td>
+			<!--td><input class="lv_simple_value" type="text" name="lvm2_lv_freespace" value="" /></td-->
+			<td></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_filesystem" value="" /></td>
+			<td><a class="remove_lv imgRemove iconAction" ></a></td>
+		</tr>
+	</table>
 </div>
 
 <TMPL_INCLUDE NAME="footer.tmpl">
