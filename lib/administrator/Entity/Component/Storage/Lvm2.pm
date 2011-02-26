@@ -132,6 +132,18 @@ sub getMainVg{
 	return {vgid => $vgid, vgname =>$vgname};
 }
 
+sub getVg {
+    my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id})) { 
+		$errmsg = "Lvm2->getVg need a lvm2_vg_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return  $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->get_column('lvm2_vg_name');
+}
+
 sub lvCreate{
 	my $self = shift;
 	my %args = @_;
@@ -211,7 +223,8 @@ sub createLogicalVolume {
     my %args = @_;
     if((! exists $args{disk_name} or ! defined $args{disk_name})||
        (! exists $args{size} or ! defined $args{size}) ||
-       (! exists $args{filesystem} or ! defined $args{filesystem})) {
+       (! exists $args{filesystem} or ! defined $args{filesystem}) ||
+       (! exists $args{vg_id} or ! defined $args{vg_id})) {
 	   	$errmsg = "CreateLogicalVolume needs disk_name, size and filesystem named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
@@ -227,7 +240,8 @@ sub createLogicalVolume {
             component_instance_id => $self->getAttr(name=>'component_instance_id'),
             disk_name => $args{disk_name},
             size => $args{size},
-            filesystem => $args{filesystem}
+            filesystem => $args{filesystem},
+            vg_id => $args{vg_id}
         },
     );
 }
