@@ -143,7 +143,7 @@ sub getConf {
 }
 
 sub setConf {
-		my $self = shift;
+	my $self = shift;
 	my ($conf) = @_;
 		
 	if(not $conf->{snmpd5_id}) {

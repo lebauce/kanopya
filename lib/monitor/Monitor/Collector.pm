@@ -455,6 +455,7 @@ sub update {
 		# update clusters databases (nodes count and aggregated values) #
 		#################################################################
 		# Retrieve clusters info again to be up to date (nodes state may change during update)	
+		my $time = time();
 		%hosts_by_cluster = $self->retrieveHostsByCluster();
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
 			
@@ -464,10 +465,12 @@ sub update {
 									  collect_time => $start_time, 
 									  );
 		}
+		$log->debug('aggregation : ' . ( time() - $time) . " sec");
 		
 		# Update total consumption
+		$time = time();
 		$self->updateConsumption();
-		
+		$log->debug('consumption : ' . ( time() - $time) . " sec");
 	};
 	if ($@) {
 		my $error = $@;

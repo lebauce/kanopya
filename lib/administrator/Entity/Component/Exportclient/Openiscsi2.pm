@@ -121,6 +121,36 @@ sub new {
 
 }
 
+sub getConf {
+	my $self = shift;
+	my %conf = ( );
+	
+	my $conf_rs = $self->{_dbix}->openiscsi2s;
+	my @imports = ();
+	while (my $conf_row = $conf_rs->next) {
+		my %import = $conf_row->get_columns();
+		delete $import{component_instance_id};
+		push @imports, \%import;
+	}
+	
+	$conf{imports} = \@imports;
+	
+	return \%conf;
+}
+
+sub setConf {
+	my $self = shift;
+	my ($conf) = @_;
+	
+	$self->{_dbix}->openiscsi2s->delete_all();
+	
+	for my $import ( @{ $conf->{imports} } ) {
+		delete $import->{openiscsi2_id};
+		$self->{_dbix}->openiscsi2s->create( $import );
+	}
+	
+}
+
 sub getExports {
 	my $self = shift;
 	my $export_rs = $self->{_dbix}->openiscsi2s;

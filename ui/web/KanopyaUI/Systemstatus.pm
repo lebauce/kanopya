@@ -1,4 +1,7 @@
 package KanopyaUI::Systemstatus;
+
+use Entity::Cluster;
+
 use base 'KanopyaUI::CGI';
 
 # Define admin components and services we want display status. They are organized as we want in ui.
@@ -88,4 +91,44 @@ sub view_status : StartRunmode {
 sub permission_denied : runmode {
 	return "you dont have permission to access to this page";
 }
+
+
+sub view_logs : Runmode {
+	my $self = shift;
+	
+	my $admin_cluster = Entity::Cluster->get(id => 1);
+	my $logger_comp = $admin_cluster->getComponent( category => 'Logger', name => 'Syslogng', version => 3 );
+	my $path = $logger_comp->getLogDirectories();
+	
+	# Select only files
+	my $ls_output = `ls $path`;
+	my @files = grep { -f "$path$_" } split(" ", $ls_output);
+	# Built tmpl struct
+	my @files_info = map { { path=>$path, filename=>$_} } @files;
+	
+	my $tmpl =  $self->load_tmpl('Systemstatus/view_logs.tmpl');
+    $tmpl->param('TITLEPAGE' => "System Logs");
+	$tmpl->param('MDASHBOARD' => 1);
+	$tmpl->param('SUBMLOGS' => 1);
+	$tmpl->param('username' => $self->session->param('username')); 
+    $tmpl->param('files' => \@files_info);
+     
+    return $tmpl->output(); 
+}
+
+sub get_log : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $query = $self->query();
+	
+	my $log_id = $query->param('log_id');
+
+	my $log_str = `tail -50 $log_id`;
+	
+	$log_str = CGI::escapeHTML($log_str);
+	#$log_str =~ s/\n/<br\/>/g;
+	
+	return $log_str;
+}
+
 1;

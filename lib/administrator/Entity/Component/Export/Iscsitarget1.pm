@@ -121,6 +121,14 @@ sub new {
 
 }
 
+
+sub getConf {
+	my $self = shift;
+	my %conf = ( );
+	
+	return \%conf;
+}
+
 =head2 
 	
 	Desc : 
