@@ -62,6 +62,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use Administrator;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -298,6 +299,34 @@ B<throws>  : Nothing
 
 sub getNetConf {
     return {3260=> 'tcp'};
+}
+
+sub createExport {
+    my $self = shift;
+    my %args = @_;
+    if((! exists $args{export_name} or ! defined $args{export_name})||
+       (! exists $args{device} or ! defined $args{device}) ||
+       (! exists $args{typeio} or ! defined $args{typeio}) ||
+       (! exists $args{iomode} or ! defined $args{iomode})) {
+	   	$errmsg = "createExport needs export_name, device, typeio and iomode named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $admin = Administrator->new();
+	
+    my %params = $self->getAttrs();
+    $log->debug("New Operation CreateExport with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'CreateExport',
+        params   => {
+            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            export_name => $args{export_name},
+            device => $args{device},
+            typeio => $args{typeio},
+            iomode => $args{iomode}
+        },
+    );
 }
 
 =head1 DIAGNOSTICS

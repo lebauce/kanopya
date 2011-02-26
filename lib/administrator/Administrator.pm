@@ -930,7 +930,7 @@ sub getMessages {
 sub getOperations {
 	my $self = shift;
 	my $Operations = $self->{db}->resultset('Operation')->search(undef, { 
-		order_by => { -desc => [qw/execution_rank creation_date creation_time/] },
+		order_by => { -asc => [qw/execution_rank/] },
 		'+columns' => [ 'user.user_login' ],
 		join => [ 'user' ]
 	});
@@ -960,7 +960,7 @@ sub getOperations {
 			'TYPE' => $op->get_column('type'), 
 			'FROM' => $op->get_column('user_login'), 
 			'CREATION' => $op->get_column('creation_date')." ".$op->get_column('creation_time'), 
-			'PLANNED' => $execution_time, 
+			#'PLANNED' => $execution_time, 
 			'RANK' => $op->get_column('execution_rank'), 
 			'PRIORITY' => $op->get_column('priority'),
 			'PARAMETERS' => $opparams,

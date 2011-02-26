@@ -206,6 +206,22 @@ sub create {
     );
 }
 
+=head2 installComponent
+
+=cut
+
+sub installComponent {
+    my $self = shift;
+    my %params = $self->getAttrs();
+    
+    $log->debug("New Operation InstallComponentOnSystemImage with attrs : " . Dumper(%params));
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'InstallComponentOnSystemImage',
+        params   => \%params,
+    );
+}
+
 =head2 update
 
 =cut

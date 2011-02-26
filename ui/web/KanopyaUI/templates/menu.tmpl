@@ -17,30 +17,26 @@
 	<ul><TMPL_IF NAME="mDashboard">
 		<li><a class="imgEye<TMPL_IF NAME="submSystemstatus"> current</TMPL_IF>" href="/cgi/kanopya.cgi/systemstatus">Status</a>
 		</li>
+		<li><a class="imgExecute<TMPL_IF NAME="submExecutor"> current</TMPL_IF>" href="/cgi/kanopya.cgi/executor">Operations Queue</a>
+		</li>
 		<li><a class="imgLog<TMPL_IF NAME="submLogs"> current</TMPL_IF>" href="/cgi/kanopya.cgi/systemstatus/view_logs">Logs</a>
 		</li></TMPL_IF>
 		
 		<TMPL_IF NAME="mSettings">
-		<li><a class="imgDatabase<TMPL_IF NAME="submAdministrator"> current</TMPL_IF>" href="">Administrator</a>
-		</li>
-		<li><a class="imgExecute<TMPL_IF NAME="submExecutor"> current</TMPL_IF>" href="">Executor</a>
-		</li>
-		<li><a class="imgMonitor<TMPL_IF NAME="submMonitor"> current</TMPL_IF>" href="/cgi/kanopya.cgi/monitoring">Monitor</a>
-		</li>
-		<li><a class="imgOrchestrator<TMPL_IF NAME="submOrchestrator"> current</TMPL_IF>" href="/cgi/kanopya.cgi/orchestration">Orchestrator</a>
-		</li>
-		<li><a class="imgDrivenet<TMPL_IF NAME="submNAS"> current</TMPL_IF>" href="">NAS</a>
-		</li>
 		<li><a class="imgUser<TMPL_IF NAME="submUsers"> current</TMPL_IF>" href="/cgi/kanopya.cgi/users">Users</a>
 		</li>
 		<li><a class="imgGroups<TMPL_IF NAME="submGroups"> current</TMPL_IF>" href="/cgi/kanopya.cgi/groups">Groups</a>
 		</li>
 		<li><a class="imgPermission<TMPL_IF NAME="submPermissions"> current</TMPL_IF>" href="/cgi/kanopya.cgi/permissions">Permissions</a>
 		</li>
+		<li><a class="imgMonitor<TMPL_IF NAME="submMonitor"> current</TMPL_IF>" href="/cgi/kanopya.cgi/monitoring">Monitor</a>
+		</li>
+		<li><a class="imgOrchestrator<TMPL_IF NAME="submOrchestrator"> current</TMPL_IF>" href="/cgi/kanopya.cgi/orchestration">Orchestrator</a>
+		</li>
 		</TMPL_IF>
 		
 		<TMPL_IF NAME="mHardware">
-		<li><a class="imgMotherboard<TMPL_IF NAME="submMotherboards"> current</TMPL_IF>" href="/cgi/kanopya.cgi/motherboards">Motherboards</a>
+		<li><a class="imgMotherboard<TMPL_IF NAME="submMotherboards"> current</TMPL_IF>" href="/cgi/kanopya.cgi/motherboards">Hosts</a>
 		</li>
 		<li><a class="imgModel<TMPL_IF NAME="submModels"> current</TMPL_IF>" href="/cgi/kanopya.cgi/models">Models</a>
 		</li>
@@ -63,8 +59,6 @@
 		<li><a class="imgCluster<TMPL_IF NAME="submClusters"> current</TMPL_IF>" href="/cgi/kanopya.cgi/clusters">Clusters</a>
 		</li>
 		<li><a class="imgNetwork<TMPL_IF NAME="submNetworks"> current</TMPL_IF>" href="/cgi/kanopya.cgi/networks">Networks</a>
-		</li>
-		<li><a class="imgDrivenet<TMPL_IF NAME="submShareddisks"> current</TMPL_IF>" href="/cgi/kanopya.cgi/shareddisks">Shared disks</a>
 		</li>
 		</TMPL_IF>
 		<li id="messagelauncher"><a class="imgMessage" href="javascript:openform('/cgi/kanopya.cgi/messager/view_messages?userid=<TMPL_VAR NAME=USERID>','messages', 800,400, 'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no');">messages</a></li>
