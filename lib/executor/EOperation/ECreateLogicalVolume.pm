@@ -47,7 +47,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Cluster;
-use Entity::Systemimage;
+use Entity::Component::Storage::Lvm2;;
 use EFactory;
 
 my $log = get_logger("executor");
@@ -88,13 +88,6 @@ sub _init {
     return;
 }
 
-sub checkOp{
-    my $self = shift;
-	my %args = @_;
-    
-
-}
-
 =head2 prepare
 
 	$op->prepare(internal_cluster => \%internal_clust);
@@ -102,7 +95,6 @@ sub checkOp{
 =cut
 
 sub prepare {
-	
 	my $self = shift;
 	my %args = @_;
 	$self->SUPER::prepare();
@@ -111,7 +103,7 @@ sub prepare {
 
     # Check if internal_cluster exists
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EInstallComponentInSystemImage->prepare need an internal_cluster named argument!";
+		$errmsg = "ECreateExport->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
@@ -120,29 +112,35 @@ sub prepare {
 	my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
- 	# Cluster instantiation
-    #TODO Get Systemimage
-
-
-
-    if($@) {
-        my $err = $@;
-    	$errmsg = "EOperation::EInstallComponentInSystemImage->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    ### Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
+    if ((! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) ||
+        (! exists $params->{disk_name} or ! defined $params->{disk_name})||
+        (! exists $params->{size} or ! defined $params->{size})||
+        (! exists $params->{filesystem} or ! defined $params->{filesystem})){
         my $error = $@;
-		$errmsg = "Operation ActivateCluster failed an error occured :\n$error";
+		$errmsg = "Operation ECreateLogicalVolume failed, missing parameters";
 		$log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
+    $self->{params} = $params;
+    # Test if component instance id is really a Entity::Component::Export::Iscsitarget
+    my $comp_lvm = Entity::Component::Storage::Lvm2->get(id => $params->{component_instance_id});
+    my $comp_desc = $comp_lvm->getComponentAttr();
+    if (! $comp_desc->{component_name} eq "Lvm") {
+		$errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
+    my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
+    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
+    if (!($self->{_objs}->{cluster}->getAttr(name=>"cluster_state") eq "up")){
+        $errmsg = "Cluster has to be up !";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
+	$self->{cluster_econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $masternode_ip);
+	
 }
 
 sub execute{
@@ -150,7 +148,10 @@ sub execute{
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	
-
+    $self->{_objs}->{ecomp_lvm}->createDisk(name => $self->{params}->{disk_name},
+                                            size => $self->{params}->{size},
+                                            filesystem => $self->{params}->{filesystem},
+                                            econtext => $self->{cluster_econtext});
 		
 }
 

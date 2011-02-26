@@ -56,7 +56,7 @@ sub addTarget {
 		(! exists $args{mountpoint} or ! defined $args{mountpoint}) ||
 		(! exists $args{mount_option} or ! defined $args{mount_option})||
 		(! exists $args{econtext} or ! defined $args{econtext})) {
-		$errmsg = "Component::Export::Iscsitarget1->addTarget needs a iscsitarget1_targetname and mountpoint named argument!";
+		$errmsg = "EComponent::EExport::EIscsitarget1->addTarget needs a iscsitarget1_targetname,econtext,mount_option and mountpoint named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
