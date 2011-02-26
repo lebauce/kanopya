@@ -101,7 +101,12 @@ sub view_logs : Runmode {
 	my $path = $logger_comp->getLogDirectories();
 	
 	# Select only files
+	eval {
 	my $ls_output = `ls $path`;
+	};
+	if ($@) {
+		#die $@;
+	}
 	my @files = grep { -f "$path$_" } split(" ", $ls_output);
 	# Built tmpl struct
 	my @files_info = map { { path=>$path, filename=>$_} } @files;
