@@ -265,37 +265,63 @@ sub process_deactivatesystemimage : Runmode {
 	} 
 }
 
-# TODO form_installcomponent popup window
+# form_installcomponent popup window
 
 sub form_installcomponent : Runmode {
 	my $self = shift;
-	my $errors = shift;
-	my $tmpl =$self->load_tmpl('Systemimages/form_installcomponent.tmpl');
-	$tmpl->param($errors) if $errors;
-	my $query = $self->query;
-	$tmpl->param('systemimage_id' => $query->param('systemimage_id'));
+	my $query = $self->query();
+	my $systemimage_id = $query->param('systemimage_id');
+	my ($edistribution, $esystemimage, $systemimage_components, $distribution_components);
+	eval {
+		$esystemimage = Entity::Systemimage->get(id => $systemimage_id);
+		$systemimage_components = $esystemimage->getInstalledComponents();
+		$edistribution = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
+		$distribution_components = $edistribution->getProvidedComponents();
+	};
+	if($@) {
+    	my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');	
+		}
+		else { $exception->rethrow(); }
+	}
+	else {	
+		my $components = []; 
+		foreach my $dc  (@$distribution_components) {	
+			my $found = 0;
+			foreach my $sic (@$systemimage_components) {
+				if($sic->{component_id} eq $dc->{component_id}) { $found = 1; }
+			}
+			if(not $found) { push @$components, $dc; };
+		} 
+		my $tmpl = $self->load_tmpl('Systemimages/form_installcomponent.tmpl');
+		$tmpl->param('systemimage_id' => $systemimage_id);
+		$tmpl->param('systemimage_name' => $esystemimage->getAttr(name => 'systemimage_name'));
+		$tmpl->param('components_list' => $components);
 	
-	return $tmpl->output();
+		return $tmpl->output();
+	}
 }
 
-sub _installcomponent_profile {
-	return {
-		required => 'componentfile',
-		msgs => {
-				any_errors => 'some_errors',
-				prefix => 'err_'
-		},
-	};
-}
+
+
+
 
 sub process_installcomponent : Runmode {
 	my $self = shift;
-	use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
-    my ($results, $err_page) = $self->check_rm('form_installcomponent', '_installcomponent_profile');
-    return $err_page if $err_page;
 	my $query = $self->query();
+	my $filename = $query->param('componentfile');
+	open (OUTFILE, ">>/tmp/$filename");
+	my $buffer;
+	while (my $bytesread = read($filename, $buffer, 1024)) {
+  		print OUTFILE $buffer;
+	}
+	
+	return $filename;
 	eval {
 		my $esystemimage = Entity::Systemimage->get(id => $query->param('systemimage_id'));
+		
 		$esystemimage->installComponent();
 	};
 	if($@) {
