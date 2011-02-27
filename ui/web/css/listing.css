@@ -250,6 +250,7 @@ table.rulesview tr:hover { background-color:transparent;} /* here to overload si
 
 table.rulesview tr.selected {	background-color: #EEE; }
 
-
+#logs_table td { vertical-align: top; }
+#logs_table .selected_link { font-weight: bold; }
 
 

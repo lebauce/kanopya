@@ -62,6 +62,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use Administrator;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -118,6 +119,51 @@ sub new {
 	my $self = $class->SUPER::new( %args);
 
     return $self;
+
+}
+
+
+sub getConf {
+	my $self = shift;
+	my %conf = ( );
+	
+	my $conf_rs = $self->{_dbix}->iscsitarget1_targets;
+	my @targets = ();
+	while (my $conf_row = $conf_rs->next) {
+		my $lun_rs = $conf_row->iscsitarget1_luns;
+		my @luns = ();
+		while (my $lun_row = $lun_rs->next) {
+			push @luns, {
+				iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
+				iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
+				iscsitarget1_lun_typeio => $lun_row->get_column('iscsitarget1_lun_typeio'),
+				iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
+			}
+		}
+		push @targets, { 	iscsitarget1_target_name => $conf_row->get_column('iscsitarget1_target_name'),
+							iscsitarget1_target_id => $conf_row->get_column('iscsitarget1_target_id'),
+							luns => \@luns};
+	}
+	
+	$conf{targets} = \@targets;
+	
+	return \%conf;
+}
+
+sub setConf {
+	my $self = shift;
+	my($conf) = @_;
+	
+	for my $target ( @{ $conf->{targets} } ) {
+		LUN:
+		for my $lun ( @{ $target->{luns} } ) {
+			$self->createExport(export_name => $target->{iscsitarget1_target_name},
+								device => $lun->{iscsitarget1_lun_device},
+								typeio => $lun->{iscsitarget1_lun_typeio},
+								iomode => $lun->{iscsitarget1_lun_iomode});
+			last LUN; #Temporary: we can create only one lun with one target
+		}		
+	}
 
 }
 
@@ -290,6 +336,34 @@ B<throws>  : Nothing
 
 sub getNetConf {
     return {3260=> 'tcp'};
+}
+
+sub createExport {
+    my $self = shift;
+    my %args = @_;
+    if((! exists $args{export_name} or ! defined $args{export_name})||
+       (! exists $args{device} or ! defined $args{device}) ||
+       (! exists $args{typeio} or ! defined $args{typeio}) ||
+       (! exists $args{iomode} or ! defined $args{iomode})) {
+	   	$errmsg = "createExport needs export_name, device, typeio and iomode named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $admin = Administrator->new();
+	
+    my %params = $self->getAttrs();
+    $log->debug("New Operation CreateExport with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'CreateExport',
+        params   => {
+            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            export_name => $args{export_name},
+            device => $args{device},
+            typeio => $args{typeio},
+            iomode => $args{iomode}
+        },
+    );
 }
 
 =head1 DIAGNOSTICS

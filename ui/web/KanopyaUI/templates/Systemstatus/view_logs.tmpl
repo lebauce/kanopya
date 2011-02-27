@@ -1,0 +1,33 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<script language="Javascript" src="/js/jquery.js"></script>
+<script language="Javascript" src="/js/custom.js"></script>
+<script language="Javascript" src="/js/status.js"></script>
+
+<div id="content">
+
+<br/>
+
+<table id="logs_table" >
+<!--tr><th>files</th><td>last <input type="text"></input> lines <input type="button" value="Refresh"/></td></tr-->
+<tr>
+<td>
+<TMPL_LOOP NAME=files>
+	<a class="log_link" id="<TMPL_VAR NAME=path><TMPL_VAR NAME=filename>"><TMPL_VAR NAME=filename></a><br/>
+</TMPL_LOOP>
+</td>
+<td>
+<textarea cols="120" rows="80" readonly="true" id="log_container">
+</textarea>
+</td>
+</tr>
+</table>
+
+</div>
+
+
+<TMPL_INCLUDE NAME="footer.tmpl">
+

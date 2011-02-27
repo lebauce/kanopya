@@ -287,6 +287,8 @@ sub getComponentAttr {
 	return $componentAttr;	
 }
 
+
+
 =head2 toString
 
 B<Class>   : Public

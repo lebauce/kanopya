@@ -203,6 +203,12 @@ sub getNetConf {
     return {514=> 'udp'};
 }
 
+sub getLogDirectories {
+	my $self = shift;
+	
+	return "/var/log/kanopya/";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
