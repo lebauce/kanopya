@@ -311,18 +311,10 @@ sub form_installcomponent : Runmode {
 sub process_installcomponent : Runmode {
 	my $self = shift;
 	my $query = $self->query();
-	my $filename = $query->param('componentfile');
-	open (OUTFILE, ">>/tmp/$filename");
-	my $buffer;
-	while (my $bytesread = read($filename, $buffer, 1024)) {
-  		print OUTFILE $buffer;
-	}
 	
-	return $filename;
 	eval {
 		my $esystemimage = Entity::Systemimage->get(id => $query->param('systemimage_id'));
-		
-		$esystemimage->installComponent();
+		$esystemimage->installComponent(component_id => $query->param('component_id'));
 	};
 	if($@) {
 		my $exception = $@;
