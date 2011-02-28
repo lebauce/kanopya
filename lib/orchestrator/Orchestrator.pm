@@ -453,6 +453,23 @@ sub _isNodeInState {
     return 0;
 }
 
+sub _isNodeMigrating {
+	my $self = shift;
+    my %args = @_;
+    
+    my $cluster_name = $args{cluster_name};
+    
+    my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
+    my $motherboards = $cluster->getMotherboards();
+    for my $mb (values %$motherboards) {
+    	if (not $mb->getNodeState() eq "in") {
+    		return 1;
+    	}
+    }	
+    
+    return 0;
+}
+
 =head2 _isOpInQueue
 	
 	Class : Private
@@ -516,16 +533,11 @@ sub _canAddNode {
     
     my $cluster_name = $args{cluster};
     
-    
-    my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
-    my $motherboards = $cluster->getMotherboards();
-    for my $mb (values %$motherboards) {
-    	if (not $mb->getNodeState() eq "in") {
-    		$log->info(" => A node is already migrating in this cluster");
-		   	return 0;
-    	}
-    }
-     
+    # Check if no node of the cluster is migrating  
+    if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
+    	log->info(" => A node in this cluster is currently migrating");
+		return 0;
+    } 
     
 #    # Check if there is already a node starting in the cluster #
 #    if ( 	$self->_isNodeInState( cluster => $cluster_name, state => 'starting' ) ||
@@ -584,15 +596,21 @@ sub _canRemoveNode {
 	my $self = shift;
     my %args = @_;
     
-    my $cluster = $args{cluster};
+    my $cluster_name = $args{cluster};
     
-    # Check if there is a corresponding remove node operation in operation queue #
-    if ( 	$self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
-    		$self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
-    {
-    	$log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
-    	return 0;
+    # Check if no node of the cluster is migrating  
+    if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
+    	log->info(" => A node in this cluster is currently migrating");
+		return 0;
     }
+    
+#    # Check if there is a corresponding remove node operation in operation queue #
+#    if ( 	$self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
+#    		$self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
+#    {
+#    	$log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
+#    	return 0;
+#    }
     
     return 1;
 }
