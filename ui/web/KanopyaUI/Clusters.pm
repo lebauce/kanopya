@@ -239,6 +239,7 @@ sub view_clusterdetails : Runmode {
 			}
 		} else {
 			$tmpl->param('link_start' => 1);	
+			$tmpl->param('link_deactivate' => 1);
 		}
 		
 	} else { 
