@@ -535,7 +535,7 @@ sub _canAddNode {
     
     # Check if no node of the cluster is migrating  
     if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
-    	log->info(" => A node in this cluster is currently migrating");
+    	$log->info(" => A node in this cluster is currently migrating");
 		return 0;
     } 
     
@@ -600,7 +600,7 @@ sub _canRemoveNode {
     
     # Check if no node of the cluster is migrating  
     if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
-    	log->info(" => A node in this cluster is currently migrating");
+    	$log->info(" => A node in this cluster is currently migrating");
 		return 0;
     }
     
