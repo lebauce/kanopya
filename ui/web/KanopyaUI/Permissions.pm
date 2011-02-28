@@ -4,7 +4,7 @@ use base 'KanopyaUI::CGI';
 use strict;
 use warnings;
 use Entity::User;
-use Entity::Groups;
+use Entity::Gp;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("webui");
@@ -56,13 +56,13 @@ sub view_selectactors : StartRunmode {
 	$tmpl->param('entitylist' => $entitylist);
 	
 	# get entity groups list
-	my @egroups = Entity::Groups->getGroups(hash => {groups_type => $entitytype});
+	my @egroups = Entity::Gp->getGroups(hash => {gp_type => $entitytype});
 	my $groupslist = [];
 	foreach my $e (@egroups) {
 		my $tmp = {};
 		$tmp->{entity_id} = $e->{_entity_id};
 		$tmp->{groups} = $e->toString();
-		$tmp->{entitytype} = 'Groups';
+		$tmp->{entitytype} = 'Gp';
 		push @$groupslist, $tmp;
 	}
 	$tmpl->param('groupslist' => $groupslist);
@@ -81,13 +81,13 @@ sub view_selectactors : StartRunmode {
 	$tmpl->param('userslist' => $users);
 	
 	# get users'groups list
-	my @eusersgroups = Entity::Groups->getGroups(hash => {groups_type => 'User'});
+	my @eusersgroups = Entity::Gp->getGroups(hash => {gp_type => 'User'});
 	my $usersgroups = [];
 	foreach my $ug (@eusersgroups) {
 		my $tmp = {};
 		$tmp->{entity_id} = $ug->{_entity_id};
 		$tmp->{groups} = $ug->toString();
-		$tmp->{entitytype} = 'Groups';
+		$tmp->{entitytype} = 'Gp';
 		push @$usersgroups, $tmp;
 	}
 	$tmpl->param('usersgroupslist' => $usersgroups);
@@ -135,7 +135,7 @@ sub view_selectconsumer : Runmode {
 	$tmpl->param('userslist' => $users);
 	
 	# get users'groups list
-	my @eusersgroups = Entity::Groups->getGroups(hash => {groups_type => 'User'});
+	my @eusersgroups = Entity::Gp->getGroups(hash => {gp_type => 'User'});
 	my $usersgroups = [];
 	foreach my $ug (@eusersgroups) {
 		my $tmp = {};

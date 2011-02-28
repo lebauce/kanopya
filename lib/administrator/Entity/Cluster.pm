@@ -121,6 +121,15 @@ sub methods {
 		'setperm'	=> {'description' => 'set permissions on this cluster', 
 						'perm_holder' => 'entity',
 		},
+		'addcomponent'	=> {'description' => 'add a component to this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'removecomponent'	=> {'description' => 'remove a component from this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'configurecomponents'	=> {'description' => 'configure components of this cluster', 
+						'perm_holder' => 'entity',
+		},
 	};
 }
 

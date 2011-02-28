@@ -16,6 +16,7 @@ sub view_kernels : StartRunmode {
 	$tmpl->param('username' => $self->session->param('username'));
 
     my @ekernels = Entity::Kernel->getKernels(hash => {});
+    my $methods = Entity::Kernel->getPerms();
     my $kernels = [];
     
     foreach my $m (@ekernels) {
@@ -30,6 +31,8 @@ sub view_kernels : StartRunmode {
 		push (@$kernels, $tmp);
     }
 
+	if($methods->{'upload'}->{'granted'}) { $tmpl->param('link_upload' => 1); }
+	else { $tmpl->param('link_upload' => 0); }
 	$tmpl->param('kernels_list' => $kernels);
     return $tmpl->output();
 }
