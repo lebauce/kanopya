@@ -307,7 +307,7 @@ sub view_clusterdetails : Runmode {
 	
 	$tmpl->param('nodes_list' => $nodes);
 	if(not $methods->{'update'}->{'granted'} ) { $tmpl->param('link_edit' => 0); }
-	if(not $methods->{'delete'}->{'granted'} ) { $tmpl->param('link_delete' => 0); }
+	if(not $methods->{'remove'}->{'granted'} ) { $tmpl->param('link_delete' => 0); }
 	if(not $methods->{'activate'}->{'granted'} ) { $tmpl->param('link_activate' => 0); }
 	if(not $methods->{'start'}->{'granted'} ) { $tmpl->param('link_start' => 0); }
 	if(not $methods->{'stop'}->{'granted'} ) { $tmpl->param('link_stop' => 0); }
