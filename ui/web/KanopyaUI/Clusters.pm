@@ -307,6 +307,7 @@ sub view_clusterdetails : Runmode {
 	if(not $methods->{'start'}->{'granted'} ) { $tmpl->param('link_start' => 0); }
 	if(not $methods->{'stop'}->{'granted'} ) { $tmpl->param('link_stop' => 0); }
 	if(not $methods->{'addcomponent'}->{'granted'} ) { $tmpl->param('link_addcomponent' => 0); }
+	else {$tmpl->param('link_addcomponent' => 1); }
 	
 	return $tmpl->output();
 }
