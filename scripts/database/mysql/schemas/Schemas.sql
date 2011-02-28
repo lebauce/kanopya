@@ -381,17 +381,17 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `groups`
+-- Table structure for table `gp`
 --
 
-CREATE TABLE `groups` (
-  `groups_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `groups_name` char(32) NOT NULL,
-  `groups_type` char(32) NOT NULL,
-  `groups_desc` char(255) DEFAULT NULL,
-  `groups_system` int(1) unsigned NOT NULL,
-  PRIMARY KEY (`groups_id`),
-  UNIQUE KEY `groups_name` (`groups_name`)
+CREATE TABLE `gp` (
+  `gp_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `gp_name` char(32) NOT NULL,
+  `gp_type` char(32) NOT NULL,
+  `gp_desc` char(255) DEFAULT NULL,
+  `gp_system` int(1) unsigned NOT NULL,
+  PRIMARY KEY (`gp_id`),
+  UNIQUE KEY `gp_name` (`gp_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -622,13 +622,13 @@ CREATE TABLE `entity` (
 --
 
 CREATE TABLE `ingroups` (
-  `groups_id` int(8) unsigned NOT NULL,
+  `gp_id` int(8) unsigned NOT NULL,
   `entity_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`groups_id`,`entity_id`),
+  PRIMARY KEY (`gp_id`,`entity_id`),
   KEY `fk_grouping_1` (`entity_id`),
-  KEY `fk_grouping_2` (`groups_id`),
+  KEY `fk_grouping_2` (`gp_id`),
   CONSTRAINT `fk_grouping_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_grouping_2` FOREIGN KEY (`groups_id`) REFERENCES `groups` (`groups_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT `fk_grouping_2` FOREIGN KEY (`gp_id`) REFERENCES `gp` (`gp_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -790,17 +790,17 @@ CREATE TABLE `operationtype_entity` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `groups_entity`
+-- Table structure for table `gp_entity`
 --
 
-CREATE TABLE `groups_entity` (
+CREATE TABLE `gp_entity` (
   `entity_id` int(8) unsigned NOT NULL,
-  `groups_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`groups_id`),
-  UNIQUE KEY `fk_groups_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_groups_entity_2` (`groups_id`),
-  CONSTRAINT `fk_groups_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_groups_entity_2` FOREIGN KEY (`groups_id`) REFERENCES `groups` (`groups_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `gp_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`gp_id`),
+  UNIQUE KEY `fk_gp_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_gp_entity_2` (`gp_id`),
+  CONSTRAINT `fk_gp_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_gp_entity_2` FOREIGN KEY (`gp_id`) REFERENCES `gp` (`gp_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

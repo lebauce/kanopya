@@ -185,7 +185,7 @@ sub view_systemimagedetails : Runmode {
 	}
 	$tmpl->param('components_list' => $components_list);
 	$tmpl->param('components_count' => $nb + 1);
-	
+	if(not $methods->{'installcomponent'}->{'granted'}) { $tmpl->param('can_installcomponent' => 1); }
 	
 	return $tmpl->output();
 }
