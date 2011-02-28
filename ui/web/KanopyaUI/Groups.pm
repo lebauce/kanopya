@@ -6,7 +6,7 @@ use warnings;
 use Data::FormValidator::Constraints qw( email FV_eq_with );
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-use Entity::Groups;
+use Entity::Gp;
 
 my $log = get_logger('webui');
 
@@ -20,20 +20,20 @@ sub view_groups : StartRunmode {
 	$tmpl->param('submGroups' => 1);
 	$tmpl->param('username' => $self->session->param('username'));
 	
-	my @egroups = Entity::Groups->getGroups(hash => { groups_system => 0 });
+	my @egroups = Entity::Gp->getGroups(hash => { gp_system => 0 });
 	my $groups = [];
 	
 	foreach my $group (@egroups) {
 		my $tmp = {};
-		$tmp->{groups_id} = $group->getAttr('name' => 'groups_id');
-		$tmp->{groups_name} = $group->getAttr('name' => 'groups_name'); 
-		$tmp->{groups_desc} = $group->getAttr('name' => 'groups_desc');
-		$tmp->{groups_type} = $group->getAttr('name' => 'groups_type');
-		$tmp->{groups_size} = $group->getSize();
+		$tmp->{gp_id} = $group->getAttr('name' => 'gp_id');
+		$tmp->{gp_name} = $group->getAttr('name' => 'gp_name'); 
+		$tmp->{gp_desc} = $group->getAttr('name' => 'gp_desc');
+		$tmp->{gp_type} = $group->getAttr('name' => 'gp_type');
+		$tmp->{gp_size} = $group->getSize();
 		push(@$groups, $tmp);
 	}
-	$tmpl->param('groups_list' => $groups);
-	my $methods = Entity::Groups->getPerms();
+	$tmpl->param('gp_list' => $groups);
+	my $methods = Entity::Gp->getPerms();
 	if($methods->{'create'}->{'granted'}) { $tmpl->param('can_create' => 1); }
 	return $tmpl->output();
 }
@@ -57,11 +57,11 @@ sub process_addgroup : Runmode {
     return $err_page if $err_page;
     
     my $query = $self->query();
-    my $egroup = Entity::Groups->new( 
-    	groups_name => $query->param('groups_name'), 
-    	groups_desc => $query->param('groups_desc'),
-    	groups_type => $query->param('groups_type'),
-    	groups_system => 0,
+    my $egroup = Entity::Gp->new( 
+    	gp_name => $query->param('gp_name'), 
+    	gp_desc => $query->param('gp_desc'),
+    	gp_type => $query->param('gp_type'),
+    	gp_system => 0,
     );
     eval { $egroup->create(); };
 	if($@) {
@@ -79,7 +79,7 @@ sub process_addgroup : Runmode {
 
 sub _addgroup_profile {
 	return {
-    	required => ['groups_name', 'groups_type'],
+    	required => ['gp_name', 'gp_type'],
         msgs => {
         	any_errors => 'some_errors',
         	prefix => 'err_',
@@ -101,7 +101,7 @@ sub groupsname_used {
 		$dfv->name_this('groupname_used');
 		my $groupsname = $dfv->get_current_constraint_value();
 		my $admin = Administrator->new(login => 'admin', password => 'admin');
-		my @egroup = $admin->getEntities(type => 'Groups', hash => { groups_name => $groupsname });
+		my @egroup = $admin->getEntities(type => 'Gp', hash => { gp_name => $groupsname });
 		return (scalar(@egroup) < 1);
 	}
 }
@@ -112,8 +112,8 @@ sub view_groupdetails : Runmode {
 	my $self = shift;
     	
 	my $query = $self->query();
-	my $groups_id = $query->param('groups_id');
-	my $egroups = eval { Entity::Groups->get(id => $groups_id) };
+	my $gp_id = $query->param('gp_id');
+	my $egroups = eval { Entity::Gp->get(id => $gp_id) };
 	if($@) {
 		my $exception = $@;
 		if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -131,19 +131,19 @@ sub view_groupdetails : Runmode {
 		$tmpl->param('submGroups' => 1);
 		$tmpl->param('username' => $self->session->param('username'));
 		
-		$tmpl->param('groups_id' =>  $groups_id);
-		$tmpl->param('groups_name' =>  $egroups->getAttr('name' => 'groups_name'));
-		$tmpl->param('groups_desc' =>  $egroups->getAttr('name' => 'groups_desc'));
-		$tmpl->param('groups_type' =>  $egroups->getAttr('name' => 'groups_type'));
+		$tmpl->param('gp_id' =>  $gp_id);
+		$tmpl->param('gp_name' =>  $egroups->getAttr('name' => 'gp_name'));
+		$tmpl->param('gp_desc' =>  $egroups->getAttr('name' => 'gp_desc'));
+		$tmpl->param('gp_type' =>  $egroups->getAttr('name' => 'gp_type'));
 		
 		my $methods = $egroups->getPerms();
 		my @entities = $egroups->getEntities();
 		my $content = [];
 		foreach my $e (@entities) {
 			my $tmp = {};
-			$tmp->{content_id} = $e->getAttr('name' => lc($tmpl->param('groups_type')).'_id');
+			$tmp->{content_id} = $e->getAttr('name' => lc($tmpl->param('gp_type')).'_id');
 			$tmp->{content_label} = $e->toString();
-			$tmp->{groups_id} = $groups_id;
+			$tmp->{gp_id} = $gp_id;
 			$tmp->{can_removeEntity} = $methods->{'removeEntity'}->{'granted'}; 
 						
 			push(@$content, $tmp) 
@@ -163,8 +163,8 @@ sub view_groupdetails : Runmode {
 sub process_deletegroup : Runmode {
 	my $self = shift;
 	my $query = $self->query();
-	my $groups_id = $query->param('groups_id');
-	my $egroups = Entity::Groups->get(id => $groups_id);
+	my $gp_id = $query->param('gp_id');
+	my $egroups = Entity::Gp->get(id => $gp_id);
 	$egroups->delete();
 	$self->redirect('/cgi/kanopya.cgi/groups/view_groups');
 }
@@ -175,11 +175,11 @@ sub form_appendentity : Runmode {
 	my $self = shift;
 	my $tmpl = $self->load_tmpl('Groups/form_appendentity.tmpl');
 	my $query = $self->query();
-	my $egroups = Entity::Groups->get(id => $query->param('groups_id'));
-	$tmpl->param('groups_id' => $query->param('groups_id'));
-	$tmpl->param('groups_name' => $egroups->getAttr('name' => 'groups_name'));
-	my $type = $egroups->getAttr('name' => 'groups_type');
-	$tmpl->param('groups_type' => $type);
+	my $egroups = Entity::Gp->get(id => $query->param('gp_id'));
+	$tmpl->param('gp_id' => $query->param('gp_id'));
+	$tmpl->param('gp_name' => $egroups->getAttr('name' => 'gp_name'));
+	my $type = $egroups->getAttr('name' => 'gp_type');
+	$tmpl->param('gp_type' => $type);
 	my $entity_list = [];
 	my @entities = $egroups->getExcludedEntities();
 	
@@ -198,12 +198,12 @@ sub form_appendentity : Runmode {
 sub process_appendentity : Runmode {
 	my $self = shift;
 	my $query = $self->query();
-	my $groups_id = $query->param('groups_id');
+	my $gp_id = $query->param('gp_id');
 	my $real_id = $query->param('real_id');
-	my $egroups = Entity::Groups->get(id => $groups_id);
-	my $groups_type = $egroups->getAttr('name' => 'groups_type');
-	my $module = "Entity/".$groups_type.".pm";
-	my $class = "Entity::".$groups_type;
+	my $egroups = Entity::Gp->get(id => $gp_id);
+	my $gp_type = $egroups->getAttr('name' => 'gp_type');
+	my $module = "Entity/".$gp_type.".pm";
+	my $class = "Entity::".$gp_type;
 	eval { require $module; };
 	my $entity = $class->get(id => $real_id);
 	$egroups->appendEntity(entity => $entity);
@@ -215,18 +215,18 @@ sub process_appendentity : Runmode {
 sub process_removeentity : Runmode {
 	my $self = shift;
 	my $query = $self->query();
-	my $groups_id = $query->param('groups_id');
+	my $gp_id = $query->param('gp_id');
 	my $real_id = $query->param('real_id');
-	my $egroups = Entity::Groups->get(id => $groups_id);
-	my $groups_type = $egroups->getAttr('name' => 'groups_type');
+	my $egroups = Entity::Gp->get(id => $gp_id);
+	my $gp_type = $egroups->getAttr('name' => 'gp_type');
 	
-	my $module = "Entity/".$groups_type.".pm";
-	my $class = "Entity::".$groups_type;
+	my $module = "Entity/".$gp_type.".pm";
+	my $class = "Entity::".$gp_type;
 	eval { require $module; };
 	my $entity = $class->get(id => $real_id);
 	
 	$egroups->removeEntity(entity => $entity);
-	$self->redirect("/cgi/kanopya.cgi/groups/view_groupdetails?groups_id=$groups_id");
+	$self->redirect("/cgi/kanopya.cgi/groups/view_groupdetails?gp_id=$gp_id");
 }
 
 # edituser form

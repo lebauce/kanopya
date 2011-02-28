@@ -257,16 +257,6 @@ sub execute{
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
 
-#	# Set Hostname
-#	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
-#										   value => $self->{_objs}->{motherboard}->generateHostname());
-#	# Set initiatorName
-#	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
-#										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
-#	
-	# internal ip is set during node addition in a cluster 
-	#$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip",
-	#									   value => $adm->getFreeInternalIP());
 
 	#TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
 	my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $self->{_objs}->{motherboard}->getEtcName(),

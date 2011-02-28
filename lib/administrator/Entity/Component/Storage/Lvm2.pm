@@ -206,6 +206,46 @@ sub getConf {
 	return $conf;
 }
 
+sub setConf {
+	my $self = shift;
+	my ($conf) = @_;
+
+	my $vg_id = $conf->{lvm2_vg_id};
+	for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
+		$self->createLogicalVolume(	vg_id => $vg_id,
+									disk_name => $new_lv->{lvm2_lv_name},
+									size => $new_lv->{lvm2_lv_size},
+									filesystem => $new_lv->{lvm2_lv_filesystem});
+	}
+
+}
+
+sub createLogicalVolume {
+    my $self = shift;
+    my %args = @_;
+    if((! exists $args{disk_name} or ! defined $args{disk_name})||
+       (! exists $args{size} or ! defined $args{size}) ||
+       (! exists $args{filesystem} or ! defined $args{filesystem})) {
+	   	$errmsg = "CreateLogicalVolume needs disk_name, size and filesystem named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $admin = Administrator->new();
+	
+    my %params = $self->getAttrs();
+    $log->debug("New Operation CreateLogicalVolume with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'CreateLogicalVolume',
+        params   => {
+            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            disk_name => $args{disk_name},
+            size => $args{size},
+            filesystem => $args{filesystem}
+        },
+    );
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

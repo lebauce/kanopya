@@ -212,7 +212,17 @@ sub create {
 
 sub installComponent {
     my $self = shift;
-    my %params = $self->getAttrs();
+    my %args = @_;
+    
+    if (! exists $args{component_id} or ! defined $args{component_id}) {
+        $errmsg = "Entity::Systemimage->installComponent needs a component_id parameter!";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    
+    my %params = ();
+    $params{systemimage_id} = $self->getAttr(name => 'systemimage_id');
+    $params{component_id} = $args{component_id};
     
     $log->debug("New Operation InstallComponentOnSystemImage with attrs : " . Dumper(%params));
     Operation->enqueue(

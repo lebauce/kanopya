@@ -74,12 +74,12 @@ sub _getEntityIds {
 	push @$ids, $args{entity_id};
 	
 	# retrieve entity_id of groups containing this entity object
-	my @groups = $self->{schema}->resultset('Groups')->search( 
+	my @groups = $self->{schema}->resultset('Gp')->search( 
 		{ 'ingroups.entity_id' => $args{entity_id} },
 		{ 
 			columns 	=> [], 									# use no columns from Groups table
-			'+columns' 	=> [ 'groups_entity.entity_id' ], 	# but add the entity_id column from groups_entity related table
-			join 		=> [qw/ingroups groups_entity/],
+			'+columns' 	=> [ 'gp_entity.entity_id' ], 	# but add the entity_id column from groups_entity related table
+			join 		=> [qw/ingroups gp_entity/],
 		}
 	);
 	# add entity_id groups to the arrayref
@@ -97,7 +97,7 @@ sub _getEntityIds {
 		   and a method, grant the permission to that consumed method for that 
 		   consumer entity 
 	args:
-		consumer : Entity::User instance or Entity::Groups instance
+		consumer : Entity::User instance or Entity::Gp instance
 		consumed : Entity::* instance
 		method   : scalar (string) : method name
 

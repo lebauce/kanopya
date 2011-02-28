@@ -116,17 +116,17 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 groups_entity
+=head2 gp_entity
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::GroupsEntity>
+Related object: L<AdministratorDB::Schema::Result::GpEntity>
 
 =cut
 
 __PACKAGE__->might_have(
-  "groups_entity",
-  "AdministratorDB::Schema::Result::GroupsEntity",
+  "gp_entity",
+  "AdministratorDB::Schema::Result::GpEntity",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -312,8 +312,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I8FQma1v8orGJFLcyzh8gA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ba6T8h4r+C2/B4/RwxIPlA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
