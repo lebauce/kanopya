@@ -300,6 +300,10 @@ sub view_clusterdetails : Runmode {
 		}
 	}
 	
+	if($tmpl->param('link_start')) {
+		$tmpl->param('link_stop' => 0); 
+	} else { $tmpl->param('link_stop' => 1); }
+	
 	$tmpl->param('nodes_list' => $nodes);
 	if(not $methods->{'update'}->{'granted'} ) { $tmpl->param('link_edit' => 0); }
 	if(not $methods->{'delete'}->{'granted'} ) { $tmpl->param('link_delete' => 0); }
