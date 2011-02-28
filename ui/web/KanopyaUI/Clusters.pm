@@ -262,7 +262,7 @@ sub view_clusterdetails : Runmode {
 		if(not $methods->{'configurecomponents'}->{'granted'} ) { 
 				$comphash->{'link_configurecomponents'} = 0; 
 		} else { $comphash->{'link_configurecomponents'} = 1;}
-		if(not $methods->{'removenode'}->{'granted'} ) {
+		if(not $methods->{'removecomponent'}->{'granted'} ) {
 				$comphash->{link_remove} = 0;
 		} else { $comphash->{link_remove} = not $active;}
 		
@@ -293,7 +293,7 @@ sub view_clusterdetails : Runmode {
 			$tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname'); 	
 			$tmp->{motherboard_internal_ip} = $n->getAttr(name => 'motherboard_internal_ip');
 			
-			if(not $methods->{'removenode'}->{'granted'} ) {
+			if(not $methods->{'removeNode'}->{'granted'} ) {
 				$tmp->{link_remove} = 0;
 			} else { $tmp->{link_remove} = 1;}
 			push @$nodes, $tmp;
