@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Result::Ingroup;
+package AdministratorDB::Schema::Result::GpEntity;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -11,22 +11,22 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::Ingroup
+AdministratorDB::Schema::Result::GpEntity
 
 =cut
 
-__PACKAGE__->table("ingroups");
+__PACKAGE__->table("gp_entity");
 
 =head1 ACCESSORS
 
-=head2 gp_id
+=head2 entity_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 entity_id
+=head2 gp_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -36,13 +36,6 @@ __PACKAGE__->table("ingroups");
 =cut
 
 __PACKAGE__->add_columns(
-  "gp_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
   "entity_id",
   {
     data_type => "integer",
@@ -50,8 +43,17 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "gp_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
-__PACKAGE__->set_primary_key("gp_id", "entity_id");
+__PACKAGE__->set_primary_key("entity_id", "gp_id");
+__PACKAGE__->add_unique_constraint("fk_gp_entity_2", ["gp_id"]);
+__PACKAGE__->add_unique_constraint("fk_gp_entity_1", ["entity_id"]);
 
 =head1 RELATIONS
 
@@ -87,7 +89,7 @@ __PACKAGE__->belongs_to(
 
 
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9LHDeNsLIiKZqIy0qW7zww
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hVo40iTwiTvKLK5kGS66ig
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

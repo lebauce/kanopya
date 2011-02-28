@@ -98,26 +98,30 @@ sub view_logs : Runmode {
 	
 	my $admin_cluster = Entity::Cluster->get(id => 1);
 	my $logger_comp = $admin_cluster->getComponent( category => 'Logger', name => 'Syslogng', version => 3 );
-	my $path = $logger_comp->getLogDirectories();
+	my @log_dirs = $logger_comp->getLogDirectories();
 	
-	# Select only files
-	eval {
-	my $ls_output = `ls $path`;
-	};
-	if ($@) {
-		#die $@;
+	my @dirs_info = ();
+	for $path (@log_dirs) {
+		my $dir_error;
+		my @files_info = ();
+		my $ls_output = `ls $path` or $dir_error = 1;
+		if (not defined $dir_error) {
+			# Select only files
+			my @files = grep { -f "$path$_" } split(" ", $ls_output);
+			# Built tmpl struct
+			@files_info = map { { path=>$path, filename=>$_} } @files;
+		}
+		
+		push @dirs_info, { path => $path, dir_locked => $dir_error, files => \@files_info };
 	}
-	my @files = grep { -f "$path$_" } split(" ", $ls_output);
-	# Built tmpl struct
-	my @files_info = map { { path=>$path, filename=>$_} } @files;
 	
 	my $tmpl =  $self->load_tmpl('Systemstatus/view_logs.tmpl');
     $tmpl->param('TITLEPAGE' => "System Logs");
 	$tmpl->param('MDASHBOARD' => 1);
 	$tmpl->param('SUBMLOGS' => 1);
 	$tmpl->param('username' => $self->session->param('username')); 
-    $tmpl->param('files' => \@files_info);
-     
+    $tmpl->param('dirs' => \@dirs_info);
+ 
     return $tmpl->output(); 
 }
 

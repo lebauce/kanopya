@@ -42,9 +42,9 @@
 <hr/>
 <span id="groups" class="title simpleexpand">Groups</span>
 <table id="Xgroups" class="detailspart">
-<TMPL_LOOP NAME=groups_list>
-<tr><td class="label2"><span class="bold"><TMPL_VAR NAME=groups_name></span> - <span class="italic"><TMPL_VAR NAME=groups_desc></span></td>
-<TMPL_UNLESS NAME=groups_system><td class="action"><a class="imgManage" href="/cgi/kanopya.cgi/groups/view_groupdetails?groups_id=<TMPL_VAR NAME=groups_id>">details</a></td>
+<TMPL_LOOP NAME=gp_list>
+<tr><td class="label2"><span class="bold"><TMPL_VAR NAME=gp_name></span> - <span class="italic"><TMPL_VAR NAME=gp_desc></span></td>
+<TMPL_UNLESS NAME=gp_system><td class="action"><a class="imgManage" href="/cgi/kanopya.cgi/groups/view_groupdetails?gp_id=<TMPL_VAR NAME=gp_id>">details</a></td>
 <TMPL_ELSE><td class="action"></td></TMPL_UNLESS>
 </tr>
 </TMPL_LOOP>

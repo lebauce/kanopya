@@ -206,7 +206,7 @@ sub getNetConf {
 sub getLogDirectories {
 	my $self = shift;
 	
-	return "/var/log/kanopya/";
+	return ("/var/log/kanopya/");
 }
 
 =head1 DIAGNOSTICS

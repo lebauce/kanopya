@@ -138,6 +138,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 cluster_ipv4_routes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ClusterIpv4Route>
+
+=cut
+
+__PACKAGE__->has_many(
+  "cluster_ipv4_routes",
+  "AdministratorDB::Schema::Result::ClusterIpv4Route",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 clusterdetails
 
 Type: has_many
@@ -198,6 +213,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 ipv4_publics
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Ipv4Public>
+
+=cut
+
+__PACKAGE__->has_many(
+  "ipv4_publics",
+  "AdministratorDB::Schema::Result::Ipv4Public",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nodes
 
 Type: has_many
@@ -244,8 +274,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l7DVqVTi4jG5VRccL+5x4A
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/x77xBZ0yWrX6UUEONYKTQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

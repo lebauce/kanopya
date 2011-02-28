@@ -46,8 +46,9 @@
 <tr><td colspan="2">&nbsp;</td>
 <td class="actions" rowspan="<TMPL_VAR NAME=components_count>">
 <TMPL_UNLESS NAME=active>
+<TMPL_IF NAME=can_installcomponent>
 <a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/systemimages/form_installcomponent?systemimage_id=<TMPL_VAR NAME=systemimage_id>', 'Component Installation', 500, 200, '');">Install a component</a><br />
-<span class="desc">Install a component to this system image.</span><br /><br />
+<span class="desc">Install a component to this system image.</span><br /><br /></TMPL_IF>
 </TMPL_UNLESS>
 </td></tr>
 <TMPL_LOOP NAME=components_list>
