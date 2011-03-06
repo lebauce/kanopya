@@ -18,7 +18,6 @@
 </TMPL_IF>
 <td class="toright">
 <TMPL_IF NAME=link_activity>
-<a class="imgMonitor" href="/cgi/kanopya.cgi/clusters/view_clustergraphs?cluster_id=<TMPL_VAR NAME=motherboard_id>">activity</a>
 </TMPL_IF>
 </td></tr>
 <tr><td class="italic" colspan="3"><TMPL_VAR NAME=motherboard_desc></td></tr>
@@ -28,8 +27,8 @@
 </TMPL_LOOP>
 <div class="actions">
 <TMPL_IF NAME=can_create>
-<a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/motherboards/form_addmotherboard', 'add a new motherboard', 800, 380,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">add a new motherboard</a>
-<p class="italic">add a new motherboard.</p></TMPL_IF>&nbsp;
+<a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/motherboards/form_addmotherboard', 'add a new host', 800, 380,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">add a new host</a>
+<p class="italic">add a new host.</p></TMPL_IF>&nbsp;
 </div>
 </div>
 <TMPL_INCLUDE NAME="footer.tmpl">

@@ -4,7 +4,7 @@
 #TODO Implement serverAlias
 	ServerAdmin  "[% virtualhost.apache2_virtualhost_serveradmin %]"
 	DocumentRoot [% virtualhost.apache2_virtualhost_documentroot %]
-	CustomLog  [% virtualhost.apache2_virtualhost_log %]
+	CustomLog  [% virtualhost.apache2_virtualhost_log %] vhost_combined
 	ErrorLog  [% virtualhost.apache2_virtualhost_errorlog %]
 </VirtualHost>
 
@@ -12,9 +12,11 @@
 <VirtualHost *:[% sslports %]>
         ServerName   [% virtualhost.apache2_virtualhost_servername %]
 #TODO Implement serverAlias
+        SSLEngine On
+        SSLCertificateFile /etc/apache2/apache.pem
         ServerAdmin  "[% virtualhost.apache2_virtualhost_serveradmin %]"
         DocumentRoot [% virtualhost.apache2_virtualhost_documentroot %]
-        CustomLog  [% virtualhost.apache2_virtualhost_log %]
+        CustomLog  [% virtualhost.apache2_virtualhost_log %] vhost_combined
         ErrorLog  [% virtualhost.apache2_virtualhost_errorlog %]
 </VirtualHost>
 [% END %]

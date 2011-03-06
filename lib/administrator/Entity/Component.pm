@@ -178,10 +178,10 @@ sub getInstance {
    	my $adm = Administrator->new;
    	my $comp_instance_row = $adm->{db}->resultset("ComponentInstance")->find(
 		{ component_instance_id => $args{id} }, 
-		{ '+columns' => [ "component_id.component_name",
-						  "component_id.component_version",
-						  "component_id.component_category"], 
-		join => ["component_id"]}
+		{ '+columns' => [ "component.component_name",
+						  "component.component_version",
+						  "component.component_category"], 
+		join => ["component"]}
 	);
    	
    	$class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
@@ -207,10 +207,10 @@ sub delete {
 	my $self = shift;
 	my $data = $self->{_dbix};
 	
-	my $entity_rs = $data->related_resultset( "component_instance_entities" );
-	$log->debug("First Deletion of entity link : component_instance_entities");
+	my $entity_rs = $data->related_resultset( "entitylink" );
+	$log->debug("First Deletion of entity link : component_instance_entity");
 	# J'essaie de supprimer dans la table entity
-	my $real_entity_rs = $entity_rs->related_resultset("entity_id");
+	my $real_entity_rs = $entity_rs->related_resultset("entity");
 	$real_entity_rs->delete;
 
 	$log->debug("Finally delete the dbix itself");
@@ -253,7 +253,7 @@ B<throws>  : None
 sub getTemplateDirectory {
 	my $self = shift;
 	if( defined $self->{_dbix}->get_column('component_template_id') ) {
-		return $self->{_dbix}->component_template_id->get_column('component_template_directory');
+		return $self->{_dbix}->component_template->get_column('component_template_directory');
 	} else {
 		return;
 	}
@@ -279,13 +279,15 @@ sub getComponentAttr {
 	my %args = @_;
 	my $componentAttr = {};
 	
-	$componentAttr->{component_name} = $self->{_dbix}->component_id->get_column('component_name');
-	$componentAttr->{component_id} = $self->{_dbix}->component_id->get_column('component_id');	
-	$componentAttr->{component_version} = $self->{_dbix}->component_id->get_column('component_version');
-	$componentAttr->{component_category} = $self->{_dbix}->component_id->get_column('component_category');
+	$componentAttr->{component_name} = $self->{_dbix}->component->get_column('component_name');
+	$componentAttr->{component_id} = $self->{_dbix}->component->get_column('component_id');	
+	$componentAttr->{component_version} = $self->{_dbix}->component->get_column('component_version');
+	$componentAttr->{component_category} = $self->{_dbix}->component->get_column('component_category');
 	
 	return $componentAttr;	
 }
+
+
 
 =head2 toString
 
@@ -300,7 +302,7 @@ B<throws>  : None
 
 sub toString {
 	my $self = shift;
-	my $string = $self->{_dbix}->component_id->get_column('component_name')." ".$self->{_dbix}->component_id->get_column('component_version');
+	my $string = $self->{_dbix}->component->get_column('component_name')." ".$self->{_dbix}->component->get_column('component_version');
 	return $string;
 }
 
@@ -333,9 +335,10 @@ sub save {
 		my $newentity = $self->{_dbix}->insert;
 		$log->debug("new entity inserted.");
 		my $adm = Administrator->new();
-		my $row = $adm->{db}->resultset('Entity')->create(
-			{ "component_instance_entities" => [ { "component_instance_id" => $newentity->get_column("component_instance_id")} ] },
-		);
+		my $row = $adm->{db}->resultset('Entity')->create({});
+		my $row_entity = $adm->{db}->resultset("ComponentInstanceEntity")->create({
+			entity_id => $row->get_column('entity_id'),
+			"component_instance_id" => $newentity->get_column("component_instance_id")});
 		$log->debug("new $self inserted with his entity relation.");
 		$self->{_entity_id} = $row->get_column('entity_id');
 		

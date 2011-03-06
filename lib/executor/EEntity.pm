@@ -66,7 +66,7 @@ sub new {
 		throw Mcs::Exception::Internal(error => $errmsg);
     }
         
-   	$log->debug("Class is : $class");
+#   	$log->debug("Class is : $class");
     my $self = { _entity => $args{data}};
     bless $self, $class;
     return $self;

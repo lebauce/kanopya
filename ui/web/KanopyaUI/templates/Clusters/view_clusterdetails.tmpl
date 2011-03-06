@@ -12,23 +12,25 @@
 <tr><TMPL_IF NAME=active><td>Active</td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
 <td class="actions" rowspan="2">
 <TMPL_IF NAME=link_activate>
-<TMPL_IF NAME=systemimage_active>
-<a class="imgActivate" href="/cgi/kanopya.cgi/clusters/process_activatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">
-<TMPL_ELSE>
-<a class="imgActivate" href="javascript:alert('System image <TMPL_VAR NAME=systemimage_name> used by this cluster must be active.');">
-</TMPL_IF>
+	<TMPL_IF NAME=systemimage_active>
+	<a class="imgActivate" href="/cgi/kanopya.cgi/clusters/process_activatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">
+	<TMPL_ELSE>
+	<a class="imgActivate" href="javascript:alert('System image <TMPL_VAR NAME=systemimage_name> used by this cluster must be active.');"></TMPL_IF>
 activate</a><br />
 <span class="desc">Activate this cluster to be able to start it.</span><br /><br />
 <TMPL_ELSE>
-<TMPL_IF NAME=link_start>
-<a class="imgDeactivate" href="/cgi/kanopya.cgi/clusters/process_deactivatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">deactivate</a><br />
-<span class="desc">Deactivate this cluster.</span><br /><br />
-<a class="imgStart" href="/cgi/kanopya.cgi/clusters/process_startcluster?cluster_id=<TMPL_VAR NAME=cluster_id>">start</a><br />
-<span class="desc">Start this cluster.</span>
-<TMPL_ELSE>
-<a class="imgStop" href="/cgi/kanopya.cgi/clusters/process_stopcluster?cluster_id=<TMPL_VAR NAME=cluster_id>">stop</a><br />
-<span class="desc">Stop this cluster.</span><br /><br />
-</TMPL_IF>
+	<TMPL_IF NAME=link_deactivate>
+	<a class="imgDeactivate" href="/cgi/kanopya.cgi/clusters/process_deactivatecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">deactivate</a><br />
+	<span class="desc">Deactivate this cluster.</span><br /><br />
+	</TMPL_IF>
+	<TMPL_IF NAME=link_start>
+	<a class="imgStart" href="/cgi/kanopya.cgi/clusters/process_startcluster?cluster_id=<TMPL_VAR NAME=cluster_id>">start</a><br />
+	<span class="desc">Start this cluster.</span>
+	</TMPL_IF>
+	<TMPL_IF NAME=link_stop>
+	<a class="imgStop" href="/cgi/kanopya.cgi/clusters/process_stopcluster?cluster_id=<TMPL_VAR NAME=cluster_id>">stop</a><br />
+	<span class="desc">Stop this cluster.</span><br /><br />
+	</TMPL_IF>
 </TMPL_IF>
 </td></tr><tr>
 <TMPL_IF NAME=active>
@@ -48,8 +50,10 @@ activate</a><br />
 <table id="Xmainsettings" class="detailspart">
 <tr><td class="italic" colspan="2"><TMPL_VAR NAME=cluster_desc></td>
 <td class="actions" rowspan="10">
+<TMPL_IF NAME=link_edit>
 <a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/clusters/form_editcluster?cluster_id=<TMPL_VAR NAME=cluster_id>', 'edit cluster', 800, 400, '');">edit</a><br />
 <span class="desc">Modify these global parameters.</span><br /><br />
+</TMPL_IF>
 <TMPL_IF NAME=link_delete>
 <a class="imgRemove" href="/cgi/kanopya.cgi/clusters/process_removecluster?cluster_id=<TMPL_VAR NAME=cluster_id>">delete</a><br />
 <span class="desc">Delete this cluster.</span><br /><br /></TMPL_IF>
@@ -100,12 +104,14 @@ activate</a><br />
 <TMPL_IF NAME=components_list>
 <tr><td colspan="2">&nbsp;</td>
 <td class="actions" rowspan="<TMPL_VAR NAME=NBCOMPONENTS>">
+<TMPL_IF NAME=link_addcomponent>
 <a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/clusters/form_addcomponenttocluster?cluster_id=<TMPL_VAR NAME=cluster_id>', 'Add a component', 500, 200, '');">add a component</a><br />
 <span class="desc">Add a new component to this cluster.</span><br /><br />
+</TMPL_IF>
 </td></tr>
 <TMPL_LOOP NAME=components_list>
 <tr><td class="label2"><span class="bold"><TMPL_VAR NAME=component_name><TMPL_VAR NAME=component_version></span> - <TMPL_VAR NAME=component_category></td>
-<td class="action"><a class="imgConfigure" href="/cgi/kanopya.cgi/components/form_configurecomponent?component_instance_id=<TMPL_VAR NAME=component_instance_id>">configure</a>
+<td class="action"><TMPL_IF NAME=link_configurecomponents><a class="imgConfigure" href="/cgi/kanopya.cgi/components/form_configurecomponent?component_instance_id=<TMPL_VAR NAME=component_instance_id>">configure</a></TMPL_IF>
 <TMPL_IF NAME=link_remove><a class="imgRemove" href="/cgi/kanopya.cgi/clusters/process_removecomponent?cluster_id=<TMPL_VAR NAME=cluster_id>&component_instance_id=<TMPL_VAR NAME=component_instance_id>">remove</a></TMPL_IF>
 </td></tr>
 </TMPL_LOOP>
@@ -133,7 +139,7 @@ activate</a><br />
 <tr><td class="label2"><span class="bold"><TMPL_VAR NAME=motherboard_hostname></span></td>
 <td class="label2">ip: <TMPL_VAR NAME=motherboard_internal_ip></td>
 <td class="action"><TMPL_IF NAME=link_remove><a class="imgRemove" href="/cgi/kanopya.cgi/clusters/process_removenode?cluster_id=<TMPL_VAR NAME=cluster_id>&motherboard_id=<TMPL_VAR NAME=motherboard_id>">remove</a>
-<TMPL_ELSE></TMPL_IF></td></tr>
+</TMPL_IF></td></tr>
 </TMPL_LOOP>
 <TMPL_ELSE>
 <tr><td>This cluster has no nodes</td></tr>

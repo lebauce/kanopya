@@ -149,8 +149,8 @@ sub authenticate {
 			user_login => $args{login}, 
 			user_password => $args{password},
 		},{ 
-			'+columns' => ['user_entities.entity_id'],
-    		join => ['user_entities'] 
+			'+columns' => ['user_entity.entity_id'],
+    		join => ['user_entity'] 
 		},
 	
 	)->single;
@@ -200,8 +200,8 @@ sub buildEntityRights {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
-	my $user = $args{schema}->resultset('User')->search({ 'user_entities.entity_id' => $ENV{EID}},
-		 { join => ['user_entities'] }
+	my $user = $args{schema}->resultset('User')->search({ 'user_entity.entity_id' => $ENV{EID}},
+		 { join => ['user_entity'] }
 	)->single;
 	
 	if($user->get_column('user_system')) {
@@ -724,7 +724,7 @@ sub _getDbixFromHash {
 	}
 
 	my $dbix;
-	my $entitylink = lc($args{table})."_entities";
+	my $entitylink = lc($args{table})."_entity";
 	eval {
 		my $hash = $args{hash};
 		if (keys(%$hash)){
@@ -768,7 +768,7 @@ sub _getAllDbix {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 
-	my $entitylink = lc($args{table})."_entities";
+	my $entitylink = lc($args{table})."_entity";
 	return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
 		join => ["$entitylink"]});
 }
@@ -930,9 +930,9 @@ sub getMessages {
 sub getOperations {
 	my $self = shift;
 	my $Operations = $self->{db}->resultset('Operation')->search(undef, { 
-		order_by => { -desc => [qw/execution_rank creation_date creation_time/] },
-		'+columns' => [ 'user_id.user_login' ],
-		join => [ 'user_id' ]
+		order_by => { -asc => [qw/execution_rank/] },
+		'+columns' => [ 'user.user_login' ],
+		join => [ 'user' ]
 	});
 	
 	my $arr = [];
@@ -960,7 +960,7 @@ sub getOperations {
 			'TYPE' => $op->get_column('type'), 
 			'FROM' => $op->get_column('user_login'), 
 			'CREATION' => $op->get_column('creation_date')." ".$op->get_column('creation_time'), 
-			'PLANNED' => $execution_time, 
+			#'PLANNED' => $execution_time, 
 			'RANK' => $op->get_column('execution_rank'), 
 			'PRIORITY' => $op->get_column('priority'),
 			'PARAMETERS' => $opparams,

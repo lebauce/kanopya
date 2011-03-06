@@ -185,7 +185,7 @@ sub view_systemimagedetails : Runmode {
 	}
 	$tmpl->param('components_list' => $components_list);
 	$tmpl->param('components_count' => $nb + 1);
-	
+	if(not $methods->{'installcomponent'}->{'granted'}) { $tmpl->param('can_installcomponent' => 1); }
 	
 	return $tmpl->output();
 }
@@ -265,10 +265,69 @@ sub process_deactivatesystemimage : Runmode {
 	} 
 }
 
-# TODO form_installcomponent popup window
+# form_installcomponent popup window
 
 sub form_installcomponent : Runmode {
-	return "TODO";
+	my $self = shift;
+	my $query = $self->query();
+	my $systemimage_id = $query->param('systemimage_id');
+	my ($edistribution, $esystemimage, $systemimage_components, $distribution_components);
+	eval {
+		$esystemimage = Entity::Systemimage->get(id => $systemimage_id);
+		$systemimage_components = $esystemimage->getInstalledComponents();
+		$edistribution = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
+		$distribution_components = $edistribution->getProvidedComponents();
+	};
+	if($@) {
+    	my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');	
+		}
+		else { $exception->rethrow(); }
+	}
+	else {	
+		my $components = []; 
+		foreach my $dc  (@$distribution_components) {	
+			my $found = 0;
+			foreach my $sic (@$systemimage_components) {
+				if($sic->{component_id} eq $dc->{component_id}) { $found = 1; }
+			}
+			if(not $found) { push @$components, $dc; };
+		} 
+		my $tmpl = $self->load_tmpl('Systemimages/form_installcomponent.tmpl');
+		$tmpl->param('systemimage_id' => $systemimage_id);
+		$tmpl->param('systemimage_name' => $esystemimage->getAttr(name => 'systemimage_name'));
+		$tmpl->param('components_list' => $components);
+	
+		return $tmpl->output();
+	}
+}
+
+
+
+
+
+sub process_installcomponent : Runmode {
+	my $self = shift;
+	my $query = $self->query();
+	
+	eval {
+		my $esystemimage = Entity::Systemimage->get(id => $query->param('systemimage_id'));
+		$esystemimage->installComponent(component_id => $query->param('component_id'));
+	};
+	if($@) {
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');	
+		}
+		else { $exception->rethrow(); }
+	}
+	else {	
+		$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'new component installation added to execution queue'); 
+		return $self->close_window();
+	} 		
 }
 
 1;

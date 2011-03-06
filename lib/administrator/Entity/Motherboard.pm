@@ -160,7 +160,7 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
    	} 
-   	my $entity_id = $motherboard->motherboard_entities->first->get_column('entity_id');
+   	my $entity_id = $motherboard->entitylink->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard with id $args{id}");
@@ -180,13 +180,13 @@ sub setNodeState {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	$self->{_dbix}->nodelink->update({'node_state' => $args{state}});
+	$self->{_dbix}->node->update({'node_state' => $args{state}});
 }
 
 sub getNodeState {
     my $self = shift;
 
-	return $self->{_dbix}->nodelink->get_column('node_state');
+	return $self->{_dbix}->node->get_column('node_state');
 }
 
 =head2 Entity::Motherboard->becomeNode (%args)
@@ -219,16 +219,26 @@ sub becomeNode{
 	return $res->get_column("node_id");
 }
 
-=head2 Entity::Motherboard->becomeNode (%args)
+sub becomeMasterNode{
+    my $self = shift;
+
+	my $row = $self->{_dbix}->node;
+	if(not defined $row) {
+		$errmsg = "Entity::Motherboard->becomeMasterNode :Motherboard ".$self->getAttr(name=>"motherboard_mac_address")." is not a node!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
+	}
+	$row->update({master_node => 1});
+}
+
+=head2 Entity::Motherboard->stopToBeNode (%args)
 	
 	Class : Public
 	
-	Desc : Create a new node instance in db from motherboard linked to cluster (in params).
+	Desc : Remove a node instance for a dedicated motherboard.
 	
 	args: 
 		cluster_id : Int : Cluster identifier
-		master_node : Int : 0 or 1 to say if the motherboard is the master node
-	return: Node identifier
 	
 =cut
 
@@ -241,39 +251,9 @@ sub stopToBeNode{
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	my $row = $self->{_dbix}->nodelink;
+	my $row = $self->{_dbix}->node;
 	if(not defined $row) {
 		$errmsg = "Entity::Motherboard->stopToBeNode : node representing motherboard ".$self->getAttr(name=>"motherboard_mac_address")." and cluster $args{cluster_id} not found!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::DB(error => $errmsg);
-	}
-	$row->delete;
-}
-
-=head2 Entity::Motherboard->notNode (%args)
-	
-	Class : Public
-	
-	Desc : Remove a node instance for a dedicated motherboard.
-	
-	args: 
-		cluster_id : Int : Cluster identifier
-	
-=cut
-
-sub notNode{
-	my $self = shift;
-	my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})){
-		$errmsg = "Entity::Motherboard->notNode need a cluster_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	$args{'motherboard_id'} = $self->getAttr(name =>"motherboard_id");
-	my $row = $self->{_node_rs}->search(\%args)->first;
-	if(not defined $row) {
-		$errmsg = "Entity::Motherboard->notNode : node representing motherboard $args{'motherboard_id'} and cluster $args{cluster_id} not found!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::DB(error => $errmsg);
 	}
@@ -315,7 +295,7 @@ sub getFreeMotherboards {
 	my @motherboards = $class->getMotherboards(hash => {active => 1, motherboard_state => 'down'});
 	my @free;
 	foreach my $m (@motherboards) {
-		if(not $m->{_dbix}->nodelink) {
+		if(not $m->{_dbix}->node) {
 			push @free, $m;
 		}
 	}
@@ -553,12 +533,12 @@ sub getEtcDev {
 		throw Kanopya::Exception(error => $errmsg);
 	}
 	$log->info("retrieve etc attributes");
-	my $etcrow = $self->{_dbix}->etc_device_id;
+	my $etcrow = $self->{_dbix}->etc_device;
 	my $devices = {
 		etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
 				 vg_id => $etcrow->get_column('lvm2_vg_id'),
 				 lvname => $etcrow->get_column('lvm2_lv_name'),
-				 vgname => $etcrow->lvm2_vg_id->get_column('lvm2_vg_name'),
+				 vgname => $etcrow->lvm2_vg->get_column('lvm2_vg_name'),
 				 size => $etcrow->get_column('lvm2_lv_size'),
 				 freespace => $etcrow->get_column('lvm2_lv_freespace'),	
 				 filesystem => $etcrow->get_column('lvm2_lv_filesystem')
@@ -604,16 +584,26 @@ sub generateHostname {
 
 sub getClusterId {
 	my $self = shift;
-	return $self->{_dbix}->nodes->first()->cluster_id->get_column('cluster_id');
+	return $self->{_dbix}->node->cluster->get_column('cluster_id');
 }
 
 sub getPowerSupplyCardId {
 	my $self = shift;
-	my $row = $self->{_dbix}->motherboard_powersupply_id;
+	my $row = $self->{_dbix}->motherboard_powersupply;
 	if (defined $row) {
 		return $row->get_column('powersupplycard_id');}
 	else {
 		return;
 	}
 }
+
+sub getModel {
+	my $self = shift;
+	my $model_row = $self->{_dbix}->motherboardmodel;
+	if ( defined $model_row ) {
+		return $model_row->get_columns();
+	}
+	return;
+}
+
 1;

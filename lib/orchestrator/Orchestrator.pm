@@ -196,7 +196,7 @@ sub getValue {
 
 	my $value = $cluster_data_aggreg->{ $args{ds} };
 	if (not defined $value) {
-		$log->warn("No value for ds '$args{ds}' in cluster '$args{cluster}' (for last $args{time_laps}sec).  considered as undef.");
+		$log->warn("No value of '$args{set}:$args{ds}' for cluster '$args{cluster}' (for last $args{time_laps}sec, maybe time step is too small).  considered as undef.");
 		return;
 	}
 	
@@ -453,6 +453,23 @@ sub _isNodeInState {
     return 0;
 }
 
+sub _isNodeMigrating {
+	my $self = shift;
+    my %args = @_;
+    
+    my $cluster_name = $args{cluster_name};
+    
+    my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
+    my $motherboards = $cluster->getMotherboards();
+    for my $mb (values %$motherboards) {
+    	if (not $mb->getNodeState() eq "in") {
+    		return 1;
+    	}
+    }	
+    
+    return 0;
+}
+
 =head2 _isOpInQueue
 	
 	Class : Private
@@ -514,20 +531,26 @@ sub _canAddNode {
 	my $self = shift;
     my %args = @_;
     
-    my $cluster = $args{cluster};
+    my $cluster_name = $args{cluster};
     
-    # Check if there is already a node starting in the cluster #
-    if ( 	$self->_isNodeInState( cluster => $cluster, state => 'starting' ) ||
-    		$self->_isNodeInState( cluster => $cluster, state => 'locked' ) ) {
-		$log->info(" => A node is already starting or locked in cluster '$cluster'");
-    	return 0;
-    }
+    # Check if no node of the cluster is migrating  
+    if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
+    	$log->info(" => A node in this cluster is currently migrating");
+		return 0;
+    } 
     
-    # Check if there is a corresponding add node operation in operation queue #
-    if ( $self->_isOpInQueue( cluster => $cluster, type => 'AddMotherboardInCluster' ) ) {
-    	$log->info(" => An operation to add node in cluster '$cluster' is already in queue");
-    	return 0;
-    }
+#    # Check if there is already a node starting in the cluster #
+#    if ( 	$self->_isNodeInState( cluster => $cluster_name, state => 'starting' ) ||
+#    		$self->_isNodeInState( cluster => $cluster_name, state => 'locked' ) ) {
+#		$log->info(" => A node is already starting or locked in cluster '$cluster_name'");
+#    	return 0;
+#    }
+#    
+#    # Check if there is a corresponding add node operation in operation queue #
+#    if ( $self->_isOpInQueue( cluster => $cluster_name, type => 'AddMotherboardInCluster' ) ) {
+#    	$log->info(" => An operation to add node in cluster '$cluster_name' is already in queue");
+#    	return 0;
+#    }
     
     return 1;
 }
@@ -573,15 +596,21 @@ sub _canRemoveNode {
 	my $self = shift;
     my %args = @_;
     
-    my $cluster = $args{cluster};
+    my $cluster_name = $args{cluster};
     
-    # Check if there is a corresponding remove node operation in operation queue #
-    if ( 	$self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
-    		$self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
-    {
-    	$log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
-    	return 0;
+    # Check if no node of the cluster is migrating  
+    if ( $self->_isNodeMigrating( cluster_name => $cluster_name ) ) {
+    	$log->info(" => A node in this cluster is currently migrating");
+		return 0;
     }
+    
+#    # Check if there is a corresponding remove node operation in operation queue #
+#    if ( 	$self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
+#    		$self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
+#    {
+#    	$log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
+#    	return 0;
+#    }
     
     return 1;
 }
@@ -626,7 +655,8 @@ sub addNode {
     
     $log->info("====> add node in $args{cluster_name}");
     
-	my @free_motherboards = Entity::Motherboard->getMotherboards( hash => { active => 1, motherboard_state => 'down'} );
+	#my @free_motherboards = Entity::Motherboard->getMotherboards( hash => { active => 1, motherboard_state => 'down'} );
+	my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
 	
 	die "No free motherboard to add in cluster '$args{cluster_name}'" if ( scalar @free_motherboards == 0 );
 	

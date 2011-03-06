@@ -16,4 +16,36 @@ function refresh_status() {
 	setTimeout('refresh_status()', 5000);
 }
 
-refresh_status();
+function change_timeline( period ) {
+	var graph_name = "graph_consumption_" + period + ".png";
+	document.getElementById( "conso_graph" ).src = "/graph/monitor/graph/" + graph_name;
+}
+
+
+$(document).ready(function(){
+
+	var get_log_link = "/cgi/kanopya.cgi/systemstatus/get_log";
+
+ 	//setInterval( function() { show_log($('.selected_link'));  } , 5000);
+ 	 	
+	$("#default_timeline").click();
+
+ 	 
+ 	 function show_log (log_link) {
+ 		$.get(get_log_link, { log_id : log_link.attr('id') }, function(resp) {
+			//loading_stop();
+			$("#log_container").html(resp);
+		}); 
+ 	 }
+	
+	$("#conso_graph").error( function () { $("#img_div").hide(); $("#load_error_div").show(); } );
+	$("#conso_graph").load( function () { $("#img_div").show(); $("#load_error_div").hide(); } );
+	
+
+	$(".log_link").click( function () {
+		$('.selected_link').removeClass('selected_link');
+		$(this).addClass('selected_link');
+		show_log($(this));
+	} ).addClass('clickable');
+
+});

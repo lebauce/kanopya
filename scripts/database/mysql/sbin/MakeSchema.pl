@@ -26,8 +26,6 @@ use lib '/opt/kanopya/lib/administrator';
       'AdministratorDB::Schema',
       { debug => 1,
         dump_directory => '/opt/kanopya/lib/administrator',
-        components => '+AdministratorDB::EntityBase',
-        #additional_base_classes => '+AdministratorDB::EntityBase',
       },
       [ 'dbi:mysql:administrator:localhost:3306', 'root', 'Hedera@123'],
   );

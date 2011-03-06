@@ -3,7 +3,7 @@
 use FindBin qw($Bin);
 use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 use Log::Log4perl qw(:easy);
-Log::Log4perl->init('/opt/kanopya/conf/log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/executor-log.conf');
 
 use Test::More tests => 28;
 use Test::Exception;

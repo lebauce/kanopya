@@ -121,6 +121,15 @@ sub methods {
 		'setperm'	=> {'description' => 'set permissions on this cluster', 
 						'perm_holder' => 'entity',
 		},
+		'addComponent'	=> {'description' => 'add a component to this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'removeComponent'	=> {'description' => 'remove a component from this cluster', 
+						'perm_holder' => 'entity',
+		},
+		'configureComponents'	=> {'description' => 'configure components of this cluster', 
+						'perm_holder' => 'entity',
+		},
 	};
 }
 
@@ -146,7 +155,7 @@ sub get {
 		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
    	}   	
    	
-   	my $entity_id = $dbix_cluster->cluster_entities->first->get_column('entity_id');
+   	my $entity_id = $dbix_cluster->entitylink->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
@@ -405,10 +414,10 @@ sub getComponents {
 	}
 #	my $adm = Administrator->new();
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
-											{ '+columns' => [ "component_id.component_name",
-															  "component_id.component_category",
-															  "component_id.component_version"],
-													join => ["component_id"]});
+											{ '+columns' => [ "component.component_name",
+															  "component.component_category",
+															  "component.component_version"],
+													join => ["component"]});
 
 	my %comps;
 	$log->debug("Category is $args{category}");
@@ -456,12 +465,12 @@ sub getComponent{
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	my $hash = {'component_id.component_name' => $args{name}, 'component_id.component_version' => $args{version}};
+	my $hash = {'component.component_name' => $args{name}, 'component.component_version' => $args{version}};
 	my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
-											{ '+columns' => [ "component_id.component_name",
-															  "component_id.component_version",
-															  "component_id.component_category"],
-													join => ["component_id"]});
+											{ '+columns' => [ "component.component_name",
+															  "component.component_version",
+															  "component.component_category"],
+													join => ["component"]});
 
 	$log->debug("name is $args{name}, version is $args{version}");
 	my $comp_instance_row = $comp_instance_rs->next;
@@ -497,7 +506,7 @@ sub getMasterNodeIp {
 	my $self = shift;
 	my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
 	if(defined $node_instance_rs) {
-		my $node_ip = $node_instance_rs->motherboard_id->get_column('motherboard_internal_ip');
+		my $node_ip = $node_instance_rs->motherboard->get_column('motherboard_internal_ip');
 		$log->debug("Master node found and its ip is $node_ip");
 		return $node_ip;
 	} else {
@@ -510,7 +519,7 @@ sub getMasterNodeId {
 	my $self = shift;
 	my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
 	if(defined $node_instance_rs) {
-		my $id = $node_instance_rs->motherboard_id->get_column('motherboard_id');
+		my $id = $node_instance_rs->motherboard->get_column('motherboard_id');
 		return $id;
 	} else {
 		return;
@@ -575,7 +584,7 @@ sub getMotherboards {
 	my $motherboard_rs = $self->{_dbix}->nodes;
 	my %motherboards;
 	while ( my $node_row = $motherboard_rs->next ) {
-		my $motherboard_row = $node_row->motherboard_id;
+		my $motherboard_row = $node_row->motherboard;
 		$log->debug("Nodes found");
 		my $motherboard_id = $motherboard_row->get_column('motherboard_id');
 		eval { $motherboards{$motherboard_id} = Entity::Motherboard->get (
@@ -594,7 +603,12 @@ sub getMotherboards {
 
 sub getCurrentNodesCount {
 	my $self = shift;
-	return $self->{_dbix}->nodes->count;
+	my $nodes = $self->{_dbix}->nodes;
+	if ($nodes) {
+	return $nodes->count;}
+	else {
+	    return 0;
+	}
 }
 
 

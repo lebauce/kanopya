@@ -37,13 +37,13 @@ sub addNode {
 				
 		$log->debug("adding virtualserver  definition in database");
 		my $vsid1 = $keepalived->addVirtualserver(
-			virtualserver_ip => '192.168.100.254/24',
+			virtualserver_ip => '10.10.10.100/24',
 			virtualserver_port => 80,
 			virtualserver_lbkind => 'NAT',
 			virtualserver_lbalgo => 'wlc');
 			
 		my $vsid2 = $keepalived->addVirtualserver(
-			virtualserver_ip => '192.168.100.254/24',
+			virtualserver_ip => '10.10.10.100/24',
 			virtualserver_port => 443,
 			virtualserver_lbkind => 'NAT',
 			virtualserver_lbalgo => 'wlc');

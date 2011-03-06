@@ -225,15 +225,11 @@ div#footer {
 /*.imgSnmp { background: url("/images/icons/snmp.png") no-repeat center;}*/
 
 .iconAction {
-	padding-left: 32px; 
+	padding-left: 25px; 
 	background-repeat: no-repeat;
 }
 
 .iconAction:hover {
-	cursor: pointer;
-}
-
-.linkAction:hover {
 	cursor: pointer;
 	color:  #115911;
 }

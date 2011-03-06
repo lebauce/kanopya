@@ -1,4 +1,7 @@
 package KanopyaUI::Systemstatus;
+
+use Entity::Cluster;
+
 use base 'KanopyaUI::CGI';
 
 # Define admin components and services we want display status. They are organized as we want in ui.
@@ -8,15 +11,13 @@ sub adminComponentsDef {
     				{ id => 'Boot', label => 'Boot server', comps => [	{ label => 'ntpd', name => 'ntpd'},
     																	{ label => 'dhcpd3', name => 'dhcpd3'},
     																	{ label => 'atftpd', name => 'atftpd'}] },
-    				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'},
-    																	{ label => 'nfsd', name => 'nfsd'}] }
+    			],[
+    				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'}] },
+    				{ id => 'Execute', label => 'Executor', comps => [{ label => 'executor', name => 'kanopya-executor'}] },
     			],[
     				{ id => 'Monitor', label => 'Monitor', comps => [{ label => 'collector', name => 'kanopya-collector'}, { label => 'grapher', name => 'kanopya-grapher'}] },
-    				{ id => 'Planner', label => 'Planner', comps => [] },
     				{ id => 'Orchestrator', label => 'Orchestrator', comps => [{ label => 'orchestrator', name => 'kanopya-orchestrator'}] },
-    			],[
-    				{ id => 'Execute', label => 'Executor', comps => [{ label => 'executor', name => 'kanopya-executor'}] },
-				]
+    			]
   			];
 }
 
@@ -90,4 +91,53 @@ sub view_status : StartRunmode {
 sub permission_denied : runmode {
 	return "you dont have permission to access to this page";
 }
+
+
+sub view_logs : Runmode {
+	my $self = shift;
+	
+	my $admin_cluster = Entity::Cluster->get(id => 1);
+	my $logger_comp = $admin_cluster->getComponent( category => 'Logger', name => 'Syslogng', version => 3 );
+	my @log_dirs = $logger_comp->getLogDirectories();
+	
+	my @dirs_info = ();
+	for $path (@log_dirs) {
+		my $dir_error;
+		my @files_info = ();
+		my $ls_output = `ls $path` or $dir_error = 1;
+		if (not defined $dir_error) {
+			# Select only files
+			my @files = grep { -f "$path$_" } split(" ", $ls_output);
+			# Built tmpl struct
+			@files_info = map { { path=>$path, filename=>$_} } @files;
+		}
+		
+		push @dirs_info, { path => $path, dir_locked => $dir_error, files => \@files_info };
+	}
+	
+	my $tmpl =  $self->load_tmpl('Systemstatus/view_logs.tmpl');
+    $tmpl->param('TITLEPAGE' => "System Logs");
+	$tmpl->param('MDASHBOARD' => 1);
+	$tmpl->param('SUBMLOGS' => 1);
+	$tmpl->param('username' => $self->session->param('username')); 
+    $tmpl->param('dirs' => \@dirs_info);
+ 
+    return $tmpl->output(); 
+}
+
+sub get_log : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $query = $self->query();
+	
+	my $log_id = $query->param('log_id');
+
+	my $log_str = `tail -50 $log_id`;
+	
+	$log_str = CGI::escapeHTML($log_str);
+	#$log_str =~ s/\n/<br\/>/g;
+	
+	return $log_str;
+}
+
 1;

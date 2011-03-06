@@ -1,0 +1,26 @@
+<html>
+<head>
+	<title>install a component</title>
+</head>
+<body>
+<style type="text/css">@import url(/css/form.css);</style>
+<div class="title"><TMPL_VAR NAME=systemimage_name> : install component</div>
+<form method="POST" action="/cgi/kanopya.cgi/systemimages/process_installcomponent">
+<table class="form">
+	<tr>
+		<td class="label">available components :</td>
+		<td>
+		<select name="component_id"><TMPL_LOOP NAME=components_list>
+			<option value="<TMPL_VAR NAME=component_id>"><TMPL_VAR NAME=component_name> <TMPL_VAR NAME=component_version> - <TMPL_VAR NAME=component_category></option>
+		</TMPL_LOOP>
+		</select>
+		</td>
+	</tr>
+</table>
+<input type="hidden" name="systemimage_id" value="<TMPL_VAR NAME=systemimage_id>" />
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form>
+</div>

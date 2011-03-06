@@ -196,15 +196,24 @@ sub view_clusterdetails : Runmode {
 	
 	my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
 	if($systemimage_id) {
-		my $esystemimage = Entity::Systemimage->get(id => $systemimage_id);
-		$tmpl->param('systemimage_name' =>  $esystemimage->getAttr(name => 'systemimage_name'));
-		$tmpl->param('systemimage_active' => $esystemimage->getAttr('name' => 'active'));		 
+		my $esystemimage = eval { Entity::Systemimage->get(id => $systemimage_id) };
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$tmpl->param('systemimage_name' => '-');
+			$tmpl->param('systemimage_active' => '-');
+		} else {
+			$tmpl->param('systemimage_name' =>  $esystemimage->getAttr(name => 'systemimage_name'));
+			$tmpl->param('systemimage_active' => $esystemimage->getAttr('name' => 'active'));
+		}		 
 	}
 	
 	my $kernel_id = $ecluster->getAttr(name =>'kernel_id');
 	if($kernel_id) {
-		my $ekernel = Entity::Kernel->get(id => $kernel_id);
-		$tmpl->param('kernel' => $ekernel->getAttr(name => 'kernel_version'));
+		my $ekernel = eval { Entity::Kernel->get(id => $kernel_id) };
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$tmpl->param('kernel' =>'-');
+		} else {
+			$tmpl->param('kernel' => $ekernel->getAttr(name => 'kernel_version'));
+		}
 	} else {
 		$tmpl->param('kernel' => 'no specific kernel');
 	}
@@ -230,6 +239,7 @@ sub view_clusterdetails : Runmode {
 			}
 		} else {
 			$tmpl->param('link_start' => 1);	
+			$tmpl->param('link_deactivate' => 1);
 		}
 		
 	} else { 
@@ -250,7 +260,13 @@ sub view_clusterdetails : Runmode {
 		$comphash->{component_version} = $compAtt->{component_version};
 		$comphash->{component_category} = $compAtt->{component_category};
 		$comphash->{cluster_id} = $cluster_id;
-		$comphash->{link_remove} = not $active;
+		if(not $methods->{'configureComponents'}->{'granted'} ) { 
+				$comphash->{'link_configureComponents'} = 0; 
+		} else { $comphash->{'link_configureComponents'} = 1;}
+		if(not $methods->{'removeComponent'}->{'granted'} ) {
+				$comphash->{link_remove} = 0;
+		} else { $comphash->{link_remove} = not $active;}
+		
 				
 		push (@$comps, $comphash);
 	}
@@ -260,6 +276,7 @@ sub view_clusterdetails : Runmode {
 	# nodes list
 	if($nbnodesup) {
 		my $id = $ecluster->getMasterNodeId();
+		if($id) {
 		my $masternode = $motherboards->{ $id };
 		my $tmp = {
 			motherboard_id => $masternode->getAttr(name => 'motherboard_id'),
@@ -269,19 +286,34 @@ sub view_clusterdetails : Runmode {
 		};
 		delete $motherboards->{ $id };
 		push @$nodes, $tmp;
-		
+		}
 		while( my ($id, $n) = each %$motherboards) {
-			$tmp = {};
+			my $tmp = {};
 			$tmp->{motherboard_id} = $id;
 			$tmp->{cluster_id} = $cluster_id;
 			$tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname'); 	
 			$tmp->{motherboard_internal_ip} = $n->getAttr(name => 'motherboard_internal_ip');
-			$tmp->{link_remove} = 1;
+			
+			if(not $methods->{'removeNode'}->{'granted'} ) {
+				$tmp->{link_remove} = 0;
+			} else { $tmp->{link_remove} = 1;}
 			push @$nodes, $tmp;
 		}
 	}
 	
+	if($tmpl->param('link_start')) {
+		$tmpl->param('link_stop' => 0); 
+	} else { $tmpl->param('link_stop' => 1); }
+	
 	$tmpl->param('nodes_list' => $nodes);
+	if(not $methods->{'update'}->{'granted'} ) { $tmpl->param('link_edit' => 0); }
+	if(not $methods->{'remove'}->{'granted'} ) { $tmpl->param('link_delete' => 0); }
+	if(not $methods->{'activate'}->{'granted'} ) { $tmpl->param('link_activate' => 0); }
+	if(not $methods->{'start'}->{'granted'} ) { $tmpl->param('link_start' => 0); }
+	if(not $methods->{'stop'}->{'granted'} ) { $tmpl->param('link_stop' => 0); }
+	if(not $methods->{'addComponent'}->{'granted'} ) { $tmpl->param('link_addcomponent' => 0); }
+	else {$tmpl->param('link_addcomponent' => 1); }
+	
 	return $tmpl->output();
 }
 

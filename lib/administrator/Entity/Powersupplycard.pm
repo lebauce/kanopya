@@ -99,7 +99,7 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
    	} 
-   	my $entity_id = $powersupplycard->powersupplycard_entities->first->get_column('entity_id');
+   	my $entity_id = $powersupplycard->entitylink->get_column('entity_id');
    	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get power supply card with id $args{id}");
@@ -333,7 +333,7 @@ sub getMotherboardPort{
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	return $self->{_dbix}->powersupplies()->find($args{motherboard_powersupply_id})->get_column('powersupplyport_number');
+	return $self->{_dbix}->powersupplies->find($args{motherboard_powersupply_id})->get_column('powersupplyport_number');
 }
 
 sub addPowerSupplyPort {
@@ -345,7 +345,7 @@ sub addPowerSupplyPort {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	my $powersupply_schema = $self->{_dbix}->powersupplies();
+	my $powersupply_schema = $self->{_dbix}->powersupplies;
 	my $powersupply = $powersupply_schema->create({
 								powersupplycard_id => $self->getAttr(name=>"powersupplycard_id"),
 								powersupplyport_number => $args{powersupplyport_number}});
@@ -376,7 +376,7 @@ sub delPowerSupply {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
-	my $powersupply = $self->{_dbix}->powersupplies()->find($args{powersupply_id})->delete();
+	my $powersupply = $self->{_dbix}->powersupplies->find($args{powersupply_id})->delete();
 }
 
 sub getPowerSupply {

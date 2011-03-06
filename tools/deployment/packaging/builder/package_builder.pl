@@ -23,11 +23,11 @@ my $temp_kanopya_dir = "/tmp/kanopya";
 my $orig_kanopya_dir = "/opt/kanopya";
 #debian directory path#
 my $kanopya_debian = $orig_kanopya_dir."/tools/deployment/packaging/$package/debian/";
-print $kanopya_debian."\n";
+#print $kanopya_debian."\n";
 unless ( -d $temp_kanopya_dir ){mkdir $temp_kanopya_dir}   
 #package's directory#
 my $this_package = $temp_kanopya_dir."/".$package."-".$ARGV[1];
-print $this_package."\n";
+#print $this_package."\n";
 mkdir $this_package;
 
 #parse configuration file#
@@ -68,5 +68,5 @@ system ("debuild -us -uc");
 my $build_logs = $this_package."-logs";
 mkdir $build_logs;
 chdir $temp_kanopya_dir;
-system ('mv *.dsc *.build *.gz *.changes '.$build_logs);
+system ('mv *.dsc *.build *.changes '.$ARGV[0].'_'.$ARGV[1].'.tar.gz '.$build_logs);
 system ("tar czf $build_logs.tar.gz $build_logs"); 

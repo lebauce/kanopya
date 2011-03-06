@@ -282,7 +282,7 @@ sub _graphHash {
 	my $graph_row = $args{row};
 	
 	return 	{ 
-				set_label => $graph_row->indicatorset_id->get_column('indicatorset_name'),
+				set_label => $graph_row->indicatorset->get_column('indicatorset_name'),
 				graph_type => $graph_row->get_column('graph_type'),
 				ds_label => $graph_row->get_column('graph_indicators'),
 				percent => ($graph_row->get_column('graph_percent') == 1) ? 'yes' : 'no',

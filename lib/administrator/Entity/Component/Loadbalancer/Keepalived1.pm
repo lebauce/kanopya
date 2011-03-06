@@ -132,7 +132,7 @@ sub new {
 sub getVirtualservers {
 	my $self = shift;
 		
-	my $virtualserver_rs = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->search();
+	my $virtualserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers->search();
 	my $result = [];
 	while(my $vs = $virtualserver_rs->next) {
 		my $hashvs = {};
@@ -166,7 +166,7 @@ sub getRealserverId {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $virtualserver = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id});
+	my $virtualserver = $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id});
 	$log->debug("Virtualserver found with id <$args{virtualserver_id}>");
 	my $realserver = $virtualserver->keepalived1_realservers->search({ realserver_ip => $args{realserver_ip} })->single;
 	$log->debug("Realserver found with ip <$args{realserver_ip}>");
@@ -195,7 +195,7 @@ sub addVirtualserver {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $virtualserver_rs = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers;
+	my $virtualserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers;
 	my $row = $virtualserver_rs->create(\%args);
 	$log->info("New virtualserver added with ip $args{virtualserver_ip} and port $args{virtualserver_port}");
 	return $row->get_column("virtualserver_id");
@@ -227,7 +227,7 @@ sub addRealserver {
 	}
 	
 	$log->debug("New real server try to be added on virtualserver_id <$args{virtualserver_id}>");
-	my $realserver_rs = $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
+	my $realserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
 
 	my $row = $realserver_rs->create(\%args);
 	$log->info("New real server <$args{realserver_ip}> <$args{realserver_port}> added");
@@ -252,7 +252,7 @@ sub removeVirtualserver {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$log->debug("Trying to delete virtualserver with id <$args{virtualserver_id}>");
-	return $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
+	return $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
 }
 
 =head2 removeRealserver
@@ -274,7 +274,7 @@ sub removeRealserver {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$log->debug("Trying to delete realserver with id <$args{realserver_id}>");
-	return $self->{_dbix}->keepalived1s->first()->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
+	return $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
 }
 
 =head2 getConf
@@ -307,7 +307,7 @@ sub setConf {
 sub getTemplateDataIpvsadm {
 	my $self = shift;
 	my $data = {};
-	my $keepalived = $self->{_dbix}->keepalived1s->first();
+	my $keepalived = $self->{_dbix}->keepalived1;
 	$data->{daemon_method} = $keepalived->get_column('daemon_method');
 	$data->{iface} = $keepalived->get_column('iface');
 	return $data;	  
@@ -317,7 +317,7 @@ sub getTemplateDataIpvsadm {
 sub getTemplateDataKeepalived {
 	my $self = shift;
 	my $data = {};
-	my $keepalived = $self->{_dbix}->keepalived1s->first();
+	my $keepalived = $self->{_dbix}->keepalived1;
 	$data->{notification_email} = $keepalived->get_column('notification_email');
 	$data->{notification_email_from} = $keepalived->get_column('notification_email_from');
 	$data->{smtp_server} = $keepalived->get_column('smtp_server');

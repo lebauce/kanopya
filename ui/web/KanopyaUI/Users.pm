@@ -7,7 +7,7 @@ use Data::FormValidator::Constraints qw( email FV_eq_with );
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Entity::User;
-use Entity::Groups;
+use Entity::Gp;
 
 my $log = get_logger('webui');
 
@@ -149,16 +149,16 @@ sub view_userdetails : Runmode {
 		# password is not retrieved because displayed like ********
 		
 		my $groups = [];
-		my @egroups = Entity::Groups->getGroupsFromEntity(entity => $euser);
+		my @egroups = Entity::Gp->getGroupsFromEntity(entity => $euser);
 		foreach my $eg (@egroups) {
 			my $tmp = {};
-			$tmp->{groups_id} = $eg->getAttr(name => 'groups_id');
-			$tmp->{groups_name} = $eg->getAttr(name => 'groups_name');
-			$tmp->{groups_desc} = $eg->getAttr(name => 'groups_desc');
-			$tmp->{groups_system} = $eg->getAttr(name => 'groups_system');
+			$tmp->{gp_id} = $eg->getAttr(name => 'gp_id');
+			$tmp->{gp_name} = $eg->getAttr(name => 'gp_name');
+			$tmp->{gp_desc} = $eg->getAttr(name => 'gp_desc');
+			$tmp->{gp_system} = $eg->getAttr(name => 'gp_system');
 			push(@$groups, $tmp);
 		} 
-		$tmpl->param('groups_list' => $groups);
+		$tmpl->param('gp_list' => $groups);
 		
 		my $methods = $euser->getPerms();
 		$log->debug(Dumper $methods);

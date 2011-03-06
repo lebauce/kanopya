@@ -118,6 +118,7 @@ sub run {
    		my $opdata = Operation::getNextOp();
    		if ($opdata){
 	   		# start transaction
+	   		$opdata->setProcessing();
 	   		my $op = EFactory::newEOperation(op => $opdata);
    			$log->info("New operation (".ref($op).") retrieve ; execution processing");
    			$adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");

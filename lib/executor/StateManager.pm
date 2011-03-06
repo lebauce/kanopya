@@ -129,19 +129,20 @@ sub checkNodeUp {
 
     my $node_ip = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
    	foreach my $i (keys %$components) {
-   	    print "Browse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
+   	    print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
 		if ($components->{$i}->can("getNetConf")) {
 		    #TODO Call a method on component which test if component is ready to receive a new node.
 		    my $protoToTest = $components->{$i}->getNetConf();
-		    print "Component with a netConf, its proto is %$protoToTest \n";
             foreach my $j (keys %$protoToTest) {
-                print "Test port <$j> of motherboard <$node_ip> with protocol <" . $protoToTest->{$j} ."> for component " . $components->{$i}->getComponentAttr()->{component_name} ."\n";
+                print "\tTest port <$j> of motherboard <$node_ip> with protocol <" . $protoToTest->{$j} ."> for component " . $components->{$i}->getComponentAttr()->{component_name};
                 my $sock = new
                         IO::Socket::INET(PeerAddr=>$node_ip,PeerPort=>$j,Proto=>$protoToTest->{$j});
                 if(! $sock) {
+                    print ", service is not available\n";
                     $node_available = 0;
                     last; 
                 }
+                print ", service is available\n";
                 close $sock or die "close: $!";
             }
 	   }
@@ -180,26 +181,38 @@ sub run {
         # First Check Motherboard Status
         my @motherboards = Entity::Motherboard->getMotherboards(hash => {motherboard_state => {'!=','down'}});
 #   	    my @moth_index = keys %$motherboards;
-   	    foreach my $mb (@motherboards) {
- 	      my $emotherboard = EFactory::newEEntity(data => $mb);
-	      my $is_up = $emotherboard->checkUp();
-	     # $emotherboard->updateStatus(is_up => $is_up);
-		  updateMotherboardStatus(pingable => $is_up, motherboard=>$mb);
+		foreach my $mb (@motherboards) {
+			eval {
+		  		my $emotherboard = EFactory::newEEntity(data => $mb);
+	      		my $is_up = $emotherboard->checkUp();
+		  		updateMotherboardStatus(pingable => $is_up, motherboard=>$mb);
+		  	};
+		  	if($@) {
+		  		my $exception = $@;
+		  		if(Kanopya::Exception::OperationAlreadyEnqueued->caught()) { next; }
+		  		else { $exception->rethrow(); }
+		  	}
    	    }
 
         # Second Check node status
    	    my @clusters = Entity::Cluster->getClusters(hash=>{cluster_state => {'!=' => 'down'}});
-   	    print "First cluster get is <" . $clusters[0]->getAttr(name=>'cluster_name'). ">\n";
    	    foreach my $cluster (@clusters) {
-   	    print "cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n";
+   	        print "cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n";
    	        my $motherboards = $cluster->getMotherboards();
    	        my @moth_index = keys %$motherboards;
    	        foreach my $mb (@moth_index) {
 #				my $pingable = checkMotherboardUp(ip => $motherboards->{$mb}->getAttr( name => 'motherboard_internal_ip' ));
 #				print "Pingable : $pingable for motherboard ".$motherboards->{$mb}->getAttr( name => 'motherboard_internal_ip' ) ." state " . $motherboards->{$mb}->getAttr(name=>"motherboard_state")."\n";
 #		        updateMotherboardStatus(pingable => $pingable, motherboard=>$motherboards->{$mb});
-		        my $srv_available = checkNodeUp(motherboard=>$motherboards->{$mb}, cluster=>$cluster);
-		        updateNodeStatus(motherboard=>$motherboards->{$mb}, services_available => $srv_available, cluster => $cluster);
+		        eval {
+		        	my $srv_available = checkNodeUp(motherboard=>$motherboards->{$mb}, cluster=>$cluster);
+		        	updateNodeStatus(motherboard=>$motherboards->{$mb}, services_available => $srv_available, cluster => $cluster);
+		        };
+		        if($@) {
+		        	my $exception = $@;
+		        	if(Kanopya::Exception::OperationAlreadyEnqueued->caught()) { next; }
+		        	else { $exception->rethrow(); }
+		        }
    	        }
    	    }
 #   	    my @motherboards = Entity::Motherboard->getMotherboards(hash => {-or => [motherboard_state => {'like','starting%'},
@@ -265,6 +278,7 @@ sub motherboardStarted{
     my %params;
     $params{cluster_id} = $args{motherboard}->getClusterId();
     $params{motherboard_id} = $args{motherboard}->getAttr(name=>"motherboard_id");
+    
     Operation->enqueue(priority => 200,
                    type     => 'PostStartNode',
                    params   => \%params);
@@ -299,12 +313,10 @@ sub nodeOut{
             $errmsg = "StateManager::nodeOut need a motherboard named argument!";	
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-#    $args{motherboard}->setNodeState(state => "out");
-
+    }
 }
 
-sub nodeIn{
+sub nodeIn {
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
             $errmsg = "StateManager::nodeIn need a motherboard named argument!";	
@@ -463,7 +475,8 @@ sub updateNodeStatus {
                           goingin  => \&testGoingInNode,
                           pregoingin => \&testPreGoingInNode,
                           broken    => sub {},
-                          goingout  => \&nodeOut},
+                          goingout  => \&nodeOut,
+                          pregoingout => \&testPreGoingOutNode},
                    # state PreGoingIn is not possible when node is available
                    1 => { broken    => \&nodeRepaired,
                           in        => sub {},

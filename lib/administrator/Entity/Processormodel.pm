@@ -81,7 +81,7 @@ sub get {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
    	} 
-   	my $entity_id = $processormodel->processormodel_entities->first->get_column('entity_id');
+   	my $entity_id = $processormodel->entitylink->get_column('entity_id');
    	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get processor model with id $args{id}");

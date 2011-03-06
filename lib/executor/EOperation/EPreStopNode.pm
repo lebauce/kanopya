@@ -144,6 +144,14 @@ sub prepare {
 	$log->info("Load Motherboard instance");
 	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
 	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+
+    my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
+    my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
+    if ($node_count > 1 && $master_node_id == $params->{motherboard_id}){
+        $errmsg = "Node <$params->{motherboard_id}> is master node and not alone";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 }
 
 sub execute {

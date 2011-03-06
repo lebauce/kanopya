@@ -147,6 +147,10 @@ sub execute {
 	my $self = shift;
 	$self->SUPER::execute();
 	
+	if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
+		$self->{_objs}->{motherboard}->becomeMasterNode();
+	}
+	
 	my $components = $self->{_objs}->{components};
 	$log->info('Processing cluster components configuration for this node');
 	foreach my $i (keys %$components) {
@@ -160,6 +164,18 @@ sub execute {
 
 }
 
+#sub finish {
+#    my $self = shift;
+#    my $masternode;
+#
+#	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
+#		$masternode = 0;
+#	} else {
+#		$masternode =1;
+#	}
+#    
+#	$self->{_objs}->{motherboard}->becomeMasterNode(master_node => $masternode);
+#}
 1;
 __END__
 

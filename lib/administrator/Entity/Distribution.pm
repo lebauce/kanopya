@@ -72,7 +72,7 @@ sub get {
 		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
    	}   	
    	
-   	my $entity_id = $dbix_distribution->distribution_entities->first->get_column('entity_id');
+   	my $entity_id = $dbix_distribution->entitylink->get_column('entity_id');
    	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
    	if(not $granted) {
    		$errmsg = "Permission denied to get distribution with id $args{id}";
@@ -138,8 +138,8 @@ sub getDevices {
 		throw Mcs::Exception(error => $errmsg);
 	}
 	
-	my $etcrow = $self->{_dbix}->etc_device_id;
-	my $rootrow = $self->{_dbix}->root_device_id;
+	my $etcrow = $self->{_dbix}->etc_device;
+	my $rootrow = $self->{_dbix}->root_device;
 	my $devices = {
 		etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
 				 lvname => $etcrow->get_column('lvm2_lv_name'),
@@ -147,9 +147,9 @@ sub getDevices {
 				 lvfreespace => $etcrow->get_column('lvm2_lv_freespace'),	
 				 filesystem => $etcrow->get_column('lvm2_lv_filesystem'),
 				 vg_id => $etcrow->get_column('lvm2_vg_id'),
-				 vgname => $etcrow->lvm2_vg_id->get_column('lvm2_vg_name'),
-				 vgsize => $etcrow->lvm2_vg_id->get_column('lvm2_vg_size'),
-				 vgfreespace => $etcrow->lvm2_vg_id->get_column('lvm2_vg_freespace'),
+				 vgname => $etcrow->lvm2_vg->get_column('lvm2_vg_name'),
+				 vgsize => $etcrow->lvm2_vg->get_column('lvm2_vg_size'),
+				 vgfreespace => $etcrow->lvm2_vg->get_column('lvm2_vg_freespace'),
 				},
 		root => { lv_id => $rootrow->get_column('lvm2_lv_id'), 
 				 lvname => $rootrow->get_column('lvm2_lv_name'),
@@ -157,9 +157,9 @@ sub getDevices {
 				 lvfreespace => $rootrow->get_column('lvm2_lv_freespace'),	
 				 filesystem => $rootrow->get_column('lvm2_lv_filesystem'),
 				 vg_id => $rootrow->get_column('lvm2_vg_id'),
-				 vgname => $rootrow->lvm2_vg_id->get_column('lvm2_vg_name'),
-				 vgsize => $rootrow->lvm2_vg_id->get_column('lvm2_vg_size'),
-				 vgfreespace => $rootrow->lvm2_vg_id->get_column('lvm2_vg_freespace'),
+				 vgname => $rootrow->lvm2_vg->get_column('lvm2_vg_name'),
+				 vgsize => $rootrow->lvm2_vg->get_column('lvm2_vg_size'),
+				 vgfreespace => $rootrow->lvm2_vg->get_column('lvm2_vg_freespace'),
 		}
 	};
 	$log->info("Distribution etc and root devices retrieved from database");
@@ -181,12 +181,12 @@ sub getProvidedComponents {
 		throw Mcs::Exception(error => $errmsg);
 	}
 	my $components = [];
-	my $search = $self->{_dbix}->component_provideds->search(undef, 
-		{ '+columns' => [ 'component_id.component_id', 
-						'component_id.component_name', 
-						'component_id.component_version', 
-						'component_id.component_category' ],
-			join => ['component_id'] } 
+	my $search = $self->{_dbix}->components_provided->search(undef, 
+		{ '+columns' => [ 'component.component_id', 
+						'component.component_name', 
+						'component.component_version', 
+						'component.component_category' ],
+			join => ['component'] } 
 	);
 	while (my $row = $search->next) {
 		my $tmp = {};
@@ -197,6 +197,22 @@ sub getProvidedComponents {
 		push @$components, $tmp;
 	}
 	return $components;
+}
+
+=head2 uploadComponent
+
+=cut
+
+sub uploadComponent {
+    my $self = shift;
+    my %params = $self->getAttrs();
+    
+    $log->debug("New Operation UploadComponentOnDistribution with attrs : " . Dumper(%params));
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'UploadComponentOnDistribution',
+        params   => \%params,
+    );
 }
 
 =head2 toString
