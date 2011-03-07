@@ -1,0 +1,70 @@
+#! /bin/sh -e
+### BEGIN INIT INFO
+# Provides:           mcexecutor
+# Required-Start:     $network $remote_fs $syslog
+# Required-Stop:      $network $remote_fs $syslog
+# Default-Start:      2 3 4 5
+# Default-Stop:       0 1 6
+# Short-Description:  Kanopya executor
+# Description:        Kanopya executor
+### END INIT INFO
+#
+# Author:    Antoine Castaing <antoine.castaing@hederatech.com>
+#
+
+set -e
+
+. /lib/lsb/init-functions
+
+export PATH=/opt/kanopya/sbin
+
+test -x /opt/kanopya/sbin/kanopya_executor || exit 0
+
+# Defaults
+LIB5PERL=/opt/kanopya/lib/
+KANOPYA_EXECUTOR_RUN=yes
+KANOPYA_EXECUTOR_OPTS=''
+
+
+# Reads config file (will override defaults above)
+[ -r /etc/default/kanopya ] && . /etc/default/kanopya
+
+# Cd to / before starting any daemons.
+cd /
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting Kanopya executor services:"
+    if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
+	start-stop-daemon --quiet --start --oknodo --exec /opt/kanopya/sbin/kanopya-executor \
+	    -- $KANOPYA_EXECUTOR_OPTS
+	log_progress_msg " Kanopya executor"
+    fi
+    ;;
+  stop)
+    log_daemon_msg "Stopping Kanopya executor service:"
+    start-stop-daemon --quiet --stop --oknodo --exec /opt/kanopya/sbin/kanopya-executor
+    log_progress_msg " kanopya executor"
+    ;;
+  restart)
+    log_daemon_msg "Restarting network management services:"
+    start-stop-daemon --quiet --stop --oknodo --exec /opt/kanopya/sbin/kanopya-executor
+    # Allow the daemons time to exit completely.
+    sleep 2
+    if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
+	start-stop-daemon --quiet --start --oknodo --exec /opt/kanopya/sbin/kanopya-executor \
+	    -- $KANOPYA_EXECUTOR_OPTS
+	log_progress_msg " Kanopya executor"
+    fi
+    ;;
+  status)
+    status=0
+    status_of_proc /opt/kanopya/sbin/kanopya-executor kanopya-executor || status=$?
+    exit $status
+    ;;
+  *)
+    echo "Usage: /etc/init.d/kanopya-executor {start|stop|restart|reload|force-reload|status}"
+    exit 1
+esac
+
+exit 0

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Creer un initrd a partir des sources du noyau et ladapte au besoin du boot iscsi + ocfs2
+
+# Avant de lancer le script, verifier la liste de modules 
+# dans /etc/initramfs-tools/modules
+# - r8169 
+# - libiscsi
+# - iscsi_tcp
+# - scsi_transport_iscsi
+# - scsi_mod
+# - sd_mod
+# - usbhid, uhci_hcd, ehci_hcd
+# - crc32c
+
+KERNEL="2.6.30.1-hedera"
+
+rm -rf /tmp/mkinitramfs*
+RES_INITRAM=`mkinitramfs -k -o initrd "$KERNEL"`
+INITRAMDIR=`echo "$RES_INITRAM" | sed 's/^.*\(\/tmp.*\)\ and\ overlay.*$/\1/'`
+
+# foreign conf recuperation script 
+ln -sf /root/scripts/get_conf.sh $INITRAMDIR/scripts/local-top/get_conf
+
+# Replacing the local script file to use our own mountroot
+rm $INITRAMDIR/scripts/local
+ln -sf /root/scripts/local $INITRAMDIR/scripts/local
+
+# iscsi support
+ln -sf /root/scripts/iscsi.initramfs  $INITRAMDIR/etc/iscsi.initramfs
+ln -sf /usr/sbin/iscsistart $INITRAMDIR/sbin/iscsistart 
+ln -sf /bin/bash $INITRAMDIR/bin/bash
+# Replacing the iscsi script file to use our
+rm $INITRAMDIR/scripts/local-top/iscsi
+ln -sf /root/scripts/iscsi $INITRAMDIR/scripts/local-top/iscsi
+
+# mount different de celui de busybox pour gerer ext4
+ln -fs /bin/mount $INITRAMDIR/bin/mount
+ln -fs /lib/libblkid.so.1 $INITRAMDIR/lib/libblkid.so.1
+ln -fs /lib/libuuid.so.1 $INITRAMDIR/lib/libuuid.so.1 
+
+# cree larchive initrd et la copie dans /tftp
+
+cd $INITRAMDIR
+
+find . | cpio --quiet --dereference -o -H newc | gzip > initrd-test
+#cp initrd-test /tftp/initrd_"$KERNEL"

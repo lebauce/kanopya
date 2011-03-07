@@ -1,0 +1,90 @@
+#! /bin/bash
+### BEGIN INIT INFO
+# Provides:           kanopya-collector
+# Required-Start:     $network $remote_fs $syslog
+# Required-Stop:      $network $remote_fs $syslog
+# Default-Start:      2 3 4 5
+# Default-Stop:       0 1 6
+# Short-Description:  Kanopya collector
+# Description:        Kanopya collector
+### END INIT INFO
+#
+# Author:    Antoine Castaing <antoine.castaing@hederatech.com>
+#
+
+set -e
+
+. /lib/lsb/init-functions
+
+PATH="/opt/kanopya/sbin:$PATH"
+DAEMON="/opt/kanopya/sbin/kanopya-collector"
+EXEC="kanopya-collector"
+PIDFILE="/var/run/$EXEC.pid"
+
+test -x /opt/kanopya/sbin/kanopya-collector || exit 0
+
+# Defaults
+PERL5LIB=\
+/opt/kanopya/lib/monitor/:\
+/opt/kanopya/lib/administrator/:\
+/opt/kanopya/lib/common
+export PERL5LIB
+KANOPYA_COLLECTOR_RUN=yes
+KANOPYA_COLLECTOR_OPTS=''
+
+
+# Reads config file (will override defaults above)
+[ -r /etc/default/kanopya ] && . /etc/default/kanopya
+
+# Cd to / before starting any daemons.
+cd /
+
+echo "Welcome in kanopya-collector start stop script"
+echo "env variable are :"
+echo "PERL5LIB : $PERL5LIB"
+echo "KANOPYA_COLLECTOR_RUN : $KANOPYA_COLLECTOR_RUN"
+echo "KANOPYA_COLLECTOR_OPTS : $KANOPYA_COLLECTOR_OPTS"
+
+case "$1" in
+  start)
+    if [ -f $PIDFILE ]; then
+	log_daemon_msg "Kanopya collector already running"
+    else
+	log_daemon_msg "Starting Kanopya collector services:"
+	if [ "$KANOPYA_COLLECTOR_RUN" = "yes" -a -f /opt/kanopya/conf/monitor.conf ]; then
+	    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
+		-- $KANOPYA_COLLECTOR_OPTS
+	    log_progress_msg " Kanopya collector"
+	fi
+    fi
+    ;;
+  stop)
+    log_daemon_msg "Stopping Kanopya collector service:"
+    start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+    log_progress_msg " kanopya collector"
+    echo "rm $PIDFILE"
+    rm $PIDFILE
+    ;;
+  restart)
+    log_daemon_msg "Restarting Kanopya collector services:"
+    if [ "$KANOPYA_COLLECTOR_RUN" = "yes" -a -f /opt/kanopya/conf/monitor.conf ]; then
+	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 	
+	rm $PIDFILE
+	log_progress_msg " Kanopya collector"
+    fi
+    # Allow the daemons time to exit completely.
+    sleep 2
+    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
+	    -- $KANOPYA_COLLECTOR_OPTS
+    ;;
+  status)
+    status=0
+    status_of_proc /opt/kanopya/sbin/kanopya-collector kanopya-collector || status=$?
+    exit $status
+    ;;
+  *)
+    echo "Usage: /etc/init.d/kanopya-collector {start|stop|restart|status}"
+    exit 1
+esac
+
+exit 0

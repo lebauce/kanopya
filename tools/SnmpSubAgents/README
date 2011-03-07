@@ -1,0 +1,24 @@
+
+Install new module in the snmp master agent.
+
+	1. Copy the sub-agent perl file (xxx_snmp_module.pl) in a directory of your choice (ex: /etc/snmp/)
+	
+	2. In /etc/snmp/snmpd.conf, at the end of file, add the line:  
+			perl do '/abolute/path/xxx_snmp_module.pl';
+
+	3. Restart the snmp deamon.
+
+
+WARNING:
+	The deamon is executed as user 'snmp'.
+	Some sub-agents need to execute commands as root, to allow this we have to add these commands in the sudoers.
+	see sudoers.conf in each sub-agent directory.
+
+Enabling MIB.
+	The MIB file is not required, but is useful to know data structure and valid oids.
+	When MIB is enabled, snmp request can be done using the var name instead of its oid.
+	
+	1. Copy the MIB file XXX-MIB.txt into the snmp mib directory (/usr/share/snmp/mibs)
+	2. In /etc/snmp/snmp.conf (create it if doesn't exist) add the line  'mibs +XXX-MIB'.
+
+	

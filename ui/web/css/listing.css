@@ -1,0 +1,256 @@
+table.graphview {
+	margin: 0 0 20px 0;
+	border-collapse: collapse;
+	float: left;
+	clear: both;
+	background: transparent;
+	max-width: 1022px;
+	border-top: 2px solid #6678b1;
+	/*width:100%;*/
+}
+
+table.graphview th
+{
+	font-size: 14px;
+	font-weight: normal;
+	color: #039;
+	padding: 10px 8px;
+	border-bottom: 2px solid #6678b1;
+	background: #e8edff;
+}
+table.graphview td
+{
+	border-bottom: 1px solid #ccc;
+	color: #669;
+	padding: 6px 8px;
+}
+
+
+
+table.graphview .node_selector {
+	vertical-align: top;
+}
+
+.clickable:hover
+{
+	cursor: pointer;
+	/*font-weight: bold;*/
+	color: #00A;
+}
+
+table.graphview .selected_set
+{
+	color: #669;
+	/*border-bottom: 5px solid #6678b1;*/
+	/*background: #c6cbdd;*/
+border-bottom: 5px solid #6678b1;
+border-top: 5px solid #6678b1;
+}
+
+.set_selectors .set_selector:hover
+{ 
+	cursor: pointer;
+	color: #900;
+} 
+
+table#graphchoices, table.set_selectors {
+	width:100%;
+}
+
+
+#graph_table .node_selector {width: 10px;}
+
+.period_selectors, .period_selectors table, #settings_link, #settings_link table {
+	width: 100px;
+}
+
+
+.period_selectors .period_selector { display:none;}
+.period_selectors ul { z-index: +1; position: absolute; }
+.period_selectors:hover .period_selector { display: inline; }
+
+.period_selectors table { margin: 0 0 20px 0;}
+.period_selectors table th { background: url("/images/icons/clock.png") no-repeat left;}
+
+.selected_period { color: #484; }
+
+.monitor_settings { width: 100%;} 
+/*.monitor_settings table { width: 100%;}*/
+.monitor_settings td, .monitor_settings th { width: 25%;} 
+.monitor_settings td td { width: 20px;}
+.monitor_settings td { text-align: left;}
+
+
+.monitor_settings .graph_options {width: 100%;}
+.monitor_settings .graph_options td, .monitor_settings .graph_options th {text-align:left; width:50%;}
+
+.monitor_settings tr { height: 30px;}
+
+.monitor_settings .expand_cont { height: 1px;}
+
+
+.monitor_settings .select_collect { border-left: 2px solid #6678b1;border-right: 2px solid #6678b1; width:10px;}
+
+/*.monitor_settings td { border-top: 2px solid red; border-bottom: 2px solid green; }*/
+
+.collected { background: url("/images/icons/database-import.png") no-repeat center;}
+.graphed { background: url("/images/icons/monitor.png") no-repeat center;}
+.on_graph { background: url("/images/icons/eye2.png") no-repeat center;}
+
+
+.rulesview td.operator {
+	border: none;
+	background-color: #DDD;
+	text-align: center;
+}
+
+.rulesview .then_col { 
+	width: 50px;	
+	background: url("/images/icons/arrow.png") no-repeat center;
+	border: none;
+}
+
+.rulesview .remove_cond { 
+	width: 10px;	
+	background: url("/images/icons/remove.png") no-repeat top;
+}
+
+.rulesview .then_head { background: none;}
+
+.rulesview #rules_head th {text-align: center;}
+
+#rules_table .new_edit {color: #555; font-style:italic;}
+
+/* ********************************************************************************************************************** */
+
+table.listview {
+	margin: 0 0 20px 0;
+	border-collapse: collapse;
+	float: left;
+	clear: both;
+	background-color: white;
+	min-width: 50%;
+	max-width: 1022px;
+}
+
+.small_img {
+	height: 200px;
+	width: 500px;
+}
+
+table.listing {
+    border-bottom: 1px solid black;
+    float: left;    
+    width: 78%;
+    
+    border-collapse: collapse;
+}
+
+table.listing:hover { background-color: #EEE; }
+
+table.listing td { padding: 5px; width: 25%; }
+
+
+table.listing h1 {
+    color: #228b22;
+    font-weight: bold;
+    font-size: 1.6em;
+    margin: 20px 0 0 0;
+}
+
+table.listing td.toright a { 
+    background-repeat: no-repeat;
+    padding-left: 20px;
+    text-decoration: none;
+    color: #228b22;
+}
+
+.state {
+	background-position: left;
+	background-repeat:  no-repeat;
+	padding-left: 20px;
+}
+
+
+div.actions {
+    margin-left: 80%;
+    margin-top: 30px;
+    background-color: #F9F9FF;
+    width: 20%;
+    border: thin dashed black;
+}
+
+div.actions a.action {
+    margin: 10px 0 0 10px;    
+    display: block;    
+    color: #0A0;
+    background-repeat: no-repeat;
+    padding-left: 20px;
+    text-decoration: none;   
+    font-size: 1em; 
+}
+
+div.actions p {
+    margin: 5px 0 10px 10px;
+    font-size: 0.9em;
+}
+
+
+table.simplelisting {
+    float: left;    
+    width: 78%;
+    margin-bottom: 15px;
+    border-collapse: collapse;
+}
+
+
+table.status th { background-color: #DDD; padding: 5px 15px 5px 24px; background-position: 5px 5px;
+	background-repeat: no-repeat; text-align: left;	 }
+table.status td { background-color: #DDD; padding: 5px; background-position: 5px; min-width: 20px; min-height: 20px;
+	background-repeat: no-repeat; text-align: center;	 }
+
+#admin_status table {display: inline;}
+
+table.simplelisting caption { 
+	color: #228b22;
+	font-size: 1.5em;
+	font-weight: bold;
+	margin: 10px;
+	text-align: left; 
+}
+
+
+
+table.simplelisting th { 
+	background-color: #CDC;
+	color: #228b22;
+	border: thin solid white;
+}
+
+table.simplelisting tr:hover { background-color: #EEE; }
+
+table.simplelisting td {
+	border-bottom: thin solid #AAA;
+	padding: 15px 5px 5px 5px;
+}
+
+table.simplelisting td a {
+    color: #228b22;
+    background-repeat: no-repeat;
+    padding-left: 20px;
+    text-decoration: none;   
+}
+
+.right { text-align: right; }
+.center { text-align: center; }
+.bold { font-weight: bold; }
+
+
+table.rulesview tr:hover { background-color:transparent;} /* here to overload simplelisting tr:hover */
+
+table.rulesview tr.selected {	background-color: #EEE; }
+
+#logs_table td { vertical-align: top; }
+#logs_table .selected_link { font-weight: bold; }
+
+

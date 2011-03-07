@@ -1,0 +1,127 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/atooltype.jquery.js"></script>
+<script type="text/javascript" src="/js/kanopiaui-tools.js"></script>
+<script type="text/javascript" src="/js/orchestrator.js"></script>
+
+<div id="content">
+
+<table id="rules_table" class='simplelisting rulesview'>
+	<caption>Cluster scaling rules <span class='info'>&nbsp;</span></caption>
+	<tr id='rules_head'><th colspan='6'>Condition</th><th colspan='2' class='then_head'></th><th>Action</th><th>Node selection</th></tr>
+	
+	<tr id='rule_model' class="hidden">
+		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
+		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>trans func</td>
+		<td><span class='time_laps editable'>laps</span> sec</td>
+		<td class='comp_op editable_choice' choices='&lt;,&gt;'>comp op</td>
+		<td class='thresh_value editable' cond_id=''>threshold</td>
+		<td class='remove_cond'></td>
+		<td class='op_col' op_id=''></td>
+		<td class='then_col'></td>
+		<td class='action_col editable_choice' choices='Add node,Remove node'>action</td>
+		<td class='node_selection'>rand</td>
+	</tr>
+	
+	<TMPL_LOOP NAME=RULES>
+		<TMPL_LOOP NAME=CONDITIONS>
+			<tr class="rule">
+			<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'><TMPL_VAR NAME=VAR></td>
+			<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
+			<td><span class='time_laps editable'><TMPL_VAR NAME=TIME_LAPS></span> sec</td>
+			<td class='comp_op editable_choice' choices='&lt;,&gt;'><TMPL_IF NAME=INF>&lt;<TMPL_ELSE>&gt;</TMPL_IF></td>
+			<td class='thresh_value editable' cond_id='<TMPL_VAR NAME=OP_ID>'><TMPL_VAR NAME=VALUE></td>
+			<td class='remove_cond'></td>
+			<TMPL_IF NAME=MASTER_ROW>
+				<TMPL_IF NAME=BIN_OP>
+					<td class='operator' op_id='<TMPL_VAR NAME=OP_ID>' rowspan='<TMPL_VAR NAME=SPAN>'><TMPL_VAR NAME=BIN_OP></td>
+				<TMPL_ELSE>
+					<td class='op_col' op_id='<TMPL_VAR NAME=OP_ID>'></td>
+				</TMPL_IF>
+				<td class='then_col' rowspan='<TMPL_VAR NAME=SPAN>'></td>
+				<td class='action_col editable_choice' choices='Add node,Remove node' rowspan='<TMPL_VAR NAME=SPAN>'><TMPL_VAR NAME=ACTION></td>
+				<td class='node_selection' rowspan='<TMPL_VAR NAME=SPAN>'>rand</td>
+			</TMPL_IF>
+			</tr>
+		</TMPL_LOOP>
+	</TMPL_LOOP>
+	
+</table>	
+
+<table id="optim_table" class='simplelisting rulesview'>
+	<caption>Service level agreement<span class='info'>&nbsp;</span></caption>
+	<tr id='rules_head'><th colspan='6'>Condition</th></tr>
+	
+	<tr id='condition_model' class="hidden">
+		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
+		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>trans func</td>
+		<td><span class='time_laps editable'>laps</span> sec</td>
+		<td class='comp_op editable_choice' choices='&lt;,&gt;'>comp op</td>
+		<td class='thresh_value editable' cond_id=''>threshold</td>
+		<td class='remove_cond'></td>
+		<td class='op_col' op_id=''></td>
+	</tr>
+	
+	<TMPL_LOOP NAME=OPTIM_CONDITIONS>
+		<tr class="condition">
+		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'><TMPL_VAR NAME=VAR></td>
+		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
+		<td><span class='time_laps editable'><TMPL_VAR NAME=TIME_LAPS></span> sec</td>
+		<td class='comp_op editable_choice' choices='&lt;,&gt;'><TMPL_IF NAME=INF>&lt;<TMPL_ELSE>&gt;</TMPL_IF></td>
+		<td class='thresh_value editable' cond_id='<TMPL_VAR NAME=OP_ID>'><TMPL_VAR NAME=VALUE></td>
+		<td class='remove_cond'></td>
+		</tr>
+	</TMPL_LOOP>
+	
+</table>
+
+<!--table class='rulesview simplelisting'>
+<caption>Nodes control</caption>
+<tr><th colspan='3'>Condition</th><th class='then_head'></th><th>Action</th></tr>
+<tr>
+	<td>One of all nodes</td>
+	<td>process mpi</td>
+	<td>not running</td>
+	<td class='then_col'></td>
+	<td>shut down node</td>
+</tr>
+</table>
+
+
+<table class='rulesview simplelisting'>
+<caption>Traps management</caption>
+<tr><th colspan='1'>On trap</th><th class='then_head'></th><th>Action</th></tr>
+<tr>
+	<td>processing_done</td>
+	<td class='then_col'></td>
+	<td>shut down sender node</td>
+</tr>
+</table-->
+
+<div class="actions">
+<a class="action imgSave" id="save_orchestrator_settings">save</a>
+<p class="italic">Save rules.</p>
+</div>
+
+<div class="actions">
+<a class="action imgAdding" id='add_cond_button'>add scale condition</a>
+<p class="italic">Add a new condition based on cluster's activity.</p>
+<a class="action operator_button" op='or'>OR operator</a>
+<p class="italic">OR selected conditions.</p>
+<a class="action operator_button" op='and'>AND operator</a>
+<p class="italic">AND selected conditions.</p>
+</div>
+
+<div class="actions">
+<a class="action imgAdding" id='add_optim_cond_button'>add optimization condition</a>
+<p class="italic">Add a new condition used for optimization.</p>
+</div>
+
+
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

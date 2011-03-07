@@ -1,0 +1,50 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<script language="Javascript" src="/js/jquery.js"></script>
+<script language="Javascript" src="/js/custom.js"></script>
+<script language="Javascript" src="/js/status.js"></script>
+
+<div id="content">
+
+<div id="admin_status">
+<h3>System status</h3>
+<TMPL_LOOP NAME=COMPONENTS_STATUS>
+	<table class="status">
+	<TMPL_LOOP NAME=GROUP>
+		<tr id="<TMPL_VAR NAME=ID>" class="simpleexpand">
+			<th colspan="2" class="img<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=LABEL></th><td id="status<TMPL_VAR NAME=ID>" class="img<TMPL_VAR NAME=STATUS>">&nbsp;</td>
+		</tr>
+		<tr id="X<TMPL_VAR NAME=ID>" class='hidden'>
+			<td><table class="listdetails">
+				<TMPL_LOOP NAME=DETAILS>
+					<tr><td><TMPL_VAR NAME=LABEL></td><td id="status<TMPL_VAR NAME=NAME>" class="img<TMPL_VAR NAME=STATUS>">&nbsp;</td></tr>
+				</TMPL_LOOP>
+			</table></td>
+		</tr>
+	</TMPL_LOOP>
+	</table>
+</TMPL_LOOP>
+</div>
+
+<hr />
+<h3>Energy consumption</h3>
+
+<div id="img_div">
+<input id="default_timeline" type="radio" name="timeline" value="hourly" onclick="change_timeline('hour')" >hourly</input>
+<input type="radio" name="timeline" value="daily" onclick="change_timeline('day')" >daily</input>
+<br/>
+<img id="conso_graph" class='autorefresh' src="" alt="kanopya-grapher must be running to see graph"/>
+</div>
+<div class="hidden" id="load_error_div">
+Kanopya monitoring must be running to see graph.
+</div>
+
+</div>
+
+
+<TMPL_INCLUDE NAME="footer.tmpl">
+
+<script language="Javascript">refresh_status()</script>

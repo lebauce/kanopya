@@ -1,0 +1,51 @@
+<html>
+<head>
+	<title>new user</title>
+</head>
+<body>
+<style type="text/css">@import url(/css/form.css);</style>
+<div class="title">create user<TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
+<form method="POST" action="/cgi/kanopya.cgi/users/process_adduser">
+<table class="form">
+	<tr>
+		<td class="label">First name :</td>
+		<td><input type="text" name="firstname" maxlength="16" size="16"/>
+		<span style="color: red"><TMPL_VAR NAME=err_firstname></span></td>
+	</tr>
+	<tr>
+		<td class="label">Last name :</td>
+		<td><input type="text" name="lastname" maxlength="16" size="16"/>
+		<span style="color: red"><TMPL_VAR NAME=err_lastname></span></td>
+	</tr>
+	<tr>
+		<td class="label">Email :</td>
+		<td><input type="text" name="email" maxlength="255" size="32"/>
+		<span style="color: red"><TMPL_VAR NAME=err_email></span></td>
+	</tr>
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="desc" value=""></textarea></td> 
+	</tr>	
+	<tr>
+		<td class="label">Login :</td>
+		<td><input type="text" name="login" maxlength="16" size="16"/>
+		<span style="color: red"><TMPL_VAR NAME=err_login></span></td>
+	</tr>
+	<tr>
+		<td class="label">Password :</td>
+		<td><input type="password" name="password" maxlength="16" size="16"/>
+		<span style="color: red"><TMPL_VAR NAME=err_password></span></td>
+	</tr>
+	<tr>
+		<td class="label">Confirm password :</td>
+		<td><input type="password" name="confirmpassword" maxlength="16" size="16"/>
+		<span style="color: red"><TMPL_VAR NAME=err_confirmpassword></span></td>
+	</tr>	
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form> 
+</body>	
+</html>

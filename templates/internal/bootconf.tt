@@ -1,0 +1,34 @@
+#!/bin/sh
+root=/dev/sda
+rootfstype=[% root_fs %]
+etc=/dev/sdb
+etcfstype=[% etc_fs %]
+iscsi_initiator=[% initiatorname %]
+iscsi_target_name=[% root_target %]
+iscsi_target_ip=[% root_ip %]
+iscsi_target_port=[% root_port %]
+iscsi_target_group=
+iscsi_username=
+iscsi_password=
+iscsi_in_username=
+iscsi_in_password=
+etc_iscsi_target_name=[% etc_target %]
+etc_iscsi_target_ip=[% etc_ip %]
+etc_iscsi_target_port=[% etc_port %]
+etc_iscsi_target_group=
+etc_iscsi_username=
+etc_iscsi_password=
+etc_iscsi_in_username=
+etc_iscsi_in_password=
+
+[% FOREACH mount=mounts_iscsi %]
+data_iscsi_target_name=[% mount.target %]
+data_iscsi_target_ip=[% mount.ip %]
+data_iscsi_target_port=[% mount.port %]
+data_iscsi_target_group=
+data_iscsi_username=
+data_iscsi_password=
+data_iscsi_in_username=
+data_iscsi_in_password=
+
+[% END %]

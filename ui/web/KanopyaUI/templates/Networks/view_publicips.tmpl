@@ -1,0 +1,26 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<div id="content">
+<table class="simplelisting">
+	<caption>Virtual IP</caption>
+	<tr><th>ip</th><th>mask</th><th>gateway</th><th>already used</th><th></th></tr><TMPL_LOOP NAME=PUBLICIPS>
+	<tr>
+		<td class="center"><TMPL_VAR NAME=IP_ADDRESS></td>
+		<td class="center"><TMPL_VAR NAME=IP_MASK></td>
+		<td class="center"><TMPL_VAR NAME=GATEWAY></td>
+		<td class="center"><TMPL_IF NAME=CLUSTER_ID>yes<TMPL_ELSE>no</TMPL_IF></td>
+		<td><TMPL_IF NAME=CLUSTER_ID>
+		<TMPL_ELSE>
+		<a class="imgRemove" href="/cgi/kanopya.cgi/networks/process_removepublicip?publicip_id=<TMPL_VAR NAME=PUBLICIP_ID>">remove</a>
+		</TMPL_IF>
+		</td>
+	</tr>
+</TMPL_LOOP>
+</table>
+<div class="actions">
+<a class="action imgAdding" href="javascript:openform('/cgi/kanopya.cgi/networks/form_addpublicip', 'create a public ip', 600, 200,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no')">create a virtual ip</a>
+<p class="italic">Create a new virtual ip.</p>
+</div>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

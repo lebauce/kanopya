@@ -1,0 +1,26 @@
+<html>
+<head>
+	<title>Permissions settings</title>
+</head>
+<body>
+<style type="text/css">@import url(/css/form.css);</style>
+<div class="title">Permissions settings</div>
+<hr />
+<form name="" method="POST" action="/cgi/kanopya.cgi/permissions/process_permissionsettings">
+<table>
+<TMPL_LOOP NAME=methods>
+<tr><td><input type="checkbox" name="methods" value="<TMPL_VAR NAME=method>" <TMPL_VAR NAME=checked>/></td>
+<td><span style="font-weight: bold;"><TMPL_VAR NAME=method></span> - <span style="font-style: italic;"><TMPL_VAR NAME=description></span></td></tr>
+</TMPL_LOOP>
+</table>
+<div class="buttons">
+<input type="submit" value="apply"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+<input type="hidden" name="consumer_id" value="<TMPL_VAR NAME=consumer_id>"/>
+<input type="hidden" name="consumed_id" value="<TMPL_VAR NAME=consumed_id>"/>
+<input type="hidden" name="consumed_type" value="<TMPL_VAR NAME=consumed_type>"/>
+</form>
+</div>
+</form> 
+</body>	
+</html>

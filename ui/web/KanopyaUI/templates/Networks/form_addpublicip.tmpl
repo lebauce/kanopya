@@ -1,0 +1,32 @@
+<html>
+<head>
+	<title>new virtual ip</title>
+</head>
+<body>
+<style type="text/css">@import url(/css/form.css);</style>
+<div class="title">create a virtual ip<TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
+<form method="POST" action="/cgi/kanopya.cgi/networks/process_addpublicip">
+<table class="form">
+	<tr>
+		<td class="label">IP :</td>
+		<td><input type="text" name="ip_address" maxlength="39" size="20"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_IP_ADDRESS></span></td>
+	</tr>
+	<tr>
+		<td class="label">mask :</td>
+		<td><input type="text" name="ip_mask" maxlength="39" size="20"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_IP_MASK></span></td>
+	</tr>
+	<tr>
+		<td class="label">gateway :</td>
+		<td><input type="text" name="gateway" maxlength="39" size="20"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_GATEWAY></span></td>
+	</tr>
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form> 
+</body>	
+</html>

@@ -1,0 +1,68 @@
+<html>
+<head>
+	<title>new motherboard</title>
+</head>
+<body>
+<style type="text/css">@import url(/css/form.css);</style>
+<div class="title">create host<TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
+<form method="POST" action="/cgi/kanopya.cgi/motherboards/process_addmotherboard">
+<table class="form">
+	<tr>
+		<td class="label">MAC address :</td>
+		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
+		<span style="color: red"><TMPL_VAR NAME=ERR_MAC_ADDRESS></span></td>
+	</tr>
+	<tr>
+		<td class="label">Serial Number :</td>
+		<td><input type="text" name="serial_number" size="50" /></td>
+	</tr>
+	<tr>
+		<td class="label">Motherboard model :</td>
+		<td><select name="motherboard_model">
+		<TMPL_LOOP NAME=MOTHERBOARDMODELS>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Processor model :</td>
+		<td><select name="cpu_model">
+		<TMPL_LOOP NAME=PROCESSORMODELS>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Default kernel :</td>
+		<td><select name="kernel">
+		<TMPL_LOOP NAME=KERNEL>
+			<option value="<TMPL_VAR NAME=ID>"><TMPL_VAR NAME=NAME></option>
+		</TMPL_LOOP>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="desc" value=""></textarea></td> 
+	</tr>
+	<tr>
+		<td class="label">Power supply card :</td>
+		<td><select name="powersupplycard_id">
+			<option value="none">none</option>
+		<TMPL_LOOP NAME=powersupplycards>
+			<option value="<TMPL_VAR NAME=powersupplycard_id>"><TMPL_VAR NAME=powersupplycard_name></option>
+		</TMPL_LOOP>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Port number :</td>
+		<td><input type="text" name="powersupplyport_number" maxlength="2" size="2"/>
+	</tr>
+	
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form> 
+</body>
+</html>

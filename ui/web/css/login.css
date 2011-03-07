@@ -1,0 +1,33 @@
+* {
+	margin: 0;
+	padding: 0;
+	font-family: Monospace;
+	font-size: 1.05em;
+	color: #69B033;
+}
+
+.small { font-size: small; color: #69B033; text-align: center; position: relative; top: 20px ;}
+
+div#container {
+	margin: auto;
+	width: 350px;
+	margin-top: 100px;
+	background-color: #FFF;
+	border: thin solid #69B033;
+	padding: 25px;
+}
+
+h2 { text-decoration: underline; }
+
+table { margin-top: 20px; width: 100%; font-size: 1em; }
+
+table td.label {
+	text-align: right;
+	margin: 10px 0;
+}
+
+table td.button { text-align: center; margin-top: 30px;}
+input { width: 120px; }
+
+img#biglogo { margin-bottom: 20px; }
+.dfv_errors { font-size: 0.8em }

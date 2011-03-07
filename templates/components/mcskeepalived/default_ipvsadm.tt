@@ -1,0 +1,3 @@
+AUTO="true"
+DAEMON="[% daemon_method %]"
+IFACE="[% iface %]"

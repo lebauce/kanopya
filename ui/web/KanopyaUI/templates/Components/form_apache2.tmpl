@@ -1,0 +1,75 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/components.js"></script>
+<div id="content">
+<h2>Cluster <TMPL_VAR NAME=CLUSTER_NAME> - Apache2 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<TMPL_VAR NAME=component_instance_id>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<TMPL_VAR NAME=cluster_id>"/>
+<input class="conf_simple_value" type="hidden" name="apache2_id" value="<TMPL_VAR NAME=apache2_id>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Apache2"/>
+<table>
+<tr><td>server root :</td><td><input class="conf_simple_value" type="text" name="apache2_serverroot" value="<TMPL_VAR NAME=apache2_serverroot>"/></td></tr>
+<tr><td>http ports :</td><td><input class="conf_simple_value" type="text" name="apache2_ports" value="<TMPL_VAR NAME=apache2_ports>"/></td></tr>
+<tr><td>ssl ports :</td><td><input class="conf_simple_value" type="text" name="apache2_sslports" value="<TMPL_VAR NAME=apache2_sslports>"/></td></tr>
+<tr><td>php sessions directory :</td><td><input class="conf_simple_value" type="text" name="apache2_phpsession_dir" value="<TMPL_VAR NAME=apache2_phpsession_dir>"/></td></tr>
+<tr><td>log level :</td><td>
+<select class="conf_simple_value" name="apache2_loglevel">
+<option id="debug" value="debug">debug</option>
+<option id="info" value="info">info</option>
+<option id="notice" value="notice">notice</option>
+<option id="warn" value="warn">warn</option>
+<option id="error" value="error">error</option>
+<option id="crit" value="crit">crit</option>
+<option id="alert" value="alert">alert</option>
+<option id="emerg" value="emerg">emerg</option>
+</select></td></tr>
+</table>
+<hr />
+<h3>Virtual hosts definition</h3>
+<table class="conf_array_value" id="apache2_virtualhosts">
+<tr><th>server name</th><th>admin email</th><th>document root</th><th>SSL enable</th><th>access log</th><th>error log</th></tr>
+<TMPL_LOOP NAME=apache2_virtualhosts>
+<tr class="elem_apache2_virtualhosts" name="virtualhost" >
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_servername" value="<TMPL_VAR NAME=apache2_virtualhost_servername>"/></td>
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_serveradmin" value="<TMPL_VAR NAME=apache2_virtualhost_serveradmin>"/></td>
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_documentroot" value="<TMPL_VAR NAME=apache2_virtualhost_documentroot>"/></td>
+<td><select class="virtualhost_simple_value" name="apache2_virtualhost_sslenable"><option value="1" <TMPL_IF NAME=apache2_virtualhost_sslenable>selected</TMPL_IF>>yes</option><option value="0" <TMPL_UNLESS NAME=apache2_virtualhost_sslenable>selected</TMPL_UNLESS>>no</option></select></td><!-- <TMPL_VAR NAME=apache2_virtualhost_sslenable> -->
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_log" value="<TMPL_VAR NAME=apache2_virtualhost_log>"/></td>
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_errorlog" value="<TMPL_VAR NAME=apache2_virtualhost_errorlog>"/></td>
+<td><input class="virtualhost_simple_value" type="hidden" name="apache2_virtualhost_id" value="<TMPL_VAR NAME=apache2_virtualhost_id>"/></td>
+<td><a class="remove_virtualhost imgRemove iconAction" ></a></td>
+</tr>
+</TMPL_LOOP>
+</table>
+<br/>
+<a class="add_apache2_virtualhosts imgAdding iconAction" >Add virtual host</a>
+<hr />
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=cluster_id>'"/>
+</div>
+</form>
+</div>
+
+<div class="hidden" id="models">
+<table>
+<tr class="elem_apache2_virtualhosts" name="virtualhost" >
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_servername" value=""/></td>
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_serveradmin" value=""/></td>
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_documentroot" value=""/></td>
+<td><select class="virtualhost_simple_value" name="apache2_virtualhost_sslenable"><option value="1">yes</option><option value="0" >no</option></select></td>
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_log" value=""/></td>
+<td><input class="virtualhost_simple_value" type="text" name="apache2_virtualhost_errorlog" value=""/></td>
+<td><input class="virtualhost_simple_value" type="hidden" name="apache2_virtualhost_id" value="0"/></td>
+<td><a class="remove_virtualhost imgRemove iconAction" ></a></td>
+</tr>
+</table>
+</div>
+
+<TMPL_INCLUDE NAME="footer.tmpl">
+<script type="text/javascript">
+document.getElementById('<TMPL_VAR NAME=apache2_loglevel>').selected=1;
+</script>

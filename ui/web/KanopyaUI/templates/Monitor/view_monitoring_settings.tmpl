@@ -1,0 +1,76 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">
+@import url(/css/listing.css);
+</style>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/custom.js"></script>
+
+<div id="content">
+
+<!--table class='monitor_settings general_settings graphview'-->
+<table class='monitor_settings general_settings simplelisting'-->
+<caption>General</caption>
+<tr><th>Time step</th><th>period</th><th>database files dir</th><th>graph files</th></tr>
+	<tr>
+	<td class='editable'><TMPL_VAR NAME=TIME_STEP></td>
+	<td class='editable'><TMPL_VAR NAME=PERIOD></td>
+	<td class='editable'><TMPL_VAR NAME=RRD_BASE_DIR></td>
+	<td class='editable'><TMPL_VAR NAME=GRAPH_DIR></td>
+	</tr>
+</table>
+
+
+<!--table class='monitor_settings graphview'-->
+<table class='monitor_settings simplelisting'>
+<caption>Data sources conf</caption>
+	<tr>
+		<th>Set</th>
+		<th>Provider</th>
+		<th>Type</th>
+		<th>Component</th>
+	</tr>
+	<tr><td colspan='4'></td></tr>
+	<TMPL_LOOP NAME=SETS>
+		<tr class='set_info'>
+		<th id='<TMPL_VAR NAME=LABEL>' class='expander'><TMPL_VAR NAME=LABEL></th>
+		<td choices='Snmp,Apache,MySql,Func' class='img<TMPL_VAR NAME=PROVIDER_NAME> editable_choice set_def'><TMPL_VAR NAME=PROVIDER_NAME></td>
+		<td choices='Gauge,Counter,Derive' class='editable_choice set_def'><TMPL_VAR NAME=DS_TYPE></td>
+		<td class='img<TMPL_VAR NAME=COMPONENT>  set_def'><TMPL_VAR NAME=COMPONENT></td>
+		</tr>
+		<tr id='X<TMPL_VAR NAME=LABEL>' class='expand_cont' >
+
+		<td colspan='4'>
+		
+		<TMPL_IF NAME=IS_TABLE>
+			<table class='expandable hidden'>
+			<tr><td>Table</td><td><TMPL_VAR NAME=TABLE_OID></td></tr>
+			<tr><td colspan='2'>
+			<table>
+		<TMPL_ELSE>
+			<table class='expandable hidden'>
+		</TMPL_IF>
+				<TMPL_LOOP NAME=DS>
+					<tr>
+						<td class='editable' ><TMPL_VAR NAME=DS_NAME></td>
+						<td class='set_def editable'><TMPL_VAR NAME=OID></td>
+					</tr>
+				</TMPL_LOOP>
+			</table>
+		<TMPL_IF NAME=IS_TABLE>
+			</td></tr></table>	
+		</TMPL_IF>	
+		</td>
+
+		</tr>
+	</TMPL_LOOP>
+</table>	
+
+<div class="actions">
+<a class="action imgSave" id="save_monitoring_settings">save</a>
+<p class="italic">Save settings.</p>
+</div>
+
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

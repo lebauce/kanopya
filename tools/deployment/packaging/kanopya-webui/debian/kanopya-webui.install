@@ -1,0 +1,3 @@
+ui/web/* opt/kanopya/ui/web
+logs/*
+conf/webui-log.conf etc/kanopya/samples/

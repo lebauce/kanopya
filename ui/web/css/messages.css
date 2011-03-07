@@ -1,0 +1,68 @@
+* { margin: 0; padding: 0; }
+
+body {
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: monospace;
+	font-size: 1em;
+}
+
+/* filters table */
+
+table.controls { 
+	border: none; 
+	border-collapse: collapse;
+	width: 100%;
+}
+
+table.controls td { 
+	padding: 5px;
+	vertical-align: middle;
+	border-bottom: thin solid black;
+	background-color: #CDC;
+}
+
+table.controls td.header { text-align: right; font-weight: bold; width: 10em;}
+td.chkbx { text-align: center; width: 0.5em; padding: 5px;}
+table.controls  td.txt { 
+	background-repeat: no-repeat; 
+	padding-left: 20px; 
+	background-position: left center;
+}
+
+/* messages table */
+
+div#scrolldiv { height: 90%; overflow: scroll; }
+
+table#messagelist {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+
+table#messagelist td {
+	border-bottom: thin dotted #030;
+	padding: 10px 5px;
+}
+
+td.level, td.from { width: 20px; background-repeat: no-repeat; background-position: center;}
+
+td.date { width: 9%; }
+td.time { width: 8%; }
+td.content { text-align: left; }
+
+
+
+.dark { background-color: #EFEFEF; } 
+.light { background-color: #FFF; }
+.Administrator { background-image: url('/images/icons/database.png'); }
+.Executor { background-image: url('/images/icons/execute.png'); }
+.Monitor { background-image: url('/images/icons/monitor.png'); }
+.Orchestrator { background-image: url('/images/icons/orchestrator.png'); }
+.Planner { background-image: url('/images/icons/planner.png'); }
+.info { background-image: url('/images/icons/info.png'); }
+.warning { background-image: url('/images/icons/warning.png'); }
+.error { background-image: url('/images/icons/error.png'); }
+.debug { background-image: url('/images/icons/debug.png'); }
+

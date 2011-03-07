@@ -1,0 +1,2 @@
+#!/bin/bash
+ps -C iscsid -o pid= | sed 's/\s\(.*\)/\1/' >> /var/run/sendsigs.omit

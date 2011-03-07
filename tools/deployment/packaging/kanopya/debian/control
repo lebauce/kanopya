@@ -1,0 +1,13 @@
+Source: kanopya
+Section: admin
+Priority: optional
+Maintainer: Hedera Dev Team <dev@hederatech.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.4
+Homepage: <http://kanopya.org>
+Vcs-Git: git://git.kanopya.org/mcs/executor.git
+
+Package: kanopya
+Architecture: all
+Depends: libkanopya-perl, kanopya-core, kanopya-webui, kanopya-monitor, kanopya-bootmanager, kanopya-orchestrator, kanopya-storage, kanopya-dev 
+Description: Meta provides a full Kanopya install

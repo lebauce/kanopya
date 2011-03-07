@@ -1,0 +1,5 @@
+lib/common/* opt/kanopya/lib/common
+lib/administrator/* opt/kanopya/lib/administrator
+t/administrator/* opt/kanopya/t/administrator
+t/common/* opt/kanopya/t/common
+conf/components.conf etc/kanopya/samples/

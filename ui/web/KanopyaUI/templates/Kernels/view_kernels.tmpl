@@ -1,0 +1,21 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/listing.css);</style>
+<div id="content">
+<TMPL_LOOP NAME=kernels_list>
+<table class="listing">
+<tr><td colspan="2"><h1 id="<TMPL_VAR NAME=kernel_id>"><TMPL_VAR NAME=kernel_name></h1></td></tr>
+<tr><td><TMPL_VAR NAME=kernel_version></td>
+<td class="toright"><TMPL_IF NAME=can_setperm><a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Kernel&id=<TMPL_VAR NAME=kernel_id>">permissions</a></TMPL_IF></td></tr>
+<tr><td colspan="2" class="italic"><TMPL_VAR NAME=kernel_desc></td></tr>
+</table>
+</TMPL_LOOP>
+<div class="actions">
+<TMPL_IF NAME=link_upload>
+<a class="action imgKernel" href="">upload new kernel</a>
+<p class="italic">Upload a new kernel.</p>
+</TMPL_IF>
+<br />
+</div>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">

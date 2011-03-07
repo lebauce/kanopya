@@ -1,0 +1,53 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<style type="text/css">@import url(/css/details.css);</style>
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/details.js"></script>
+<div id="content">
+<h2>User : <TMPL_VAR NAME=user_firstname> <TMPL_VAR NAME=user_lastname></h2>
+<hr/>
+<span id="identity" class="title simpleexpand">Identity</span>
+<table id="Xidentity" class="detailspart">
+<tr><td class="italic" colspan="4"><TMPL_VAR NAME=user_desc></td>
+<td class="actions" rowspan="7">
+<TMPL_IF NAME=can_update>
+<a class="imgEdit" href="javascript:openform('/cgi/kanopya.cgi/users/form_edituser?user_id=<TMPL_VAR NAME=user_id>', 'edit user', 800, 400, '');">edit</a><br />
+<span class="desc">Modify these parameters.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_delete>
+<a class="imgRemove" href="/cgi/kanopya.cgi/users/process_deleteuser?user_id=<TMPL_VAR NAME=user_id>">delete</a><br />
+<span class="desc">Delete this user.</span><br /><br /></TMPL_IF>
+<TMPL_IF NAME=can_setperm>
+<a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=User&id=<TMPL_VAR NAME=user_id>">permission</a><br />
+<span class="desc">View/set permissions on this user.</span><br /></TMPL_IF>
+
+</td><tr/>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr><td class="label">First name :</td><td><TMPL_VAR NAME=user_firstname></td>
+<td class="label">Login :</td><td><TMPL_VAR NAME=user_login></td></tr>
+
+<tr><td class="label">Last name :</td><td><TMPL_VAR NAME=user_lastname></td>
+<td class="label">Password :</td><td>**********</td></tr>
+
+<tr><td class="label">Email :</td><td><TMPL_VAR NAME=user_email></td>
+<TMPL_IF NAME=user_lastaccess>
+<td class="label">Last login :</td><td><TMPL_VAR NAME=user_lastaccess></td>
+<TMPL_ELSE>
+<td></td></tr>
+</TMPL_IF>
+
+<tr><td class="label">Creation date :</td><td><TMPL_VAR NAME=user_creationdate></td><td></td><td></td></tr>
+
+</table>
+
+<hr/>
+<span id="groups" class="title simpleexpand">Groups</span>
+<table id="Xgroups" class="detailspart">
+<TMPL_LOOP NAME=gp_list>
+<tr><td class="label2"><span class="bold"><TMPL_VAR NAME=gp_name></span> - <span class="italic"><TMPL_VAR NAME=gp_desc></span></td>
+<TMPL_UNLESS NAME=gp_system><td class="action"><a class="imgManage" href="/cgi/kanopya.cgi/groups/view_groupdetails?gp_id=<TMPL_VAR NAME=gp_id>">details</a></td>
+<TMPL_ELSE><td class="action"></td></TMPL_UNLESS>
+</tr>
+</TMPL_LOOP>
+</table>
+</div>
+<TMPL_INCLUDE NAME="footer.tmpl">
