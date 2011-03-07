@@ -32,11 +32,12 @@ __PACKAGE__->table("powersupplycard");
   is_nullable: 0
   size: 64
 
-=head2 powersupplycard_ip
+=head2 ipv4_internal_id
 
-  data_type: 'char'
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
-  size: 15
 
 =head2 powersupplycardmodel_id
 
@@ -68,8 +69,13 @@ __PACKAGE__->add_columns(
   },
   "powersupplycard_name",
   { data_type => "char", is_nullable => 0, size => 64 },
-  "powersupplycard_ip",
-  { data_type => "char", is_nullable => 1, size => 15 },
+  "ipv4_internal_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
   "powersupplycardmodel_id",
   {
     data_type => "integer",
@@ -116,6 +122,21 @@ __PACKAGE__->belongs_to(
   { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 ipv4_internal
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Ipv4Internal>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "ipv4_internal",
+  "AdministratorDB::Schema::Result::Ipv4Internal",
+  { ipv4_internal_id => "ipv4_internal_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 powersupplycard_entity
 
 Type: might_have
@@ -132,8 +153,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sOxbSkrCywWA5PU9E9ohSw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-03-07 00:25:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Krb0zL6L/c7tgrGHIGjyUg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

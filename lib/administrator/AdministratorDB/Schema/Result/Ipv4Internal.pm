@@ -64,9 +64,26 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("ipv4_internal_id");
 __PACKAGE__->add_unique_constraint("ipv4_internal_address_UNIQUE", ["ipv4_internal_address"]);
 
+=head1 RELATIONS
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:E6mIPAYb2r5bGihbkF1QGg
+=head2 powersupplycards
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Powersupplycard>
+
+=cut
+
+__PACKAGE__->has_many(
+  "powersupplycards",
+  "AdministratorDB::Schema::Result::Powersupplycard",
+  { "foreign.ipv4_internal_id" => "self.ipv4_internal_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-03-07 00:25:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DvTGt5Z5Ln2w1iVeBxYgXw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
