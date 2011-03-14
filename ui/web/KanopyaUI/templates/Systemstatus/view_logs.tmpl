@@ -11,30 +11,33 @@
 
 <br/>
 
-<table id="logs_table" >
-<!--tr><th>files</th><td>last <input type="text"></input> lines <input type="button" value="Refresh"/></td></tr-->
-<tr>
-<td>
-<TMPL_LOOP NAME=dirs>
-<TMPL_VAR NAME=path>:<br/>
-<TMPL_IF NAME=dir_locked>
-	<i>can not read</i><br/>
+<TMPL_IF NAME=error_msg>
+	<TMPL_VAR NAME=error_msg>
 <TMPL_ELSE>
-	<ul>
-	<TMPL_LOOP NAME=files>
-		<li><a class="log_link" id="<TMPL_VAR NAME=path><TMPL_VAR NAME=filename>"><TMPL_VAR NAME=filename></a></li>
+	<table id="logs_table" >
+	<!--tr><th>files</th><td>last <input type="text"></input> lines <input type="button" value="Refresh"/></td></tr-->
+	<tr>
+	<td>
+	<TMPL_LOOP NAME=dirs>
+	<TMPL_VAR NAME=path>:<br/>
+	<TMPL_IF NAME=dir_locked>
+		<i>can not read</i><br/>
+	<TMPL_ELSE>
+		<ul>
+		<TMPL_LOOP NAME=files>
+			<li><a class="log_link" id="<TMPL_VAR NAME=path><TMPL_VAR NAME=filename>"><TMPL_VAR NAME=filename></a></li>
+		</TMPL_LOOP>
+		</ul>
+	</TMPL_IF>
 	</TMPL_LOOP>
-	</ul>
+	</td>
+	<td>
+	<textarea cols="120" rows="80" readonly="true" id="log_container">
+	</textarea>
+	</td>
+	</tr>
+	</table>
 </TMPL_IF>
-</TMPL_LOOP>
-</td>
-<td>
-<textarea cols="120" rows="80" readonly="true" id="log_container">
-</textarea>
-</td>
-</tr>
-</table>
-
 </div>
 
 

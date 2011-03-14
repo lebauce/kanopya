@@ -1,6 +1,9 @@
 package KanopyaUI::Systemstatus;
 
 use Entity::Cluster;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("webui");
 
 use base 'KanopyaUI::CGI';
 
@@ -96,23 +99,32 @@ sub permission_denied : runmode {
 sub view_logs : Runmode {
 	my $self = shift;
 	
-	my $admin_cluster = Entity::Cluster->get(id => 1);
-	my $logger_comp = $admin_cluster->getComponent( category => 'Logger', name => 'Syslogng', version => 3 );
-	my @log_dirs = $logger_comp->getLogDirectories();
-	
 	my @dirs_info = ();
-	for $path (@log_dirs) {
-		my $dir_error;
-		my @files_info = ();
-		my $ls_output = `ls $path` or $dir_error = 1;
-		if (not defined $dir_error) {
-			# Select only files
-			my @files = grep { -f "$path$_" } split(" ", $ls_output);
-			# Built tmpl struct
-			@files_info = map { { path=>$path, filename=>$_} } @files;
-		}
+	my $error_msg;
+	my $logger_comp;
+	my $admin_cluster = Entity::Cluster->get(id => 1);
+	eval {
+		$logger_comp = $admin_cluster->getComponent( category => 'Logger', name => 'Syslogng', version => 3 );
+	};
+	if ($@) {
+		$log->warn("$@");
+		$error_msg = "Syslogng3 must be installed on admin cluster";
+	} else {
+		my @log_dirs = $logger_comp->getLogDirectories();
 		
-		push @dirs_info, { path => $path, dir_locked => $dir_error, files => \@files_info };
+		for $path (@log_dirs) {
+			my $dir_error;
+			my @files_info = ();
+			my $ls_output = `ls $path` or $dir_error = 1;
+			if (not defined $dir_error) {
+				# Select only files
+				my @files = grep { -f "$path$_" } split(" ", $ls_output);
+				# Built tmpl struct
+				@files_info = map { { path=>$path, filename=>$_} } @files;
+			}
+			
+			push @dirs_info, { path => $path, dir_locked => $dir_error, files => \@files_info };
+		}
 	}
 	
 	my $tmpl =  $self->load_tmpl('Systemstatus/view_logs.tmpl');
@@ -121,6 +133,7 @@ sub view_logs : Runmode {
 	$tmpl->param('SUBMLOGS' => 1);
 	$tmpl->param('username' => $self->session->param('username')); 
     $tmpl->param('dirs' => \@dirs_info);
+    $tmpl->param('error_msg' => $error_msg);
  
     return $tmpl->output(); 
 }

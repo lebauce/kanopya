@@ -782,6 +782,7 @@ sub graphConsumption {
 					height => $self->{_graph_height},
 					
 					draw => 	{
+									thickness => 3,
 									type => 'line',
 									dsname => 'consumption',
 									name => 'conso',
