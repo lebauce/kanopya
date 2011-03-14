@@ -206,6 +206,7 @@ sub getNetConf {
 sub getLogDirectories {
 	my $self = shift;
 	
+	#TODO retrieve log dirs from conf (= param of driver file in destination used)
 	return ("/var/log/kanopya/");
 }
 

@@ -115,7 +115,8 @@ sub prepare {
     if ((! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) ||
         (! exists $params->{disk_name} or ! defined $params->{disk_name})||
         (! exists $params->{size} or ! defined $params->{size})||
-        (! exists $params->{filesystem} or ! defined $params->{filesystem})){
+        (! exists $params->{filesystem} or ! defined $params->{filesystem}) ||
+        (! exists $params->{vg_id} or ! defined $params->{vg_id})){
         my $error = $@;
 		$errmsg = "Operation ECreateLogicalVolume failed, missing parameters";
 		$log->error($errmsg);
@@ -148,11 +149,13 @@ sub execute{
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	
-    $self->{_objs}->{ecomp_lvm}->createDisk(name => $self->{params}->{disk_name},
-                                            size => $self->{params}->{size},
-                                            filesystem => $self->{params}->{filesystem},
-                                            econtext => $self->{cluster_econtext});
-		
+	my $vg = $self->_getEntity()->getMainVg();
+	$self->{_objs}->{ecomp_lvm}->lvCreate(lvm2_vg_id =>$self->{params}->{vg_id},
+	                       lvm2_lv_name => $self->{params}->{disk_name},
+					       lvm2_lv_filesystem =>$self->{params}->{filesystem},
+					       lvm2_lv_size => $self->{params}->{size},
+					       econtext => $self->{cluster_econtext},
+					       lvm2_vg_name => $self->{_objs}->{ecomp_lvm}->_getEntity()->getMainVg(lvm2_vg_id =>$self->{params}->{vg_id}));
 }
 
 =head1 DIAGNOSTICS

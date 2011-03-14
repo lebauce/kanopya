@@ -474,6 +474,9 @@ sub getComponent{
 
 	$log->debug("name is $args{name}, version is $args{version}");
 	my $comp_instance_row = $comp_instance_rs->next;
+	if (not defined $comp_instance_row) {
+		throw Kanopya::Exception::Internal(error => "Component with name '$args{name}' version $args{version} not installed on this cluster");
+	}
 	$log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
 	$log->debug("Component instance found with " . ref($comp_instance_row));
 	my $comp_category = $comp_instance_row->get_column('component_category');
