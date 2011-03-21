@@ -11,7 +11,7 @@ use strict;
 
 #version number is mandatory#
 if (!$ARGV[0] || !$ARGV[1]) {
-	print "usage: lib.pl <package name> <package_version_number>, e.g: lib.pl 0.9";
+	print "usage: package_builder.pl <package name> <package_version_number>, e.g: lib.pl 0.9\n";
 	exit;
 }
 
@@ -62,11 +62,12 @@ system("cp -vr $kanopya_debian $this_package/debian");
 
 #we now run the debuild utility#
 chdir $this_package;
-system ("debuild -us -uc");
+system ("debuild");
 
 #we archive the logs of the build#
 my $build_logs = $this_package."-logs";
 mkdir $build_logs;
 chdir $temp_kanopya_dir;
-system ('mv *.dsc *.build *.changes '.$ARGV[0].'_'.$ARGV[1].'.tar.gz '.$build_logs);
+system ('cp -vr *.dsc *.build *.changes '.$ARGV[0].'_'.$ARGV[1].'.tar.gz '.$build_logs);
 system ("tar czf $build_logs.tar.gz $build_logs"); 
+system ("rm -rf $build_logs");

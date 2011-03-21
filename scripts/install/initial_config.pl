@@ -66,6 +66,11 @@ ReadMode ("original");
 print "\nplease enter the database's url or domain name: ";
 $db_location = <STDIN>;
 chomp($db_location);
+while (length($db_location)==0){
+	print "you can't give a null location for the database: ";
+	$db_location = <STDIN>;
+	chomp($db_location);
+}
 
 print "please enter the database's port (it should be 3306 by default): ";
 $db_port = <STDIN>;
@@ -79,20 +84,62 @@ while ($db_port =~ m/\D/  || length($db_port) == 0 || $db_port == 0 || $db_port 
 print "please enter the Kanopya's internal network address: ";
 $mcs_internal_network = <STDIN>;
 chomp($mcs_internal_network);
+while ($mcs_internal_network !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+{
+	print "you must enter a valid ipv4 address: ";	
+	$mcs_internal_network = <STDIN>;
+	chomp($mcs_internal_network);
+	my @ip = split /\./, $mcs_internal_network;
+	for (my $i = 0; $i < @ip; $i++)
+	{
+		while (!($ip[$i] <= 255))
+		{
+			last;
+		}
+	}
+}
 
 print "please enter the gateway for kanopya's network: ";
 $mcs_gateway = <STDIN>;
 chomp($mcs_gateway);
+while ($mcs_gateway !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+{
+	print "you must enter a valid ipv4 address: ";	
+	$mcs_gateway = <STDIN>;
+	chomp($mcs_gateway);
+	my @ip = split /\./, $mcs_gateway;
+	for (my $i = 0; $i < @ip; $i++)
+	{
+		while (!($ip[$i] <= 255))
+		{
+			last;
+		}
+	}
+}
 
 print "please enter the internal network netmask: ";
 $mcs_internal_network_netmask = <STDIN>;
 chomp($mcs_internal_network_netmask);
+while ($mcs_internal_network_netmask !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+{
+	print "you must enter a valid ipv4 address: ";	
+	$mcs_internal_network_netmask = <STDIN>;
+	chomp($mcs_internal_network_netmask);
+	my @ip = split /\./, $mcs_internal_network_netmask;
+	for (my $i = 0; $i < @ip; $i++)
+	{
+		while (!($ip[$i] <= 255))
+		{
+			last;
+		}
+	}
+}
 
 print "please enter the absolute path of kanopya's logging directory: ";
 $kanopya_logdir = <STDIN>;
 chomp($kanopya_logdir);
 while ($kanopya_logdir !~ m/^\//){
-	print $kanopya_logdir." is not an absolute path. Absolute path starts with the '/' symbol that represents the root of the filesystem: ";
+	print "'".$kanopya_logdir."' is not an absolute path. Absolute path starts with the '/' symbol that represents the root of the filesystem: ";
 	$kanopya_logdir = <STDIN>;
 	chomp($kanopya_logdir);
 }
@@ -100,8 +147,8 @@ while ($kanopya_logdir !~ m/^\//){
 print "please enter the physical volumes name, separated by a comma: ";
 $kanopya_pv = <STDIN>;
 chomp($kanopya_pv);
-while (length($kanopya_pv)==0){
-	print "you must enter at least one physical volume name: ";
+while (length($kanopya_pv)==0 || $kanopya_pv !~ m/^\//){
+	print "you must enter at least one physical volume name. It must contain the absolute path to the volume. Absolute path starts with the '/' symbol, that represents the root of the filesystem: ";
 	$kanopya_pv = <STDIN>;
 	chomp($kanopya_pv);
 }
@@ -141,7 +188,7 @@ while ($kanopya_vg_free_space =~ m/\D/ || $kanopya_vg_free_space == 0){
 
 #We can now create the database credentials
 print "creating mysql user...\n";
-system ("mysql -h $db_location -P $db_port -u root -p -e \"CREATE USER '$db_user' IDENTIFIED BY '$db_user_pwd'\"") or die "$!";
+system ("mysql -h $db_location -P $db_port -u root -p -e \"CREATE USER '$db_user' IDENTIFIED BY '$db_user_pwd'\"") == 0 or die "error while creating mysql user: $!";
 print "done\n";
 
 #We create Kanopya system user
@@ -162,21 +209,21 @@ print "done\n";
 
 #Then we create the logging directory
 print "creating the logging directory...";
-system ("mkdir $kanopya_logdir") or die "$!";
+system ("mkdir $kanopya_logdir") == 0 or die "error while creating the logging directory: $!";
 print "done\n";
 
 #TEMPORARY: we make www-data owner of /opt/kanopya/logs after having created it
-system ("mkdir /opt/kanopya/logs") or die "$!";
-system ("chown -R www-data.www-data /opt/kanopya/logs") or die "$!";
+system ("mkdir /opt/kanopya/logs") == 0 or die "$!";
+system ("chown -R www-data.www-data /opt/kanopya/logs") == 0 or die "$!";
 #TEMPORARY: we put components.conf in /etc/kanopya
-system ("cp /etc/kanopya/samples/components.conf /etc/kanopya") or die "$!";
+system ("cp /etc/kanopya/samples/components.conf /etc/kanopya") == 0 or die "$!";
 
 #We then create the administrator.conf file, and place it under /etc/kanopya/administrator.conf
 print "creating administrator.conf...";
-system("touch $administrator_conf") or die "$!";
+system("touch $administrator_conf") or die "error while touching administrator.conf: $!";
 print "done\n";
 print "filling administrator.conf...";
-open (FILE, ">$administrator_conf") or die "open: $!"; 
+open (FILE, ">$administrator_conf") == 0 or die "error while opening administrator.conf: $!"; 
 print FILE "<config logdir=\"$kanopya_logdir\">\n<internalnetwork ip=\"$mcs_internal_network\" mask=\"$mcs_internal_network_netmask\" gateway=\"$mcs_gateway\"/>\n<dbconf type=\"mysql\" name=\"administrator\" user=\"$db_user\" password=\"$db_user_pwd\" port=\"$db_port\" host=\"$db_location\" debug=\"0\"/>\n</config>";
 close (FILE);
 print "done\n";
@@ -204,12 +251,12 @@ print "done\n";
 
 #We now generate the database schemas
 print "generating database schemas...";
-system ("mysql -u $db_user -p$db_user_pwd < $schemas_sql") or die "$!";
+system ("mysql -u $db_user -p$db_user_pwd < $schemas_sql") == 0 or die "error while generating database schema: $!";
 print "done\n";
 
 #We now generate the components schemas 
 print "loading component DB schemas...";
-open (FILE, "<$components_conf") or die "open: $!";
+open (FILE, "<$components_conf") or die "error while opening components.conf: $!";
 my $line;
 LINE:
 while( defined( $line = <FILE> ) )
@@ -224,6 +271,6 @@ print "components DB schemas loaded\n";
 
 #And to conclude, we insert initial, datas in the DB
 print "inserting initial datas...";
-system ("mysql -u $db_user -p$db_user_pwd < $data_sql") or die "$!";
+system ("mysql -u $db_user -p$db_user_pwd < $data_sql") == 0 or die "error while inserting initial datas: $!";
 print "done\n";
 print "initial configuration: done.\n";
