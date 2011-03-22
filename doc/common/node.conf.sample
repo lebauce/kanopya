@@ -9,8 +9,7 @@ bootmode=iscsi
 initiatorname=iqn.2011-03.com.hedera-technology.node
 
 root_fs_type=ext3
-root_mount_point="/root" # do not change this ! it is used during initramfs boot process
-root_mount_opts="rw"
+root_mount_opts="ro,noatime,nodiratime"
 root_target_name=iqn.2011-03.com.hedera-technology.nas:root_node
 root_target_ip=10.10.10.1
 root_target_port=3260
@@ -24,7 +23,7 @@ root_in_password=
 additional_devices="etc data"
 
 etc_fs_type=ext3
-etc_mount_point="/root/etc" 
+etc_mount_point="/etc" 
 etc_mount_opts="rw"
 etc_target_name=iqn.2011-03.com.hedera-technology.nas:etc_node
 etc_target_ip=10.10.10.1
@@ -36,7 +35,7 @@ etc_in_username=
 etc_in_password=
 
 data_fs_type=ext3
-data_mount_point="/root/srv" 
+data_mount_point="/srv" 
 data_mount_opts="rw"
 data_target_name=iqn.2011-03.com.hedera-technology.nas:data_node
 data_target_ip=10.10.10.1

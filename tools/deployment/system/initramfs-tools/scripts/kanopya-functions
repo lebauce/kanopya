@@ -62,9 +62,14 @@ do_mount()
     DEV_MOUNT_POINT=$(eval echo \$${1}_mount_point)
     DEV_MOUNT_OPTS=$(eval echo \$${1}_mount_opts)
 
+    if [ "$1" = "root" ]; then
+	DEV_MOUNT_POINT=
+    else
+	DEV_MOUNT_POINT=$(eval echo \$${1}_mount_point)
+
     DEVICE=`cat /tmp/${1}`
-    echo "mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} ${DEV_MOUNT_POINT}"
-    mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} ${DEV_MOUNT_POINT}
+    echo "mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}"
+    mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}
 
 }
 
