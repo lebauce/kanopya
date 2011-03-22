@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# bootmode is either local, iscsi or install
+# TODO : local mount harddisk and boot on
+# iscsi do connection to targets, mount imported devices and boot on
+# TODO : install do connection to targets, create identical devices on local harddrive, duplicate data on harddrive and boot on local
+bootmode=iscsi
+
+initiatorname=iqn.2011-03.com.hedera-technology.node
+
+root_fs_type=ext3
+root_mount_point="/root" # do not change this ! it is used during initramfs boot process
+root_mount_opts="rw"
+root_target_name=iqn.2011-03.com.hedera-technology.nas:root_node
+root_target_ip=10.10.10.1
+root_target_port=3260
+root_target_group=0
+root_username=
+root_password=
+root_in_username=
+root_in_password=
+
+# additional_devices are names help to identify variables defined under
+additional_devices="etc data"
+
+etc_fs_type=ext3
+etc_mount_point="/root/etc" 
+etc_mount_opts="rw"
+etc_target_name=iqn.2011-03.com.hedera-technology.nas:etc_node
+etc_target_ip=10.10.10.1
+etc_target_port=3260
+etc_target_group=0
+etc_username=
+etc_password=
+etc_in_username=
+etc_in_password=
+
+data_fs_type=ext3
+data_mount_point="/root/srv" 
+data_mount_opts="rw"
+data_target_name=iqn.2011-03.com.hedera-technology.nas:data_node
+data_target_ip=10.10.10.1
+data_target_port=3260
+data_target_group=0
+data_username=
+data_password=
+data_in_username=
+data_in_password=
+
+
