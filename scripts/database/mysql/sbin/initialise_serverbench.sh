@@ -11,7 +11,6 @@ for i in $( cat /etc/kanopya/components.conf ); do
     echo "Installing $i component in db from"
     echo "/opt/kanopya/scripts/database/mysql/schemas/components/$i.sql"
     mysql -u $dbuser -p$dbpassword < "/opt/kanopya/scripts/database/mysql/schemas/components/$i.sql"
-    mysql -u $dbuser -p$dbpassword < "/opt/kanopya/scripts/database/mysql/data-sample/components/$i.sql"
 done
 echo -n 'insert initial data... '
 mysql -u $dbuser -p$dbpassword < /opt/kanopya/scripts/database/mysql/data-sample/initialize_for_Bench_server.sql 

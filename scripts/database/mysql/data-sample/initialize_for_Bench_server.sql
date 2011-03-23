@@ -6,7 +6,7 @@ SET @eid := 1;
 -- permanents data
 --
 -- system groups
-INSERT INTO `groups` VALUES 
+INSERT INTO `gp` VALUES 
 (1,'User','User', 'User master group containing all users',1),
 (2,'Processormodel','Processormodel','Processormodel master group containing all processor models',1),
 (3,'Motherboardmodel','Motherboardmodel','Motherboardmodel master group containing all motherboard models',1),
@@ -17,21 +17,21 @@ INSERT INTO `groups` VALUES
 (8,'Systemimage','Systemimage','Systemimage master group containing all system images',1),
 (9,'Operationtype','Operationtype','Operationtype master group containing all operations',1),
 (10,'Powersupply','Powersupply','Powersupply master group  containing all power supply cards',1);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,1); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,4); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,5); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,6); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,7); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,8); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,9); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,10); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,2); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,3); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,4); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,5); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,6); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,7); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,8); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,9); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,10); SET @eid := @eid +1;
 
 -- predefined groups
-INSERT INTO `groups` VALUES
+INSERT INTO `gp` VALUES
 (11,'Admin','User','Privileged users for administration tasks',0);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `groups_entity` VALUES (@eid,11); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,11); SET @eid := @eid +1;
 SET @Admin_group = 11;
 
 -- system user
@@ -188,7 +188,7 @@ INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1,'Admin motherboard'
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
-INSERT INTO `node` VALUES (1,1,1,1);
+INSERT INTO `node` VALUES (1,1,1,1,'down');
 
 -- components templates
 INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/components/mcsapache2', 2);
