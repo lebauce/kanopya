@@ -62,7 +62,7 @@ system("cp -vr $kanopya_debian $this_package/debian");
 
 #we now run the debuild utility#
 chdir $this_package;
-system ("debuild");
+system ("debuild -us -uc");
 
 #we archive the logs of the build#
 my $build_logs = $this_package."-logs";
