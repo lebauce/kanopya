@@ -339,8 +339,8 @@ sub view_clustermonitoring_settings : Runmode {
 	$tmpl->param('SETS' => \@sets);
 	$tmpl->param('CLUSTER_ID' => $query->param('cluster_id'));
 	$tmpl->param('TITLEPAGE' => "Cluster monitoring settings");
-	$tmpl->param('MSETTINGS' => 1);
-	$tmpl->param('SUBMMONITOR' => 1);
+	$tmpl->param('MCLUSTERS' => 1);
+	$tmpl->param('SUBMCLUSTERS' => 1);
 	
 	return $tmpl->output();
 }

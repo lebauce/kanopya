@@ -142,8 +142,8 @@ sub view_orchestrator_settings : StartRunmode {
 	$tmpl->param('RULES' => \@rules);
 	$tmpl->param('VAR_CHOICES' => $var_choices);
 	$tmpl->param('TITLEPAGE' => "Orchestrator settings");
-	$tmpl->param('MSETTINGS' => 1);
-	$tmpl->param('SUBMORCHESTRATOR' => 1);
+	$tmpl->param('MCLUSTERS' => 1);
+	$tmpl->param('SUBMCLUSTERS' => 1);
 	
 	return $tmpl->output();
 }
