@@ -1,5 +1,5 @@
-kanopya-storage (0.9) unstable; urgency=low
+kanopya-storage (0.9) stable; urgency=low
 
   * Initial Release.
 
- -- maxime <maxime@unknown>  Mon, 31 Jan 2011 15:22:37 +0100
+ -- Hedera Dev Team <dev@hederatech.com>  Mon, 31 Jan 2011 15:22:37 +0100
