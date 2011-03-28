@@ -69,7 +69,7 @@ sub getWorkload {
 							delay => [1],
 							think_time => 2 );
 
-	my $workload_amount = 1000;
+	my $workload_amount = 301;
 		
 	return { workload_class => \%workload_class, workload_amount => $workload_amount };
 }
