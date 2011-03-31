@@ -596,18 +596,20 @@ sub generateBootConf {
 				root_port		=> "3260",
 				mounts_iscsi		=> []
 	};
+    $vars->{additional_devices} = "etc";
 	my $components = $self->{_objs}->{components};
 	foreach my $i (keys %$components) {
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
 				my $iscsi_export = $components->{$i};
-				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-				#									 						version => "0");
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
+                my $tmp = $vars->{mounts_iscsi};
+                foreach my $j (keys %$tmp){
+                    $vars->{additional_devices} .= " ". $tmp->{$j}->{name};
+                }
    			}
 		}
 	}
-
 	$log->debug(Dumper $vars);
 	$template->process($input, $vars, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
 	#TODO problem avec fichier de boot a voir.
