@@ -14,7 +14,7 @@ root_in_username=
 root_in_password=
 
 etc_fs_type=[% etc_fs %]
-ext_mount_point="/etc"
+etc_mount_point="/etc"
 etc_mount_opts="rw"
 etc_target_name=[% etc_target %]
 etc_target_ip=[% etc_ip %]
