@@ -1,6 +1,7 @@
 #!/bin/sh
-iscsi_initiator=[% initiatorname %]
-additional_devices=[% additional_devices %]
+initiatorname=[% initiatorname %]
+bootmode=iscsi
+additional_devices="[% additional_devices %]"
 
 root_fs_type=[% root_fs %]
 root_mount_opts="ro,noatime,nodiratime"
