@@ -121,6 +121,8 @@ sub prepare {
 
 }
 
+
+
 sub execute{
 	my $self = shift;
 	$log->debug("Before EOperation exec");
@@ -129,7 +131,7 @@ sub execute{
 	my $adm = Administrator->new();
 	$log->debug("After Adm");
 	
-	
+###############################	$self->prepare_systemimage();
 # Create cluster directory
 	my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
 	$self->{econtext}->execute(command => $command);

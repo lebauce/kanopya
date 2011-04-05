@@ -273,7 +273,14 @@ sub execute {
 	# Configure DHCP Component
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
 	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
-	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	my $motherboard_kernel_id;# = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
+	if ($tmp_kernel_id) {
+	    $motherboard_kernel_id = $tmp_kernel_id;
+	} else {
+	    $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	}
+
 	$self->{_objs}->{component_dhcpd}->addHost( dhcpd3_subnet_id		=> $subnet,
 												dhcpd3_hosts_ipaddr	=> $motherboard_ip,
 												dhcpd3_hosts_mac_address	=> $motherboard_mac,
