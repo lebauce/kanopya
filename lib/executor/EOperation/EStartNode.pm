@@ -612,7 +612,7 @@ sub generateBootConf {
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
                 my $tmp = $vars->{mounts_iscsi};
                 foreach my $j (@$tmp){
-                    $vars->{additional_devices} .= " ". $tmp->{$j}->{name};
+                    $vars->{additional_devices} .= " ". $j->{name};
                 }
    			}
 		}
