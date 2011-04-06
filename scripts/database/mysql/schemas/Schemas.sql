@@ -136,13 +136,15 @@ CREATE TABLE `powersupply` (
 CREATE TABLE `powersupplycard` (
   `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `powersupplycard_name` char(64) NOT NULL,
-  `powersupplycard_ip` char(15) DEFAULT NULL,
+  `ipv4_internal_id` int(8) unsigned DEFAULT NULL,
   `powersupplycardmodel_id` int(8) unsigned DEFAULT NULL,
   `powersupplycard_mac_address` char(32) NOT NULL,
   `active` int(1),
   PRIMARY KEY (`powersupplycard_id`),
   KEY `fk_powersupplycardmodel` (`powersupplycardmodel_id`),
-  CONSTRAINT `fk_powersupplycardmodel` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY `fk_powersupplycard_ipv4_internal_id` (`ipv4_internal_id`),
+  CONSTRAINT `fk_powersupplycardmodel` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_powersupplycard_ipv4_internal_id` FOREIGN KEY (`ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -356,6 +358,7 @@ CREATE TABLE `cluster_ipv4_route` (
   PRIMARY KEY (`cluster_ipv4_route_id`),
   KEY `fk_cluster_ipv4_route_1` (`cluster_id`),
   KEY `fk_cluster_ipv4_route_2` (`ipv4_route_id`),
+  UNIQUE KEY `index4` (`cluster_id`,`ipv4_route_id`),
   CONSTRAINT `fk_cluster_ipv4_route_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_cluster_ipv4_route_2` FOREIGN KEY (`ipv4_route_id`) REFERENCES `ipv4_route` (`ipv4_route_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

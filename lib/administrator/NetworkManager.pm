@@ -77,7 +77,8 @@ sub addRoute {
 	my %args = @_;
 	if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
 		! exists $args{ip_destination} or ! defined $args{ip_destination} || 
-		! exists $args{gateway} or ! defined $args{gateway}) {
+		! exists $args{gateway} or ! defined $args{gateway} ||
+		! exists $args{context} or ! defined $args{context}) {
 		$errmsg = "NetworkManager->addRoute need publicip_id, ip_destination and gateway named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);
@@ -98,9 +99,8 @@ sub addRoute {
 	
 	# try to create route
 	eval {
-		my $row = {ip_destination => $destinationip->addr, publicip_id => $args{publicip_id}};
-		if($gateway) { $row->{gateway} = $gateway->addr; }
-		$self->{db}->resultset('Route')->create($row);
+		my $row = {ipv4_route_destination => $destinationip->addr, ipv4_route_gateway => $gateway->addr,ipv4_route_context=>$args{context}};
+		$self->{db}->resultset('Ipv4Route')->create($row);
 	};
 	if($@) { 
 		$errmsg = "NetworkManager->addRoute: $@";
@@ -128,14 +128,11 @@ sub getFreeInternalIP{
 	
 	# try to find a matching motherboard of each ip of our network	
 	while ($freeip = $network->nth($i)) {
-		$row = $self->{db}->resultset('Motherboard')->find({ motherboard_internal_ip => $freeip->addr });
+		$row = $self->{db}->resultset('Ipv4Internal')->find({ ipv4_internal_address => $freeip->addr });
 		
 		# if no record is found for this ip address, it is free so we return it
 		if(not defined $row) { 
-			$row = $self->{db}->resultset('Powersupplycard')->find({ powersupplycard_ip => $freeip->addr });
-			if(not defined $row) {
-				return $freeip->addr; }}
-		
+				return $freeip->addr; }
 		$log->debug($freeip->addr." is already used");
 		$i++;
 	}
@@ -186,17 +183,17 @@ sub newPublicIP {
 	my $res;	
 	# try to save public ip
 	eval {
-		my $row = {ip_address => $pubip->addr, ip_mask => $pubip->mask};
-		if($gateway) { $row->{gateway} = $gateway->addr; }
-		$res = $self->{db}->resultset('Publicip')->create($row);
-		$log->debug("Public ip create and return ". $res->get_column("publicip_id"));
+		my $row = {ipv4_public_address => $pubip->addr, ipv4_public_mask => $pubip->mask};
+		if($gateway) { $row->{ipv4_public_default_gw} = $gateway->addr; }
+		$res = $self->{db}->resultset('Ipv4Public')->create($row);
+		$log->debug("Public ip create and return ". $res->get_column("ipv4_public_id"));
 	};
 	if($@) { 
 		$errmsg = "NetworkManager->newPublicIP: $@";
 		$log->error($errmsg);
 		throw Mcs::Exception::DB(error => $errmsg); }
 	$log->debug("new public ip created");
-	return $res->get_column("publicip_id");
+	return $res->get_column("ipv4_public_id");
 }
 
 =head2 getPublicIPs
@@ -208,15 +205,15 @@ Get list of public ip addresses
 
 sub getPublicIPs {
 	my $self = shift;
-	my $pubips = $self->{db}->resultset('Publicip')->search;
+	my $pubips = $self->{db}->resultset('Ipv4Public')->search;
 	my $pubiparray = [];
 	while(my $ips = $pubips->next) {
 		push @$pubiparray, {
-			publicip_id => $ips->get_column('publicip_id'),
+			publicip_id => $ips->get_column('ipv4_public_id'),
 			cluster_id => $ips->get_column('cluster_id'),
-			ip_address => $ips->get_column('ip_address'),
-			ip_mask => $ips->get_column('ip_mask'),
-			gateway =>$ips->get_column('gateway') 
+			ip_address => $ips->get_column('ipv4_public_address'),
+			ip_mask => $ips->get_column('ipv4_public_mask'),
+			gateway =>$ips->get_column('ipv4_public_default_gw') 
 		};
 	}
 	return $pubiparray;
@@ -231,14 +228,14 @@ Get list of unused public ip addresses
 
 sub getFreePublicIPs {
 	my $self = shift;
-	my $pubips = $self->{db}->resultset('Publicip')->search({ cluster_id => undef });
+	my $pubips = $self->{db}->resultset('Ipv4Public')->search({ cluster_id => undef });
 	my $pubiparray = [];
 	while(my $ips = $pubips->next) {
 		push @$pubiparray, {
-			publicip_id => $ips->get_column('publicip_id'),
-			ip_address => $ips->get_column('ip_address'),
-			ip_mask => $ips->get_column('ip_mask'),
-			gateway =>$ips->get_column('gateway') 
+			publicip_id => $ips->get_column('ipv4_public_id'),
+			ip_address => $ips->get_column('ipv4_public_address'),
+			ip_mask => $ips->get_column('ipv4_public_mask'),
+			gateway =>$ips->get_column('ipv4_public_default_gw') 
 		};
 	}
 	return $pubiparray;
@@ -261,7 +258,7 @@ sub delPublicIP {
 	}
 	
 	# getting the row	
-	my $row = $self->{db}->resultset('Publicip')->find( $args{publicip_id} );
+	my $row = $self->{db}->resultset('Ipv4Public')->find( $args{publicip_id} );
 	if(! defined $row) {
 		$errmsg = "NetworkManager->delPublicIP : publicip_id $args{publicip_id} not found!";
 		$log->error($errmsg);
@@ -298,7 +295,7 @@ sub setClusterPublicIP {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	my $row = $self->{db}->resultset('Publicip')->find($args{publicip_id});
+	my $row = $self->{db}->resultset('Ipv4Public')->find($args{publicip_id});
 	# getting public ip row
 	if(! defined $row) {
 		$errmsg = "NetworkManager->setClusterPublicIP : publicip_id $args{publicip_id} not found!";
@@ -333,7 +330,7 @@ sub delRoute {
 		throw Mcs::Exception::Internal(error => $errmsg);
 	}
 	
-	my $row = $self->{db}->resultset('Route')->find($args{route_id});
+	my $row = $self->{db}->resultset('Ipv4Route')->find($args{route_id});
 	if(not defined $row) {
 		$errmsg = "NetworkManager->delRoute : route_id $args{route_id} not found!";
 		$log->error($errmsg);
@@ -341,6 +338,36 @@ sub delRoute {
 	}
 	$row->delete;
 	$log->info("route ($args{route_id}) successfully deleted");	
+}
+
+sub setClusterRoute {
+    my $self = shift;
+	my %args = @_;
+	if (! exists $args{ipv4_route_id} or ! defined $args{ipv4_route_id} ||
+		! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
+		$errmsg = "NetworkManager->setClusterRoute need ipv4_route_id and cluster_id named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	
+#	my $row = $self->{db}->resultset('ClusterIpv4Route')->search({cluster_id => $args{cluster_id}, ipv4_route_id =>$args{ipv4_route_id}});
+#	# getting public ip row
+#	if(! defined $row) {
+#		$errmsg = "NetworkManager->setClusterRoute : ipv4_route_id $args{ipv4_route_id} not found!";
+#		$log->error($errmsg);
+#		throw Mcs::Exception::DB(error => $errmsg);
+#	}
+	# try to set cluster_id to this ip
+	eval {
+	    my $row = {cluster_id => $args{cluster_id}, ipv4_route_id =>$args{ipv4_route_id}};
+		$self->{db}->resultset('ClusterIpv4Route')->create($row);
+	};
+	if($@) { 
+		$errmsg = "NetworkManager->setClusterRoute : $@";
+		$log->error($errmsg);
+		throw Mcs::Exception::DB(error => $errmsg);
+	}
+	$log->info("Route $args{ipv4_route_id} set to cluster $args{cluster_id}");
 }
 
 =head getRoutes
@@ -351,14 +378,14 @@ return list of registered routes
 
 sub getRoutes {
 	my $self = shift;
-	my $routes = $self->{db}->resultset('Route');
+	my $routes = $self->{db}->resultset('Ipv4Route');
 	my $routearray = [];
 	while(my $r = $routes->next) {
 		push @$routearray, {
-			route_id => $r->get_column('route_id'),
-			publicip_id => $r->get_column('publicip_id'),
-			ip_destination => $r->get_column('ip_destination'),
-			gateway =>$r->get_column('gateway') 
+			route_id => $r->get_column('ipv4_route_id'),
+			ip_destination => $r->get_column('ipv4_route_destination'),
+			gateway =>$r->get_column('ipv4_route_gateway'),
+			context =>$r->get_column('ipv4_route_context')
 		};
 	}
 	return $routearray;
