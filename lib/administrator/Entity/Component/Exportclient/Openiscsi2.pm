@@ -155,18 +155,25 @@ sub getExports {
 	my $self = shift;
 	my $export_rs = $self->{_dbix}->openiscsi2s;
 	my @tab_exports =();
+	my $i =0;
 	while (my $export_row = $export_rs->next){
 		my $export ={};
+		$export->{name} = "device" . $i;
 		$export->{target} = $export_row->get_column('openiscsi2_target');
 		$export->{ip} = $export_row->get_column('openiscsi2_server');
 		$export->{port} = $export_row->get_column('openiscsi2_port');
 		$export->{mount_point} = $export_row->get_column('openiscsi2_mount_point');
 		$export->{options} = $export_row->get_column('openiscsi2_mount_options');
 		$export->{fs} = $export_row->get_column('openiscsi2_filesystem');
+		$i++;
 		push @tab_exports, $export;
 	}
 	$log->debug("asked openiscsi import : " . Dumper(@tab_exports));
 	return \@tab_exports;
+}
+
+sub getExportsList {
+    
 }
 
 =head1 DIAGNOSTICS

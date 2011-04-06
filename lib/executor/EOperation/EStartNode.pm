@@ -273,7 +273,14 @@ sub execute {
 	# Configure DHCP Component
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
 	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
-	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	my $motherboard_kernel_id;# = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
+	if ($tmp_kernel_id) {
+	    $motherboard_kernel_id = $tmp_kernel_id;
+	} else {
+	    $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	}
+
 	$self->{_objs}->{component_dhcpd}->addHost( dhcpd3_subnet_id		=> $subnet,
 												dhcpd3_hosts_ipaddr	=> $motherboard_ip,
 												dhcpd3_hosts_mac_address	=> $motherboard_mac,
@@ -596,18 +603,20 @@ sub generateBootConf {
 				root_port		=> "3260",
 				mounts_iscsi		=> []
 	};
+    $vars->{additional_devices} = "etc";
 	my $components = $self->{_objs}->{components};
 	foreach my $i (keys %$components) {
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
 				my $iscsi_export = $components->{$i};
-				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-				#									 						version => "0");
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
+                my $tmp = $vars->{mounts_iscsi};
+                foreach my $j (@$tmp){
+                    $vars->{additional_devices} .= " ". $j->{name};
+                }
    			}
 		}
 	}
-
 	$log->debug(Dumper $vars);
 	$template->process($input, $vars, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
 	#TODO problem avec fichier de boot a voir.
