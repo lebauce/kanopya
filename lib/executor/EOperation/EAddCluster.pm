@@ -123,15 +123,22 @@ sub prepare {
 
 
 
-sub execute{
+sub execute {
 	my $self = shift;
-	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
-	$log->debug("After Adm");
+	my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
+	my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
+	my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
 	
-###############################	$self->prepare_systemimage();
+	if($si_location eq 'diskless') {
+		if(not $si_shared) {
+			# ici clonage du system image pour en faire un dedicated
+		} 
+	} else {
+		
+	}
+
 # Create cluster directory
 	my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
 	$self->{econtext}->execute(command => $command);

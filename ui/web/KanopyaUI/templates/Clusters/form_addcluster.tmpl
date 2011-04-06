@@ -19,11 +19,11 @@
 		<tr>
 		<td class="label">Cluster type :</td>
 		<td>
-		<input type="radio" name="siprovision" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via 
+		<input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via 
 		<select name="exporttype" style="width: 50px">
 			<option value="iscsi">ISCSI</option>
 		</select>&nbsp;|&nbsp;
-		<input type="radio" name="siprovision" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local
+		<input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local
 		</td>
 	</tr>
 	<tr>
@@ -35,8 +35,8 @@
 		</select>
 		<span style="color: red"><TMPL_VAR NAME=ERR_SYSTEMIMAGE></span></td>		
 	</tr>
-	<tr id="sitype"><td></td><td><input type="radio" name="shareddedicate" value="shared" checked=checked/>shared
-	<input type="radio" name="shareddedicate" value="dedicated" />dedicated
+	<tr id="sitype"><td></td><td><input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared
+	<input type="radio" name="si_shareordedicate" value="dedicated" />dedicated
 	</td></tr>
 
 	<tr>
