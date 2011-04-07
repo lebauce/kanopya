@@ -73,10 +73,16 @@
 </td></tr>
 <TMPL_LOOP NAME=harddisks_list>
 <td class="label2">device: <TMPL_VAR NAME=harddisk_device></td>
-<td class="action"><TMPL_IF NAME=link_removeharddisk><a class="imgRemove" href="/cgi/kanopya.cgi/motherboard/process_removeharddisk?harddisk_id=<TMPL_VAR NAME=harddisk_id>&motherboard_id=<TMPL_VAR NAME=motherboard_id>">remove</a>
+<td class="action"><TMPL_IF NAME=link_removeharddisk><a class="imgRemove" href="/cgi/kanopya.cgi/motherboards/process_removeharddisk?harddisk_id=<TMPL_VAR NAME=harddisk_id>&motherboard_id=<TMPL_VAR NAME=motherboard_id>">remove</a>
 </TMPL_IF></td></tr>
 </TMPL_LOOP>
 <TMPL_ELSE>
+<tr><td colspan="2">&nbsp;</td>
+<td class="actions">
+<TMPL_IF NAME=can_addHarddisk>
+<a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/motherboards/form_addharddisk?motherboard_id=<TMPL_VAR NAME=motherboard_id>', 'add harddisk', 400, 130, '');">add hard disk</a><br />
+<span class="desc">Add a hard disk to this motherboard.</span></TMPL_IF>
+</td></tr>
 <tr><td>This motherboard has no hard disk</td></tr>
 </TMPL_IF>
 </table>

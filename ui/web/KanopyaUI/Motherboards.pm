@@ -258,17 +258,13 @@ sub view_motherboarddetails : Runmode {
 	}
 	
 	# harddisks list
-	#my $harddisks = $emotherboard->getHarddisks();
-	my $harddisks = [
-		{ harddisk_id => 1, harddisk_device => '/dev/sda' },
-		{ harddisk_id => 2, harddisk_device => '/dev/sdb' },
-		{ harddisk_id => 3, harddisk_device => '/dev/sdc' },
-	];
+	my $harddisks = $emotherboard->getHarddisks();
 	my $hds= [];
 	foreach my $hd (@$harddisks) {
 		my $tmp = {};
 		$tmp->{harddisk_id} = $hd->{harddisk_id};
 		$tmp->{harddisk_device} = $hd->{harddisk_device}; 
+		$tmp->{motherboard_id} = $emotherboard->getAttr(name => 'motherboard_id');
 					
 		if(not $methods->{'removeHarddisk'}->{'granted'} ) {
 			$tmp->{link_removeHarddisk} = 0;
@@ -387,6 +383,27 @@ sub process_addharddisk : Runmode {
 		}
 		else { $exception->rethrow(); }
 	} else { return $self->close_window(); }
+}
+
+# removeharddisk processing
+
+sub process_removeharddisk : Runmode {
+	my $self = shift;
+    my $query = $self->query();
+    my $motherboard;
+    eval { 
+    	$motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+    	$motherboard->removeHarddisk(harddisk_id => $query->param('harddisk_id')); 
+    };
+    if($@) { 
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	} 
+	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboarddetails?motherboard_id='.$motherboard->getAttr(name => 'motherboard_id')); }
 }
 
 1;

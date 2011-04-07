@@ -463,13 +463,66 @@ sub extension {
 	return "motherboarddetails";
 }
 
-
+sub getHarddisks {
+	
+	my $self = shift;
+	my $hds = [];
+	my $harddisks = $self->{_dbix}->harddisks;
+	while(my $hd = $harddisks->next) {
+		my $tmp = {};
+		$tmp->{harddisk_id} = $hd->get_column('harddisk_id');
+		$tmp->{harddisk_device} = $hd->get_column('harddisk_device');
+		push @$hds, $tmp;
+	} 
+	return $hds;
+	 
+}
 
 sub addHarddisk {
+	my $self = shift;
+	my %args = @_;
+	    
+    if (! exists $args{device} or ! defined $args{device}) {
+		$errmsg = "Entity::Motherboard->addHarddisk need a device named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $adm = Administrator->new();
+	# addHarddisk method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addHarddisk');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a hard disk to this motherboard");
+   	}
+	
+	$self->{_dbix}->harddisks->create({
+		harddisk_device => $args{device},
+		motherboard_id => $self->getAttr(name => 'motherboard_id'), 
+	});
 	
 }
 
-sub removeHarddisk {}
+sub removeHarddisk {
+	my $self = shift;
+	my %args = @_;
+	    
+    if (! exists $args{harddisk_id} or ! defined $args{harddisk_id}) {
+		$errmsg = "Entity::Motherboard->removeHarddisk need a harddisk_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+
+	my $adm = Administrator->new();
+	# removeHarddisk method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeHarddisk');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a hard disk from this motherboard");
+   	}
+
+	my $hd = $self->{_dbix}->harddisks->find($args{harddisk_id});
+	$hd->delete();
+
+}
 
 
 
