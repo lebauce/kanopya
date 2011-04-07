@@ -172,9 +172,26 @@ sub _addmotherboard_profile {
 		required => 'mac_address',
 		msgs => {
 				any_errors => 'some_errors',
-				prefix => 'err_'
+				prefix => 'err_',
+				constraints => {
+        			'mac_address_valid' => 'Invalid MAC address format',
+        		}
 		},
+		constraint_methods => {
+        	mac_address => mac_address_valid(),
+        }
 	};
+}
+
+# function constraint for mac_address field used in _addmotherboard_profile
+
+sub mac_address_valid {
+	return sub {
+		my $dfv = shift;
+		$dfv->name_this('mac_address_valid');
+		my $mac = $dfv->get_current_constraint_value();
+		return ($mac =~ /^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$/);
+	}
 }
 
 # motherboard details page
@@ -356,9 +373,26 @@ sub _addharddisk_profile {
 		required => 'device',
 		msgs => {
 				any_errors => 'some_errors',
-				prefix => 'err_'
+				prefix => 'err_',
+				constraints => {
+        			'device_valid' => 'Invalid device format',
+        		}
 		},
+		constraint_methods => {
+        	device => device_valid(),
+        }
 	};
+}
+
+# function constraint for mac_address field used in _addmotherboard_profile
+
+sub device_valid {
+	return sub {
+		my $dfv = shift;
+		$dfv->name_this('device_valid');
+		my $device = $dfv->get_current_constraint_value();
+		return ($device =~ /^\/dev\/(hd|sd)[a-z]{1}[0-9]*$/);
+	}
 }
 
 # form_addharddisk processing
