@@ -16,6 +16,16 @@
 		<td class="label">Description :</td>
 		<td><textarea cols="50" name="desc" value=""></textarea></td> 
 	</tr>
+		<tr>
+		<td class="label">Cluster type :</td>
+		<td>
+		<input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via 
+		<select name="exporttype" style="width: 50px">
+			<option value="iscsi">ISCSI</option>
+		</select>&nbsp;|&nbsp;
+		<input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local
+		</td>
+	</tr>
 	<tr>
 		<td class="label">System image :</td>
 		<td><select name="systemimage_id">
@@ -25,19 +35,10 @@
 		</select>
 		<span style="color: red"><TMPL_VAR NAME=ERR_SYSTEMIMAGE></span></td>		
 	</tr>
-	<tr>
-		<td class="label" rowspan="2">System image provision :</td>
-		<td><input type="radio" name="siprovision" value="diskless" checked="checked">Kanopya storage via 
-		<select name="exporttype" style="width: 50px">
-			<option value="iscsi">ISCSI</option>
-			<option value="nfs">NFS</option>
-		</select>
-		</td>
-	</tr>
-	<tr><td>
-		<input type="radio" name="siprovision" value="local">nodes'harddisk 
-		</td>
-	</tr>
+	<tr id="sitype"><td></td><td><input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared
+	<input type="radio" name="si_shareordedicate" value="dedicated" />dedicated
+	</td></tr>
+
 	<tr>
 		<td class="label">minimum node to used :</td>
 		<td><select name="min_node">
@@ -78,5 +79,7 @@
 <input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form> 
+
 </body>	
 </html>
+

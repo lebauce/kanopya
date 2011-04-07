@@ -127,10 +127,29 @@ sub process_addcluster : Runmode {
     return $err_page if $err_page;
 
     my $query = $self->query();
+    my ($si_location, $si_access_mode, $si_shared);
+    
+    $si_location = $query->param('si_location'); 
+    if($si_location eq 'local') {
+    	$si_access_mode = 'rw';
+    	$si_shared = 0;
+    } elsif($si_location eq 'diskless') {
+    	if($query->param('si_shareordedicate') eq 'shared') {
+    		$si_access_mode = 'ro';
+    		$si_shared = 1;
+    	} else {
+    		$si_access_mode = 'rw';
+    		$si_shared = 0;
+    	}
+    }
+    
     eval {
     	my $params = {
 			cluster_name => $query->param('name'),
 			cluster_desc => $query->param('desc'),
+			cluster_si_location => $si_location,
+			cluster_si_access_mode => $si_access_mode,
+			cluster_si_shared => $si_shared,
 			cluster_min_node => $query->param('min_node'),
 			cluster_max_node => $query->param('max_node'),
 			cluster_priority => $query->param('priority'),
