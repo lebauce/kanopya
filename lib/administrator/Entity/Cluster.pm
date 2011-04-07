@@ -631,13 +631,13 @@ sub getCurrentNodesCount {
 sub getPublicIps {
 	my $self = shift;
 
-	my $publicip_rs = $self->{_dbix}->publicips;
+	my $publicip_rs = $self->{_dbix}->ipv4_publics;
 	my $i =0;
 	my @pub_ip =();
 	while ( my $publicip_row = $publicip_rs->next ) {
-		my $publicip = {address => $publicip_row->get_column('ip_address'),
-						netmask => $publicip_row->get_column('ip_mask'),
-						gateway => $publicip_row->get_column('gateway'),
+		my $publicip = {address => $publicip_row->get_column('ipv4_public_address'),
+						netmask => $publicip_row->get_column('ipv4_public_mask'),
+						gateway => $publicip_row->get_column('ipv4_public_default_gw'),
 						name 	=> "eth0:$i"};
 		$i++;
 		push @pub_ip, $publicip;
