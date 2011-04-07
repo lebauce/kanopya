@@ -133,6 +133,13 @@ sub methods {
 		'deactivate'=> {'description' => 'deactivate this motherboard', 
 						'perm_holder' => 'entity',
 		},
+		'addHarddisk'=> {'description' => 'add a hard disk to this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		'removeHarddisk'=> {'description' => 'remove a hard disk from this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		
 		'setperm'	=> {'description' => 'set permissions on this motherboard', 
 						'perm_holder' => 'entity',
 		},
@@ -458,7 +465,11 @@ sub extension {
 
 
 
+sub addHarddisk {
+	
+}
 
+sub removeHarddisk {}
 
 
 

@@ -256,7 +256,28 @@ sub view_motherboarddetails : Runmode {
 		if($methods->{'activate'}->{'granted'}) { $tmpl->param('can_activate' => 1); }
 		if($methods->{'remove'}->{'granted'}) { $tmpl->param('can_delete' => 1); }
 	}
-		
+	
+	# harddisks list
+	#my $harddisks = $emotherboard->getHarddisks();
+	my $harddisks = [
+		{ harddisk_id => 1, harddisk_device => '/dev/sda' },
+		{ harddisk_id => 2, harddisk_device => '/dev/sdb' },
+		{ harddisk_id => 3, harddisk_device => '/dev/sdc' },
+	];
+	my $hds= [];
+	foreach my $hd (@$harddisks) {
+		my $tmp = {};
+		$tmp->{harddisk_id} = $hd->{harddisk_id};
+		$tmp->{harddisk_device} = $hd->{harddisk_device}; 
+					
+		if(not $methods->{'removeHarddisk'}->{'granted'} ) {
+			$tmp->{link_removeHarddisk} = 0;
+		} else { $tmp->{link_removeHarddisk} = 1;}
+		push @$hds, $tmp;
+	}
+	$tmpl->param('nbharddisks' => scalar(@$hds)+1);
+	$tmpl->param('harddisks_list' => $hds);
+	$tmpl->param('can_addHarddisk' => 1); #if($methods->{'addHarddisk'}->{'granted'}) { $tmpl->param('can_addHarddisk' => 1); }
 	return $tmpl->output();
 }
 
@@ -318,6 +339,54 @@ sub process_removemotherboard : Runmode {
 		else { $exception->rethrow(); }
 	} 
 	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
+}
+
+# harddisk addition popup window
+
+sub form_addharddisk : Runmode {
+	my $self = shift;
+    my $errors = shift;
+    my $tmpl =  $self->load_tmpl('Motherboards/form_addharddisk.tmpl');
+    $tmpl->param($errors) if $errors;
+    my $query = $self->query();
+    $tmpl->param('motherboard_id' => $query->param('motherboard_id'));
+    return $tmpl->output();
+}
+
+# fields verification function to used with form_addharddisk
+
+sub _addharddisk_profile {
+	return {
+		required => 'device',
+		msgs => {
+				any_errors => 'some_errors',
+				prefix => 'err_'
+		},
+	};
+}
+
+# form_addharddisk processing
+
+sub process_addharddisk : Runmode {
+	my $self = shift;
+    use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
+    my ($results, $err_page) = $self->check_rm('form_addharddisk', '_addharddisk_profile');
+    return $err_page if $err_page;
+    
+    my $query = $self->query();
+    
+    eval { 
+    	my $motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+    	$motherboard->addHarddisk(device => $query->param('device')); 
+    };
+    if($@) { 
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	} else { return $self->close_window(); }
 }
 
 1;
