@@ -66,6 +66,23 @@ __PACKAGE__->add_unique_constraint("ipv4_internal_address_UNIQUE", ["ipv4_intern
 
 =head1 RELATIONS
 
+=head2 motherboards
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Motherboard>
+
+=cut
+
+__PACKAGE__->has_many(
+  "motherboards",
+  "AdministratorDB::Schema::Result::Motherboard",
+  {
+    "foreign.motherboard_ipv4_internal_id" => "self.ipv4_internal_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 powersupplycards
 
 Type: has_many
@@ -82,8 +99,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-03-07 00:25:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DvTGt5Z5Ln2w1iVeBxYgXw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-07 12:42:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GDk8/9n+NAbQs1fB/qTiZA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
