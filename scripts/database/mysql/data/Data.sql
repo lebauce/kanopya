@@ -207,7 +207,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@ei
 INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1);
 
 -- admin cluster
-INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1, 'up');
+INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local', 'rw',0,1,NULL,1, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- public ip for admin cluster
@@ -219,7 +219,7 @@ INSERT INTO `ipv4_internal` VALUES (1,'10.0.0.1','255.255.255.0', NULL);
 INSERT INTO `ipv4_internal` VALUES (2,'10.0.0.2','255.255.255.0', NULL);
 
 -- admin motherboard
-INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1,'Admin motherboard',1,'6c:f0:49:d1:dc:9f','node1.hederatech.com','10.0.0.1','node001',NULL, 'up');
+INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1, 1,'Admin motherboard',1,'6c:f0:49:d1:dc:9f','node1.hederatech.com','10.0.0.1','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node

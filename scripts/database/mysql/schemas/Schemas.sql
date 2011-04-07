@@ -70,6 +70,19 @@ CREATE TABLE `motherboardmodel` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+
+--
+-- Table structure for table `harddisk`
+--
+CREATE TABLE `harddisk` (
+  `harddisk_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `motherboard_id` int(8) unsigned NOT NULL,
+  `harddisk_device` char(32) NOT NULL,
+  PRIMARY KEY (`harddisk_id`),
+  KEY `fk_harddisk_1` (`motherboard_id`),
+  CONSTRAINT `fk_harddisk_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `motherboard`
 --
@@ -81,6 +94,7 @@ CREATE TABLE `motherboard` (
   `kernel_id` int(8) unsigned NOT NULL,
   `motherboard_serial_number` char(64) NOT NULL,
   `motherboard_powersupply_id` int(8) unsigned,
+  `motherboard_ipv4_internal_id` int(8) unsigned  DEFAULT NULL,
   `motherboard_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `motherboard_mac_address` char(18) NOT NULL,
@@ -97,11 +111,13 @@ CREATE TABLE `motherboard` (
   KEY `fk_motherboard_3` (`kernel_id`),
   KEY `fk_motherboard_4` (`etc_device_id`),
   KEY `fk_motherboard_5` (`motherboard_powersupply_id`),
+  KEY `fk_motherboard_6` (`motherboard_ipv4_internal_id`),
   CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_motherboard_6` FOREIGN KEY (`motherboard_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -178,6 +194,9 @@ CREATE TABLE `cluster` (
   `cluster_min_node` int(2) unsigned NOT NULL,
   `cluster_max_node` int(2) unsigned NOT NULL,
   `cluster_priority` int(1) unsigned NOT NULL,
+  `cluster_si_location` ENUM('local','diskless') NOT NULL,
+  `cluster_si_access_mode` ENUM('ro','rw') NOT NULL,
+  `cluster_si_shared` int(1) unsigned NOT NULL,
   `active` int(1) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
