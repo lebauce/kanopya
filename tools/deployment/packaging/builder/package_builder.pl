@@ -11,7 +11,7 @@ use strict;
 
 #version number is mandatory#
 if (!$ARGV[0]) {
-	print "usage: package_builder.pl <package name>, e.g: lib.pl\n";
+	print "usage: package_builder.pl <package name>, e.g: ./package_builder.pl lib.pl\n";
 	exit;
 }
 
