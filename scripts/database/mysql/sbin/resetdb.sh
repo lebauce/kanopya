@@ -12,6 +12,10 @@ for i in $( cat /etc/kanopya/components.conf ); do
     echo "/opt/kanopya/scripts/database/mysql/schemas/components/$i.sql"
     mysql -u $dbuser -p$dbpassword < "/opt/kanopya/scripts/database/mysql/schemas/components/$i.sql"
 done
+
+echo 'generating Data.sql... '
+perl /opt/kanopya/scripts/database/mysql/sbin/gendatasql.pl
+echo 'done'
 echo -n 'insert initial data... '
 mysql -u $dbuser -p$dbpassword < /opt/kanopya/scripts/database/mysql/data/Data.sql
 echo 'done'

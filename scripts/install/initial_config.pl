@@ -29,21 +29,27 @@ my $admin_user_pwd;
 #this variable will handle the rollback operation in case of script failure
 my @rollback;
 
+#debug mode for administrator.conf
+
+my $debug = 0;
+
 #variables that handles locations used through this script
-my $conf_dir = "/etc/kanopya/";
-my $components_conf = $conf_dir."components.conf";
-my $administrator_conf = $conf_dir."administrator.conf";
-my $schemas_dir = "/opt/kanopya/scripts/database/mysql/schemas/";
-my $schemas_sql = $schemas_dir."Schemas.sql";
-my $data_sql = $schemas_dir."Data.sql";
-my $components_sql_dir = $schemas_dir."components/";
-my $data_sql_template_dir = "/opt/kanopya/scripts/install/";
+my $conf_dir = '/etc/kanopya/';
+my $kanopya_dir = '/opt/kanopya/';
+my $components_conf = $conf_dir.'components.conf';
+my $administrator_conf = $conf_dir.'administrator.conf';
+my $mysql_dir =  $kanopya_dir.'scripts/database/mysql/';
+my $schemas_dir = $mysql_dir.'schemas/';
+my $data_dir = $mysql_dir.'data/';
+my $schema_sql = $schemas_dir.'Schemas.sql';
+my $data_sql = $schemas_dir.'Data.sql';
+my $components_sql_dir = $schemas_dir.'components/';
 #############################
 #############################
 #############################
 
 #we first prompt the user for the required informations, that will be used to generate administrator.conf
-print "please enter the database's user: ";
+print 'please enter the database\'s user: ';
 $db_user = <STDIN>;
 chomp($db_user);
 while (length($db_user)==0){
@@ -209,7 +215,7 @@ print "done\n";
 
 #Then we create the logging directory
 print "creating the logging directory...";
-system ("mkdir $kanopya_logdir") == 0 or die "error while creating the logging directory: $!";
+system ("mkdir -p $kanopya_logdir") == 0 or die "error while creating the logging directory: $!";
 print "done\n";
 
 #TEMPORARY: we make www-data owner of /opt/kanopya/logs after having created it
@@ -220,24 +226,24 @@ system ("cp /etc/kanopya/samples/components.conf /etc/kanopya") == 0 or die "$!"
 
 #We then create the administrator.conf file, and place it under /etc/kanopya/administrator.conf
 print "creating administrator.conf...";
-system("touch $administrator_conf") or die "error while touching administrator.conf: $!";
+system("touch $administrator_conf") == 0 or die "error while touching administrator.conf: $!";
 print "done\n";
 print "filling administrator.conf...";
-open (FILE, ">$administrator_conf") == 0 or die "error while opening administrator.conf: $!"; 
-print FILE "<config logdir=\"$kanopya_logdir\">\n<internalnetwork ip=\"$mcs_internal_network\" mask=\"$mcs_internal_network_netmask\" gateway=\"$mcs_gateway\"/>\n<dbconf type=\"mysql\" name=\"administrator\" user=\"$db_user\" password=\"$db_user_pwd\" port=\"$db_port\" host=\"$db_location\" debug=\"0\"/>\n</config>";
+open (FILE, ">$administrator_conf") or die "error while opening administrator.conf: $!"; 
+print FILE "<config logdir=\"$kanopya_logdir\">\n<internalnetwork ip=\"$mcs_internal_network\" mask=\"$mcs_internal_network_netmask\" gateway=\"$mcs_gateway\"/>\n<dbconf type=\"mysql\" name=\"administrator\" user=\"$db_user\" password=\"$db_user_pwd\" port=\"$db_port\" host=\"$db_location\" debug=\"$debug\"/>\n</config>";
 close (FILE);
 print "done\n";
 
 #We will now generate the Data.sql file
-print "generating Data.sql...";
+print "generating user_data.sql...";
 my $config = {
-	INCLUDE_PATH => $data_sql_template_dir,
+	INCLUDE_PATH => $data_dir,
 	INTERPOLATE  => 1,
 	POST_CHOMP   => 1,
 	EVAL_PERL    => 1,
 };
 my $template = Template->new($config);
-my $input = "Data.sql.tt";
+my $input = "data.sql.tt";
 my %datas = (kanopya_vg_name => $kanopya_vg_name, kanopya_vg_total_size => $kanopya_vg_total_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs);
 $template->process($input, \%datas, $data_sql) || do {
 	print "error while generating Data.sql: $!";
@@ -246,12 +252,12 @@ print "done\n";
 
 #We grant all privileges to administrator database for $db_user
 print "granting all privileges on administrator database to $db_user...\n";
-system ("mysql -h $db_location -P $db_port -u root -p -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$db_user' WITH GRANT OPTION\"");
+system ("mysql -h $db_location -P $db_port -u root -p -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$db_user' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $db_user: $!";
 print "done\n";
 
 #We now generate the database schemas
 print "generating database schemas...";
-system ("mysql -u $db_user -p$db_user_pwd < $schemas_sql") == 0 or die "error while generating database schema: $!";
+system ("mysql -u $db_user -p$db_user_pwd < $schema_sql") == 0 or die "error while generating database schema: $!";
 print "done\n";
 
 #We now generate the components schemas 
