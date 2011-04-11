@@ -95,7 +95,13 @@ use constant ATTR_DEF => {
 	cluster_domainname      => {pattern 		=> '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
 								is_mandatory	=> 1,
 								is_extended 	=> 0,
-								is_editable		=> 0}
+								is_editable		=> 0},
+	cluster_nameserver		=> {pattern 		=> '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+								is_mandatory	=> 1,
+								is_extended 	=> 0,
+								is_editable		=> 0},
+	
+								
 	};
 
 sub methods {
