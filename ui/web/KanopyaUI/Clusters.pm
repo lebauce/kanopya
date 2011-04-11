@@ -113,9 +113,26 @@ sub _addcluster_profile {
     	required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node', 'priority', 'domainname'],
         msgs => {
         	any_errors => 'some_errors',
-            prefix => 'err_'
+            prefix => 'err_',
+            constraints => {
+            	domainname_valid => 'Invalid domain name'
+            }
         },
+        constraint_methods => {
+        	domainname => domainname_valid(),
+        }
 	};
+}
+
+# function constraint for domainname field used in _addcluster_profile
+
+sub domainname_valid {
+	return sub {
+		my $dfv = shift;
+		$dfv->name_this('domainname_valid');
+		my $domain = $dfv->get_current_constraint_value();
+		return ($domain =~ /^[a-z0-9-]+(\.[a-z0-9-]+)+$/);
+	}
 }
 
 # form_addcluster processing
