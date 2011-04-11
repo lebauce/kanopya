@@ -110,7 +110,7 @@ sub form_addcluster : Runmode {
 
 sub _addcluster_profile {
 	return {
-    	required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node', 'priority'],
+    	required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node', 'priority', 'domainname'],
         msgs => {
         	any_errors => 'some_errors',
             prefix => 'err_'
@@ -153,7 +153,8 @@ sub process_addcluster : Runmode {
 			cluster_min_node => $query->param('min_node'),
 			cluster_max_node => $query->param('max_node'),
 			cluster_priority => $query->param('priority'),
-			systemimage_id => $query->param('systemimage_id')
+			systemimage_id => $query->param('systemimage_id'),
+			cluster_domainname => $query->param('domainname'),
 		};
 		if($query->param('kernel_id') ne '0') { $params->{kernel_id} = $query->param('kernel_id'); }
 		my $ecluster = Entity::Cluster->new(%$params);
@@ -202,6 +203,7 @@ sub view_clusterdetails : Runmode {
 	$tmpl->param('cluster_name' => $ecluster->getAttr(name => 'cluster_name'));
 	$tmpl->param('cluster_desc' => $ecluster->getAttr(name => 'cluster_desc'));
 	$tmpl->param('cluster_priority' => $ecluster->getAttr(name => 'cluster_priority'));
+	$tmpl->param('cluster_domainname' => $ecluster->getAttr(name => 'cluster_domainname'));
 	
 	my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
 	my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
