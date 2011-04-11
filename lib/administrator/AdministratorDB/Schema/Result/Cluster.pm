@@ -86,6 +86,12 @@ __PACKAGE__->table("cluster");
   is_nullable: 0
   size: 64
 
+=head2 cluster_nameserver
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
 =head2 active
 
   data_type: 'integer'
@@ -149,6 +155,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "cluster_domainname",
   { data_type => "char", is_nullable => 0, size => 64 },
+  "cluster_nameserver",
+  { data_type => "char", is_nullable => 0, size => 15 },
   "active",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "systemimage_id",
@@ -314,8 +322,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-08 17:21:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:U1Igh+qePvJXQBNprmJlrg
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-11 18:41:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:O5L4rQ3Wq4egK2eKkgX4Jg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

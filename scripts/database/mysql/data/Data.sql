@@ -207,7 +207,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@ei
 INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1);
 
 -- admin cluster
-INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local', 'rw',0,'hedera-technology.com',1,NULL,1, 'up');
+INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local', 'rw',0,'hedera-technology.com','192.168.0.254',1,NULL,1, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- public ip for admin cluster
