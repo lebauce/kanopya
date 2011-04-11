@@ -196,6 +196,61 @@ sub newPublicIP {
 	return $res->get_column("ipv4_public_id");
 }
 
+=head2 newInternalIP
+
+add a new internal ip address
+	args: 
+		ip_address
+		ip_mask
+	optional args:
+		gateway
+=cut
+
+sub newInternalIP {
+    #################################
+    #TODO This method
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{ip_address} or ! defined $args{ip_address} || 
+		! exists $args{ip_mask} or ! defined $args{ip_mask}) {
+		$errmsg = "NetworkManager->newPublicIP need ip_address and ip_mask named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+	# ip format valid ?
+	my $pubip = new NetAddr::IP($args{ip_address}, $args{ip_mask});
+	if(not defined $pubip) { 
+		$errmsg = "NetworkManager->newPublicIP : wrong value for ip_address/ip_mask!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	} 
+	
+	my $gateway;
+	if(exists $args{gateway} and defined $args{gateway}) {
+		$gateway = new NetAddr::IP($args{gateway});
+		if(not defined $gateway) {
+			$errmsg = "NetworkManager->newPublicIP : wrong value for gateway!";
+			$log->error($errmsg);
+			throw Mcs::Exception::Internal(error => $errmsg);
+		}
+	}
+
+	my $res;	
+	# try to save public ip
+	eval {
+		my $row = {ipv4_public_address => $pubip->addr, ipv4_public_mask => $pubip->mask};
+		if($gateway) { $row->{ipv4_public_default_gw} = $gateway->addr; }
+		$res = $self->{db}->resultset('Ipv4Public')->create($row);
+		$log->debug("Public ip create and return ". $res->get_column("ipv4_public_id"));
+	};
+	if($@) { 
+		$errmsg = "NetworkManager->newPublicIP: $@";
+		$log->error($errmsg);
+		throw Mcs::Exception::DB(error => $errmsg); }
+	$log->debug("new public ip created");
+	return $res->get_column("ipv4_public_id");
+}
+
 =head2 getPublicIPs
 
 Get list of public ip addresses 

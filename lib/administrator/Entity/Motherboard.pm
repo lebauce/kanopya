@@ -620,6 +620,7 @@ sub getInternalIP {
 sub setNewInternalIP{
     my $self = shift;
     
+    
 }
 
 sub generateHostname {
