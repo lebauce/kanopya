@@ -92,10 +92,10 @@ use constant ATTR_DEF => {
 								is_mandatory	=> 0,
 								is_extended 	=> 0,
 								is_editable		=> 0},
-	cluster_toto             => {pattern 		=> '^\w*$',
-								is_mandatory	=> 0,
-								is_extended 	=> 1,
-								is_editable		=> 1}
+	cluster_domainname      => {pattern 		=> '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
+								is_mandatory	=> 1,
+								is_extended 	=> 0,
+								is_editable		=> 0}
 	};
 
 sub methods {

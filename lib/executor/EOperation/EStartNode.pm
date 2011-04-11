@@ -629,8 +629,35 @@ sub generateBootConf {
 }
 
 sub generateResolvConf{
-	#TODO GenerateResolvConf, il faut intégrer la gestion domain (dns + domainname)
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
+		$errmsg = "EOperation::EStartNode->generateResolvConf need a mount_point named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("cccccccc");
+	
+	my @nameservers = ();
+	# TODO manage nameserver !
+	push @nameservers, { ipaddress => '212.27.40.241' };
+	
+	my $vars = {
+		domainname => $self->{_objs}->{cluster}->getAttr(name => 'cluster_domainname'),
+		nameservers => \@nameservers, 
+	};
+	
+	my $template = Template->new($config);
+    my $input = "resolv.conf.tt";
+	
+	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
+	$self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/resolv.conf");	
+	unlink "/tmp/$tmpfile";
 }
+
+1;
 __END__
 
 =head1 AUTHOR

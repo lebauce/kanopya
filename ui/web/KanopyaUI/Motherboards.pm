@@ -283,14 +283,15 @@ sub view_motherboarddetails : Runmode {
 		$tmp->{harddisk_device} = $hd->{harddisk_device}; 
 		$tmp->{motherboard_id} = $emotherboard->getAttr(name => 'motherboard_id');
 					
-		if(not $methods->{'removeHarddisk'}->{'granted'} ) {
+		if((not $methods->{'removeHarddisk'}->{'granted'}) || $emotherboard->getAttr('name' => 'active')) {
 			$tmp->{link_removeHarddisk} = 0;
 		} else { $tmp->{link_removeHarddisk} = 1;}
 		push @$hds, $tmp;
 	}
 	$tmpl->param('nbharddisks' => scalar(@$hds)+1);
 	$tmpl->param('harddisks_list' => $hds);
-	$tmpl->param('can_addHarddisk' => 1); #if($methods->{'addHarddisk'}->{'granted'}) { $tmpl->param('can_addHarddisk' => 1); }
+	if($methods->{'addHarddisk'}->{'granted'} && !$emotherboard->getAttr('name' => 'active')) { $tmpl->param('can_addHarddisk' => 1); }
+	else { $tmpl->param('can_addHarddisk' => 0); }
 	return $tmpl->output();
 }
 
@@ -311,7 +312,10 @@ sub process_activatemotherboard : Runmode {
 		}
 		else { $exception->rethrow(); }
 	} 
-	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
+	else { 
+		$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'host activation adding to execution queue');
+		$self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboarddetails?motherboard_id='.$query->param('motherboard_id')); 
+	}
 }
 
 # motherboard deactivation processing
@@ -336,7 +340,7 @@ sub process_deactivatemotherboard : Runmode {
 
 # motherboard deletion processing
 
-sub process_removemotherboard : Runmode {
+sub process_deletemotherboard : Runmode {
     my $self = shift;
     my $query = $self->query();
     eval {
@@ -361,6 +365,7 @@ sub form_addharddisk : Runmode {
     my $errors = shift;
     my $tmpl =  $self->load_tmpl('Motherboards/form_addharddisk.tmpl');
     $tmpl->param($errors) if $errors;
+    
     my $query = $self->query();
     $tmpl->param('motherboard_id' => $query->param('motherboard_id'));
     return $tmpl->output();

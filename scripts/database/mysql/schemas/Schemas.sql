@@ -197,6 +197,7 @@ CREATE TABLE `cluster` (
   `cluster_si_location` ENUM('local','diskless') NOT NULL,
   `cluster_si_access_mode` ENUM('ro','rw') NOT NULL,
   `cluster_si_shared` int(1) unsigned NOT NULL,
+  `cluster_domainname` char(64) NOT NULL,
   `active` int(1) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
