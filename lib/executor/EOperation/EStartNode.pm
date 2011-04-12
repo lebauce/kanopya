@@ -285,6 +285,9 @@ sub execute {
 												dhcpd3_hosts_ipaddr	=> $motherboard_ip,
 												dhcpd3_hosts_mac_address	=> $motherboard_mac,
 												dhcpd3_hosts_hostname	=> $motherboard_hostname,
+												dhcpd3_hosts_ntp_server => $self->{bootserver}->{obj}->getMasterNodeIp(),
+												dhcpd3_hosts_domain_name =>$self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
+												dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver"),
 												kernel_id	=> $motherboard_kernel_id);
 	
 	$log->info('generate dhcp configuration file');

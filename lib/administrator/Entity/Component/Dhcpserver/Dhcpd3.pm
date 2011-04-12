@@ -172,7 +172,7 @@ sub getConf {
 	my $data = {};
 	$data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
 	$data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
-	$data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');;
+	$data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');
 	$data->{server_ip} = $cluster->search_related("nodes", { master_node => 1 })->single->motherboard->get_column('motherboard_internal_ip');
 	
 	my $subnets = $dhcpd3->dhcpd3_subnets;
@@ -181,11 +181,13 @@ sub getConf {
 		my $hosts = $subnet->dhcpd3_hosts;
 		my @data_hosts = ();
 		while(my $host = $hosts->next) {
-        my $motherboard = Motherboard::getMotherboardFromIP(ipv4_internal_ip => $host->get_column('dhcpd3_hosts_ipaddr'));
+        #my $motherboard = Motherboard::getMotherboardFromIP(ipv4_internal_ip => $host->get_column('dhcpd3_hosts_ipaddr'));
 			push @data_hosts, {
-			    #########################
-			    #TODO search node from their ip.
-				ip_address => $host->get_column('dhcpd3_hosts_ipaddr'), 
+			    domain_name =>$host->get_column('dhcpd3_hosts_domain_name'),
+			    domain_name_server => $host->get_column('dhcpd3_hosts_domain_name_server'),
+			    ntp_server => $host->get_column('dhcpd3_hosts_ntp_server'),
+				ip_address => $host->get_column('dhcpd3_hosts_ipaddr'),
+				ntp_server => $host->get_column('dhcpd3_hosts_ntp_server'),
 				mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
 				hostname => $host->get_column('dhcpd3_hosts_hostname'), 
 				kernel_version => $host->kernel->get_column('kernel_version')
@@ -225,8 +227,11 @@ sub addHost {
 		(! exists $args{dhcpd3_hosts_ipaddr} or ! defined $args{dhcpd3_hosts_ipaddr}) ||
 		(! exists $args{dhcpd3_hosts_mac_address} or ! defined $args{dhcpd3_hosts_mac_address}) ||
 		(! exists $args{dhcpd3_hosts_hostname} or ! defined $args{dhcpd3_hosts_hostname}) ||
+		(! exists $args{dhcpd3_hosts_ntp_server} or ! defined $args{dhcpd3_hosts_ntp_server}) ||
+		(! exists $args{dhcpd3_hosts_domain_name} or ! defined $args{dhcpd3_hosts_domain_name}) ||
+		(! exists $args{dhcpd3_hosts_domain_name_server} or ! defined $args{dhcpd3_hosts_domain_name_server}) ||
 		(! exists $args{kernel_id} or ! defined $args{kernel_id})) {
-		$errmsg = "Component::Dhcpserver::Dhcpd3->addHost needs a dhcpd3_subnet_id, dhcpd3_hosts_ipaddr, dhcpd3_hostst_mac_add, dhcpd3_hosts_hostname and kernel_id named argument!";
+		$errmsg = "Component::Dhcpserver::Dhcpd3->addHost needs a dhcpd3_subnet_id, dhcpd3_hosts_ipaddr, dhcpd3_hostst_mac_add, dhcpd3_hosts_hostname, dhcpd3_hosts_hostname, dhcpd3_hosts_domain_name, dhcpd3_hosts_ntp_server and kernel_id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
