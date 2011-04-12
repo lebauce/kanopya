@@ -294,8 +294,9 @@ sub execute {
 	
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
-    $self->{_objs}->{motherboard}->setNewInternalIP(ipv4_internal_address => $motherboard_ip,
-                                                    ipv4_internal_mask => $subnet);
+	#TODO Manage gateway in motherboard with cluster ???
+    $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
+                                                 ipv4_internal_mask => $subnet);
 
 	# Mount Motherboard etc to populate it
 	my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";

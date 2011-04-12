@@ -613,13 +613,20 @@ sub getEtcDev {
 
 sub getInternalIP {
     my $self = shift;
-
 #    if($self->{_dbix}->)
 }
 
-sub setNewInternalIP{
+sub setInternalIP{
     my $self = shift;
-    
+    my %args = @_;
+	if (! exists $args{ipv4_internal_address} or ! defined $args{ipv4_internal_address} || 
+		! exists $args{ipv4_internal_mask} or ! defined $args{ipv4_internal_mask}) {
+		$errmsg = "Motherboard->setInternalIP need ipv4_internal_address and ipv4_internal_mask named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+    my $adm = Administrator->new();
+    my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
     
 }
 

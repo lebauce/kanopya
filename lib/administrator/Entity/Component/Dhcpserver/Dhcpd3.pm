@@ -182,6 +182,8 @@ sub getConf {
 		my @data_hosts = ();
 		while(my $host = $hosts->next) {
 			push @data_hosts, {
+			    #########################
+			    #TODO search node from their ip.
 				ip_address => $host->get_column('dhcpd3_hosts_ipaddr'), 
 				mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
 				hostname => $host->get_column('dhcpd3_hosts_hostname'), 

@@ -26,7 +26,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
-use McsExceptions;
+use Kanopya::Exceptions;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -54,7 +54,7 @@ sub new {
 		(! exists $args{internalnetwork} or ! defined $args{internalnetwork})){
 		$errmsg = "NetworkManager->new schemas and internalnetwork named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	$self->{db} = $args{schemas};
 	$self->{internalnetwork} = $args{internalnetwork};
@@ -81,20 +81,20 @@ sub addRoute {
 		! exists $args{context} or ! defined $args{context}) {
 		$errmsg = "NetworkManager->addRoute need publicip_id, ip_destination and gateway named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	# check valid ip_destination and gateway format
 	my $destinationip = new NetAddr::IP($args{ip_destination});
 	if(not defined $destinationip) {
 		$errmsg = "NetworkManager->addRoute : wrong value for ip_destination!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);}
+		throw Kanopya::Exception::Internal(error => $errmsg);}
 	
 	my $gateway = new NetAddr::IP($args{gateway});
 	if(not defined $gateway) {
 		$errmsg = "NetworkManager->addRoute : wrong value for gateway!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	# try to create route
@@ -105,7 +105,7 @@ sub addRoute {
 	if($@) { 
 		$errmsg = "NetworkManager->addRoute: $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$log->debug("new route added to public ip");
 }
@@ -139,7 +139,7 @@ sub getFreeInternalIP{
 	if(not defined $freeip) {
 		$errmsg = "NetworkManager->getFreeInternalIP : all internal ip addresses seems to be used !";
 		$log->error($errmsg);
-		throw Mcs::Exception::Network(error => $errmsg);
+		throw Kanopya::Exception::Network(error => $errmsg);
 	}
 }
 
@@ -160,14 +160,14 @@ sub newPublicIP {
 		! exists $args{ip_mask} or ! defined $args{ip_mask}) {
 		$errmsg = "NetworkManager->newPublicIP need ip_address and ip_mask named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	# ip format valid ?
 	my $pubip = new NetAddr::IP($args{ip_address}, $args{ip_mask});
 	if(not defined $pubip) { 
 		$errmsg = "NetworkManager->newPublicIP : wrong value for ip_address/ip_mask!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	} 
 	
 	my $gateway;
@@ -176,7 +176,7 @@ sub newPublicIP {
 		if(not defined $gateway) {
 			$errmsg = "NetworkManager->newPublicIP : wrong value for gateway!";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal(error => $errmsg);
+			throw Kanopya::Exception::Internal(error => $errmsg);
 		}
 	}
 
@@ -191,7 +191,7 @@ sub newPublicIP {
 	if($@) { 
 		$errmsg = "NetworkManager->newPublicIP: $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg); }
+		throw Kanopya::Exception::DB(error => $errmsg); }
 	$log->debug("new public ip created");
 	return $res->get_column("ipv4_public_id");
 }
@@ -211,44 +211,44 @@ sub newInternalIP {
     #TODO This method
 	my $self = shift;
 	my %args = @_;
-	if (! exists $args{ip_address} or ! defined $args{ip_address} || 
-		! exists $args{ip_mask} or ! defined $args{ip_mask}) {
-		$errmsg = "NetworkManager->newPublicIP need ip_address and ip_mask named argument!";
+	if (! exists $args{ipv4_internal_address} or ! defined $args{ipv4_internal_address} || 
+		! exists $args{ipv4_internal_mask} or ! defined $args{ipv4_internal_mask}) {
+		$errmsg = "NetworkManager->newInternalIP need ipv4_internal_address and ipv4_internal_mask named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	# ip format valid ?
-	my $pubip = new NetAddr::IP($args{ip_address}, $args{ip_mask});
-	if(not defined $pubip) { 
-		$errmsg = "NetworkManager->newPublicIP : wrong value for ip_address/ip_mask!";
+	my $internalip = new NetAddr::IP($args{ipv4_internal_address}, $args{ipv4_internal_mask});
+	if(not defined $internalip) { 
+		$errmsg = "NetworkManager->newInternalIP : wrong value for ip_address/ip_mask!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	} 
 	
 	my $gateway;
-	if(exists $args{gateway} and defined $args{gateway}) {
-		$gateway = new NetAddr::IP($args{gateway});
+	if(exists $args{ipv4_internal_default_gw} and defined $args{ipv4_internal_default_gw}) {
+		$gateway = new NetAddr::IP($args{ipv4_internal_default_gw});
 		if(not defined $gateway) {
-			$errmsg = "NetworkManager->newPublicIP : wrong value for gateway!";
+			$errmsg = "NetworkManager->newInternalIP : wrong value for gateway!";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal(error => $errmsg);
+			throw Kanopya::Exception::Internal(error => $errmsg);
 		}
 	}
 
 	my $res;	
 	# try to save public ip
 	eval {
-		my $row = {ipv4_public_address => $pubip->addr, ipv4_public_mask => $pubip->mask};
+		my $row = {ipv4_public_address => $internalip->addr, ipv4_public_mask => $internalip->mask};
 		if($gateway) { $row->{ipv4_public_default_gw} = $gateway->addr; }
-		$res = $self->{db}->resultset('Ipv4Public')->create($row);
+		$res = $self->{db}->resultset('Ipv4Internal')->create($row);
 		$log->debug("Public ip create and return ". $res->get_column("ipv4_public_id"));
 	};
 	if($@) { 
-		$errmsg = "NetworkManager->newPublicIP: $@";
+		$errmsg = "NetworkManager->newInternalIP: $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg); }
-	$log->debug("new public ip created");
-	return $res->get_column("ipv4_public_id");
+		throw Kanopya::Exception::DB(error => $errmsg); }
+	$log->debug("new internal ip created");
+	return $res->get_column("ipv4_internal_id");
 }
 
 =head2 getPublicIPs
@@ -309,7 +309,7 @@ sub delPublicIP {
 	if (! exists $args{publicip_id} or ! defined $args{publicip_id}) { 
 		$errmsg = "NetworkManager->delPublicIP need a publicip_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	# getting the row	
@@ -317,14 +317,14 @@ sub delPublicIP {
 	if(! defined $row) {
 		$errmsg = "NetworkManager->delPublicIP : publicip_id $args{publicip_id} not found!";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	
 	# verify that it is not used by a cluster
 	if(defined ($row->get_column('cluster_id'))) {
 		$errmsg = "NetworkManager->delPublicIP : publicip_id $args{publicip_id} is used by a cluster!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	
 	# related routes are automatically deleted due to foreign key 
@@ -347,7 +347,7 @@ sub setClusterPublicIP {
 		! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
 		$errmsg = "NetworkManager->setClusterPublicIP need publicip_id and cluster_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	my $row = $self->{db}->resultset('Ipv4Public')->find($args{publicip_id});
@@ -355,7 +355,7 @@ sub setClusterPublicIP {
 	if(! defined $row) {
 		$errmsg = "NetworkManager->setClusterPublicIP : publicip_id $args{publicip_id} not found!";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	# try to set cluster_id to this ip
 	eval {
@@ -365,7 +365,7 @@ sub setClusterPublicIP {
 	if($@) { 
 		$errmsg = "NetworkManager->setClusterPublicIP : $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$log->info("Public ip $args{publicip_id} set to cluster $args{cluster_id}");
 }
@@ -382,14 +382,14 @@ sub delRoute {
 	if (! exists $args{route_id} or ! defined $args{route_id}) {
 		$errmsg = "NetworkManager->delRoute need a route_id named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 	my $row = $self->{db}->resultset('Ipv4Route')->find($args{route_id});
 	if(not defined $row) {
 		$errmsg = "NetworkManager->delRoute : route_id $args{route_id} not found!";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$row->delete;
 	$log->info("route ($args{route_id}) successfully deleted");	
@@ -402,7 +402,7 @@ sub setClusterRoute {
 		! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
 		$errmsg = "NetworkManager->setClusterRoute need ipv4_route_id and cluster_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	
 #	my $row = $self->{db}->resultset('ClusterIpv4Route')->search({cluster_id => $args{cluster_id}, ipv4_route_id =>$args{ipv4_route_id}});
@@ -410,7 +410,7 @@ sub setClusterRoute {
 #	if(! defined $row) {
 #		$errmsg = "NetworkManager->setClusterRoute : ipv4_route_id $args{ipv4_route_id} not found!";
 #		$log->error($errmsg);
-#		throw Mcs::Exception::DB(error => $errmsg);
+#		throw Kanopya::Exception::DB(error => $errmsg);
 #	}
 	# try to set cluster_id to this ip
 	eval {
@@ -420,7 +420,7 @@ sub setClusterRoute {
 	if($@) { 
 		$errmsg = "NetworkManager->setClusterRoute : $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$log->info("Route $args{ipv4_route_id} set to cluster $args{cluster_id}");
 }
