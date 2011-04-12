@@ -162,7 +162,10 @@ sub process_addmotherboard : Runmode {
 		}
 		else { $exception->rethrow(); }
 	}
-    else { return $self->close_window(); }
+    else { 
+    	$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'host creation adding to execution queue');
+    	return $self->close_window(); 
+    }
 }
 
 # fields verification function to used with form_addmotherboard
