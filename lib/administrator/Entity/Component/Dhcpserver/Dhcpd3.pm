@@ -181,6 +181,7 @@ sub getConf {
 		my $hosts = $subnet->dhcpd3_hosts;
 		my @data_hosts = ();
 		while(my $host = $hosts->next) {
+        my $motherboard = Motherboard::getMotherboardFromIP(ipv4_internal_ip => $host->get_column('dhcpd3_hosts_ipaddr'));
 			push @data_hosts, {
 			    #########################
 			    #TODO search node from their ip.

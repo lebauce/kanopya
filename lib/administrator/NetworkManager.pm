@@ -196,6 +196,18 @@ sub newPublicIP {
 	return $res->get_column("ipv4_public_id");
 }
 
+sub getInternalIP{
+    my $self = shift;
+	my %args = @_;
+	if (! exists $args{ipv4_internal_address} or ! defined $args{ipv4_internal_address}) {
+		$errmsg = "NetworkManager->getInternalIP need ipv4_internal_address named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $internal_ip_row = $self->{db}->resultset('Ipv4Internal')->find({ipv4_internal_address => $args{ipv4_internal_address},key=>"ipv4_internal_address_UNIQUE"});
+    return $internal_ip_row->get_column("ipv4_internal_id");
+}
+
 =head2 newInternalIP
 
 add a new internal ip address
@@ -250,6 +262,8 @@ sub newInternalIP {
 	$log->debug("new internal ip created");
 	return $res->get_column("ipv4_internal_id");
 }
+
+
 
 =head2 getPublicIPs
 

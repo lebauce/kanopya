@@ -297,6 +297,20 @@ sub getMotherboard {
     return pop @Motherboards;
 }
 
+sub getMotherboardFromIP {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{ipv4_internal_ip} or ! defined $args{ipv4_internal_ip})) { 
+		$errmsg = "Entity::getMotherboardFromIP need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+    my $net_id = $adm->{manager}->{network}->getInternalIP(%args);
+    return $class->SUPER::getEntities( hash=>{motherboard_ipv4_internal_id => $net_id},  type => "Motherboard");
+}
+
 sub getFreeMotherboards {
 	my $class = shift;
 	my @motherboards = $class->getMotherboards(hash => {active => 1, motherboard_state => 'down'});
@@ -627,7 +641,7 @@ sub setInternalIP{
 	}
     my $adm = Administrator->new();
     my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
-    
+    $self->setAttr(name => "motherboard_ipv4_internal_id", value => $net_id);
 }
 
 sub generateHostname {

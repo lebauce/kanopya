@@ -295,9 +295,9 @@ sub execute {
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
 	#TODO Manage gateway in motherboard with cluster ???
-    $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
+    my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
                                                  ipv4_internal_mask => $subnet);
-
+    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_ipv4_internal_id", value => $ipv4_internal_id);
 	# Mount Motherboard etc to populate it
 	my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mkdir_cmd);
@@ -306,7 +306,7 @@ sub execute {
 
 	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();	
 	# Generate Node configuration
-	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
+	$self->_generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},
 					 		etc_dev		=> $node_dev->{etc},
 					 		etc_export	=> $node_etc_export,
@@ -343,7 +343,7 @@ sub execute {
 	$emotherboard->start(econtext =>$self->{econtext});
 }
 
-sub generateNodeConf {
+sub _generateNodeConf {
 	my $self = shift;
 	my %args = @_;
 
@@ -358,29 +358,29 @@ sub generateNodeConf {
 	}
 	my $initiatorname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname");
 	$log->info("Generate Initiator Conf");
-	$self->generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
+	$self->_generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
 	$log->info("Generate Udev Conf");
-	$self->generateUdevConf(mount_point=>$args{mount_point});
+	$self->_generateUdevConf(mount_point=>$args{mount_point});
 	$log->info("Generate Fstab Conf");
-	$self->generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
+	$self->_generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
 	$log->info("Generate Kanopya Halt script Conf");
-	$self->generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
+	$self->_generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
 #	$log->info("Generate Hosts Conf");
 #	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
 	$log->info("Generate Network Conf");
-	$self->generateNetConf(mount_point=>$args{mount_point});
+	$self->_generateNetConf(mount_point=>$args{mount_point});
 	$log->info("Generate resolv.conf");
-	$self->generateResolvConf(mount_point=>$args{mount_point});
+	$self->_generateResolvConf(mount_point=>$args{mount_point});
 #TODO generateRouteConf
 	$log->info("Generate Boot Conf");
-	$self->generateBootConf(mount_point=>$args{mount_point},
+	$self->_generateBootConf(mount_point=>$args{mount_point},
 							initiatorname => $initiatorname,
 							root_dev => $args{root_dev},
 							etc_dev => $args{etc_dev},
 							etc_export => $args{etc_export});	
 }
 
-sub generateInitiatorConf {
+sub _generateInitiatorConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -393,7 +393,7 @@ sub generateInitiatorConf {
 	$self->{nas}->{econtext}->execute(command=>"echo \"InitiatorName=$args{initiatorname}\" > $args{mount_point}/iscsi/initiatorname.iscsi");
 }
 
-sub generateUdevConf{
+sub _generateUdevConf{
 	my $self = shift;
 	my %args = @_;
 	
@@ -416,7 +416,7 @@ sub generateUdevConf{
 	unlink "/tmp/$tmpfile";
 }
 
-sub generateFstabConf{
+sub _generateFstabConf{
 	my $self = shift;
 	my %args = @_;
 	
@@ -471,7 +471,7 @@ sub generateFstabConf{
 	unlink "/tmp/$tmpfile";
 }
 
-sub generateKanopyaHalt{
+sub _generateKanopyaHalt{
 	my $self = shift;
 	my %args = @_;
 	
@@ -518,7 +518,7 @@ sub generateKanopyaHalt{
    	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/Kanopya_omitted_iscsid $args{mount_point}/rc0.d/S19Kanopya_omitted_iscsid");
 }
 
-sub generateHosts {
+sub _generateHosts {
 	my $self = shift;
 	my %args = @_;
 	
@@ -552,7 +552,7 @@ sub generateHosts {
     unlink 	"/tmp/$tmpfile";
 }
 
-sub generateNetConf {
+sub _generateNetConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -576,7 +576,7 @@ sub generateNetConf {
 	unlink "/tmp/$tmpfile"; 
 }
 
-sub generateBootConf {
+sub _generateBootConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -629,7 +629,7 @@ sub generateBootConf {
     unlink "/tmp/$tmpfile";
 }
 
-sub generateResolvConf{
+sub _generateResolvConf{
 	my $self = shift;
 	my %args = @_;
 	
