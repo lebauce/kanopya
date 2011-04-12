@@ -69,11 +69,8 @@ our $VERSION = '1.00';
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
-    
     return $self;
 }
 
@@ -92,13 +89,17 @@ sub _init {
 	return;
 }
 
-sub checkOp{
+=head2 _checkOp
+
+    $op->_checkOp();
+    # This private method is used to verify parameters and prerequisite
+=cut
+
+sub _checkOp {
     my $self = shift;
 	my %args = @_;
     
-    
     # check if systemimage is not active
-    $log->debug("checking systemimage active value <".$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id').">");
    	if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
 	    	$errmsg = "EOperation::EActivateSystemimage->new : systemimage <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') ."> is already active";
 	    	$log->error($errmsg);
@@ -117,9 +118,6 @@ sub prepare {
 	my $self = shift;
 	my %args = @_;
 	$self->SUPER::prepare();
-
-	$log->info("Operation preparation");
-
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EActivateSystemimage->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
@@ -129,7 +127,6 @@ sub prepare {
 	my $params = $self->_getOperation()->getParams();
 
     #### Get instance of Systemimage Entity
-	$log->info("Load systemimage instance");
     eval {
 	   $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
@@ -139,9 +136,8 @@ sub prepare {
     	$log->error($errmsg);
     	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
-
-    ### Check Parameters and context
+	
+    # Check Parameters and context
     eval {
         $self->checkOp(params => $params);
     };
@@ -152,46 +148,26 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }    
 
-	#### Instanciate Clusters
-	$log->info("Get Internal Clusters");
-	# Instanciate nas Cluster 
+	# Instanciate Clusters
 	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
-	$log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
-	# Instanciate executor Cluster
 	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
-	$log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
-		
-	#### Get Internal IP
-	$log->info("Get Internal Cluster IP");
-	# Get Internal Ip address of Master node of cluster Executor
+			
+	# Get Internal IP
 	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-	$log->debug("Executor ip is : <$exec_ip>");
-	# Get Internal Ip address of Master node of cluster nas
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	$log->debug("Nas ip is : <$nas_ip>");
-	
-	#### Instanciate context 
-	$log->info("Get Internal Cluster context");
-	# Get context for nas
+		
+	# Instanciate context 
 	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-	$log->debug("Get econtext for nas with ip ($nas_ip) and ref " . ref($self->{nas}->{econtext}));
 	
-	
-	## Instanciate Component needed (here ISCSITARGET on nas )
 	# Instanciate Export component.
 	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
 																					  version=> "1"));
-	$log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
-
-
 }
 
-sub execute{
+sub execute {
 	my $self = shift;
-	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
-	
+		
 	## Update export to allow to motherboard to boot with this systemimage
 	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name'));
 
@@ -202,15 +178,18 @@ sub execute{
 		mountpoint=>"/",
 		mount_option=>""
 	};
-		
+	
 	$sysimg_root_export->{econtext} = $self->{nas}->{econtext};
 	my $target_id = $self->{_objs}->{component_export}->addTarget(%$sysimg_root_export);
 	delete $sysimg_root_export->{econtext};															  
+	
+	my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'rw' : 'ro';
+	
 	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id	=> $target_id,
 												iscsitarget1_lun_number	=> 0,
 												iscsitarget1_lun_device	=> "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
 												iscsitarget1_lun_typeio	=> "fileio",
-												iscsitarget1_lun_iomode	=> "ro",
+												iscsitarget1_lun_iomode	=> $si_access_mode,
 												iscsitarget1_target_name=>$target_name,
 												econtext 				=> $self->{nas}->{econtext});
 	# generate new configuration file
