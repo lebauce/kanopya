@@ -38,6 +38,13 @@ __PACKAGE__->table("systemimage");
   is_nullable: 1
   size: 255
 
+=head2 systemimage_dedicated
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 distribution_id
 
   data_type: 'integer'
@@ -79,6 +86,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "systemimage_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
+  "systemimage_dedicated",
+  {
+    data_type => "integer",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
   "distribution_id",
   {
     data_type => "integer",
@@ -184,8 +198,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tom2eBOdDrzd9UWJcKUl7w
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-12 15:20:07
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GugKYaadEHYSYqSFdtET2Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
