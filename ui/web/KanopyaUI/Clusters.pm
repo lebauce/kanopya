@@ -73,7 +73,7 @@ sub form_addcluster : Runmode {
 		
 	my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});	
 	my @ekernels = Entity::Kernel->getKernels(hash => {});
-	my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});
+	my @esystemimages = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => 0});
 	my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
 	
 	my $count = scalar @emotherboards;
