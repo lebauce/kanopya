@@ -5,7 +5,7 @@ use warnings;
 use Data::Dumper;
 use List::Util qw(min max sum);
 
-use parent "Model";
+use base "Model";
 
 sub new {
     my $class = shift;
