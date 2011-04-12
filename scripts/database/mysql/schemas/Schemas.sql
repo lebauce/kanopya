@@ -292,6 +292,7 @@ CREATE TABLE `systemimage` (
   `systemimage_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
+  `systemimage_dedicated` int(1) unsigned NOT NULL DEFAULT 0,
   `distribution_id` int(8) unsigned NOT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `root_device_id` int(8) unsigned DEFAULT NULL,
