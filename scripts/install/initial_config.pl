@@ -285,6 +285,12 @@ print "creating the logging directory...";
 system ("mkdir -p $kanopya_logdir") == 0 or die "error while creating the logging directory: $!";
 print "done\n";
 
+#We modify /etc/default/atftpd to make it fit to the tftp component configuration (we turn use of inetd to false and give /tftp instead of /srv/tftp as dir
+my $atftpd_default='/etc/default/atftpd';
+open (FILE, ">$atftpd_default") or die ("couldn't open file: $!");
+print FILE "USE_INETD=false\nOPTIONS=\"--tftpd-timeout 300 --retry-timeout 5 --mcast-port 1758 --mcast-addr 239.239.239.0-255 --mcast-ttl 1 --maxthread 100 --verbose=5 /tftp\"";
+close (FILE);
+
 #TEMPORARY: we make www-data owner of /opt/kanopya/logs after having created it
 system ("mkdir /opt/kanopya/logs") == 0 or die "$!";
 system ("chown -R www-data.www-data /opt/kanopya/logs") == 0 or die "$!";
