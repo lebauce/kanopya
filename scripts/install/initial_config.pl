@@ -243,7 +243,7 @@ my $config = {
 	EVAL_PERL    => 1,
 };
 my $template = Template->new($config);
-my $input = "data.sql.tt";
+my $input = "Data.sql.tt";
 my %datas = (kanopya_vg_name => $kanopya_vg_name, kanopya_vg_total_size => $kanopya_vg_total_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs);
 $template->process($input, \%datas, $data_sql) || do {
 	print "error while generating Data.sql: $!";
