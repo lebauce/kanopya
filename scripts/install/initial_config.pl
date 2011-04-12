@@ -8,6 +8,7 @@
 use strict;
 use Term::ReadKey;
 use Template;
+use NetAddr::IP;
 
 ##############################
 ##VARIABLES DECLARATION ZONE##
@@ -18,14 +19,19 @@ my $db_user_pwd;
 my $db_location;
 my $db_port;
 my $mcs_internal_network;
+my $mcs_admin_internal_ip;
 my $mcs_gateway;
-my $mcs_internal_network_netmask;
+my $mcs_internal_network_mask;
 my $kanopya_logdir;
 my $kanopya_pv;
 my $kanopya_vg_name;
 my $kanopya_vg_total_size;
 my $kanopya_vg_free_space;
 my $admin_user_pwd;
+my $nameserver;
+my $mcs_public_network;
+my $mcs_admin_public_ip;
+my $mcs_public_network_mask;
 #this variable will handle the rollback operation in case of script failure
 my @rollback;
 
@@ -124,14 +130,14 @@ while ($mcs_gateway !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
 }
 
 print "please enter the internal network netmask: ";
-$mcs_internal_network_netmask = <STDIN>;
-chomp($mcs_internal_network_netmask);
-while ($mcs_internal_network_netmask !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+$mcs_internal_network_mask = <STDIN>;
+chomp($mcs_internal_network_mask);
+while ($mcs_internal_network_mask !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
 {
 	print "you must enter a valid ipv4 address: ";	
-	$mcs_internal_network_netmask = <STDIN>;
-	chomp($mcs_internal_network_netmask);
-	my @ip = split /\./, $mcs_internal_network_netmask;
+	$mcs_internal_network_mask = <STDIN>;
+	chomp($mcs_internal_network_mask);
+	my @ip = split /\./, $mcs_internal_network_mask;
 	for (my $i = 0; $i < @ip; $i++)
 	{
 		while (!($ip[$i] <= 255))
@@ -140,6 +146,67 @@ while ($mcs_internal_network_netmask !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[
 		}
 	}
 }
+
+print "calculating the first host address available for this network...";
+my $network_addr = NetAddr::IP->new($mcs_internal_network, $mcs_internal_network_mask);
+my @c = split("/",$network_addr->first);
+$mcs_admin_internal_ip = $c[0];
+print "done (address set to $mcs_admin_internal_ip)\n";
+
+print "please enter the public network address: ";
+$mcs_public_network = <STDIN>;
+chomp($mcs_public_network);
+while ($mcs_public_network !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+{
+	print "you must enter a valid ipv4 address: ";	
+	$mcs_public_network = <STDIN>;
+	chomp($mcs_public_network);
+	my @ip = split /\./, $mcs_public_network;
+	for (my $i = 0; $i < @ip; $i++)
+	{
+		while (!($ip[$i] <= 255))
+		{
+			last;
+		}
+	}
+}
+
+print "please enter the public network mask address: ";
+$mcs_public_network_mask = <STDIN>;
+chomp($mcs_public_network_mask);
+while ($mcs_public_network_mask !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+{
+        print "you must enter a valid ipv4 address: ";
+        $mcs_public_network_mask = <STDIN>;
+        chomp($mcs_public_network_mask);
+        my @ip = split /\./, $mcs_public_network;
+        for (my $i = 0; $i < @ip; $i++)
+        {
+                while (!($ip[$i] <= 255))
+                {
+                        last;
+                }
+        }
+}
+
+print "please enter the admin public ip address: ";
+$mcs_admin_public_ip = <STDIN>;
+chomp($mcs_admin_public_ip);
+while ($mcs_admin_public_ip !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+{
+        print "you must enter a valid ipv4 address: ";
+        $mcs_admin_public_ip = <STDIN>;
+        chomp($mcs_admin_public_ip);
+        my @ip = split /\./, $mcs_admin_public_ip;
+        for (my $i = 0; $i < @ip; $i++)
+        {
+                while (!($ip[$i] <= 255))
+                {
+                        last;
+                }
+        }
+}
+
 
 print "please enter the absolute path of kanopya's logging directory: ";
 $kanopya_logdir = <STDIN>;
@@ -169,7 +236,7 @@ while (length($kanopya_vg_name)==0){
 	chomp($kanopya_vg_name);
 }
 
-print "please enter the volume group's total size: ";
+print "please enter the volume group's total size in Mo: ";
 $kanopya_vg_total_size = <STDIN>;
 chomp($kanopya_vg_total_size);
 while ($kanopya_vg_total_size =~ m/\D/ || $kanopya_vg_total_size == 0){
@@ -178,7 +245,7 @@ while ($kanopya_vg_total_size =~ m/\D/ || $kanopya_vg_total_size == 0){
 	chomp($kanopya_vg_total_size);
 }
 
-print "please enter the volume group's free space: ";
+print "please enter the volume group's free space in Mo: ";
 $kanopya_vg_free_space = <STDIN>;
 chomp($kanopya_vg_free_space);
 while ($kanopya_vg_free_space =~ m/\D/ || $kanopya_vg_free_space == 0){
@@ -230,7 +297,7 @@ system("touch $administrator_conf") == 0 or die "error while touching administra
 print "done\n";
 print "filling administrator.conf...";
 open (FILE, ">$administrator_conf") or die "error while opening administrator.conf: $!"; 
-print FILE "<config logdir=\"$kanopya_logdir\">\n<internalnetwork ip=\"$mcs_internal_network\" mask=\"$mcs_internal_network_netmask\" gateway=\"$mcs_gateway\"/>\n<dbconf type=\"mysql\" name=\"administrator\" user=\"$db_user\" password=\"$db_user_pwd\" port=\"$db_port\" host=\"$db_location\" debug=\"$debug\"/>\n</config>";
+print FILE "<config logdir=\"$kanopya_logdir\">\n<internalnetwork ip=\"$mcs_internal_network\" mask=\"$mcs_internal_network_mask\" gateway=\"$mcs_gateway\"/>\n<dbconf type=\"mysql\" name=\"administrator\" user=\"$db_user\" password=\"$db_user_pwd\" port=\"$db_port\" host=\"$db_location\" debug=\"$debug\"/>\n</config>";
 close (FILE);
 print "done\n";
 
@@ -244,7 +311,7 @@ my $config = {
 };
 my $template = Template->new($config);
 my $input = "Data.sql.tt";
-my %datas = (kanopya_vg_name => $kanopya_vg_name, kanopya_vg_total_size => $kanopya_vg_total_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs);
+my %datas = (kanopya_vg_name => $kanopya_vg_name, kanopya_vg_total_size => $kanopya_vg_total_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $mcs_admin_internal_ip, ipv4_internal_netmask => $mcs_internal_network_mask, ipv4_internal_network_ip => $mcs_internal_network, nameserver => $nameserver, ipv4_public_ip => $mcs_admin_public_ip , ipv4_public_netmask => $mcs_public_network_mask );
 $template->process($input, \%datas, $data_sql) || do {
 	print "error while generating Data.sql: $!";
 };
