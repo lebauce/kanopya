@@ -642,8 +642,8 @@ sub generateResolvConf{
 	my $tmpfile = $rand->randpattern("cccccccc");
 	
 	my @nameservers = ();
-	# TODO manage nameserver !
-	push @nameservers, { ipaddress => '212.27.40.241' };
+	# TODO manage more than only one nameserver !
+	push @nameservers, { ipaddress => $self->{_objs}->{cluster}->getAttr(name => 'cluster_nameserver'), };
 	
 	my $vars = {
 		domainname => $self->{_objs}->{cluster}->getAttr(name => 'cluster_domainname'),

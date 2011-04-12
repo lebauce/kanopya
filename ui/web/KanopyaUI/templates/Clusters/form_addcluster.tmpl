@@ -78,6 +78,11 @@
 		<td><input type="text" name="domainname" maxlength="64" size="32" value="hedera-technology.com"/>
 		<span style="color: red"><TMPL_VAR NAME=err_domainname></span></td></td>
 	</tr>
+	<tr>
+		<td class="label">Name server :</td>
+		<td><input type="text" name="nameserver" maxlength="15" size="15" value="<TMPL_VAR NAME=nameserver>"/>
+		<span style="color: red"><TMPL_VAR NAME=err_nameserver></span></td></td>
+	</tr>
 </table>
 <div class="buttons">
 <input type="submit" value="ok"/>
