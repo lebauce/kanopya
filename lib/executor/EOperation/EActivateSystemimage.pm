@@ -139,7 +139,7 @@ sub prepare {
 	
     # Check Parameters and context
     eval {
-        $self->checkOp(params => $params);
+        $self->_checkOp(params => $params);
     };
     if ($@) {
         my $error = $@;
@@ -183,7 +183,7 @@ sub execute {
 	my $target_id = $self->{_objs}->{component_export}->addTarget(%$sysimg_root_export);
 	delete $sysimg_root_export->{econtext};															  
 	
-	my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'rw' : 'ro';
+	my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
 	
 	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id	=> $target_id,
 												iscsitarget1_lun_number	=> 0,
