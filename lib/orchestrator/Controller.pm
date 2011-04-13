@@ -51,11 +51,42 @@ sub init {
 	
 	my $cap_plan = CapacityPlanning::IncrementalSearch->new();
 	my $model = Model::MVAModel->new();
-
+	$self->{_model} = $model;
 	$cap_plan->setModel(model => $model);
 	$cap_plan->setConstraints(constraints => { max_latency => 22, max_abort_rate => 0.3 } );
 	
 	$self->{_cap_plan} = $cap_plan;
+
+	
+}
+
+sub getControllerRRD {
+	my $self = shift;
+    my %args = @_;
+    
+	# RRD
+
+	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
+
+	my $rrd_file = "/tmp/cluster" . $cluster_id .  "_controller.rrd";
+	my $rrd = RRDTool::OO->new( file =>  $rrd_file );
+	if ( not -e $rrd_file ) {	
+		
+	    $rrd->create(
+	         		step        => $self->{_time_step},  # interval
+	         		data_source => { name	=> "workload_amount",
+	                          		 type 	=> "GAUGE" },
+	                data_source => { name  	=> "latency",
+	                          		 type 	=> "GAUGE" },                
+	              	data_source => { name	=> "abort_rate",
+	                          		 type  	=> "GAUGE" },
+	            	data_source => { name  	=> "throughput",
+	                          		 type  	=> "GAUGE" },
+	         		archive     => { rows  	=> 500 }
+	         		);
+	}
+	
+	return $rrd;
 }
 
 sub getClusterConf {
@@ -64,7 +95,7 @@ sub getClusterConf {
 
 	my $cluster = $args{cluster};
 	
-	return {nb_nodes => 1, mpl => 150};	
+	return {nb_nodes => 1, mpl => 1500};	
 }
 
 sub getWorkload {
@@ -87,16 +118,16 @@ sub getWorkload {
 		
 		
 	if (not defined $cluster_data_aggreg->{$load_metric} ) {
-		throw Kanopya::Exception::Internal( error => "Can't get workload amount from monitoring" );	
+#		throw Kanopya::Exception::Internal( error => "Can't get workload amount from monitoring" );	
 	}
 	
-	#my $workload_amount = $cluster_data_aggreg->{$load_metric};
-							my $workload_amount = 1;												
+	my $workload_amount = $cluster_data_aggreg->{$load_metric};
+	#my $workload_amount = 666;												
 																
 	my %workload_class = ( 	visit_ratio => [1],
-							service_time => [1],
-							delay => [1],
-							think_time => 2 );
+							service_time => [0.015],
+							delay => [0],
+							think_time => 0.01 );
 
 
 
@@ -127,9 +158,91 @@ sub manageCluster {
     $self->{_cap_plan}->setNbTiers( tiers => 1);
 	
 	my $workload = $self->getWorkload( cluster => $cluster);						
+	
+	$self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
+	#$self->store( workload => $workload );
+	
+	
 	my $conf = $self->{_cap_plan}->calculate( workload_amount => $workload->{workload_amount}, workload_class => $workload->{workload_class} );
 	
 	$self->applyConf( conf => $conf, cluster => $cluster);
+}
+
+sub validateModel {
+	my $self = shift;
+    my %args = @_;
+    
+    my $workload = $args{workload};
+    my $cluster_conf = $args{cluster_conf};
+    
+    my %perf = $self->{_model}->calculate( configuration => { M => 1, AC => [1], LC => [$cluster_conf->{mpl}] },
+									 		workload_class => $workload->{workload_class},
+											workload_amount => $workload->{workload_amount});
+				
+	my $rrd = $self->getControllerRRD( cluster => $args{cluster} );
+	$rrd->update( time => time(), values =>  [ 	$workload->{workload_amount},
+												$perf{latency},
+												$perf{abort_rate},
+												$perf{throughput},
+												] );
+												
+	$self->genGraph( cluster => $args{cluster} );
+}
+
+sub genGraph {
+	my $self = shift;
+    my %args = @_;
+    
+	my $rrd = $self->getControllerRRD( cluster => $args{cluster} );
+	
+	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
+	my $graph_file_prefix = "cluster$cluster_id" . "_controller_server_";
+	
+	
+	$rrd->graph(
+      image          => "/tmp/" . $graph_file_prefix . "load.png",
+      vertical_label => 'req',
+      start => time() - 3600,
+      draw	=> {
+        type  	=> 'line',
+        color  	=> 'FF0000',
+        dsname 	=> "workload_amount",
+      	legend	=> "load amount (concurrent connections)" },
+    );
+    
+    $rrd->graph(
+      image          => "/tmp/" . $graph_file_prefix . "latency.png",
+      vertical_label => 'ms',
+      start => time() - 3600,
+      draw 	=> {
+        type      => 'line',
+        color     => '00FF00', 
+        dsname  => "latency",
+      	legend	=> "latency"},
+    );
+    
+    $rrd->graph(
+      image          => "/tmp/" . $graph_file_prefix . "abortrate.png",
+      vertical_label => 'rate',
+      start => time() - 3600,
+      draw 	=> {
+        type      => 'area',
+        color     => '00FF00', 
+        dsname    => "abort_rate",
+      	legend 	=> "abortRate"},
+    );
+
+    $rrd->graph(
+      image          => "/tmp/" . $graph_file_prefix . "throughput.png",
+      vertical_label => 'req/sec',
+      start => time() - 3600,
+      draw	=> {
+        type      => 'area',
+        color     => '00FF00', 
+        dsname    => "throughput",
+      	legend	=> "throughput"},
+    );
+        
 }
 
 sub applyConf {
