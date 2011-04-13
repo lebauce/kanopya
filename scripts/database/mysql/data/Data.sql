@@ -174,6 +174,7 @@ INSERT INTO `kernel` VALUES (6,'2.6.31-hederatech-minix','2.6.31-hederatech-mini
 INSERT INTO `kernel` VALUES (7,'2.6.31-hederatech-via-vb8001','2.6.31-hederatech-via-vb8001','');
 INSERT INTO `kernel` VALUES (8,'2.6.31-hederatech-zotac-ion','2.6.31-hederatech-zotac-ion','');
 INSERT INTO `kernel` VALUES (9,'2.6.35.4-hedera','2.6.35.4-hedera','');
+INSERT INTO `kernel` VALUES (10,'2.6.32.33','2.6.32.33','');
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,2); SET @eid := @eid +1;
@@ -184,6 +185,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,6);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,7); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,10); SET @eid := @eid +1;
 
 -- Power Supply Card
 INSERT INTO `powersupplycard` VALUE (1,'InternalCard',2,1,'00:30:f9:05:8b:6e',1);
