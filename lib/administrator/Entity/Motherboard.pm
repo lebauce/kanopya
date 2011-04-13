@@ -107,6 +107,9 @@ use constant ATTR_DEF => {
 			motherboard_state				=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
+			motherboard_ipv4_internal_id 	=> {pattern 		=> 'm/^\d*$',
+											is_mandatory	=> 0,
+											is_extended 	=> 0},
 			motherboard_toto				=> {pattern 		=> '^.*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 1}
