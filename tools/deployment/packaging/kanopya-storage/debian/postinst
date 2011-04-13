@@ -1,0 +1,2 @@
+#!/bin/bash -e 
+echo "ISCSITARGET_ENABLE=true" > /etc/default/iscsitarget
