@@ -233,7 +233,7 @@ sub execute {
 	   $self->{_objs}->{cluster}->save();
     }
 	## Remove Motherboard in the dhcp
-	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
+	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
 	my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id			=> $subnet,
 															 			   dhcpd3_hosts_mac_address	=> $motherboard_mac);

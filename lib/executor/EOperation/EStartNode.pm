@@ -261,7 +261,7 @@ sub execute {
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 		
 	## ADD Motherboard in the dhcp
-	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
+	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
 	my $motherboard_ip = $adm->{manager}->{network}->getFreeInternalIP();
 	# Set Hostname
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
@@ -298,8 +298,9 @@ sub execute {
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
 	#TODO Manage gateway in motherboard with cluster ???
+	my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcp3_subnet_id => $subnet);
     my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
-                                                 ipv4_internal_mask => $subnet);
+                                                 ipv4_internal_mask => $subnet_hash{'dhcp3_subnet_mask'});
     $self->{_objs}->{motherboard}->setAttr(name => "motherboard_ipv4_internal_id", value => $ipv4_internal_id);
 	# Mount Motherboard etc to populate it
 	my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";

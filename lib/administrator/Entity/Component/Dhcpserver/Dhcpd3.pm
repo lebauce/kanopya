@@ -123,7 +123,7 @@ sub new {
 
 }
 
-=head2 getInternalSubNet
+=head2 getInternalSubNetId
 B<Class>   : Public
 B<Desc>    : This method return internal network subnet id
 B<args>    : None
@@ -134,11 +134,24 @@ B<Comment>  : TO Change when kanopya will manage different internal network
 B<throws>  : None  	
 =cut
 
-sub getInternalSubNet{
-	#TO Change when kanopya will manage different internal network
+sub getInternalSubNetId{
+	#TODO Change when kanopya will manage different internal network
 	# Or when component dhcp will be a available to be installed on a cluster
 	# Before internal ip will be the first entry in dhcp component
 	return 1;
+}
+
+sub getSubNet {
+    my $self = shift;
+    my %args = @_;
+	
+	if ((! exists $args{dhcp3_subnet_id} or ! defined $args{dhcp3_subnet_id})){ 
+		$errmsg = "Entity::Component::Dhcpserver::Dhcpd3->getSubNet need a dhcp3_subnet_id  named argument!";	
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcp3_subnet_id});
+	return $dhcpd3_subnet->get_columns();
 }
 
 =head2 getConf
