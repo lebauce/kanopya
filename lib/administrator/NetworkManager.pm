@@ -346,6 +346,30 @@ sub delPublicIP {
 	$log->info("Public ip ($args{publicip_id}) deleted with its routes");
 }
 
+sub delInternalIP {
+	my $self = shift;
+	my %args = @_;
+	# arguments checking
+	if (! exists $args{ipv4_internal_id} or ! defined $args{ipv4_internal_id}) { 
+		$errmsg = "NetworkManager->delInternalIP need a ipv4_internal_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	# getting the row	
+	my $row = $self->{db}->resultset('Ipv4Internal')->find( $args{ipv4_internal_id} );
+	if(! defined $row) {
+		$errmsg = "NetworkManager->delInternalIP : ipv4_internal_id $args{ipv4_internal_id} not found!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
+	}
+	
+	
+	# related routes are automatically deleted due to foreign key 
+	$row->delete;
+	$log->info("Internal ip ($args{ipv4_internal_id}) deleted");
+}
+
 =head2 setClusterPublicIP
 
 associate public ip and cluster

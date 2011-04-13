@@ -647,6 +647,16 @@ sub setInternalIP{
     $self->setAttr(name => "motherboard_ipv4_internal_id", value => $net_id);
 }
 
+sub removeInternalIP{
+    my $self = shift;
+    
+    my $internal_net_id = $self->getAttr(name =>"motherboard_ipv4_internal_id");
+    
+    my $adm = Administrator->new();
+    my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_internal_id => $internal_net_id);
+    $self->setAttr(name => "motherboard_ipv4_internal_id", value => undef);
+}
+
 sub generateHostname {
 #	my $self = shift;
 #	my $mac = $self->getAttr(name => 'motherboard_mac_address');	
