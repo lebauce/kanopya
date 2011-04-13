@@ -253,7 +253,7 @@ sub newInternalIP {
 		my $row = {ipv4_internal_address => $internalip->addr, ipv4_internal_mask => $internalip->mask};
 		if($gateway) { $row->{ipv4_internal_default_gw} = $gateway->addr; }
 		$res = $self->{db}->resultset('Ipv4Internal')->create($row);
-		$log->debug("Public ip create and return ". $res->get_column("ipv4_public_id"));
+		$log->debug("Public ip create and return ". $res->get_column("ipv4_internal_id"));
 	};
 	if($@) { 
 		$errmsg = "NetworkManager->newInternalIP: $@";
