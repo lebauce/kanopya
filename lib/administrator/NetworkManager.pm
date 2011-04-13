@@ -250,8 +250,8 @@ sub newInternalIP {
 	my $res;	
 	# try to save public ip
 	eval {
-		my $row = {ipv4_public_address => $internalip->addr, ipv4_public_mask => $internalip->mask};
-		if($gateway) { $row->{ipv4_public_default_gw} = $gateway->addr; }
+		my $row = {ipv4_internal_address => $internalip->addr, ipv4_internal_mask => $internalip->mask};
+		if($gateway) { $row->{ipv4_internal_default_gw} = $gateway->addr; }
 		$res = $self->{db}->resultset('Ipv4Internal')->create($row);
 		$log->debug("Public ip create and return ". $res->get_column("ipv4_public_id"));
 	};

@@ -22,7 +22,7 @@ host [% node.hostname %] {
 hardware ethernet [% node.mac_address %];
 fixed-address [% node.ip_address %];
 option domain-name-servers [% node.domain_name_server %];
-option domain-name [% node.domain_name %];
+option domain-name "[% node.domain_name %]";
 option ntp-servers [% node.ntp_server %];
 #server-name [% server_name %];
 option host-name "[% node.hostname %]";
