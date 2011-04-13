@@ -645,6 +645,7 @@ sub setInternalIP{
     my $adm = Administrator->new();
     my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
     $self->setAttr(name => "motherboard_ipv4_internal_id", value => $net_id);
+    return $net_id;
 }
 
 sub removeInternalIP{
@@ -652,9 +653,10 @@ sub removeInternalIP{
     
     my $internal_net_id = $self->getAttr(name =>"motherboard_ipv4_internal_id");
     
+    $self->{_dbix}->update({'motherboard_ipv4_internal_id' => undef});
     my $adm = Administrator->new();
     my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_internal_id => $internal_net_id);
-    $self->setAttr(name => "motherboard_ipv4_internal_id", value => undef);
+
 }
 
 sub generateHostname {
