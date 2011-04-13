@@ -299,8 +299,9 @@ sub execute {
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
 	#TODO Manage gateway in motherboard with cluster ???
 	my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcp3_subnet_id => $subnet);
+
     my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
-                                                 ipv4_internal_mask => $subnet_hash{'dhcp3_subnet_mask'});
+                                                 ipv4_internal_mask => $subnet_hash{'dhcpd3_subnet_mask'});
     $self->{_objs}->{motherboard}->setAttr(name => "motherboard_ipv4_internal_id", value => $ipv4_internal_id);
 	# Mount Motherboard etc to populate it
 	my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";
