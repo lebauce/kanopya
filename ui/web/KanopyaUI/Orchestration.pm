@@ -148,5 +148,28 @@ sub view_orchestrator_settings : StartRunmode {
 	return $tmpl->output();
 }
 
+sub view_controller : Runmode {
+	my $self = shift;
+	my $errors = shift;
+	my $query = $self->query();
+	my $tmpl = $self->load_tmpl('Orchestrator/view_controller.tmpl');
+	$tmpl->param('titlepage' => "Cluster - Controller's activity");
+	$tmpl->param('mClusters' => 1);
+	$tmpl->param('submClusters' => 1);
+	$tmpl->param('username' => $self->session->param('username'));
+	$tmpl->param('CLUSTER_ID' => $query->param('cluster_id'));
+
+	my $cluster_id = $query->param('cluster_id');
+	my $graph_name_prefix = "cluster$cluster_id" .  "_controller_server_";
+
+	$tmpl->param('GRAPHS' => [ 	{ graph => "/graph/" . $graph_name_prefix . "load.png"},
+								{ graph => "/graph/" . $graph_name_prefix . "latency.png"},
+								{ graph => "/graph/" . $graph_name_prefix . "abortrate.png"},
+								{ graph => "/graph/" . $graph_name_prefix . "throughput.png"},
+							] );
+							
+	return $tmpl->output();
+}
+
 
 1;

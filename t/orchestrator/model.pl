@@ -19,7 +19,7 @@ my %workload_class = ( visit_ratio => [1],
 		       service_time => [0.011],
 		       delay => [0],
 		       think_time => 2 );
-my $mpl = 150;
+my $mpl = 1500;
 my @AC = (1);
 my @LC = ($mpl);
 

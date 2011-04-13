@@ -29,10 +29,15 @@ sub calculate {
 	
 	my @V 	= @{ $args{workload_class}{visit_ratio} }; 	# Visit ratio
 	my @S	= @{ $args{workload_class}{service_time} };	# Service time
-	my @D	= @{ $args{workload_class}{delay} };		# Delay
+	my @D	= @{ $args{workload_class}{delay} };		# Delay (communication between tiers)
 	my $Z   = $args{workload_class}{think_time};		# Think time
 	
 	my $workload_amount = $args{workload_amount};
+	
+	# assert
+	if ( $Z <= 0 ) {
+		print "Assert: MVAModel: workload_class->think_time must be > 0\n";
+	}
 	
 	####
 	# Calculate the entering admission control
@@ -112,9 +117,9 @@ sub calculate {
 	
 	
 	return (
-		latency => $latency,			# ms
-		abort_rate => $abort_rate,		# %
-		throughput => 1000 * $Ta,		# req/sec
+		latency => $latency,			# ms (mean time for execute client request)
+		abort_rate => $abort_rate,		# %  (rejected_request/total_request)
+		throughput => 1000 * $Ta,		# req/sec (successful requests per sec) = reply rate?
 	);	
 }
 

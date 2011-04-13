@@ -12,7 +12,7 @@ sub adminComponentsDef {
 	return [ 	[
     				{ id => 'Database', label => 'Database server', comps => [{ label => 'mysql', name => 'mysql'}] },
     				{ id => 'Boot', label => 'Boot server', comps => [	{ label => 'ntpd', name => 'ntpd'},
-    																	{ label => 'dhcpd3', name => 'dhcpd3'},
+    																	{ label => 'dhcpd', name => 'dhcpd'},
     																	{ label => 'atftpd', name => 'atftpd'}] },
     			],[
     				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'}] },
