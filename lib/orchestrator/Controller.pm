@@ -181,8 +181,11 @@ sub validateModel {
 				
 	my $rrd = $self->getControllerRRD( cluster => $args{cluster} );
 	$rrd->update( time => time(), values =>  [ 	$workload->{workload_amount},
-												$perf{latency},
+												
+												$perf{latency} * 1000,
+												
 												$perf{abort_rate},
+												
 												$perf{throughput},
 												] );
 												
@@ -205,10 +208,10 @@ sub genGraph {
 	if (defined $cluster_public_ips->[0]) {
 		my $profil_rrd_name = "perf_" . $cluster_public_ips->[0]{address} . ".rrd";
 		if ( -e "/tmp/$profil_rrd_name") {
-			%profil_latency_draw = ( draw => { { type => 'line', color => '0000FF',
-												dsname  => "latency", legend => "latency(profil)", file => "/tmp/$profil_rrd_name" } } );
-			%profil_throughput_draw = ( draw => { { type => 'line', color => '0000FF',
-												dsname  => "lthroughput", legend => "throughput(profil)", file => "/tmp/$profil_rrd_name" } } );	
+			%profil_latency_draw = ( draw => { 	type => 'line', color => '0000FF',
+												dsname  => "latency", legend => "latency(profil)", file => "/tmp/$profil_rrd_name" } );
+			%profil_throughput_draw = ( draw => { 	type => 'line', color => '0000FF',
+													dsname  => "throughput", legend => "throughput(profil)", file => "/tmp/$profil_rrd_name" } );	
 		}
 	}
 		

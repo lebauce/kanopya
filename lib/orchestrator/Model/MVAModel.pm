@@ -111,13 +111,12 @@ sub calculate {
 	######
 	#  Service throughput and abandon rate
 	######
-	
-	print ">>>> throughputs array Ta: " . (Dumper \@Ta);
-	
+		
 	my $Ta_total = $N_admitted / ($La[0] + $Z);	# throughput of requets admitted at T1 ..TM <=> total throughput
 	
 	
-	print ">>>> throughputs total Ta: " . (Dumper $Ta_total);
+	print ">>>> throughputs total Ta: $Ta_total\n";
+	print ">>>> my throughput: " . ( 1 / $latency ) . "\n"; 
 	
 	my $Tr = $Nr[0] / $Z;	# throughput of requets admitted at T1 and rejected at T2 ..TM
 	my $Trp = ($N_rejected - $Nr[0]) / ($Lr[0] + $Z); # throughput of requests rejected at T1
