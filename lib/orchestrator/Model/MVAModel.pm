@@ -35,9 +35,8 @@ sub calculate {
 	my $workload_amount = $args{workload_amount};
 	
 	# assert
-	if ( $Z <= 0 ) {
-		print "Assert: MVAModel: workload_class->think_time must be > 0\n";
-	}
+	die "## ASSERT: MVAModel: no workload amount\n" if ( not defined $workload_amount );
+	die "## ASSERT: MVAModel: workload_class->think_time must be > 0\n" if ( $Z <= 0 );
 	
 	####
 	# Calculate the entering admission control
@@ -65,6 +64,8 @@ sub calculate {
 		
 	my $N_rejected = sum @Nr;
 	my $N_admitted = $workload_amount - $N_rejected;
+	
+	print ">>> Admitted : $N_admitted / $workload_amount\n";
 	
 	#####
 	# Service latency
@@ -110,16 +111,23 @@ sub calculate {
 	######
 	#  Service throughput and abandon rate
 	######
-	my $Ta = $N_admitted / ($La[0] + $Z);	# throughput of requets admitted at T1 ..TM <=> total throughput
+	
+	print ">>>> throughputs array Ta: " . (Dumper \@Ta);
+	
+	my $Ta_total = $N_admitted / ($La[0] + $Z);	# throughput of requets admitted at T1 ..TM <=> total throughput
+	
+	
+	print ">>>> throughputs total Ta: " . (Dumper $Ta_total);
+	
 	my $Tr = $Nr[0] / $Z;	# throughput of requets admitted at T1 and rejected at T2 ..TM
 	my $Trp = ($N_rejected - $Nr[0]) / ($Lr[0] + $Z); # throughput of requests rejected at T1
-	my $abort_rate = ($Tr+$Trp)/($Tr+$Trp+$Ta); # total abandon rate 
+	my $abort_rate = ($Tr+$Trp)/($Tr+$Trp+$Ta_total); # total abandon rate 
 	
 	
 	return (
 		latency => $latency,			# ms (mean time for execute client request)
 		abort_rate => $abort_rate,		# %  (rejected_request/total_request)
-		throughput => 1000 * $Ta,		# req/sec (successful requests per sec) = reply rate?
+		throughput => 1000 * $Ta_total,		# req/sec (successful requests per sec) = reply rate?
 	);	
 }
 

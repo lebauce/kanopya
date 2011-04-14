@@ -125,7 +125,7 @@ sub getWorkload {
 	#my $workload_amount = 666;												
 																
 	my %workload_class = ( 	visit_ratio => [1],
-							service_time => [0.015],
+							service_time => [0.001],
 							delay => [0],
 							think_time => 0.01 );
 
@@ -198,7 +198,21 @@ sub genGraph {
 	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
 	my $graph_file_prefix = "cluster$cluster_id" . "_controller_server_";
 	
-	
+	#
+	my %profil_latency_draw = ();
+	my %profil_throughput_draw = ();
+	my $cluster_public_ips = $args{cluster}->getPublicIps();
+	if (defined $cluster_public_ips->[0]) {
+		my $profil_rrd_name = "perf_" . $cluster_public_ips->[0]{address} . ".rrd";
+		if ( -e "/tmp/$profil_rrd_name") {
+			%profil_latency_draw = ( draw => { { type => 'line', color => '0000FF',
+												dsname  => "latency", legend => "latency(profil)", file => "/tmp/$profil_rrd_name" } } );
+			%profil_throughput_draw = ( draw => { { type => 'line', color => '0000FF',
+												dsname  => "lthroughput", legend => "throughput(profil)", file => "/tmp/$profil_rrd_name" } } );	
+		}
+	}
+		
+	# LOAD
 	$rrd->graph(
       image          => "/tmp/" . $graph_file_prefix . "load.png",
       vertical_label => 'req',
@@ -210,6 +224,9 @@ sub genGraph {
       	legend	=> "load amount (concurrent connections)" },
     );
     
+    
+    # LATENCY
+    
     $rrd->graph(
       image          => "/tmp/" . $graph_file_prefix . "latency.png",
       vertical_label => 'ms',
@@ -219,6 +236,7 @@ sub genGraph {
         color     => '00FF00', 
         dsname  => "latency",
       	legend	=> "latency"},
+      %profil_latency_draw,
     );
     
     $rrd->graph(
@@ -241,6 +259,7 @@ sub genGraph {
         color     => '00FF00', 
         dsname    => "throughput",
       	legend	=> "throughput"},
+      %profil_throughput_draw,
     );
         
 }

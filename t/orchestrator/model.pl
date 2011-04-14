@@ -13,15 +13,24 @@ print "enter amount: ";
 my $workload_amount = <STDIN>;
 
 print "Worload amount: $workload_amount\n";
+{
+    my $nb_tiers = 3;
+    my %workload_class = ( visit_ratio => [1,0.5,2],
+			   service_time => [0.01,0.01,0.01],
+			   delay => [0,0,0],
+			   think_time => 0.1 );
+    my @AC = (1,1,2);
+    my @LC = (20,15,3);
+}
 
-my $nb_tiers = 1;
+my $nb_tiers =1;
 my %workload_class = ( visit_ratio => [1],
-		       service_time => [0.011],
+		       service_time => [0.001],
 		       delay => [0],
-		       think_time => 2 );
-my $mpl = 1500;
+		       think_time => 0.1 );
 my @AC = (1);
-my @LC = ($mpl);
+my @LC = (150);
+
 
 my %QoS = $model->calculate(  
     configuration => { M => $nb_tiers, AC => \@AC, LC => \@LC},
