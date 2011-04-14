@@ -51,6 +51,7 @@ my $monitor_log_conf = $conf_dir.'monitor-log.conf';
 my $orchestrator_conf = $conf_dir.'orchestrator.conf';
 my $orchestrator_log_conf = $conf_dir.'orchestrator-log.conf';
 my $state_manager_log_conf = $conf_dir.'state-manager-log.conf';
+my $webui_log_conf = $conf_dir.'webui-log.conf';
 my $mysql_dir =  $kanopya_dir.'scripts/database/mysql/';
 my $schemas_dir = $mysql_dir.'schemas/';
 my $data_dir = $mysql_dir.'data/';
@@ -100,7 +101,7 @@ while ($db_port =~ m/\D/  || length($db_port) == 0 || $db_port == 0 || $db_port 
 	chomp($db_port);
 }
 
-print "please enter the nameserver that admin will use: "
+print "please enter the nameserver that admin will use: ";
 $nameserver = <STDIN>;
 chomp($nameserver);
 while ($nameserver !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
@@ -137,24 +138,6 @@ while ($mcs_internal_network !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3
 	}
 }
 
-print "please enter the gateway for kanopya's network: ";
-$mcs_gateway = <STDIN>;
-chomp($mcs_gateway);
-while ($mcs_gateway !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
-{
-	print "you must enter a valid ipv4 address: ";	
-	$mcs_gateway = <STDIN>;
-	chomp($mcs_gateway);
-	my @ip = split /\./, $mcs_gateway;
-	for (my $i = 0; $i < @ip; $i++)
-	{
-		while (!($ip[$i] <= 255))
-		{
-			last;
-		}
-	}
-}
-
 print "please enter the internal network netmask: ";
 $mcs_internal_network_mask = <STDIN>;
 chomp($mcs_internal_network_mask);
@@ -164,6 +147,24 @@ while ($mcs_internal_network_mask !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9
 	$mcs_internal_network_mask = <STDIN>;
 	chomp($mcs_internal_network_mask);
 	my @ip = split /\./, $mcs_internal_network_mask;
+	for (my $i = 0; $i < @ip; $i++)
+	{
+		while (!($ip[$i] <= 255))
+		{
+			last;
+		}
+	}
+}
+
+print "please enter the gateway for kanopya's network: ";
+$mcs_gateway = <STDIN>;
+chomp($mcs_gateway);
+while ($mcs_gateway !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
+{
+	print "you must enter a valid ipv4 address: ";	
+	$mcs_gateway = <STDIN>;
+	chomp($mcs_gateway);
+	my @ip = split /\./, $mcs_gateway;
 	for (my $i = 0; $i < @ip; $i++)
 	{
 		while (!($ip[$i] <= 255))
@@ -242,6 +243,9 @@ while ($kanopya_logdir !~ m/^\//){
 	$kanopya_logdir = <STDIN>;
 	chomp($kanopya_logdir);
 }
+if ($kanopya_logdir !~ m/\/$/){
+	$kanopya_logdir = $kanopya_logdir.'/';
+}
 
 print "please enter the physical volumes name, separated by a comma: ";
 $kanopya_pv = <STDIN>;
@@ -290,9 +294,11 @@ print "creating the logging directory...";
 system ("mkdir -p $kanopya_logdir") == 0 or die "error while creating the logging directory: $!";
 print "done\n";
 
-#TEMPORARY: we make www-data owner of /opt/kanopya/logs after having created it: this is required for the webui to work (cf kanopya.cgi file)
-#system ("mkdir /opt/kanopya/logs") == 0 or die "$!";
-#system ("chown -R www-data.www-data /opt/kanopya/logs") == 0 or die "$!";
+
+#We remove an annoying line from /etc/inetd.conf that avoid atftpd to run properly 
+system ('sed "/^tftp/d" /etc/inetd.conf > tmp');
+system('mv tmp /etc/inetd.conf');
+system('invoke-rc.d atftpd restart');
 
 #We configure dhcp server with the gathered informations
 #As conf file changes from lenny to squeeze, we need to handle both cases
@@ -308,15 +314,16 @@ while ($line = <FILE>){
 	}
 }
 if ($debian_version eq 'squeeze'){
-	open (FILE, "/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
-	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_admin_internal_ip.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-server '.$nameserver."\n".'}'."\n";
+	open (FILE, ">/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
+	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_internal_network.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-servers '.$nameserver.";\n".'}'."\n";
+	system('invoke-rc.d isc-dhcp-server restart');
 }elsif ($debian_version eq 'lenny'){
-	open (FILE, "/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
-	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_admin_internal_ip.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-server '.$nameserver."\n".'}'."\n";
+	open (FILE, ">/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
+	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_internal_network.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-servers '.$nameserver.";\n".'}'."\n";
+	system('invoke-rc.d dhcpd restart');
 }else{ 
 	print 'we can\'t determine the Debian version you are running, please check /etc/debian_version';
 }
-
 
 #We will now create the configuration files for Kanopya
 #Note: components.conf is the only file shipped with packages. Others are generated here.
@@ -366,16 +373,16 @@ system("touch $executor_log_conf") == 0 or die "error while touching executor-lo
 print "done\n";
 print "filling executor-log.conf...";
 open (FILE, ">$executor_log_conf") or die "error while opening executor-log.conf: $!"; 
-print FILE "log4perl.logger.executor=DEBUG, A1\nlog4perl.appender.A1=Log::Dispatch::File\nlog4perl.appender.A1.filename=".$kanopya_logdirs."executor.logi\nlog4perl.appender.A1.mode=append\nlog4perl.appender.A1.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A1.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\nlog4perl.logger.administrator=DEBUG, A2\nlog4perl.appender.A2=Log::Dispatch::File\nlog4perl.appender.A2.filename=".$kanopya_logdir."executor-administrator.log\nlog4perl.appender.A2.mode=append\nlog4perl.appender.A2.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A2.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n";
+print FILE "log4perl.logger.executor=DEBUG, A1\nlog4perl.appender.A1=Log::Dispatch::File\nlog4perl.appender.A1.filename=".$kanopya_logdir."executor.log\nlog4perl.appender.A1.mode=append\nlog4perl.appender.A1.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A1.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\nlog4perl.logger.administrator=DEBUG, A2\nlog4perl.appender.A2=Log::Dispatch::File\nlog4perl.appender.A2.filename=".$kanopya_logdir."executor-administrator.log\nlog4perl.appender.A2.mode=append\nlog4perl.appender.A2.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A2.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n";
 close (FILE);
 print "done\n";
 
 #We now create the monitor-log.conf file
-print "creating executor-log.conf...";
-system("touch $executor_log_conf") == 0 or die "error while touching executor-log.conf: $!";
+print "creating monitor-log.conf...";
+system("touch $monitor_log_conf") == 0 or die "error while touching monitor-log.conf: $!";
 print "done\n";
-print "filling executor-log.conf...";
-open (FILE, ">$executor_log_conf") or die "error while opening executor-log.conf: $!"; 
+print "filling monitor-log.conf...";
+open (FILE, ">$monitor_log_conf") or die "error while opening monitor-log.conf: $!"; 
 print FILE "log4perl.logger.administrator=DEBUG, A1\nlog4perl.appender.A1=Log::Dispatch::File\nlog4perl.appender.A1.filename=".$kanopya_logdir."monitor-administrator.log\nlog4perl.appender.A1.mode=append\nlog4perl.appender.A1.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A1.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\n\nlog4perl.logger.monitor=DEBUG, A2\nlog4perl.appender.A2=Log::Dispatch::File\nlog4perl.appender.A2.filename=".$kanopya_logdir."monitor.log\nlog4perl.appender.A2.mode=append\nlog4perl.appender.A2.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A2.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\n\nlog4perl.logger.collector=DEBUG, A3\nlog4perl.appender.A3=Log::Dispatch::File\nlog4perl.appender.A3.filename=".$kanopya_logdir."collector.log\nlog4perl.appender.A3.mode=append\nlog4perl.appender.A3.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A3.layout.ConversionPattern=%d %p> %M - %m%n\n\nlog4perl.logger.grapher=DEBUG, A4\nlog4perl.appender.A4=Log::Dispatch::File\nlog4perl.appender.A4.filename=".$kanopya_logdir."grapher.log\nlog4perl.appender.A4.mode=append\nlog4perl.appender.A4.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A4.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\n";
 close (FILE);
 print "done\n";
@@ -392,25 +399,26 @@ close (FILE);
 print "done\n";
 
 #We now create the state-manager-log.conf file
-print "creating orchestrator-log.conf...";
-system("touch $orchestrator_log_conf") == 0 or die "error while touching orchestrator-log.conf: $!";
+print "creating state-manager-log.conf...";
+system("touch $state_manager_log_conf") == 0 or die "error while touching state-manager-log.conf: $!";
 print "done\n";
-print "filling orchestrator-log.conf...";
-open (FILE, ">$orchestrator_log_conf") or die "error while opening orchestrator-log.conf: $!"; 
+print "filling state-manager-log.conf...";
+open (FILE, ">$state_manager_log_conf") or die "error while opening state-manager-log.conf: $!"; 
 print FILE "log4perl.logger.administrator=DEBUG, A1\nlog4perl.appender.A1=Log::Dispatch::File\nlog4perl.appender.A1.filename=".$kanopya_logdir."state-manager-administrator.log\nlog4perl.appender.A1.mode=append\nlog4perl.appender.A1.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A1.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\n\nlog4perl.logger.statemanager=DEBUG, A2\nlog4perl.appender.A2=Log::Dispatch::File\nlog4perl.appender.A2.filename=".$kanopya_logdir."state-manager.log\nlog4perl.appender.A2.mode=append\nlog4perl.appender.A2.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A2.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\n";
 close (FILE);
 print "done\n";
 
 #We now create the webui-log.conf file
-print "creating orchestrator-log.conf...";
-system("touch $orchestrator_log_conf") == 0 or die "error while touching orchestrator-log.conf: $!";
+print "creating webui-log.conf...";
+system("touch $webui_log_conf") == 0 or die "error while touching webui-log.conf: $!";
 print "done\n";
-print "filling orchestrator-log.conf...";
-open (FILE, ">$orchestrator_log_conf") or die "error while opening orchestrator-log.conf: $!"; 
+print "filling webui-log.conf...";
+open (FILE, ">$webui_log_conf") or die "error while opening webui-log.conf: $!"; 
 print FILE "log4perl.logger.webui=DEBUG, A1\nlog4perl.appender.A1=Log::Dispatch::File\nlog4perl.appender.A1.filename=".$kanopya_logdir."webui.log\nlog4perl.appender.A1.mode=append\nlog4perl.appender.A1.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A1.layout.ConversionPattern=%d %p> %M - %m%n\n\nlog4perl.logger.administrator=DEBUG, A2\nlog4perl.appender.A2=Log::Dispatch::File\nlog4perl.appender.A2.filename=".$kanopya_logdir."webui-administrator.log\nlog4perl.appender.A2.mode=append\nlog4perl.appender.A2.layout=Log::Log4perl::Layout::PatternLayout\nlog4perl.appender.A2.layout.ConversionPattern=%d %p> %F{1}:%L %M - %m%n\n";
 close (FILE);
 print "done\n";
 #TEMPORARY we put webui-log.conf file in the /opt/kanopya/conf/ dir (cf ui/web/cgi/kanopya.cgi)
+system ('mkdir /opt/kanopya/conf') == 0 or die "$!";
 system ('cp /etc/kanopya/webui-log.conf /opt/kanopya/conf/') == 0 or die "$!"; 
 
 #We will now generate the Data.sql file
@@ -442,7 +450,6 @@ print "done\n";
 #We now generate the components schemas 
 print "loading component DB schemas...";
 open (FILE, "<$components_conf") or die "error while opening components.conf: $!";
-my $line;
 LINE:
 while( defined( $line = <FILE> ) )
 {
@@ -461,8 +468,8 @@ print "done\n";
 print "initial configuration: done.\n";
 print "launching kanopya's init script...\n";
 # We now launch the init scripts.
+system('/etc/init.d/kanopya-executor restart');
+system('/etc/init.d/kanopya-orchestrator restart');
 system('/etc/init.d/kanopya-grapher restart');
 system('/etc/init.d/kanopya-collector restart');
-system('/etc/init.d/kanopya-orchestrator restart');
-system('/etc/init.d/kanopya-executor restart');
-print "You can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
+print "\nYou can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
