@@ -331,7 +331,7 @@ sub execute {
 							econtext => $self->{nas}->{econtext});
 	}
 
-	# Umount Motherboard etc to populate it
+	# Umount Motherboard etc
 	my $umount_cmd = "umount /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $umount_cmd);
 	my $rmdir_cmd = "rmdir /mnt/$node_dev->{etc}->{lvname}";
@@ -361,28 +361,51 @@ sub _generateNodeConf {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+	my $hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
+	$log->info("Generate Hostname Conf");
+	$self->_generateHostnameConf(hostname => $hostname, mount_point=>$args{mount_point});
+	
 	my $initiatorname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname");
 	$log->info("Generate Initiator Conf");
 	$self->_generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
+	
 	$log->info("Generate Udev Conf");
 	$self->_generateUdevConf(mount_point=>$args{mount_point});
+	
 	$log->info("Generate Fstab Conf");
 	$self->_generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
+	
 	$log->info("Generate Kanopya Halt script Conf");
 	$self->_generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
 #	$log->info("Generate Hosts Conf");
 #	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
+	
 	$log->info("Generate Network Conf");
 	$self->_generateNetConf(mount_point=>$args{mount_point});
+	
 	$log->info("Generate resolv.conf");
 	$self->_generateResolvConf(mount_point=>$args{mount_point});
 #TODO generateRouteConf
+	
 	$log->info("Generate Boot Conf");
 	$self->_generateBootConf(mount_point=>$args{mount_point},
 							initiatorname => $initiatorname,
 							root_dev => $args{root_dev},
 							etc_dev => $args{etc_dev},
 							etc_export => $args{etc_export});	
+}
+
+sub _generateHostnameConf {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
+		(! exists $args{hostname} or ! defined $args{hostname})) { 
+		$errmsg = "EOperation::EStartNode->generateHostnameConf need a mount_point and a hostname named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$self->{nas}->{econtext}->execute(command => "echo $args{hostname} > $args{mount_point}/hostname");
 }
 
 sub _generateInitiatorConf {
