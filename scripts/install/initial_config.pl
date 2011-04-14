@@ -36,10 +36,10 @@ my $mcs_public_network_mask;
 my @rollback;
 
 #debug mode for administrator.conf
-
 my $debug = 0;
 
 #variables that handles locations used through this script
+my $debian_version;
 my $conf_dir = '/etc/kanopya/';
 my $kanopya_dir = '/opt/kanopya/';
 my $components_conf = $conf_dir.'components.conf';
@@ -296,6 +296,27 @@ print "done\n";
 
 #We configure dhcp server with the gathered informations
 #As conf file changes from lenny to squeeze, we need to handle both cases
+open (FILE, "</etc/debian_version") or die "error while opening /etc/debian_version: $!";
+my $line;
+while ($line = <FILE>){
+	if ($line =~ m/^6\./ || $line =~ m/^squeeze/){
+		print 'version stable: '.$line."\n";
+		$debian_version = 'squeeze';
+	}elsif ($line =~ m/^5\./ || $line =~ m/^lenny/){
+		print 'ancienne stable: '.$line."\n";
+		$debian_version = 'lenny';
+	}
+}
+if ($debian_version eq 'squeeze'){
+	open (FILE, "/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
+	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_admin_internal_ip.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-server '.$nameserver."\n".'}'."\n";
+}elsif ($debian_version eq 'lenny'){
+	open (FILE, "/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
+	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_admin_internal_ip.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-server '.$nameserver."\n".'}'."\n";
+}else{ 
+	print 'we can\'t determine the Debian version you are running, please check /etc/debian_version';
+}
+
 
 #We will now create the configuration files for Kanopya
 #Note: components.conf is the only file shipped with packages. Others are generated here.
