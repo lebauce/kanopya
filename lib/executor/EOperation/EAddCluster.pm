@@ -49,6 +49,7 @@ use Kanopya::Exceptions;
 use EFactory;
 
 use Entity::Cluster;
+use Entity::Systemimage;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -133,10 +134,10 @@ sub execute {
 	
 	if($si_location eq 'diskless') {
 		if(not $si_shared) {
-			# ici clonage du system image pour en faire un dedicated
+			my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));
+			$systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
+			$systemimage->save();
 		} 
-	} else {
-		
 	}
 
 # Create cluster directory
