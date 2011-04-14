@@ -361,6 +361,7 @@ sub _generateNodeConf {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+	
 	my $hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
 	$log->info("Generate Hostname Conf");
 	$self->_generateHostnameConf(hostname => $hostname, mount_point=>$args{mount_point});
@@ -373,7 +374,9 @@ sub _generateNodeConf {
 	$self->_generateUdevConf(mount_point=>$args{mount_point});
 	
 	$log->info("Generate Fstab Conf");
-	$self->_generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
+	$self->_generateFstabConf(	mount_point=>$args{mount_point}, 
+								root_dev => $args{root_dev}, 
+								etc_dev => $args{etc_dev});
 	
 	$log->info("Generate Kanopya Halt script Conf");
 	$self->_generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
@@ -467,16 +470,16 @@ sub _generateFstabConf{
 	my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
 	my $etc_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $etc_target_id);
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	my $vars = {#etc_dev			=> "/dev/sdb",
-   	    		etc_dev			=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_target->{target}."-lun-0",
+	my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";  
+		
+	my $vars = {etc_dev			=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_target->{target}."-lun-0",
    	    		etc_fs			=> $args{etc_dev}->{filesystem},
 				etc_options		=> "defaults",
-				#root_dev		=> "/dev/sda",
 				root_dev		=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_target->{target}."-lun-0",
 				root_fs			=> $args{root_dev}->{filesystem},
-				root_options	=> "ro,noatime,nodiratime",
+				root_options	=> $root_options
 				
-   	   };
+   	};
    	   
    	my $components = $self->{_objs}->{components};
    	$vars->{mounts_iscsi} = [];
@@ -623,6 +626,7 @@ sub _generateBootConf {
 	
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
 	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
+	my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";
 	my $vars ={ root_fs			=> $args{root_dev}->{filesystem},
 				etc_fs			=> $args{etc_dev}->{filesystem},
 				initiatorname	=> $args{initiatorname},
@@ -632,6 +636,7 @@ sub _generateBootConf {
 				root_target		=> $root_target->{target},
    	    		root_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				root_port		=> "3260",
+				root_mount_opts => $root_options,
 				mounts_iscsi		=> []
 	};
     $vars->{additional_devices} = "etc";

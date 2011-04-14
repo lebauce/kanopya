@@ -4,7 +4,7 @@ bootmode=iscsi
 additional_devices="[% additional_devices %]"
 
 root_fs_type=[% root_fs %]
-root_mount_opts="ro,noatime,nodiratime"
+root_mount_opts="[% root_mount_opts %]"
 root_target_name=[% root_target %]
 root_target_ip=[% root_ip %]
 root_target_port=[% root_port %]
