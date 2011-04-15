@@ -87,8 +87,8 @@ sub calculate {
 	# TODO study this part (difference between pseudo-code in thesis and moka implementation)
 	for (my $i = $M - 1; $i >= 0; $i--) {
 		# Client insertion
-		#for (my $j = 1; $j < $Na[$i]; $j++) {
-		for (my $j = 1; $j <= $Na[$i]; $j++) {
+		for (my $j = 1; $j < $Na[$i]; $j++) {
+		#for (my $j = 1; $j <= $Na[$i]; $j++) {
 			my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
 			$R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );
 			
@@ -118,15 +118,18 @@ sub calculate {
 	print ">>>> throughputs total Ta: $Ta_total\n";
 	print ">>>> my throughput: " . ( 1 / $latency ) . "\n"; 
 	
-	my $Tr = $Nr[0] / $Z;	# throughput of requets admitted at T1 and rejected at T2 ..TM
+	my $Tr_total = $Nr[0] / $Z;	# throughput of requets admitted at T1 and rejected at T2 ..TM
 	my $Trp = ($N_rejected - $Nr[0]) / ($Lr[0] + $Z); # throughput of requests rejected at T1
-	my $abort_rate = ($Tr+$Trp)/($Tr+$Trp+$Ta_total); # total abandon rate 
+	my $abort_rate = ($Tr_total+$Trp)/($Tr_total+$Trp+$Ta_total); # total abandon rate 
 	
+	
+	#my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
+	my $throughput = ( 1 / $latency ); # Test
 	
 	return (
 		latency => $latency,			# ms (mean time for execute client request)
 		abort_rate => $abort_rate,		# %  (rejected_request/total_request)
-		throughput => 1000 * $Ta_total,		# req/sec (successful requests per sec) = reply rate?
+		throughput => ,		# req/sec (successful requests per sec) = reply rate?
 	);	
 }
 

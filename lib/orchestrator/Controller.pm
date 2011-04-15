@@ -125,7 +125,7 @@ sub getWorkload {
 	#my $workload_amount = 666;												
 																
 	my %workload_class = ( 	visit_ratio => [1],
-							service_time => [0.001],
+							service_time => [0.002],
 							delay => [0],
 							think_time => 0.01 );
 
