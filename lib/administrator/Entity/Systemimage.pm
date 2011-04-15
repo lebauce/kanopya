@@ -484,4 +484,25 @@ sub getInstalledComponents {
 	return $components;
 }
 
+=head2 cloneComponentsInstalledFrom
+
+# used during systemimage clone to set components installed on the new systemimage
+
+=cut
+
+sub cloneComponentsInstalledFrom {
+	my $self = shift;
+	my %args = @_;
+	if(! exists $args{systemimage_source_id} or ! defined $args{systemimage_source_id}) {
+		$errmsg = "Entity::Systemimage->cloneComponentsInstalled needs a systemimage_source_id parameter!";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $si_source = Entity::Systemimage->get(id => $args{systemimage_source_id});
+	while(my $component =  $si_source->{_dbix}->components_installed->next) {
+		$self->{_dbix}->components_installed->create(
+			{	component_id => $component->get_column('component_id') });	
+	}
+}
+
 1;
