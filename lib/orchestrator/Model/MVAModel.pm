@@ -129,7 +129,7 @@ sub calculate {
 	return (
 		latency => $latency,			# ms (mean time for execute client request)
 		abort_rate => $abort_rate,		# %  (rejected_request/total_request)
-		throughput => ,		# req/sec (successful requests per sec) = reply rate?
+		throughput => $throughput,		# req/sec (successful requests per sec) = reply rate?
 	);	
 }
 
