@@ -167,12 +167,18 @@ sub prepare {
 sub execute {
 	my $self = shift;
 	$self->SUPER::execute();
+	
+	my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
+	
+	## provide root rsa pub key to provide ssh key authentication
+	
+	$self->_generateAuthorizedKeys();
 		
 	## Update export to allow to motherboard to boot with this systemimage
 	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name'));
 
 	# Get etc iscsi target information
-	my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
+	
 	my $sysimg_root_export = {
 		iscsitarget1_target_name=>$target_name,
 		mountpoint=>"/",
@@ -200,6 +206,28 @@ sub execute {
 	$self->{_objs}->{systemimage}->save();
 		
 }
+
+# generate /root/.ssh/authorized_keys file with nas root rsa pub key
+
+sub _generateAuthorizedKeys {
+	my $self = shift;
+	
+	# mount the root systemimage device
+	my $si_devices = $self->{_objs}->{systemimage}->getDevices();
+	my $mount_point = "/mnt/$si_devices->{root}->{lvm2_lv_name}";
+	my $mkdir_cmd = "mkdir -p $mount_point";
+	$self->{nas}->{econtext}->execute(command => $mkdir_cmd);
+		
+	my $mount_cmd = "mount /dev/$si_devices->{root}->{vgname}/$si_devices->{root}->{lvname} $mount_point";
+	$self->{nas}->{econtext}->execute(command => $mount_cmd);
+	
+	my $rsapubkey_cmd = "cat /root/.ssh/id_rsa.pub > $mount_point/root/.ssh/authorized_keys";
+	$self->{nas}->{econtext}->execute(command => $rsapubkey_cmd);
+	
+	my $umount_cmd = "umount $mount_point";
+	$self->{nas}->{econtext}->execute(command => $umount_cmd);
+}
+
 
 =head1 DIAGNOSTICS
 
