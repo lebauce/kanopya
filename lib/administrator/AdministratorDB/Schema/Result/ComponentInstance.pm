@@ -248,6 +248,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 pleskpanel10s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Pleskpanel10>
+
+=cut
+
+__PACKAGE__->has_many(
+  "pleskpanel10s",
+  "AdministratorDB::Schema::Result::Pleskpanel10",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 snmpd5s
 
 Type: has_many
@@ -279,8 +294,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8LrBWFEd0dFNcaPaeQNckQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-15 16:34:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Xm3ZHayBpIn7H3aiIHdXzg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
