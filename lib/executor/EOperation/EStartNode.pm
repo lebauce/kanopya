@@ -264,15 +264,19 @@ sub execute {
 	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
 	my $motherboard_ip = $adm->{manager}->{network}->getFreeInternalIP();
 	# Set Hostname
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
-										   value => $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip));
+	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
+	if(not $motherboard_hostname) {
+		$motherboard_hostname = $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip); 
+		$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
+										   value => $motherboard_hostname);
+	}
+		
 	# Set initiatorName
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
 										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
 	
 	# Configure DHCP Component
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
-	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
 	my $motherboard_kernel_id;# = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
 	my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
 	if ($tmp_kernel_id) {
