@@ -6,7 +6,7 @@ SET foreign_key_checks=0;
 -- Table structure for table `Pleskpanel10`
 --
 
-CREATE TABLE `Pleskpanel10` (
+CREATE TABLE `pleskpanel10` (
   `component_instance_id` int(8) unsigned NOT NULL,
   `pleskpanel10_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `pleskpanel10_hostname` char(32) NOT NULL DEFAULT 'hostname',
