@@ -87,8 +87,8 @@ sub calculate {
 	# TODO study this part (difference between pseudo-code in thesis and moka implementation)
 	for (my $i = $M - 1; $i >= 0; $i--) {
 		# Client insertion
-		for (my $j = 1; $j < $Na[$i]; $j++) {
-		#for (my $j = 1; $j <= $Na[$i]; $j++) {
+		#for (my $j = 1; $j < $Na[$i]; $j++) {
+		for (my $j = 1; $j <= $Na[$i]; $j++) {
 			my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
 			$R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );
 			
