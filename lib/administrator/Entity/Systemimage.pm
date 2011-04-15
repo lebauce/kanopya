@@ -500,8 +500,9 @@ sub cloneComponentsInstalledFrom {
 	}
 	my $si_source = Entity::Systemimage->get(id => $args{systemimage_source_id});
 	while(my $component =  $si_source->{_dbix}->components_installed->next) {
-		$self->{_dbix}->components_installed->create(
-			{	component_id => $component->get_column('component_id') });	
+		$log->debug("component id to copy :".$component->get_column('component_id'));
+		#$self->{_dbix}->components_installed->create(
+		#	{	component_id => $component->get_column('component_id') });	
 	}
 }
 
