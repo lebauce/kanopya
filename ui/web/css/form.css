@@ -33,7 +33,7 @@ table.form caption {
 
 
 table.form td { width: 25%; padding-top: 5px}
-table.form select { min-width: 200px;}
+table.form select { min-width: 80px;}
 
 .error { 
 	color: red;

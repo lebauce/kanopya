@@ -49,6 +49,7 @@ use Kanopya::Exceptions;
 use EFactory;
 
 use Entity::Cluster;
+use Entity::Systemimage;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -121,15 +122,24 @@ sub prepare {
 
 }
 
-sub execute{
+
+
+sub execute {
 	my $self = shift;
-	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
-	$log->debug("After Adm");
+	my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
+	my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
+	my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
 	
-	
+	if($si_location eq 'diskless') {
+		if(not $si_shared) {
+			my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));
+			$systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
+			$systemimage->save();
+		} 
+	}
+
 # Create cluster directory
 	my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
 	$self->{econtext}->execute(command => $command);

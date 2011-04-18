@@ -66,6 +66,7 @@ __PACKAGE__->add_columns(
   },
 );
 __PACKAGE__->set_primary_key("cluster_ipv4_route_id");
+__PACKAGE__->add_unique_constraint("index4", ["cluster_id", "ipv4_route_id"]);
 
 =head1 RELATIONS
 
@@ -100,8 +101,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8NjKLaX5mKvoSC2Q2rRBkA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-03-07 00:25:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6sSmA850uYYfzHXkBp5p1A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

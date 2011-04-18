@@ -1,0 +1,49 @@
+#!/bin/sh
+
+echo "Kanopya Boot Procedure"
+
+[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/kanopya-top"
+run_scripts /scripts/kanopya-top
+[ "$quiet" != "y" ] && log_end_msg
+
+HOSTNAME=`hostname`
+
+if [ ! -e "/tmp/${HOSTNAME}.conf" ]; then
+    panic "configuration file not found ! Tftp retrieving failed"
+fi
+
+
+export CONFIGFILE="/tmp/${HOSTNAME}.conf"
+. $CONFIGFILE
+
+BOOTMODE="$bootmode"
+if [ -z "$BOOTMODE" ]; then
+    [ "$quiet" != "y" ] && echo "BOOTMODE not defined, assuming local boot"
+    BOOTMODE="local"
+fi
+
+mountroot()
+{
+    case "${BOOTMODE}" in
+	'local')
+	    [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/kanopya-local"
+	    run_scripts /scripts/kanopya-local
+	    [ "$quiet" != "y" ] && log_end_msg
+	    ;;
+	
+	'iscsi')
+	    [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/kanopya-iscsi"
+	    run_scripts /scripts/kanopya-iscsi
+	    [ "$quiet" != "y" ] && log_end_msg
+	    ;;
+
+	'install')
+	    [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/kanopya-install"
+	    run_scripts /scripts/kanopya-install
+	    [ "$quiet" != "y" ] && log_end_msg
+	    ;;
+	*)
+	    panic "bad bootmode ! values are local, iscsi or install."
+	    ;;
+    esac
+}

@@ -40,51 +40,69 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 use constant ATTR_DEF => {
-    cluster_name    =>  {pattern                => '^\w*$',
-                                        is_mandatory      => 1,
-                                        is_extended         => 0,
-                                        is_editable           => 0},
-    cluster_desc    =>  {pattern                   => '\w*', # Impossible to check char used because of \n doesn't match with \w
-                                      is_mandatory        => 0,
-                                      is_extended          => 0,
-                                      is_editable            => 1},
-    cluster_type             =>  {pattern                    => '^.*$',
-                                               is_mandatory	=> 0,
-                                               is_extended		=> 0,
-                                               is_editable		=> 0},
-    cluster_min_node    => {pattern 		=> '^\d*$',
-										is_mandatory	=> 1,
-										is_extended 	=> 0,
-										is_editable		=> 1},
-			cluster_max_node		=> {pattern			=> '^\d*$',
-										is_mandatory	=> 1,
-										is_extended		=> 0,
-										is_editable		=> 1},
-			cluster_priority		=> {pattern 		=> '^\d*$',
-										is_mandatory	=> 1,
-										is_extended 	=> 0,
-										is_editable		=> 1},
-			active					=> {pattern			=> '^[01]$',
-										is_mandatory	=> 0,
-										is_extended		=> 0,
-										is_editable		=> 0},
-			systemimage_id			=> {pattern 		=> '\d*',
-										is_mandatory	=> 1,
-										is_extended 	=> 0,
-										is_editable		=> 0},
-			kernel_id				=> {pattern 		=> '^\d*$',
-										is_mandatory	=> 0,
-										is_extended 	=> 0,
-										is_editable		=> 1},
-			cluster_state			=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
-										is_mandatory	=> 0,
-										is_extended 	=> 0,
-										is_editable		=> 0},
-			cluster_toto             => {pattern 		=> '^\w*$',
-										is_mandatory	=> 0,
-										is_extended 	=> 1,
-										is_editable		=> 1}
-			};
+    cluster_name			=>  {pattern		=> '^\w*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0},
+    cluster_desc    		=>  {pattern        => '\w*', # Impossible to check char used because of \n doesn't match with \w
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    cluster_type            =>  {pattern        => '^.*$',
+                                 is_mandatory	=> 0,
+                                 is_extended	=> 0,
+                                 is_editable	=> 0},
+    cluster_si_location     =>  {pattern        => '^(diskless|local)$',
+                                 is_mandatory	=> 1,
+                                 is_extended	=> 0,
+                                 is_editable	=> 0},
+    cluster_si_access_mode  =>  {pattern        => '^(ro|rw)$',
+                                 is_mandatory	=> 1,
+                                 is_extended	=> 0,
+                                 is_editable	=> 0},
+    cluster_si_shared       =>  {pattern        => '^(0|1)$',
+                                 is_mandatory	=> 1,
+                                 is_extended	=> 0,
+                                 is_editable	=> 0},
+    cluster_min_node		=> {pattern 		=> '^\d*$',
+								is_mandatory	=> 1,
+								is_extended 	=> 0,
+								is_editable		=> 1},
+	cluster_max_node		=> {pattern			=> '^\d*$',
+								is_mandatory	=> 1,
+								is_extended		=> 0,
+								is_editable		=> 1},
+	cluster_priority		=> {pattern 		=> '^\d*$',
+								is_mandatory	=> 1,
+								is_extended 	=> 0,
+								is_editable		=> 1},
+	active					=> {pattern			=> '^[01]$',
+								is_mandatory	=> 0,
+								is_extended		=> 0,
+								is_editable		=> 0},
+	systemimage_id			=> {pattern 		=> '\d*',
+								is_mandatory	=> 1,
+								is_extended 	=> 0,
+								is_editable		=> 0},
+	kernel_id				=> {pattern 		=> '^\d*$',
+								is_mandatory	=> 0,
+								is_extended 	=> 0,
+								is_editable		=> 1},
+	cluster_state			=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
+								is_mandatory	=> 0,
+								is_extended 	=> 0,
+								is_editable		=> 0},
+	cluster_domainname      => {pattern 		=> '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
+								is_mandatory	=> 1,
+								is_extended 	=> 0,
+								is_editable		=> 0},
+	cluster_nameserver		=> {pattern 		=> '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+								is_mandatory	=> 1,
+								is_extended 	=> 0,
+								is_editable		=> 0},
+	
+								
+	};
 
 sub methods {
 	return {
@@ -619,13 +637,13 @@ sub getCurrentNodesCount {
 sub getPublicIps {
 	my $self = shift;
 
-	my $publicip_rs = $self->{_dbix}->publicips;
+	my $publicip_rs = $self->{_dbix}->ipv4_publics;
 	my $i =0;
 	my @pub_ip =();
 	while ( my $publicip_row = $publicip_rs->next ) {
-		my $publicip = {address => $publicip_row->get_column('ip_address'),
-						netmask => $publicip_row->get_column('ip_mask'),
-						gateway => $publicip_row->get_column('gateway'),
+		my $publicip = {address => $publicip_row->get_column('ipv4_public_address'),
+						netmask => $publicip_row->get_column('ipv4_public_mask'),
+						gateway => $publicip_row->get_column('ipv4_public_default_gw'),
 						name 	=> "eth0:$i"};
 		$i++;
 		push @pub_ip, $publicip;

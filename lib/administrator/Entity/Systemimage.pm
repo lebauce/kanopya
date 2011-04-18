@@ -40,6 +40,9 @@ use constant ATTR_DEF => {
 	systemimage_desc => { pattern => '^\w*$',
 						  is_mandatory => 1,
 						  is_extended => 0 },
+	systemimage_dedicated => { pattern => '^(0|1)$',
+						  is_mandatory => 0,
+						  is_extended => 0 },
 	
 	distribution_id => { pattern => '^\d*$',
 						 is_mandatory => 1,
@@ -479,6 +482,28 @@ sub getInstalledComponents {
 		push @$components, $tmp;
 	}
 	return $components;
+}
+
+=head2 cloneComponentsInstalledFrom
+
+# used during systemimage clone to set components installed on the new systemimage
+
+=cut
+
+sub cloneComponentsInstalledFrom {
+	my $self = shift;
+	my %args = @_;
+	if(! exists $args{systemimage_source_id} or ! defined $args{systemimage_source_id}) {
+		$errmsg = "Entity::Systemimage->cloneComponentsInstalled needs a systemimage_source_id parameter!";
+    	$log->error($errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $si_source = Entity::Systemimage->get(id => $args{systemimage_source_id});
+	my $rs = $si_source->{_dbix}->components_installed->search;
+	while(my $component = $rs->next) {
+		$self->{_dbix}->components_installed->create(
+			{	component_id => $component->get_column('component_id') });	
+	}
 }
 
 1;

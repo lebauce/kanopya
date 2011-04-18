@@ -64,9 +64,43 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("ipv4_internal_id");
 __PACKAGE__->add_unique_constraint("ipv4_internal_address_UNIQUE", ["ipv4_internal_address"]);
 
+=head1 RELATIONS
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:E6mIPAYb2r5bGihbkF1QGg
+=head2 motherboards
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Motherboard>
+
+=cut
+
+__PACKAGE__->has_many(
+  "motherboards",
+  "AdministratorDB::Schema::Result::Motherboard",
+  {
+    "foreign.motherboard_ipv4_internal_id" => "self.ipv4_internal_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 powersupplycards
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Powersupplycard>
+
+=cut
+
+__PACKAGE__->has_many(
+  "powersupplycards",
+  "AdministratorDB::Schema::Result::Powersupplycard",
+  { "foreign.ipv4_internal_id" => "self.ipv4_internal_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-07 12:42:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GDk8/9n+NAbQs1fB/qTiZA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

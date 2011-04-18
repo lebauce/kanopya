@@ -261,23 +261,37 @@ sub execute {
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 		
 	## ADD Motherboard in the dhcp
-	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNet();
+	my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
 	my $motherboard_ip = $adm->{manager}->{network}->getFreeInternalIP();
 	# Set Hostname
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
-										   value => $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip));
+	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
+	if(not $motherboard_hostname) {
+		$motherboard_hostname = $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip); 
+		$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
+										   value => $motherboard_hostname);
+	}
+		
 	# Set initiatorName
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
 										   value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
 	
 	# Configure DHCP Component
 	my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
-	my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
-	my $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	my $motherboard_kernel_id;# = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
+	if ($tmp_kernel_id) {
+	    $motherboard_kernel_id = $tmp_kernel_id;
+	} else {
+	    $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+	}
+
 	$self->{_objs}->{component_dhcpd}->addHost( dhcpd3_subnet_id		=> $subnet,
 												dhcpd3_hosts_ipaddr	=> $motherboard_ip,
 												dhcpd3_hosts_mac_address	=> $motherboard_mac,
 												dhcpd3_hosts_hostname	=> $motherboard_hostname,
+												dhcpd3_hosts_ntp_server => $self->{bootserver}->{obj}->getMasterNodeIp(),
+												dhcpd3_hosts_domain_name =>$self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
+												dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver"),
 												kernel_id	=> $motherboard_kernel_id);
 	
 	$log->info('generate dhcp configuration file');
@@ -287,7 +301,12 @@ sub execute {
 	
 	#Update Motherboard internal ip
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
+	#TODO Manage gateway in motherboard with cluster ???
+	my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcp3_subnet_id => $subnet);
 
+    my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
+                                                 ipv4_internal_mask => $subnet_hash{'dhcpd3_subnet_mask'});
+    #$self->{_objs}->{motherboard}->setAttr(name => "motherboard_ipv4_internal_id", value => $ipv4_internal_id);
 	# Mount Motherboard etc to populate it
 	my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $mkdir_cmd);
@@ -296,7 +315,7 @@ sub execute {
 
 	my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();	
 	# Generate Node configuration
-	$self->generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
+	$self->_generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
 					 		root_dev 	=> $sysimg_dev->{root},
 					 		etc_dev		=> $node_dev->{etc},
 					 		etc_export	=> $node_etc_export,
@@ -316,7 +335,7 @@ sub execute {
 							econtext => $self->{nas}->{econtext});
 	}
 
-	# Umount Motherboard etc to populate it
+	# Umount Motherboard etc
 	my $umount_cmd = "umount /mnt/$node_dev->{etc}->{lvname}";
 	$self->{nas}->{econtext}->execute(command => $umount_cmd);
 	my $rmdir_cmd = "rmdir /mnt/$node_dev->{etc}->{lvname}";
@@ -333,7 +352,7 @@ sub execute {
 	$emotherboard->start(econtext =>$self->{econtext});
 }
 
-sub generateNodeConf {
+sub _generateNodeConf {
 	my $self = shift;
 	my %args = @_;
 
@@ -346,31 +365,57 @@ sub generateNodeConf {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+	
+	my $hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
+	$log->info("Generate Hostname Conf");
+	$self->_generateHostnameConf(hostname => $hostname, mount_point=>$args{mount_point});
+	
 	my $initiatorname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname");
 	$log->info("Generate Initiator Conf");
-	$self->generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
+	$self->_generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
+	
 	$log->info("Generate Udev Conf");
-	$self->generateUdevConf(mount_point=>$args{mount_point});
+	$self->_generateUdevConf(mount_point=>$args{mount_point});
+	
 	$log->info("Generate Fstab Conf");
-	$self->generateFstabConf(mount_point=>$args{mount_point}, root_dev => $args{root_dev}, etc_dev => $args{etc_dev});
+	$self->_generateFstabConf(	mount_point=>$args{mount_point}, 
+								root_dev => $args{root_dev}, 
+								etc_dev => $args{etc_dev});
+	
 	$log->info("Generate Kanopya Halt script Conf");
-	$self->generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
+	$self->_generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
 #	$log->info("Generate Hosts Conf");
 #	$self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
+	
 	$log->info("Generate Network Conf");
-	$self->generateNetConf(mount_point=>$args{mount_point});
+	$self->_generateNetConf(mount_point=>$args{mount_point});
+	
 	$log->info("Generate resolv.conf");
-	$self->generateResolvConf(mount_point=>$args{mount_point});
+	$self->_generateResolvConf(mount_point=>$args{mount_point});
 #TODO generateRouteConf
+	
 	$log->info("Generate Boot Conf");
-	$self->generateBootConf(mount_point=>$args{mount_point},
+	$self->_generateBootConf(mount_point=>$args{mount_point},
 							initiatorname => $initiatorname,
 							root_dev => $args{root_dev},
 							etc_dev => $args{etc_dev},
 							etc_export => $args{etc_export});	
 }
 
-sub generateInitiatorConf {
+sub _generateHostnameConf {
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
+		(! exists $args{hostname} or ! defined $args{hostname})) { 
+		$errmsg = "EOperation::EStartNode->generateHostnameConf need a mount_point and a hostname named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$self->{nas}->{econtext}->execute(command => "echo $args{hostname} > $args{mount_point}/hostname");
+}
+
+sub _generateInitiatorConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -383,7 +428,7 @@ sub generateInitiatorConf {
 	$self->{nas}->{econtext}->execute(command=>"echo \"InitiatorName=$args{initiatorname}\" > $args{mount_point}/iscsi/initiatorname.iscsi");
 }
 
-sub generateUdevConf{
+sub _generateUdevConf{
 	my $self = shift;
 	my %args = @_;
 	
@@ -406,7 +451,7 @@ sub generateUdevConf{
 	unlink "/tmp/$tmpfile";
 }
 
-sub generateFstabConf{
+sub _generateFstabConf{
 	my $self = shift;
 	my %args = @_;
 	
@@ -429,16 +474,16 @@ sub generateFstabConf{
 	my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
 	my $etc_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $etc_target_id);
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	my $vars = {#etc_dev			=> "/dev/sdb",
-   	    		etc_dev			=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_target->{target}."-lun-0",
+	my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";  
+		
+	my $vars = {etc_dev			=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_target->{target}."-lun-0",
    	    		etc_fs			=> $args{etc_dev}->{filesystem},
 				etc_options		=> "defaults",
-				#root_dev		=> "/dev/sda",
 				root_dev		=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_target->{target}."-lun-0",
 				root_fs			=> $args{root_dev}->{filesystem},
-				root_options	=> "ro,noatime,nodiratime",
+				root_options	=> $root_options
 				
-   	   };
+   	};
    	   
    	my $components = $self->{_objs}->{components};
    	$vars->{mounts_iscsi} = [];
@@ -461,7 +506,7 @@ sub generateFstabConf{
 	unlink "/tmp/$tmpfile";
 }
 
-sub generateKanopyaHalt{
+sub _generateKanopyaHalt{
 	my $self = shift;
 	my %args = @_;
 	
@@ -508,7 +553,7 @@ sub generateKanopyaHalt{
    	$self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/Kanopya_omitted_iscsid $args{mount_point}/rc0.d/S19Kanopya_omitted_iscsid");
 }
 
-sub generateHosts {
+sub _generateHosts {
 	my $self = shift;
 	my %args = @_;
 	
@@ -542,7 +587,7 @@ sub generateHosts {
     unlink 	"/tmp/$tmpfile";
 }
 
-sub generateNetConf {
+sub _generateNetConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -566,7 +611,7 @@ sub generateNetConf {
 	unlink "/tmp/$tmpfile"; 
 }
 
-sub generateBootConf {
+sub _generateBootConf {
 	my $self = shift;
 	my %args = @_;
 	
@@ -585,6 +630,7 @@ sub generateBootConf {
 	
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
 	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
+	my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";
 	my $vars ={ root_fs			=> $args{root_dev}->{filesystem},
 				etc_fs			=> $args{etc_dev}->{filesystem},
 				initiatorname	=> $args{initiatorname},
@@ -594,20 +640,23 @@ sub generateBootConf {
 				root_target		=> $root_target->{target},
    	    		root_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				root_port		=> "3260",
+				root_mount_opts => $root_options,
 				mounts_iscsi		=> []
 	};
+    $vars->{additional_devices} = "etc";
 	my $components = $self->{_objs}->{components};
 	foreach my $i (keys %$components) {
 		if ($components->{$i}->isa("Entity::Component::Exportclient")) {
 			if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
 				my $iscsi_export = $components->{$i};
-				#$self->{_objs}->{cluster}->getComponent( name=>"Openiscsi",
-				#									 						version => "0");
 				$vars->{mounts_iscsi} = $iscsi_export->getExports();
+                my $tmp = $vars->{mounts_iscsi};
+                foreach my $j (@$tmp){
+                    $vars->{additional_devices} .= " ". $j->{name};
+                }
    			}
 		}
 	}
-
 	$log->debug(Dumper $vars);
 	$template->process($input, $vars, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
 	#TODO problem avec fichier de boot a voir.
@@ -617,9 +666,36 @@ sub generateBootConf {
     unlink "/tmp/$tmpfile";
 }
 
-sub generateResolvConf{
-	#TODO GenerateResolvConf, il faut intégrer la gestion domain (dns + domainname)
+sub _generateResolvConf{
+	my $self = shift;
+	my %args = @_;
+	
+	if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
+		$errmsg = "EOperation::EStartNode->generateResolvConf need a mount_point named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $rand = new String::Random;
+	my $tmpfile = $rand->randpattern("cccccccc");
+	
+	my @nameservers = ();
+	# TODO manage more than only one nameserver !
+	push @nameservers, { ipaddress => $self->{_objs}->{cluster}->getAttr(name => 'cluster_nameserver'), };
+	
+	my $vars = {
+		domainname => $self->{_objs}->{cluster}->getAttr(name => 'cluster_domainname'),
+		nameservers => \@nameservers, 
+	};
+	
+	my $template = Template->new($config);
+    my $input = "resolv.conf.tt";
+	
+	$template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
+	$self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/resolv.conf");	
+	unlink "/tmp/$tmpfile";
 }
+
+1;
 __END__
 
 =head1 AUTHOR

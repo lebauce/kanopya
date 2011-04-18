@@ -1,0 +1,75 @@
+#!/bin/sh
+
+. /scripts/functions
+
+DEBUG=1
+
+# first argument is about device name to operate on
+# do iscsi connection and create a file in /tmp containing corresponding device file path
+
+do_iscsi_login ()
+{
+    if [ -z "$1" ]; then 
+	return
+    fi
+
+    INITIATORNAME=$initiatorname
+    DEV_TARGET_NAME=$(eval echo \$${1}_target_name)
+    DEV_TARGET_IP=$(eval echo \$${1}_target_ip)
+    DEV_TARGET_PORT=$(eval echo \$${1}_target_port)
+    DEV_TARGET_GROUP=$(eval echo \$${1}_target_group)
+    DEV_USERNAME=$(eval echo \$${1}_username)
+    DEV_PASSWORD=$(eval echo \$${1}_password)
+    DEV_IN_USERNAME=$(eval echo \$${1}_in_username)
+    DEV_IN_PASSWORD=$(eval echo \$${1}_in_password)
+
+    if [ ! -z "$DEBUG" ]; then
+	echo "INITIATORNAME $INITIATORNAME"
+	echo "DEV_TARGET_NAME $DEV_TARGET_NAME"
+	echo "DEV_TARGET_IP $DEV_TARGET_IP"
+	echo "DEV_TARGET_PORT $DEV_TARGET_PORT"
+	echo "DEV_TARGET_GROUP $DEV_TARGET_GROUP"
+	echo "DEV_USERNAME $DEV_USERNAME"
+	echo "DEV_PASSWORD $DEV_PASSWORD"
+	echo "DEV_IN_USERNAME $DEV_IN_USERNAME"
+	echo "DEV_IN_PASSWORD $DEV_IN_PASSWORD"
+    fi
+
+
+    iscsistart -i $INITIATORNAME -t $DEV_TARGET_NAME -g $DEV_TARGET_GROUP -a $DEV_TARGET_IP -p $DEV_TARGET_PORT $DEV_USERNAME $DEV_PASSWORD $DEV_IN_USERNAME $DEV_IN_PASSWORD
+
+    udevadm settle
+
+    DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-lun-0"
+    
+    if [ ! -e "$DEVICE" ]; then
+	panic "Unable to find $DEVICE"
+    fi
+    echo "$DEVICE" > /tmp/${1}
+}
+
+
+# first argument indicate name file in /tmp containing device file path
+
+do_mount()
+{
+
+    if [ -z "$1" ]; then 
+	return
+    fi
+    
+    DEV_FS_TYPE=$(eval echo \$${1}_fs_type)
+    DEV_MOUNT_POINT=$(eval echo \$${1}_mount_point)
+    DEV_MOUNT_OPTS=$(eval echo \$${1}_mount_opts)
+
+    if [ "$1" = "root" ]; then
+	DEV_MOUNT_POINT=
+    else
+	DEV_MOUNT_POINT=$(eval echo \$${1}_mount_point)
+
+    DEVICE=`cat /tmp/${1}`
+    echo "mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}"
+    mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}
+
+}
+

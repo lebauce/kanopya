@@ -71,8 +71,9 @@ sub form_addcluster : Runmode {
 	my $errors = shift;
 	my $tmpl = $self->load_tmpl('Clusters/form_addcluster.tmpl');
 		
+	my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});	
 	my @ekernels = Entity::Kernel->getKernels(hash => {});
-	my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});
+	my @esystemimages = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => 0});
 	my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
 	
 	my $count = scalar @emotherboards;
@@ -101,6 +102,7 @@ sub form_addcluster : Runmode {
 	$tmpl->param('nodescount' => $c);
 	$tmpl->param('kernels_list' => $kmodels);
 	$tmpl->param('systemimages_list' => $smodels);
+	$tmpl->param('nameserver' => $kanopya_cluster->getAttr(name => 'cluster_nameserver'));
 	$tmpl->param($errors) if $errors;
 	
 	return $tmpl->output();
@@ -110,12 +112,40 @@ sub form_addcluster : Runmode {
 
 sub _addcluster_profile {
 	return {
-    	required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node', 'priority'],
+    	required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node', 'priority', 'domainname', 'nameserver'],
         msgs => {
         	any_errors => 'some_errors',
-            prefix => 'err_'
+            prefix => 'err_',
+            constraints => {
+            	domainname_valid => 'Invalid domain name',
+            	nameserver_valid => 'Invalid ip address'
+            }
         },
+        constraint_methods => {
+        	domainname => domainname_valid(),
+        	nameserver => nameserver_valid(),
+        }
 	};
+}
+
+# function constraint for domainname and nameserver field used in _addcluster_profile
+
+sub domainname_valid {
+	return sub {
+		my $dfv = shift;
+		$dfv->name_this('domainname_valid');
+		my $domain = $dfv->get_current_constraint_value();
+		return ($domain =~ /^[a-z0-9-]+(\.[a-z0-9-]+)+$/);
+	}
+}
+
+sub nameserver_valid {
+	return sub {
+		my $dfv = shift;
+		$dfv->name_this('nameserver_valid');
+		my $ip = $dfv->get_current_constraint_value();
+		return ($ip =~ /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/);
+	}
 }
 
 # form_addcluster processing
@@ -127,14 +157,35 @@ sub process_addcluster : Runmode {
     return $err_page if $err_page;
 
     my $query = $self->query();
+    my ($si_location, $si_access_mode, $si_shared);
+    
+    $si_location = $query->param('si_location'); 
+    if($si_location eq 'local') {
+    	$si_access_mode = 'rw';
+    	$si_shared = 0;
+    } elsif($si_location eq 'diskless') {
+    	if($query->param('si_shareordedicate') eq 'shared') {
+    		$si_access_mode = 'ro';
+    		$si_shared = 1;
+    	} else {
+    		$si_access_mode = 'rw';
+    		$si_shared = 0;
+    	}
+    }
+    
     eval {
     	my $params = {
 			cluster_name => $query->param('name'),
 			cluster_desc => $query->param('desc'),
+			cluster_si_location => $si_location,
+			cluster_si_access_mode => $si_access_mode,
+			cluster_si_shared => $si_shared,
 			cluster_min_node => $query->param('min_node'),
 			cluster_max_node => $query->param('max_node'),
 			cluster_priority => $query->param('priority'),
-			systemimage_id => $query->param('systemimage_id')
+			systemimage_id => $query->param('systemimage_id'),
+			cluster_domainname => $query->param('domainname'),
+			cluster_nameserver => $query->param('nameserver'),
 		};
 		if($query->param('kernel_id') ne '0') { $params->{kernel_id} = $query->param('kernel_id'); }
 		my $ecluster = Entity::Cluster->new(%$params);
@@ -183,6 +234,8 @@ sub view_clusterdetails : Runmode {
 	$tmpl->param('cluster_name' => $ecluster->getAttr(name => 'cluster_name'));
 	$tmpl->param('cluster_desc' => $ecluster->getAttr(name => 'cluster_desc'));
 	$tmpl->param('cluster_priority' => $ecluster->getAttr(name => 'cluster_priority'));
+	$tmpl->param('cluster_domainname' => $ecluster->getAttr(name => 'cluster_domainname'));
+	$tmpl->param('cluster_nameserver' => $ecluster->getAttr(name => 'cluster_nameserver'));
 	
 	my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
 	my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');

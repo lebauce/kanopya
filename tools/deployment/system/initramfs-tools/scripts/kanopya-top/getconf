@@ -1,0 +1,41 @@
+#!/bin/sh
+
+PREREQ=""
+prereqs()
+{
+    echo "$PREREQ"
+}
+
+case $1 in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+. /scripts/functions
+
+configure_networking
+
+# Get hostname
+HOSTNAME=`hostname`
+
+if [ ! -e /tmp/net-"${DEVICE}".conf ] 
+    then
+    echo "No network configured"
+    exit 155
+fi
+
+
+for x in $(cat /tmp/net-"${DEVICE}".conf); do
+    case ${x} in
+        ROOTSERVER=*) 
+        TFTPSERVER="${x#ROOTSERVER=}"
+        ;;
+    esac
+done
+
+cd /tmp
+tftp -g -r "$HOSTNAME".conf "$TFTPSERVER"
+
+
