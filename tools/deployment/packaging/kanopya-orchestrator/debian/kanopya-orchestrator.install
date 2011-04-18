@@ -1,5 +1,5 @@
-conf/orchestrator.conf etc/kanopya/samples/
-conf/orchestrator-log.conf etc/kanopya/samples/
+conf/orchestrator.conf etc/kanopya/
+conf/orchestrator-log.conf etc/kanopya/
 sbin/* opt/kanopya/sbin
 lib/orchestrator/* opt/kanopya/lib/orchestrator
 t/orchestrator/* opt/kanopya/t/orchestrator

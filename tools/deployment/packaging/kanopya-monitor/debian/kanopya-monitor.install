@@ -1,6 +1,4 @@
 sbin/* opt/kanopya/sbin
-conf/monitor.conf etc/kanopya/samples/
-conf/monitor-log.conf /etc/kanopya/samples/
 init/* etc/init.d
 lib/monitor/* opt/kanopya/lib/monitor
 t/monitor/* opt/kanopya/t/monitor

@@ -2,7 +2,7 @@ package CapacityPlanning::IncrementalSearch;
 
 use Log::Log4perl "get_logger";
 
-use parent "CapacityPlanning";
+use base "CapacityPlanning";
 
 my $log = get_logger("orchestrator");
 

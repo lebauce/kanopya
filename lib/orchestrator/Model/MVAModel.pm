@@ -5,7 +5,7 @@ use warnings;
 use Data::Dumper;
 use List::Util qw(min max sum);
 
-use parent "Model";
+use base "Model";
 
 sub new {
     my $class = shift;
@@ -29,10 +29,14 @@ sub calculate {
 	
 	my @V 	= @{ $args{workload_class}{visit_ratio} }; 	# Visit ratio
 	my @S	= @{ $args{workload_class}{service_time} };	# Service time
-	my @D	= @{ $args{workload_class}{delay} };		# Delay
+	my @D	= @{ $args{workload_class}{delay} };		# Delay (communication between tiers)
 	my $Z   = $args{workload_class}{think_time};		# Think time
 	
 	my $workload_amount = $args{workload_amount};
+	
+	# assert
+	die "## ASSERT: MVAModel: no workload amount\n" if ( not defined $workload_amount );
+	die "## ASSERT: MVAModel: workload_class->think_time must be > 0\n" if ( $Z <= 0 );
 	
 	####
 	# Calculate the entering admission control
@@ -61,6 +65,8 @@ sub calculate {
 	my $N_rejected = sum @Nr;
 	my $N_admitted = $workload_amount - $N_rejected;
 	
+	print ">>> Admitted : $N_admitted / $workload_amount\n";
+	
 	#####
 	# Service latency
 	#####
@@ -78,9 +84,11 @@ sub calculate {
 		$W[$i] = ($S[$i] - $D[$i]) * $V[$i];
 	}
 	
+	# TODO study this part (difference between pseudo-code in thesis and moka implementation)
 	for (my $i = $M - 1; $i >= 0; $i--) {
 		# Client insertion
-		for (my $j = 1; $j < $Na[$i]; $j++) {
+		#for (my $j = 1; $j < $Na[$i]; $j++) {
+		for (my $j = 1; $j <= $Na[$i]; $j++) {
 			my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
 			$R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );
 			
@@ -103,17 +111,25 @@ sub calculate {
 	######
 	#  Service throughput and abandon rate
 	######
+		
+	my $Ta_total = $N_admitted / ($La[0] + $Z);	# throughput of requets admitted at T1 ..TM <=> total throughput
 	
-	my $Ta = $N_admitted / ($La[0] + $Z);	# throughput of requets admitted at T1 ..TM <=> total throughput
-	my $Tr = $Nr[0] / $Z;	# throughput of requets admitted at T1 and rejected at T2 ..TM
+	
+	print ">>>> throughputs total Ta: $Ta_total\n";
+	print ">>>> my throughput: " . ( 1 / $latency ) . "\n"; 
+	
+	my $Tr_total = $Nr[0] / $Z;	# throughput of requets admitted at T1 and rejected at T2 ..TM
 	my $Trp = ($N_rejected - $Nr[0]) / ($Lr[0] + $Z); # throughput of requests rejected at T1
-	my $abort_rate = ($Tr+$Trp)/($Tr+$Trp+$Ta); # total abandon rate 
+	my $abort_rate = ($Tr_total+$Trp)/($Tr_total+$Trp+$Ta_total); # total abandon rate 
 	
+	
+	#my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
+	my $throughput = ( 1 / $latency ); # Test
 	
 	return (
-		latency => $latency,			# ms
-		abort_rate => $abort_rate,		# %
-		throughput => 1000 * $Ta,		# req/sec
+		latency => $latency,			# ms (mean time for execute client request)
+		abort_rate => $abort_rate,		# %  (rejected_request/total_request)
+		throughput => $throughput,		# req/sec (successful requests per sec) = reply rate?
 	);	
 }
 
