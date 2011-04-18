@@ -59,7 +59,7 @@ my $mysql_dir =  $kanopya_dir.'scripts/database/mysql/';
 my $schemas_dir = $mysql_dir.'schemas/';
 my $data_dir = $mysql_dir.'data/';
 my $schema_sql = $schemas_dir.'Schemas.sql';
-my $data_sql = $schemas_dir.'Data.sql';
+my $data_sql = $data.'Data.sql';
 my $components_sql_dir = $schemas_dir.'components/';
 #############################
 #############################
@@ -295,7 +295,7 @@ print "done\n";
 #Then we create the logging directory and give rights to apache on it
 print "creating the logging directory...";
 system ("mkdir -p $kanopya_logdir") == 0 or die "error while creating the logging directory: $!";
-system ("chown $apache_user.$apache_user $kanopya_logdir") == 0 or die "error while granting rights on $kanopya_logdir to $apache_user: $!";
+system ("chown -R $apache_user.$apache_user $kanopya_logdir") == 0 or die "error while granting rights on $kanopya_logdir to $apache_user: $!";
 print "done\n";
 
 #We remove an annoying line from /etc/inetd.conf that avoid atftpd to run properly 
