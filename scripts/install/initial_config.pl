@@ -62,7 +62,7 @@ my $mysql_dir =  $kanopya_dir.'scripts/database/mysql/';
 my $schemas_dir = $mysql_dir.'schemas/';
 my $data_dir = $mysql_dir.'data/';
 my $schema_sql = $schemas_dir.'Schemas.sql';
-my $data_sql = $data.'Data.sql';
+my $data_sql = $data_dir.'Data.sql';
 my $components_sql_dir = $schemas_dir.'components/';
 #############################
 #############################
@@ -89,13 +89,22 @@ while (length($db_user_pwd)==0){
 }
 ReadMode ("original");
 
-print "\nplease enter the database's url or domain name: ";
+print "\nplease enter the database's url or hostname: ";
 $db_location = <STDIN>;
 chomp($db_location);
 while (length($db_location)==0){
 	print "you can't give a null location for the database: ";
 	$db_location = <STDIN>;
 	chomp($db_location);
+}
+
+print "please enter the database's port (it should be 3306 by default): ";
+$db_port = <STDIN>;
+chomp($db_port);
+while ($db_port =~ m/\D/  || length($db_port) == 0 || $db_port == 0 || $db_port >= 65535 ){
+	print "you must enter a valid port number, within 1 and 65535: ";
+	$db_port = <STDIN>;
+	chomp($db_port);
 }
 
 print "\nplease enter the admin's domain name: ";
@@ -117,15 +126,6 @@ while (length($main_nic_name)==0){
 }
 $mcs_admin_nic_mac = `ip link list dev $main_nic_name | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
 
-print "please enter the database's port (it should be 3306 by default): ";
-$db_port = <STDIN>;
-chomp($db_port);
-while ($db_port =~ m/\D/  || length($db_port) == 0 || $db_port == 0 || $db_port >= 65535 ){
-	print "you must enter a valid port number, within 1 and 65535: ";
-	$db_port = <STDIN>;
-	chomp($db_port);
-}
-
 print "please enter the nameserver that admin will use: ";
 $nameserver = <STDIN>;
 chomp($nameserver);
@@ -145,7 +145,7 @@ while ($nameserver !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
 	
 }
 
-print "please enter the Kanopya's internal network address: ";
+print "please enter the Kanopya's internal network address (must NOT be aliased): ";
 $mcs_internal_network = <STDIN>;
 chomp($mcs_internal_network);
 while ($mcs_internal_network !~ m/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)
@@ -203,7 +203,10 @@ print "calculating the first host address available for this network...";
 my $network_addr = NetAddr::IP->new($mcs_internal_network, $mcs_internal_network_mask);
 my @c = split("/",$network_addr->first);
 $mcs_admin_internal_ip = $c[0];
-print "done (address set to $mcs_admin_internal_ip)\n";
+print "done (first host address is $mcs_admin_internal_ip)\n";
+print "setting up $main_nic_name ...";
+system ("ifconfig $main_nic_name $mcs_admin_internal_ip") == 0 or die "an error occured while trying to set up nic ($main_nic_name) address: $!";
+print "done\n";
 
 print "please enter the public network address: ";
 $mcs_public_network = <STDIN>;
@@ -320,11 +323,6 @@ system ("mkdir -p $kanopya_logdir") == 0 or die "error while creating the loggin
 system ("chown -R $apache_user.$apache_user $kanopya_logdir") == 0 or die "error while granting rights on $kanopya_logdir to $apache_user: $!";
 print "done\n";
 
-#We remove an annoying line from /etc/inetd.conf that avoid atftpd to run properly 
-system ('sed "/^tftp/d" /etc/inetd.conf > tmp');
-system('mv tmp /etc/inetd.conf');
-system('invoke-rc.d atftpd restart');
-
 #We configure dhcp server with the gathered informations
 #As conf file changes from lenny to squeeze, we need to handle both cases
 open (FILE, "</etc/debian_version") or die "error while opening /etc/debian_version: $!";
@@ -340,15 +338,25 @@ while ($line = <FILE>){
 }
 if ($debian_version eq 'squeeze'){
 	open (FILE, ">/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
-	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_internal_network.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-servers '.$nameserver.";\n".'}'."\n";
+	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_internal_network.' netmask '.$mcs_internal_network_mask.'{}'."\n";
 	system('invoke-rc.d isc-dhcp-server restart');
 }elsif ($debian_version eq 'lenny'){
 	open (FILE, ">/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
-	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_internal_network.' netmask '.$mcs_internal_network_mask.'{'."\n".'	option domain-name-servers '.$nameserver.";\n".'}'."\n";
+	print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$mcs_internal_network.' netmask '.$mcs_internal_network_mask.'{}'."\n";
 	system('invoke-rc.d dhcpd restart');
 }else{ 
 	print 'we can\'t determine the Debian version you are running, please check /etc/debian_version';
 }
+close (FILE);
+
+open (FILE, ">/etc/default/atftpd") or die "an error occured while opening /etc/default/atftpd: $!";
+print FILE "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $mcs_admin_internal_ip --maxthread 100 --verbose=5 --logfile=/var/log/tftpd.log /tftp\"";
+close (FILE);
+
+# We stop inetd as it will avoid atftpd to work properly
+system('invoke-rc.d inetutils-inetd stop');
+# We restart atftpd with the new configuration
+system('invoke-rc.d atftpd restart');
 
 #We will now create the configuration files for Kanopya
 #Note: components.conf is the only file shipped with packages. Others are generated here.

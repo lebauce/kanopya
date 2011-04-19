@@ -1,6 +1,0 @@
-#!/bin/bash -e
-
-#we push a new default configuration for atftpd
-
-echo "USE_INETD=false" > /etc/default/atftpd;
-echo "OPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5 --logfile=/var/log/tftpd.log /tftp\"" >> /etc/default/atftpd;
