@@ -38,6 +38,9 @@ my @rollback;
 #debug mode for administrator.conf
 my $debug = 0;
 
+#Users variables
+my $apache_user = 'www-data';
+
 #variables that handles locations used through this script
 my $debian_version;
 my $conf_dir = '/etc/kanopya/';
@@ -56,7 +59,7 @@ my $mysql_dir =  $kanopya_dir.'scripts/database/mysql/';
 my $schemas_dir = $mysql_dir.'schemas/';
 my $data_dir = $mysql_dir.'data/';
 my $schema_sql = $schemas_dir.'Schemas.sql';
-my $data_sql = $schemas_dir.'Data.sql';
+my $data_sql = $data.'Data.sql';
 my $components_sql_dir = $schemas_dir.'components/';
 #############################
 #############################
@@ -289,11 +292,11 @@ print "creating mysql user...\n";
 system ("mysql -h $db_location -P $db_port -u root -p -e \"CREATE USER '$db_user' IDENTIFIED BY '$db_user_pwd'\"") == 0 or die "error while creating mysql user: $!";
 print "done\n";
 
-#Then we create the logging directory
+#Then we create the logging directory and give rights to apache on it
 print "creating the logging directory...";
 system ("mkdir -p $kanopya_logdir") == 0 or die "error while creating the logging directory: $!";
+system ("chown -R $apache_user.$apache_user $kanopya_logdir") == 0 or die "error while granting rights on $kanopya_logdir to $apache_user: $!";
 print "done\n";
-
 
 #We remove an annoying line from /etc/inetd.conf that avoid atftpd to run properly 
 system ('sed "/^tftp/d" /etc/inetd.conf > tmp');

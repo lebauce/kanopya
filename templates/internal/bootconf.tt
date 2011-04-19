@@ -1,34 +1,43 @@
 #!/bin/sh
-root=/dev/sda
-rootfstype=[% root_fs %]
-etc=/dev/sdb
-etcfstype=[% etc_fs %]
-iscsi_initiator=[% initiatorname %]
-iscsi_target_name=[% root_target %]
-iscsi_target_ip=[% root_ip %]
-iscsi_target_port=[% root_port %]
-iscsi_target_group=
-iscsi_username=
-iscsi_password=
-iscsi_in_username=
-iscsi_in_password=
-etc_iscsi_target_name=[% etc_target %]
-etc_iscsi_target_ip=[% etc_ip %]
-etc_iscsi_target_port=[% etc_port %]
-etc_iscsi_target_group=
-etc_iscsi_username=
-etc_iscsi_password=
-etc_iscsi_in_username=
-etc_iscsi_in_password=
+initiatorname=[% initiatorname %]
+bootmode=iscsi
+additional_devices="[% additional_devices %]"
+
+root_fs_type=[% root_fs %]
+root_mount_opts="[% root_mount_opts %]"
+root_target_name=[% root_target %]
+root_target_ip=[% root_ip %]
+root_target_port=[% root_port %]
+root_target_group=0
+root_username=
+root_password=
+root_in_username=
+root_in_password=
+
+etc_fs_type=[% etc_fs %]
+etc_mount_point="/etc"
+etc_mount_opts="rw"
+etc_target_name=[% etc_target %]
+etc_target_ip=[% etc_ip %]
+etc_target_port=[% etc_port %]
+etc_target_group=0
+etc_username=
+etc_password=
+etc_in_username=
+etc_in_password=
 
 [% FOREACH mount=mounts_iscsi %]
-data_iscsi_target_name=[% mount.target %]
-data_iscsi_target_ip=[% mount.ip %]
-data_iscsi_target_port=[% mount.port %]
-data_iscsi_target_group=
-data_iscsi_username=
-data_iscsi_password=
-data_iscsi_in_username=
-data_iscsi_in_password=
+
+[% mount.name %]_mount_point=[% mount.mount_point %]
+[% mount.name %]_mount_opts=[% mount.options %]
+[% mount.name %]_fs_type=[% mount.fs %]
+[% mount.name %]_target_name=[% mount.target %]
+[% mount.name %]_target_ip=[% mount.ip %]
+[% mount.name %]_target_port=[% mount.port %]
+[% mount.name %]_target_group=0
+[% mount.name %]_username=
+[% mount.name %]_password=
+[% mount.name %]_in_username=
+[% mount.name %]_in_password=
 
 [% END %]

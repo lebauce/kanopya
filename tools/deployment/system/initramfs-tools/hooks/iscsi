@@ -1,0 +1,25 @@
+#!/bin/sh
+
+PREREQ=""
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case $1 in
+# get pre-requisites
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+# Hooks for loading iscsi bits into the initramfs
+. /usr/share/initramfs-tools/hook-functions
+
+copy_exec /usr/sbin/iscsistart /sbin
+
+for x in crc32c libcrc32c iscsi_tcp libiscsi scsi_transport_iscsi; do
+	manual_add_modules ${x}
+done

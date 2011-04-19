@@ -67,11 +67,8 @@ our $VERSION = '1.00';
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
-    
     return $self;
 }
 
@@ -88,12 +85,17 @@ sub _init {
     return;
 }
 
-sub checkOp{
+=head2 _checkOp
+
+    $op->_checkOp();
+    # This private method is used to verify parameters and prerequisite
+=cut
+
+sub _checkOp{
     my $self = shift;
 	my %args = @_;
     
     # check if system image used is active 
-    $log->debug("checking if systemimage of the cluster <$args{params}->{cluster_id}> is active");
     my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name => 'systemimage_id'));
     if(not $systemimage->getAttr(name => 'active')) {
 	    	$errmsg = "EOperation::EActivateCluster->new : cluster's systemimage is not activated";
@@ -102,8 +104,7 @@ sub checkOp{
     }
     
     # check if cluster is not active
-    $log->debug("checking cluster active value <$args{params}->{cluster_id}>");
-   	if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
+    if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
 	    	$errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
 	    	$log->error($errmsg);
 	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -122,8 +123,6 @@ sub prepare {
 	my %args = @_;
 	$self->SUPER::prepare();
 
-	$log->info("Operation preparation");
-
     # Check if internal_cluster exists
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EActivateCluster->prepare need an internal_cluster named argument!";
@@ -136,7 +135,6 @@ sub prepare {
     $self->{_objs} = {};
 
  	# Cluster instantiation
-    $log->debug("checking cluster existence with id <$params->{cluster_id}>");
     eval {
     	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
     };
@@ -149,7 +147,7 @@ sub prepare {
 
     ### Check Parameters and context
     eval {
-        $self->checkOp(params => $params);
+        $self->_checkOp(params => $params);
     };
     if ($@) {
         my $error = $@;
@@ -160,11 +158,9 @@ sub prepare {
 
 }
 
-sub execute{
+sub execute {
 	my $self = shift;
-	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
-	
 	
 	# set cluster active in db
 	$self->{_objs}->{cluster}->setAttr(name => 'active', value => 1);

@@ -107,6 +107,9 @@ use constant ATTR_DEF => {
 			motherboard_state				=> {pattern 		=> '^up|down|starting:\d*|stopping:\d*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 0},
+			motherboard_ipv4_internal_id 	=> {pattern 		=> 'm/^\d*$',
+											is_mandatory	=> 0,
+											is_extended 	=> 0},
 			motherboard_toto				=> {pattern 		=> '^.*$',
 											is_mandatory	=> 0,
 											is_extended 	=> 1}
@@ -133,6 +136,13 @@ sub methods {
 		'deactivate'=> {'description' => 'deactivate this motherboard', 
 						'perm_holder' => 'entity',
 		},
+		'addHarddisk'=> {'description' => 'add a hard disk to this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		'removeHarddisk'=> {'description' => 'remove a hard disk from this motherboard', 
+						'perm_holder' => 'entity',
+		},
+		
 		'setperm'	=> {'description' => 'set permissions on this motherboard', 
 						'perm_holder' => 'entity',
 		},
@@ -288,6 +298,20 @@ sub getMotherboard {
 	}
    	my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
     return pop @Motherboards;
+}
+
+sub getMotherboardFromIP {
+	my $class = shift;
+    my %args = @_;
+
+	if ((! exists $args{ipv4_internal_ip} or ! defined $args{ipv4_internal_ip})) { 
+		$errmsg = "Entity::getMotherboardFromIP need a type and a hash named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $adm = Administrator->new();
+    my $net_id = $adm->{manager}->{network}->getInternalIP(%args);
+    return $class->SUPER::getEntities( hash=>{motherboard_ipv4_internal_id => $net_id},  type => "Motherboard");
 }
 
 sub getFreeMotherboards {
@@ -456,9 +480,66 @@ sub extension {
 	return "motherboarddetails";
 }
 
+sub getHarddisks {
+	
+	my $self = shift;
+	my $hds = [];
+	my $harddisks = $self->{_dbix}->harddisks;
+	while(my $hd = $harddisks->next) {
+		my $tmp = {};
+		$tmp->{harddisk_id} = $hd->get_column('harddisk_id');
+		$tmp->{harddisk_device} = $hd->get_column('harddisk_device');
+		push @$hds, $tmp;
+	} 
+	return $hds;
+	 
+}
 
+sub addHarddisk {
+	my $self = shift;
+	my %args = @_;
+	    
+    if (! exists $args{device} or ! defined $args{device}) {
+		$errmsg = "Entity::Motherboard->addHarddisk need a device named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+	my $adm = Administrator->new();
+	# addHarddisk method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addHarddisk');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a hard disk to this motherboard");
+   	}
+	
+	$self->{_dbix}->harddisks->create({
+		harddisk_device => $args{device},
+		motherboard_id => $self->getAttr(name => 'motherboard_id'), 
+	});
+	
+}
 
+sub removeHarddisk {
+	my $self = shift;
+	my %args = @_;
+	    
+    if (! exists $args{harddisk_id} or ! defined $args{harddisk_id}) {
+		$errmsg = "Entity::Motherboard->removeHarddisk need a harddisk_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
 
+	my $adm = Administrator->new();
+	# removeHarddisk method concerns an existing entity so we use his entity_id
+   	my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeHarddisk');
+   	if(not $granted) {
+   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a hard disk from this motherboard");
+   	}
+
+	my $hd = $self->{_dbix}->harddisks->find($args{harddisk_id});
+	$hd->delete();
+
+}
 
 
 
@@ -549,13 +630,33 @@ sub getEtcDev {
 
 sub getInternalIP {
     my $self = shift;
-
 #    if($self->{_dbix}->)
 }
 
-sub setNewInternalIP{
+sub setInternalIP{
+    my $self = shift;
+    my %args = @_;
+	if (! exists $args{ipv4_internal_address} or ! defined $args{ipv4_internal_address} || 
+		! exists $args{ipv4_internal_mask} or ! defined $args{ipv4_internal_mask}) {
+		$errmsg = "Motherboard->setInternalIP need ipv4_internal_address and ipv4_internal_mask named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);
+	}
+    my $adm = Administrator->new();
+    my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
+    $self->setAttr(name => "motherboard_ipv4_internal_id", value => $net_id);
+    return $net_id;
+}
+
+sub removeInternalIP{
     my $self = shift;
     
+    my $internal_net_id = $self->getAttr(name =>"motherboard_ipv4_internal_id");
+    
+    $self->{_dbix}->update({'motherboard_ipv4_internal_id' => undef});
+    my $adm = Administrator->new();
+    my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_internal_id => $internal_net_id);
+
 }
 
 sub generateHostname {

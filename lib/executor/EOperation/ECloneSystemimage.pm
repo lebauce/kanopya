@@ -248,6 +248,7 @@ sub execute {
 	$self->{_objs}->{systemimage}->setAttr(name => "active", value => 0);
 		
 	$self->{_objs}->{systemimage}->save();
+	$self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(systemimage_source_id => $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id'));
 }
 
 1;

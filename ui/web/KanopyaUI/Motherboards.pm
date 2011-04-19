@@ -162,7 +162,10 @@ sub process_addmotherboard : Runmode {
 		}
 		else { $exception->rethrow(); }
 	}
-    else { return $self->close_window(); }
+    else { 
+    	$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'host creation adding to execution queue');
+    	return $self->close_window(); 
+    }
 }
 
 # fields verification function to used with form_addmotherboard
@@ -172,9 +175,26 @@ sub _addmotherboard_profile {
 		required => 'mac_address',
 		msgs => {
 				any_errors => 'some_errors',
-				prefix => 'err_'
+				prefix => 'err_',
+				constraints => {
+        			'mac_address_valid' => 'Invalid MAC address format',
+        		}
 		},
+		constraint_methods => {
+        	mac_address => mac_address_valid(),
+        }
 	};
+}
+
+# function constraint for mac_address field used in _addmotherboard_profile
+
+sub mac_address_valid {
+	return sub {
+		my $dfv = shift;
+		$dfv->name_this('mac_address_valid');
+		my $mac = $dfv->get_current_constraint_value();
+		return ($mac =~ /^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$/);
+	}
 }
 
 # motherboard details page
@@ -256,7 +276,25 @@ sub view_motherboarddetails : Runmode {
 		if($methods->{'activate'}->{'granted'}) { $tmpl->param('can_activate' => 1); }
 		if($methods->{'remove'}->{'granted'}) { $tmpl->param('can_delete' => 1); }
 	}
-		
+	
+	# harddisks list
+	my $harddisks = $emotherboard->getHarddisks();
+	my $hds= [];
+	foreach my $hd (@$harddisks) {
+		my $tmp = {};
+		$tmp->{harddisk_id} = $hd->{harddisk_id};
+		$tmp->{harddisk_device} = $hd->{harddisk_device}; 
+		$tmp->{motherboard_id} = $emotherboard->getAttr(name => 'motherboard_id');
+					
+		if((not $methods->{'removeHarddisk'}->{'granted'}) || $emotherboard->getAttr('name' => 'active')) {
+			$tmp->{link_removeHarddisk} = 0;
+		} else { $tmp->{link_removeHarddisk} = 1;}
+		push @$hds, $tmp;
+	}
+	$tmpl->param('nbharddisks' => scalar(@$hds)+1);
+	$tmpl->param('harddisks_list' => $hds);
+	if($methods->{'addHarddisk'}->{'granted'} && !$emotherboard->getAttr('name' => 'active')) { $tmpl->param('can_addHarddisk' => 1); }
+	else { $tmpl->param('can_addHarddisk' => 0); }
 	return $tmpl->output();
 }
 
@@ -277,7 +315,10 @@ sub process_activatemotherboard : Runmode {
 		}
 		else { $exception->rethrow(); }
 	} 
-	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
+	else { 
+		$self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'host activation adding to execution queue');
+		$self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboarddetails?motherboard_id='.$query->param('motherboard_id')); 
+	}
 }
 
 # motherboard deactivation processing
@@ -302,7 +343,7 @@ sub process_deactivatemotherboard : Runmode {
 
 # motherboard deletion processing
 
-sub process_removemotherboard : Runmode {
+sub process_deletemotherboard : Runmode {
     my $self = shift;
     my $query = $self->query();
     eval {
@@ -318,6 +359,93 @@ sub process_removemotherboard : Runmode {
 		else { $exception->rethrow(); }
 	} 
 	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboards'); }
+}
+
+# harddisk addition popup window
+
+sub form_addharddisk : Runmode {
+	my $self = shift;
+    my $errors = shift;
+    my $tmpl =  $self->load_tmpl('Motherboards/form_addharddisk.tmpl');
+    $tmpl->param($errors) if $errors;
+    
+    my $query = $self->query();
+    $tmpl->param('motherboard_id' => $query->param('motherboard_id'));
+    return $tmpl->output();
+}
+
+# fields verification function to used with form_addharddisk
+
+sub _addharddisk_profile {
+	return {
+		required => 'device',
+		msgs => {
+				any_errors => 'some_errors',
+				prefix => 'err_',
+				constraints => {
+        			'device_valid' => 'Invalid device format',
+        		}
+		},
+		constraint_methods => {
+        	device => device_valid(),
+        }
+	};
+}
+
+# function constraint for mac_address field used in _addmotherboard_profile
+
+sub device_valid {
+	return sub {
+		my $dfv = shift;
+		$dfv->name_this('device_valid');
+		my $device = $dfv->get_current_constraint_value();
+		return ($device =~ /^\/dev\/(hd|sd)[a-z]{1}[0-9]*$/);
+	}
+}
+
+# form_addharddisk processing
+
+sub process_addharddisk : Runmode {
+	my $self = shift;
+    use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
+    my ($results, $err_page) = $self->check_rm('form_addharddisk', '_addharddisk_profile');
+    return $err_page if $err_page;
+    
+    my $query = $self->query();
+    
+    eval { 
+    	my $motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+    	$motherboard->addHarddisk(device => $query->param('device')); 
+    };
+    if($@) { 
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	} else { return $self->close_window(); }
+}
+
+# removeharddisk processing
+
+sub process_removeharddisk : Runmode {
+	my $self = shift;
+    my $query = $self->query();
+    my $motherboard;
+    eval { 
+    	$motherboard = Entity::Motherboard->get(id => $query->param('motherboard_id'));
+    	$motherboard->removeHarddisk(harddisk_id => $query->param('harddisk_id')); 
+    };
+    if($@) { 
+		my $exception = $@;
+		if(Kanopya::Exception::Permission::Denied->caught()) {
+			$self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+			$self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+		}
+		else { $exception->rethrow(); }
+	} 
+	else { $self->redirect('/cgi/kanopya.cgi/motherboards/view_motherboarddetails?motherboard_id='.$motherboard->getAttr(name => 'motherboard_id')); }
 }
 
 1;

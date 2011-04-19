@@ -51,6 +51,24 @@ __PACKAGE__->table("dhcpd3_hosts");
   is_nullable: 0
   size: 40
 
+=head2 dhcpd3_hosts_domain_name
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 64
+
+=head2 dhcpd3_hosts_domain_name_server
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
+=head2 dhcpd3_hosts_ntp_server
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
 =head2 kernel_id
 
   data_type: 'integer'
@@ -81,6 +99,12 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 40 },
   "dhcpd3_hosts_hostname",
   { data_type => "char", is_nullable => 0, size => 40 },
+  "dhcpd3_hosts_domain_name",
+  { data_type => "char", is_nullable => 0, size => 64 },
+  "dhcpd3_hosts_domain_name_server",
+  { data_type => "char", is_nullable => 0, size => 15 },
+  "dhcpd3_hosts_ntp_server",
+  { data_type => "char", is_nullable => 0, size => 15 },
   "kernel_id",
   {
     data_type => "integer",
@@ -127,8 +151,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:pdYeIznx+OFxWll5rfKAXA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-13 10:05:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8k8JM1l4acMdPpZZ36NcMA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

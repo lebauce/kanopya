@@ -1,3 +1,4 @@
+domain [% domainname %]
 [% FOREACH nameserver=nameservers %]
-nameserver [% nameserver.name %]
+nameserver [% nameserver.ipaddress %]
 [% END %]
