@@ -22,6 +22,7 @@ my $mcs_internal_network;
 my $mcs_admin_internal_ip;
 my $mcs_gateway;
 my $mcs_internal_network_mask;
+my $mcs_admin_domain_name;
 my $kanopya_logdir;
 my $kanopya_pv;
 my $kanopya_vg_name;
@@ -32,6 +33,8 @@ my $nameserver;
 my $mcs_public_network;
 my $mcs_admin_public_ip;
 my $mcs_public_network_mask;
+my $main_nic_name;
+my $mcs_admin_nic_mac;
 #this variable will handle the rollback operation in case of script failure
 my @rollback;
 
@@ -94,6 +97,25 @@ while (length($db_location)==0){
 	$db_location = <STDIN>;
 	chomp($db_location);
 }
+
+print "\nplease enter the admin's domain name: ";
+$mcs_admin_domain_name = <STDIN>;
+chomp($mcs_admin_domain_name);
+while (length($mcs_admin_domain_name)==0 || $mcs_admin_domain_name !~ /^[a-z0-9-]+(\.[a-z0-9-]+)+$/){
+	print "you must give a valid domain name for Kanopya's admin: ";
+	$mcs_admin_domain_name = <STDIN>;
+	chomp($mcs_admin_domain_name);
+}
+
+print "\nplease enter the main NIC's name (eth*, wlan*,...): ";
+$main_nic_name = <STDIN>;
+chomp($main_nic_name);
+while (length($main_nic_name)==0){
+	print "We need this name to gather the NIC's MAC address and fill correctly the database: ";
+	$main_nic_name = <STDIN>;
+	chomp($main_nic_name);
+}
+$mcs_admin_nic_mac = `ip link list dev $main_nic_name | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
 
 print "please enter the database's port (it should be 3306 by default): ";
 $db_port = <STDIN>;
@@ -424,6 +446,8 @@ print "done\n";
 system ('mkdir /opt/kanopya/conf') == 0 or die "$!";
 system ('cp /etc/kanopya/webui-log.conf /opt/kanopya/conf/') == 0 or die "$!"; 
 
+#Gathering NIC MAC address to fill motherboard field.
+
 #We will now generate the Data.sql file
 print "generating user_data.sql...";
 my $config = {
@@ -434,7 +458,7 @@ my $config = {
 };
 my $template = Template->new($config);
 my $input = "Data.sql.tt";
-my %datas = (kanopya_vg_name => $kanopya_vg_name, kanopya_vg_total_size => $kanopya_vg_total_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $mcs_admin_internal_ip, ipv4_internal_netmask => $mcs_internal_network_mask, ipv4_internal_network_ip => $mcs_internal_network, nameserver => $nameserver, ipv4_public_ip => $mcs_admin_public_ip , ipv4_public_netmask => $mcs_public_network_mask );
+my %datas = (kanopya_vg_name => $kanopya_vg_name, kanopya_vg_total_size => $kanopya_vg_total_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $mcs_admin_internal_ip, ipv4_internal_netmask => $mcs_internal_network_mask, ipv4_internal_network_ip => $mcs_internal_network, nameserver => $nameserver, ipv4_public_ip => $mcs_admin_public_ip , ipv4_public_netmask => $mcs_public_network_mask, admin_domainname => $mcs_admin_domain_name, mb_hw_address => $mcs_admin_nic_mac );
 $template->process($input, \%datas, $data_sql) || do {
 	print "error while generating Data.sql: $!";
 };

@@ -185,10 +185,6 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,7);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
--- Power Supply Card
-INSERT INTO `powersupplycard` VALUE (1,'InternalCard','10.0.0.220',1,'00:30:f9:05:8b:6e',1);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycard_entity` VALUES (@eid,1); SET @eid := @eid +1;
-
 -- Power Supply
 INSERT INTO `powersupply` VALUE (1,1,1);
 
@@ -200,14 +196,14 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@e
 INSERT INTO `component_provided` VALUES (2,1),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(9,1);
 
 -- default systemimage based on default distribution
-INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 1, 3, 4, 0);
+INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 0, 1, 3, 4, 0);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components installed on systemimage DebianSystemImage
 INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1);
 
 -- admin cluster
-INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,1,NULL,1, 'up');
+INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '[% nameserver %]',1,NULL,1, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- public ip for admin cluster
@@ -218,7 +214,7 @@ INSERT INTO `ipv4_public` VALUES (1,'[% ipv4_public_ip %]','[% ipv4_public_netma
 INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal_netmask %]', NULL);
 
 -- admin motherboard
-INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1,'Admin motherboard',1,'6c:f0:49:d1:dc:9f','node1.hederatech.com','[% ipv4_internal_ip %]','node001',NULL, 'up');
+INSERT INTO `motherboard` VALUES (1,6,2,9,'SN102050046322',1,1,'Admin motherboard',1,'[% mb_hw_address %]','node1.hederatech.com','[% ipv4_internal_ip %]','node001',NULL, 'up');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
