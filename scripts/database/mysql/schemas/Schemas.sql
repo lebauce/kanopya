@@ -503,6 +503,10 @@ CREATE TABLE `component_template_attr` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Orchestrator tables
+--
+
+--
 -- Table structure for orchestrator table `condition`
 --
 
@@ -535,11 +539,42 @@ CREATE TABLE `rule` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for orchestrator table `workload_characteristic`
+--
+
+CREATE TABLE `workload_characteristic` (
+  `wc_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `wc_visit_ratio` int(8) NOT NULL,
+  `wc_service_time` int(8) NOT NULL,
+  `wc_delay` int(8) NOT NULL,
+  `wc_think_time` int(8) NOT NULL,
+  `cluster_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`wc_id`),
+  KEY `fk_wc_1` (`cluster_id`),
+  CONSTRAINT `fk_wc_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for orchestrator table `qos_constraint`
+--
+
+CREATE TABLE `qos_constraint` (
+  `constraint_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `constraint_max_latency` int(8) NOT NULL,
+  `constraint_max_abort_rate` int(8) NOT NULL,
+  `cluster_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`constraint_id`),
+  KEY `fk_constraint_1` (`cluster_id`),
+  CONSTRAINT `fk_constraint_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
 -- Monitor tables
 --
 
 --
--- Table structure for table `indicatorset`
+-- Table structure for table `indicatorset` (monitor)
 --
 
 CREATE TABLE `indicatorset` (
@@ -554,7 +589,7 @@ CREATE TABLE `indicatorset` (
 
 
 --
--- Table structure for table `indicator`
+-- Table structure for table `indicator` (monitor)
 --
 
 CREATE TABLE `indicator` (
@@ -572,7 +607,7 @@ CREATE TABLE `indicator` (
 
 
 --
--- Table structure for table `collect`
+-- Table structure for table `collect` (monitor)
 --
 
 CREATE TABLE `collect` (
@@ -586,7 +621,7 @@ CREATE TABLE `collect` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `graph`
+-- Table structure for table `graph` (monitor)
 --
 
 CREATE TABLE `graph` (

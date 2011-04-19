@@ -633,6 +633,21 @@ sub getPublicIps {
 	return \@pub_ip;
 }
 
+=head2 getQoSConstraints
+	
+	Class : Public
+	
+	Desc : 
+	
+=cut
+
+sub getQoSConstraints {
+	my $self = shift;
+	my %args = @_;
+	
+	return { max_latency => 22, max_abort_rate => 0.3 } ;
+}
+
 =head2 addNode
 
 =cut

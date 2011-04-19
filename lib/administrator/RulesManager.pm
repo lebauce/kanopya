@@ -218,4 +218,74 @@ sub deleteClusterOptimConditions {
 	$self->deleteClusterRules( cluster_id => $args{cluster_id}, action => "optim" );
 }
 
+=head2 getClusterModelParameters
+	
+	Class : Public
+	
+	Desc : retrieve from db parameters used by cluster model, (workload type specification) 
+	
+	Args : cluster id
+	
+	Return : model parameters
+	
+=cut
+
+#TODO move in Cluster class
+sub getClusterModelParameters {
+	my $self = shift;
+	my %args = @_;
+	
+	return {	visit_ratio => 1,
+				service_time => 0.002,
+				delay => 0,
+				think_time => 0.01 };
+}
+
+sub setClusterModelParameters {
+	my $self = shift;
+	my %args = @_;
+	
+	my $row = { cluster_id => $args{cluster_id},
+				wc_visit_ratio => $args{visit_ratio},
+				wc_service_time => $args{service_time},
+				wc_delay => $args{delay},
+				wc_think_time => $args{think_time},
+				 };
+	
+	eval {			 
+		$self->{db}->resultset('WorloadCharacteristic')->create($row);
+	};
+	if($@) { 
+		$errmsg = "RulesManager->setClusterModelParameters: $@";
+		$log->error($errmsg);
+		throw Mcs::Exception::DB(error => $errmsg);
+	}
+}
+
+sub getClusterQoSConstraints {
+	my $self = shift;
+	my %args = @_;
+	
+	return { max_latency => 22, max_abort_rate => 0.3 } ;
+}
+
+sub setClusterQoSConstraints {
+	my $self = shift;
+	my %args = @_;
+	
+	my $row = { cluster_id => $args{cluster_id},
+				constraint_max_latency => $args{max_latency},
+				constraint_max_abort_rate => $args{abort_rate},
+			};
+	
+	eval {			 
+		$self->{db}->resultset('QosConstraint')->create($row);
+	};
+	if($@) { 
+		$errmsg = "RulesManager->setClusterQoSConstraints: $@";
+		$log->error($errmsg);
+		throw Mcs::Exception::DB(error => $errmsg);
+	}
+}
+
 1;

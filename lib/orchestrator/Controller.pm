@@ -39,11 +39,16 @@ sub _authenticate {
 	}
 	Administrator::authenticate( login => $self->{config}{user}{name},
 								 password => $self->{config}{user}{password});
+								 
+	
 	return;
 }
 
 sub init {
 	my $self = shift;
+	
+	my $admin = Administrator->new();
+	$self->{data_manager} = $admin->{manager}{rules};
 	
 	$self->{_monitor} = Monitor::Retriever->new( );
 	
@@ -53,7 +58,7 @@ sub init {
 	my $model = Model::MVAModel->new();
 	$self->{_model} = $model;
 	$cap_plan->setModel(model => $model);
-	$cap_plan->setConstraints(constraints => { max_latency => 22, max_abort_rate => 0.3 } );
+	#$cap_plan->setConstraints(constraints => { max_latency => 22, max_abort_rate => 0.3 } );
 	
 	$self->{_cap_plan} = $cap_plan;
 
@@ -109,6 +114,7 @@ sub getWorkload {
 
 
 	my $cluster_name = $args{cluster}->getAttr('name' => 'cluster_name');
+	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
 
 	my $cluster_data_aggreg = $self->{_monitor}->getClusterData( cluster => $cluster_name,
 																 set => $service_info_set,
@@ -124,12 +130,20 @@ sub getWorkload {
 	my $workload_amount = $cluster_data_aggreg->{$load_metric};
 	#my $workload_amount = 666;												
 																
-	my %workload_class = ( 	visit_ratio => [1],
-							service_time => [0.002],
-							delay => [0],
-							think_time => 0.01 );
+#	my %workload_class = ( 	visit_ratio => [1],
+#							service_time => [0.002],
+#							delay => [0],
+#							think_time => 0.01 );
 
 
+	# Get model parameters for this cluster (tier)
+	my $cluster_workload_class = $self->{data_manager}->getClusterModelParameters( cluster_id =>  $cluster_id );
+	# Compute workload class (i.e we put param for each cluster in an array representing each tiers) to be used by model 
+	my %workload_class = ( 	visit_ratio => [ $cluster_workload_class->{visit_ratio} ],
+							service_time => [ $cluster_workload_class->{service_time} ],
+							delay => [ $cluster_workload_class->{delay} ],
+							think_time => $cluster_workload_class->{think_time} );
+	
 
 	return { workload_class => \%workload_class, workload_amount => $workload_amount };
 }
@@ -142,6 +156,12 @@ sub manageCluster {
 	if (not defined $cluster) {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => "Needs named argument 'cluster'");
 	}
+	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
+
+	# Refresh qos constraints
+	my $constraints = $self->{data_manager}->getClusterQoSConstraints( cluster_id => $cluster_id );
+	$self->{_cap_plan}->setConstraints(constraints => $constraints );	
+
 
 	# TODO get mpl from cluster/component
 	my $cluster_conf = $self->getClusterConf( cluster => $cluster );
@@ -220,6 +240,7 @@ sub genGraph {
       image          => "/tmp/" . $graph_file_prefix . "load.png",
       vertical_label => 'req',
       start => time() - 3600,
+      title => "Load",
       draw	=> {
         type  	=> 'line',
         color  	=> 'FF0000',
@@ -234,6 +255,7 @@ sub genGraph {
       image          => "/tmp/" . $graph_file_prefix . "latency.png",
       vertical_label => 'ms',
       start => time() - 3600,
+      title => "Latency",
       draw 	=> {
         type      => 'line',
         color     => '00FF00', 
@@ -246,6 +268,7 @@ sub genGraph {
       image          => "/tmp/" . $graph_file_prefix . "abortrate.png",
       vertical_label => 'rate',
       start => time() - 3600,
+      title => "Abort rate",
       draw 	=> {
         type      => 'area',
         color     => '00FF00', 
@@ -257,6 +280,7 @@ sub genGraph {
       image          => "/tmp/" . $graph_file_prefix . "throughput.png",
       vertical_label => 'req/sec',
       start => time() - 3600,
+      title => "Throughput",
       draw	=> {
         type      => 'area',
         color     => '00FF00', 
