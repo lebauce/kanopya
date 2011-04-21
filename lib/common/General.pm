@@ -52,6 +52,44 @@ use warnings;
 my $log = get_logger("executor");
 my $errmsg;
 
+=head2
+	
+	Class : Public
+	
+	Desc : General sub for check existence of required parameters
+	
+	Args : 
+		0: hash ref to check (caller args)
+		1: array ref of required params name 
+	
+	Throw bad param exception if one param is missing
+	
+=cut
+
+# Question:
+#	named args or not ?
+#	log on corresponding caller logger
+# Usage: General::checkParams \%args, ['param1', 'param2'];
+sub checkParams {
+	my %args = @_;
+	
+	my $caller_args = shift;#$args{args};
+	my $required = shift;#$args{params};
+	my $caller_sub_name = (caller(1))[3];
+		
+	for my $param (@$required) {
+		if (! exists $caller_args->{$param} or ! defined $caller_args->{$param}) {
+			$errmsg = "$caller_sub_name needs a '$param' named argument!";
+			
+			# Log in general logger
+			# TODO log in the logger corresponding to caller package;
+			$log->error($errmsg);
+
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+		}
+	}
+}
+
 sub getClassEEntityFromEntity{
 	my %args = @_;
 	my $data = $args{entity};

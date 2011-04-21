@@ -152,10 +152,9 @@ sub manageCluster {
 	my $self = shift;
     my %args = @_;
 
+	General::checkParams \%args, ['cluster'];
+
 	my $cluster = $args{cluster};
-	if (not defined $cluster) {
-		throw Kanopya::Exception::Internal::IncorrectParam(error => "Needs named argument 'cluster'");
-	}
 	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
 
 	# Refresh qos constraints

@@ -45,6 +45,7 @@ Kanopya has it own exception to manage internal error and show to user comprehen
 
 
 
+
 use Exception::Class (
     Kanopya::Exception => {
 	description => "Kanopya General Exception",
@@ -97,9 +98,32 @@ use Exception::Class (
 	Kanopya::Exception::OperationAlreadyEnqueued => {
 	isa => 'Kanopya::Exception',
 	description => 'Operation already enqueued' 	
-	}
+	},
+    
     
 );
+
+# Force print trace when exception is stringified
+# For Kanopya::Exception and all its subclasses
+Kanopya::Exception->Trace(1);
+
+# Override method called when exception is stringified
+sub Kanopya::Exception::full_message {
+ 	my $self = shift;
+	
+	my $except_string = "## EXCEPTION : " . $self->description . " ##\n";
+	$except_string .= $self->message;
+
+	# TODO add fileds and value in string
+	#( Dumper $self->Fields );	
+	#for my $field (@{ $self->fields }) {
+	#	$except_string .= $field;
+	#}
+
+ 	return $except_string;
+
+}
+
 
 =head1 DIAGNOSTICS
 

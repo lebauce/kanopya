@@ -948,34 +948,6 @@ sub graph {
 	return "$graph_dir/$graph_filename";
 }
 
-# TEST
-sub check {
-	my %args = @_;
-	
-	my %check_args = %{ $args{args} };
-	
-	print "===> ", Dumper %check_args, "\n";
-	print "===> @{$args{required}}\n";
-	
-	my $caller_sub = (caller(1))[3];
-	print "$caller_sub\n";
-	
-	return 10;
-}
-
-# TEST
-sub pouet {
-	my $self = shift;
-	my %args = @_;
-
-	my ($p1, $p2) = check( args => \%args, required => ['p1', 'p2'] );
-
-	print $p1;
-	
-	#my $p1 = $args{p1};
-	
-	
-}
 
 =head2 run
 	
