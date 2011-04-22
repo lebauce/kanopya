@@ -85,9 +85,7 @@ sub loadConfig {
 	if (! exists $config->{internalnetwork}->{ip} ||
 		! defined $config->{internalnetwork}->{ip} ||
 		! exists $config->{internalnetwork}->{mask} ||
-		! defined $config->{internalnetwork}->{mask} ||
-		! exists $config->{internalnetwork}->{gateway} ||
-		! defined $config->{internalnetwork}->{gateway})
+		! defined $config->{internalnetwork}->{mask})
 		{
 			$errmsg = "Administrator->new need internalnetwork definition in config file!";
 			#$log->error($errmsg);
