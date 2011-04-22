@@ -454,8 +454,6 @@ print "done\n";
 system ('mkdir /opt/kanopya/conf') == 0 or die "$!";
 system ('cp /etc/kanopya/webui-log.conf /opt/kanopya/conf/') == 0 or die "$!"; 
 
-#Gathering NIC MAC address to fill motherboard field.
-
 #We will now generate the Data.sql file
 print "generating user_data.sql...";
 my $config = {

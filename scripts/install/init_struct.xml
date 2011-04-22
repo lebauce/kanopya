@@ -2,7 +2,7 @@
 <questions>
 <!-- Database server conf -->
   <dbuser
-     question="What is your kanopya database user"
+     question="What is your Kanopya database user"
      default="kanopya"
      is_searchable="0"
      pattern="^\w+$"
@@ -14,7 +14,7 @@
      is_secret="1"
      search_command=""/>
   <dbpassword2
-     question="Please repeat kanopya user's password"
+     question="Please repeat Kanopya user's password"
      default="K4n0pY4"
      is_searchable="0" 
      is_secret="1"
@@ -70,7 +70,7 @@
      pattern="^\d+$"
      search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
   <internal_net_add
-     question="What is the address of network will be used by node managed by Kanopya\nThis network will be booked for Kanopya!"
+     question="What is the address of the network that will be used by node managed by Kanopya: this network will be booked for Kanopya!"
      default="10.0.0.0"
      is_searchable="0"
      search_command=""/>
@@ -87,7 +87,7 @@
      pattern="^.*\/$"/>
 <!-- Penser a checker avec plusieurs vg -->
   <vg
-     question="Which volume group will be used by Kanaopya"
+     question="Which volume group will be used by Kanopya"
      default="vg1"
      is_searchable="n"
      search_command="echo -n `vgs  --noheadings -o vg_name --nosuffix --units M --rows`"
