@@ -1,97 +1,104 @@
 <init_struct  nb="10">
-<questions>
-<!-- Database server conf -->
-  <dbuser
-     question="What is your kanopya database user"
-     default="kanopya"
-     is_searchable="0"
-     pattern="^\w+$"
-     search_command=""/>
-  <dbpassword1
-     question="What is the password for database user"
-     default="K4n0pY4"
-     is_searchable="0" 
-     is_secret="1"
-     search_command=""/>
-  <dbpassword2
-     question="Please repeat kanopya user's password"
-     default="K4n0pY4"
-     is_searchable="0" 
-     is_secret="1"
-     search_command=""/>
-  <dbip
-     question="What is your database server ip or hostname"
-     default="localhost"
-     is_searchable="0"
-     search_command=""/>
-  <dbport
-     question="What is your database server port"
-     default="3306"
-     is_searchable="0"
-     search_command=""/>
-<!-- Kanopya server conf -->
-  <kanopya_server_domain_name
-     question="What is your Kanopya server domain name"
-     default=""
-     is_searchable="1"
-     search_command="domainname"
-     pattern="^[a-z0-9-]+(\.[a-z0-9-]+)+$"/>
-  <!--
-  <public_net_interface
-     question="Which Kanopya server network interface will be used for public access"
-     default="eth0"
-     is_searchable="n"
-     search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
+  <general_conf
+     install_template_dir="templates/"
+     conf_dir="/opt/kanopya/etc/"
+     comp_conf="/opt/kanopya/etc/components.conf"
+     database_dir="/opt/kanopya/scripts/database/mysql/"
+  />
+  <genfiles>
+    <executor.conf template="executor.conf.tt">
+      <datas log_dir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
+    </executor.conf>
 
-     <publicnet_add
-     question="what is the gateway for this network"
-     default=""
-     is_searchable="0"
-     search_command=""/>
-
-  <public_net_mask
-     question="which mask is associated to this network"
-     default="255.255.255.0"
-     is_searchable="0"
-     search_command=""/>
-
-  <internal_net_gateway
-     question="which gateway is associated to this network"
-     default="255.255.255.0"
-     is_searchable="0"
-     search_command=""/>
-
--->
-<!-- Kanopya config-->
-  <internal_net_interface
-     question="Which Kanopya server network interface will be used to administrate infrastructure"
-     default="eth0"
-     is_searchable="n"
-     pattern="^\d+$"
-     search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
-  <internal_net_add
-     question="What is the address of network will be used by node managed by Kanopya\nThis network will be booked for Kanopya!"
-     default="10.0.0.0"
-     is_searchable="0"
-     search_command=""/>
-  <internal_net_mask
-     question="which mask is associated to this network"
-     default="255.255.255.0"
-     is_searchable="0"
-     search_command=""/>
-  <log_directory
-     question="Where will be stored Kanopya log"
-     default="/var/log/kanopya"
-     is_searchable="0"
-     search_command=""
-     pattern="^.*\/$"/>
-<!-- Penser a checker avec plusieurs vg -->
-  <vg
-     question="Which volume group will be used by Kanaopya"
-     default="vg1"
-     is_searchable="n"
-     search_command="echo -n `vgs  --noheadings -o vg_name --nosuffix --units M --rows`"
-     pattern="^\d+$"/>
-
-</questions>
+  </genfiles>
+  <questions>
+    <!-- Database server conf -->
+    <dbuser
+       question="What is your Kanopya database user"
+       default="kanopya"
+       is_searchable="0"
+       pattern="^\w+$"
+       search_command=""/>
+    <dbpassword1
+       question="What is the password for database user"
+       default="K4n0pY4"
+       is_searchable="0" 
+       is_secret="1"
+       search_command=""/>
+    <dbpassword2
+       question="Please repeat Kanopya user's password"
+       default="K4n0pY4"
+       is_searchable="0" 
+       is_secret="1"
+       search_command=""/>
+    <dbip
+       question="What is your database server ip or hostname"
+       default="localhost"
+       is_searchable="0"
+       search_command=""/>
+    <dbport
+       question="What is your database server port"
+       default="3306"
+       is_searchable="0"
+       search_command=""/>
+    <!-- Kanopya server conf -->
+    <kanopya_server_domain_name
+       question="What is your Kanopya server domain name"
+       default=""
+       is_searchable="1"
+       search_command="domainname"
+       pattern="^[a-z0-9-]+(\.[a-z0-9-]+)+$"/>
+    <!--
+       <public_net_interface
+	  question="Which Kanopya server network interface will be used for public access"
+	  default="eth0"
+	  is_searchable="n"
+	  search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
+       <publicnet_add
+	  question="what is the gateway for this network"
+	  default=""
+	  is_searchable="0"
+	  search_command=""/>
+       <public_net_mask
+	  question="which mask is associated to this network"
+	  default="255.255.255.0"
+	  is_searchable="0"
+	  search_command=""/>
+       <internal_net_gateway
+	  question="which gateway is associated to this network"
+	  default="255.255.255.0"
+	  is_searchable="0"
+	  search_command=""/>
+       -->
+    <!-- Kanopya config-->
+    <internal_net_interface
+       question="Which Kanopya server network interface will be used to administrate infrastructure"
+       default="eth0"
+       is_searchable="n"
+       pattern="^\d+$"
+       search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
+    <internal_net_add
+       question="What is the address of the network that will be used by node managed by Kanopya: this network will be booked for Kanopya!"
+       default="10.0.0.0"
+       is_searchable="0"
+       search_command=""/>
+    <internal_net_mask
+       question="which mask is associated to this network"
+       default="255.255.255.0"
+       is_searchable="0"
+       search_command=""/>
+    <log_directory
+       question="Where will be stored Kanopya log"
+       default="/var/log/kanopya"
+       is_searchable="0"
+       search_command=""
+       pattern="^.*\/$"/>
+    <!-- Penser a checker avec plusieurs vg -->
+    <vg
+       question="Which volume group will be used by Kanopya"
+       default="vg1"
+       is_searchable="n"
+       search_command="echo -n `vgs  --noheadings -o vg_name --nosuffix --units M --rows`"
+       pattern="^\d+$"/>
+  </questions>
 </init_struct>

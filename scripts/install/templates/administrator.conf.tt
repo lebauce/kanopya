@@ -1,0 +1,4 @@
+<config logdir="[% logdir %]">
+	<internalnetwork ip="[% internal_net_add %]" mask="[% internal_net_mask %]"/>
+	<dbconf type="mysql" name="administrator" user="root" password="Hedera@123" port="[% dbport %]" host="[% dbip %]" debug="0"/>
+</config>
