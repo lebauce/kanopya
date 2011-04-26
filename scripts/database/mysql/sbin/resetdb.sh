@@ -19,4 +19,13 @@ echo 'done'
 echo -n 'insert initial data... '
 mysql -u $dbuser -p$dbpassword < /opt/kanopya/scripts/database/mysql/data/Data.sql
 echo 'done'
-
+echo "Insert component data"
+for i in $( cat /etc/kanopya/components.conf ); do
+    if [[ -r "/opt/kanopya/scripts/database/mysql/data/components/$i.sql" ]]
+    then
+	echo "Inserting data for $i component in db from"
+	echo "/opt/kanopya/scripts/database/mysql/data/components/$i.sql"
+	mysql -u $dbuser -p$dbpassword < "/opt/kanopya/scripts/database/mysql/data/components/$i.sql"
+    fi
+done
+echo 'done'

@@ -40,6 +40,7 @@ package EEntity::EComponent;
 
 use strict;
 use warnings;
+use String::Random;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
@@ -114,6 +115,37 @@ sub addInitScripts {
       		my $result = $args{econtext}->execute(command => $command);
       		#TODO gere les erreurs d'execution
     }	
+}
+
+
+sub generateFile {
+	my $self = shift;
+	my %args = @_;
+	
+	General::checkParams( args => \%args, require => ['econtext', 'mount_point','input_file','data','output'] );
+	
+	my $config = {
+	    INCLUDE_PATH => $self->_getEntity()->getTemplateDirectory(),
+	    INTERPOLATE  => 1,               # expand "$var" in plain text
+	    POST_CHOMP   => 0,               # cleanup whitespace 
+	    EVAL_PERL    => 1,               # evaluate Perl code blocks
+	    RELATIVE => 1,                   # desactive par defaut
+	};
+	
+	my $rand = new String::Random;
+	my $template = Template->new($config);
+	
+	# generation 
+	my $tmpfile = $rand->randpattern("cccccccc");
+	
+	$template->process($args{input_file}, $args{data}, "/tmp/".$tmpfile) || do {
+		$errmsg = "error during generation from 'args{input_file}': $template->error;";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal(error => $errmsg);	
+	};
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});	
+	unlink "/tmp/$tmpfile";
+	
 }
 
 sub addNode {}

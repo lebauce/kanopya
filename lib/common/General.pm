@@ -66,15 +66,13 @@ my $errmsg;
 	
 =cut
 
-# Question:
-#	named args or not ?
-#	log on corresponding caller logger
-# Usage: General::checkParams \%args, ['param1', 'param2'];
+# TODO log on corresponding caller logger
+# Usage: General::checkParams( args => \%args, require => ['param1', 'param2'] );
 sub checkParams {
 	my %args = @_;
 	
-	my $caller_args = shift;#$args{args};
-	my $required = shift;#$args{params};
+	my $caller_args = $args{args};
+	my $required = $args{required};
 	my $caller_sub_name = (caller(1))[3];
 		
 	for my $param (@$required) {
