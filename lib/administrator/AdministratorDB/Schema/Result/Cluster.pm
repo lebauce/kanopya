@@ -306,6 +306,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 qos_constraints
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::QosConstraint>
+
+=cut
+
+__PACKAGE__->has_many(
+  "qos_constraints",
+  "AdministratorDB::Schema::Result::QosConstraint",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 rules
 
 Type: has_many
@@ -321,9 +336,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workload_characteristics
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-11 18:41:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:O5L4rQ3Wq4egK2eKkgX4Jg
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkloadCharacteristic>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workload_characteristics",
+  "AdministratorDB::Schema::Result::WorkloadCharacteristic",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-26 14:21:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oAyb8QR7eMhzKwS0bjgREA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
