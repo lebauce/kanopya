@@ -41,6 +41,7 @@ package EEntity::EComponent;
 use strict;
 use warnings;
 use String::Random;
+use Template;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
