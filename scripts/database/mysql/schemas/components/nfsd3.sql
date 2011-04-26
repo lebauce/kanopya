@@ -31,7 +31,7 @@ CREATE TABLE `nfsd3_export` (
   `nfsd3_export_path` char(255) NOT NULL,
   PRIMARY KEY (`nfsd3_export_id`),
   KEY `fk_nfsd3_export_1` (`nfsd3_id`),
-  CONSTRAINT `fk_nfsd3_export_1` FOREIGN KEY (`nfsd3_id`) REFERENCES `nfsd3` (`nfsd3_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_nfsd3_export_1` FOREIGN KEY (`nfsd3_id`) REFERENCES `nfsd3` (`nfsd3_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
