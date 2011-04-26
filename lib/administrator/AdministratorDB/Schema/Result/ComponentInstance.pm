@@ -233,6 +233,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nfsd3s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Nfsd3>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nfsd3s",
+  "AdministratorDB::Schema::Result::Nfsd3",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 openiscsi2s
 
 Type: has_many
@@ -294,8 +309,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-15 16:34:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Xm3ZHayBpIn7H3aiIHdXzg
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-26 11:39:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:R7UW6F9OaCgVw2bbmDkfBg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

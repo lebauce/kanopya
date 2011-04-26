@@ -1,0 +1,73 @@
+<TMPL_INCLUDE NAME="header.tmpl">
+<TMPL_INCLUDE NAME="menu.tmpl">
+<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/components.js"></script>
+<div id="content">
+<h2>Cluster <TMPL_VAR NAME=CLUSTER_NAME> - NFSd3 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<TMPL_VAR NAME=component_instance_id>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<TMPL_VAR NAME=cluster_id>"/>
+<input class="conf_simple_value" type="hidden" name="nfsd3_id" value="<TMPL_VAR NAME=nfsd3_id>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Nfsd3"/>
+<table>
+<tr><td>statd options: </td><td><input type="text" value="<TMPL_VAR NAME=lvm2_lv_name>" /></td></tr>
+<tr><td>need GSSD: </td><td><select>
+<option>no</option>
+<option>yes</option>
+</select></td></tr>
+<tr><td>Number of servers to start up: </td><td><input type="text" value="8"/></td></tr>
+<tr><td>Runtime priority of server: </td><td><input type="text" value="0"/></td></tr>
+<tr><td>Options for rpc.mountd: </td><td><input type="text" value="--manage-gids"/></td></tr>
+<tr><td>start svcgssd: </td><td><select>
+<option>no</option>
+<option>yes</option>
+</select></td></tr>
+<tr><td>Options for rpc.svcgssd: </td><td><input type="text" value=""/></td></tr>
+</table>
+
+<hr />
+<h3>Exports</h3>
+<ul class="conf_array_value" id="exports">
+<TMPL_LOOP NAME=exports>
+	<li class="elem_exports" name="export">	
+		Device to exports: 
+		<input class="entry_simple_value" type="text" name="entry_name" value="<TMPL_VAR NAME=name>"/>
+		<a class="remove_entry imgRemove iconAction" ></a>
+		<table class="entry_array_value" id="params">
+			<TMPL_LOOP NAME=params>
+				<tr class="elem_params" name="param">
+					<td><input class="param_simple_value" type="text" size="50" name="content" value="<TMPL_VAR NAME=content>"/></td>
+					<td><a class="remove_param imgRemove iconAction" /></td>
+				</tr>
+			</TMPL_LOOP>
+		</table>
+		<a class="add_params imgAdding iconAction"></a>
+	</li>
+</TMPL_LOOP>
+</ul>
+<a class="add_entries imgAdding iconAction" >Add entry</a>
+<hr />
+
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=cluster_id>'"/>
+</div>
+</form>
+</div>
+
+<div class="hidden" id="models">
+	<table>
+		<tr class="elem_lvm2_lvs" name="lv">
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_name" value=""/></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_size" value="" /></td>
+			<!--td><input class="lv_simple_value" type="text" name="lvm2_lv_freespace" value="" /></td-->
+			<td></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_filesystem" value="" /></td>
+			<td><a class="remove_lv imgRemove iconAction" ></a></td>
+		</tr>
+	</table>
+</div>
+
+<TMPL_INCLUDE NAME="footer.tmpl">
+
