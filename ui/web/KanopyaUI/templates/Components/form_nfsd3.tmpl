@@ -11,19 +11,19 @@
 <input class="conf_simple_value" type="hidden" name="nfsd3_id" value="<TMPL_VAR NAME=nfsd3_id>"/>
 <input class="conf_simple_value" type="hidden" name="component_name" value="Nfsd3"/>
 <table>
-<tr><td>statd options: </td><td><input type="text" value="<TMPL_VAR NAME=lvm2_lv_name>" /></td></tr>
-<tr><td>need GSSD: </td><td><select>
-<option>no</option>
-<option>yes</option>
+<tr><td>statd options: </td><td><input class="conf_simple_value" type="text" name="nfsd3_statdopts" value="<TMPL_VAR NAME=nfsd3_statdopts>" /></td></tr>
+<tr><td>need GSSD: </td><td><select class="conf_simple_value" name="nfsd3_need_gssd" selected_value="<TMPL_VAR NAME=nfsd3_need_gssd>">
+<option value="no">no</option>
+<option value="yes">yes</option>
 </select></td></tr>
-<tr><td>Number of servers to start up: </td><td><input type="text" value="8"/></td></tr>
-<tr><td>Runtime priority of server: </td><td><input type="text" value="0"/></td></tr>
-<tr><td>Options for rpc.mountd: </td><td><input type="text" value="--manage-gids"/></td></tr>
-<tr><td>start svcgssd: </td><td><select>
-<option>no</option>
-<option>yes</option>
+<tr><td>Number of servers to start up: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcnfsdcount" value="<TMPL_VAR NAME=nfsd3_rpcnfsdcount>"/></td></tr>
+<tr><td>Runtime priority of server: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcnfsdpriority" value="<TMPL_VAR NAME=nfsd3_rpcnfsdpriority>"/></td></tr>
+<tr><td>Options for rpc.mountd: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcmountopts" value="<TMPL_VAR NAME=nfsd3_rpcmountopts>"/></td></tr>
+<tr><td>start svcgssd: </td><td><select class="conf_simple_value" name="nfsd3_need_svcgssd" selected_value="<TMPL_VAR NAME=nfsd3_need_svcgssd>">
+<option value="no">no</option>
+<option value="yes">yes</option>
 </select></td></tr>
-<tr><td>Options for rpc.svcgssd: </td><td><input type="text" value=""/></td></tr>
+<tr><td>Options for rpc.svcgssd: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcsvcgssdopts" value="<TMPL_VAR NAME=nfsd3_rpcsvcgssdopts>"/></td></tr>
 </table>
 
 <hr />
@@ -31,22 +31,23 @@
 <ul class="conf_array_value" id="exports">
 <TMPL_LOOP NAME=exports>
 	<li class="elem_exports" name="export">	
-		Device to exports: 
-		<input class="entry_simple_value" type="text" name="entry_name" value="<TMPL_VAR NAME=name>"/>
-		<a class="remove_entry imgRemove iconAction" ></a>
-		<table class="entry_array_value" id="params">
-			<TMPL_LOOP NAME=params>
-				<tr class="elem_params" name="param">
-					<td><input class="param_simple_value" type="text" size="50" name="content" value="<TMPL_VAR NAME=content>"/></td>
-					<td><a class="remove_param imgRemove iconAction" /></td>
+		Device to export: 
+		<input class="export_simple_value" type="text" name="nfsd3_export_path" value="<TMPL_VAR NAME=nfsd3_export_path>"/>
+		<a class="remove_export imgRemove iconAction" ></a>
+		<table class="export_array_value" id="clients">
+			<TMPL_LOOP NAME=clients>
+				<tr class="elem_clients" name="client">
+					<td>Host(s):<input class="client_simple_value" type="text" size="20" name="nfsd3_exportclient_name" value="<TMPL_VAR NAME=nfsd3_exportclient_name>"/></td>
+					<td>Options:<input class="client_simple_value" type="text" size="50" name="nfsd3_exportclient_options" value="<TMPL_VAR NAME=nfsd3_exportclient_options>"/></td></td>
+                    <td><a class="remove_client imgRemove iconAction" /></td>
 				</tr>
 			</TMPL_LOOP>
 		</table>
-		<a class="add_params imgAdding iconAction"></a>
+		<a class="add_clients imgAdding iconAction"></a>
 	</li>
 </TMPL_LOOP>
 </ul>
-<a class="add_entries imgAdding iconAction" >Add entry</a>
+<a class="add_exports imgAdding iconAction" >Add export</a>
 <hr />
 
 <div class="right">
@@ -57,16 +58,21 @@
 </div>
 
 <div class="hidden" id="models">
-	<table>
-		<tr class="elem_lvm2_lvs" name="lv">
-			<td><input class="lv_simple_value" type="text" name="lvm2_lv_name" value=""/></td>
-			<td><input class="lv_simple_value" type="text" name="lvm2_lv_size" value="" /></td>
-			<!--td><input class="lv_simple_value" type="text" name="lvm2_lv_freespace" value="" /></td-->
-			<td></td>
-			<td><input class="lv_simple_value" type="text" name="lvm2_lv_filesystem" value="" /></td>
-			<td><a class="remove_lv imgRemove iconAction" ></a></td>
-		</tr>
-	</table>
+<ul class="conf_array_value" id="exports">
+	<li class="elem_exports" name="export">	
+		Device to export: 
+		<input class="export_simple_value" type="text" name="nfsd3_export_path" value=""/>
+		<a class="remove_export imgRemove iconAction" ></a>
+		<table class="export_array_value" id="clients">
+				<tr class="elem_clients" name="client">
+					<td>Host(s):<input class="client_simple_value" type="text" size="20" name="nfsd3_exportclient_name" value=""/></td>
+					<td>Options:<input class="client_simple_value" type="text" size="50" name="nfsd3_exportclient_options" value=""/></td></td>
+                    <td><a class="remove_client imgRemove iconAction" /></td>
+				</tr>
+		</table>
+		<a class="add_clients imgAdding iconAction"></a>
+	</li>
+</ul>
 </div>
 
 <TMPL_INCLUDE NAME="footer.tmpl">

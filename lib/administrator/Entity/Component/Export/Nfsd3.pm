@@ -92,25 +92,44 @@ sub getConf {
 	my $self = shift;
 	my %conf = ( );
 	
-#	my $conf_rs = $self->{_dbix}->iscsitarget1_targets;
-#	my @targets = ();
-#	while (my $conf_row = $conf_rs->next) {
-#		my $lun_rs = $conf_row->iscsitarget1_luns;
-#		my @luns = ();
-#		while (my $lun_row = $lun_rs->next) {
-#			push @luns, {
-#				iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
-#				iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
-#				iscsitarget1_lun_typeio => $lun_row->get_column('iscsitarget1_lun_typeio'),
-#				iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
-#			}
-#		}
-#		push @targets, { 	iscsitarget1_target_name => $conf_row->get_column('iscsitarget1_target_name'),
-#							iscsitarget1_target_id => $conf_row->get_column('iscsitarget1_target_id'),
-#							luns => \@luns};
-#	}
-#	
-#	$conf{targets} = \@targets;
+	my $conf_row = $self->{_dbix}->nfsd3s->first;
+	if($conf_row) {
+		$conf{nfsd3_statdopts} = $conf_row->get_column('nfsd3_statdopts');
+		$conf{nfsd3_need_gssd} = $conf_row->get_column('nfsd3_need_gssd');
+		$conf{nfsd3_rpcnfsdcount} = $conf_row->get_column('nfsd3_rpcnfsdcount');
+		$conf{nfsd3_rpcnfsdpriority} = $conf_row->get_column('nfsd3_rpcnfsdpriority');
+		$conf{nfsd3_rpcmountopts} = $conf_row->get_column('nfsd3_rpcmountopts');
+		$conf{nfsd3_need_svcgssd} = $conf_row->get_column('nfsd3_need_svcgssd');
+		$conf{nfsd3_rpcsvcgssdopts} = $conf_row->get_column('nfsd3_rpcsvcgssdopts');
+		
+		my @exports = ();
+		my $conf_exports = $conf_row->nfsd3_exports;
+		while (my $export_row = $conf_exports->next) {
+			my $client_rs = $export_row->nfsd3_exportclients;
+			my @clients = ();
+			while (my $client_row = $client_rs->next) {
+				push @clients, {
+					nfsd3_exportclient_name => $client_row->get_column('nfsd3_exportclient_name'),
+					nfsd3_exportclient_options => $client_row->get_column('nfsd3_exportclient_options'),
+				}
+			}
+			push @exports, { 
+				nfsd3_export_path => $export_row->get_column('nfsd3_export_path'),
+				clients => \@clients,
+			};		
+		}
+		$conf{exports} = \@exports;
+	}
+	else {
+		$conf{nfsd3_statdopts} = '';
+		$conf{nfsd3_need_gssd} = 'no';
+		$conf{nfsd3_rpcnfsdcount} = '8';
+		$conf{nfsd3_rpcnfsdpriority} = '0';
+		$conf{nfsd3_rpcmountopts} = '';
+		$conf{nfsd3_need_svcgssd} = 'no';
+		$conf{nfsd3_rpcsvcgssdopts} = '';
+		$conf{exports} = [];
+	}
 	
 	return \%conf;
 }
@@ -119,16 +138,35 @@ sub setConf {
 	my $self = shift;
 	my($conf) = @_;
 	
-#	for my $target ( @{ $conf->{targets} } ) {
-#		LUN:
-#		for my $lun ( @{ $target->{luns} } ) {
-#			$self->createExport(export_name => $target->{iscsitarget1_target_name},
-#								device => $lun->{iscsitarget1_lun_device},
-#								typeio => $lun->{iscsitarget1_lun_typeio},
-#								iomode => $lun->{iscsitarget1_lun_iomode});
-#			last LUN; #Temporary: we can create only one lun with one target
-#		}		
-#	}
+	# delete old conf		
+	my $conf_row = $self->{_dbix}->nfsd3s->first();
+	$conf_row->delete() if (defined $conf_row); 
+
+	# create
+	$conf_row = $self->{_dbix}->nfsd3s->create( {
+		nfsd3_statdopts => $conf->{nfsd3_statdopts},
+		nfsd3_need_gssd => $conf->{nfsd3_need_gssd},
+		nfsd3_rpcnfsdcount => $conf->{nfsd3_rpcnfsdcount},
+		nfsd3_rpcnfsdpriority => $conf->{nfsd3_rpcnfsdpriority},
+		nfsd3_rpcmountopts => $conf->{nfsd3_rpcmountopts},
+		nfsd3_need_svcgssd => $conf->{nfsd3_need_svcgssd},
+		nfsd3_rpcsvcgssdopts => $conf->{nfsd3_rpcsvcgssdopts},
+	} );
+	
+	# exports
+	foreach my $export (@{ $conf->{exports} }) {
+		my $export_row = $conf_row->nfsd3_exports->create({
+			nfsd3_export_path => $export->{nfsd3_export_path}
+		});
+		# clients options														
+		foreach my $client (@{ $export->{clients} }) {
+			$export_row->nfsd3_exportclients->create(
+			{	
+				nfsd3_exportclient_name => $client->{nfsd3_exportclient_name},
+				nfsd3_exportclient_options => $client->{nfsd3_exportclient_options},
+			});
+		}	
+	} 
 }
 
 =head2 addExport
@@ -180,32 +218,6 @@ sub addExportClient {
 	#return $res->get_column('iscsitarget1_lun_id');
 }
 
-#sub getTargetIdLike {
-#	my $self = shift;
-#    my %args = @_;
-#
-#	if (! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name}) {
-#		$errmsg = "Component::Export::Iscsitarget1->getTargetId needs a iscsitarget1_target_name named argument!";
-#		$log->error($errmsg);
-#		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-#	}
-#	return $self->{_dbix}->iscsitarget1_targets->search({iscsitarget1_target_name => {-like => $args{iscsitarget1_target_name}}})->first()->get_column('iscsitarget1_target_id');
-#}
-#
-#sub getLunId {
-#	my $self = shift;
-#    my %args = @_;
-#
-#	if ((! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id})||
-#		(! exists $args{iscsitarget1_lun_device} or ! defined $args{iscsitarget1_lun_device})) {
-#		$errmsg = "Component::Export::Iscsitarget1->getLun needs an iscsitarget1_target_id and an iscsitarget1_lun_device named argument!";
-#		$log->error($errmsg);
-#		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-#	}
-#	return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->first({ iscsitarget1_lun_device=> $args{iscsitarget1_lun_device}})->get_column('iscsitarget1_lun_id');
-#	
-#}
-
 =head2 removeExport
 	
 	Desc : This function delete an export and all its clients
@@ -242,23 +254,7 @@ sub removeExportClient {
 	#return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
 }
 
-#sub getTarget {
-#	my $self = shift;
-#	my %args  = @_;	
-#	if (! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) {
-#		$errmsg = "Component::Export::Iscsitarget1->getTarget needs an iscsitarget1_target_id named argument!";
-#		$log->error($errmsg);
-#		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-#	}
-#	
-#	my $target_raw = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-#	my $export ={};
-#	$export->{target} = $target_raw->get_column('iscsitarget1_target_name');
-#	$export->{mountpoint} = $target_raw->get_column('mountpoint');
-#	$export->{mount_option} = $target_raw->get_column('mount_option');
-#
-#	return $export;
-#}
+
 
 # return a data structure to pass to the template processor 
 sub getTemplateDataNfsCommon {
@@ -285,8 +281,8 @@ sub getTemplateDataNfsCommon {
 	return $data;	  
 }
 
-
 sub getTemplateDataNfsKernelServer {
+
 	my $self = shift;
 	my $data = {};
 #	my $targets = $self->{_dbix}->iscsitarget1_targets;
