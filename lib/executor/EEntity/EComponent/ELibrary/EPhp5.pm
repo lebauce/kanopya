@@ -39,6 +39,7 @@ sub configureNode {
 				session_path => $conf->{php5_session_path},
 				};
 	$self->generateFile( econtext => $args{econtext}, econtext => $args{mount_point},
+						 template_dir => "/templates/components/php5",
 						 input_file => "php.ini.tt", output => "/php5/apache2/php.ini", data => $data);
 }
 

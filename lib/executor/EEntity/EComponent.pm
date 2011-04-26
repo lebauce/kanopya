@@ -124,8 +124,11 @@ sub generateFile {
 	
 	General::checkParams( args => \%args, require => ['econtext', 'mount_point','input_file','data','output'] );
 	
+	my $template_dir = defined $args{template_dir} 	? $args{template_dir}
+													: $self->_getEntity()->getTemplateDirectory();
+	
 	my $config = {
-	    INCLUDE_PATH => $self->_getEntity()->getTemplateDirectory(),
+	    INCLUDE_PATH => $template_dir,
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -139,7 +142,7 @@ sub generateFile {
 	my $tmpfile = $rand->randpattern("cccccccc");
 	
 	$template->process($args{input_file}, $args{data}, "/tmp/".$tmpfile) || do {
-		$errmsg = "error during generation from 'args{input_file}': $template->error;";
+		$errmsg = "error during generation from '$args{input_file}':" .  $template->error;
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal(error => $errmsg);	
 	};
