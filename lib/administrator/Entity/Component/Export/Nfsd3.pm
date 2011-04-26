@@ -254,56 +254,47 @@ sub removeExportClient {
 	#return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
 }
 
+# return a data structure to pass to the template processor for /etc/exports file
+sub getTemplateDataExports {
+	my $self = shift;
+	my $data = {};
+	my $general_config = $self->{_dbix}->nfsd3s->first;
+	if(not $general_config) {
+		# TODO throw exception then no configuration
+	} 
+	
+	return $data;
+}
 
-
-# return a data structure to pass to the template processor 
+# return a data structure to pass to the template processor for /etc/default/nfs-common file
 sub getTemplateDataNfsCommon {
 	my $self = shift;
 	my $data = {};
-#	my $targets = $self->{_dbix}->iscsitarget1_targets;
-#	$data->{targets} = [];
-#	while (my $onetarget = $targets->next) {
-#		my $record = {};
-#		$record->{target_name} = $onetarget->get_column('iscsitarget1_target_name');
-#		$record->{luns} = [];
-#		my $luns = $onetarget->iscsitarget1_luns->search();
-#		while(my $onelun = $luns->next) {
-#			push @{$record->{luns}}, { 
-#				number => $onelun->get_column('iscsitarget1_lun_number'),
-#				device => $onelun->get_column('iscsitarget1_lun_device'),
-#				type => $onelun->get_column('iscsitarget1_lun_typeio'),
-#				iomode => $onelun->get_column('iscsitarget1_lun_iomode'),
-#			}; 
-#		}
-#		push @{$data->{targets}}, $record;
-#	}
-	 
-	return $data;	  
+	my $general_config = $self->{_dbix}->nfsd3s->first;
+	if(not $general_config) {
+		# TODO throw exception then no configuration
+	} 
+	$data->{nfsd3_statdopts} = $general_config->get_column('nfsd3_statdopts');
+	$data->{nfsd3_need_gssd} = $general_config->get_column('nfsd3_need_gssd');
+	
+	return $data;
 }
 
+# return a data structure to pass to the template processor for /etc/default/nfs-kernel-server file
 sub getTemplateDataNfsKernelServer {
-
 	my $self = shift;
 	my $data = {};
-#	my $targets = $self->{_dbix}->iscsitarget1_targets;
-#	$data->{targets} = [];
-#	while (my $onetarget = $targets->next) {
-#		my $record = {};
-#		$record->{target_name} = $onetarget->get_column('iscsitarget1_target_name');
-#		$record->{luns} = [];
-#		my $luns = $onetarget->iscsitarget1_luns->search();
-#		while(my $onelun = $luns->next) {
-#			push @{$record->{luns}}, { 
-#				number => $onelun->get_column('iscsitarget1_lun_number'),
-#				device => $onelun->get_column('iscsitarget1_lun_device'),
-#				type => $onelun->get_column('iscsitarget1_lun_typeio'),
-#				iomode => $onelun->get_column('iscsitarget1_lun_iomode'),
-#			}; 
-#		}
-#		push @{$data->{targets}}, $record;
-#	}
-	 
-	return $data;	  
+	my $general_config = $self->{_dbix}->nfsd3s->first;
+	if(not $general_config) {
+		# TODO throw exception then no configuration
+	} 
+	$data->{nfsd3_rpcnfsdcount} = $general_config->get_column('nfsd3_rpcnfsdcount');
+	$data->{nfsd3_rpcnfsdpriority} = $general_config->get_column('nfsd3_rpcnfsdpriority');
+	$data->{nfsd3_rpcmountopts} = $general_config->get_column('nfsd3_rpcmountopts');
+	$data->{nfsd3_need_svcgssd} = $general_config->get_column('nfsd3_need_svcgssd');
+	$data->{nfsd3_rpcsvcgssdopts} = $general_config->get_column('nfsd3_rpcsvcgssdopts');
+	
+	return $data;   
 }
 
 
