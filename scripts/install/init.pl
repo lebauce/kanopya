@@ -43,6 +43,7 @@ my $schema_sql = $schemas_dir.'Schemas.sql';
 my $data_sql = $data_dir.'Data.sql';
 my $components_dir = $schemas_dir.'components/';
 my $apache_user = 'www-data';
+
 my $install_conf = XMLin("init_struct.xml");
 my $questions = $install_conf->{questions};
 my $answers ={};
@@ -66,12 +67,18 @@ getConf();
 #Print user's answers, can be usefull for recap, etc
 #printAnswers();
 #Functions used to generate conf files - may them be called from within another mother function?
-genLibkanopyaConf();
-genCoreConf();
-genMonitorConf();
-genOrchestratorConf();
-genStateManagerConf();
-genWebuiConf();
+genConf();
+
+
+
+
+sub genConf(){
+    genLibkanopyaConf();
+    genCoreConf();
+    genMonitorConf();
+    genOrchestratorConf();
+    genStateManagerConf();
+    genWebuiConf();
 
 #Network setup
 print "calculating the first host address available for this network...";
@@ -79,7 +86,7 @@ my $internal_ip_add = NetAddr::IP->new($answers->{internal_net_add}, $answers->{
 my @c = split("/",$internal_ip_add->first);
 $internal_ip_add = $c[0];
 print "done (first host address is $internal_ip_add)\n";
-print "setting up $answers{internal_net_interface} ...";
+print "setting up $answers->{internal_net_interface} ...";
 system ("ifconfig $answers{internal_net_interface} $internal_ip_add") == 0 or die "an error occured while trying to set up nic ($answers->{internal_net_interface}) address: $!";
 print "done\n";
 #We gather the NIC's MAC address
@@ -181,7 +188,7 @@ system('/etc/init.d/kanopya-orchestrator start');
 system('/etc/init.d/kanopya-grapher start');
 system('/etc/init.d/kanopya-collector start');
 print "\nYou can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
-
+}
 
 sub welcome {
     my $validate_licence;
