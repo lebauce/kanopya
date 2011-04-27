@@ -12,10 +12,12 @@
 <input class="conf_simple_value" type="hidden" name="component_name" value="Php5"/>
 
 
-Session save handler: <input class="conf_simple_value" type="text" name="php5_session_handler" value="<TMPL_VAR NAME=php5_session_handler>"/>
+Session save handler: <input id="session_handler" class="conf_simple_value" type="text" name="php5_session_handler" value="<TMPL_VAR NAME=php5_session_handler>"/>
 <br/>
-Session save path: <input class="conf_simple_value" type="text" name="php5_session_path" value="<TMPL_VAR NAME=php5_session_path>"/>
-
+Session save path: <input id="session_path" class="conf_simple_value" type="text" name="php5_session_path" value="<TMPL_VAR NAME=php5_session_path>"/>
+<br/><br/>
+<input id="use_cache" type="checkbox"/> use Memcached (you must have component Memcached activated on you cluster)
+<br/>
 
 <div class="right">
 <input id="save_button" type="button" value="ok"/>
@@ -24,9 +26,22 @@ Session save path: <input class="conf_simple_value" type="text" name="php5_sessi
 </form>
 </div>
 
-<div class="hidden" id="models">
+<script type="text/javascript">
+	// Facilities to switch between cache or file session conf
+	$("#use_cache").click( function () { 
+		if ($(this).attr("checked")) {
+			$("#session_handler").val('memcache').attr('disabled', true);
+			$("#session_path").val('<auto>').attr('disabled', true);
+		} else {
+			$("#session_handler").val('files').attr('disabled', false);
+			$("#session_path").val('/var/lib/php5').attr('disabled', false);
+		}
+	} );
+	if ($('#session_handler').attr('value') == "memcache") {
+		$("#use_cache").attr('checked', true).click().attr('checked', true);
+	}
+</script>
 
-</div>
 
 <TMPL_INCLUDE NAME="footer.tmpl">
 
