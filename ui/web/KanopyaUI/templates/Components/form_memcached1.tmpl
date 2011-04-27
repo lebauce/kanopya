@@ -12,6 +12,8 @@
 <input class="conf_simple_value" type="hidden" name="component_name" value="Memcached1"/>
 
 
+Port: <input class="conf_simple_value" type="text" name="memcached1_port" value="<TMPL_VAR NAME=memcached1_port>" disabled/>
+
 <div class="right">
 <input id="save_button" type="button" value="ok"/>
 <input type="button" value="cancel" onclick="javascript:document.location='/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id=<TMPL_VAR NAME=cluster_id>'"/>
