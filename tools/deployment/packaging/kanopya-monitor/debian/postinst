@@ -1,0 +1,5 @@
+#!/bin/bash -e
+update-rc.d kanopya-grapher defaults
+update-rc.d kanopya-collector defaults
+chmod +x /etc/init.d/kanopya-grapher
+chmod +x /etc/init.d/kanopya-collector

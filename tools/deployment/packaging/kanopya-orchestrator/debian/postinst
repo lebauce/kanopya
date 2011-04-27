@@ -1,0 +1,3 @@
+#!/bin/bash -e
+update-rc.d kanopya-orchestrator defaults
+chmod +x /etc/init.d/kanopya-orchestrator
