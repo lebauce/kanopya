@@ -116,16 +116,13 @@ sub setConf {
 
 	# create
 	$conf_row = $self->{_dbix}->memcached1s->create( $conf );
-
-	#TODO
-	# if component php5 then php5->setConf( session_handler => "memcache", session_path => "tcp://127.0.0.1:11211" ) <--- with master node ip and port in conf
 }
 
 sub getNetConf {
 
 	my $conf = $self->getConf();
 	
-	return { $conf->{memcached1_port} => 'tcp' }
+	return { $conf->{memcached1_port} => 'tcp' };
  
 }
 

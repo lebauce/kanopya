@@ -34,7 +34,7 @@ sub configureNode {
 	if ( $data->{session_handler} eq "memcache" ) { # This handler needs specific configuration (depending on master node)
 		my $masternodeip = $args{cluster}->getMasterNodeIp();
 		my $ip = (not defined $masternodeip) ? "127.0.0.1" : $masternodeip;
-		my $port = '11211';
+		my $port = '11211'; # default port of memcached
 		$data->{session_path} = "tcp://$ip:$port";
 	}
 	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
