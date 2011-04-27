@@ -147,8 +147,12 @@ sub prepare {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
+     # Instanciate executor Cluster
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    
+    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
-	$self->{cluster_econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $masternode_ip);
+	$self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
 
 }
 
