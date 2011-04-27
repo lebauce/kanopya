@@ -263,7 +263,19 @@ sub getTemplateDataExports {
 		# TODO throw exception then no configuration
 	} 
 	
-	return $data;
+#	$data->{nfsd3_exports} = [];
+#	my $exports_rs = $general_config->nfsd3_exports;
+#	while(my $export = $exports_rs->next) {
+#		my $record = {};
+#		$record->{nfsd3_export_path} = $export->get_column('nfsd3_export_path');
+#		$record->{clients} = [];
+#		my $clients_rs = $record->nfsd3_exportclients;
+#		while(my $client = $client_rs->next) {
+#			
+#		}
+#		push @{},  	
+#	}
+ 	return $data;
 }
 
 # return a data structure to pass to the template processor for /etc/default/nfs-common file
