@@ -118,14 +118,12 @@ sub setConf {
 	$conf_row = $self->{_dbix}->memcached1s->create( $conf );
 }
 
-sub getNetConf {
-	my $self = shift;
-
-	my $conf = $self->getConf();
-	
-	return { $conf->{memcached1_port} => 'tcp' };
- 
-}
+# Commented because we want check this component only on master node
+#sub getNetConf {
+#	my $self = shift;
+#	my $conf = $self->getConf();
+#	return { $conf->{memcached1_port} => 'tcp' };
+#}
 
 
 =head1 DIAGNOSTICS
