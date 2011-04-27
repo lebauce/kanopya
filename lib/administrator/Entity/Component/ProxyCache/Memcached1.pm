@@ -119,6 +119,7 @@ sub setConf {
 }
 
 sub getNetConf {
+	my $self = shift;
 
 	my $conf = $self->getConf();
 	
