@@ -85,6 +85,7 @@ sub new {
 sub _init {
     my $self = shift;
     $self->{_objs} = {};
+    $self->{executor} = {};
     return;
 }
 
@@ -111,6 +112,7 @@ sub prepare {
     # Get Operation parameters
 	my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
+    
 
     if ((! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) ||
         (! exists $params->{disk_name} or ! defined $params->{disk_name})||
@@ -139,8 +141,14 @@ sub prepare {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
+    
+    # Instanciate executor Cluster
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    
+    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
-	$self->{cluster_econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $masternode_ip);
+	
+	$self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
 	
 }
 
@@ -149,13 +157,19 @@ sub execute{
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	
-	my $vg = $self->_getEntity()->getMainVg();
-	$self->{_objs}->{ecomp_lvm}->lvCreate(lvm2_vg_id =>$self->{params}->{vg_id},
-	                       lvm2_lv_name => $self->{params}->{disk_name},
-					       lvm2_lv_filesystem =>$self->{params}->{filesystem},
-					       lvm2_lv_size => $self->{params}->{size},
-					       econtext => $self->{cluster_econtext},
-					       lvm2_vg_name => $self->{_objs}->{ecomp_lvm}->_getEntity()->getMainVg(lvm2_vg_id =>$self->{params}->{vg_id}));
+	my $vg = $self->{_objs}->{ecomp_lvm}->_getEntity()->getMainVg();
+	$self->{_objs}->{ecomp_lvm}->lvCreate(
+		lvm2_vg_id 			=> $self->{params}->{vg_id},
+	    lvm2_lv_name 		=> $self->{params}->{disk_name},
+		lvm2_lv_filesystem 	=>$self->{params}->{filesystem},
+		lvm2_lv_size 		=> $self->{params}->{size},
+		econtext 			=> $self->{cluster_econtext},
+		lvm2_vg_name 		=> $vg->{vgname}
+	);
+	
+	
+	
+	
 }
 
 =head1 DIAGNOSTICS
