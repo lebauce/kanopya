@@ -23,21 +23,20 @@ sub new {
 sub configureNode {
 	my $self = shift;
 	my %args = @_;
-	
-	if((! exists $args{econtext} or ! defined $args{econtext}) ||
-		(! exists $args{motherboard} or ! defined $args{motherboard}) ||
-		(! exists $args{mount_point} or ! defined $args{mount_point})) {
-		$errmsg = "EComponent::EMonitoragent::EPhp5->configureNode needs a motherboard, mount_point and econtext named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+
+	my $conf = $self->_getEntity()->getConf();
 
 	# Generation of php.ini
-	my $conf = $self->_getEntity()->getConf();
 	my $data = { 
 				session_handler => $conf->{php5_session_handler},
 				session_path => $conf->{php5_session_path},
 				};
+	if ( $data->{session_handler} eq "memcache" ) { # This handler needs specific configuration (depending on master node)
+		my $masternodeip = $args{cluster}->getMasterNodeIp();
+		my $ip = (not defined $masternodeip) ? "127.0.0.1" : $masternodeip;
+		my $port = '11211';
+		$data->{session_path} = "tcp://$ip:$port";
+	}
 	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
 						 template_dir => "/templates/components/php5",
 						 input_file => "php.ini.tt", output => "/php5/apache2/php.ini", data => $data);
@@ -46,30 +45,9 @@ sub configureNode {
 sub addNode {
 	my $self = shift;
 	my %args = @_;
-	
-	if((! exists $args{econtext} or ! defined $args{econtext}) ||
-		(! exists $args{mount_point} or ! defined $args{mount_point})) {
-		$errmsg = "EComponent::ELibrary::EPhp5->addNode needs a motherboard, mount_point and econtext named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
+		
 	$self->configureNode(%args);
-
 }
 
-# Reload process
-sub reload {
-	my $self = shift;
-	my %args = @_;
-	
-	if(! exists $args{econtext} or ! defined $args{econtext}) {
-		$errmsg = "EComponent::ELibrary::EPhp5->reload needs an econtext named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
-
-}
 
 1;

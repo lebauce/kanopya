@@ -95,14 +95,12 @@ sub new {
 sub getConf {
 	my $self = shift;
 
-	my $conf = {};
+	my $conf = { memcached1_port => "11211" };
 
-	#my $confindb = $self->{_dbix}->memcached1s->first();
-	my $confindb;
+	my $confindb = $self->{_dbix}->memcached1s->first();
 	if($confindb) {
-		
-		#TODO build conf hash with db data
-		
+		my %row = $confindb->get_columns(); 
+		$conf = \%row;
 	}
 
 	return $conf;
@@ -117,15 +115,17 @@ sub setConf {
 	$conf_row->delete() if (defined $conf_row); 
 
 	# create
-	$conf_row = $self->{_dbix}->memcached1s->create( {} );
-	
-	#TODO insert conf in db
-	
+	$conf_row = $self->{_dbix}->memcached1s->create( $conf );
+
+	#TODO
+	# if component php5 then php5->setConf( session_handler => "memcache", session_path => "tcp://127.0.0.1:11211" ) <--- with master node ip and port in conf
 }
 
 sub getNetConf {
 
-	#TODO return { port => protocol }
+	my $conf = $self->getConf();
+	
+	return { $conf->{memcached1_port} => 'tcp' }
  
 }
 

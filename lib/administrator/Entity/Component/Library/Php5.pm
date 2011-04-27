@@ -95,16 +95,12 @@ sub new {
 sub getConf {
 	my $self = shift;
 
-	my $conf = {};
-
-	# TEMPORARY 
-	return { php5_session_handler => "memcache", php5_session_path => "tcp://127.0.0.1:11211" };
+	my $conf = { php5_session_handler => "files", php5_session_path => "/var/lib/php5" };
 
 	my $confindb = $self->{_dbix}->php5s->first();
 	if($confindb) {
-		
-		#TODO build conf hash with db data
-		
+		my %row = $confindb->get_columns(); 
+		$conf = \%row;		
 	}
 
 	return $conf;
@@ -114,8 +110,6 @@ sub setConf {
 	my $self = shift;
 	my ($conf) = @_;
 	
-	$log->info( Dumper $conf );
-	
 	if(not $conf->{php5_id}) {
 		# new configuration -> create
 		$self->{_dbix}->php5s->create($conf);
@@ -123,6 +117,7 @@ sub setConf {
 		# old configuration -> update
 		$self->{_dbix}->php5s->update($conf);
 	}
+	
 }
 
 
