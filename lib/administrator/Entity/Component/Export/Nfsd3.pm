@@ -34,6 +34,7 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 =head2 get
+
 B<Class>   : Public
 B<Desc>    : This method allows to get an existing NFSd component.
 B<args>    : 
@@ -237,7 +238,7 @@ sub addExportClient {
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $component = $self->{_dbix}->nfsd3s->first;
-	my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}});
+	my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}})->nfsd3_exportclients;
 	my $exportclient = $exportclient_rs->create({
 		nfsd3_exportclient_name => $args{client_name},
 		nfsd3_exportclient_options => $args{client_options}
@@ -296,13 +297,13 @@ sub getTemplateDataExports {
 	my $exports_rs = $general_config->nfsd3_exports;
 	while(my $export = $exports_rs->next) {
 		my $record = {};
-		$record->{nfsd3_export_path} = $self->getMountDir($export->get_column('nfsd3_export_path'));
+		$record->{path} = $self->getMountDir(device => $export->get_column('nfsd3_export_path'));
 		$record->{clients} = [];
-		my $clients_rs = $record->nfsd3_exportclients;
+		my $clients_rs = $export->nfsd3_exportclients;
 		while(my $client = $clients_rs->next) {
 			my $tmp = {
 				name => $client->get_column('nfsd3_exportclient_name'),
-				options => "(".$client->get_column('nfsd3_exportclient_options').")"
+				options => $client->get_column('nfsd3_exportclient_options')
 			};	
 			push @{$record->{clients}}, $tmp; 	
 		}

@@ -211,7 +211,7 @@ sub execute{
 		 	client_options => $self->{params}->{client_options}
 		 );
 		
-		$self->update_exports(econtext => $self->{cluster_econtext});
+		$self->{_objs}->{ecomp_nfsd}->update_exports(econtext => $self->{cluster_econtext});
 		
 	}
 	
