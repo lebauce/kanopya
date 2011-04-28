@@ -377,11 +377,7 @@ sub genConf {
 	my %datas;
 	print $conf_vars->{apache_user}."\n";
 	foreach my $files (keys %$conf_files){
-		print 'template file is: '.$conf_files->{$files}->{template}."\n";
-		print 'conf file is: '.$files."\n";
 		foreach my $d (keys %{$conf_files->{$files}->{datas}}){
-			print '(key is: '.$d.' => ';
-			print 'data is: '.$conf_files->{$files}->{datas}->{$d}.")\n";
 			%datas->{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
 		}
 		useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});

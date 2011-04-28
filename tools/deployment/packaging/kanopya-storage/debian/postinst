@@ -1,4 +1,5 @@
 #!/bin/bash -e 
 echo "ISCSITARGET_ENABLE=true" > /etc/default/iscsitarget
 touch /var/log/tftp.log
+chmod 777 /var/log/tftp.log
 invoke-rc.d iscsitarget restart
