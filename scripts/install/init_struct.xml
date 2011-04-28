@@ -100,7 +100,7 @@
     <!-- Kanopya config-->
     <internal_net_interface
        question="Which Kanopya server network interface will be used to administrate infrastructure"
-       default="eth0"
+       default=""
        is_searchable="n"
        pattern="^\d+$"
        search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
@@ -123,7 +123,7 @@
     <!-- Penser a checker avec plusieurs vg -->
     <vg
        question="Which volume group will be used by Kanopya"
-       default="vg1"
+       default=""
        is_searchable="n"
        search_command="echo -n `vgs  --noheadings -o vg_name --nosuffix --units M --rows`"
        pattern="^\d+$"/>

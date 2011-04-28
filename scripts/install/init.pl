@@ -79,8 +79,6 @@ my $kanopya_vg_sizes= `vgs --noheadings $answers->{vg} --units m -o vg_size,vg_f
 chomp($kanopya_vg_sizes);
 $kanopya_vg_sizes=~ s/^\s+//;
 (my $kanopya_vg_size, my $kanopya_vg_free_space)=split(/\|/,$kanopya_vg_sizes);
-print Dumper($kanopya_vg_size);
-print Dumper($kanopya_vg_free_space);
 #We gather pv's present in the vg
 my @kanopya_pvs= `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
 chomp(@kanopya_pvs);
@@ -120,11 +118,11 @@ while ($line = <FILE>){
 if ($debian_version eq 'squeeze'){
         open (FILE, ">/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
         print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
-#        system('invoke-rc.d isc-dhcp-server restart');
+        system('invoke-rc.d isc-dhcp-server restart');
 }elsif ($debian_version eq 'lenny'){
         open (FILE, ">/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
         print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
-#        system('invoke-rc.d dhcpd restart');
+        system('invoke-rc.d dhcpd restart');
 }else{
         print 'we can\'t determine the Debian version you are running, please check /etc/debian_version';
 }
@@ -160,16 +158,15 @@ while( defined( $line = <FILE> ) )
 {
         chomp ($line);
         print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
-        system("mysql -u $answers->{dbuser} -p$answers->{dbpassword} < $conf_vars->{comp_schemas_dir}$line.sql");
+        system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
         print "done\n";
 }
 close(FILE);
 print "components DB schemas loaded\n";
 #And to conclude, we insert initial datas in the DB
 print "inserting initial datas...";
-system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword} < $conf_vars->{data_sql}") == 0 or die "error while inserting initial datas: $!";
+system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{data_sql}") == 0 or die "error while inserting initial datas: $!";
 print "done\n";
-print "initial configuration: done.\n";
 #######################
 #Services manipulation#
 #######################
@@ -178,11 +175,12 @@ system('invoke-rc.d inetutils-inetd stop');
 # We restart atftpd with the new configuration
 system('invoke-rc.d atftpd restart');
 # Launching Kanopya's init scripts
-system('/etc/init.d/kanopya-executor start');
-system('/etc/init.d/kanopya-orchestrator start');
-system('/etc/init.d/kanopya-grapher start');
-system('/etc/init.d/kanopya-collector start');
-print "\nYou can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
+system('invoke-rc.d kanopya-executor start');
+system('invoke-rc.d kanopya-collector start');
+system('invoke-rc.d kanopya-grapher start');
+system('invoke-rc.d kanopya-orchestrator start');
+print "\ninitial configuration: done.\n";
+print "You can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
 
 
 ##########################################################################################
@@ -228,7 +226,7 @@ sub getConf{
         }
         chomp($answers->{$question} = <STDIN>);
 
-        if (!$answers->{$question}){
+        if ($answers->{$question} eq ''){
             if ($questions->{$question}->{is_searchable} eq "1"){
                 print "Script will discover your configuration\n";
                 $answers->{$question} = `$questions->{$question}->{search_command}`;
@@ -246,7 +244,7 @@ sub getConf{
             }
         }
         if ($questions->{$question}->{is_searchable} eq "n"){
-            if ($answers->{$question} > scalar @searchable_answer){
+            if ($answers->{$question} >= scalar @searchable_answer){
                 print "Error you entered a value out of the answer scope.";
                 default_error();}
             else {
