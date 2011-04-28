@@ -33,19 +33,10 @@ use XML::Simple;
 use Data::Dumper;
 
 #Scripts variables, used to set stuff like path, users, etc
-my $kanopya_dir = '/opt/kanopya/';
-my $conf_dir = '/etc/kanopya/';
-my $components_conf = $conf_dir.'components.conf';
-my $mysql_dir =  $kanopya_dir.'scripts/database/mysql/';
-my $schemas_dir = $mysql_dir.'schemas/';
-my $data_dir = $mysql_dir.'data/';
-my $schema_sql = $schemas_dir.'Schemas.sql';
-my $data_sql = $data_dir.'Data.sql';
-my $components_dir = $schemas_dir.'components/';
-my $apache_user = 'www-data';
-
 my $install_conf = XMLin("init_struct.xml");
 my $questions = $install_conf->{questions};
+my $conf_vars = $install_conf->{general_conf};
+my $conf_files = $install_conf->{genfiles};
 my $answers ={};
 
 my %param_test = (dbuser => \&matchRegexp,
@@ -66,42 +57,52 @@ welcome();
 getConf();
 #Print user's answers, can be usefull for recap, etc
 #printAnswers();
-#Functions used to generate conf files - may them be called from within another mother function?
+#Function used to generate conf files 
 genConf();
 
-
-
-
-sub genConf(){
-    genLibkanopyaConf();
-    genCoreConf();
-    genMonitorConf();
-    genOrchestratorConf();
-    genStateManagerConf();
-    genWebuiConf();
-
-#Network setup
+###############
+#Network setup#
+###############
 print "calculating the first host address available for this network...";
 my $internal_ip_add = NetAddr::IP->new($answers->{internal_net_add}, $answers->{internal_net_mask});
 my @c = split("/",$internal_ip_add->first);
 $internal_ip_add = $c[0];
 print "done (first host address is $internal_ip_add)\n";
 print "setting up $answers->{internal_net_interface} ...";
-system ("ifconfig $answers{internal_net_interface} $internal_ip_add") == 0 or die "an error occured while trying to set up nic ($answers->{internal_net_interface}) address: $!";
+system ("ifconfig $answers->{internal_net_interface} $internal_ip_add") == 0 or die "an error occured while trying to set up nic ($answers->{internal_net_interface}) address: $!";
 print "done\n";
 #We gather the NIC's MAC address
-my $internal_net_interface_mac_add = `ip link list dev $internal_net_interface | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
+my $internal_net_interface_mac_add = `ip link list dev $answers->{internal_net_interface} | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
+chomp($internal_net_interface_mac_add);
+#We gather the vg's size and free space:
+my $kanopya_vg_sizes= `vgs --noheadings $answers->{vg} --units m -o vg_size,vg_free --nosuffix --separator '|'`;
+chomp($kanopya_vg_sizes);
+$kanopya_vg_sizes=~ s/^\s+//;
+(my $kanopya_vg_size, my $kanopya_vg_free_space)=split(/\|/,$kanopya_vg_sizes);
+print Dumper($kanopya_vg_size);
+print Dumper($kanopya_vg_free_space);
+#We gather pv's present in the vg
+my @kanopya_pvs= `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
+chomp(@kanopya_pvs);
 
-#Directory manipulations
-#Then we create the logging directory and give rights to apache on it
+#########################
+#Directory manipulations#
+#########################
+#We create the logging directory and give rights to apache user on it
 print "creating the logging directory...";
+if ($answers->{log_directory} !~ /\/$/){
+	$answers->{log_directory} = $answers->{log_directory}.'/';
+}
 system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating the logging directory: $!";
-system ("chown -R $apache_user.$apache_user $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $apache_user: $!";
+system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
 print "done\n";
 #TEMPORARY we put webui-log.conf file in the /opt/kanopya/conf/ dir (cf ui/web/cgi/kanopya.cgi)
 system ('mkdir /opt/kanopya/conf') == 0 or die "$!";
 system ('cp /etc/kanopya/webui-log.conf /opt/kanopya/conf/') == 0 or die "$!";
 
+########################
+#Services configuration#
+########################
 #We configure dhcp server with the gathered informations
 #As conf file changes from lenny to squeeze, we need to handle both cases
 open (FILE, "</etc/debian_version") or die "error while opening /etc/debian_version: $!";
@@ -119,11 +120,11 @@ while ($line = <FILE>){
 if ($debian_version eq 'squeeze'){
         open (FILE, ">/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
         print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
-        system('invoke-rc.d isc-dhcp-server restart');
+#        system('invoke-rc.d isc-dhcp-server restart');
 }elsif ($debian_version eq 'lenny'){
         open (FILE, ">/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
         print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
-        system('invoke-rc.d dhcpd restart');
+#        system('invoke-rc.d dhcpd restart');
 }else{
         print 'we can\'t determine the Debian version you are running, please check /etc/debian_version';
 }
@@ -133,51 +134,45 @@ open (FILE, ">/etc/default/atftpd") or die "an error occured while opening /etc/
 print FILE "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $internal_ip_add --maxthread 100 --verbose=5 --logfile=/var/log/tftp.log /tftp\"";
 close (FILE);
 
-
+########################
+#Database configuration#
+########################
 #We generate the Data.sql file and setup database
-## A L ATTENTION D ANTOINE: CETTE PARTIE EST DONC ENCORE A PORTER (je n'ai mis que le has contenant les données
-## IL MANQUE LES DONNEES A CALCULER (VGS) ET LA GENERATION DU FICHIER DATA.SQL, AINSI QUE LES DONNEES CONCERNANT LE RESEAU "PUBLIC"
-my %datas = (kanopya_vg_name => $kanopya_vg_name, kanopya_vg_total_size => $kanopya_vg_total_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $internal_ip_add, ipv4_internal_netmask => $answers->{internal_net_mask}, ipv4_internal_network_ip => $answers->{internal_net_add}, nameserver => $nameserver, ipv4_public_ip => $mcs_admin_public_ip , ipv4_public_netmask => $mcs_public_network_mask, admin_domainname => $answers->{kanopya_server_domain_name}, mb_hw_address => $internal_net_interface_mac_add);
-        
-
+my %datas = (kanopya_vg_name => $answers->{vg}, kanopya_vg_size => $kanopya_vg_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $internal_ip_add, ipv4_internal_netmask => $answers->{internal_net_mask}, ipv4_internal_network_ip => $answers->{internal_net_add}, admin_domainname => $answers->{kanopya_server_domain_name}, mb_hw_address => $internal_net_interface_mac_add);
+useTemplate(template => 'Data.sql.tt', datas => \%datas, conf => $conf_vars->{data_sql}, include => $conf_vars->{data_dir});
 #Creation of database user
 print "creating mysql user...\n";
 system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p -e \"CREATE USER '$answers->{dbuser}' IDENTIFIED BY '$answers->{dbpassword1}'\"") == 0 or die "error while creating mysql user: $!";
 print "done\n";
-
 #We grant all privileges to administrator database for $db_user
-print "granting all privileges on administrator database to $db_user...\n";
+print "granting all privileges on administrator database to $answers->{dbuser}...\n";
 system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
 print "done\n";
-
-my 
 #We now generate the database schemas
 print "generating database schemas...";
-system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $schema_sql") == 0 or die "error while generating database schema: $!";
+system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";
 print "done\n";
-
 #We now generate the components schemas 
 print "loading component DB schemas...";
-open (FILE, "<$components_conf") or die "error while opening components.conf: $!";
+open (FILE, "<$conf_vars->{comp_conf}") or die "error while opening components.conf: $!";
 LINE:
 while( defined( $line = <FILE> ) )
 {
         chomp ($line);
-        print "installing $line component in database from $components_dir$line.sql...\n ";
-        system("mysql -u $answers->{dbuser} -p$answers->{dbpassword} < $components_dir$line.sql");
+        print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
+        system("mysql -u $answers->{dbuser} -p$answers->{dbpassword} < $conf_vars->{comp_schemas_dir}$line.sql");
         print "done\n";
 }
 close(FILE);
 print "components DB schemas loaded\n";
-
 #And to conclude, we insert initial datas in the DB
 print "inserting initial datas...";
-system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword} < $data_sql") == 0 or die "error while inserting initial datas: $!";
+system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword} < $conf_vars->{data_sql}") == 0 or die "error while inserting initial datas: $!";
 print "done\n";
 print "initial configuration: done.\n";
-
-
-#Services manipulation
+#######################
+#Services manipulation#
+#######################
 # We stop inetd as it will avoid atftpd to work properly
 system('invoke-rc.d inetutils-inetd stop');
 # We restart atftpd with the new configuration
@@ -188,8 +183,11 @@ system('/etc/init.d/kanopya-orchestrator start');
 system('/etc/init.d/kanopya-grapher start');
 system('/etc/init.d/kanopya-collector start');
 print "\nYou can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
-}
 
+
+##########################################################################################
+##############################FUNCTIONS DECLARATION#######################################
+##########################################################################################
 sub welcome {
     my $validate_licence;
 
@@ -205,6 +203,7 @@ sub welcome {
     }
     print "Please answer to the following questions\n";
 }
+######################################### Methods to prompt user for informations
 sub getConf{
     my $i = 0;
     foreach my $question (sort keys %$questions){
@@ -375,76 +374,29 @@ sub default_error{
 
 
 ###################################################### Following functions generates conf files for Kanopya
-sub genLibkanopyaConf{
-        my $tpl='templates/administrator.conf.tt';
-        my $conf=$conf_dir.'administrator.conf';
-        my %datas=(logdir => $answers->{log_directory}, internal_net_add => $answers->{internal_net_add}, internal_net_mask => $answers->{internal_net_mask}, dbip => $answers->{dbip}, dbport => $answers->{dbport});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
+
+sub genConf {
+	my %datas;
+	print $conf_vars->{apache_user}."\n";
+	foreach my $files (keys %$conf_files){
+		print 'template file is: '.$conf_files->{$files}->{template}."\n";
+		print 'conf file is: '.$files."\n";
+		foreach my $d (keys %{$conf_files->{$files}->{datas}}){
+			print '(key is: '.$d.' => ';
+			print 'data is: '.$conf_files->{$files}->{datas}->{$d}.")\n";
+			%datas->{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
+		}
+		useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});
+	}
 }
-
-sub genCoreConf{
-        my $tpl='templates/executor.conf.tt';
-        my $conf=$conf_dir.'executor.conf';
-        my %datas=(logdir => $answers->{log_directory}, internal_net_add => $answers->{internal_net_add}, internal_net_mask => $answers->{internal_net_mask});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
-        #We generate executor's log configuration
-        $tpl='templates/executor-log.conf.tt';
-        $conf=$conf_dir.'executor-log.conf';
-        %datas=(logdir => $answers->{log_directory});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
-}
-
-sub genMonitorConf{
-        my $tpl='templates/monitor.conf.tt';
-        my $conf=$conf_dir.'monitor.conf';
-        my %datas= (internal_net_add => $answers->{internal_net_add}, internal_net_mask => $answers->{internal_net_mask});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
-        #We generate monitor's log configuration
-        $tpl='templates/monitor-log.conf.tt';
-        $conf=$conf_dir.'monitor-log.conf';
-        %datas=(logdir => $answers->{log_directory});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
-}
-
-sub genOrchestratorConf{
-        print "creating orchestrator.conf...";
-        my $conf=$conf_dir.'orchestrator.conf';
-        system("touch $conf") == 0 or die "error while touching orchestrator.conf: $!";
-        print "done\n";
-        print "filling orchestrator.conf...";
-        open (FILE, ">$conf") or die "error while opening orchestrator.conf: $!";
-        print FILE "<config time_step='20' rrd_base_dir='/var/cache/mcs/orchestrator/base' graph_dir='/tmp/orchestrator/graph'>\n<user name=\"admin\" password=\"admin\"/>\n</config>";
-        close (FILE);
-        print "done\n";
-
-        #We generate orchestrator's log configuration
-        my $tpl='templates/orchestrator-log.conf.tt';
-        $conf=$conf_dir.'orchestrator-log.conf';
-        my %datas=(logdir => $answers->{log_directory});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
-}
-
-sub genStateManagerConf{
-        my $tpl='templates/state-manager-log.conf.tt';
-        my $conf=$conf_dir.'state-manager-log.conf';
-        my %datas=(logdir => $answers->{log_directory});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
-}
-
-sub genWebuiConf{
-        my $tpl='templates/webui-log.conf.tt';
-        my $conf=$conf_dir.'webui-log.conf';
-        my %datas=(logdir => $answers->{log_directory});
-        useTemplate(template => $tpl, datas => \%datas, conf => $conf);
-}
-
 sub useTemplate{
         my %args=@_;
         my $input=$args{template};
+	my $include=$args{include};
         my $dat=$args{datas};
         my $output=$args{conf};
         my $config = {
-                INCLUDE_PATH => $conf_dir,
+                INCLUDE_PATH => $include,
                 INTERPOLATE  => 1,
                 POST_CHOMP   => 1,
                 EVAL_PERL    => 1,
@@ -454,17 +406,3 @@ sub useTemplate{
                 print "error while generating $output: $!";
         };
 }
-
-#my $mcs_admin_nic_mac = `ip link list dev $main_nic_name | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
-
-# Calculate free space on vg
-#	my $command = "vgs $args{lvm2_vg_name} --noheadings -o vg_free --nosuffix --units M --rows";
-
-#print "calculating the first host address available for this network...";
-#my $network_addr = NetAddr::IP->new($mcs_internal_network, $mcs_internal_network_mask);
-#my @c = split("/",$network_addr->first);
-#$mcs_admin_internal_ip = $c[0];
-#print "done (first host address is $mcs_admin_internal_ip)\n";
-#print "setting up $main_nic_name ...";
-#system ("ifconfig $main_nic_name $mcs_admin_internal_ip") == 0 or die "an error occured while trying to set up nic ($main_nic_name) address: $!";
-#print "done\n";
