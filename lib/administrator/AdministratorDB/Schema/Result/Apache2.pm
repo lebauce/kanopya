@@ -50,12 +50,6 @@ __PACKAGE__->table("apache2");
   is_nullable: 0
   size: 32
 
-=head2 apache2_phpsession_dir
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 64
-
 =head2 apache2_id
 
   data_type: 'integer'
@@ -81,8 +75,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "apache2_sslports",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "apache2_phpsession_dir",
-  { data_type => "char", is_nullable => 0, size => 64 },
   "apache2_id",
   {
     data_type => "integer",
@@ -126,8 +118,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:t14ZsY0+sYfzilOy0ZU90Q
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-28 14:30:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ksOwNyzm5z+k+/bVSYLviQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

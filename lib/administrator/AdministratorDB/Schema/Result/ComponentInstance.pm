@@ -248,6 +248,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nfsd3s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Nfsd3>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nfsd3s",
+  "AdministratorDB::Schema::Result::Nfsd3",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 openiscsi2s
 
 Type: has_many
@@ -274,21 +289,6 @@ Related object: L<AdministratorDB::Schema::Result::Php5>
 __PACKAGE__->has_many(
   "php5s",
   "AdministratorDB::Schema::Result::Php5",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 pleskpanel10s
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Pleskpanel10>
-
-=cut
-
-__PACKAGE__->has_many(
-  "pleskpanel10s",
-  "AdministratorDB::Schema::Result::Pleskpanel10",
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -324,8 +324,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-26 14:21:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:RPDFiQoD45fhOht6M94I7Q
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-28 14:30:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qTSFKoJ8Z/pBRIutl1Hp8A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
