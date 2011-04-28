@@ -328,7 +328,7 @@ sub run {
 	my $self = shift;
 	my $running = shift;
 	
-	#$self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopia Orchestrator started.");
+	#$self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
 	
 	while ( $$running ) {
 
@@ -346,7 +346,7 @@ sub run {
 
 	}
 	
-	#$self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopia Orchestrator stopped");
+	#$self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
 }
 
 1;

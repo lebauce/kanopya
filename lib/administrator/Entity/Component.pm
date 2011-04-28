@@ -323,6 +323,7 @@ sub save {
 	my $data = $self->{_dbix};
 	#TODO check rights
 
+	my $component_instance_id;
 	if ( $data->in_storage ) {
 		# MODIFY existing db obj
 		$data->update;
@@ -333,22 +334,27 @@ sub save {
 		$relation =~ s/.*\:\://g;
 		$log->debug("la relation: $relation");
 		my $newentity = $self->{_dbix}->insert;
+		$component_instance_id = $newentity->get_column("component_instance_id");
 		$log->debug("new entity inserted.");
 		my $adm = Administrator->new();
 		my $row = $adm->{db}->resultset('Entity')->create({});
 		my $row_entity = $adm->{db}->resultset("ComponentInstanceEntity")->create({
 			entity_id => $row->get_column('entity_id'),
-			"component_instance_id" => $newentity->get_column("component_instance_id")});
+			"component_instance_id" => $component_instance_id});
 		$log->debug("new $self inserted with his entity relation.");
 		$self->{_entity_id} = $row->get_column('entity_id');
 		
 		$self->_saveExtendedAttrs();
 		$log->info(ref($self)." saved to database");
 	}
-		
+	
+	return $component_instance_id;
 }
 sub readyNodeAddition{return 1;}
 sub readyNodeRemoving{return 1;}
+
+# Method to override to insert in db component default configuration
+sub insertDefaultConfiguration() { }
 
 =head1 DIAGNOSTICS
 

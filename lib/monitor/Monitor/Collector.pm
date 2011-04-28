@@ -545,7 +545,7 @@ sub run {
 	my $running = shift;
 	
 	my $adm = $self->{_admin};
-	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopia Collector started.");
+	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopya Collector started.");
 	
 	while ( $$running ) {
 
@@ -565,7 +565,7 @@ sub run {
 		#`/etc/init.d/kanopya-collector restart`;
 	}
 	
-	$adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopia Collector stopped");
+	$adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopya Collector stopped");
 }
 
 sub getMem {
