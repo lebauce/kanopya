@@ -1,3 +1,2 @@
 scripts/database/* /opt/kanopya/scripts/database
 scripts/install/* /opt/kanopya/scripts/install
-conf/templates/* /etc/kanopya/templates
