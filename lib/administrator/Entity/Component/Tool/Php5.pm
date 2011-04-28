@@ -120,6 +120,16 @@ sub setConf {
 	
 }
 
+# Insert default configuration in db for this component 
+sub insertDefaultConfiguration() {
+	my $self = shift;
+	
+	my $default_conf = {
+		php5_session_path => "/var/lib/php5",
+	};
+	
+	$self->{_dbix}->php5s->create( $default_conf );
+}
 
 =head1 DIAGNOSTICS
 
