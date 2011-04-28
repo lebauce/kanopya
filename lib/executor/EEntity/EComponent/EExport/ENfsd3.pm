@@ -20,11 +20,80 @@ sub new {
     return $self;
 }
 
-
-
 sub reload {
 	my $self = shift;
 	$self->generateConf();
+}
+
+sub MountDevice {
+	my $self = shift;
+	my %args = @_;
+	if((! exists $args{econtext} or ! defined $args{econtext}) ||
+	  (! exists $args{device} or ! defined $args{device})) {
+		$errmsg = "EComponent::EExport::ENfsd3->mkMountDirectory needs a econtext and device named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+
+	# create directory if necessary
+	my $dir = $self->_getEntity()->getMountDir(device => $args{device});
+	my $command = "mkdir -p $dir";
+	$args{econtext}->execute(command => $command);
+
+	# check if nothing is mounted on directory
+	$command = "mount | grep $dir";
+	my $result = $args{econtext}->execute(command => $command);
+	if($result->{stdout}) {
+		$errmsg = "EComponent::EExport::ENfsd3->MountDevice : $dir already used as mount point by \n($result->{stdout})";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$command = "mount $args{device} $dir";
+	$args{econtext}->execute(command => $command);
+}
+
+sub addExport {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{device} or ! defined $args{device}) ||
+		(! exists $args{econtext} or ! defined $args{econtext})) {
+		$errmsg = "EComponent::EExport::EIscsitarget1->addExport needs a device and econtext named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $export_id = $self->_getEntity()->addExport(device => $args{device});
+	$self->MountDevice(device => $args{device}, econtext => $args{econtext});
+	return $export_id;
+}
+
+sub addExportClient {
+	my $self = shift;
+	my %args = @_;
+	if ((! exists $args{export_id} or ! defined $args{export_id}) ||
+		(! exists $args{client_name} or ! defined $args{client_name}) ||
+		(! exists $args{client_options} or ! defined $args{client_options})) {
+		$errmsg = "EComponent::EExport::ENfsd3->addExportClient needs a export_id, client_name and client_options named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$self->_getEntity()->addExportClient(
+		export_id => $args{export_id},
+		client_name => $args{client_name},
+		client_options => $args{client_options}
+	);
+}
+
+sub update_exports {
+	my $self = shift;
+	my %args = @_;
+	if(! exists $args{econtext} or ! defined $args{econtext}) {
+		$errmsg = "EComponent::EExport::ENfsd3->update_exports needs a econtext named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	$self->generate_exports(econtext => $args{econtext});
+	my $command = "/usr/sbin/exportfs";
+	$args{econtext}->execute(command => $command);
 }
 
 # generate /etc/default/nfs-common file
@@ -118,7 +187,7 @@ sub generate_exports {
 	# create Template object
 	my $template = Template->new($config);
     my $input = "exports.tt";
-    my $data = $self->_getEntity()->getTemplateData();
+    my $data = $self->_getEntity()->getTemplateDataExports();
 	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EExport::ENfsd3->generate_exports : error during template generation : $template->error;";

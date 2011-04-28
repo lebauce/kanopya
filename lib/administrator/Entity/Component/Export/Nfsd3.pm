@@ -138,58 +138,84 @@ sub setConf {
 	my $self = shift;
 	my($conf) = @_;
 	
-	# delete old conf		
-	my $conf_row = $self->{_dbix}->nfsd3s->first();
-	$conf_row->delete() if (defined $conf_row); 
+	for my $export ( @{ $conf->{exports} } ) {
+		CLIENT:
+		for my $client ( @{ $export->{clients} } ) {
+			$self->createExport(device => $export->{nfsd3_export_path},
+								client_name => $client->{nfsd3_exportclient_name},
+								client_options => $client->{nfsd3_exportclient_options});
+			last CLIENT; #Temporary: we can create only one client with one export
+		}		
+	}
 
-	# create
-	$conf_row = $self->{_dbix}->nfsd3s->create( {
-		nfsd3_statdopts => $conf->{nfsd3_statdopts},
-		nfsd3_need_gssd => $conf->{nfsd3_need_gssd},
-		nfsd3_rpcnfsdcount => $conf->{nfsd3_rpcnfsdcount},
-		nfsd3_rpcnfsdpriority => $conf->{nfsd3_rpcnfsdpriority},
-		nfsd3_rpcmountopts => $conf->{nfsd3_rpcmountopts},
-		nfsd3_need_svcgssd => $conf->{nfsd3_need_svcgssd},
-		nfsd3_rpcsvcgssdopts => $conf->{nfsd3_rpcsvcgssdopts},
-	} );
-	
-	# exports
-	foreach my $export (@{ $conf->{exports} }) {
-		my $export_row = $conf_row->nfsd3_exports->create({
-			nfsd3_export_path => $export->{nfsd3_export_path}
-		});
-		# clients options														
-		foreach my $client (@{ $export->{clients} }) {
-			$export_row->nfsd3_exportclients->create(
-			{	
-				nfsd3_exportclient_name => $client->{nfsd3_exportclient_name},
-				nfsd3_exportclient_options => $client->{nfsd3_exportclient_options},
-			});
-		}	
-	} 
+#	my $self = shift;
+#	my($conf) = @_;
+#	
+#	# delete old conf		
+#	my $conf_row = $self->{_dbix}->nfsd3s->first();
+#	$conf_row->delete() if (defined $conf_row); 
+#
+#	# create
+#	$conf_row = $self->{_dbix}->nfsd3s->create( {
+#		nfsd3_statdopts => $conf->{nfsd3_statdopts},
+#		nfsd3_need_gssd => $conf->{nfsd3_need_gssd},
+#		nfsd3_rpcnfsdcount => $conf->{nfsd3_rpcnfsdcount},
+#		nfsd3_rpcnfsdpriority => $conf->{nfsd3_rpcnfsdpriority},
+#		nfsd3_rpcmountopts => $conf->{nfsd3_rpcmountopts},
+#		nfsd3_need_svcgssd => $conf->{nfsd3_need_svcgssd},
+#		nfsd3_rpcsvcgssdopts => $conf->{nfsd3_rpcsvcgssdopts},
+#	} );
+#	
+#	# exports
+#	foreach my $export (@{ $conf->{exports} }) {
+#		my $export_row = $conf_row->nfsd3_exports->create({
+#			nfsd3_export_path => $export->{nfsd3_export_path}
+#		});
+#		# clients options														
+#		foreach my $client (@{ $export->{clients} }) {
+#			$export_row->nfsd3_exportclients->create(
+#			{	
+#				nfsd3_exportclient_name => $client->{nfsd3_exportclient_name},
+#				nfsd3_exportclient_options => $client->{nfsd3_exportclient_options},
+#			});
+#		}	
+#	} 
+}
+
+# return directory where a device will be mounted for nfs export 
+sub getMountDir {
+	my $self = shift;
+	my %args = @_;
+	if(! exists $args{device} or ! defined $args{device}) {
+		$errmsg = "EComponent::EExport::ENfsd3->getMountDir needs a device named argument!";
+		$log->error($errmsg);
+		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $dir = $args{device};
+	$dir =~ s/\//_/g;
+	return "/nfsexports/".$dir;
 }
 
 =head2 addExport
 	
-	Desc : This function a new export entry into nfsd configuration.
-	args : nfsd3_id, export_path
-	
+	Desc : This function add new export to the db component
+	args : export_id, client_name, client_options 
+
 =cut
 
 sub addExport {
 	my $self = shift;
-    my %args = @_;
-
-	if ((! exists $args{nfsd3_id} or ! defined $args{nfsd3_id}) ||
-		(! exists $args{export_path} or ! defined $args{export_path})) {
-		$errmsg = "Component::Export::Nfsd3->addExport needs a nfsd3_id and export_path named argument!";
+	my %args = @_;
+	if (! exists $args{device} or ! defined $args{device}) {
+		$errmsg = "Component::Export::Nfsd3->addExport needs a device named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	#my $iscsitarget1_rs = $self->{_dbix}->iscsitarget1_targets;
-	#my $res = $iscsitarget1_rs->create(\%args);
-	#$log->info("New target <$args{iscsitarget1_target_name}> added with mount point <$args{mountpoint}> and options <$args{mount_option}> and return " .$res->get_column("iscsitarget1_target_id"));
-	#return $res->get_column("iscsitarget1_target_id");
+	my $component = $self->{_dbix}->nfsd3s->first;
+	my $export = $component->nfsd3_exports->create({
+		nfsd3_export_path => $args{device}
+	});
+	return $export->get_column('nfsd3_export_id')
 }
 
 =head2 addExportClient
@@ -210,12 +236,13 @@ sub addExportClient {
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	#$log->debug("New Lun try to be added with iscsitarget1_target_id $args{iscsitarget1_target_id} iscsitarget1_lun_number $args{iscsitarget1_lun_number} iscsitarget1_lun_device $args{iscsitarget1_lun_device}" );
-	#my $iscsitarget1_lun_rs = $self->{_dbix}->iscsitarget1_targets->single( {iscsitarget1_target_id => $args{iscsitarget1_target_id}})->iscsitarget1_luns;
-
-	#my $res = $iscsitarget1_lun_rs->create(\%args);
-	#$log->info("New Lun <$args{iscsitarget1_lun_device}> added");
-	#return $res->get_column('iscsitarget1_lun_id');
+	my $component = $self->{_dbix}->nfsd3s->first;
+	my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}});
+	my $exportclient = $exportclient_rs->create({
+		nfsd3_exportclient_name => $args{client_name},
+		nfsd3_exportclient_options => $args{client_options}
+	});
+	return $exportclient->get_column('nfsd3_exportclient_id')
 }
 
 =head2 removeExport
@@ -228,12 +255,13 @@ sub addExportClient {
 sub removeExport {
 	my $self = shift;
 	my %args  = @_;
-	if (! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) {
-		$errmsg = "Component::Export::Nfsd3->removeExport needs an export_id named argument!";
+	if (! exists $args{nfsd3_export_id} or ! defined $args{nfsd3_export_id}) {
+		$errmsg = "Component::Export::Nfsd3->removeExport needs an nfsd3_export_id named argument!";
 		$log->error($errmsg);
 		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	#return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->find($args{iscsitarget1_lun_id})->delete();
+	my $component = $self->{_dbix}->nfsd3s->first;
+	return $component->nfsd3_exports->find($args{nfsd3_export_id})->delete();
 }
 
 =head2 removeExportClient
@@ -254,6 +282,7 @@ sub removeExportClient {
 	#return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
 }
 
+
 # return a data structure to pass to the template processor for /etc/exports file
 sub getTemplateDataExports {
 	my $self = shift;
@@ -263,18 +292,22 @@ sub getTemplateDataExports {
 		# TODO throw exception then no configuration
 	} 
 	
-#	$data->{nfsd3_exports} = [];
-#	my $exports_rs = $general_config->nfsd3_exports;
-#	while(my $export = $exports_rs->next) {
-#		my $record = {};
-#		$record->{nfsd3_export_path} = $export->get_column('nfsd3_export_path');
-#		$record->{clients} = [];
-#		my $clients_rs = $record->nfsd3_exportclients;
-#		while(my $client = $client_rs->next) {
-#			
-#		}
-#		push @{},  	
-#	}
+	$data->{nfsd3_exports} = [];
+	my $exports_rs = $general_config->nfsd3_exports;
+	while(my $export = $exports_rs->next) {
+		my $record = {};
+		$record->{nfsd3_export_path} = $self->getMountDir($export->get_column('nfsd3_export_path'));
+		$record->{clients} = [];
+		my $clients_rs = $record->nfsd3_exportclients;
+		while(my $client = $clients_rs->next) {
+			my $tmp = {
+				name => $client->get_column('nfsd3_exportclient_name'),
+				options => "(".$client->get_column('nfsd3_exportclient_options').")"
+			};	
+			push @{$record->{clients}}, $tmp; 	
+		}
+		push @{$data->{nfsd3_exports}}, $record; 	
+	}
  	return $data;
 }
 
@@ -309,5 +342,37 @@ sub getTemplateDataNfsKernelServer {
 	return $data;   
 }
 
+=head2 createExport
+	
+	Desc : This function enqueue a ECreateExport operation
+	args : client_name, device, options
+	
+=cut
+
+sub createExport {
+    my $self = shift;
+    my %args = @_;
+    if((! exists $args{client_name} or ! defined $args{client_name})||
+       (! exists $args{device} or ! defined $args{device}) ||
+       (! exists $args{client_options} or ! defined $args{client_options})) {
+	   	$errmsg = "createExport needs device, client_name and client_options named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $admin = Administrator->new();
+	
+    my %params = $self->getAttrs();
+    $log->debug("New Operation CreateExport with attrs : " . %params);
+    Operation->enqueue(
+    	priority => 200,
+        type     => 'CreateExport',
+        params   => {
+            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            device => $args{device},
+            client_name => $args{client_name},
+            client_options => $args{client_options}
+        },
+    );
+}
 
 1;
