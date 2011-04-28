@@ -91,9 +91,6 @@ sub _init {
 sub checkOp{
     my $self = shift;
 	my %args = @_;
-    
-    
-
 }
 
 =head2 prepare
@@ -120,38 +117,62 @@ sub prepare {
 	my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
-    if ((! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) ||
-        (! exists $params->{export_name} or ! defined $params->{export_name})||
-        (! exists $params->{device} or ! defined $params->{device})||
-        (! exists $params->{typeio} or ! defined $params->{typeio})||
-        (! exists $params->{iomode} or ! defined $params->{iomode})){
-        my $error = $@;
-		$errmsg = "Operation ECreateExport failed, missing parameters";
+	# test component_instance_id presence
+	if(! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) {
+		$errmsg = "Operation::ECreateExport need a component_instance_id parameter";
 		$log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    $self->{params} = $params;
-    # Test if component instance id is really a Entity::Component::Export::Iscsitarget
-    my $comp_iscsitarget = Entity::Component::Export::Iscsitarget1->get(id => $params->{component_instance_id});
-    my $comp_desc = $comp_iscsitarget->getComponentAttr();
-    if (! $comp_desc->{component_name} eq "Iscsitarget") {
-		$errmsg = "ECreateExport->prepare need id of a iscsitarget component !";
+	}
+
+	# instanciate component and check its type
+	my $component = Entity::Component->getInstance(id => $params->{component_instance_id});
+	$self->{component_name} = $component->getComponentAttr()->{component_name};
+	if(!(($self->{component_name} eq 'Iscsitarget') or ($self->{component_name} eq 'Nfsd'))) {
+		$errmsg = "Operation::ECreateExport need either a Iscstarget or Nfsd component";
 		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    $self->{_objs}->{ecomp_iscsitarget} = EFactory::newEEntity(data => $comp_iscsitarget);
-    my $cluster_id =$comp_iscsitarget->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
-    if (!($self->{_objs}->{cluster}->getAttr(name=>"cluster_state") eq "up")){
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+	}
+	
+	my $cluster_id =$component->getAttr(name => "cluster_id");
+	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
+	if (!($self->{_objs}->{cluster}->getAttr(name=>"cluster_state") eq "up")){
         $errmsg = "Cluster has to be up !";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-     # Instanciate executor Cluster
-	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
     
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
+    	
+	## TODO change this monstrous bevahior by another components management... 
+	# BIG if here...
+	if($self->{component_name} eq 'Iscsitarget') {
+		
+	    if ((! exists $params->{export_name} or ! defined $params->{export_name})||
+	        (! exists $params->{device} or ! defined $params->{device})||
+	        (! exists $params->{typeio} or ! defined $params->{typeio})||
+	        (! exists $params->{iomode} or ! defined $params->{iomode})){
+	       	$errmsg = "Operation ECreateExport failed for component $self->{component_name}, missing parameters";
+			$log->error($errmsg);
+	        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+	    }
+	    $self->{params} = $params;
+	    $self->{_objs}->{ecomp_iscsitarget} = EFactory::newEEntity(data => $component);
+	}	
+	elsif($self->{component_name} eq 'Nfsd') {
+		
+		if ((! exists $params->{device} or ! defined $params->{device})||
+	        (! exists $params->{client_name} or ! defined $params->{client_name})||
+	        (! exists $params->{client_options} or ! defined $params->{client_options})){
+	       	$errmsg = "Operation ECreateExport failed for component $self->{component_name}, missing parameters";
+			$log->error($errmsg);
+	        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+	    }
+	    $self->{params} = $params;
+	    $self->{_objs}->{ecomp_nfsd} = EFactory::newEEntity(data => $component);
+	}
+	
+	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
+	my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
 	$self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
 
 }
@@ -161,20 +182,41 @@ sub execute{
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	
-	my $disk_targetname = $self->{_objs}->{ecomp_iscsitarget}->generateTargetname(name => $self->{params}->{export_name});
-	my $target_id = $self->{_objs}->{ecomp_iscsitarget}->addTarget(
-	                                               iscsitarget1_target_name		=> $disk_targetname,
-												   mountpoint		=> "unused",
-												   mount_option	=> "unused",
-												   econtext			=> $self->{cluster_econtext});
-	$self->{_objs}->{ecomp_iscsitarget}->addLun(iscsitarget1_lun_number => 0,
-	                                            iscsitarget1_lun_device => $self->{params}->{device},
-	                                            iscsitarget1_target_id => $target_id,
-	                                            iscsitarget1_lun_typeio => $self->{params}->{typeio},
-	                                            iscsitarget1_lun_iomode => $self->{params}->{iomode},
-	                                            iscsitarget1_target_name => $disk_targetname,
-	                                            econtext			=> $self->{cluster_econtext});
-$self->{_objs}->{ecomp_iscsitarget}->generate(econtext => $self->{cluster_econtext});
+	# other big if...
+	if($self->{component_name} eq 'Iscsitarget') {
+	
+		my $disk_targetname = $self->{_objs}->{ecomp_iscsitarget}->generateTargetname(name => $self->{params}->{export_name});
+		my $target_id = $self->{_objs}->{ecomp_iscsitarget}->addTarget(
+		                                               iscsitarget1_target_name		=> $disk_targetname,
+													   mountpoint		=> "unused",
+													   mount_option	=> "unused",
+													   econtext			=> $self->{cluster_econtext});
+		$self->{_objs}->{ecomp_iscsitarget}->addLun(iscsitarget1_lun_number => 0,
+		                                            iscsitarget1_lun_device => $self->{params}->{device},
+		                                            iscsitarget1_target_id => $target_id,
+		                                            iscsitarget1_lun_typeio => $self->{params}->{typeio},
+		                                            iscsitarget1_lun_iomode => $self->{params}->{iomode},
+		                                            iscsitarget1_target_name => $disk_targetname,
+		                                            econtext			=> $self->{cluster_econtext});
+		$self->{_objs}->{ecomp_iscsitarget}->generate(econtext => $self->{cluster_econtext});
+	}
+	
+	elsif($self->{component_name} eq 'Nfsd') {
+		my $export_id = $self->{_objs}->{ecomp_nfsd}->addExport(
+			device => $self->{params}->{device},
+			econtext =>  $self->{cluster_econtext}
+		);
+		 $self->{_objs}->{ecomp_nfsd}->addExportClient(
+		 	
+		 	export_id => $export_id,
+		 	client_name => $self->{params}->{client_name},
+		 	client_options => $self->{params}->{client_options}
+		 );
+		
+		$self->{_objs}->{ecomp_nfsd}->update_exports(econtext => $self->{cluster_econtext});
+		
+	}
+	
 }
 
 =head1 DIAGNOSTICS

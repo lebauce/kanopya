@@ -163,7 +163,9 @@ INSERT INTO `component` VALUES
 (7,'Snmpd','5','Monitoragent'),
 (8,'Keepalived','1','Loadbalancer'),
 (9,'Mysql','5','DBserver'),
-(10,'Memcached','1','ProxyCache');
+(10,'Memcached','1','ProxyCache'),
+(11,'Nfsd', '3', 'Export');
+
 
 -- kernels
 INSERT INTO `kernel` VALUES (1,'admin','2.6.32','Admin Kernel');
@@ -228,12 +230,13 @@ INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/components/mcs
 INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/components/mcskeepalived', 8);
 
 -- initial components instance for admin cluster: 
-INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);
+INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL),(6,1,11,NULL);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,3); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,4); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,5); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,6); SET @eid := @eid +1;
 
 -- main vg storage from only one pv
 INSERT INTO `lvm2_vg` VALUES (1,1,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_total_size %]');
@@ -256,6 +259,9 @@ INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 
 -- dhcpd configuration
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com','[% nameserver %]','node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,1,'[% ipv4_internal_network_ip %]','[% ipv4_internal_netmask %]');
+
+-- nfsd configuration
+INSERT INTO `nfsd3` VALUES(1,6,NULL,'no',8,0,NULL,'no',NULL);
 
 
 -- Monitoring

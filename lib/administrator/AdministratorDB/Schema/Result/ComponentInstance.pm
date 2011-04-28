@@ -233,6 +233,7 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+
 =head2 memcached1s
 
 Type: has_many
@@ -247,6 +248,7 @@ __PACKAGE__->has_many(
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
+
 
 =head2 nfsd3s
 
@@ -324,8 +326,10 @@ __PACKAGE__->has_many(
 );
 
 
+
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-28 14:30:54
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qTSFKoJ8Z/pBRIutl1Hp8A
+
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
