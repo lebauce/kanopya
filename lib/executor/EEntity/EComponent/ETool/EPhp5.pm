@@ -1,9 +1,9 @@
-package EEntity::EComponent::ELibrary::EPhp5;
+package EEntity::EComponent::ETool::EPhp5;
 
 use strict;
 use Template;
 use String::Random;
-use base "EEntity::EComponent::ELibrary";
+use base "EEntity::EComponent::ETool";
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");

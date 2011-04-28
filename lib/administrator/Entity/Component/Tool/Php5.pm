@@ -21,19 +21,19 @@
 
 =head1 NAME
 
-<Entity::Component::Library::Php5> <Php5 component concret class>
+<Entity::Component::Tool::Php5> <Php5 component concret class>
 
 =head1 VERSION
 
-This documentation refers to <Entity::Component::Library::Php5> version 1.0.0.
+This documentation refers to <Entity::Component::Tool::Php5> version 1.0.0.
 
 =head1 SYNOPSIS
 
-use <Entity::Component::Library::Php5>;
+use <Entity::Component::Tool::Php5>;
 
 my $component_instance_id = 2; # component instance id
 
-Entity::Component::Library::Php5->get(id=>$component_instance_id);
+Entity::Component::Tool::Php5->get(id=>$component_instance_id);
 
 # Cluster id
 
@@ -43,19 +43,19 @@ my $cluster_id = 3;
 
 my $component_id =2 
 
-Entity::Component::Library::Php5->new(component_id=>$component_id, cluster_id=>$cluster_id);
+Entity::Component::Tool::Php5->new(component_id=>$component_id, cluster_id=>$cluster_id);
 
 =head1 DESCRIPTION
 
-Entity::Component::Library::Php5 is class allowing to instantiate a Php5 component
+Entity::Component::Tool::Php5 is class allowing to instantiate a Php5 component
 This Entity is empty but present methods to set configuration.
 
 =head1 METHODS
 
 =cut
 
-package Entity::Component::Library::Php5;
-use base "Entity::Component::Library";
+package Entity::Component::Tool::Php5;
+use base "Entity::Component::Tool";
 
 use strict;
 use warnings;
@@ -69,11 +69,11 @@ my $errmsg;
 
 =head2 new
 B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Library component and concretly Php5.
+B<Desc>    : This method allows to create a new instance of Tool component and concretly Php5.
 B<args>    : 
     B<component_id> : I<Int> : Identify component. Refer to component identifier table
     B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Library::Php5 from parameters.
+B<Return>  : a new Entity::Component::Tool::Php5 from parameters.
 B<Comment>  : Like all component, instantiate it creates a new empty component instance.
         You have to populate it with dedicated methods.
 B<throws>  : 
