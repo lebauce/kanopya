@@ -672,6 +672,7 @@ sub getQoSConstraints {
 	my $self = shift;
 	my %args = @_;
 	
+	# TODO retrieve from db (it's currently done by RulesManager, move here)
 	return { max_latency => 22, max_abort_rate => 0.3 } ;
 }
 

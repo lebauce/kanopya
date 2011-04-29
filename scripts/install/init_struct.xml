@@ -2,7 +2,7 @@
   <general_conf
 	kanopya_dir="/opt/kanopya"
      install_template_dir="/opt/kanopya/scripts/install/templates/"
-     conf_dir="/etc/kanopya/"
+     conf_dir="/opt/kanopya/conf/"
      comp_conf="/etc/kanopya/components.conf"
      database_dir="/opt/kanopya/scripts/database/mysql/"
 	comp_schemas_dir="/opt/kanopya/scripts/database/mysql/schemas/components/"
@@ -19,9 +19,9 @@
 	<executor-log.conf template="executor-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</executor-log.conf>
-	<administrator.conf template="administrator.conf.tt">
+	<libkanopya.conf template="administrator.conf.tt">
 		<datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip"/>
-	</administrator.conf>
+	</libkanopya.conf>
 	<monitor.conf template="monitor.conf.tt">
 		<datas internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
 	</monitor.conf>	
