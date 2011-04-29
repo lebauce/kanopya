@@ -446,7 +446,7 @@ sub updateClusterData{
 	
 	# log cluster nodes state
 	my @state_log = map { 	$_->getInternalIP()->{ipv4_internal_address} .
-							"(" . $_->getAttr( name => "motherboard_state" ) .
+							" (" . $_->getAttr( name => "motherboard_state" ) .
 							", node:" .  $_->getNodeState() . ")"
 						} @mbs;
 	$log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
@@ -552,15 +552,15 @@ sub update {
 		#################################################################
 		# Retrieve clusters info again to be up to date (nodes state may change during update)	
 		my $time = time();
-		my %hosts_by_cluster = $self->retrieveHostsByCluster();
-		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
-			
-			$self->updateClusterData( cluster_name => $cluster_name,
-									  cluster_info => $cluster_info,
-									  hosts_values => \%hosts_values,
-									  collect_time => $start_time, 
-									  );
-		}
+#		my %hosts_by_cluster = $self->retrieveHostsByCluster();
+#		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
+#			
+#			$self->updateClusterData( cluster_name => $cluster_name,
+#									  cluster_info => $cluster_info,
+#									  hosts_values => \%hosts_values,
+#									  collect_time => $start_time, 
+#									  );
+#		}
 		$log->debug('aggregation : ' . ( time() - $time) . " sec");
 		
 		# Update total consumption
