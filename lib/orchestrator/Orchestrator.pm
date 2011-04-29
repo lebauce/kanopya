@@ -693,7 +693,7 @@ sub removeNode {
     die "No up node to remove in cluster '$cluster_name'." if ( not defined $node_to_remove );
     
 	# TODO keep the motherboard ID and get it with this id! (ip can be not unique)
-	my @mb_res = Entity::Motherboard->getMotherboards( hash => { motherboard_internal_ip => $node_to_remove->{ip} } );
+	my @mb_res = Entity::Motherboard->getMotherboardFromIP( ipv4_internal_ip => $node_to_remove->{ip} );
 	die "Several motherboards with ip '$node_to_remove->{ip}', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
 	my $mb_to_remove = shift @mb_res;
 	die "motherboard '$node_to_remove->{ip}' no more in DB" if (not defined $mb_to_remove);

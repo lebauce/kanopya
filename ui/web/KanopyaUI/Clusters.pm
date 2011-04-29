@@ -334,7 +334,7 @@ sub view_clusterdetails : Runmode {
 		my $tmp = {
 			motherboard_id => $masternode->getAttr(name => 'motherboard_id'),
 			motherboard_hostname => $masternode->getAttr(name => 'motherboard_hostname'),
-			motherboard_internal_ip => $masternode->getAttr(name => 'motherboard_internal_ip'),
+			motherboard_internal_ip => $masternode->getInternalIP()->{ipv4_internal_address},
 			link_remove => 0
 		};
 		delete $motherboards->{ $id };
@@ -345,7 +345,7 @@ sub view_clusterdetails : Runmode {
 			$tmp->{motherboard_id} = $id;
 			$tmp->{cluster_id} = $cluster_id;
 			$tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname'); 	
-			$tmp->{motherboard_internal_ip} = $n->getAttr(name => 'motherboard_internal_ip');
+			$tmp->{motherboard_internal_ip} = $n->getInternalIP()->{ipv4_internal_address};
 			
 			if(not $methods->{'removeNode'}->{'granted'} ) {
 				$tmp->{link_remove} = 0;

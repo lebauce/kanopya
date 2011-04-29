@@ -310,7 +310,7 @@ sub getMotherboardFromIP {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->getInternalIP(%args);
+    my $net_id = $adm->{manager}->{network}->getInternalIPid(%args);
     return $class->SUPER::getEntities( hash=>{motherboard_ipv4_internal_id => $net_id},  type => "Motherboard");
 }
 
@@ -630,6 +630,9 @@ sub getEtcDev {
 
 sub getInternalIP {
     my $self = shift;
+    my $adm = Administrator->new();
+    my $ip = $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $self->getAttr(name=>"motherboard_ipv4_internal_id"));
+    
 #    if($self->{_dbix}->)
 }
 

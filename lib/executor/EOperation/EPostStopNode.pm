@@ -239,7 +239,7 @@ sub execute {
 															 			   dhcpd3_hosts_mac_address	=> $motherboard_mac);
 	$self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id	=> $subnet,
 												  dhcpd3_hosts_id	=> $hostid);
-	$self->{_objs}->{motherboard}->removeInternalIP();
+	########## Strange : $self->{_objs}->{motherboard}->removeInternalIP();
 	$self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
 	
 	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
@@ -296,7 +296,7 @@ sub execute {
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
 	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
 	## Update Motherboard internal ip
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => undef);
+	$self->{_objs}->{motherboard}->removeInternalIP();
 	
 	## finaly save motherboard 
 	$self->{_objs}->{motherboard}->save();

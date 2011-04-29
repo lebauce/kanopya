@@ -41,7 +41,7 @@ sub view_motherboards : StartRunmode {
 		my $state = $m->getAttr(name => 'motherboard_state');
 		#$tmp->{motherboard_mac} = $m->getAttr(name => 'motherboard_mac_address');
 		$tmp->{motherboard_hostname} = $m->getAttr(name => 'motherboard_hostname');
-		$tmp->{motherboard_ip} = $m->getAttr(name => 'motherboard_internal_ip');
+		$tmp->{motherboard_ip} = $m->getInternalIP()->{ipv4_internal_address};
 		$tmp->{active} = $m->getAttr(name => 'active');
  		 
 		if($tmp->{active}) {
@@ -223,7 +223,7 @@ sub view_motherboarddetails : Runmode {
 	$tmpl->param('motherboard_hostname' => $emotherboard->getAttr('name' => 'motherboard_hostname'));
 	$tmpl->param('motherboard_desc' => $emotherboard->getAttr('name' => 'motherboard_desc'));
 	$tmpl->param('motherboard_mac' => $emotherboard->getAttr('name' => 'motherboard_mac_address'));
-	$tmpl->param('motherboard_ip' => $emotherboard->getAttr('name' => 'motherboard_internal_ip'));
+	$tmpl->param('motherboard_ip' => $emotherboard->getInternalIP()->{ipv4_internal_address});
 	$tmpl->param('motherboard_sn' => $emotherboard->getAttr('name' => 'motherboard_serial_number'));
 	$tmpl->param('motherboard_powersupply' => $emotherboard->getAttr('name' => 'motherboard_powersupply_id'));
 		
