@@ -332,69 +332,11 @@ sub updateClusterNodeCount {
 	Desc : Aggregate and store indicators values for each set for a cluster
 	
 	Args :
-		cluster_name
-		cluster_info : hash ref : node info for each node of the cluster
+		cluster : Entity::Cluster
 		hosts_values : hash ref : indicators values of each set for each hosts
 		collect_time : seconds since Epoch when hosts data have been collected 
 	
 =cut
-
-sub updateClusterData_OLD {
-	my $self = shift;
-	my %args = @_;
-	
-	my ($cluster_name, $cluster_info, $hosts_values, $collect_time ) = ($args{cluster_name}, $args{cluster_info}, $args{hosts_values}, $args{collect_time});
-	
-	# Build list of up nodes
-	my @up_nodes = grep { $_->{state} =~ 'up' } values %$cluster_info;
-	my @nodes_ip = map { $_->{ip} } @up_nodes;
-	my $nb_up = scalar @up_nodes;
-	
-	# Group indicators values by set
-	my %sets;
-	foreach my $host_ip (@nodes_ip) {
-		my @sets_name = keys %{ $hosts_values->{ $host_ip } };
-		foreach my $set_name ( @sets_name ) {	
-			push @{$sets{$set_name}}, $hosts_values->{ $host_ip }{$set_name};
-		}
-	}
-			
-	# For each sets, aggregate values and store 
-	SET:
-	while ( my ($set_name, $sets_list) = each %sets ) {
-				
-		if ( $nb_up != scalar @$sets_list ) {
-			$log->warn("During aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.");
-			next SET;
-		}
-					
-		my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
-		my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
-	
-		next SET if ( scalar grep { not defined $_ } values %aggreg_sum );
-	    		
-	    my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
-	    my $mean_rrd_name = $base_rrd_name . "_avg";
-	    my $sum_rrd_name = $base_rrd_name . "_total";
-		eval {
-			$self->updateRRD( rrd_name => $mean_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $collect_time, data => \%aggreg_mean);
-			$self->updateRRD( rrd_name => $sum_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $collect_time, data => \%aggreg_sum);
-		};
-		if ($@){
-			my $error = $@;
-			$log->error("Update cluster rrd error => $error");
-		}
-	} 
-			
-	# log cluster nodes state
-	my @state_log = map { "$_->{ip} ($_->{state})" } values %$cluster_info;
-	$log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
-	
-	# update cluster node count
-	my @nodes_state = map { $_->{state} } values %$cluster_info;
-	$self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state )	
-			
-}
 
 sub updateClusterData{
 	my $self = shift;
@@ -460,59 +402,27 @@ sub updateClusterData{
 	
 	Class : Public
 	
-	Desc : Create a thread to update data for every monitored host
+	Desc :  Update data for every monitored host and then update clusters data
 	
 =cut
 
 sub update {
 	my $self = shift;
 	
+	# Flag to switch between treaded mode or not.
+	# Threaded mode: allow to manage simultaneously each host and so speed up the entire update
+	#				 but some memory leaks happen and collector can seg fault (TODO make it work properly)
+	my $THREADED = 0;
+	
 	my $start_time = time();
 	
 	eval {
 
 		my $monitor_manager = $self->{_admin}->{manager}{monitor};
-		
-		
-#		my %hosts_by_cluster = $self->retrieveHostsByCluster();
-#		if ( 0 == scalar keys %hosts_by_cluster ) {
-#			$log->info(" # No cluster to monitor => quit\n");
-#			return;
-#		}
-		
-		#############################
+
+		############################
 		# Update data for each host #
 		#############################
-#		my %threads = ();
-#		while ( my ($cluster_name, $cluster_nodes) = each %hosts_by_cluster ) {
-#			#TODO keep cluster id from the beginning (get by name is not really good)
-#			my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster_name } )->getAttr( name => "cluster_id");
-#			my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster_id );
-#			for my $host_info (values %$cluster_nodes) {
-#				# We create a thread for each host to don't block update if a host is unreachable
-#				#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
-#				my $thr = threads->create( 	'updateHostData',
-#											$self,
-#											host_ip => $host_info->{ip},
-#											host_state => $host_info->{state},
-#											components => $host_info->{components},
-#											sets => $monitored_sets );
-#				$threads{$host_info->{ip}} = $thr;
-#			}
-#		}		
-#
-#		############################
-#		# Wait end of all threads  #
-#		############################
-#		my %hosts_values = ();
-#
-#		while ( my ($host_ip, $thr) = each %threads ) {
-#			my $ret = $thr->join();
-#			$hosts_values{ $host_ip } = $ret;
-#		}
-		
-		##################################
-		#################################
 		my %hosts_values = ();
 		my @clusters = Entity::Cluster->getClusters( hash => { } );
 		foreach my $cluster (@clusters) {
@@ -526,19 +436,42 @@ sub update {
 			foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
 				if ( $mb->getNodeState() eq 'in' ) {
 					my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
-					my $ret = $self->updateHostData(
-								host_ip => $host_ip,
-								host_state => $mb->getAttr( name => "motherboard_state" ),
-								components => \@components_name,
-								sets => $monitored_sets
-					);
-					$hosts_values{ $host_ip } = $ret;
+					if ($THREADED) {
+						my $thr = threads->create( 	'updateHostData',
+													$self,
+													host_ip => $host_ip,
+													host_state => $mb->getAttr( name => "motherboard_state" ),
+													components => \@components_name,
+													sets => $monitored_sets
+													);
+						$threads{$host_ip} = $thr;
+					} else {
+						my $ret = $self->updateHostData(
+													host_ip => $host_ip,
+													host_state => $mb->getAttr( name => "motherboard_state" ),
+													components => \@components_name,
+													sets => $monitored_sets
+													);
+						$hosts_values{ $host_ip } = $ret;
+					}
 				}
 			}
 		}
 		
-		############################################
-		############################################
+		#############################
+		# Wait end of all threads  #
+		############################
+		if ($THREADED) {
+			while ( my ($host_ip, $thr) = each %threads ) {
+				my $ret = $thr->join();
+				$hosts_values{ $host_ip } = $ret;
+			}
+		}
+		
+		#################################################################
+		# update clusters databases (nodes count and aggregated values) #
+		#################################################################	
+		my $time = time();
 		foreach my $cluster (@clusters) {
 				$self->updateClusterData( 	
 											cluster => $cluster,
@@ -546,21 +479,7 @@ sub update {
 									  		collect_time => $start_time, 
 									  	);
 		}
-		
-		#################################################################
-		# update clusters databases (nodes count and aggregated values) #
-		#################################################################
-		# Retrieve clusters info again to be up to date (nodes state may change during update)	
-		my $time = time();
-#		my %hosts_by_cluster = $self->retrieveHostsByCluster();
-#		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
-#			
-#			$self->updateClusterData( cluster_name => $cluster_name,
-#									  cluster_info => $cluster_info,
-#									  hosts_values => \%hosts_values,
-#									  collect_time => $start_time, 
-#									  );
-#		}
+
 		$log->debug('aggregation : ' . ( time() - $time) . " sec");
 		
 		# Update total consumption
