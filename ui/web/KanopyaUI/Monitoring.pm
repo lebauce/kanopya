@@ -117,7 +117,7 @@ sub view_clustermonitoring : Runmode {
 	my $motherboards = $cluster->getMotherboards();
 	my $masterId = $cluster->getMasterNodeId();
 	my @nodes = map { { id => $_->getAttr(name=>'motherboard_id'),
-						name => $_->getAttr(name=>'motherboard_internal_ip'),
+						name => $_->getInternalIP()->{ipv4_internal_address},
 						master => ($_->getAttr(name=>'motherboard_id') == $masterId) }
 					} values %$motherboards;
 	
@@ -176,7 +176,7 @@ sub xml_graph_list : Runmode {
 #			push @sets, { 	set_name => 'nodecount', img_src => "$graph_dir_alias/$graph_subdir/$nodecount_graph"};
 
 		} else {
-			$node_ip = $motherboards->{$node_id}->getAttr(name=>'motherboard_internal_ip');
+			$node_ip = $motherboards->{$node_id}->getInternalIP()->{ipv4_internal_address};
 		}
 		
 		foreach my $set ( defined $set_name ? ($set_name) : @sets_name ) {

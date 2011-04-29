@@ -48,7 +48,7 @@ sub addNode {
 	my $tmpfile = $rand->randpattern("cccccccc");
 	my $input = "default_snmpd.tt";
     my $data = {};
-    $data->{node_ip_address} = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
+    $data->{node_ip_address} = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
     $data->{options} = $conf->{options};
    	
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {

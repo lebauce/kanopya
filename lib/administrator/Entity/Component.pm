@@ -354,7 +354,8 @@ sub readyNodeAddition{return 1;}
 sub readyNodeRemoving{return 1;}
 
 # Method to override to insert in db component default configuration
-sub insertDefaultConfiguration() { }
+sub insertDefaultConfiguration { }
+sub getClusterizationType{}
 
 =head1 DIAGNOSTICS
 

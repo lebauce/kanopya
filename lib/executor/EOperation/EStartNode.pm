@@ -300,8 +300,8 @@ sub execute {
 	$self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
 	
 	#Update Motherboard internal ip
-	$self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
-	#TODO Manage gateway in motherboard with cluster ???
+	# OBSOLETE $self->{_objs}->{motherboard}->setAttr(name => "motherboard_internal_ip", value => $motherboard_ip);
+
 	my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcp3_subnet_id => $subnet);
 
     my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
@@ -578,7 +578,7 @@ sub _generateHosts {
 	foreach my $i (keys %$nodes) {
 		my $tmp = {hostname 	=> $nodes->{$i}->getAttr(name => 'motherboard_hostname'),
 				   domainname	=> "hedera-technology.com",
-				   ip			=> $nodes->{$i}->getAttr(name => 'motherboard_internal_ip')};
+				   ip			=> $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
 		push @nodes_list, $tmp;
 	}
 	$log->debug(Dumper($vars));

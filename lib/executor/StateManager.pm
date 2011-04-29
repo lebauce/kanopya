@@ -127,7 +127,7 @@ sub checkNodeUp {
     my $protoToTest;
     my $node_available = 1;    
 
-    my $node_ip = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
+    my $node_ip = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
    	foreach my $i (keys %$components) {
    	    print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
 		if ($components->{$i}->can("getNetConf")) {

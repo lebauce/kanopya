@@ -345,6 +345,7 @@ sub getNetConf{
     return {80=>'tcp'};
 }
 
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
