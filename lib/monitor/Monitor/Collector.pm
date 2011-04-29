@@ -401,6 +401,7 @@ sub updateClusterData{
 	my %args = @_;
 	
 	my ($cluster, $hosts_values, $collect_time ) = ($args{cluster}, $args{hosts_values}, $args{collect_time});
+	my $cluster_name = $cluster->getAttr( name => "cluster_name" );
 	
 	my @mbs = values %{ $cluster->getMotherboards( ) };
 	my @in_node_mb = grep { $_->getNodeState() eq 'in' } @mbs; 
@@ -409,7 +410,7 @@ sub updateClusterData{
 	# Group indicators values by set
 	my %sets;
 	foreach my $mb (@in_node_mb) {
-		my $host_ip = $mb->getAttr( name => "motherboard_internal_ip" );
+		my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
 		my @sets_name = keys %{ $hosts_values->{ $host_ip } };
 		foreach my $set_name ( @sets_name ) {	
 			push @{$sets{$set_name}}, $hosts_values->{ $host_ip }{$set_name};
@@ -444,7 +445,7 @@ sub updateClusterData{
 	}
 	
 	# log cluster nodes state
-	my @state_log = map { 	$_->getAttr( name => "motherboard_internal_ip" ) .
+	my @state_log = map { 	$_->getInternalIP()->{ipv4_internal_address} .
 							"(" . $_->getAttr( name => "motherboard_state" ) .
 							", node:" .  $_->getNodeState() . ")"
 						} @mbs;
@@ -524,7 +525,7 @@ sub update {
 			# Collect data for nodes in the cluster
 			foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
 				if ( $mb->getNodeState() eq 'in' ) {
-					my $host_ip = $mb->getAttr( name => "motherboard_internal_ip" );
+					my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
 					my $ret = $self->updateHostData(
 								host_ip => $host_ip,
 								host_state => $mb->getAttr( name => "motherboard_state" ),
