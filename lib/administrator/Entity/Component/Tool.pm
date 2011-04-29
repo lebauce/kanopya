@@ -1,4 +1,4 @@
-# Library.pm - Library component generalisation
+# Tool.pm - Tool component generalisation
 # Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
 
 # This program is free software; you can redistribute it and/or modify
@@ -20,19 +20,19 @@
 # Created 7 sept 2010
 =head1 NAME
 
-<Entity::Component::Library> – <General class for component abstraction>
+<Entity::Component::Tool> – <General class for component abstraction>
 
 =head1 VERSION
 
-This documentation refers to <Entity::Component::Library> version 1.0.0.
+This documentation refers to <Entity::Component::Tool> version 1.0.0.
 
 =head1 SYNOPSIS
 
-use <Entity::Component::Library>;
+use <Entity::Component::Tool>;
 
 my $component_instance_id = 2; # component instance id
 
-Entity::Component::Library->get(id=>$component_instance_id);
+Entity::Component::Tool->get(id=>$component_instance_id);
 
 # Cluster id
 
@@ -42,16 +42,16 @@ my $cluster_id = 3;
 
 my $component_id =2 
 
-Entity::Component::Library->new(component_id=>$component_id, cluster_id=>$cluster_id);
+Entity::Component::Tool->new(component_id=>$component_id, cluster_id=>$cluster_id);
 
 =head1 DESCRIPTION
 
-Entity::Component::Library is an abstract class of component objects
+Entity::Component::Tool is an abstract class of component objects
 
 =head1 METHODS
 
 =cut
-package Entity::Component::Library;
+package Entity::Component::Tool;
 use base "Entity::Component";
 
 use strict;

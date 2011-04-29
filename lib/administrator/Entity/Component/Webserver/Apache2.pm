@@ -188,7 +188,6 @@ B<Return>  : hash ref containing apache 2 general conf, hash is composed by :
         (debug, info, notice, warn, error, crit,  alert, emerg)
     B<apache2_serverroot> : I<String> : directory hosting apache2 root document.
     B<apache2_ports> : I<int> : Apache 2 port HTTP number
-    B<apache2_phpsession_dir> : I<String> : directory containing php sessions.
     B<apache2_sslports> : I<Int> : fApache 2 port SSL number.
 B<Comment>  : None
 B<throws>  : 
@@ -218,7 +217,6 @@ B<Return>  : hash ref containing apache 2 global conf, hash is composed by :
         (debug, info, notice, warn, error, crit,  alert, emerg)
     B<apache2_serverroot> : I<String> : directory hosting apache2 root document.
     B<apache2_ports> : I<int> : Apache 2 port HTTP number
-    B<apache2_phpsession_dir> : I<String> : directory containing php sessions.
     B<apache2_sslports> : I<Int> : Apache 2 port SSL number.
     B<apache2_virtualhosts> : I<Table of hash ref> : Containing virtualhost, composed by :
         B<apache2_virtualhost_servername> : I<String> : Virtualhost server name
@@ -239,7 +237,6 @@ sub getConf {
 		apache2_serverroot => undef,
 		apache2_ports => undef,
 		apache2_sslports => undef,
-		apache2_phpsession_dir => undef,
 		apache2_virtualhosts => [
 			{ apache2_virtualhost_id => undef,
 			  apache2_virtualhost_servername => undef,
@@ -280,7 +277,6 @@ B<args>    : hash ref containing apache 2 global conf, hash is composed by :
         (debug, info, notice, warn, error, crit,  alert, emerg)
     B<apache2_serverroot> : I<String> : directory hosting apache2 root document.
     B<apache2_ports> : I<int> : Apache 2 port HTTP number
-    B<apache2_phpsession_dir> : I<String> : directory containing php sessions.
     B<apache2_sslports> : I<Int> : Apache 2 port SSL number.
     B<apache2_virtualhosts> : I<Table of hash ref> : Containing virtualhost, composed by :
         B<apache2_virtualhost_servername> : I<String> : Virtualhost server name

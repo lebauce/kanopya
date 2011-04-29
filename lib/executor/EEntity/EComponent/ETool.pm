@@ -1,4 +1,4 @@
-package EEntity::EComponent::ELibrary;
+package EEntity::EComponent::ETool;
 
 use strict;
 
