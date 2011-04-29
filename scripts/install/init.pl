@@ -22,7 +22,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 #This scripts has to be executed as root or with sudo, after Kanopya's installation through a package manager.
-#it's goal is to generate administrator.conf, to create kanopya system user and then to populate the database.
+#it's goal is to generate configuration files, to create kanopya system user and then to populate the database.
 #@Date: 23/02/2011
 
 use strict;
@@ -101,9 +101,6 @@ if ($answers->{log_directory} !~ /\/$/){
 system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating the logging directory: $!";
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
 print "done\n";
-#TEMPORARY we put webui-log.conf file in the /opt/kanopya/conf/ dir (cf ui/web/cgi/kanopya.cgi)
-system ('mkdir -p /opt/kanopya/conf') == 0 or die "$!";
-#system ('cp /etc/kanopya/webui-log.conf /opt/kanopya/conf/') == 0 or die "$!";
 
 ########################
 #Services configuration#
@@ -149,11 +146,11 @@ close ($FILE);
 my %datas = (kanopya_vg_name => $answers->{vg}, kanopya_vg_size => $kanopya_vg_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $internal_ip_add, ipv4_internal_netmask => $answers->{internal_net_mask}, ipv4_internal_network_ip => $answers->{internal_net_add}, admin_domainname => $answers->{kanopya_server_domain_name}, mb_hw_address => $internal_net_interface_mac_add);
 useTemplate(template => 'Data.sql.tt', datas => \%datas, conf => $conf_vars->{data_sql}, include => $conf_vars->{data_dir});
 #Creation of database user
-print "creating mysql user...\n";
+print "creating mysql user, please insert root password...\n";
 system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p -e \"CREATE USER '$answers->{dbuser}' IDENTIFIED BY '$answers->{dbpassword1}'\"") == 0 or die "error while creating mysql user: $!";
 print "done\n";
 #We grant all privileges to administrator database for $db_user
-print "granting all privileges on administrator database to $answers->{dbuser}...\n";
+print "granting all privileges on administrator database to $answers->{dbuser}, please insert root password...\n";
 system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
 print "done\n";
 #We now generate the database schemas
@@ -180,8 +177,9 @@ print "done\n";
 #######################
 #Services manipulation#
 #######################
-# We stop inetd as it will avoid atftpd to work properly
-system('invoke-rc.d inetutils-inetd stop');
+# We remove the initial tftp line from inetd conf file and restart the service
+system('sed -i s/^tftp.*// /etc/inetd.conf');
+system('invoke-rc.d inetutils-inetd restart');
 # We restart atftpd with the new configuration
 system('invoke-rc.d atftpd restart');
 # Launching Kanopya's init scripts
@@ -388,6 +386,7 @@ sub default_error{
 ###################################################### Following functions generates conf files for Kanopya
 
 sub genConf {
+	unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir};
 	my %datas;
 	print $conf_vars->{apache_user}."\n";
 	foreach my $files (keys %$conf_files){
