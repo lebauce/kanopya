@@ -424,6 +424,7 @@ sub update {
 		# Update data for each host #
 		#############################
 		my %hosts_values = ();
+		my %threads = ();
 		my @clusters = Entity::Cluster->getClusters( hash => { } );
 		foreach my $cluster (@clusters) {
 			$log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
