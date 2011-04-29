@@ -350,6 +350,17 @@ sub getTemplateDataKeepalived {
 	return $data;	  
 }
 
+# Insert default configuration in db for this component 
+sub insertDefaultConfiguration() {
+	my $self = shift;
+	
+	my $default_conf = {
+		daemon_method => 'master',
+	};
+	
+	$self->{_dbix}->create_related('keepalived1', $default_conf);
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

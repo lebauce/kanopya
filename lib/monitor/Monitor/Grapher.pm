@@ -847,7 +847,7 @@ sub run {
 	my $running = shift;
 	
 	my $adm = $self->{_admin};
-	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopia Grapher started.");
+	$adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopya Grapher started.");
 	
 	while ( $$running ) {
 
@@ -865,7 +865,7 @@ sub run {
 
 	}
 	
-	$adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopia Grapher stopped");
+	$adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopya Grapher stopped");
 }
 
 1;

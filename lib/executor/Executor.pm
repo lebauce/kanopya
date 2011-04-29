@@ -113,7 +113,7 @@ sub run {
 	my $running = shift;
 	
 	my $adm = Administrator->new();
-	$adm->addMessage(from => 'Executor', level => 'info', content => "Kanopia Executor started.");
+	$adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
    	while ($$running) {
    		my $opdata = Operation::getNextOp();
    		if ($opdata){
@@ -162,7 +162,7 @@ sub run {
    		else { sleep 5; }
    	}
    	$log->debug("condition become false : $$running"); 
-   	$adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopia Executor stopped");
+   	$adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopya Executor stopped");
 }
 
 =head2 execnrun
