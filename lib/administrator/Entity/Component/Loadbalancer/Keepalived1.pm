@@ -355,7 +355,9 @@ sub insertDefaultConfiguration() {
 	my $self = shift;
 	
 	my $default_conf = {
-		daemon_method => 'master',
+		daemon_method => 'both',
+		iface => 'eth0',
+		smtp_server => '10.0.0.1',
 	};
 	
 	$self->{_dbix}->create_related('keepalived1', $default_conf);
