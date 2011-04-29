@@ -87,10 +87,10 @@ my @c = split("/",$internal_ip_add->first);
 $internal_ip_add = $c[0];
 print "done (first host address is $internal_ip_add)\n";
 print "setting up $answers->{internal_net_interface} ...";
-system ("ifconfig $answers{internal_net_interface} $internal_ip_add") == 0 or die "an error occured while trying to set up nic ($answers->{internal_net_interface}) address: $!";
+system ("ifconfig $answers->{internal_net_interface} $internal_ip_add") == 0 or die "an error occured while trying to set up nic ($answers->{internal_net_interface}) address: $!";
 print "done\n";
 #We gather the NIC's MAC address
-my $internal_net_interface_mac_add = `ip link list dev $internal_net_interface | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
+my $internal_net_interface_mac_add = `ip link list dev $answers->{internal_net_interface} | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
 
 #Directory manipulations
 #Then we create the logging directory and give rights to apache on it
