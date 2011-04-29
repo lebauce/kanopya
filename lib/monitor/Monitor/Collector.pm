@@ -411,44 +411,70 @@ sub update {
 	
 	eval {
 
-		my %hosts_by_cluster = $self->retrieveHostsByCluster();
-		
-		if ( 0 == scalar keys %hosts_by_cluster ) {
-			$log->info(" # No cluster to monitor => quit\n");
-			return;
-		}
-		
 		my $monitor_manager = $self->{_admin}->{manager}{monitor};
+		
+		
+#		my %hosts_by_cluster = $self->retrieveHostsByCluster();
+#		if ( 0 == scalar keys %hosts_by_cluster ) {
+#			$log->info(" # No cluster to monitor => quit\n");
+#			return;
+#		}
 		
 		#############################
 		# Update data for each host #
 		#############################
-		my %threads = ();
-		while ( my ($cluster_name, $cluster_nodes) = each %hosts_by_cluster ) {
-			#TODO keep cluster id from the beginning (get by name is not really good)
-			my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster_name } )->getAttr( name => "cluster_id");
-			my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster_id );
-			for my $host_info (values %$cluster_nodes) {
-				# We create a thread for each host to don't block update if a host is unreachable
-				#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
-				my $thr = threads->create( 	'updateHostData',
-											$self,
-											host_ip => $host_info->{ip},
-											host_state => $host_info->{state},
-											components => $host_info->{components},
-											sets => $monitored_sets );
-				$threads{$host_info->{ip}} = $thr;
-			}
-		}		
-
-		############################
-		# Wait end of all threads  #
-		############################
+#		my %threads = ();
+#		while ( my ($cluster_name, $cluster_nodes) = each %hosts_by_cluster ) {
+#			#TODO keep cluster id from the beginning (get by name is not really good)
+#			my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster_name } )->getAttr( name => "cluster_id");
+#			my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster_id );
+#			for my $host_info (values %$cluster_nodes) {
+#				# We create a thread for each host to don't block update if a host is unreachable
+#				#TODO vérifier les perfs et l'utilisation memoire (duplication des données pour chaque thread), comparer avec fork
+#				my $thr = threads->create( 	'updateHostData',
+#											$self,
+#											host_ip => $host_info->{ip},
+#											host_state => $host_info->{state},
+#											components => $host_info->{components},
+#											sets => $monitored_sets );
+#				$threads{$host_info->{ip}} = $thr;
+#			}
+#		}		
+#
+#		############################
+#		# Wait end of all threads  #
+#		############################
+#		my %hosts_values = ();
+#
+#		while ( my ($host_ip, $thr) = each %threads ) {
+#			my $ret = $thr->join();
+#			$hosts_values{ $host_ip } = $ret;
+#		}
+		
+		##################################
+		#################################
 		my %hosts_values = ();
-
-		while ( my ($host_ip, $thr) = each %threads ) {
-			my $ret = $thr->join();
-			$hosts_values{ $host_ip } = $ret;
+		my @clusters = Entity::Cluster->getClusters( hash => { } );
+		foreach my $cluster (@clusters) {
+			$log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
+			# Get set to monitor for this cluster
+			my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster->getAttr( name => "cluster_id") );
+			# Get components of this cluster
+			my $components = $cluster->getComponents(category => 'all');
+			my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
+			# Collect data for nodes in the cluster
+			foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
+				if ($mb->getNodeState() eq 'in') {
+					my $host_ip = $mb->getAttr( name => "motherboard_internal_ip" );
+					my $ret = $self->updateHostData(
+								host_ip => $host_ip,
+								host_state => $mb->getAttr( name => "motherboard_state" ),
+								components => \@components_name,
+								sets => $monitored_sets
+					);
+					$hosts_values{ $host_ip } = $ret;
+				}
+			}
 		}
 		
 		#################################################################
@@ -456,7 +482,7 @@ sub update {
 		#################################################################
 		# Retrieve clusters info again to be up to date (nodes state may change during update)	
 		my $time = time();
-		%hosts_by_cluster = $self->retrieveHostsByCluster();
+		my %hosts_by_cluster = $self->retrieveHostsByCluster();
 		while ( my ($cluster_name, $cluster_info) = each %hosts_by_cluster ) {
 			
 			$self->updateClusterData( cluster_name => $cluster_name,
