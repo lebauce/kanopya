@@ -386,9 +386,8 @@ sub default_error{
 ###################################################### Following functions generates conf files for Kanopya
 
 sub genConf {
-	unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir};
+	unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir}};
 	my %datas;
-	print $conf_vars->{apache_user}."\n";
 	foreach my $files (keys %$conf_files){
 		foreach my $d (keys %{$conf_files->{$files}->{datas}}){
 			%datas->{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
