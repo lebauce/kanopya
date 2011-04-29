@@ -301,10 +301,10 @@ sub updateClusterNodeCount {
 		
 	}
 		
-	my $up_count = scalar grep { $_ =~ 'up' } @$nodes_state;
-	my $starting_count = scalar grep { $_ =~ 'starting' } @$nodes_state;
-	my $stopping_count = scalar grep { $_ =~ 'stopping' } @$nodes_state;
-	my $broken_count = scalar grep { $_ =~ 'broken' } @$nodes_state;
+	my $up_count = scalar grep { $_ eq 'in' } @$nodes_state;
+	my $starting_count = scalar grep { $_ =~ 'goingin' } @$nodes_state;
+	my $stopping_count = scalar grep { $_ =~ 'goingout' } @$nodes_state;
+	my $broken_count = scalar grep { $_ eq 'broken' } @$nodes_state;
 
 	# we want update the rrd at time multiple of time_step (to avoid rrd extrapolation)
 	my $time = time();
@@ -339,7 +339,7 @@ sub updateClusterNodeCount {
 	
 =cut
 
-sub updateClusterData {
+sub updateClusterData_OLD {
 	my $self = shift;
 	my %args = @_;
 	
@@ -394,6 +394,65 @@ sub updateClusterData {
 	my @nodes_state = map { $_->{state} } values %$cluster_info;
 	$self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state )	
 			
+}
+
+sub updateClusterData{
+	my $self = shift;
+	my %args = @_;
+	
+	my ($cluster, $hosts_values, $collect_time ) = ($args{cluster}, $args{hosts_values}, $args{collect_time});
+	
+	my @mbs = values %{ $cluster->getMotherboards( ) };
+	my @in_node_mb = grep { $_->getNodeState() eq 'in' } @mbs; 
+	
+	
+	# Group indicators values by set
+	my %sets;
+	foreach my $mb (@in_node_mb) {
+		my $host_ip = $mb->getAttr( name => "motherboard_internal_ip" );
+		my @sets_name = keys %{ $hosts_values->{ $host_ip } };
+		foreach my $set_name ( @sets_name ) {	
+			push @{$sets{$set_name}}, $hosts_values->{ $host_ip }{$set_name};
+		}
+	}
+	
+	# For each sets, aggregate values and store 
+	SET:
+	while ( my ($set_name, $sets_list) = each %sets ) {
+				
+		if ( scalar @in_node_mb != scalar @$sets_list ) {
+			$log->warn("During aggregation => missing set '$set_name' for one node of cluster '$cluster_name'. Cluster aggregated values for this set as considered undef.");
+			next SET;
+		}
+					
+		my %aggreg_mean = $self->aggregate( hash_list => $sets_list, f => 'mean' );
+		my %aggreg_sum = $self->aggregate( hash_list => $sets_list, f => 'sum' );
+	
+		next SET if ( scalar grep { not defined $_ } values %aggreg_sum );
+	    		
+	    my $base_rrd_name = $self->rrdName( set_name => $set_name, host_name => $cluster_name );
+	    my $mean_rrd_name = $base_rrd_name . "_avg";
+	    my $sum_rrd_name = $base_rrd_name . "_total";
+		eval {
+			$self->updateRRD( rrd_name => $mean_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $collect_time, data => \%aggreg_mean);
+			$self->updateRRD( rrd_name => $sum_rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => $collect_time, data => \%aggreg_sum);
+		};
+		if ($@){
+			my $error = $@;
+			$log->error("Update cluster rrd error => $error");
+		}
+	}
+	
+	# log cluster nodes state
+	my @state_log = map { 	$_->getAttr( name => "motherboard_internal_ip" ) .
+							"(" . $_->getAttr( name => "motherboard_state" ) .
+							", node:" .  $_->getNodeState() . ")"
+						} @mbs;
+	$log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
+	
+	# update cluster node count
+	my @nodes_state = map { $_->getNodeState() } @mbs;
+	$self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state )	
 }
 
 =head2 udpate
@@ -464,7 +523,7 @@ sub update {
 			my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
 			# Collect data for nodes in the cluster
 			foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
-				if ($mb->getNodeState() eq 'in') {
+				if ( $mb->getNodeState() eq 'in' ) {
 					my $host_ip = $mb->getAttr( name => "motherboard_internal_ip" );
 					my $ret = $self->updateHostData(
 								host_ip => $host_ip,
@@ -475,6 +534,16 @@ sub update {
 					$hosts_values{ $host_ip } = $ret;
 				}
 			}
+		}
+		
+		############################################
+		############################################
+		foreach my $cluster (@clusters) {
+				$self->updateClusterData( 	
+											cluster => $cluster,
+									  		hosts_values => \%hosts_values,
+									  		collect_time => $start_time, 
+									  	);
 		}
 		
 		#################################################################
