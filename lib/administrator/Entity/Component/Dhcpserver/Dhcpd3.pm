@@ -188,7 +188,7 @@ sub getConf {
 	$data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
 	$data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');
 	my $ipv4_internal_id = $cluster->search_related("nodes", { master_node => 1 })->single->motherboard->get_column('motherboard_ipv4_internal_id');
-	$data->{server_ip}= $adm->{manager}->{network}->getInternalIP(motherboard_ipv4_internal_id => $ipv4_internal_id)->{ipv4_internal_address};
+	$data->{server_ip}= $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $ipv4_internal_id)->{ipv4_internal_address};
 	
 	my $subnets = $dhcpd3->dhcpd3_subnets;
 	my @data_subnets = ();
