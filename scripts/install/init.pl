@@ -39,16 +39,17 @@ my $conf_vars = $install_conf->{general_conf};
 my $conf_files = $install_conf->{genfiles};
 my $answers ={};
 
-my %param_test = (dbuser => \&matchRegexp,
-                  dbpassword1 => sub {},
-                  dbpassword2 => \&comparePassword,
-                  dbip => \&checkIpOrHostname,
-                  dbport => \&checkPort,
+my %param_test = (dbuser        => \&matchRegexp,
+                  dbpassword1   => sub {},
+                  dbpassword2   => \&comparePassword,
+                  dbip          => \&checkIpOrHostname,
+                  dbport        => \&checkPort,
                   kanopya_server_domain_name=> \&matchRegexp,
                   internal_net_interface => \&matchRegexp,
                   internal_net_add => \&checkIp,
                   internal_net_mask => \&checkIp,
-                  log_directory => \&matchRegexp);
+                  log_directory => \&matchRegexp,
+                  vg    => \&matchRegexp);
 
 printInitStruct();
 #Welcome message - accepting Licence is mandatory
@@ -59,6 +60,7 @@ getConf();
 #printAnswers();
 #Function used to generate conf files 
 genConf();
+
 
 ###############
 #Network setup#
@@ -73,8 +75,11 @@ system ("ifconfig $answers->{internal_net_interface} $internal_ip_add") == 0 or 
 print "done\n";
 #We gather the NIC's MAC address
 my $internal_net_interface_mac_add = `ip link list dev $answers->{internal_net_interface} | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
-
 chomp($internal_net_interface_mac_add);
+
+
+#######################
+# VG Analysis
 #We gather the vg's size and free space:
 my $kanopya_vg_sizes= `vgs --noheadings $answers->{vg} --units m -o vg_size,vg_free --nosuffix --separator '|'`;
 chomp($kanopya_vg_sizes);
@@ -83,6 +88,7 @@ $kanopya_vg_sizes=~ s/^\s+//;
 #We gather pv's present in the vg
 my @kanopya_pvs= `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
 chomp(@kanopya_pvs);
+
 
 #########################
 #Directory manipulations#
@@ -96,18 +102,18 @@ system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating 
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
 print "done\n";
 #TEMPORARY we put webui-log.conf file in the /opt/kanopya/conf/ dir (cf ui/web/cgi/kanopya.cgi)
-system ('mkdir /opt/kanopya/conf') == 0 or die "$!";
-system ('cp /etc/kanopya/webui-log.conf /opt/kanopya/conf/') == 0 or die "$!";
+system ('mkdir -p /opt/kanopya/conf') == 0 or die "$!";
+#system ('cp /etc/kanopya/webui-log.conf /opt/kanopya/conf/') == 0 or die "$!";
 
 ########################
 #Services configuration#
 ########################
 #We configure dhcp server with the gathered informations
 #As conf file changes from lenny to squeeze, we need to handle both cases
-open (FILE, "</etc/debian_version") or die "error while opening /etc/debian_version: $!";
+open (my $FILE, "<","/etc/debian_version") or die "error while opening /etc/debian_version: $!";
 my $line;
 my $debian_version;
-while ($line = <FILE>){
+while ($line = <$FILE>){
         if ($line =~ m/^6\./ || $line =~ m/^squeeze/){
                 print 'version stable: '.$line."\n";
                 $debian_version = 'squeeze';
@@ -116,22 +122,25 @@ while ($line = <FILE>){
                 $debian_version = 'lenny';
         }
 }
+close ($FILE);
 if ($debian_version eq 'squeeze'){
-        open (FILE, ">/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
-        print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
+        open (my $FILE, ">","/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
+        print $FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
         system('invoke-rc.d isc-dhcp-server restart');
+        close ($FILE);
 }elsif ($debian_version eq 'lenny'){
-        open (FILE, ">/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
-        print FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
+        open (my $FILE, ">","/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
+        print $FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
         system('invoke-rc.d dhcpd restart');
+        close ($FILE);
 }else{
         print 'we can\'t determine the Debian version you are running, please check /etc/debian_version';
 }
-close (FILE);
+
 #Atftpd configuration
-open (FILE, ">/etc/default/atftpd") or die "an error occured while opening /etc/default/atftpd: $!";
-print FILE "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $internal_ip_add --maxthread 100 --verbose=5 --logfile=/var/log/tftp.log /tftp\"";
-close (FILE);
+open ($FILE, ">","/etc/default/atftpd") or die "an error occured while opening /etc/default/atftpd: $!";
+print $FILE "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $internal_ip_add --maxthread 100 --verbose=5 --logfile=/var/log/tftp.log /tftp\"";
+close ($FILE);
 
 ########################
 #Database configuration#
@@ -153,16 +162,16 @@ system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{sc
 print "done\n";
 #We now generate the components schemas 
 print "loading component DB schemas...";
-open (FILE, "<$conf_vars->{comp_conf}") or die "error while opening components.conf: $!";
-LINE:
-while( defined( $line = <FILE> ) )
+open ($FILE, "<","$conf_vars->{comp_conf}") or die "error while opening components.conf: $!";
+
+while( defined( $line = <$FILE> ) )
 {
         chomp ($line);
         print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
         system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
         print "done\n";
 }
-close(FILE);
+close($FILE);
 print "components DB schemas loaded\n";
 #And to conclude, we insert initial datas in the DB
 print "inserting initial datas...";
@@ -232,8 +241,12 @@ sub getConf{
                 print "Script will discover your configuration\n";
                 $answers->{$question} = `$questions->{$question}->{search_command}`;
             } else {
-                print "Use default value\n";
-                $answers->{$question} = $questions->{$question}->{default};
+                if ($questions->{$question}->{is_searchable} eq "n"){
+                    $answers->{$question} = 0;
+                }
+                else {
+                #print "Use default value\n";
+                $answers->{$question} = $questions->{$question}->{default};}
             }
             chomp($answers->{$question});
         }
@@ -334,10 +347,10 @@ sub comparePassword{
         default_error();
     }
     if ($answers->{$args{question}} ne $answers->{'dbpassword1'}){
-        print "Password <".$answers->{$args{question}}."> and <".$answers->{'dbpassword1'}."> are differents\n";
+        print "Passwords are differents\n";
         return 1;
     }
-    return 0;
+    exit 0;
 }
 
 # When no check method are defined in param_test structure.
