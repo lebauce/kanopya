@@ -702,7 +702,7 @@ sub addNode {
     	cluster_id => $self->getAttr(name =>"cluster_id"),
     	motherboard_id => $args{motherboard_id}, 
     );
-    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
+    $log->debug("New Operation PreStartNode with attrs : " . %params);
 
     Operation->enqueue(
     	priority => 200,

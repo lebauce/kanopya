@@ -48,7 +48,7 @@ use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
 use Entity::Motherboard;
-
+use Operation;
 use strict;
 use warnings;
 
@@ -150,6 +150,13 @@ sub prepare {
     if (! $master_node_id && $node_count){
         $errmsg = "No master node when motherboard <$params->{motherboard_id}> migrating, pls wait...";
 		$log->error($errmsg);
+		my %params = ( cluster_id => $params->{cluster_id},
+    	               motherboard_id => $params->{motherboard_id},);
+        $log->debug("New Operation PreStartNode with attrs : " . %params);
+        Operation->enqueue(
+            priority => 200,
+            type     => 'PreStartNode',
+            params   => \%params);
 		throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -178,19 +185,13 @@ sub execute {
 
 sub finish {
     my $self = shift;
-#    my $masternode;
-
-#	if ($self->{_objs}->{cluster}->getMasterNodeId()) {
-#		$masternode = 0;
-#	} else {
-#		$masternode =1;
-#	}
     
 	$self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
                           					  master_node => 0);
     $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingin");
-#	$self->{_objs}->{motherboard}->save();
+
 }
+
 
 1;
 __END__

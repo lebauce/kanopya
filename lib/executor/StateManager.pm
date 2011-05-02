@@ -177,8 +177,8 @@ sub run {
 		  	};
 		  	if($@) {
 		  		my $exception = $@;
-		  		if(Kanopya::Exception::OperationAlreadyEnqueued->caught()) { next; }
-		  		else { $exception->rethrow(); }
+		  		$adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
+   				$log->error($exception);
 		  	}
    	    }
 
@@ -189,9 +189,6 @@ sub run {
    	        my $motherboards = $cluster->getMotherboards();
    	        my @moth_index = keys %$motherboards;
    	        foreach my $mb (@moth_index) {
-#				my $pingable = checkMotherboardUp(ip => $motherboards->{$mb}->getAttr( name => 'motherboard_internal_ip' ));
-#				print "Pingable : $pingable for motherboard ".$motherboards->{$mb}->getAttr( name => 'motherboard_internal_ip' ) ." state " . $motherboards->{$mb}->getAttr(name=>"motherboard_state")."\n";
-#		        updateMotherboardStatus(pingable => $pingable, motherboard=>$motherboards->{$mb});
 		        eval {
 		        	my $srv_available = checkNodeUp(motherboard=>$motherboards->{$mb}, 
 		        	                                cluster=>$cluster,
@@ -199,15 +196,12 @@ sub run {
 		        	updateNodeStatus(motherboard=>$motherboards->{$mb}, services_available => $srv_available, cluster => $cluster);
 		        };
 		        if($@) {
-		        	my $exception = $@;
-		        	if(Kanopya::Exception::OperationAlreadyEnqueued->caught()) { next; }
-		        	else { $exception->rethrow(); }
+		            my $exception = $@;
+		            $adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
+		            $log->error($exception);
 		        }
    	        }
    	    }
-#   	    my @motherboards = Entity::Motherboard->getMotherboards(hash => {-or => [motherboard_state => {'like','starting%'},
-#   	                                                                             motherboard_state => {'like','stopping%'},
-#   	                                                                             motherboard_state => {'like','broken'}]});
    		sleep 10;
    	}
 
@@ -222,9 +216,12 @@ sub motherboardBroken{
             $errmsg = "StateManager::motherboardBroken need a motherboard named argument!";	
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-        print "motherboard". $args{motherboard}->getAttr(name=>"motherboard_mac_address")." broken\n";
-    $args{motherboard}->setAttr(name=>"motherboard_state", value => "broken");
+    }
+    my $mb_mac = $args{motherboard}->getAttr(name=>"motherboard_mac_address");
+    print "motherboard". $mb_mac." broken\n";
+    my $adm = Administrator->new();
+	$adm->addMessage(from => 'State-manager', level => 'info', content => "Motherboard with mac address <$mb_mac> is now broken");
+    $args{motherboard}->setAttr(name=>"motherboard_state", value => "broken:".time);
     $args{motherboard}->save();
 }
 
@@ -284,7 +281,7 @@ sub nodeBroken{
 		    throw Kanopya::Exception::Internal(error => $errmsg);
         }
     print "motherboard". $args{motherboard}->getAttr(name=>"motherboard_mac_address")." broken\n";
-    $args{motherboard}->setNodeState(state => "broken");
+    $args{motherboard}->setNodeState(state => "broken:".time);
 }
 
 sub nodeRepaired{
@@ -358,7 +355,8 @@ sub testPreGoingInNode {
     my $cluster_ready = 1;
 
    	foreach my $i (keys %$components) {
-        $cluster_ready = $components->{$i}->readyNodeAddition(motherboard_id => $args{motherboard}->getAttr(name => "motherboard_id")) && $cluster_ready;
+   	    if ($cluster_ready){
+        $cluster_ready = $components->{$i}->readyNodeAddition(motherboard_id => $args{motherboard}->getAttr(name => "motherboard_id"));}
    	    $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
 	}
 
@@ -370,8 +368,7 @@ sub testPreGoingInNode {
     	priority => 200,
         type     => 'StartNode',
         params   => {cluster_id => $args{cluster}->getAttr(name=>'cluster_id'),
-                     motherboard_id => $args{motherboard}->getAttr(name=>'motherboard_id')},
-                     );
+                     motherboard_id => $args{motherboard}->getAttr(name=>'motherboard_id')});
     }
 }
 

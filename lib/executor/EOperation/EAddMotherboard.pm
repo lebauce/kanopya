@@ -176,6 +176,8 @@ sub prepare {
 	$self->{nas} = {};
 	$self->{executor} = {};
 	
+	$self->{erollback} = ERollback->new();
+	
 	# First review params 
 	## Put in lowcase mac address
 	$params->{motherboard_mac_address} = lc($params->{motherboard_mac_address});
@@ -257,24 +259,34 @@ sub execute{
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
 
-
-	#TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
-	my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $self->{_objs}->{motherboard}->getEtcName(),
-													size => "52M",
-													filesystem => "ext3",
-													econtext => $self->{nas}->{econtext});
+    eval {
+        #TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
+        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $self->{_objs}->{motherboard}->getEtcName(),
+                                                                    size        => "52M",
+                                                                    filesystem  => "ext3",
+                                                                    econtext    => $self->{nas}->{econtext});
+        my $func = $self->{_objs}->{component_storage}->removeDisk;
+	    $self->{erollback}->add(function   =>\&$func,
+	                            parameters => { name       => $self->{_objs}->{motherboard}->getEtcName(),
+	                                            econtext   => $self->{nas}->{econtext}});
+        $self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
 	
-	$self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
-	
-	if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
-		(exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})){
-			
-		my $powersupplycard_id = 1;
-		my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(powersupplyport_number => $self->{_objs}->{powersupplyport_number});
-		$self->{_objs}->{motherboard}->setAttr(name=>'motherboard_powersupply_id', value=>$powersupply_id);
-	}
-	# AddMotherboard finish, just save the Entity in DB
-	$self->{_objs}->{motherboard}->save();
+        if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
+            (exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})){
+            my $powersupplycard_id = 1;
+            my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(powersupplyport_number => $self->{_objs}->{powersupplyport_number});
+            $self->{_objs}->{motherboard}->setAttr(name=>'motherboard_powersupply_id', value=>$powersupply_id);
+        }
+        # AddMotherboard finish, just save the Entity in DB
+        $self->{_objs}->{motherboard}->save();
+    };
+    if ($@){
+        my $error = $@;
+		$errmsg = "Operation EAddMotherboard failed an error occured :\n$error";
+		$log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $self->{erollback}->undo();
+    }
 }
 
 =head1 DIAGNOSTICS

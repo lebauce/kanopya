@@ -1,9 +1,11 @@
 package EEntity::EComponent::EStorage::ELvm2;
+use base "EEntity::EComponent::EStorage";
 
 use strict;
 use Data::Dumper;
-use base "EEntity::EComponent::EStorage";
 use Log::Log4perl "get_logger";
+
+use Kanopya::Exceptions;
 my $log = get_logger("executor");
 my $errmsg;
 # contructor
@@ -39,7 +41,7 @@ sub createDisk {
 		(! exists $args{econtext} or ! defined $args{econtext})) { 
 		$errmsg = "ELvm2->createDisk need a name, size and filesystem named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $vg = $self->_getEntity()->getMainVg();
 	return $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
@@ -65,7 +67,7 @@ sub removeDisk{
 		(! exists $args{econtext} or ! defined $args{econtext})) { 
 		$errmsg = "ELvm2->removeDisk need a name and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $vg = $self->_getEntity()->getMainVg();
 
@@ -99,7 +101,7 @@ sub lvCreate{
 		(! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
 		$errmsg = "ELvm2->createLV need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	$log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
@@ -109,7 +111,7 @@ sub lvCreate{
 	if($ret->{exitcode} != 0) {
 		my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
 		$log->error($errmsg);
-		throw Mcs::Exception::Execution(error => $errmsg);
+		throw Kanopya::Exception::Execution(error => $errmsg);
 	}
 	
 	my $newdevice = "/dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
@@ -146,14 +148,14 @@ sub vgSpaceUpdate {
 		(! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
 		$errmsg = "ELvm2->vgSpaceUpdate need a econtext, lvm2_vg_id and lvm2_vg_name named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $command = "vgs $args{lvm2_vg_name} --noheadings -o vg_free --nosuffix --units M --rows";
 	my $ret = $args{econtext}->execute(command => $command);
 	if($ret->{exitcode} != 0) {
 		my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
 		$log->error($errmsg);
-		throw Mcs::Exception::Execution(error => $errmsg);
+		throw Kanopya::Exception::Execution(error => $errmsg);
 	}
 	my $freespace = $ret->{stdout};
 	chomp $freespace;
@@ -183,7 +185,7 @@ sub lvRemove{
 		(! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
 		$errmsg = "ELvm2->removeLV need a lvm2_lv_name, lvm2_vg_id, econtext and lvm2_vg_name named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	$log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
@@ -215,7 +217,7 @@ sub mkfs {
 		(! exists $args{econtext} or ! defined $args{econtext})) { 
 		$errmsg = "ELvm2->_mkfs need a device, fstype and econtext named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $command = "mkfs -t $args{fstype} ";
@@ -227,7 +229,7 @@ sub mkfs {
 	if($ret->{exitcode} != 0) {
 		my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
 		$log->error($errmsg);
-		throw Mcs::Exception::Execution(error => $errmsg);
+		throw Kanopya::Exception::Execution(error => $errmsg);
 	}
 }
 

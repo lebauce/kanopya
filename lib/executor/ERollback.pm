@@ -36,15 +36,14 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
+
 
 my $log = get_logger("executor");
 my $errmsg;
 
-use lib "../../Common/Lib";
-use McsExceptions;
+use Kanopya::Exceptions;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $VERSION = "1.00";
 
 =head2 new
 
@@ -79,7 +78,7 @@ sub add {
 	   (! exists $args{parameters} or ! defined $args{parameters})) {
 		$errmsg = "ERollback->add need function and parameters named arguments";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);   	
+		throw Kanopya::Exception::Internal(error => $errmsg);   	
 	}
     
     if(not defined $self->{function}) {
