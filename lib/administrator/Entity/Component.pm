@@ -356,6 +356,8 @@ sub readyNodeRemoving{return 1;}
 # Method to override to insert in db component default configuration
 sub insertDefaultConfiguration { }
 sub getClusterizationType{}
+sub getExecToTest{}
+sub getNetConf{}
 
 =head1 DIAGNOSTICS
 

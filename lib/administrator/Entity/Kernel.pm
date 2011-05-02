@@ -31,9 +31,9 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	kernel_name => { pattern => 'm//s', is_mandatory => 1, is_extended => 0 },
-	kernel_version => { pattern => 'm//s', is_mandatory => 1, is_extended => 0 },
-	kernel_desc => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
+	kernel_name => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
+	kernel_version => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
+	kernel_desc => { pattern => '^.*$', is_mandatory => 0, is_extended => 0 },
 
 };
 
