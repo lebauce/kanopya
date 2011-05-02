@@ -81,7 +81,7 @@ my ($schema, $config, $oneinstance);
 =cut
 
 sub loadConfig {
-	$config = XMLin("/etc/kanopya/libkanopya.conf");
+	$config = XMLin("/opt/kanopya/conf/libkanopya.conf");
 	if (! exists $config->{internalnetwork}->{ip} ||
 		! defined $config->{internalnetwork}->{ip} ||
 		! exists $config->{internalnetwork}->{mask} ||

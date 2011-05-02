@@ -4,7 +4,7 @@ echo "Loading environment configuration"
 echo  "DB user is $dbuser"
 echo  "DB user is $dbpassword"
 
-for i in $( cat /etc/kanopya/components.conf ); do
+for i in $( cat /opt/kanopya/conf/components.conf ); do
     echo "Installing $i component in db"
     echo " Create tables"
     echo "/opt/kanopya/scripts/database/mysql/schemas/components/$i.sql"

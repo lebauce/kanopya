@@ -10,7 +10,7 @@ use JSON;
 
 my $log = get_logger("webui");
 
-my $conf_file_path = "/etc/kanopya/monitor.conf";
+my $conf_file_path = "/opt/kanopya/conf/monitor.conf";
 
 # Build an array of html template hash for graphs associated to one target (cluster or node) and one set of indicators
 sub graphs {

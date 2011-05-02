@@ -7,7 +7,7 @@ echo -n 'Generate database shemas ... '
 mysql -u $dbuser -p$dbpassword < /opt/kanopya/scripts/database/mysql/schemas/Schemas.sql
 echo 'done'
 echo "Load Component DB schemas"
-for i in $( cat /etc/kanopya/components.conf ); do
+for i in $( cat /opt/kanopya/conf/components.conf ); do
     echo "Installing $i component in db from"
     echo "/opt/kanopya/scripts/database/mysql/schemas/components/$i.sql"
     mysql -u $dbuser -p$dbpassword < "/opt/kanopya/scripts/database/mysql/schemas/components/$i.sql"

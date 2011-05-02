@@ -81,7 +81,7 @@ sub new {
 	bless $self, $class;
 
 	# Load conf
-	my $conf = XMLin("/etc/kanopya/orchestrator.conf");
+	my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
 	$self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );

@@ -76,7 +76,7 @@ sub new {
 	$self->{_timeref} = $timeref;
 	
 	# Load conf
-	my $conf = XMLin("/etc/kanopya/nodes.conf");
+	my $conf = XMLin("/opt/kanopya/conf/nodes.conf");
 	my $nodes = General::getAsArrayRef( data => $conf, tag => 'node' );
 	my @node_conf = grep { $_->{ip} eq $host } @{ $nodes };
 	my $node_conf = shift @node_conf;

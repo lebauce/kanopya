@@ -32,7 +32,7 @@ sub new {
 sub _authenticate {
 	my $self = shift;
 	
-	$self->{config} = XMLin("/etc/kanopya/orchestrator.conf");
+	$self->{config} = XMLin("/opt/kanopya/conf/orchestrator.conf");
 	if ( (! defined $self->{config}{user}{name}) ||
 		 (! defined $self->{config}{user}{password}) ) { 
 		throw Kanopya::Exception::Internal::IncorrectParam(error => "needs user definition in config file!");
