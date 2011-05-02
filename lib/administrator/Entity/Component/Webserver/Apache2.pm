@@ -351,7 +351,7 @@ sub getNetConf{
 
 sub getExecToTest {
     return {apache =>   {cmd => 'invoke-rc.d apache2 status',
-                         answer => '^Apache2 is running.*$',
+                         answer => '^Apache2? is running.*$',
                          return_code => '0'}
     };
 }
