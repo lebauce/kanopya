@@ -32,7 +32,7 @@ sub new {
 sub _authenticate {
 	my $self = shift;
 	
-	$self->{config} = XMLin("/etc/kanopya/orchestrator.conf");
+	$self->{config} = XMLin("/opt/kanopya/conf/orchestrator.conf");
 	if ( (! defined $self->{config}{user}{name}) ||
 		 (! defined $self->{config}{user}{password}) ) { 
 		throw Kanopya::Exception::Internal::IncorrectParam(error => "needs user definition in config file!");
@@ -152,7 +152,7 @@ sub manageCluster {
 	my $self = shift;
     my %args = @_;
 
-	General::checkParams \%args, ['cluster'];
+	General::checkParams args => \%args, required => ['cluster'];
 
 	my $cluster = $args{cluster};
 	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');

@@ -44,7 +44,7 @@ use warnings;
 use Orchestrator;
 use Log::Log4perl "get_logger";
 
-Log::Log4perl->init('/etc/kanopya/orchestrator-log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/orchestrator-log.conf');
 my $log = get_logger("orchestrator");
 
 

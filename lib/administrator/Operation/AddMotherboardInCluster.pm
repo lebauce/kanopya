@@ -43,7 +43,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Cluster;
 use Entity::Motherboard;
@@ -73,7 +72,7 @@ sub new {
 		(! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id})) { 
 		$errmsg = "Operation::AddMotherboardInCluster->new : params Need a motherboard_id and a cluster_id";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# check if cluster_id exist
@@ -82,7 +81,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddMotherboardInCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # checkclient if motherboard_id exist
@@ -91,7 +90,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddMotherboardInCluster->new : motherboard_id $args{params}->{motherboard_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     my $motherboard = $admin->getEntity(type => "Motherboard", id => $args{params}->{motherboard_id});
     $motherboard->setAttr(name => "motherboard_state", value => "locked");

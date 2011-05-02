@@ -98,7 +98,7 @@ sub new {
     if ((! exists $args{data} or ! defined $args{data})) { 
 		$errmsg = "EOperation->new ($class) need a data named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
    	}
     
     

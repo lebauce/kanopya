@@ -28,7 +28,7 @@ sub generateInitiatorname{
 	if ((! exists $args{hostname} or ! defined $args{hostname})) { 
 		$errmsg = "EEntity::EStorage::EIscsitarget1->generateInitiatorname need an hostname named argument to generate initiatorname!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $today = today();
 	my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology." . $args{hostname};
@@ -40,7 +40,7 @@ sub generateTargetname {
 	my %args  = @_;	
 	
 	if ((! exists $args{name} or ! defined $args{name})) { 
-		throw Mcs::Exception::Internal(error => "EEntity::EStorage::EIscsitarget1->generateTargetname need a name and a type named argument to generate initiatorname!"); }
+		throw Kanopya::Exception::Internal(error => "EEntity::EStorage::EIscsitarget1->generateTargetname need a name and a type named argument to generate initiatorname!"); }
 	my $today = today();
 	my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology.nas:$args{name}";
 	$log->info("TargetName generated is $res");
@@ -58,7 +58,7 @@ sub addTarget {
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->addTarget needs a iscsitarget1_targetname,econtext,mount_option and mountpoint named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $result = $args{econtext}->execute(command => "grep tid: /proc/net/iet/volume | sed 's/tid:\\(\[0-9\]\*\\) .*/\\1/'");
  	my $tid;
@@ -83,14 +83,14 @@ sub gettid {
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->gettid needs a target_name and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$log->debug("target name is $args{target_name}");
 	my $result = $args{econtext}->execute(command =>"grep \"$args{target_name}\" /proc/net/iet/volume");
 	if ($result->{stdout} eq "") {
 		$errmsg = "EComponent::EExport::EIscsitarget1->gettid : no target name found for $args{target_name}!";#
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my @t1 = split(/\s/, $result->{stdout});
 	my @t2 = split(/:/, $t1[0]);
@@ -117,7 +117,7 @@ sub addLun {
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->addLun needs a iscsitarget1_target_id, iscsitarget1_lun_number, iscsitarget1_lun_device, iscsitarget1_lun_typeio and iscsitarget1_lun_iomode named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $tid = $self->gettid(target_name => $args{iscsitarget1_target_name}, econtext => $args{econtext});
 	delete $args{iscsitarget1_target_name};
@@ -142,7 +142,7 @@ sub removeTarget{
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->removeTarget needs an iscsitarget1_target_id and iscsitarget1_target_name named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $tid = $self->gettid(target_name => $args{iscsitarget1_target_name}, econtext => $args{econtext});
 	my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
@@ -166,7 +166,7 @@ sub getIscsiSession {
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->getIscsiSession needs a targetname,  initiatorname and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $command = 'cat /proc/net/iet/session';
@@ -187,7 +187,7 @@ sub cleanIscsiSession {
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->cleanIscsiSession needs a tid, sid and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $command = "ietadm --op delete --tid=$args{tid} --sid=$args{sid} --cid=0";
 	my $result = $args{econtext}->execute(command => $command);
@@ -202,31 +202,18 @@ sub generate {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->generate needs a econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
-	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsietd',
-	    INTERPOLATE  => 1,               # expand "$var" in plain text
-	    POST_CHOMP   => 0,               # cleanup whitespace 
-	    EVAL_PERL    => 1,               # evaluate Perl code blocks
-	    RELATIVE => 1,                   # desactive par defaut
-	};
+	my $data = $self->_getEntity()->getTemplateData();
 	
-	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("cccccccc");
-	# create Template object
-	my $template = Template->new($config);
-    my $input = "ietd.conf.tt";
-    my $data = $self->_getEntity()->getTemplateData();
-	
-	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EExport::EIscsitarget1->generate : error during template generation : $template->error;";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
-	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/iet/ietd.conf");	
-	unlink "/tmp/$tmpfile";		 	 
+	$self->generateFile( econtext => $args{econtext},
+						 mount_point => $args{mount_point},
+						 template_dir => "/templates/components/ietd",
+						 input_file => "ietd.conf.tt",
+						 output => "/iet/ietd.conf",
+						 data => $data);
+	 	 
 }
 
 

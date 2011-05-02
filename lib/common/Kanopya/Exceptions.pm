@@ -71,6 +71,11 @@ use Exception::Class (
 	isa => 'Kanopya::Exception::Internal',
 	description => 'Wrong attribute or parameter',
     },
+    Kanopya::Exception::Internal::MissingParam => {
+	isa => 'Kanopya::Exception::Internal',
+	description => 'Parameter missing or undefined',
+	fields => [ 'sub_name', 'param_name' ],
+    },
     Kanopya::Exception::Execution => {
 	isa => 'Kanopya::Exception',
 	description => 'Command execution failed',
@@ -111,14 +116,13 @@ Kanopya::Exception->Trace(1);
 sub Kanopya::Exception::full_message {
  	my $self = shift;
 	
-	my $except_string = "## EXCEPTION : " . $self->description . " ##\n";
-	$except_string .= $self->message;
+	my $except_string = "## EXCEPTION : " . $self->description . " ##";
+	$except_string .= "\n" . $self->message if ($self->message ne "");
 
-	# TODO add fileds and value in string
-	#( Dumper $self->Fields );	
-	#for my $field (@{ $self->fields }) {
-	#	$except_string .= $field;
-	#}
+	# Show fields	
+	for my $field ( $self->Fields ) {
+		$except_string .= "\n" . $field . ": " . $self->$field . "\n" if (defined $self->$field);
+	}
 
  	return $except_string;
 

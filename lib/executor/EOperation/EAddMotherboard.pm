@@ -138,7 +138,7 @@ sub checkOp{
     if (defined Entity::Motherboard->getMotherboard(hash => {motherboard_mac_address => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_mac_address')})){
     	$errmsg = "Operation::AddMotherboard->new : motherboard_mac_address ". $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_mac_address') ." already exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if (defined $self->{_objs}->{powersupplyport_number}){
@@ -147,7 +147,7 @@ sub checkOp{
         if ($self->{_objs}->{powersupplycard}->isPortUsed(powersupplyport_number => $self->{_objs}->{powersupplyport_number})){
 			$errmsg = "Operation::AddMotherboard->new : This power supply port is already recorded!";
     		$log->error($errmsg);
-    		throw Mcs::Exception::Internal(error => $errmsg);
+    		throw Kanopya::Exception::Internal(error => $errmsg);
         }
     }
 }

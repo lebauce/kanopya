@@ -41,7 +41,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Systemimage;
 my $log = get_logger("administrator");
@@ -68,56 +67,56 @@ sub new {
 	if (! exists $args{params}->{disk_name} or ! defined $args{params}->{disk_name}) {
     	$errmsg = "Operation::CreateSharedDisk->new : params need a disk_name parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if (! exists $args{params}->{disk_size} or ! defined $args{params}->{disk_size}) {
     	$errmsg = "Operation::CreateSharedDisk->new : params need a disk_size parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if (! exists $args{params}->{disk_fs} or ! defined $args{params}->{disk_fs}) {
     	$errmsg = "Operation::CreateSharedDisk->new : params need a disk_fs parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if (! exists $args{params}->{export_client_instance_id} or ! defined $args{params}->{export_client_instance_id}) {
     	$errmsg = "Operation::CreateSharedDisk->new : params need a export_client_instance_id parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if (! exists $args{params}->{export_instance_id} or ! defined $args{params}->{export_instance_id}) {
     	$errmsg = "Operation::CreateSharedDisk->new : params need a export_instance_id parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     #TODO Get Storage cluster as a parameter
 #    if (! exists $args{params}->{storage_cluster_id} or ! defined $args{params}->{storage_cluster_id}) {
 #    	$errmsg = "Operation::CreateSharedDisk need a storage_cluster_id parameter!";
 #    	$log->error($errmsg);
-#    	throw Mcs::Exception::Internal(error => $errmsg);
+#    	throw Kanopya::Exception::Internal(error => $errmsg);
 #    }
 	
 	if (! exists $args{params}->{mount_point} or ! defined $args{params}->{mount_point}) {
     	$errmsg = "Operation::CreateSharedDisk need a mount_point parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	
 	if (! exists $args{params}->{mount_options} or ! defined $args{params}->{mount_options}) {
     	$errmsg = "Operation::CreateSharedDisk need a mount_options parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	
 	if (! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) {
     	$errmsg = "Operation::CreateSharedDisk need a cluster_id parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	
 	#TODO Need cluster if we hotly update shared disk on cluster
@@ -131,7 +130,7 @@ sub new {
 #    if($neededsize > $devices->{etc}->{vgfreespace}) {
 #    	$errmsg = "Operation::CreateSharedDisk->new : not enough freespace on vg $devices->{etc}->{vgname} ($devices->{etc}->{vgfreespace} M left)";
 #    	$log->error($errmsg);
-#    	throw Mcs::Exception::Internal(error => $errmsg);
+#    	throw Kanopya::Exception::Internal(error => $errmsg);
 #    }
 	
     return $self;

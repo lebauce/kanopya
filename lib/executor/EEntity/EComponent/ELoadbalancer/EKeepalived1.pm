@@ -5,7 +5,6 @@ use Date::Simple (':all');
 use Log::Log4perl "get_logger";
 use Template;
 use String::Random;
-use lib qw(/workspace/mcs/Executor/Lib);
 
 use base "EEntity::EComponent::ELoadbalancer";
 
@@ -166,7 +165,7 @@ sub reload {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::ELoadbalancer::EKeepalived->reload needs an econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $command = "invoke-rc.d keepalived reload";
 	my $result = $args{econtext}->execute(command => $command);
@@ -181,11 +180,11 @@ sub generateKeepalived {
 		(! exists $args{mount_point} or ! defined $args{mount_point})) {
 		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateKeepalived needs a econtext and mount_point named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcskeepalived',
+	    INCLUDE_PATH => '/templates/components/keepalived',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -202,7 +201,7 @@ sub generateKeepalived {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->generate : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/keepalived/keepalived.conf");	
 	unlink "/tmp/$tmpfile";		 	 
@@ -216,11 +215,11 @@ sub generateIpvsadm {
 		(! exists $args{mount_point} or ! defined $args{mount_point})){
 		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateIpvsadm needs a econtext and mount_point named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcskeepalived',
+	    INCLUDE_PATH => '/templates/components/keepalived',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -237,7 +236,7 @@ sub generateIpvsadm {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateIpvsadm : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/default/ipvsadm");	
 	unlink "/tmp/$tmpfile";		
@@ -252,11 +251,11 @@ sub addnetwork_routes {
 		(! exists $args{loadbalancer_internal_ip} or ! defined $args{loadbalancer_internal_ip})) {
 		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateKeepalived needs a econtext, mount_point and loadbalancer_internal_ip named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcskeepalived',
+	    INCLUDE_PATH => '/templates/components/keepalived',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -274,7 +273,7 @@ sub addnetwork_routes {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::ELoadbalancer::EKeepalived1->addnetwork_routes : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/init.d/network_routes");	
 	my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/network_routes';

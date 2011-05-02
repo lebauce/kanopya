@@ -29,34 +29,16 @@ sub configureNode {
 		(! exists $args{mount_point} or ! defined $args{mount_point})) {
 		$errmsg = "EComponent::EMonitoragent::ESyslogng3->configureNode needs a motherboard, mount_point and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $template_path = $args{template_path} || "/templates/components/mcssyslogng";
+	my $template_path = $args{template_path} || "/templates/components/syslogng";
 	
-	my $config = {
-	    INCLUDE_PATH => $template_path, #$self->_getEntity()->getTemplateDirectory(),
-	    INTERPOLATE  => 1,               # expand "$var" in plain text
-	    POST_CHOMP   => 0,               # cleanup whitespace 
-	    EVAL_PERL    => 1,               # evaluate Perl code blocks
-	    RELATIVE => 1,                   # desactive par defaut
-	};
-	
-	my $conf = $self->_getEntity()->getConf();
-	my $rand = new String::Random;
-	my $template = Template->new($config);
-	
-	# generation of /etc/syslog-ng/syslog-ng.conf
-	my $tmpfile = $rand->randpattern("cccccccc");
-	my $input = "syslog-ng.conf.tt";
-    my $data = $conf;
-    
-	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::ECLogger::ESyslogng3->generate : error during template generation : " . $template->error;;
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
-	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/syslog-ng/syslog-ng.conf');	
-	unlink "/tmp/$tmpfile";
+	my $data = $self->_getEntity()->getConf();
+		
+	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+						 template_dir => $template_path,
+						 input_file => "syslog-ng.conf.tt", output => "/syslog-ng/syslog-ng.conf",
+						 data => $data);
 	
 }
 
@@ -68,7 +50,7 @@ sub addNode {
 		(! exists $args{mount_point} or ! defined $args{mount_point})) {
 		$errmsg = "EComponent::EMonitoragent::ESyslogng3->addNode needs a motherboard, mount_point and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	$self->configureNode(%args);
@@ -92,7 +74,7 @@ sub reload {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::ELooger::ESyslogng3->reload needs an econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $command = "invoke-rc.d syslog-ng restart";
 	my $result = $args{econtext}->execute(command => $command);

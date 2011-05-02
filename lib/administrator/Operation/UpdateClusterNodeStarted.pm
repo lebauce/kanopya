@@ -41,7 +41,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 
 my $log = get_logger("administrator");
@@ -69,7 +68,7 @@ sub new {
 		(! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id})) { 
 		$errmsg = "Operation::UpdateClusterNodeStarted->new : params Need a motherboard_id and a cluster_id";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
     
 	# check if cluster exists in db
@@ -80,7 +79,7 @@ sub new {
     if($cluster->getAttr(name => 'active') == 0 or $cluster->getAttr(name => 'cluster_state') ne 'up') {
     	my $errmsg = "Operation::UpdateClusterNodeStarted->new : cluster must be active and started to be Updated";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if motherboard exists in db
@@ -91,7 +90,7 @@ sub new {
     if($motherboard->getAttr(name => 'active') == 0 ) {
     	my $errmsg = "Operation::UpdateClusterNodeStarted->new : motherboard must be active and started";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	
 	# Check if motherboard is in cluster
@@ -100,7 +99,7 @@ sub new {
       cluster_id  => $args{params}->{cluster_id}})){
     	my $errmsg = "Operation::UpdateClusterNodeStarted->new : motherboard $args{params}->{motherboard_id} is not in cluster $args{params}->{cluster_id}";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
       }
     
 	return $self;

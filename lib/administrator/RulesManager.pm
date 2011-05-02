@@ -25,7 +25,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use McsExceptions;
+use Kanopya::Exceptions;
 use Parse::BooleanLogic;
 
 my $log = get_logger("administrator");
@@ -51,7 +51,7 @@ sub new {
 	if (! exists $args{schemas} or ! defined $args{schemas}){
 		$errmsg = "RulesManager->new needz schemas named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	$self->{db} = $args{schemas};
 	
@@ -117,7 +117,7 @@ sub addClusterRule {
 	if($@) { 
 		$errmsg = "RulesManager->addClusterRule: $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$log->debug("new rule added for cluster " . $args{cluster_id} );	
 	
@@ -258,7 +258,7 @@ sub setClusterModelParameters {
 	if($@) { 
 		$errmsg = "RulesManager->setClusterModelParameters: $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 }
 
@@ -284,7 +284,7 @@ sub setClusterQoSConstraints {
 	if($@) { 
 		$errmsg = "RulesManager->setClusterQoSConstraints: $@";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 }
 

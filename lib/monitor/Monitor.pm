@@ -43,7 +43,7 @@ Monitor is the main object used to collect, store and provide hosts informations
 package Monitor;
 
 #TODO Modulariser: Collector, DataProvider (snmp, generator,...), DataStorage (rrd, ...), DataManipulator, Grapher, ...
-#TODO use Mcs::Exception
+#TODO use Kanopya::Exception
 #TODO renommer correctement ex: $host représente des fois $host_name ou $host_ip
 
 use strict;
@@ -82,7 +82,7 @@ sub new {
 	$log->info("NEW");
 
 	# Load conf
-	my $conf = XMLin("/etc/kanopya/monitor.conf");
+	my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
 
 	$self->{_time_step	 } = $conf->{time_step};
 	$self->{_period		 } = $conf->{period};

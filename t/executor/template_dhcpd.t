@@ -4,7 +4,6 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
 
 #Log::Log4perl->init('../Conf/log.conf');
 #my $log = get_logger("executor");
@@ -15,7 +14,7 @@ use Template;
 
 # some useful options (see below for full list)
 my $config = {
-    INCLUDE_PATH => '/templates/mcsdhcpd',
+    INCLUDE_PATH => '/templates/dhcpd',
     INTERPOLATE  => 1,               # expand "$var" in plain text
     POST_CHOMP   => 1,               # cleanup whitespace 
     EVAL_PERL    => 1,               # evaluate Perl code blocks

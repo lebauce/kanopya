@@ -67,7 +67,7 @@ my $errmsg;
 =cut
 
 # TODO log on corresponding caller logger
-# Usage: General::checkParams( args => \%args, require => ['param1', 'param2'] );
+# Usage: General::checkParams( args => \%args, required => ['param1', 'param2'] );
 sub checkParams {
 	my %args = @_;
 	
@@ -83,7 +83,7 @@ sub checkParams {
 			# TODO log in the logger corresponding to caller package;
 			$log->error($errmsg);
 
-			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::MissingParam(sub_name => $caller_sub_name, param_name => $param);
 		}
 	}
 }

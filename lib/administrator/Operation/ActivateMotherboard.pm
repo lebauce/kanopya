@@ -43,7 +43,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 
 my $log = get_logger("administrator");
@@ -73,7 +72,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::ActivateMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if motherboard is not active
@@ -81,7 +80,7 @@ sub new {
    	if( $row->get_column('active') ) {
 	    	$errmsg = "Operation::ActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
        
     return $self;

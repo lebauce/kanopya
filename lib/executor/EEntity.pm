@@ -63,7 +63,7 @@ sub new {
     if ((! exists $args{data} or ! defined $args{data})) { 
 		$errmsg = "EEntity->new ($class) need a data named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
     }
         
 #   	$log->debug("Class is : $class");

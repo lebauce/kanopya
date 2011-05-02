@@ -41,7 +41,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Systemimage;
 my $log = get_logger("administrator");
@@ -68,12 +67,12 @@ sub new {
 	if (! exists $args{params}->{systemimage_name} or ! defined $args{params}->{systemimage_name}) {
     	$errmsg = "Operation::CloneSystemimage->new : params need a systemimage_name parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     if (! exists $args{params}->{systemimage_id} or ! defined $args{params}->{systemimage_id}) {
     	$errmsg = "Operation::CloneSystemimage need a distribution_id parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	
 	# check if systemimage source exists
@@ -81,7 +80,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::CloneSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }	
 	
 	 # check if systemimage name does not already exist
@@ -89,7 +88,7 @@ sub new {
     if(defined $row) {
     	$errmsg = "Operation::CloneSystemimage->new : systemimage_name $args{params}->{systemimage_name} already exists";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	
 	# check validity of systemimage attributes     
@@ -107,7 +106,7 @@ sub new {
     if($neededsize > $devices->{etc}->{vgfreespace}) {
     	$errmsg = "Operation::CloneSystemimage->new : not enough freespace on vg $devices->{etc}->{vgname} ($devices->{etc}->{vgfreespace} M left)";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 	
     return $self;

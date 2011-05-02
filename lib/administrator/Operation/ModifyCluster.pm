@@ -43,7 +43,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Cluster;
 
@@ -87,7 +86,7 @@ sub new {
 		    if(! defined $row) {
 		    	$errmsg = "Operation::ModifyCluster->new : kernel_id $args{params}->{kernel_id} does not exist";
 		    	$log->error($errmsg);
-		    	throw Mcs::Exception::Internal(error => $errmsg);
+		    	throw Kanopya::Exception::Internal(error => $errmsg);
 	    	}
     	}
     }
@@ -103,7 +102,7 @@ sub new {
        	cluster_max_node ($args{params}->{cluster_max_node}) can't 
        	exceed total motherboards number ($totalmotherboards)/;
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if(! $args{params}->{cluster_min_node} > $args{params}->{cluster_max_node}) {
@@ -111,7 +110,7 @@ sub new {
        	cluster_min_node ($args{params}->{cluster_min_node}) must  
        	be inferior or equal cluster_max_node ($args{params}->{cluster_max_node})/;
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     return $self;

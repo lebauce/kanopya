@@ -74,7 +74,7 @@ B<args>    :
 B<Return>  : a new Entity::Component::Webserver::Apache2 from Kanopya Database
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -102,7 +102,7 @@ B<Return>  : a new Entity::Component::Webserver::Apache2 from parameters.
 B<Comment>  : Like all component, instantiate it creates a new empty component instance.
         You have to populate it with dedicated methods.
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -137,7 +137,7 @@ B<args>    :
 B<Return>  : None
 B<Comment>  : None
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -351,7 +351,7 @@ sub getNetConf{
 
 sub getExecToTest {
     return {apache =>   {cmd => 'invoke-rc.d apache2 status',
-                         answer => '^Apache2 is running.*$',
+                         answer => '^Apache2? is running.*$',
                          return_code => '0'}
     };
 }

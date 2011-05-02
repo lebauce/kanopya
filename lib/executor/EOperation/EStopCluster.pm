@@ -112,7 +112,7 @@ sub execute {
 	if(not scalar keys %$motherboards) {
 		$errmsg = "EStopCluster->execute : this cluster with id $self->{_objs}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $master_node_id =  $self->{_objs}->{cluster}->getMasterNodeId();
 	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');

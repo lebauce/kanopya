@@ -61,11 +61,6 @@ getConf();
 #Function used to generate conf files 
 genConf();
 
-#####WORKAROUND#######
-#create /etc/kanopya and make a soft link inside to /opt/kanopya/conf/libkanopya.conf
-system('mkdir /etc/kanopya');
-system('ln -s /opt/kanopya/ /etc/kanopya/');
-
 ###############
 #Network setup#
 ###############
@@ -168,6 +163,10 @@ open ($FILE, "<","$conf_vars->{comp_conf}") or die "error while opening componen
 while( defined( $line = <$FILE> ) )
 {
         chomp ($line);
+        # don't proceed empty lines or commented lines
+        if((not $line) || ($line =~ /^#/)) {
+        	next;
+        }
         print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
         system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
         print "done\n";
@@ -395,7 +394,7 @@ sub genConf {
 	my %datas;
 	foreach my $files (keys %$conf_files){
 		foreach my $d (keys %{$conf_files->{$files}->{datas}}){
-			%datas->{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
+			$datas{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
 		}
 		useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});
 	}

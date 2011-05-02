@@ -45,8 +45,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use vars qw(@ISA $VERSION);
 use base "EOperation";
-use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
 use EFactory;
 
 my $log = get_logger("executor");
@@ -97,7 +96,7 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "ECreateSharedDisk->prepare need an internal_cluster named argument!"; 
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $adm = Administrator->new();

@@ -32,7 +32,7 @@ sub MountDevice {
 	  (! exists $args{device} or ! defined $args{device})) {
 		$errmsg = "EComponent::EExport::ENfsd3->mkMountDirectory needs a econtext and device named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# create directory if necessary
@@ -46,7 +46,7 @@ sub MountDevice {
 	if($result->{stdout}) {
 		$errmsg = "EComponent::EExport::ENfsd3->MountDevice : $dir already used as mount point by \n($result->{stdout})";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$command = "mount $args{device} $dir";
 	$args{econtext}->execute(command => $command);
@@ -59,7 +59,7 @@ sub addExport {
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->addExport needs a device and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $export_id = $self->_getEntity()->addExport(device => $args{device});
 	$self->MountDevice(device => $args{device}, econtext => $args{econtext});
@@ -74,7 +74,7 @@ sub addExportClient {
 		(! exists $args{client_options} or ! defined $args{client_options})) {
 		$errmsg = "EComponent::EExport::ENfsd3->addExportClient needs a export_id, client_name and client_options named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$self->_getEntity()->addExportClient(
 		export_id => $args{export_id},
@@ -89,7 +89,7 @@ sub update_exports {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EExport::ENfsd3->update_exports needs a econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$self->generate_exports(econtext => $args{econtext});
 	my $command = "/usr/sbin/exportfs -r";
@@ -103,11 +103,11 @@ sub generate_nfs_common {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EExport::ENfsd3->generate_nfs_common needs a econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsnfsd3',
+	    INCLUDE_PATH => '/templates/components/nfsd3',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -124,7 +124,7 @@ sub generate_nfs_common {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EExport::ENfsd3->generate_nfs_common : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/default/nfs-common");	
 	unlink "/tmp/$tmpfile";		
@@ -137,11 +137,11 @@ sub generate_nfs_kernel_server {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EExport::ENfsd3->generate_nfs_kernel_server needs a econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsnfsd3',
+	    INCLUDE_PATH => '/templates/components/nfsd3',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -158,7 +158,7 @@ sub generate_nfs_kernel_server {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EExport::ENfsd3->generate_nfs_kernel_server : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/default/nfs-kernel-server");	
 	unlink "/tmp/$tmpfile";	
@@ -171,11 +171,11 @@ sub generate_exports {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EExport::ENfsd3->generate_exports needs a econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsnfsd3',
+	    INCLUDE_PATH => '/templates/components/nfsd3',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -192,7 +192,7 @@ sub generate_exports {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EExport::ENfsd3->generate_exports : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/exports");	
 	unlink "/tmp/$tmpfile";

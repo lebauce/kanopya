@@ -5,7 +5,6 @@ use Data::Dumper;
 use Log::Log4perl;
 Log::Log4perl->init('/workspace/mcs/Administrator/Conf/log.conf');
 
-use lib qw(/workspace/mcs/Administrator/Lib);
 use Administrator;
 
 my %args = (login =>'xebech', password => 'pass');

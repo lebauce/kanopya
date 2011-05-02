@@ -46,7 +46,7 @@ package Orchestrator;
 #WARN l'orchestrator considère actuellement que les noeuds sont homogènes et ne prend pas en compte les spécificités de chaque carte
 #TODO Prendre en compte les spécificités des cartes dans les algos, faire un système de notation pour le choix des cartes à ajouter/supprimer
 #TODO Percent option. WARN: avg % != % avg
-#TODO use mcs exception
+#TODO use Kanopya Exception
 ###############################################################################################################
 
 use strict;
@@ -81,7 +81,7 @@ sub new {
 	bless $self, $class;
 
 	# Load conf
-	my $conf = XMLin("/etc/kanopya/orchestrator.conf");
+	my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
 	$self->{_time_step} = $conf->{time_step};
 	$self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
 	$self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );

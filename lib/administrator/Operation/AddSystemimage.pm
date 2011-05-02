@@ -42,7 +42,6 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Systemimage;
 my $log = get_logger("administrator");
@@ -73,14 +72,14 @@ sub new {
     if(defined $row) {
     	$errmsg = "Operation::AddSystemimage->new : systemimage_name $args{params}->{systemimage_name} already exists";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     # check if distribution_id exist
     $row = $admin->{db}->resultset('Distribution')->find($args{params}->{distribution_id});
     if(! defined $row) {
     	$errmsg = "Operation::AddSystemimage->new : distribution_id $args{params}->{distribution_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     # check if vg has enough free space
     my $distrib = $admin->getEntity(type => 'Distribution', id => $args{params}->{distribution_id});
@@ -91,7 +90,7 @@ sub new {
     if($neededsize > $devices->{etc}->{vgfreespace}) {
     	$errmsg = "Operation::AddSystemimage->new : not enough freespace on vg $devices->{etc}->{vgname} ($devices->{etc}->{vgfreespace} M left)";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     return $self;
 }

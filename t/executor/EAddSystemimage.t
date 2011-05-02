@@ -1,7 +1,6 @@
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
@@ -12,7 +11,7 @@ my $exectest = "ExecTest";
 note("Use Tests");
 use_ok(Administrator);
 use_ok(Executor);
-use_ok(McsExceptions);
+use_ok(Kanopya::Exceptions);
 
 note("Load Administrator tests");
 my %args = (login =>'xebech', password => 'pass');
@@ -38,7 +37,7 @@ eval {
 		my $createsystemimage_op = $adm->getNextOp();
 	};
 	if ($@){
-		is ($@->isa('Mcs::Exception::Internal'), 1, "get Mcs Exception No more operation in queue!");
+		is ($@->isa('Kanopya::Exception::Internal'), 1, "get Kanopya Exception No more operation in queue!");
 		my $err = $@;
 	}
 
@@ -46,9 +45,9 @@ eval {
 if ($@){
 	print "Exception catch, its type is : " . ref($@);
 	print Dumper $@;
-	if ($@->isa('Mcs::Exception')) 
+	if ($@->isa('Kanopya::Exception')) 
    	{
-		print "Mcs Exception\n";
+		print "Kanopya Exception\n";
    }
 	
 }

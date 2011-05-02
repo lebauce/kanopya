@@ -174,10 +174,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@ei
 INSERT INTO `node` VALUES (1,1,1,1);
 
 -- components templates
-INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/mcsapache2', 2);
-INSERT INTO `component_template` VALUES (2,'mcsdhcpd','/templates/mcsdhcpd', 5);
-INSERT INTO `component_template` VALUES (3,'mcssnmpd','/templates/mcssnmpd', 7);
-INSERT INTO `component_template` VALUES (4,'mcskeepalived','/templates/mcskeepalived', 8);
+INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/apache2', 2);
+INSERT INTO `component_template` VALUES (2,'dhcpd','/templates/dhcpd', 5);
+INSERT INTO `component_template` VALUES (3,'snmpd','/templates/snmpd', 7);
+INSERT INTO `component_template` VALUES (4,'keepalived','/templates/keepalived', 8);
 
 -- initial components instance for admin cluster: 
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL);

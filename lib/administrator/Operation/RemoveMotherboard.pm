@@ -43,7 +43,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 
 my $log = get_logger("administrator");
@@ -70,7 +69,7 @@ sub new {
     if (! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id}) { 
 		$errmsg = "Operation::RemoveMotherboard->new : params Need a motherboard_id";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	# check if motherboard_id exist
@@ -79,7 +78,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::RemoveMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     return $self;

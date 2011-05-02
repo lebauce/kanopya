@@ -102,7 +102,7 @@ sub addInitScripts {
 		(! exists $args{stopvalue} or ! defined $args{stopvalue})) {
 			$errmsg = "EEntity::EComponent->addInitScripts needs a etc_mountpoint, econtext,scriptname, startvalue, stopvalue  named argument!";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
 	foreach my $startlevel ((2, 3, 4, 5)) { 
@@ -132,7 +132,7 @@ sub generateFile {
 	my $self = shift;
 	my %args = @_;
 	
-	General::checkParams( args => \%args, require => ['econtext', 'mount_point','input_file','data','output'] );
+	General::checkParams( args => \%args, required => ['econtext', 'mount_point','input_file','data','output'] );
 	
 	my $template_dir = defined $args{template_dir} 	? $args{template_dir}
 													: $self->_getEntity()->getTemplateDirectory();
@@ -154,7 +154,7 @@ sub generateFile {
 	$template->process($args{input_file}, $args{data}, "/tmp/".$tmpfile) || do {
 		$errmsg = "error during generation from '$args{input_file}':" .  $template->error;
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});	
 	unlink "/tmp/$tmpfile";
@@ -174,7 +174,7 @@ sub is_up {
     my %args = @_;
     my $availability = 1;
     
-    General::checkParams( args => \%args, require => ['cluster', 'host', 'host_econtext'] );
+    General::checkParams( args => \%args, required => ['cluster', 'host', 'host_econtext'] );
 
     my $execution_list = $self->{_entity}->getExecToTest();
     my $net_conf = $self->{_entity}->getNetConf();

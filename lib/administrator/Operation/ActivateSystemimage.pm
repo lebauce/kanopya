@@ -43,7 +43,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Cluster;
 
@@ -74,7 +73,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::ActivateSystemimage->new : systemimage_id $args{params}->{systemimage_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if systemimage is not active
@@ -82,7 +81,7 @@ sub new {
    	if( $row->get_column('active') ) {
 	    	$errmsg = "Operation::ActivateSystemimage->new : systemimage $args{params}->{systemimage_id} is already active";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
        
     return $self;

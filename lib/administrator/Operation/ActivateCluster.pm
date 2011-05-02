@@ -43,7 +43,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 
 my $log = get_logger("administrator");
@@ -76,7 +75,7 @@ sub new {
     if($@) {
     	$errmsg = "Operation::ActivateCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if system image used is active 
@@ -85,7 +84,7 @@ sub new {
     if(not $systemimage->getAttr(name => 'active')) {
 	    	$errmsg = "Operation::ActivateCluster->new : cluster's systemimage is not activated";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if cluster is not active
@@ -93,7 +92,7 @@ sub new {
    	if($cluster->getAttr(name => 'active')) {
 	    	$errmsg = "Operation::ActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
        
     return $self;
