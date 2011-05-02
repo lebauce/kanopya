@@ -132,7 +132,7 @@ sub generateFile {
 	my $self = shift;
 	my %args = @_;
 	
-	General::checkParams( args => \%args, require => ['econtext', 'mount_point','input_file','data','output'] );
+	General::checkParams( args => \%args, required => ['econtext', 'mount_point','input_file','data','output'] );
 	
 	my $template_dir = defined $args{template_dir} 	? $args{template_dir}
 													: $self->_getEntity()->getTemplateDirectory();
@@ -174,7 +174,7 @@ sub is_up {
     my %args = @_;
     my $availability = 1;
     
-    General::checkParams( args => \%args, require => ['cluster', 'host', 'host_econtext'] );
+    General::checkParams( args => \%args, required => ['cluster', 'host', 'host_econtext'] );
 
     my $execution_list = $self->{_entity}->getExecToTest();
     my $net_conf = $self->{_entity}->getNetConf();

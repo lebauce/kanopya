@@ -152,7 +152,7 @@ sub manageCluster {
 	my $self = shift;
     my %args = @_;
 
-	General::checkParams \%args, ['cluster'];
+	General::checkParams args => \%args, required => ['cluster'];
 
 	my $cluster = $args{cluster};
 	my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
