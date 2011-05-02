@@ -32,46 +32,27 @@ sub addNode {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
-	my $config = {
-	    INCLUDE_PATH => "/templates/components/mcssnmpd", #$self->_getEntity()->getTemplateDirectory(),
-	    INTERPOLATE  => 1,               # expand "$var" in plain text
-	    POST_CHOMP   => 0,               # cleanup whitespace 
-	    EVAL_PERL    => 1,               # evaluate Perl code blocks
-	    RELATIVE => 1,                   # desactive par defaut
-	};
-	
 	my $conf = $self->_getEntity()->getConf();
-	my $rand = new String::Random;
-	my $template = Template->new($config);
 	
 	# generation of /etc/default/snmpd 
-	my $tmpfile = $rand->randpattern("cccccccc");
-	my $input = "default_snmpd.tt";
-    my $data = {};
+	my $data = {};
     $data->{node_ip_address} = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
-    $data->{options} = $conf->{options};
-   	
-	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);	
-	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/default/snmpd');	
-	unlink "/tmp/$tmpfile";
+    $data->{options} = $conf->{options};   	
 	
+	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+						 template_dir => "/templates/components/snmpd",
+						 input_file => "default_snmpd.tt", output => "/default/snmpd",
+					 	 data => $data);
+						 
 	# generation of /etc/snmpd/snmpd.conf 
-	$tmpfile = $rand->randpattern("cccccccc");
-	$input = "snmpd.conf.tt";
     $data = {};
     $data->{monitor_server_ip} = $conf->{monitor_server_ip};
-       	
-	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);	
-	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/snmp/snmpd.conf');	
-	unlink "/tmp/$tmpfile";
+
+	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+						 template_dir => "/templates/components/snmpd",
+						 input_file => "snmpd.conf.tt", output => "/snmp/snmpd.conf",
+					 	 data => $data);
+
 	
 	# add snmpd init scripts
 	$self->addInitScripts(

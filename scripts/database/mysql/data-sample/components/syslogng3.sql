@@ -15,7 +15,7 @@ INSERT INTO `component_installed` VALUES (@eid_new_component,1);
 
 # Template
 SET @eid_new_component_template = (SELECT MAX(component_template_id) FROM component_template) + 1;
-INSERT INTO `component_template` VALUES (@eid_new_component_template,'mcssyslogng','/templates/components/mcssyslogng', @eid_new_component);
+INSERT INTO `component_template` VALUES (@eid_new_component_template,'syslogng','/templates/components/syslogng', @eid_new_component);
 
 # instance on cluster
 SET @cluster_id = 1;
