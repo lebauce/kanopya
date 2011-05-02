@@ -4,7 +4,6 @@ use warnings;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
 
 #Log::Log4perl->init('../Conf/log.conf');
 #my $log = get_logger("executor");

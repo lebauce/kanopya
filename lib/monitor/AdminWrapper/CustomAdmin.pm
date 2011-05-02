@@ -2,7 +2,6 @@ package CustomAdmin;
 
 use strict;
 use warnings;
-use lib qw(/workspace/mcs/Common/Lib);
 use XML::Simple;
 use General;
 

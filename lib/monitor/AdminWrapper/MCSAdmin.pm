@@ -1,6 +1,5 @@
 package MCSAdmin;
 
-use lib qw(/workspace/mcs/Administrator/Lib);
 
 use strict;
 use warnings;

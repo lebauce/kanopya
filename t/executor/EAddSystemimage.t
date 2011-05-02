@@ -1,7 +1,6 @@
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});

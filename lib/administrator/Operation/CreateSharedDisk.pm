@@ -41,7 +41,6 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
-use lib qw(/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib);
 use base "Operation";
 use Entity::Systemimage;
 my $log = get_logger("administrator");

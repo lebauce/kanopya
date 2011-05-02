@@ -5,7 +5,6 @@ use Date::Simple (':all');
 use Log::Log4perl "get_logger";
 use Template;
 use String::Random;
-use lib qw(/workspace/mcs/Executor/Lib);
 
 use base "EEntity::EComponent::ELoadbalancer";
 
