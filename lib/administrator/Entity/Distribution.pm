@@ -24,7 +24,7 @@ use base "Entity";
 use strict;
 use warnings;
 
-use McsExceptions;
+use Kanopya::Exceptions;
 use Data::Dumper;
 use Administrator;
 use Log::Log4perl "get_logger";
@@ -61,7 +61,7 @@ sub get {
     if ((! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Entity::Distribution->new need an id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $adm = Administrator->new();
@@ -97,7 +97,7 @@ sub getDistributions {
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getDistributions need a type and a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Distribution");
@@ -135,7 +135,7 @@ sub getDevices {
 	if(! $self->{_dbix}->in_storage) {
 		$errmsg = "Entity::Distribution->getDevices must be called on an already save instance";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Kanopya::Exception(error => $errmsg);
 	}
 	
 	my $etcrow = $self->{_dbix}->etc_device;
@@ -178,7 +178,7 @@ sub getProvidedComponents {
 	if(! $self->{_dbix}->in_storage) {
 		$errmsg = "Entity::Distribution->getComponents must be called on an already save instance";
 		$log->error($errmsg);
-		throw Mcs::Exception(error => $errmsg);
+		throw Kanopya::Exception(error => $errmsg);
 	}
 	my $components = [];
 	my $search = $self->{_dbix}->components_provided->search(undef, 

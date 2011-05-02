@@ -190,7 +190,7 @@ sub getMountDir {
 	if(! exists $args{device} or ! defined $args{device}) {
 		$errmsg = "EComponent::EExport::ENfsd3->getMountDir needs a device named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $dir = $args{device};
 	$dir =~ s/\//_/g;
@@ -210,7 +210,7 @@ sub addExport {
 	if (! exists $args{device} or ! defined $args{device}) {
 		$errmsg = "Component::Export::Nfsd3->addExport needs a device named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $component = $self->{_dbix}->nfsd3s->first;
 	my $export = $component->nfsd3_exports->create({
@@ -235,7 +235,7 @@ sub addExportClient {
 		(! exists $args{client_options} or ! defined $args{client_options})) {
 		$errmsg = "Component::Export::Nfsd3->addExportClient needs a export_id, client_name and client_options named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $component = $self->{_dbix}->nfsd3s->first;
 	my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}})->nfsd3_exportclients;
@@ -259,7 +259,7 @@ sub removeExport {
 	if (! exists $args{nfsd3_export_id} or ! defined $args{nfsd3_export_id}) {
 		$errmsg = "Component::Export::Nfsd3->removeExport needs an nfsd3_export_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $component = $self->{_dbix}->nfsd3s->first;
 	return $component->nfsd3_exports->find($args{nfsd3_export_id})->delete();
@@ -278,7 +278,7 @@ sub removeExportClient {
 	if (! exists $args{client_id} or ! defined $args{client_id}) {
 		$errmsg = "Component::Export::Nfsd3->removeExportClient needs a client_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	#return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
 }

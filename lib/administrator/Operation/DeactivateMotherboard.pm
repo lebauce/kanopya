@@ -73,7 +73,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::DeactivateMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if motherboard is active
@@ -81,7 +81,7 @@ sub new {
    	if(not $row->get_column('active') ) {
 	    	$errmsg = "Operation::DeactivateMotherboard->new : motherboard $args{params}->{motherboard_id} is not active";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
       
     # check if motherboard is down and out of a cluster
@@ -91,7 +91,7 @@ sub new {
    	if(not (($state eq 'down') or ($state eq 'broken'))) {
 	    	$errmsg = "Operation::DeactivateMotherboard->new : motherboard $args{params}->{motherboard_id} must be down or broken to be deactivated";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }  
        
     return $self;

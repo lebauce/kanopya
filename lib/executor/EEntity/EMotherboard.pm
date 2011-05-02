@@ -87,7 +87,7 @@ sub start {
     if ((! exists $args{econtext} or ! defined $args{econtext})){
 		$errmsg = "EEntity::EMotherboard->start need a econtext named argument!";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $powersupplycard_id = $self->_getEntity()->getPowerSupplyCardId();
 	if (!$powersupplycard_id) {
@@ -130,7 +130,7 @@ sub halt {
     if ((! exists $args{node_econtext} or ! defined $args{node_econtext})){
 		$errmsg = "EEntity::EMotherboard->halt need a node_econtext named argument!";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
     my $command = 'halt';
 	my $result = $args{node_econtext}->execute(command => $command);

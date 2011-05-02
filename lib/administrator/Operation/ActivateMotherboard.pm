@@ -73,7 +73,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::ActivateMotherboard->new : motherboard_id $args{params}->{motherboard_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if motherboard is not active
@@ -81,7 +81,7 @@ sub new {
    	if( $row->get_column('active') ) {
 	    	$errmsg = "Operation::ActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
        
     return $self;

@@ -46,7 +46,7 @@ package Orchestrator;
 #WARN l'orchestrator considère actuellement que les noeuds sont homogènes et ne prend pas en compte les spécificités de chaque carte
 #TODO Prendre en compte les spécificités des cartes dans les algos, faire un système de notation pour le choix des cartes à ajouter/supprimer
 #TODO Percent option. WARN: avg % != % avg
-#TODO use mcs exception
+#TODO use Kanopya Exception
 ###############################################################################################################
 
 use strict;

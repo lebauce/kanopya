@@ -77,7 +77,7 @@ sub new {
        (! exists $args{params}->{component_template_id} or !defined $args{params}->{component_template_id})) {
     	$errmsg = "Operation::AddComponentToCluster->new : params need cluster_id, component_id and component_template_id";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);	
+    	throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);	
     }
     
     # check if cluster_id exist
@@ -86,7 +86,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddComponentToCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
     # check if component_id exist
@@ -95,7 +95,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddComponentToCluster->new : component_id $args{params}->{component_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
     # check if component_template_id exist
@@ -104,7 +104,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddComponentToCluster->new : component_template_id $args{params}->{component_template_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
 	# check if component not already added to the cluster
@@ -116,7 +116,7 @@ sub new {
     if(defined $row) {
     	$errmsg = "Operation::AddComponentToCluster->new : cluster with id $args{params}->{cluster_id} already has component with id $args{params}->{component_id}";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     return $self;

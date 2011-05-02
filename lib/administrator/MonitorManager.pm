@@ -25,7 +25,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use McsExceptions;
+use Kanopya::Exceptions;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -50,7 +50,7 @@ sub new {
 	if (! exists $args{schemas} or ! defined $args{schemas}){
 		$errmsg = "MonitorManager->new needs schemas named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	$self->{db} = $args{schemas};
 	

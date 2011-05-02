@@ -29,7 +29,7 @@ sub addNode {
 		(! exists $args{mount_point} or ! defined $args{mount_point})) {
 		$errmsg = "EComponent::EMonitoragent::ESnmpd5->configureNode needs a motherboard, mount_point and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $config = {
@@ -54,7 +54,7 @@ sub addNode {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/default/snmpd');	
 	unlink "/tmp/$tmpfile";
@@ -68,7 +68,7 @@ sub addNode {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/snmp/snmpd.conf');	
 	unlink "/tmp/$tmpfile";
@@ -92,7 +92,7 @@ sub reload {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EMonitoragent::ESnmpd5->reload needs an econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $command = "invoke-rc.d snmpd restart";
 	my $result = $args{econtext}->execute(command => $command);

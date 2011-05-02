@@ -115,7 +115,7 @@ sub prepare {
 	if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
 		$errmsg = "ERemoveMotherboard->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	$log->debug("After Eoperation prepare and before get Administrator singleton");
 	my $params = $self->_getOperation()->getParams();

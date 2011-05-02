@@ -14,7 +14,7 @@ my $exectest = "ExecTest";
 note("Use Tests");
 use_ok(Administrator);
 use_ok(Executor);
-use_ok(McsExceptions);
+use_ok(Kanopya::Exceptions);
 
 note("Load Administrator tests");
 my %
@@ -98,7 +98,7 @@ eval {
 	if ($@){
 				my $err = $@;
 		
-		is ($@->isa('Mcs::Exception::Internal'), 1, "get Mcs Exception No more operation in queue!");
+		is ($@->isa('Kanopya::Exception::Internal'), 1, "get Kanopya Exception No more operation in queue!");
 	}
 
 #	$adm->{db}->txn_rollback;
@@ -106,9 +106,9 @@ eval {
 if ($@){
 	print "Exception catch, its type is : " . ref($@);
 	print Dumper $@;
-	if ($@->isa('Mcs::Exception')) 
+	if ($@->isa('Kanopya::Exception')) 
    	{
-		print "Mcs Exception\n";
+		print "Kanopya Exception\n";
    }
 #	$adm->{db}->txn_rollback;
 }

@@ -47,7 +47,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
-use McsExceptions;
+use Kanopya::Exceptions;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -71,7 +71,7 @@ sub new {
 	if (! exists $args{node_rs} or ! defined $args{node_rs}){
 		$errmsg = "NodeManager->new need a _node_rs named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	$self->{_node_rs} = $args{node_rs};
 	$self->{adm} = $args{adm};
@@ -103,7 +103,7 @@ sub addNode{
 		(! exists $args{master_node} or ! defined $args{master_node})){
 		$errmsg = "NodeManager->addNode need a cluster_id, motherboard_id and a master_node named argument!";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 		
 	my $res =$self->{_node_rs}->create({cluster_id=>$args{cluster_id},
@@ -132,13 +132,13 @@ sub delNode{
 		(! exists $args{motherboard_id} or ! defined $args{motherboard_id})){
 		$errmsg = "NodeManager->delNode need a cluster_id and a motherboard_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $row = $self->{_node_rs}->search(\%args)->first;
 	if(not defined $row) {
 		$errmsg = "NodeManager->delNode : node representing motherboard $args{motherboard_id} and cluster $args{cluster_id} not found!";
 		$log->error($errmsg);
-		throw Mcs::Exception::DB(error => $errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
 	}
 	$row->delete;
 }
@@ -162,7 +162,7 @@ sub getNodes {
 	if (! exists $args{cluster_id} or ! defined $args{cluster_id}) {
 		$errmsg = "Administrator->getNodes need a cluster_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $nodes =  $self->{_node_rs}->search({ cluster_id => $args{cluster_id}});
 	my $motherboards = [];

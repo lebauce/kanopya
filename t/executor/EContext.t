@@ -1,6 +1,6 @@
 use Test::More 'no_plan';
 use lib "../Lib", "../../Common/Lib" ;
-use McsExceptions;
+use Kanopya::Exceptions;
 use Log::Log4perl qw(:easy);
 use Data::Dumper;
 
@@ -20,13 +20,13 @@ use_ok(EFactory);
 
 note("\nInstanciation Exceptions Test");
 eval { my $context = EFactory::newEContext(); };
-if($@) { is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@"); }
+if($@) { is ($@->isa('Kanopya::Exception'), 1, "get Kanopya Exception: $@"); }
 
 eval { my $context = EFactory::newEContext(ip_source => undef); };
-if($@) { is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@"); }
+if($@) { is ($@->isa('Kanopya::Exception'), 1, "get Kanopya Exception: $@"); }
 
 eval { my $context = EFactory::newEContext(ip_destination => undef); };
-if($@) { is ($@->isa('Mcs::Exception'), 1, "get Mcs Exception: $@"); }
+if($@) { is ($@->isa('Kanopya::Exception'), 1, "get Kanopya Exception: $@"); }
 
 note("\nEContext::Local Instanciation");
 my $context1 = EFactory::newEContext(ip_source => '123.123.123.123', ip_destination => '123.123.123.123'); 
@@ -39,7 +39,7 @@ is($context2, $context1, '$context1 and $context2 are same instance');
 
 note("\nEContext::Local failed execution Exception");
 eval { my $result = $context1->execute(command => "badcommandbadcommand"); };
-if($@) { is ($@->isa('Mcs::Exception::Execution'), 1, "get Mcs Exception: $@"); }
+if($@) { is ($@->isa('Kanopya::Exception::Execution'), 1, "get Kanopya Exception: $@"); }
 
 note("\nEContext::Local send method");
 my $srcfile = '/tmp/srcfile';
@@ -74,7 +74,7 @@ if($@) { print $@, "\n"; }
 
 note("\nEContext::SSH failed execution Exception");
 eval { my $result = $context3->execute(command => "badcommandbadcommand"); };
-if($@) { is ($@->isa('Mcs::Exception::Execution'), 1, "get Mcs Exception: $@"); }
+if($@) { is ($@->isa('Kanopya::Exception::Execution'), 1, "get Kanopya Exception: $@"); }
 
 note("\nEContext::SSH send method");
 # context1 is LOCAL

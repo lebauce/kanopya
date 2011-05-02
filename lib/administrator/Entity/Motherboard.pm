@@ -645,7 +645,7 @@ sub setInternalIP{
 		! exists $args{ipv4_internal_mask} or ! defined $args{ipv4_internal_mask}) {
 		$errmsg = "Motherboard->setInternalIP need ipv4_internal_address and ipv4_internal_mask named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
     my $adm = Administrator->new();
     my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
