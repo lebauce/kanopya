@@ -140,9 +140,17 @@ B<Comment>  : None
 B<throws>  : Nothing
 =cut
 
-sub getNetConf {
-    return {69=> 'udp'};
+# Warning Atftp bug when a port scan is done
+#sub getNetConf {
+#    return {69=> 'udp'};
+#}
+sub getExecToTest {
+    return {atftp =>   {cmd => 'netstat -lnpu | grep 69',
+                         answer => '.+$',
+                         return_code => '0'}
+    };
 }
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

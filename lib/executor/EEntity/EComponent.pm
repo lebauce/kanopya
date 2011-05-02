@@ -180,10 +180,17 @@ sub is_up {
     my $net_conf = $self->{_entity}->getNetConf();
 
     # Test executable
+    $log->info("Test component " . ref $self);
     foreach my $i (keys %$execution_list) {
+        my $ret;
         eval {
-        my $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
-        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");};
+        $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
+        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
+        $log->debug("Value returned are <$ret->{stdout}> and has to match $execution_list->{$i}->{answer}")
+        };
+        if ($ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
+            return 0;
+        }
         if ($@) {
             return 0;
    			    }
