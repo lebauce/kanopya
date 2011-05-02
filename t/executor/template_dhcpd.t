@@ -14,7 +14,7 @@ use Template;
 
 # some useful options (see below for full list)
 my $config = {
-    INCLUDE_PATH => '/templates/mcsdhcpd',
+    INCLUDE_PATH => '/templates/dhcpd',
     INTERPOLATE  => 1,               # expand "$var" in plain text
     POST_CHOMP   => 1,               # cleanup whitespace 
     EVAL_PERL    => 1,               # evaluate Perl code blocks

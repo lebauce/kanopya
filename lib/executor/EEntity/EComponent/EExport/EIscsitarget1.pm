@@ -205,28 +205,15 @@ sub generate {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
-	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsietd',
-	    INTERPOLATE  => 1,               # expand "$var" in plain text
-	    POST_CHOMP   => 0,               # cleanup whitespace 
-	    EVAL_PERL    => 1,               # evaluate Perl code blocks
-	    RELATIVE => 1,                   # desactive par defaut
-	};
+	my $data = $self->_getEntity()->getTemplateData();
 	
-	my $rand = new String::Random;
-	my $tmpfile = $rand->randpattern("cccccccc");
-	# create Template object
-	my $template = Template->new($config);
-    my $input = "ietd.conf.tt";
-    my $data = $self->_getEntity()->getTemplateData();
-	
-	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EExport::EIscsitarget1->generate : error during template generation : $template->error;";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);	
-	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/iet/ietd.conf");	
-	unlink "/tmp/$tmpfile";		 	 
+	$self->generateFile( econtext => $args{econtext},
+						 mount_point => $args{mount_point},
+						 template_dir => "/templates/components/ietd",
+						 input_file => "ietd.conf.tt",
+						 output => "/iet/ietd.conf",
+						 data => $data);
+	 	 
 }
 
 

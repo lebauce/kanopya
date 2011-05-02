@@ -184,7 +184,7 @@ sub generateKeepalived {
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcskeepalived',
+	    INCLUDE_PATH => '/templates/components/keepalived',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -219,7 +219,7 @@ sub generateIpvsadm {
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcskeepalived',
+	    INCLUDE_PATH => '/templates/components/keepalived',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -255,7 +255,7 @@ sub addnetwork_routes {
 	}
 
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcskeepalived',
+	    INCLUDE_PATH => '/templates/components/keepalived',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks

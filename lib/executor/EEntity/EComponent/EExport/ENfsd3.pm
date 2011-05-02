@@ -107,7 +107,7 @@ sub generate_nfs_common {
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsnfsd3',
+	    INCLUDE_PATH => '/templates/components/nfsd3',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -141,7 +141,7 @@ sub generate_nfs_kernel_server {
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsnfsd3',
+	    INCLUDE_PATH => '/templates/components/nfsd3',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -175,7 +175,7 @@ sub generate_exports {
 	}
 		
 	my $config = {
-	    INCLUDE_PATH => '/templates/components/mcsnfsd3',
+	    INCLUDE_PATH => '/templates/components/nfsd3',
 	    INTERPOLATE  => 1,               # expand "$var" in plain text
 	    POST_CHOMP   => 0,               # cleanup whitespace 
 	    EVAL_PERL    => 1,               # evaluate Perl code blocks
