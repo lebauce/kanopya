@@ -298,7 +298,7 @@ sub view_clusterdetails : Runmode {
 	} else { 
 		$tmpl->param('active' => 0);
 		$tmpl->param('link_activate' => 1);
-		$tmpl->param('link_delete' => 1);
+		$tmpl->param('link_delete' => 1); 
 	}
 	
 	# components list
@@ -363,7 +363,8 @@ sub view_clusterdetails : Runmode {
 	if(not $methods->{'remove'}->{'granted'} ) { $tmpl->param('link_delete' => 0); }
 	if(not $methods->{'activate'}->{'granted'} ) { $tmpl->param('link_activate' => 0); }
 	if(not $methods->{'start'}->{'granted'} ) { $tmpl->param('link_start' => 0); }
-	if(not $methods->{'stop'}->{'granted'} ) { $tmpl->param('link_stop' => 0); }
+	# TODO identifier le cluster d'admin autrement que $cluster_id == 1
+	if(not $methods->{'stop'}->{'granted'} or $cluster_id == 1) { $tmpl->param('link_stop' => 0); }
 	if(not $methods->{'addComponent'}->{'granted'} ) { $tmpl->param('link_addcomponent' => 0); }
 	else {$tmpl->param('link_addcomponent' => 1); }
 	
