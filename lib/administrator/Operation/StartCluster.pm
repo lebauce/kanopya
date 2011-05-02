@@ -74,7 +74,7 @@ sub new {
     if($cluster->getAttr(name => 'active') == 0 or $cluster->getAttr(name => 'cluster_state') ne 'down') {
     	my $errmsg = "Operation::StartCluster->new : cluster must be active and down to be started";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if systemimage is active
@@ -82,7 +82,7 @@ sub new {
     if($systemimage->getAttr(name => 'active') == 0) {
     	my $errmsg = "Operation::StartCluster->new : cluster's systemimage is not active ; activate it to start the cluster";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if there are enough free motherboard to start cluster min nodes
@@ -95,7 +95,7 @@ sub new {
 		$errmsg .= "minimum nodes required is ". $cluster->getAttr(name => 'cluster_min_node');
 		$errmsg .= " and only ".scalar(@freemotherboards). " motherboards are available";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
 	}    
 
 	return $self;

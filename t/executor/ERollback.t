@@ -1,6 +1,6 @@
 use Test::More 'no_plan';
 use lib "../Lib", "../../Common/Lib" ;
-use McsExceptions;
+use Kanopya::Exceptions;
 use Log::Log4perl qw(:easy);
 use Data::Dumper;
 

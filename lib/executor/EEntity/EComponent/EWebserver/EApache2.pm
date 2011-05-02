@@ -30,7 +30,7 @@ sub addNode {
 		(! exists $args{mount_point} or ! defined $args{mount_point})) {
 		$errmsg = "EComponent::EWebserver::EApacge2->configureNode needs a motherboard, mount_point and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $config = {
@@ -55,7 +55,7 @@ sub addNode {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/apache2/apache2.conf');	
 	unlink "/tmp/$tmpfile";
@@ -70,7 +70,7 @@ sub addNode {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/apache2/ports.conf');	
 	unlink "/tmp/$tmpfile";
@@ -87,7 +87,7 @@ sub addNode {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EWebserver::EApache2->addNode : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/apache2/sites-available/default');	
 	unlink "/tmp/$tmpfile";
@@ -112,7 +112,7 @@ sub reload {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EMonitoragent::ESnmpd5->reload needs an econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $command = "invoke-rc.d apache2 restart";
 	my $result = $args{econtext}->execute(command => $command);

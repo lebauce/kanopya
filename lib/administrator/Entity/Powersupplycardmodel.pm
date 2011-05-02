@@ -179,7 +179,7 @@ sub checkAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		$errmsg = "Entity::Processormodel->checkAttrs need an attrs hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
@@ -197,7 +197,7 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Processormodel->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$attr_def)) {
@@ -205,7 +205,7 @@ sub checkAttrs {
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Processormodel->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -231,18 +231,18 @@ sub checkAttr{
 		(! exists $args{value})) { 
 		$errmsg = "Entity::Processormodel->checkAttr need a name and value named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
 		$errmsg = "Entity::Processormodel->checkAttr detect a null value for a mandatory attr ($args{name})";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Processormodel->checkAttr invalid attr name : '$args{name}'";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# Here check attr value

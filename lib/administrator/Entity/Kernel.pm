@@ -24,7 +24,7 @@ use base "Entity";
 use strict;
 use warnings;
 
-use McsExceptions;
+use Kanopya::Exceptions;
 use Administrator;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -59,7 +59,7 @@ sub get {
     if ((! exists $args{id} or ! defined $args{id})) { 
 		$errmsg = "Entity::Kernel->new need an id named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $admin = Administrator->new();
@@ -92,7 +92,7 @@ sub getKernels {
 	if ((! exists $args{hash} or ! defined $args{hash})) { 
 		$errmsg = "Entity::getKernels need a type and a hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
 	my $adm = Administrator->new();
    	return $class->SUPER::getEntities( %args,  type => "Kernel");
@@ -145,7 +145,7 @@ sub checkAttrs {
 	if (! exists $args{attrs} or ! defined $args{attrs}){ 
 		$errmsg = "Entity::Kernel->checkAttrs need an attrs hash named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}	
 
 	my $attrs = $args{attrs};
@@ -163,7 +163,7 @@ sub checkAttrs {
 		else {
 			$errmsg = "Entity::Kernel->checkAttrs detect a wrong attr $attr !";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 		}
 	}
 	foreach $attr (keys(%$attr_def)) {
@@ -171,7 +171,7 @@ sub checkAttrs {
 			(! exists $attrs->{$attr})) {
 				$errmsg = "Entity::Kernel->checkAttrs detect a missing attribute $attr !";
 				$log->error($errmsg);
-				throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 	}
 	#TODO Check if id (systemimage, kernel, ...) exist and are correct.
@@ -197,18 +197,18 @@ sub checkAttr{
 		(! exists $args{value})) { 
 		$errmsg = "Entity::Kernel->checkAttr need a name and value named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
 		$errmsg = "Entity::Kernel->checkAttr detect a null value for a mandatory attr ($args{name})";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 
 	if (!exists $attr_def->{$args{name}}){
 		$errmsg = "Entity::Kernel->checkAttr invalid attr name : '$args{name}'";
 		$log->error($errmsg);	
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	# Here check attr value

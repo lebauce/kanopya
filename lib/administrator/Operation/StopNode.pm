@@ -74,7 +74,7 @@ sub new {
     if(not defined $node) {
     	my $errmsg = "Operation::StopNode->new : can't find this node in db (cluster_id is $args{params}->{cluster_id}, motherboard_id is $args{params}->{motherboard_id})";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
         
     # check if node is up
@@ -85,7 +85,7 @@ sub new {
     if($motherboard->getAttr(name => 'motherboard_state') ne 'up') {
     	my $errmsg = "Operation::StopNode->new : motherboard must be up to be stopped";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
 	return $self;

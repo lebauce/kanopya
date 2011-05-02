@@ -17,7 +17,7 @@ my $exectest = "ExecTest";
 note("Use Tests");
 use_ok(Administrator);
 use_ok(Executor);
-use_ok(McsExceptions);
+use_ok(Kanopya::Exceptions);
 
 note("Load Administrator tests");
 my %args = (login =>'admin', password => 'admin');
@@ -156,9 +156,9 @@ eval {
 if ($@){
 	print "Exception catch, its type is : " . ref($@);
 	print Dumper $@;
-	if ($@->isa('Mcs::Exception')) 
+	if ($@->isa('Kanopya::Exception')) 
    	{
-		print "Mcs Exception\n";
+		print "Kanopya Exception\n";
    }
 #	$adm->{db}->txn_rollback;
 }

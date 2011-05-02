@@ -480,13 +480,9 @@ sub update {
 									  		collect_time => $start_time, 
 									  	);
 		}
-
-		$log->debug('aggregation : ' . ( time() - $time) . " sec");
 		
 		# Update total consumption
-		$time = time();
 		$self->updateConsumption();
-		$log->debug('consumption : ' . ( time() - $time) . " sec");
 	};
 	if ($@) {
 		my $error = $@;

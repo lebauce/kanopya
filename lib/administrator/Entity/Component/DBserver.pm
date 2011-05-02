@@ -83,7 +83,7 @@ To save data in DB call save() on returned obj (after modification)
 Like all component, instantiate it creates a new empty component instance.
 You have to populate it with dedicated methods.
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -112,7 +112,7 @@ B<args>    :
 B<Return>  : a new Entity::Component::DBServer from Kanopya Database
 B<Comment>  : To modify data in DB call save() on returned obj (after modification)
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
 	
 =cut
 
@@ -132,7 +132,7 @@ sub get {
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
-Exception : Mcs::Exception::Internal::IncorrectParam
+Exception : Kanopya::Exception::Internal::IncorrectParam
 
 =head1 CONFIGURATION AND ENVIRONMENT
 

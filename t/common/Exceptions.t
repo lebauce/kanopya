@@ -1,15 +1,15 @@
 use lib qw(../Lib);
-use McsExceptions;
+use Kanopya::Exceptions;
 use Data::Dumper;
 
 eval {
 	print "Before exception\n";
 	#die "test";
-	throw Mcs::Exception::DB(error => "DB connection failed");
+	throw Kanopya::Exception::DB(error => "DB connection failed");
 	print "After exception";
 };
 if ($@) {
-if ($@->isa('Mcs::Exception')) 
+if ($@->isa('Kanopya::Exception')) 
    {
       print STDERR "Exception DB Received";
       print Dumper $@;

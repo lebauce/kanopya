@@ -258,6 +258,9 @@ INSERT INTO `lvm2_lv` VALUES (4,1,'root_DebianSystemImage',6144,0,'ext3');
 -- atftp configuration
 INSERT INTO `atftpd0` VALUES (1,5,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
 
+-- Apache2 configuration
+INSERT INTO `apache2` VALUES(2,"/var/www","debug", "80", "443", 1);
+
 -- dhcpd configuration
 -- INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com','[% nameserver %]','node001');
 INSERT INTO `dhcpd3` VALUES (1,4,'hedera-technology.com',NULL,'node001');

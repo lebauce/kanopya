@@ -49,7 +49,7 @@ use vars qw(@ISA $VERSION);
 
 use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use base "EContext";
-use McsExceptions;
+use Kanopya::Exceptions;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -94,7 +94,7 @@ sub new {
     	$p->close();
     	$errmsg = "EContext::SSH->new : can't contact $args{ip} on port 22";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Network(error => $errmsg);	
+    	throw Kanopya::Exception::Network(error => $errmsg);	
     }
     $p->close();
     $log->debug("Remote econtext ssh instanciate");
@@ -105,7 +105,7 @@ sub new {
 	#$log->debug("using GRID::Machine::is_operative to test the connection");
 	#eval { is_operative('ssh', $host, 'hostname', 1); };
 	#if($@) {	
-	#	throw Mcs::Exception::Network(error => "EContext::SSH->new : $@"); 
+	#	throw Kanopya::Exception::Network(error => "EContext::SSH->new : $@"); 
 	#}
 	bless $self, $class;
 	#$sshcontexts->{$args{ip}} = $self;	
@@ -154,13 +154,13 @@ sub execute {
 	if(! exists $args{command} or ! defined $args{command}) {
 		$errmsg = "EContext::SSH->execute need a command named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 	
 	if($args{command} =~ m/2>/) {
 		$errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 		
 	if(not exists $self->{machine}) {
@@ -175,7 +175,7 @@ sub execute {
 	if(not $r->ok) {
 		$errmsg = "EContext::SSH->execute RPC failed";
 		$log->error($errmsg);
-		throw Mcs::Exception::Network(error => $errmsg);
+		throw Kanopya::Exception::Network(error => $errmsg);
 	}
 	$result->{exitcode} = $r->errcode; # TODO URGENT voir le code de grid::machine pour qu'il retourne le errcode
 	$result->{stdout} = $r->stdout;
@@ -187,7 +187,7 @@ sub execute {
 	if($result->{stderr}) {
 		$errmsg = "EContext::SSH->execute : got stderr: $result->{stderr}";
 		$log->error($errmsg);
-		throw Mcs::Exception::Execution(error => $errmsg);
+		throw Kanopya::Exception::Execution(error => $errmsg);
 	}
 	return $result;	
 }
@@ -212,12 +212,12 @@ sub send {
 	   (! exists $args{dest} or ! defined $args{dest})) {
 		$errmsg = "EContext::SSH->execute need a src and dest named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 	if(not -e $args{src}) {
 		$errmsg = "EContext::SSH->execute src file $args{src} no found";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	if(not exists $self->{machine}) {
@@ -229,7 +229,7 @@ sub send {
 	if(not $result) {
 		$errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 }
 	

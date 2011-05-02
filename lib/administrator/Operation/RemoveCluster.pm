@@ -72,7 +72,7 @@ sub new {
     if (! exists $args{params}->{cluster_id} or ! defined $args{params}->{cluster_id}) {
     	$errmsg = "Operation::RemoveCluster->new : params need a cluster_id parameter!";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
    
 	$log->debug("checking cluster existence with id <$args{params}->{cluster_id}>");
@@ -80,7 +80,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::RemoveCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }   
     
     return $self;

@@ -30,7 +30,7 @@ sub addHost {
 		(! exists $args{kernel_id} or ! defined $args{kernel_id})) {
 		$errmsg = "EComponent::EDhcpserver::EDhcpd3->addHost needs a dhcpd3_subnet_id, dhcpd3_hosts_ipaddr, dhcpd3_hostst_mac_add, dhcpd3_hosts_hostname and kernel_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	return $self->_getEntity()->addHost(%args);
@@ -44,7 +44,7 @@ sub removeHost {
 		(! exists $args{dhcpd3_hosts_id} or ! defined $args{dhcpd3_hosts_id})) {
 		$errmsg = "EComponent::EDhcpserver::EDhcpd3->removeHost needs a dhcpd3_subnet_id, dhcpd3_hosts_id named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	return $self->_getEntity()->removeHost(%args);
 }
@@ -57,7 +57,7 @@ sub generate {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EDhcpserver::EDhcpd3->generate needs an econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $config = {
@@ -78,7 +78,7 @@ sub generate {
 	$template->process($input, $data, "/tmp/".$tmpfile) || do {
 		$errmsg = "EComponent::EDhcpserver::EDhcpd3->generate : error during template generation : $template->error;";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/dhcp3/dhcpd.conf");	
 	unlink "/tmp/$tmpfile";		 	 
@@ -92,7 +92,7 @@ sub reload {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::EDhcpserver::EDhcpd3->reload needs an econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $command = "invoke-rc.d dhcp3-server restart";
 	my $result = $args{econtext}->execute(command => $command);

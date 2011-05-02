@@ -29,7 +29,7 @@ sub configureNode {
 		(! exists $args{mount_point} or ! defined $args{mount_point})) {
 		$errmsg = "EComponent::EMonitoragent::E[% component_name %]->configureNode needs a motherboard, mount_point and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	#TODO insert configuration files generation
@@ -43,7 +43,7 @@ sub addNode {
 		(! exists $args{mount_point} or ! defined $args{mount_point})) {
 		$errmsg = "EComponent::E[% component_category %]::E[% component_name %]->addNode needs a motherboard, mount_point and econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	$self->configureNode(%args);
@@ -59,7 +59,7 @@ sub reload {
 	if(! exists $args{econtext} or ! defined $args{econtext}) {
 		$errmsg = "EComponent::E[% component_category %]::E[% component_name %]->reload needs an econtext named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 

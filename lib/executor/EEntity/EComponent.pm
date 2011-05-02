@@ -102,7 +102,7 @@ sub addInitScripts {
 		(! exists $args{stopvalue} or ! defined $args{stopvalue})) {
 			$errmsg = "EEntity::EComponent->addInitScripts needs a etc_mountpoint, econtext,scriptname, startvalue, stopvalue  named argument!";
 			$log->error($errmsg);
-			throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 		
 	foreach my $startlevel ((2, 3, 4, 5)) { 
@@ -154,7 +154,7 @@ sub generateFile {
 	$template->process($args{input_file}, $args{data}, "/tmp/".$tmpfile) || do {
 		$errmsg = "error during generation from '$args{input_file}':" .  $template->error;
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
+		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
 	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});	
 	unlink "/tmp/$tmpfile";
@@ -180,10 +180,17 @@ sub is_up {
     my $net_conf = $self->{_entity}->getNetConf();
 
     # Test executable
+    $log->info("Test component " . ref $self);
     foreach my $i (keys %$execution_list) {
+        my $ret;
         eval {
-        my $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
-        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");};
+        $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
+        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
+        $log->debug("Value returned are <$ret->{stdout}> and has to match $execution_list->{$i}->{answer}")
+        };
+        if ($ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
+            return 0;
+        }
         if ($@) {
             return 0;
    			    }

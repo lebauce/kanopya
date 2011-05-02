@@ -46,7 +46,7 @@ use vars qw(@ISA $VERSION);
 
 use lib qw(/workspace/mcs/Executor/Lib /workspace/mcs/Common/Lib);
 use base "EContext";
-use McsExceptions;
+use Kanopya::Exceptions;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -100,14 +100,14 @@ sub execute {
 	if(! exists $args{command} or ! defined $args{command}) {
 		$errmsg = "EContext::Local->execute need a command named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 	
 	# command must no contain stderr redirection !
 	if($args{command} =~ m/2>/) {
 		$errmsg = "EContext::Local->execute : command must not contain stderr redirection (2>)!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 		
 	my $result = {};
@@ -121,7 +121,7 @@ sub execute {
 	$log->debug("Command stdout is : '$result->{stdout}'");
 	$log->debug("Command stderr is : '$result->{stderr}'");
 	#if($result->{stderr}) {
-		#throw Mcs::Exception::Execution(
+		#throw Kanopya::Exception::Execution(
 			#error => "EContext::Local->execute : got stderr: $result->{stderr}");
 	#}
 	return $result;	
@@ -147,12 +147,12 @@ sub send {
 	   (! exists $args{dest} or ! defined $args{dest})) {
 		$errmsg = "EContext::Local->execute need a src and dest named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg); 
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
 	}
 	if(not -e $args{src}) {
 		$errmsg = "EContext::Local->execute src file $args{src} no found";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	# TODO faire plus de test sur la destination
 	my $result = {};

@@ -73,7 +73,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::DeactivateCluster->new : cluster_id $args{params}->{cluster_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if cluster is active
@@ -81,7 +81,7 @@ sub new {
    	if(not $row->get_column('active') ) {
 	    	$errmsg = "Operation::DeactivateCluster->new : cluster $args{params}->{cluster_id} is not active";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
       
     # check if cluster is down
@@ -91,7 +91,7 @@ sub new {
    	if(not ($state eq 'down')) {
 	    	$errmsg = "Operation::DeactivateCluster->new : cluster $args{params}->{cluster_id} must be down to be deactivated";
 	    	$log->error($errmsg);
-	    	throw Mcs::Exception::Internal(error => $errmsg);
+	    	throw Kanopya::Exception::Internal(error => $errmsg);
     }  
        
     return $self;

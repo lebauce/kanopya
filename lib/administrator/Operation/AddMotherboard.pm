@@ -92,7 +92,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddMotherboard->new : kernel_id $args{params}->{kernel_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if motherboard_model_id exist
@@ -101,7 +101,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddMotherboard->new : motherboardmodel_id $args{params}->{motherboardmodel_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check if processor_model_id exist
@@ -110,7 +110,7 @@ sub new {
     if(! defined $row) {
     	$errmsg = "Operation::AddMotherboard->new : processormodel_id $args{params}->{processormodel_id} does not exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check mac address unicity
@@ -119,7 +119,7 @@ sub new {
     if(defined $row) {
     	$errmsg = "Operation::AddMotherboard->new : motherboard_mac_address $args{params}->{motherboard_mac_address} already exist";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if (defined $args{params}->{motherboard_powersupply_id}){
@@ -130,13 +130,13 @@ sub new {
     	if(! $row) {
     		$errmsg = "Operation::AddMotherboard->new : There is no power supply defined in the system!";
     		$log->error($errmsg);
-    		throw Mcs::Exception::Internal(error => $errmsg);
+    		throw Kanopya::Exception::Internal(error => $errmsg);
     	}
     	my $existing_psc_id = $row->powersupplies->single({powersupplyport_id=>$args{params}->{motherboard_powersupply_id}});
 		if ($existing_psc_id) {
 			$errmsg = "Operation::AddMotherboard->new : This power supply port is already recorded!";
     		$log->error($errmsg);
-    		throw Mcs::Exception::Internal(error => $errmsg);
+    		throw Kanopya::Exception::Internal(error => $errmsg);
 		}
     }
     return $self;

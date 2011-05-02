@@ -90,7 +90,7 @@ sub checkOp{
     if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
 		my $msg = "Node is still in stopping state.";
 		$log->error($msg);
-		throw Mcs::Exception::Execution::OperationReported(error => $msg);
+		throw Kanopya::Exception::Execution::OperationReported(error => $msg);
 	}
  
 }
@@ -112,7 +112,7 @@ sub prepare {
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EAddMotherboardInCluster->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 

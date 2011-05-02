@@ -74,7 +74,7 @@ sub newEOperation{
     if ($@){
     	$errmsg = "EFactory->newEOperation : require locaction failed (location is $location)";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
 #	$log->info("$class instanciated");
@@ -93,7 +93,7 @@ sub newEEntity {
 	if (! exists $args{data} or ! defined $args{data}) { 
 		$errmsg = "EntityFactory::newEEntity need a data named argument!";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $data = $args{data};
 	my $class = General::getClassEEntityFromEntity(entity => $data);
@@ -102,9 +102,9 @@ sub newEEntity {
 	
 	eval { require $location; };
     if ($@){
-    	$errmsg = "EFactory->newEEntity : require locaction failed (location is $location)";
+    	$errmsg = "EFactory->newEEntity : require locaction failed (location is $location) : $@";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
 #	$log->info("$class instanciated");
@@ -123,18 +123,18 @@ sub newEContext {
 		(! exists $args{ip_destination} or ! defined $args{ip_destination})) { 
 		$errmsg = "EFactory::newEContext need ip_source and ip_destination named argument!";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
 	if (!ip_is_ipv4($args{ip_source})){
 		$errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 		if (!ip_is_ipv4($args{ip_destination})){
 		$errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";	
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::WrongValue(error => $errmsg);
+		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 	}
 	#Create EContext::Local or EContext::SSH
 	if($args{ip_source} eq $args{ip_destination}) {

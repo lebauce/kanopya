@@ -73,7 +73,7 @@ sub new {
     if($cluster->getAttr(name => 'active') == 0 or $cluster->getAttr(name => 'cluster_state') ne 'up') {
     	my $errmsg = "Operation::StartCluster->new : cluster must be active and up to be stopped";
     	$log->error($errmsg);
-    	throw Mcs::Exception::Internal(error => $errmsg);
+    	throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
 	return $self;

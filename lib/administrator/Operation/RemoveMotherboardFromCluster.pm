@@ -73,7 +73,7 @@ sub new {
 		(! exists $args{params}->{motherboard_id} or ! defined $args{params}->{motherboard_id})) { 
 		$errmsg = "Operation::RemoveMotherboardFromCluster->new : params need a motherboard_id and a cluster_id";
 		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
  	#TODO Here check cluster and motherboard existance and rights
     return $self;
