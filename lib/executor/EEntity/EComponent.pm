@@ -118,6 +118,13 @@ sub addInitScripts {
     }	
 }
 
+=head2 generateFile
+	
+	Class : Public
+	
+	Desc : Generate a file using a template file and data, and send it to the desired location using econtext 
+	
+=cut
 
 sub generateFile {
 	my $self = shift;

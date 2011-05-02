@@ -32,10 +32,10 @@ sub configureNode {
 				session_path => $conf->{php5_session_path},
 				};
 	if ( $data->{session_handler} eq "memcache" ) { # This handler needs specific configuration (depending on master node)
-		my $masternodeip = $args{cluster}->getMasterNodeIp();
-		my $ip = (not defined $masternodeip) ? "127.0.0.1" : $masternodeip;
-		my $port = '11211'; # default port of memcached
-		$data->{session_path} = "tcp://$ip:$port";
+		my $masternodeip = 	$args{cluster}->getMasterNodeIp() ||
+							$args{motherboard}->getInternalIP()->{ipv4_internal_address}; # current node is the master node
+		my $port = '11211'; # default port of memcached TODO: retrieve memcached port using component
+		$data->{session_path} = "tcp://$masternodeip:$port";
 	}
 	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
 						 template_dir => "/templates/components/php5",
