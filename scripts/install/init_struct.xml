@@ -3,7 +3,7 @@
 	kanopya_dir="/opt/kanopya"
      install_template_dir="/opt/kanopya/scripts/install/templates/"
      conf_dir="/opt/kanopya/conf/"
-     comp_conf="/etc/kanopya/components.conf"
+     comp_conf="/opt/kanopya/conf/components.conf"
      database_dir="/opt/kanopya/scripts/database/mysql/"
 	comp_schemas_dir="/opt/kanopya/scripts/database/mysql/schemas/components/"
 	schemas_dir="/opt/kanopya/scripts/database/mysql/schemas"

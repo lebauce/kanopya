@@ -113,7 +113,8 @@ sub checkNodeUp {
     my %args = @_;
     
     if ((!defined $args{cluster} or !exists $args{cluster})||
-        (!defined $args{motherboard} or !exists $args{motherboard})){
+        (!defined $args{motherboard} or !exists $args{motherboard}) ||
+        (!defined $args{executor_ip} or !exists $args{executor_ip})){
             $errmsg = "StateManager::updateNodeStatus need a cluster and motherboard named argument!";	
 		    $log->error($errmsg);
 		    throw Kanopya::Exception::Internal(error => $errmsg);
@@ -125,27 +126,36 @@ sub checkNodeUp {
    
     my $components= $args{cluster}->getComponents(category => "all");
     my $protoToTest;
-    my $node_available = 1;    
+    my $node_available = 1;
 
     my $node_ip = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
+    if (!$node_ip) {
+        $errmsg = "Node without IP!";	
+        $log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    my $host_econtext = EFactory::newEContext(ip_source => $args{executor_ip}, ip_destination => $node_ip);
    	foreach my $i (keys %$components) {
    	    print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
-		if ($components->{$i}->can("getNetConf")) {
-		    #TODO Call a method on component which test if component is ready to receive a new node.
-		    my $protoToTest = $components->{$i}->getNetConf();
-            foreach my $j (keys %$protoToTest) {
-                print "\tTest port <$j> of motherboard <$node_ip> with protocol <" . $protoToTest->{$j} ."> for component " . $components->{$i}->getComponentAttr()->{component_name};
-                my $sock = new
-                        IO::Socket::INET(PeerAddr=>$node_ip,PeerPort=>$j,Proto=>$protoToTest->{$j});
-                if(! $sock) {
-                    print ", service is not available\n";
-                    $node_available = 0;
-                    last; 
-                }
-                print ", service is available\n";
-                close $sock or die "close: $!";
-            }
-	   }
+   	    my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
+   	    $tmp_ecomp->is_up(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext);
+#		if ($components->{$i}->can("getNetConf")) {
+#		    
+#		    #TODO Call a method on component which test if component is ready to receive a new node.
+#		    my $protoToTest = $components->{$i}->getNetConf();
+#            foreach my $j (keys %$protoToTest) {
+#                print "\tTest port <$j> of motherboard <$node_ip> with protocol <" . $protoToTest->{$j} ."> for component " . $components->{$i}->getComponentAttr()->{component_name};
+#                my $sock = new
+#                        IO::Socket::INET(PeerAddr=>$node_ip,PeerPort=>$j,Proto=>$protoToTest->{$j});
+#                if(! $sock) {
+#                    print ", service is not available\n";
+#                    $node_available = 0;
+#                    last; 
+#                }
+#                print ", service is available\n";
+#                close $sock or die "close: $!";
+#            }
+#	   }
 	}
 
     return $node_available;
@@ -162,6 +172,8 @@ sub checkMotherboardUp {
 	my $p = Net::Ping->new();
 	my $pingable = $p->ping($args{ip});
 	$p->close();
+	$log->debug("Check Host <$args{ip}> availability <$pingable>");
+    print "Check Host <$args{ip}> availability <$pingable>\n";
 	return $pingable;
 }
 
@@ -197,7 +209,7 @@ sub run {
         # Second Check node status
    	    my @clusters = Entity::Cluster->getClusters(hash=>{cluster_state => {'!=' => 'down'}});
    	    foreach my $cluster (@clusters) {
-   	        print "cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n";
+   	        $log->debug("cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n");
    	        my $motherboards = $cluster->getMotherboards();
    	        my @moth_index = keys %$motherboards;
    	        foreach my $mb (@moth_index) {
@@ -205,7 +217,9 @@ sub run {
 #				print "Pingable : $pingable for motherboard ".$motherboards->{$mb}->getAttr( name => 'motherboard_internal_ip' ) ." state " . $motherboards->{$mb}->getAttr(name=>"motherboard_state")."\n";
 #		        updateMotherboardStatus(pingable => $pingable, motherboard=>$motherboards->{$mb});
 		        eval {
-		        	my $srv_available = checkNodeUp(motherboard=>$motherboards->{$mb}, cluster=>$cluster);
+		        	my $srv_available = checkNodeUp(motherboard=>$motherboards->{$mb}, 
+		        	                                cluster=>$cluster,
+		        	                                executor_ip=>Entity::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
 		        	updateNodeStatus(motherboard=>$motherboards->{$mb}, services_available => $srv_available, cluster => $cluster);
 		        };
 		        if($@) {

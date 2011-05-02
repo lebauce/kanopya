@@ -631,8 +631,10 @@ sub getEtcDev {
 sub getInternalIP {
     my $self = shift;
     my $adm = Administrator->new();
-    my $ip = $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $self->getAttr(name=>"motherboard_ipv4_internal_id"));
-    
+    if ($self->getAttr(name=>"motherboard_ipv4_internal_id")) {
+        return $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $self->getAttr(name=>"motherboard_ipv4_internal_id"));
+    }
+    return {};
 #    if($self->{_dbix}->)
 }
 

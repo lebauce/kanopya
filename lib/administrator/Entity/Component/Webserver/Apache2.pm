@@ -342,9 +342,19 @@ sub setConf {
 }
 
 sub getNetConf{
-    return {80=>'tcp'};
+    my $self = shift;
+    my $http_port = $self->{_dbix}->apache2s->first()->get_column("apache2_ports");
+    my $https_port = $self->{_dbix}->apache2s->first()->get_column("apache2_sslports");
+    return {$http_port=>'tcp',
+            $https_port=>'tcp'};
 }
 
+sub getExecToTest {
+    return {apache =>   {cmd => 'invoke-rc.d apache2 status',
+                         answer => '^Apache2 is running.*$',
+                         return_code => '0'}
+    };
+}
 
 =head1 DIAGNOSTICS
 
