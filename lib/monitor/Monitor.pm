@@ -82,7 +82,7 @@ sub new {
 	$log->info("NEW");
 
 	# Load conf
-	my $conf = XMLin("/etc/kanopya/monitor.conf");
+	my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
 
 	$self->{_time_step	 } = $conf->{time_step};
 	$self->{_period		 } = $conf->{period};

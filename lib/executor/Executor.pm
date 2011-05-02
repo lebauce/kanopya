@@ -91,7 +91,7 @@ Executor::_init is a private method used to define internal parameters.
 sub _init {
 	my $self = shift;
 	
-	$self->{config} = XMLin("/etc/kanopya/executor.conf");
+	$self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
 	if ((! exists $self->{config}->{user}->{name} ||
 		 ! defined exists $self->{config}->{user}->{name}) &&
 		(! exists $self->{config}->{user}->{password} ||

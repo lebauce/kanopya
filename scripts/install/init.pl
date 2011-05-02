@@ -61,11 +61,6 @@ getConf();
 #Function used to generate conf files 
 genConf();
 
-#####WORKAROUND#######
-#create /etc/kanopya and make a soft link inside to /opt/kanopya/conf/libkanopya.conf
-system('mkdir /etc/kanopya');
-system('ln -s /opt/kanopya/ /etc/kanopya/');
-
 ###############
 #Network setup#
 ###############

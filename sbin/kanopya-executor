@@ -45,7 +45,7 @@ use Executor;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
-Log::Log4perl->init('/etc/kanopya/executor-log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/executor-log.conf');
 my $log = get_logger("executor");
 
 

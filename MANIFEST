@@ -385,7 +385,6 @@ tools/deployment/packaging/administrator/debian/executor/DEBIAN/control
 tools/deployment/packaging/administrator/debian/executor/DEBIAN/md5sums
 tools/deployment/packaging/administrator/debian/executor/DEBIAN/postinst
 tools/deployment/packaging/administrator/debian/executor/DEBIAN/postrm
-tools/deployment/packaging/administrator/debian/executor/etc/kanopya/executor.conf
 tools/deployment/packaging/administrator/debian/executor/sbin/kanopya-executor
 tools/deployment/packaging/administrator/debian/executor/usr/share/doc/executor/changelog.gz
 tools/deployment/packaging/administrator/debian/executor/usr/share/doc/executor/copyright
