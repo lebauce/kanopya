@@ -176,9 +176,6 @@ sub checkUp {
 	$p->close();
     $log->debug("Check Host <$ip> availability <$pingable>");
 
-    if ($pingable) {
-        
-    }
 	return $pingable;
 }
 
