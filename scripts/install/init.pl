@@ -352,6 +352,7 @@ sub comparePassword{
         print "Passwords are differents\n";
         return 1;
     }
+    ReadMode('original');
     exit 0;
 }
 

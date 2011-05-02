@@ -181,8 +181,12 @@ sub is_up {
 
     # Test executable
     foreach my $i (keys %$execution_list) {
+        eval {
         my $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
-        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
+        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");};
+        if ($@) {
+            return 0;
+   			    }
         
     }
     # Test Services
