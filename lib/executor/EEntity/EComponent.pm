@@ -37,21 +37,23 @@ EComponent is an abstract class of component objects
 
 =cut
 package EEntity::EComponent;
+use base "EEntity";
 
 use strict;
 use warnings;
+
 use String::Random;
 use Template;
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
+use Nmap::Scanner;
+use General;
+use EFactory;
 
-use lib qw(/workspace/mcs/Common/Lib);
-use base "EEntity";
+our $VERSION = '1.00';
 
 my $log = get_logger("executor");
 my $errmsg;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
 =head2 new
 
@@ -118,6 +120,13 @@ sub addInitScripts {
     }	
 }
 
+=head2 generateFile
+	
+	Class : Public
+	
+	Desc : Generate a file using a template file and data, and send it to the desired location using econtext 
+	
+=cut
 
 sub generateFile {
 	my $self = shift;
@@ -160,6 +169,44 @@ sub preStartNode{}
 sub preStopNode{return 0;}
 sub postStopNode{}
 
+sub is_up {
+    my $self = shift;
+    my %args = @_;
+    my $availability = 1;
+    
+    General::checkParams( args => \%args, require => ['cluster', 'host', 'host_econtext'] );
+
+    my $execution_list = $self->{_entity}->getExecToTest();
+    my $net_conf = $self->{_entity}->getNetConf();
+
+    # Test executable
+    foreach my $i (keys %$execution_list) {
+        my $ret = $args{host_econtext}->execute(command=>$execution_list->{$i}->{cmd});
+        $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
+        
+    }
+    # Test Services
+    foreach my $j (keys %$net_conf) {
+        my $scanner = new Nmap::Scanner;
+        $scanner->max_rtt_timeout(200);
+        my $ip = $args{host}->getInternalIP()->{ipv4_internal_address};
+        $scanner->add_target($ip);
+        if ($net_conf->{$j} eq "udp") {
+            $scanner->udp_scan();
+        }
+        else {
+            $scanner->tcp_connect_scan();
+        }
+        $scanner->add_scan_port($j);
+        my $results = $scanner->scan();
+        my $port_state = $results-> get_host_list()->get_next()->get_port_list()->get_next()->state();
+        $log->debug("Check host <$ip> on port $j ($net_conf->{$j}) is <$port_state>");
+        if ($port_state eq "closed"){
+            return 0;
+        }
+    }
+    return 1;
+}
 
 1;
 

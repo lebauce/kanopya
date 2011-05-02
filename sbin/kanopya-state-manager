@@ -43,7 +43,7 @@ use StateManager;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
 
-Log::Log4perl->init('/etc/kanopya/state-manager-log.conf');
+Log::Log4perl->init('/opt/kanopya/conf/state-manager-log.conf');
 my $log = get_logger("statemanager");
 
 

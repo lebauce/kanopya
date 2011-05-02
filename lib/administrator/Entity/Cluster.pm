@@ -525,9 +525,11 @@ sub getSystemImage {
 
 sub getMasterNodeIp {
 	my $self = shift;
+	my $adm = Administrator->new();
 	my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
 	if(defined $node_instance_rs) {
-		my $node_ip = $node_instance_rs->motherboard->get_column('motherboard_internal_ip');
+		 my $motherboard_ipv4_internal_id = $node_instance_rs->motherboard->get_column('motherboard_ipv4_internal_id');
+		 my $node_ip = $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $motherboard_ipv4_internal_id)->{ipv4_internal_address};
 		$log->debug("Master node found and its ip is $node_ip");
 		return $node_ip;
 	} else {
@@ -670,6 +672,7 @@ sub getQoSConstraints {
 	my $self = shift;
 	my %args = @_;
 	
+	# TODO retrieve from db (it's currently done by RulesManager, move here)
 	return { max_latency => 22, max_abort_rate => 0.3 } ;
 }
 

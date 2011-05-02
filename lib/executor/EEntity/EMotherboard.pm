@@ -170,11 +170,12 @@ sub stop {
 sub checkUp {
     my $self = shift;
     
-    my $ip = $self->_getEntity()->getAttr(name=>"motherboard_internal_ip");
-    
+    my $ip = $self->_getEntity()->getInternalIP()->{ipv4_internal_address};
 	my $p = Net::Ping->new();
 	my $pingable = $p->ping($ip);
 	$p->close();
+    $log->debug("Check Host <$ip> availability <$pingable>");
+
 	return $pingable;
 }
 

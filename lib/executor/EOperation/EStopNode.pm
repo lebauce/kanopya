@@ -104,7 +104,7 @@ sub prepare {
 	$log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
     # Get node context
 	$self->{node_econtext} = EFactory::newEContext(ip_source => "127.0.0.1",
-	                                               ip_destination => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_internal_ip'));
+	                                               ip_destination => $self->{_objs}->{motherboard}->getInternalIP()->{ipv4_internal_address});
 	$log->debug("Get econtext for motherboard with ref ". ref($self->{node_econtext}));
 
 }

@@ -152,7 +152,7 @@ sub retrieveHostsByCluster {
 		my %mb_info;
 		foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
 			my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
-			my $mb_ip = $mb->getAttr( name => "motherboard_internal_ip" );
+			my $mb_ip = $mb->getInternalIP()->{ipv4_internal_address};
 			my $mb_state = $mb->getAttr( name => "motherboard_state" );
 
 			$mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };
