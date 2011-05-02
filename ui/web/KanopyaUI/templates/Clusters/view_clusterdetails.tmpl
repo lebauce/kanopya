@@ -88,7 +88,7 @@ activate</a><br />
 </td></tr>
 <TMPL_LOOP NAME=publicip_list>
 <tr><td class="label2"><TMPL_VAR NAME=address> / <TMPL_VAR NAME=netmask> (gateway: <TMPL_VAR NAME=gateway>)</td>
-<td class="action"><a class="imgRemove">remove</a>
+<td class="action"><a class="imgRemove" href="/cgi/kanopya.cgi/clusters/process_unsetpublicipfromcluster?cluster_id=<TMPL_VAR NAME=cluster_id>&publicip_id=<TMPL_VAR NAME=publicip_id>">remove</a>
 <input type="hidden" value="<TMPL_VAR NAME=name>"/>
 <td></tr>
 </TMPL_LOOP>

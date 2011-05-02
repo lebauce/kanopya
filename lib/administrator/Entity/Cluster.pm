@@ -650,10 +650,13 @@ sub getPublicIps {
 	my $i =0;
 	my @pub_ip =();
 	while ( my $publicip_row = $publicip_rs->next ) {
-		my $publicip = {address => $publicip_row->get_column('ipv4_public_address'),
+		my $publicip = {publicip_id => $publicip_row->get_column('ipv4_public_id'),
+						address => $publicip_row->get_column('ipv4_public_address'),
 						netmask => $publicip_row->get_column('ipv4_public_mask'),
 						gateway => $publicip_row->get_column('ipv4_public_default_gw'),
-						name 	=> "eth0:$i"};
+						name 	=> "eth0:$i",
+						cluster_id => $self->{_dbix}->get_column('cluster_id'),
+		};
 		$i++;
 		push @pub_ip, $publicip;
 	}

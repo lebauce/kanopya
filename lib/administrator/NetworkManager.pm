@@ -420,6 +420,49 @@ sub setClusterPublicIP {
 	$log->info("Public ip $args{publicip_id} set to cluster $args{cluster_id}");
 }
 
+=head2 unsetClusterPublicIP
+
+associate public ip and cluster
+	args:	publicip_id, cluster_id 
+	
+=cut
+
+sub unsetClusterPublicIP {
+	my $self = shift;
+	my %args = @_;
+	if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
+		! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
+		$errmsg = "NetworkManager->unsetClusterPublicIP need publicip_id and cluster_id named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	
+	my $row = $self->{db}->resultset('Ipv4Public')->find($args{publicip_id});
+	# getting public ip row
+	if(! defined $row) {
+		$errmsg = "NetworkManager->unsetClusterPublicIP : publicip_id $args{publicip_id} not found!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
+	}
+	if($row->get_column('cluster_id') ne $args{cluster_id}) {
+		$errmsg = "NetworkManager->unsetClusterPublicIP : publicip_id $args{publicip_id} not set to cluster_id $args{cluster_id}!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
+	}
+	
+	# try to unset cluster_id to this ip
+	eval {
+		$row->set_column('cluster_id', undef);
+		$row->update;
+	};
+	if($@) { 
+		$errmsg = "NetworkManager->unsetClusterPublicIP : $@";
+		$log->error($errmsg);
+		throw Kanopya::Exception::DB(error => $errmsg);
+	}
+	$log->info("Public ip $args{publicip_id} unset to cluster $args{cluster_id}");
+}
+
 =head delRoute
 
 delRoute delete a route given its id

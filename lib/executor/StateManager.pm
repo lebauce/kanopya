@@ -127,6 +127,7 @@ sub checkNodeUp {
     my $components= $args{cluster}->getComponents(category => "all");
     my $protoToTest;
     my $node_available = 1;
+    my $host_econtext;
 
     my $node_ip = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
     if (!$node_ip) {
@@ -134,48 +135,23 @@ sub checkNodeUp {
         $log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    my $host_econtext = EFactory::newEContext(ip_source => $args{executor_ip}, ip_destination => $node_ip);
+    eval {
+        $host_econtext = EFactory::newEContext(ip_source => $args{executor_ip}, ip_destination => $node_ip);};
+    if ($@) {
+        return 0;
+    }
    	foreach my $i (keys %$components) {
    	    print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
    	    my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
-   	    $tmp_ecomp->is_up(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext);
-#		if ($components->{$i}->can("getNetConf")) {
-#		    
-#		    #TODO Call a method on component which test if component is ready to receive a new node.
-#		    my $protoToTest = $components->{$i}->getNetConf();
-#            foreach my $j (keys %$protoToTest) {
-#                print "\tTest port <$j> of motherboard <$node_ip> with protocol <" . $protoToTest->{$j} ."> for component " . $components->{$i}->getComponentAttr()->{component_name};
-#                my $sock = new
-#                        IO::Socket::INET(PeerAddr=>$node_ip,PeerPort=>$j,Proto=>$protoToTest->{$j});
-#                if(! $sock) {
-#                    print ", service is not available\n";
-#                    $node_available = 0;
-#                    last; 
-#                }
-#                print ", service is available\n";
-#                close $sock or die "close: $!";
-#            }
-#	   }
+   	    if (!$tmp_ecomp->is_up(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
+   	        return 0;
+   	    }
 	}
 
     return $node_available;
 }
 
-sub checkMotherboardUp {
-    my %args = @_;
-    if ((!defined $args{ip} or !exists $args{ip})){
-            $errmsg = "StateManager::checkMotherboardUp need an ip named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-	my $p = Net::Ping->new();
-	my $pingable = $p->ping($args{ip});
-	$p->close();
-	$log->debug("Check Host <$args{ip}> availability <$pingable>");
-    print "Check Host <$args{ip}> availability <$pingable>\n";
-	return $pingable;
-}
+
 
 =head2 run
 

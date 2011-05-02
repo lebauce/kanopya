@@ -566,6 +566,22 @@ sub process_setpubliciptocluster : Runmode {
     return $self->close_window();
 }
 
+sub process_unsetpublicipfromcluster : Runmode {
+	my $self = shift;
+    my $query = $self->query();
+    eval {
+    	$self->{adm}->{manager}->{network}->unsetClusterPublicIP(
+    		publicip_id => $query->param('publicip_id'),
+    		cluster_id => $query->param('cluster_id'),
+    	);
+    };
+    if($@) { 
+		my $error = $@;
+		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed from cluster.'); }
+    $self->redirect('/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
+}
+
 # cluster start processing
 
 sub process_startcluster : Runmode {
