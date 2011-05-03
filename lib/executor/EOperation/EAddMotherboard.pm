@@ -55,6 +55,7 @@ use Entity::Kernel;
 use Entity::Motherboardmodel;
 use Entity::Processormodel;
 use Entity::Powersupplycard;
+use ERollback;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -264,11 +265,11 @@ sub execute{
         my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $self->{_objs}->{motherboard}->getEtcName(),
                                                                     size        => "52M",
                                                                     filesystem  => "ext3",
-                                                                    econtext    => $self->{nas}->{econtext});
-        my $func = $self->{_objs}->{component_storage}->removeDisk;
-	    $self->{erollback}->add(function   =>\&$func,
-	                            parameters => { name       => $self->{_objs}->{motherboard}->getEtcName(),
-	                                            econtext   => $self->{nas}->{econtext}});
+                                                                    econtext    => $self->{nas}->{econtext});;
+	    $self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
+	                            parameters => [$self->{_objs}->{component_storage},
+	                                           "name", $self->{_objs}->{motherboard}->getEtcName(),
+	                                            "econtext", $self->{nas}->{econtext}]);
         $self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
 	
         if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
@@ -284,8 +285,9 @@ sub execute{
         my $error = $@;
 		$errmsg = "Operation EAddMotherboard failed an error occured :\n$error";
 		$log->error($errmsg);
+		$self->{erollback}->undo();
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        $self->{erollback}->undo();
+
     }
 }
 

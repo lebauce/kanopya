@@ -80,7 +80,7 @@ sub add {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);   	
 	}
-    
+    $log->debug("add rollback func $args{function} with parameters ".Dumper($args{parameters}));
     if(not defined $self->{function}) {
     	$self->{function} = $args{function};
     	$self->{parameters} = $args{parameters};
@@ -127,10 +127,10 @@ sub undo {
 	my $self = shift;
     my $tmp = $self->_last;
 
-    while ($tmp) {
+    while ($tmp && $tmp->{function}) {
         my $fn = $tmp->{function};
         my $args = $tmp->{parameters};
-        $log->debug("undo with parameters: ", Dumper  $args);
+        $log->debug("undo $fn with parameters: ", Dumper  $args);
 	$fn->(@$args);
         $tmp = $tmp->{prev_item};
     }
