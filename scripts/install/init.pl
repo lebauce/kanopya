@@ -141,6 +141,12 @@ close ($FILE);
 ########################
 #Database configuration#
 ########################
+# first test if mysql server is running
+my $mysqlpidfile = '/var/run/mysqld/mysqld.pid';
+if(not -e $mysqlpidfile) {
+	system('invoke-rc.d mysql start');
+}
+
 #We generate the Data.sql file and setup database
 my %datas = (kanopya_vg_name => $answers->{vg}, kanopya_vg_size => $kanopya_vg_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $internal_ip_add, ipv4_internal_netmask => $answers->{internal_net_mask}, ipv4_internal_network_ip => $answers->{internal_net_add}, admin_domainname => $answers->{kanopya_server_domain_name}, mb_hw_address => $internal_net_interface_mac_add);
 useTemplate(template => 'Data.sql.tt', datas => \%datas, conf => $conf_vars->{data_sql}, include => $conf_vars->{data_dir});
