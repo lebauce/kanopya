@@ -82,8 +82,8 @@ sub checkParams {
 			# Log in general logger
 			# TODO log in the logger corresponding to caller package;
 			$log->error($errmsg);
-
-			throw Kanopya::Exception::Internal::MissingParam(sub_name => $caller_sub_name, param_name => $param);
+			
+			throw Kanopya::Exception::Internal::MissingParam(sub_name => $caller_sub_name, param_name => $param );
 		}
 	}
 }

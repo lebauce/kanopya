@@ -208,7 +208,7 @@ sub generate {
 	my $data = $self->_getEntity()->getTemplateData();
 	
 	$self->generateFile( econtext => $args{econtext},
-						 mount_point => $args{mount_point},
+						 mount_point => "/etc",
 						 template_dir => "/templates/components/ietd",
 						 input_file => "ietd.conf.tt",
 						 output => "/iet/ietd.conf",

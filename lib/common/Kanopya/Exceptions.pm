@@ -110,7 +110,7 @@ use Exception::Class (
 
 # Force print trace when exception is stringified
 # For Kanopya::Exception and all its subclasses
-Kanopya::Exception->Trace(1);
+#Kanopya::Exception->Trace(1);
 
 # Override method called when exception is stringified
 sub Kanopya::Exception::full_message {
@@ -121,7 +121,7 @@ sub Kanopya::Exception::full_message {
 
 	# Show fields	
 	for my $field ( $self->Fields ) {
-		$except_string .= "\n" . $field . ": " . $self->$field . "\n" if (defined $self->$field);
+		$except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
 	}
 
  	return $except_string;

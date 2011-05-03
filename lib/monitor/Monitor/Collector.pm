@@ -409,7 +409,7 @@ sub updateClusterData{
 sub update {
 	my $self = shift;
 	
-	# Flag to switch between treaded mode or not.
+	# Flag to switch between threaded mode or not.
 	# Threaded mode: allow to manage simultaneously each host and so speed up the entire update
 	#				 but some memory leaks happen and collector can seg fault (TODO make it work properly)
 	my $THREADED = 0;
@@ -437,22 +437,17 @@ sub update {
 			foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
 				if ( $mb->getNodeState() eq 'in' ) {
 					my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
+					my %params = (
+						host_ip => $host_ip,
+						host_state => $mb->getAttr( name => "motherboard_state" ),
+						components => \@components_name,
+						sets => $monitored_sets,
+					);
 					if ($THREADED) {
-						my $thr = threads->create( 	'updateHostData',
-													$self,
-													host_ip => $host_ip,
-													host_state => $mb->getAttr( name => "motherboard_state" ),
-													components => \@components_name,
-													sets => $monitored_sets
-													);
+						my $thr = threads->create( 'updateHostData', $self, %params	);
 						$threads{$host_ip} = $thr;
 					} else {
-						my $ret = $self->updateHostData(
-													host_ip => $host_ip,
-													host_state => $mb->getAttr( name => "motherboard_state" ),
-													components => \@components_name,
-													sets => $monitored_sets
-													);
+						my $ret = $self->updateHostData( %params );
 						$hosts_values{ $host_ip } = $ret;
 					}
 				}
