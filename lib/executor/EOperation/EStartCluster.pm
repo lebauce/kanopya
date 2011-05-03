@@ -127,8 +127,8 @@ sub execute {
 		$self->{_objs}->{cluster}->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id'));
 	} 	
 	
-	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'up');
-	$self->{_objs}->{cluster}->save();
+#	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'starting');
+#	$self->{_objs}->{cluster}->save();
 }
 
 1;

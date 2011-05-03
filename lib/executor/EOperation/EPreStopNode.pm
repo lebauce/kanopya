@@ -149,14 +149,14 @@ sub prepare {
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
     if ($node_count > 1 && $master_node_id == $params->{motherboard_id}){
         $errmsg = "Node <$params->{motherboard_id}> is master node and not alone";
-        my %params = ( cluster_id => $params->{cluster_id},
-    	               motherboard_id => $params->{motherboard_id},);
-        $log->debug("New Operation PreStopNode with attrs : " . %params);
-        Operation->enqueue(
-            priority => $self->_getOperation()->getAttr(attr_name => "priority") -10,
-            type     => 'PreStopNode',
-            params   => \%params);
-		throw Kanopya::Exception::Internal(error => $errmsg);
+#        my %params = ( cluster_id => $params->{cluster_id},
+#    	               motherboard_id => $params->{motherboard_id},);
+#        $log->debug("New Operation PreStopNode with attrs : " . %params);
+#        Operation->enqueue(
+#            priority => $self->_getOperation()->getAttr(attr_name => "priority") -10,
+#            type     => 'PreStopNode',
+#            params   => \%params);
+#		throw Kanopya::Exception::Internal(error => $errmsg);
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
     }

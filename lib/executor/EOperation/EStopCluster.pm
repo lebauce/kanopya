@@ -126,10 +126,10 @@ sub execute {
 		if($motherboards->{$mb_id}->getAttr(name => 'motherboard_state') ne 'up') { next; }
 		$self->{_objs}->{cluster}->removeNode(motherboard_id => $mb_id);
 	}
-	$self->{_objs}->{cluster}->removeNode(motherboard_id => $master_node_id);
+#	$self->{_objs}->{cluster}->removeNode(motherboard_id => $master_node_id);
 	
-	#$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping');
-	#$self->{_objs}->{cluster}->save();
+	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping');
+	$self->{_objs}->{cluster}->save();
 }
 
 1;
