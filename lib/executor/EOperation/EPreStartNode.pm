@@ -154,7 +154,7 @@ sub prepare {
     	                  motherboard_id => $params->{motherboard_id},);
         $log->debug("New Operation PreStartNode with attrs : " . %op_params);
         Operation->enqueue(
-            priority => $self->_getOperation()->getAttr(name => "priority") -10,
+            priority => $self->_getOperation()->getAttr(attr_name => "priority") -10,
             type     => 'PreStartNode',
             params   => \%op_params);
 		throw Kanopya::Exception::Internal(error => $errmsg);
