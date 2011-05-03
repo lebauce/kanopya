@@ -153,7 +153,7 @@ sub prepare {
     	               motherboard_id => $params->{motherboard_id},);
         $log->debug("New Operation PreStopNode with attrs : " . %params);
         Operation->enqueue(
-            priority => $self->getAttr(name => "priority") -10,
+            priority => $self->_getOperation()->getAttr(name => "priority") -10,
             type     => 'PreStopNode',
             params   => \%params);
 		throw Kanopya::Exception::Internal(error => $errmsg);
