@@ -27,19 +27,26 @@
 		</td>
 	</tr>
 	<tr>
-		<td class="label">System image :</td>
-		<td><select name="systemimage_id">
-		<TMPL_LOOP NAME=systemimages_list>
+		<td class="label">System image :</td><td>
+        <TMPL_IF NAME=systemimages_forshared>
+        <input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared : 
+		<select name="systemimage2_id">
+		<TMPL_LOOP NAME=systemimages_forshared>
 			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
 		</TMPL_LOOP>	
 		</select>
-		<span style="color: red"><TMPL_VAR NAME=ERR_SYSTEMIMAGE></span></td>		
-	</tr>
-	<tr id="sitype"><td></td><td><input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared
-	<input type="radio" name="si_shareordedicate" value="dedicated" />dedicated
-	</td></tr>
-
-	<tr>
+        </TMPL_IF>
+        <TMPL_IF NAME=systemimages_fordedicated>
+        <input type="radio" name="si_shareordedicate" value="dedicated" />dedicated : 
+        <select name="systemimage_id">
+		<TMPL_LOOP NAME=systemimages_fordedicated>
+			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
+		</TMPL_LOOP>	
+		</select>
+        </TMPL_IF>
+        </td>
+    </tr>
+    <tr>
 		<td class="label">minimum node to used :</td>
 		<td><select name="min_node">
 		<TMPL_LOOP NAME=nodescount>
