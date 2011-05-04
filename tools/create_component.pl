@@ -26,8 +26,10 @@ sub getComponentInfo {
 	my %comp_info = ();
 	for my $info ('name', 'category', 'version') {
 		print "Component $info: ";
-		$comp_info{$info} = ucfirst <STDIN>;
-		chomp $comp_info{$info};
+		my $input = ucfirst <STDIN>;
+		chomp($input); 
+		$input =~ s/[^\w\d]//g;
+		$comp_info{$info} = $input;		
 	}
 	return %comp_info;
 }
@@ -38,8 +40,7 @@ sub checkValidCategory {
 	for my $dir ( 	$ROOT_PATH . $PATHS{component} . $args{category}, 
 					$ROOT_PATH . $PATHS{ecomponent} . 'E' . $args{category} ) {					
 		if ( not -d $dir ) {
-	    print "	This category doesn't exists. You have to manually create category directory and category module before launch this script ($dir)\n";
-	    exit;
+	    	mkdir($dir);
 		}
 	}
 }
@@ -57,10 +58,13 @@ sub genFiles {
 	);
 	
 	my %files = (
+	    "ComponentCategory.pm.tt"=> $ROOT_PATH . $PATHS{component} 	. "$comp_cat.pm",
 	    "Component.pm.tt" 		 => $ROOT_PATH . $PATHS{component} 	. "$comp_cat/$comp_name.pm",
+	    "EComponentCategory.pm.tt" => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_cat.pm",
 	    "EComponent.pm.tt" 		 => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_cat/E$comp_name.pm",
 	    "ComponentTable.sql.tt"  => $ROOT_PATH . $PATHS{table} 		. "$comp_name_lc.sql",
 	    "form_component.tmpl.tt" => $ROOT_PATH . $PATHS{form} 		. "form_$comp_name_lc.tmpl",
+		
 	);
 	
 	my $config = {
@@ -70,6 +74,10 @@ sub genFiles {
 	my $template = Template->new($config);
 	
 	while ( my ($input, $output) = each %files ) { 
+	    if(-e $output) {
+	    	print "$output exists, skipping generation\n";
+	    	next;
+	    }
 	    print "Generate $output...\n";
 	    $template->process($input, \%data, $output) || do {
 			print "error while generating file '$output' from '$input' : $!\n";
