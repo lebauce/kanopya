@@ -606,45 +606,18 @@ sub graphFromConf {
 	}
 	my @time_laps = ('1200', 'hour', 'day');
 	
-	my %hosts_by_cluster = $self->retrieveHostsByCluster();
-
-	while ( my ($cluster_name, $cluster_nodes) = each %hosts_by_cluster ) {
+	my @clusters = Entity::Cluster->getClusters( hash => { } );
+	CLUSTER:
+	foreach my $cluster (@clusters) {
 		eval {
-			#TODO keep cluster id from the beginning (get by name is not really good)
-			my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster_name } )->getAttr( name => "cluster_id");
+			my $cluster_id = $cluster->getAttr( name => "cluster_id");
+			my $cluster_name = $cluster->getAttr( name => "cluster_name");
+			$log->debug("### graph cluster $cluster_name");
+		
 			my $graphs_settings = $self->{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
 			
-			my @nodes_ip = map { $_->{ip} } values %$cluster_nodes;
-			
-			foreach my $graph_def ( @$graphs_settings ) {
-				my @required_indicators = split ",", $graph_def->{ds_label};
-				my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;
-					
-				foreach my $laps (@time_laps) {
-					# Graph cluster
-					$self->graphCluster( 	time_laps => $laps,
-											time_range => $time_range,
-											cluster => $cluster_name,
-											required_set => $graph_def->{set_label},
-											required_indicators => $required,
-											percent => $graph_def->{percent},
-											graph_type => $graph_def->{graph_type} || 'line',
-											with_total => $graph_def->{with_total},
-											options => $graph_def );
-											
-					# Graph cluster Nodes
-					$self->graphNodes( 	nodes_ip => \@nodes_ip,
-										time_laps => $laps,
-										time_range => $time_range,
-										required_set => $graph_def->{set_label},
-										required_indicators => $required,
-										percent => $graph_def->{percent},
-										graph_type => $graph_def->{graph_type} || 'line',
-										options => $graph_def );
-					
-				} # foreach time_laps
-				
-			} # foreach graph_desc
+			#my @nodes_ip = map { $_->{ip} } values %$cluster_nodes;
+			my @nodes_ip = map { $_->getInternalIP()->{ipv4_internal_address} } values %{ $cluster->getMotherboards( ) };
 			
 			# Graph Node Count
 			foreach my $laps (@time_laps) {
@@ -652,6 +625,33 @@ sub graphFromConf {
 										time_range => $time_range,
 										cluster => $cluster_name );
 			}
+			
+			next CLUSTER if (0 == scalar @nodes_ip);
+			
+			# Graph metrics
+			foreach my $graph_def ( @$graphs_settings ) {
+				my @required_indicators = split ",", $graph_def->{ds_label};
+				my $required = $graph_def->{ds_label} eq 'ALL' ? 'all' : \@required_indicators;			
+				foreach my $laps (@time_laps) {
+					my %params = ( 	time_laps => $laps,
+									time_range => $time_range,
+									required_set => $graph_def->{set_label},
+									required_indicators => $required,
+									percent => $graph_def->{percent},
+									graph_type => $graph_def->{graph_type} || 'line',
+									options => $graph_def,
+								);
+					# Graph cluster
+					$self->graphCluster( cluster => $cluster_name,	
+										 with_total => $graph_def->{with_total},
+										 %params );
+					# Graph cluster Nodes
+					$self->graphNodes( 	nodes_ip => \@nodes_ip, %params );
+					
+				} # foreach time_laps
+				
+			} # foreach graph_desc
+			
 		};
 		if ($@) {
 			my $error = $@;
