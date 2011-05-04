@@ -301,10 +301,10 @@ sub updateClusterNodeCount {
 		
 	}
 		
-	my $up_count = scalar grep { $_ eq 'in' } @$nodes_state;
+	my $up_count = scalar grep { $_ =~ '^in' } @$nodes_state;
 	my $starting_count = scalar grep { $_ =~ 'goingin' } @$nodes_state;
 	my $stopping_count = scalar grep { $_ =~ 'goingout' } @$nodes_state;
-	my $broken_count = scalar grep { $_ eq 'broken' } @$nodes_state;
+	my $broken_count = scalar grep { $_ =~ 'broken' } @$nodes_state;
 
 	# we want update the rrd at time multiple of time_step (to avoid rrd extrapolation)
 	my $time = time();
