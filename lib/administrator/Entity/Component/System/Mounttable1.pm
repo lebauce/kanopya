@@ -94,36 +94,56 @@ sub new {
 
 sub getConf {
 	my $self = shift;
-
 	my $conf = {};
 
-	my $confindb = $self->{_dbix}->mounttable1s->first();
-	if($confindb) {
-		
-		#TODO build conf hash with db data
-		
+	my $conf_rs = $self->{_dbix}->mounttable1s;
+	my @mountdefs = ();
+	while (my $conf_row = $conf_rs->next) {
+		push @mountdefs, { 	mounttable1_id => $conf_row->get_column('mounttable1_id'),
+							mounttable1_device => $conf_row->get_column('mounttable1_device'),
+							mounttable1_mountpoint => $conf_row->get_column('mounttable1_mountpoint'),
+							mounttable1_filesystem => $conf_row->get_column('mounttable1_filesystem'),
+							mounttable1_options => $conf_row->get_column('mounttable1_options'),
+							mounttable1_dumpfreq => $conf_row->get_column('mounttable1_dumpfreq'),
+							mounttable1_passnum => $conf_row->get_column('mounttable1_passnum'),
+						};
 	}
-
+	
+	$conf->{mountdefs} = \@mountdefs;
 	return $conf;
 }
 
 sub setConf {
 	my $self = shift;
 	my ($conf) = @_;
+	$log->debug("la conf récupérée depuis le component mountab : ".Dumper ($conf));
+	my $mountdefs_conf = $conf->{mounttable_mountdefs};
 	
-	if(not $conf->{mounttable1_id}) {
-		# new configuration -> create
-		$self->{_dbix}->mounttable1s->create($conf);
-	} else {
-		# old configuration -> update
-		$self->{_dbix}->mounttable1s->update($conf);
+	# for each mount definition , we search it in db for update or deletion
+	my $mountdefs_rs = $self->{_dbix}->mounttable1s;
+	while(my $mountdef_row = $mountdefs_rs->next) {
+		my $found = 0;
+		my $mountdef_data;
+		my $id = $mountdef_row->get_column('mounttable1_id');
+		foreach	my $mountdef_conf (@$mountdefs_conf) {
+		 	if($mountdef_conf->{mounttable1_id} == $id) {
+		 		$found = 1;
+		 		$mountdef_data = $mountdef_conf;
+		 		last;
+		 	}
+		}
+		if($found) {
+	 		$mountdef_row->update($mountdef_data);
+	 	} else {
+	 		$mountdef_row->delete();
+	 	}	 
 	}
-}
-
-sub getNetConf {
-
-	#TODO return { port => protocol }
- 
+	
+	foreach	my $mtdef (@$mountdefs_conf) {
+		if (not exists $mtdef->{mounttable1_id}) {
+				$self->{_dbix}->mounttable1s->create($mtdef);
+		}
+	}
 }
 
 

@@ -32,7 +32,20 @@ sub configureNode {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 
-	#TODO insert configuration files generation
+	my $config = {
+	    INCLUDE_PATH => "/templates/components/mounttable1", #$self->_getEntity()->getTemplateDirectory(),
+	    INTERPOLATE  => 1,               # expand "$var" in plain text
+	    POST_CHOMP   => 0,               # cleanup whitespace 
+	    EVAL_PERL    => 1,               # evaluate Perl code blocks
+	    RELATIVE => 1,                   # desactive par defaut
+	};
+	
+	my $rand = new String::Random;
+	my $template = Template->new($config);
+	my $tmpfile = $rand->randpattern("cccccccc");
+	my $input = "fstab.tt";
+	my $data = {};
+	$data->{serverroot}
 }
 
 sub addNode {
@@ -47,22 +60,10 @@ sub addNode {
 	}
 	
 	$self->configureNode(%args);
-	
-	#TODO addInitScript(..) if there is a daemon associated to this component
 }
 
-# Reload process
-sub reload {
-	my $self = shift;
-	my %args = @_;
-	
-	if(! exists $args{econtext} or ! defined $args{econtext}) {
-		$errmsg = "EComponent::ESystem::EMounttable1->reload needs an econtext named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 
 
-}
+
 
 1;
