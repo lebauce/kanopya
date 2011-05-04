@@ -29,6 +29,11 @@ sub view_systemimages : StartRunmode {
 			$tmp->{distribution} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
 		};
 		$tmp->{active} = $s->getAttr(name => 'active');
+		if($tmp->{active}) {
+			$tmp->{systemimage_usage} = $s->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared';
+		} else {
+			$tmp->{systemimage_usage} = '';
+		}
 		push (@$systemimages, $tmp);
     }		
 	$tmpl->param('systemimages_list' => $systemimages);
@@ -176,6 +181,11 @@ sub view_systemimagedetails : Runmode {
 	} else {
 		if($methods->{'deactivate'}->{'granted'}) { $tmpl->param('can_deactivate' => 1); }
 		$tmpl->param('active' => 1);
+	}
+	if($tmpl->param('active')) {
+		$tmpl->param('systemimage_usage' => $esystemimage->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared');
+	} else {
+		$tmpl->param('systemimage_usage' => '');
 	}
 	
 	my $components_list = $esystemimage->getInstalledComponents();
