@@ -8,7 +8,7 @@
 <hr/>
 <span id="state" class="title simpleexpand">State</span>
 <table id="Xstate" class="detailspart">
-<tr><TMPL_IF NAME=active><td>Active</td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
+<tr><TMPL_IF NAME=active><td>Active, <TMPL_VAR NAME=systemimage_usage></td><TMPL_ELSE><td>Deactivated</td></TMPL_IF>
 <td class="actions">
 <TMPL_IF NAME=can_activate>
 <a class="imgActivate" href="/cgi/kanopya.cgi/systemimages/process_activatesystemimage?systemimage_id=<TMPL_VAR NAME=systemimage_id>">activate</a><br />

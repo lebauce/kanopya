@@ -73,7 +73,8 @@ sub form_addcluster : Runmode {
 		
 	my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});	
 	my @ekernels = Entity::Kernel->getKernels(hash => {});
-	my @esystemimages = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => 0});
+	my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
+	my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
 	my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
 	
 	my $count = scalar @emotherboards;
@@ -90,18 +91,27 @@ sub form_addcluster : Runmode {
 		};
 		push (@$kmodels, $tmp);	
 	} 
-	my $smodels = [];
-	foreach my $s (@esystemimages){
+	my $si_forshared = [];
+	foreach my $s (@esystemimages_forshared){
 		my $tmp = { 
-			systemimage_id => $s->getAttr (name => 'systemimage_id'),
+			systemimage_id => $s->getAttr(name => 'systemimage_id'),
 			systemimage_name => $s->getAttr(name => 'systemimage_name')
 		};
-		push (@$smodels, $tmp);
+		push (@$si_forshared, $tmp);
+	}
+	my $si_fordedicated = [];
+	foreach my $s (@esystemimages_fordedicated){
+		my $tmp = { 
+			systemimage_id => $s->getAttr(name => 'systemimage_id'),
+			systemimage_name => $s->getAttr(name => 'systemimage_name')
+		};
+		push (@$si_fordedicated, $tmp);
 	}
 	
 	$tmpl->param('nodescount' => $c);
 	$tmpl->param('kernels_list' => $kmodels);
-	$tmpl->param('systemimages_list' => $smodels);
+	$tmpl->param('systemimages_forshared' => $si_forshared);
+	$tmpl->param('systemimages_fordedicated' => $si_fordedicated);
 	$tmpl->param('nameserver' => $kanopya_cluster->getAttr(name => 'cluster_nameserver'));
 	$tmpl->param($errors) if $errors;
 	
@@ -172,6 +182,7 @@ sub process_addcluster : Runmode {
     		$si_shared = 0;
     	}
     }
+    
     
     eval {
     	my $params = {

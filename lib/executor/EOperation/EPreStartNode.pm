@@ -150,13 +150,13 @@ sub prepare {
     if (! $master_node_id && $node_count){
         $errmsg = "No master node when motherboard <$params->{motherboard_id}> migrating, pls wait...";
 		$log->error($errmsg);
-		my %params = ( cluster_id => $params->{cluster_id},
-    	               motherboard_id => $params->{motherboard_id},);
-        $log->debug("New Operation PreStartNode with attrs : " . %params);
+		my %op_params = ( cluster_id => $params->{cluster_id},
+    	                  motherboard_id => $params->{motherboard_id},);
+        $log->debug("New Operation PreStartNode with attrs : " . %op_params);
         Operation->enqueue(
-            priority => 200,
+            priority => $self->_getOperation()->getAttr(attr_name => "priority") -10,
             type     => 'PreStartNode',
-            params   => \%params);
+            params   => \%op_params);
 		throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
