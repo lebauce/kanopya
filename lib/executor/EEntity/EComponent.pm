@@ -169,7 +169,7 @@ sub preStartNode{}
 sub preStopNode{return 0;}
 sub postStopNode{}
 
-sub is_up {
+sub isUp {
     my $self = shift;
     my %args = @_;
     my $availability = 1;
@@ -188,7 +188,7 @@ sub is_up {
         $log->debug("Test executable <$i> with command $execution_list->{$i}->{cmd}");
         $log->debug("Value returned are <$ret->{stdout}> and has to match $execution_list->{$i}->{answer}")
         };
-        if ($ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
+        if ((not defined $ret->{stdout}) || $ret->{stdout}  !~ m/($execution_list->{$i}->{answer})/) {
             return 0;
         }
         if ($@) {
