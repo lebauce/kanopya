@@ -191,8 +191,8 @@ sub execute{
 	
 	my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
 	
-	my $target_name = $sysimg_dev->{root}->{lvname};
-	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $target_name);
+	my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $sysimg_dev->{root}->{lvname});
+	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $sysimg_dev->{root}->{lvname});
 
 	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_device => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}");

@@ -245,6 +245,18 @@ sub getTargetIdLike {
 	return $self->{_dbix}->iscsitarget1_targets->search({iscsitarget1_target_name => {-like => $args{iscsitarget1_target_name}}})->first()->get_column('iscsitarget1_target_id');
 }
 
+sub getFullTargetName {
+	my $self = shift;
+    my %args = @_;
+
+	if (! exists $args{lv_name} or ! defined $args{lv_name}) {
+		$errmsg = "Component::Export::Iscsitarget1->getFullTargetName needs a lv_name named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	return $self->{_dbix}->iscsitarget1_targets->search({iscsitarget1_target_name => {-like => '%'.$args{lv_name}}})->first()->get_column('iscsitarget1_target_name');
+}
+
 sub getLunId {
 	my $self = shift;
     my %args = @_;

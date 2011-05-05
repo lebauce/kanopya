@@ -134,7 +134,7 @@ sub removeLun {
 	return $self->_getEntity()->removeLun(%args);	
 }
 
-sub removeTarget{
+sub removeTarget {
 	my $self = shift;
 	my %args  = @_;	
 	if ((! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) ||
@@ -144,54 +144,123 @@ sub removeTarget{
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $tid = $self->gettid(target_name => $args{iscsitarget1_target_name}, econtext => $args{econtext});
+	
+	$log->debug('iscsitargetname : '.$args{iscsitarget1_target_name});
+	
+	# first we clean sessions for this target
+	my $tid = $self->cleanTargetSession(targetname => $args{iscsitarget1_target_name}, econtext => $args{econtext});
+		
 	my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
 	delete $args{econtext};
 	return $self->_getEntity()->removeTarget(%args);	
 }
 
-=head 
+=head _getIetdSessions
+	argument : econtext
+	return an arrayref contening /proc/net/iet/session content
 
-	given a targetname, an initiatorname and an econtext 
-	return a hash reference containing iscsi target id and session id for an initiator and a target
-	return undef if no session found                                                                                 
+=cut
+
+sub _getIetdSessions {
+	my $self = shift;
+	my %args = @_;
+	if(! exists $args{econtext} or ! defined $args{econtext}) {
+		$errmsg = "EComponent::EExport::EIscsitarget1->_getIetdSessions needs an econtext named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	my $target_regexp = qr/^tid:([0-9]+)\sname:(.+)/;
+	my $session_regexp = qr/^\tsid:([0-9]+)\sinitiator:(.+)/;
+	my $connection_regexp = qr/^\t\tcid:([0-9]+)\sip:(.+)state:(.+)\shd:(.+)\sdd:(.+)/;
+	
+	my $result = $args{econtext}->execute(command => 'cat /proc/net/iet/session');
+	my @output = split(/\n/, $result->{stdout});
+	
+	my ($target, $session, $connection);
+	my $ietdsessions = [];
+	
+	foreach my $line (@output) {
+		if($line =~ $target_regexp) {
+			$target = { tid => $1, targetname => $2, sessions => [] };
+			push(@$ietdsessions, $target);
+		} elsif($line =~ $session_regexp) {
+			$session = { sid => $1, initiator => $2, connections => [] };
+			push(@{$ietdsessions->[-1]->{sessions}}, $session);
+		} elsif($line =~ $connection_regexp) {
+			$connection = { cid => $1, ip => $2, state => $3, hd => $4, dd => $5};
+			push(@{$ietdsessions->[-1]->{sessions}->[-1]->{connections}}, $connection); 
+		}
+	}
+	return $ietdsessions;
+} 
+
+=head cleanTargetSession
+
+	argument : targetname, econtext
+	try to remove any sessions on a target 
 
 =cut 
 
-sub getIscsiSession {
+sub cleanTargetSession {
 	my $self = shift;
 	my %args  = @_;	
-	if ((! exists $args{initiatorname} or ! defined $args{initiatorname}) ||
-		(! exists $args{targetname} or ! defined $args{targetname})||
+	if ((! exists $args{targetname} or ! defined $args{targetname}) ||
 		(! exists $args{econtext} or ! defined $args{econtext})) {
-		$errmsg = "EComponent::EExport::EIscsitarget1->getIscsiSession needs a targetname,  initiatorname and econtext named argument!";
+		$errmsg = "EComponent::EExport::EIscsitarget1->cleanTargetSession needs targetname and econtext named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
+	# first, we get actual sessions 
+	my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext}); 
 	
-	my $command = 'cat /proc/net/iet/session';
-	my $result = $args{econtext}->execute(command => $command);
-	$result->{stdout} =~ m/tid:([0-9]+)\sname:$args{targetname}\n(\tsid:[0-9]+\sinitiator:.*\n\t\tcid:.*\n)*\tsid:([0-9]+)\sinitiator:$args{initiatorname}\n\t\tcid:.*\n/;
-	if(defined $1 && defined $3) {
-		$log->debug("tid found : $1\tsid found : $3");
-		return { tid => $1, sid => $3 };
+	# next we clean existing sessions on this target
+	foreach my $target (@$ietdsessions) {
+		if($target->{targetname} eq $args{targetname}) {
+			foreach my $session(@{$target->{sessions}}) {
+				for my $connection (@{$session->{connections}}) {
+					my $command = "ietadm --op delete --tid=$target->{tid} --sid=$session->{sid} --cid=$connection->{cid}";
+					my $result = $args{econtext}->execute(command => $command);
+					#TODO tester le retour de la commande
+				}
+			}
+			return $target->{tid};
+		}
+		else { next; } 
 	}
-	return undef;
-}
+	return;
+}	
 
-sub cleanIscsiSession {
+=head cleanInitiatorSession
+
+	argument : initiator, econtext
+	try to remove all sessions for an initiator 
+
+=cut 
+	
+sub cleanInitiatorSession {
 	my $self = shift;
 	my %args  = @_;	
-	if ((! exists $args{tid} or ! defined $args{tid}) ||
-		(! exists $args{sid} or ! defined $args{sid})||
+	if ((! exists $args{initiator} or ! defined $args{initiator}) ||
 		(! exists $args{econtext} or ! defined $args{econtext})) {
-		$errmsg = "EComponent::EExport::EIscsitarget1->cleanIscsiSession needs a tid, sid and econtext named argument!";
+		$errmsg = "EComponent::EExport::EIscsitarget1->cleanInitiatorSession needs an initiatorname and econtext named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $command = "ietadm --op delete --tid=$args{tid} --sid=$args{sid} --cid=0";
-	my $result = $args{econtext}->execute(command => $command);
-	#TODO tester le retour de la commande
+	# first, we get actual sessions 
+	my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext}); 
+	
+	# next we clean existing sessions for the given initiatorname
+	foreach my $target (@$ietdsessions) {
+		foreach my $session(@{$target->{sessions}}) {
+			if($session->{initiator} eq $args{initiator}) {
+				for my $connection (@{$session->{connections}}) {
+					my $command = "ietadm --op delete --tid=$target->{tid} --sid=$session->{sid} --cid=$connection->{cid}";
+					my $result = $args{econtext}->execute(command => $command);
+					#TODO tester le retour de la commande
+				}
+			} else { next; }
+		}
+	}
 }
 
 
