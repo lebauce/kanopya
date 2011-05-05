@@ -49,6 +49,7 @@ use Kanopya::Exceptions;
 use Entity::Cluster;
 use Entity::Systemimage;
 use EFactory;
+use Operation;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -130,6 +131,10 @@ sub prepare {
     	$log->error($errmsg);
     	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    
+    # cluster systemimage instanciation
+    $log->debug("checking cluster existence with id <$params->{cluster_id}>"); 
+    $self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getSystemImage(); 
 
     ### Check Parameters and context
     eval {
@@ -148,7 +153,7 @@ sub prepare {
 	
 }
 
-sub execute{
+sub execute {
 	my $self = shift;
 	$self->SUPER::execute();
 	my $adm = Administrator->new();
@@ -158,6 +163,20 @@ sub execute{
 	$self->{econtext}->execute(command => $command);
 	$log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
+	 # if systemimage defined (always true...?) and dedicated, back to shared state and deactivate it
+	 if($self->{_objs}->{systemimage}) {
+	 	if($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')){
+	 		$self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
+	 		$self->{_objs}->{systemimage}->save();
+	 		
+	 		Operation->enqueue(
+    			priority => 2000,
+        		type     => 'DeactivateSystemimage',
+        		params   => {systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id')},
+    		);
+	 	}
+	 }
+	
 	$self->{_objs}->{cluster}->delete();
 }
 

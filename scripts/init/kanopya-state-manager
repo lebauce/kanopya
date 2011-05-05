@@ -1,12 +1,12 @@
 #! /bin/bash
 ### BEGIN INIT INFO
-# Provides:           kanopya-executor
+# Provides:           kanopya-state-manager
 # Required-Start:     $network $remote_fs $syslog
 # Required-Stop:      $network $remote_fs $syslog
 # Default-Start:      2 3 4 5
 # Default-Stop:       0 1 6
-# Short-Description:  Kanopya executor
-# Description:        Kanopya executor
+# Short-Description:  Kanopya state-manager
+# Description:        Kanopya state-manager
 ### END INIT INFO
 #
 # Author:    Antoine Castaing <antoine.castaing@hederatech.com>
@@ -17,9 +17,9 @@ set -e
 . /lib/lsb/init-functions
 
 PATH="/opt/kanopya/sbin:$PATH"
-DAEMON="/opt/kanopya/sbin/kanopya-executor"
-EXEC="kanopya-executor"
-NAME="Kanopya executor"
+DAEMON="/opt/kanopya/sbin/kanopya-state-manager"
+EXEC="kanopya-state-manager"
+NAME="Kanopya state-manager"
 CONF_FILE="/opt/kanopya/conf/executor.conf"
 PIDFILE="/var/run/$EXEC.pid"
 
@@ -31,15 +31,15 @@ PERL5LIB=\
 /opt/kanopya/lib/administrator/:\
 /opt/kanopya/lib/common
 export PERL5LIB
-KANOPYA_EXECUTOR_RUN=yes
-KANOPYA_EXECUTOR_OPTS=''
+KANOPYA_STATE_MANAGER_RUN=yes
+KANOPYA_STATE_MANAGER_OPTS=''
 
 
 # Reads config file (will override defaults above)
 [ -r /etc/default/kanopya ] && . /etc/default/kanopya
 
-RUN_DAEMON=$KANOPYA_EXECUTOR_RUN
-DAEMON_OPTS=$KANOPYA_EXECUTOR_OPTS
+RUN_DAEMON=$KANOPYA_STATE_MANAGER_RUN
+DAEMON_OPTS=$KANOPYA_STATE_MANAGER_OPTS
 
 #### Generic part
 

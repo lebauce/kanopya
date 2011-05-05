@@ -26,6 +26,7 @@ use lib '/opt/kanopya/lib/administrator';
       'AdministratorDB::Schema',
       { debug => 1,
         dump_directory => '/opt/kanopya/lib/administrator',
+	overwrite_modifications => 1,
       },
       [ 'dbi:mysql:administrator:localhost:3306', 'root', 'Hedera@123'],
   );

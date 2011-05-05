@@ -143,7 +143,7 @@ sub checkNodeUp {
    	foreach my $i (keys %$components) {
    	    print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
    	    my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
-   	    if (!$tmp_ecomp->is_up(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
+   	    if (!$tmp_ecomp->isUp(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
    	        return 0;
    	    }
 	}

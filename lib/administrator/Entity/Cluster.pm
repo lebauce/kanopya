@@ -519,8 +519,13 @@ sub getComponent{
 sub getSystemImage {
 	my $self = shift;
     my %args = @_;
-
-	return Entity::Systemimage->get(id => $self->getAttr(name => 'systemimage_id'));
+	my $systemimage_id = $self->getAttr(name => 'systemimage_id');
+	if($systemimage_id) {
+		return Entity::Systemimage->get(id => $systemimage_id);
+	} else {
+		# only admin cluster has no systemimage ?
+		return undef;
+	}
 }
 
 sub getMasterNodeIp {
@@ -574,7 +579,7 @@ sub addComponent {
 	#		  There must be a way to do this more properly (component management).
 	my $concrete_component = Entity::Component->getInstance(id => $component_instance_id);
 	$concrete_component->insertDefaultConfiguration();
-
+	return $component_instance_id;
 }
 
 =head2 removeComponent

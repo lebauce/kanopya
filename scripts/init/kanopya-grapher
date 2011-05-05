@@ -19,9 +19,11 @@ set -e
 PATH="/opt/kanopya/sbin:$PATH"
 DAEMON="/opt/kanopya/sbin/kanopya-grapher"
 EXEC="kanopya-grapher"
+NAME="Kanopya grapher"
+CONF_FILE="/opt/kanopya/conf/monitor.conf"
 PIDFILE="/var/run/$EXEC.pid"
 
-test -x /opt/kanopya/sbin/kanopya-grapher || exit 0
+test -x "/opt/kanopya/sbin/$EXEC" || exit 0
 
 # Defaults
 PERL5LIB=\
@@ -36,54 +38,61 @@ KANOPYA_GRAPHER_OPTS=''
 # Reads config file (will override defaults above)
 [ -r /etc/default/kanopya ] && . /etc/default/kanopya
 
+RUN_DAEMON=$KANOPYA_GRAPHER_RUN
+DAEMON_OPTS=$KANOPYA_GRAPHER_OPTS
+
+#### Generic part
+
 # Cd to / before starting any daemons.
 cd /
 
-echo "Welcome in kanopya-grapher start stop script"
-echo "env variable are :"
-echo "PERL5LIB : $PERL5LIB"
-echo "KANOPYA_GRAPHER_RUN : $KANOPYA_GRAPHER_RUN"
-echo "KANOPYA_GRAPHER_OPTS : $KANOPYA_GRAPHER_OPTS"
+status=0;
+status_of_proc -p $PIDFILE $DAEMON $EXEC > /dev/null || status=$?
 
 case "$1" in
   start)
-    if [ -f $PIDFILE ]; then
-	log_daemon_msg "Kanopya grapher already running"
+    if [ $status == 0 ]; then
+		log_success_msg "$NAME already running"
     else
-	log_daemon_msg "Starting Kanopya grapher services:"
-	if [ "$KANOPYA_GRAPHER_RUN" = "yes" -a -f /opt/kanopya/conf/monitor.conf ]; then
-	    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
-		-- $KANOPYA_GRAPHER_OPTS
-	    log_progress_msg " Kanopya grapher"
-	fi
-    fi
+		log_success_msg "Starting $NAME service"
+		if [ "$RUN_DAEMON" = "yes" -a -f $CONF_FILE ]; then
+		    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
+			-- $DAEMON_OPTS
+		fi
+    fi  	
     ;;
   stop)
-    log_daemon_msg "Stopping Kanopya grapher service:"
-    start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
-    log_progress_msg " kanopya grapher"
-    echo "rm $PIDFILE"
-    rm $PIDFILE
+  	
+  	if [ $status == 0 ]; then
+  		log_success_msg "Stopping $NAME service"
+    	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+    	if [ -f $PIDFILE ]; then
+    		rm $PIDFILE
+    	fi
+    else
+    	log_success_msg "$NAME not started"
+    fi
     ;;
   restart)
-    log_daemon_msg "Restarting Kanopya grapher services:"
-    if [ "$KANOPYA_GRAPHER_RUN" = "yes" -a -f /opt/kanopya/conf/monitor.conf ]; then
-	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 	
-	rm $PIDFILE
-	log_progress_msg " Kanopya grapher"
-    fi
-    # Allow the daemons time to exit completely.
-    sleep 2
+    log_success_msg "Restarting $NAME service"
+    if [ $status == 0 ]; then
+	    if [ "$RUN_DAEMON" = "yes" -a -f $CONF_FILE ]; then
+			start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+			if [ -f $PIDFILE ]; then
+				rm $PIDFILE
+			fi
+	    fi
+	    # Allow the daemons time to exit completely.
+	    sleep 2
+	fi
     start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
-	    -- $KANOPYA_GRAPHER_OPTS
+	    -- $DAEMON_OPTS
     ;;
   status)
-    status=0
-    status_of_proc /opt/kanopya/sbin/kanopya-grapher kanopya-grapher || status=$?
-    exit $status
+  	status_of_proc $DAEMON $EXEC  && exit 0 || exit $?
     ;;
   *)
-    echo "Usage: /etc/init.d/kanopya-grapher {start|stop|restart|status}"
+    echo "Usage: $0 {start|stop|restart|status}"
     exit 1
 esac
 

@@ -164,29 +164,16 @@ INSERT INTO `component` VALUES
 (8,'Keepalived','1','Loadbalancer'),
 (9,'Mysql','5','DBserver'),
 (10,'Memcached','1','ProxyCache'),
-(11,'Nfsd', '3', 'Export');
+(11,'Nfsd', '3', 'Export'),
+(12,'Mounttable','1','System');
 
 
 -- kernels
 INSERT INTO `kernel` VALUES (1,'admin','2.6.32','Admin Kernel');
-INSERT INTO `kernel` VALUES (2,'2.6.26-2-486','2.6.26-2-486','');
-INSERT INTO `kernel` VALUES (3,'2.6.26-2-xen-686','2.6.26-2-xen-686','');
-INSERT INTO `kernel` VALUES (4,'2.6.26-hedera','2.6.26-hedera','');
-INSERT INTO `kernel` VALUES (5,'2.6.30.1-hedera','2.6.30.1-hedera','');
-INSERT INTO `kernel` VALUES (6,'2.6.31-hederatech-minix','2.6.31-hederatech-minix','');
-INSERT INTO `kernel` VALUES (7,'2.6.31-hederatech-via-vb8001','2.6.31-hederatech-via-vb8001','');
-INSERT INTO `kernel` VALUES (8,'2.6.31-hederatech-zotac-ion','2.6.31-hederatech-zotac-ion','');
-INSERT INTO `kernel` VALUES (9,'2.6.35.4-hedera','2.6.35.4-hedera','');
+INSERT INTO `kernel` VALUES (2,'2.6.32.33','2.6.32.33','generic kernel with lots of modules');
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,4); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,5); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,6); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,7); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,8); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
 -- Power Supply
 INSERT INTO `powersupply` VALUE (1,1,1);
@@ -196,14 +183,14 @@ INSERT INTO `distribution` VALUES (1,'Debian','5.0','Debian Lenny',1,2);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `distribution_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components provided by default distribution
-INSERT INTO `component_provided` VALUES (2,1),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(9,1),(10,1);
+INSERT INTO `component_provided` VALUES (2,1),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(9,1),(10,1),(11,1),(12,1);
 
 -- default systemimage based on default distribution
 INSERT INTO `systemimage` VALUES (1,'DebianSystemImage','default system image based on Debian 5.0 distribution', 0, 1, 3, 4, 0);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `systemimage_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- components installed on systemimage DebianSystemImage
-INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1),(10,1);
+INSERT INTO `component_installed` VALUES (2,1),(4,1),(7,1),(8,1),(10,1),(12,1);
 
 -- admin cluster
 -- INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '[% nameserver %]',1,NULL,1, 'up');
