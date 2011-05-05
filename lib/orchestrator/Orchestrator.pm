@@ -655,20 +655,20 @@ sub addNode {
     
     $log->info("====> add node in $args{cluster_name}");
     
-	#my @free_motherboards = Entity::Motherboard->getMotherboards( hash => { active => 1, motherboard_state => 'down'} );
-	my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
-	
-	die "No free motherboard to add in cluster '$args{cluster_name}'" if ( scalar @free_motherboards == 0 );
-	
-	#TODO  Select the best node ?
-	my $motherboard = pop @free_motherboards;
+#	#my @free_motherboards = Entity::Motherboard->getMotherboards( hash => { active => 1, motherboard_state => 'down'} );
+#	my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
+#	
+#	die "No free motherboard to add in cluster '$args{cluster_name}'" if ( scalar @free_motherboards == 0 );
+#	
+#	#TODO  Select the best node ?
+#	my $motherboard = pop @free_motherboards;
 	
     my $cluster = $self->getClusterByName( cluster_name => $args{cluster_name} );
     
 	############################################
 	# Enqueue the add motherboard operation
 	############################################
-	$cluster->addNode( motherboard_id => $motherboard->getAttr(name => 'motherboard_id') );
+	$cluster->addNode( );
 
 }
 

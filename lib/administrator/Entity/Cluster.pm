@@ -690,12 +690,6 @@ sub getQoSConstraints {
 
 sub addNode {
 	my $self = shift;
-	my %args = @_;
-	if((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) {
-	   	$errmsg = "Entity::Cluster->addNode needs motherboard_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
 		
 	my $adm = Administrator->new();
 	# addNode method concerns an existing entity so we use his entity_id
@@ -705,13 +699,11 @@ sub addNode {
    	}
     my %params = (
     	cluster_id => $self->getAttr(name =>"cluster_id"),
-    	motherboard_id => $args{motherboard_id}, 
     );
     $log->debug("New Operation PreStartNode with attrs : " . %params);
 
     Operation->enqueue(
     	priority => 200,
-#        type     => 'AddMotherboardInCluster',
         type     => 'PreStartNode',
         params   => \%params,
     );

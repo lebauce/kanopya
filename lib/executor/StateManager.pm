@@ -182,9 +182,11 @@ sub run {
 		  	}
    	    }
 
-        # Second Check node status
+
    	    my @clusters = Entity::Cluster->getClusters(hash=>{cluster_state => {'!=' => 'down'}});
    	    foreach my $cluster (@clusters) {
+            
+            # Second Check node status
    	        $log->debug("cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n");
    	        my $motherboards = $cluster->getMotherboards();
    	        my @moth_index = keys %$motherboards;
@@ -201,7 +203,15 @@ sub run {
 		            $log->error($exception);
 		        }
    	        }
+   	        eval {
+   	        updateClusterStatus(motherboards=>$motherboards,cluster=>$cluster);};
+		        if($@) {
+		            my $exception = $@;
+		            $adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
+		            $log->error($exception);
+		        }
    	    }
+   	    
    		sleep 10;
    	}
 
@@ -230,6 +240,7 @@ sub motherboardRepaired{
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
             $errmsg = "StateManager::motherboardBroken need a motherboard named argument!";	
 		    $log->error($errmsg);
+		    
 		    throw Kanopya::Exception::Internal(error => $errmsg);
         }
     $args{motherboard}->setAttr(name=>"motherboard_state", value => "up");
@@ -448,6 +459,103 @@ sub updateMotherboardStatus {
     $method->(pingable=>$args{pingable},motherboard=>$args{motherboard},begin_time => $tmp[1]);   
 }
 
+
+
+sub updateClusterStatus {
+    my %args = @_;
+    General::checkParams(\%args, ['cluster','motherboards']);
+    my $adm = Administrator->new();
+    my $motherboards = $args{motherboards};
+    # third Check Cluster Status
+    my @cluster_state = split /:/, $args{cluster}->getAttr(name=>"cluster_state");
+    my $master_id = $args{cluster}->getMasterNodeId();
+    $log->debug("Cluster status update for cluster <". $args{cluster}->getAttr(name=>'cluster_name'). "> with master_node <$master_id> and state <$cluster_state[0]>\n");
+    if ( $cluster_state[0] eq "starting"){
+        if ($master_id){
+            if ((scalar keys %$motherboards) < $args{cluster}->getAttr(name => "cluster_min_node")){
+                $log->info("Cluster Starting, master node is ok, there are less node than min node");
+                my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"));
+                eval {
+                    $log->debug("New Operation PreStartNode with attrs : " . %params);
+                    Operation->enqueue(
+                                       priority => 200,
+                                       type     => 'PreStartNode',
+                                       params   => \%params);};
+               if ($@){
+                   my $error = $@;
+                   if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
+                       $log->info("PreStartNode operation is already enqueued");
+                   }
+               }
+            } else {
+                $adm->addMessage(from => 'State-manger', level => 'info', content => "Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now up !");
+                $log->info("Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now up !");
+   	            $args{cluster}->setAttr(name=>"cluster_state", value => "up");
+   	            $args{cluster}->save();
+            }
+        }
+        else {
+            # Test if addNode process is already enqueued
+            
+        }
+    }
+    if (($cluster_state[0] eq "stopping")){
+        if (!scalar keys %$motherboards){
+            $adm->addMessage(from => 'State-manger', level => 'info', content => "Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now down !");
+            $log->info("Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now down !");
+   	        $args{cluster}->setAttr(name=>"cluster_state", value => "down");
+   	        $args{cluster}->save();
+        }
+# A case is not managed, when master_node flag change of motherboard because of failover during cluster stopping
+        if( scalar keys %$motherboards == 1){
+   	        if (!$master_id){
+   	           $errmsg = "Last node in cluster is not master node ! My god...";	
+		       $log->error($errmsg);
+		      throw Kanopya::Exception::Internal(error => $errmsg);
+            }
+            if ($motherboards->{$master_id}->getNodeState() eq "up"){
+   	            my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
+                              motherboard_id => $master_id);
+                $log->debug("New Operation PreStopNode with attrs : " . %params);
+                eval {
+                    Operation->enqueue(
+                                       priority => 200,
+                                       type     => 'PreStopNode',
+                                       params   => \%params);};
+                if ($@){
+                    my $error = $@;
+                    if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
+                        $log->info("PreStopNode operation is already enqueued");}
+                }
+            }
+        }
+        else {
+            my $motherboards = $args{cluster}->getMotherboards();
+            my $mb_id;
+            foreach my $mb (keys %$motherboards){
+                if ($motherboards->{$mb} != $master_id){
+                    $mb_id = $motherboards->{$mb}->getAttr(name=>'motherboard_id');
+                }
+            }
+            my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
+                          motherboard_id => $mb_id);
+            ############################################################################
+            eval {
+                Operation->enqueue(
+    	                       priority => 200,
+                               type     => 'PreStopNode',
+                               params   => \%params);};
+            if ($@){
+                my $error = $@;
+                if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
+                    $log->info("PreStopNode operation is already enqueued");}
+            }
+        }
+        
+    }
+
+}
+
 sub updateNodeStatus {
     my %args = @_;
     if ((!defined $args{services_available} or !exists $args{services_available})||
@@ -471,6 +579,8 @@ sub updateNodeStatus {
                           pregoingout => \&testPreGoingOutNode,
                           goingout  => \&testGoingOutNode});
    my $node_state = $args{motherboard}->getNodeState();
+   my @tmp = split /:/, $node_state;
+   $node_state = $tmp[0];
    print "Node state is $node_state and service status is $args{services_available}\n";
    my $method = $actions{$args{services_available}}->{$node_state} || \&incorrectStates;
    $method->(services_available=>$args{services_available},motherboard=>$args{motherboard}, cluster=>$args{cluster});
