@@ -111,7 +111,6 @@ if ($answers->{log_directory} !~ /\/$/){
 	$answers->{log_directory} = $answers->{log_directory}.'/';
 }
 system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating the logging directory: $!";
-system ("mkdir -p $answers->{log_directory}"."debug/") == 0 or die "error while creating the debug logging directory: $!";
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
 print "done\n";
 
@@ -224,11 +223,13 @@ system('sed -i s/^tftp.*// /etc/inetd.conf');
 system('invoke-rc.d inetutils-inetd restart');
 # We restart atftpd with the new configuration
 system('invoke-rc.d atftpd restart');
+system('echo "" > /etc/iet/ietd.conf');
+system('invoke-rc.d iscsitarget restart');
 # Launching Kanopya's init scripts
-system('invoke-rc.d kanopya-executor start');
-system('invoke-rc.d kanopya-collector start');
-system('invoke-rc.d kanopya-grapher start');
-system('invoke-rc.d kanopya-orchestrator start');
+system('invoke-rc.d kanopya-executor restart');
+system('invoke-rc.d kanopya-collector restart');
+system('invoke-rc.d kanopya-grapher restart');
+system('invoke-rc.d kanopya-orchestrator restart');
 print "\ninitial configuration: done.\n";
 print "You can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
 

@@ -34,6 +34,11 @@
 	<state-manager-log.conf template="state-manager-log.conf.tt">	
 		<datas logdir="log_directory"/>
 	</state-manager-log.conf>
+
+	<components.conf template="components.conf.tt">	
+		<datas />
+	</components.conf>
+
 	<webui-log.conf template="webui-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</webui-log.conf>
