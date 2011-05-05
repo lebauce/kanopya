@@ -262,29 +262,19 @@ sub execute {
 	
 	## Remove motherboard etc export from iscsitarget 
 	my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
-	my $target_name = $node_dev->{etc}->{lvname};
-	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $target_name);
+	my $lv_name = $node_dev->{etc}->{lvname};
+	my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $lv_name);
+	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $lv_name);
 	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
 	
-	 
-	# we check for existing session on etc target   
-	my $tidsid = $self->{_objs}->{component_export}->getIscsiSession(
-			targetname => $target_name,	
-			initiatorname => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname"),
-			econtext => $self->{nas}->{econtext}
-	);				
-	if(defined $tidsid) { 
-		$self->{_objs}->{component_export}->cleanIscsiSession(
-			tid => $tidsid->{tid},
-			sid => $tidsid->{sid},
-			econtext => $self->{nas}->{econtext}
-		);	
-	}
+	# clean initiator session 
+	$self->{_objs}->{component_export}->cleanInitiatorSession(
+		econtext => $self->{nas}->{econtext},
+		initiator => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_initiatorname'), 
+	);
 	
-	#TODO faire de même pour le nettoyage dela session sur le root systemimage...
 	
-
 	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id 	=> $lun_id,
 												  iscsitarget1_target_id=>$target_id);
 	$self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id		=>$target_id,
