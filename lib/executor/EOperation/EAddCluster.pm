@@ -131,10 +131,10 @@ sub execute {
 	my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
 	my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
 	my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
+	my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));;
 	
 	if($si_location eq 'diskless') {
 		if(not $si_shared) {
-			my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));
 			$systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
 			$systemimage->save();
 		} 
@@ -148,6 +148,18 @@ sub execute {
 # Save the new cluster in db
 	$self->{_objs}->{cluster}->save();
 	$log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
+	
+	# automatically add systems components
+	if($systemimage) {
+		my $components = $systemimage->getInstalledComponents(); 
+		foreach my $comp (@$components) {
+			if(($comp->{component_category} eq 'System') || ($comp->{component_category} eq 'Monitoragent')) {
+				$self->{_objs}->{cluster}->addComponent(component_id => $comp->{component_id});
+				$log->info("Component $comp->{component_name} automatically added");
+			} 	
+		}
+		
+	}
 }
 
 =head1 DIAGNOSTICS
