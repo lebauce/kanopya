@@ -80,7 +80,7 @@ sub generate {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);	
 	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/dhcp3/dhcpd.conf");	
+	$args{econtext}->send(src => "/tmp/$tmpfile", dest => "/etc/dhcp/dhcpd.conf");	
 	unlink "/tmp/$tmpfile";		 	 
 }
 
@@ -94,7 +94,7 @@ sub reload {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-	my $command = "invoke-rc.d dhcp3-server restart";
+	my $command = "invoke-rc.d isc-dhcp-server restart";
 	my $result = $args{econtext}->execute(command => $command);
 	return 	undef;
 }
