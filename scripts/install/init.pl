@@ -51,7 +51,7 @@ my %param_test = (dbuser        => \&matchRegexp,
                   log_directory => \&matchRegexp,
                   vg    => \&matchRegexp);
 
-printInitStruct();
+#printInitStruct();
 #Welcome message - accepting Licence is mandatory
 welcome();
 #Ask questions to users 
@@ -111,6 +111,7 @@ if ($answers->{log_directory} !~ /\/$/){
 	$answers->{log_directory} = $answers->{log_directory}.'/';
 }
 system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating the logging directory: $!";
+system ("mkdir -p $answers->{log_directory}"."debug/") == 0 or die "error while creating the debug logging directory: $!";
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
 print "done\n";
 
@@ -138,7 +139,7 @@ if ($debian_version eq 'squeeze'){
         system('invoke-rc.d isc-dhcp-server restart');
         close ($FILE);
 }elsif ($debian_version eq 'lenny'){
-        open (my $FILE, ">","/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
+        open (my $FILE, ">","/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp3/dhcpd.conf: $!";
         print $FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
         system('invoke-rc.d dhcpd restart');
         close ($FILE);
@@ -160,20 +161,39 @@ if(not -e $mysqlpidfile) {
 	system('invoke-rc.d mysql start');
 }
 
-#We generate the Data.sql file and setup database
+################We generate the Data.sql file and setup database
 my %datas = (kanopya_vg_name => $answers->{vg}, kanopya_vg_size => $kanopya_vg_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $internal_ip_add, ipv4_internal_netmask => $answers->{internal_net_mask}, ipv4_internal_network_ip => $answers->{internal_net_add}, admin_domainname => $answers->{kanopya_server_domain_name}, mb_hw_address => $internal_net_interface_mac_add);
 useTemplate(template => 'Data.sql.tt', datas => \%datas, conf => $conf_vars->{data_sql}, include => $conf_vars->{data_dir});
-#Creation of database user
-print "creating mysql user, please insert root password...\n";
-system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p -e \"CREATE USER '$answers->{dbuser}' IDENTIFIED BY '$answers->{dbpassword1}'\"") == 0 or die "error while creating mysql user: $!";
-print "done\n";
+
+
+###############Creation of database user
+my $root_passwd;
+print "Please enter your root database user :\n";
+ReadMode('noecho');
+chomp($root_passwd = <STDIN>);
+ReadMode('original');
+#Test user for creation
+my $user=`mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SELECT user FROM mysql.user WHERE user='$answers->{dbuser}';" | grep "$answers->{dbuser}"`;
+if (!$user){
+    print "creating mysql user, please insert root password...\n";
+    system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e \"CREATE USER '$answers->{dbuser}' IDENTIFIED BY '$answers->{dbpassword1}'\"") == 0 or die "error while creating mysql user: $!";
+    print "done\n";
+}else {
+    print "User $answers->{dbuser} already exists\n";
+}
+
 #We grant all privileges to administrator database for $db_user
-print "granting all privileges on administrator database to $answers->{dbuser}, please insert root password...\n";
-system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
-print "done\n";
+my $grant=`mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep administrator`;
+if (!$grant) {
+    print "granting all privileges on administrator database to $answers->{dbuser}, please insert root password...\n";
+    system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
+    print "done\n";
+}else {
+    print "User $answers->{dbuser} seems to have good privileges\n";
+}
 #We now generate the database schemas
 print "generating database schemas...";
-system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";
+system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";
 print "done\n";
 #We now generate the components schemas 
 print "loading component DB schemas...";
@@ -222,9 +242,9 @@ sub welcome {
     print "Welcome on Kanopya\n";
     print "This script will configure your Kanopya instance\n";
     print "We advise to install Kanopya instance on a dedicated server\n";
-    print "First please validate the user licence";
-    `cat Licence`;
-    print "Do you accept the licence ? (y/n)\n";
+    print "First please validate the user licence\n";
+    print `cat /opt/kanopya/Licence`;
+    print "\nDo you accept the licence ? (y/n)\n";
     chomp($validate_licence= <STDIN>);
     if ($validate_licence ne 'y'){
         exit;

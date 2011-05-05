@@ -147,6 +147,7 @@ sub execute {
 
 # Save the new cluster in db
 	$self->{_objs}->{cluster}->save();
+	$log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
 }
 
 =head1 DIAGNOSTICS

@@ -80,7 +80,7 @@ sub add {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);   	
 	}
-    $log->debug("add rollback func $args{function} with parameters ".Dumper($args{parameters}));
+#    $log->debug("add rollback func $args{function} with parameters ".Dumper($args{parameters}));
     if(not defined $self->{function}) {
     	$self->{function} = $args{function};
     	$self->{parameters} = $args{parameters};

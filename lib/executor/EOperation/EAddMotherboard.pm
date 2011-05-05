@@ -203,7 +203,7 @@ sub prepare {
     if (defined $params->{powersupplyport_number}){delete $params->{powersupplyport_number};}
 
 	# Instanciate new Motherboard Entity
-    $log->debug("checking motherboard validity with params" . Dumper %$params);
+#    $log->debug("checking motherboard validity with params" . Dumper %$params);
     eval {
     	$self->{_objs}->{motherboard} = Entity::Motherboard->new(%$params);
     };
@@ -271,7 +271,7 @@ sub execute{
 	                                           "name", $self->{_objs}->{motherboard}->getEtcName(),
 	                                            "econtext", $self->{nas}->{econtext}]);
         $self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
-	
+        $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> etc disk is now created");
         if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
             (exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})){
             my $powersupplycard_id = 1;
@@ -280,6 +280,7 @@ sub execute{
         }
         # AddMotherboard finish, just save the Entity in DB
         $self->{_objs}->{motherboard}->save();
+        $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> is now created");
     };
     if ($@){
         my $error = $@;

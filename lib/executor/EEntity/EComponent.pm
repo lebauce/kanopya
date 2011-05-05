@@ -45,7 +45,7 @@ use Data::Dumper;
 use String::Random;
 use Template;
 use Log::Log4perl "get_logger";
-use Nmap::Scanner;
+#use Nmap::Scanner;
 use General;
 use EFactory;
 
@@ -196,32 +196,33 @@ sub isUp {
    			    }
         
     }
-    my $scanner = new Nmap::Scanner;
-    $scanner->max_rtt_timeout(200);
+#    my $scanner = new Nmap::Scanner;
+#    $scanner->max_rtt_timeout(200);
     my $ip = $args{host}->getInternalIP()->{ipv4_internal_address};
-    $scanner->add_target($ip);
+#    $scanner->add_target($ip);
 #        $scanner->fast_scan();
 
     # Test Services
     foreach my $j (keys %$net_conf) {
-#        my $cmd = "nmap ";
+        my $cmd = "nmap ";
         if ($net_conf->{$j} eq "udp") {
-#            $cmd .= "-sU "; 
-            $scanner->udp_scan();
+            $cmd .= "-sU "; 
+#            $scanner->udp_scan();
         }
         else {
-#            $cmd .= "-sT ";
-            $scanner->tcp_connect_scan();
+            $cmd .= "-sT ";
+#            $scanner->tcp_connect_scan();
         }
-#        $cmd .= "-p $j $ip | grep $j";
-        $scanner->add_scan_port($j);
-        my $results = $scanner->scan();
-        my $port_state = $results->get_host_list()->get_next()->get_port_list()->get_next()->state();
+        $cmd .= "-p $j $ip | grep $j | cut -d\" \" -f1";
+#        $scanner->add_scan_port($j);
+#        my $results = $scanner->scan();
+#        my $port_state = $results->get_host_list()->get_next()->get_port_list()->get_next()->state();
+        my $port_state = `$cmd`;
         $log->debug("Check host <$ip> on port $j ($net_conf->{$j}) is <$port_state>");
         if ($port_state eq "closed"){
             return 0;
         }
-        $scanner->reset_scan_ports();
+#        $scanner->reset_scan_ports();
      }
     return 1;
 }

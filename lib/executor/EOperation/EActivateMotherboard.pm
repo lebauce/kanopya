@@ -155,7 +155,7 @@ sub execute{
 	# set motherboard active in db
 	$self->{_objs}->{motherboard}->setAttr(name => 'active', value => 1);
 	$self->{_objs}->{motherboard}->save();
-		
+	$log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> is now active");
 }
 
 =head1 DIAGNOSTICS
