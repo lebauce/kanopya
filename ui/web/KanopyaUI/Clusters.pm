@@ -122,7 +122,7 @@ sub form_addcluster : Runmode {
 
 sub _addcluster_profile {
 	return {
-    	required => ['name', 'systemimage_id', 'kernel_id', 'min_node', 'max_node', 'priority', 'domainname', 'nameserver'],
+    	required => ['name', 'kernel_id', 'min_node', 'max_node', 'priority', 'domainname', 'nameserver'],
         msgs => {
         	any_errors => 'some_errors',
             prefix => 'err_',
@@ -167,7 +167,7 @@ sub process_addcluster : Runmode {
     return $err_page if $err_page;
 
     my $query = $self->query();
-    my ($si_location, $si_access_mode, $si_shared);
+    my ($si_location, $si_access_mode, $si_shared, $systemimage_id);
     
     $si_location = $query->param('si_location'); 
     if($si_location eq 'local') {
@@ -177,9 +177,11 @@ sub process_addcluster : Runmode {
     	if($query->param('si_shareordedicate') eq 'shared') {
     		$si_access_mode = 'ro';
     		$si_shared = 1;
+    		$systemimage_id = $query->param('systemimage_forshared');
     	} else {
     		$si_access_mode = 'rw';
     		$si_shared = 0;
+    		$systemimage_id = $query->param('systemimage_fordedicated');
     	}
     }
     
@@ -194,7 +196,7 @@ sub process_addcluster : Runmode {
 			cluster_min_node => $query->param('min_node'),
 			cluster_max_node => $query->param('max_node'),
 			cluster_priority => $query->param('priority'),
-			systemimage_id => $query->param('systemimage_id'),
+			systemimage_id => $systemimage_id,
 			cluster_domainname => $query->param('domainname'),
 			cluster_nameserver => $query->param('nameserver'),
 		};
