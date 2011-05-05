@@ -463,9 +463,10 @@ sub form_addcomponenttocluster : Runmode {
 sub process_addcomponent : Runmode {
 	my $self = shift;
 	my $query = $self->query();
+	my $id;
 	eval {
 	    my $ecluster = Entity::Cluster->get(id => $query->param('cluster_id'));
-	    $ecluster->addComponent(component_id => $query->param('component_id'));
+	    $id = $ecluster->addComponent(component_id => $query->param('component_id'));
 	};
     if($@) { 
 		my $exception = $@;
@@ -477,7 +478,8 @@ sub process_addcomponent : Runmode {
     }	
 	else { 
 		$self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'Component added sucessfully'); 
-		return $self->close_window();	
+		my $url = "/cgi/kanopya.cgi/components/form_configurecomponent?component_instance_id=$id";
+		return $self->close_window(url => $url);	
 	}
 }
 
