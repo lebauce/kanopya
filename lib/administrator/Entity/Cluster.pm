@@ -579,7 +579,7 @@ sub addComponent {
 	#		  There must be a way to do this more properly (component management).
 	my $concrete_component = Entity::Component->getInstance(id => $component_instance_id);
 	$concrete_component->insertDefaultConfiguration();
-
+	return $component_instance_id;
 }
 
 =head2 removeComponent
