@@ -513,7 +513,7 @@ sub updateClusterStatus {
 		       $log->error($errmsg);
 		      throw Kanopya::Exception::Internal(error => $errmsg);
             }
-            if ($motherboards->{$master_id}->getNodeState() eq "up"){
+            if ($motherboards->{$master_id}->getNodeState() eq "in"){
    	            my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
                               motherboard_id => $master_id);
                 $log->debug("New Operation PreStopNode with attrs : " . %params);
