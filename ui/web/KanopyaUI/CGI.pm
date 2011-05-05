@@ -25,7 +25,17 @@ sub cgiapp_prerun {
 }
 
 sub close_window {
-	return "<script type=\"text/javascript\">window.opener.location.reload();window.close();</script>";
+	my $self = shift;
+	my %args = @_;
+	my $javascript = "<script type=\"text/javascript\">";
+	if(exists $args{url} and defined $args{url}) {
+		$javascript .= "window.opener.location.replace(\"$args{url}\");";
+	} else {
+		$javascript .= "window.opener.location.reload();";
+	}
+	
+	$javascript .= "window.close();</script>";
+	return $javascript;
 }
 
 1;
