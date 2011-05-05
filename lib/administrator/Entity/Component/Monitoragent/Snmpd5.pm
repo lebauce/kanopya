@@ -168,6 +168,21 @@ sub getNetConf {
     return {161=> 'udp'};
 }
 
+sub insertDefaultConfiguration {
+	my $self = shift;
+	my %args = @_;
+	my $snmpd5_conf = {
+		snmpd5_id => undef,
+		monitor_server_ip => '127.0.0.1',
+		snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
+	};
+	if(exists $args{internal_cluster} and defined $args{internal_cluster}) {	
+		$snmpd5_conf->{monitor_server_ip} = $args{internal_cluster}->getMasterNodeIp(),
+	} 
+	$self->{_dbix}->snmpd5s->create($snmpd5_conf);	
+}
+
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
