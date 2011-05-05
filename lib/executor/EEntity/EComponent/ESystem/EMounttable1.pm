@@ -5,6 +5,7 @@ use Template;
 use String::Random;
 use base "EEntity::EComponent::ESystem";
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -31,21 +32,27 @@ sub configureNode {
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-
-	my $config = {
-	    INCLUDE_PATH => "/templates/components/mounttable1", #$self->_getEntity()->getTemplateDirectory(),
-	    INTERPOLATE  => 1,               # expand "$var" in plain text
-	    POST_CHOMP   => 0,               # cleanup whitespace 
-	    EVAL_PERL    => 1,               # evaluate Perl code blocks
-	    RELATIVE => 1,                   # desactive par defaut
-	};
 	
-	my $rand = new String::Random;
-	my $template = Template->new($config);
-	my $tmpfile = $rand->randpattern("cccccccc");
-	my $input = "fstab.tt";
-	my $data = {};
-	$data->{serverroot}
+	my $data = $self->_getEntity()->getConf();
+	
+	$log->debug(Dumper($args{econtext}));
+	$log->debug(Dumper($args{mount_point}));
+	
+	
+	foreach my $row (@{$data->{mountdefs}}) {
+		delete $row->{mounttable1_id};
+	}
+	
+	$log->debug(Dumper($data));
+						 	
+	$self->generateFile(	econtext => $args{econtext}, 
+							mount_point => $args{mount_point},
+						 	template_dir => "/templates/components/mounttable",
+						 	input_file => "fstab.tt", 
+						 	output => "/fstab", 
+						 	data => $data);
+	
+	
 }
 
 sub addNode {

@@ -146,6 +146,29 @@ sub setConf {
 	}
 }
 
+# Insert default configuration in db for this component 
+sub insertDefaultConfiguration() {
+	my $self = shift;
+	
+	my @default_conf = (
+		{ 	mounttable1_device => 'proc', mounttable1_mountpoint => '/proc', mounttable1_filesystem => 'proc',
+			mounttable1_options => 'nodev,noexec,nosuid', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+		{ 	mounttable1_device => 'sysfs', mounttable1_mountpoint => '/sys', mounttable1_filesystem => 'sysfs',
+			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/tmp', mounttable1_filesystem => 'tmpfs',
+			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/tmp', mounttable1_filesystem => 'tmpfs',
+			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/run', mounttable1_filesystem => 'tmpfs',
+			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/lock', mounttable1_filesystem => 'tmpfs',
+			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+	);
+	
+	foreach my $row (@default_conf) {
+		$self->{_dbix}->mounttable1s->create( $row );
+	}
+}
 
 =head1 DIAGNOSTICS
 

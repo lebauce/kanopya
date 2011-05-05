@@ -377,10 +377,10 @@ sub _generateNodeConf {
 	$log->info("Generate Udev Conf");
 	$self->_generateUdevConf(mount_point=>$args{mount_point});
 	
-	$log->info("Generate Fstab Conf");
-	$self->_generateFstabConf(	mount_point=>$args{mount_point}, 
-								root_dev => $args{root_dev}, 
-								etc_dev => $args{etc_dev});
+	#$log->info("Generate Fstab Conf");
+	#$self->_generateFstabConf(	mount_point=>$args{mount_point}, 
+	#							root_dev => $args{root_dev}, 
+	#							etc_dev => $args{etc_dev});
 	
 	$log->info("Generate Kanopya Halt script Conf");
 	$self->_generateKanopyaHalt(mount_point=>$args{mount_point}, etc_export => $args{etc_export});
