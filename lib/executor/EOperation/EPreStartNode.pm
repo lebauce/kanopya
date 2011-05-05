@@ -142,21 +142,21 @@ sub prepare {
 
 	# Get instance of Motherboard Entity
 	$log->info("Load Motherboard instance");
-	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+	my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
+    if ( scalar @free_motherboards == 0) {
+        $errmsg = "EPreStartNode->prepare no free motherboard!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+	$self->{_objs}->{motherboard} = $free_motherboards[0];
 	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
     if (! $master_node_id && $node_count){
-        $errmsg = "No master node when motherboard <$params->{motherboard_id}> migrating, pls wait...";
+        $errmsg = "No master node when motherboard <$free_motherboards[0]> migrating, pls wait...";
 		$log->error($errmsg);
-#		my %op_params = ( cluster_id => $params->{cluster_id},
-#    	                  motherboard_id => $params->{motherboard_id},);
-#        $log->debug("New Operation PreStartNode with attrs : " . %op_params);
-#        Operation->enqueue(
-#            priority => $self->_getOperation()->getAttr(attr_name => "priority") -10,
-#            type     => 'PreStartNode',
-#            params   => \%op_params);
+
 		throw Kanopya::Exception::Internal(error => $errmsg);
     }
 

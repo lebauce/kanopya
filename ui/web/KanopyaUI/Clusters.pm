@@ -667,16 +667,16 @@ sub process_addnode : Runmode {
 	        
     eval {
 	    my $ecluster = Entity::Cluster->get(id => $query->param('cluster_id'));
-	    my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
-	    if(not scalar @free_motherboards) {
-	    	my $errmsg = 'no motherboard is available ; can\'t add a new node to this cluster';
-	    	$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $errmsg); 
-	    }
-	    else {
-	        my $motherboard = pop @free_motherboards;
-	     	$ecluster->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id')); 
+#	    my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
+#	    if(not scalar @free_motherboards) {
+#	    	my $errmsg = 'no motherboard is available ; can\'t add a new node to this cluster';
+#	    	$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $errmsg); 
+#	    }
+#	    else {
+#	        my $motherboard = pop @free_motherboards;
+	     	$ecluster->addNode(); 
 	    	$self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue');
-	    }
+#	    }
     };
     if($@) { 
 		my $exception = $@;

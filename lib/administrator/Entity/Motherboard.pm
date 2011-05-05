@@ -257,7 +257,7 @@ sub stopToBeNode{
 	my %args = @_;
 	
 	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})){
-		$errmsg = "NodeManager->delNode need a cluster_id named argument!";
+		$errmsg = "Motherboard->stopToBeNode need a cluster_id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}

@@ -57,7 +57,6 @@ use General;
 use XML::Simple;
 use DateTime;
 use NetworkManager;
-use NodeManager;
 use RulesManager;
 use MonitorManager;
 use EntityRights::User;
@@ -252,11 +251,6 @@ sub new {
 	$self->{manager}->{network} = NetworkManager->new(
 		schemas => $schema,
 		internalnetwork => $config->{internalnetwork}
-	);
-	
-	$self->{manager}->{node} = NodeManager->new(
-		node_rs => $schema->resultset('Node'), 
-		adm => $self
 	);
 	
 	$self->{manager}->{rules} = RulesManager->new( schemas => $schema );
