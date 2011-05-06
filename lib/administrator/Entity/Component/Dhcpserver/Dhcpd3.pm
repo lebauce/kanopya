@@ -316,7 +316,7 @@ B<throws>  : Nothing
 =cut
 
 sub getNetConf {
-    return {67=> 'udp'};
+    return { 67 => ['udp'] };
 }
 
 =head1 DIAGNOSTICS

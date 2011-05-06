@@ -9,5 +9,5 @@ Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 
 Package: kanopya-bootmanager
 Architecture: all
-Depends: atftpd, dhcp3-server, ntp, ntpdate, openssh-client, openssh-server, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libexception-class-perl, libxml-simple-perl, libtest-simple-perl, liberror-perl
+Depends: atftpd, isc-dhcp-server, ntp, ntpdate, openssh-client, openssh-server, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libexception-class-perl, libxml-simple-perl, libtest-simple-perl, liberror-perl
 Description: Boot manager manages boot. Great. 

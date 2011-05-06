@@ -165,7 +165,7 @@ B<throws>  : Nothing
 =cut
 
 sub getNetConf {
-    return {161=> 'udp'};
+    return { 161 => ['udp'] };
 }
 
 sub insertDefaultConfiguration {

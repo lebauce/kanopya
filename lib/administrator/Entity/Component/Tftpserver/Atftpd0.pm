@@ -142,7 +142,7 @@ B<throws>  : Nothing
 
 # Warning Atftp bug when a port scan is done
 #sub getNetConf {
-#    return {69=> 'udp'};
+#    return {69=> ['udp']};
 #}
 sub getExecToTest {
     return {atftp =>   {cmd => 'netstat -lnpu | grep 69',

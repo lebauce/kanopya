@@ -28,43 +28,48 @@ sub addNode {
 	
 	my $keepalived = $self->_getEntity();
 	my $masternodeip = $args{cluster}->getMasterNodeIp();
-	
+		
 	# recuperer les adresses ips publiques et les ports
 	
 	if(not defined $masternodeip) {
 
 		# no masternode defined, this motherboard becomes the masternode
 		#  so it is the first initialization of keepalived
-				
-		$log->debug("adding virtualserver  definition in database");
-		my $vsid1 = $keepalived->addVirtualserver(
-			virtualserver_ip => '10.10.10.100/24',
-			virtualserver_port => 80,
-			virtualserver_lbkind => 'NAT',
-			virtualserver_lbalgo => 'wlc');
-			
-		my $vsid2 = $keepalived->addVirtualserver(
-			virtualserver_ip => '10.10.10.100/24',
-			virtualserver_port => 443,
-			virtualserver_lbkind => 'NAT',
-			virtualserver_lbalgo => 'wlc');
 		
-		$log->debug("adding realserver definition in database");
-		 my $rsid1 = $keepalived->addRealserver(
-			virtualserver_id => $vsid1,
-			realserver_ip => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
-			realserver_port => 80,
-			realserver_checkport => 80,
-			realserver_checktimeout => 15,
-			realserver_weight => 1);
-			
-		my $rsid2 = $keepalived->addRealserver(
-			virtualserver_id => $vsid2,
-			realserver_ip => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
-			realserver_port => 443,
-			realserver_checkport => 443,
-			realserver_checktimeout => 15,
-			realserver_weight => 1);
+		my $publicips =  $args{cluster}->getPublicIps();
+		my $components = $args{cluster}->getComponents(category => 'all');
+		
+		# retrieved loadbalanced components and there ports
+		my $ports = [];
+		foreach my $component(values %$components) {
+			if($component->getClusterizationType() eq 'loadbalanced') {
+				my $netconf = $component->getNetConf();
+				foreach my $port (keys %$netconf) {
+					push(@$ports, $port); 
+				}
+			}
+		}
+		
+		foreach my $vip (@$publicips) {
+			foreach my $port (@$ports) {
+				
+				#$log->debug("adding virtualserver  definition in database");
+				my $vsid = $keepalived->addVirtualserver(
+					virtualserver_ip => $vip->{address}.'/'.$vip->{netmask},
+					virtualserver_port => $port,
+					virtualserver_lbkind => 'NAT',
+					virtualserver_lbalgo => 'wlc');
+				
+				$log->debug("adding realserver definition in database");
+				 my $rsid = $keepalived->addRealserver(
+					virtualserver_id => $vsid,
+					realserver_ip => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
+					realserver_port => $port,
+					realserver_checkport => $port,
+					realserver_checktimeout => 15,
+					realserver_weight => 1);
+			}	
+		}
 	
 		$log->debug("generate /etc/default/ipvsadm file");
 		$self->generateIpvsadm(econtext => $args{econtext}, mount_point => $args{mount_point});
