@@ -54,7 +54,8 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-
+use General;
+use Entity::Cluster;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -206,6 +207,34 @@ sub delete {
 	my $self = shift;
 	my $adm = Administrator->new();
 	$self->{_operation}->delete();	
+}
+
+=head2
+	
+	Class : Public
+	
+	Desc : load in $self->{ args{service} }->{econtext} the context correponding to the specified service
+	
+	Args : service : service name (e.g. 'nas', 'bootserver', 'executor', 'monitor')
+	
+=cut
+
+sub loadContext {
+	my $self = shift;
+	my %args = @_;
+	
+	General::checkParams( args => \%args, required => ['internal_cluster', 'service'] );
+	
+	# Retrieve executor ip (used for source all context)
+	if (not defined $self->{exec_cluster_ip}) {
+		my $exec_cluster = Entity::Cluster->get(id => $args{internal_cluster}->{'executor'});
+		$self->{exec_cluster_ip} = $exec_cluster->getMasterNodeIp();
+	}
+	
+	my $cluster = Entity::Cluster->get(id => $args{internal_cluster}->{$args{service}});
+	my $serv_ip = $cluster->getMasterNodeIp();
+	$self->{$args{service}}->{econtext} = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $serv_ip);
+	
 }
 
 =head1 DIAGNOSTICS
