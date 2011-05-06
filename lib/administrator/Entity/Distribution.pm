@@ -199,22 +199,6 @@ sub getProvidedComponents {
 	return $components;
 }
 
-=head2 uploadComponent
-
-=cut
-
-sub uploadComponent {
-    my $self = shift;
-    my %params = $self->getAttrs();
-    
-    $log->debug("New Operation UploadComponentOnDistribution with attrs : " . Dumper(%params));
-    Operation->enqueue(
-    	priority => 200,
-        type     => 'UploadComponentOnDistribution',
-        params   => \%params,
-    );
-}
-
 =head2 toString
 
 	desc: return a string representation of the entity
