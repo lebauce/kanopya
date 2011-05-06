@@ -301,12 +301,12 @@ Related object: L<AdministratorDB::Schema::Result::Php5>
 
 =cut
 
-__PACKAGE__->has_many(
-  "php5s",
-  "AdministratorDB::Schema::Result::Php5",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->has_many(
+#  "php5s",
+#  "AdministratorDB::Schema::Result::Php5",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 =head2 snmpd5s
 
@@ -350,4 +350,20 @@ __PACKAGE__->has_one(
   "AdministratorDB::Schema::Result::ComponentInstanceEntity",
     { "foreign.component_instance_id" => "self.component_instance_id" },
     { cascade_copy => 0, cascade_delete => 0 });
+
+
+#########################################
+# Load components relationship
+#########################################
+# Get list of component instance relathionship files
+opendir(DIR, "/opt/kanopya/lib/administrator/AdministratorDB/Component");
+my @comp_files = readdir(DIR);
+closedir(DIR);
+# Load components relationship
+for my $comp_file (@comp_files) {
+	if ($comp_file =~ /(.*)\.pm/) {
+		__PACKAGE__->load_components("+AdministratorDB::Component::$1");
+	}
+}
+
 1;
