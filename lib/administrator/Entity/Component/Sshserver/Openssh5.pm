@@ -131,7 +131,7 @@ B<throws>  : Nothing
 =cut
 
 sub getNetConf {
-    return {22=> 'tcp'};
+    return { 22 => ['tcp'] };
 }
 
 =head1 DIAGNOSTICS

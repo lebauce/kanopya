@@ -200,7 +200,7 @@ sub setConf {
 }
 
 sub getNetConf {
-    return {514=> 'udp'};
+    return { 514 => ['udp'] };
 }
 
 sub getLogDirectories {

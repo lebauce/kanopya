@@ -347,7 +347,7 @@ B<throws>  : Nothing
 =cut
 
 sub getNetConf {
-    return {3260=> 'tcp'};
+    return { 3260 => ['tcp'] };
 }
 
 sub createExport {

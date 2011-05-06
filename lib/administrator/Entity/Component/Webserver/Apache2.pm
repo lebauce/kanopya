@@ -345,8 +345,8 @@ sub getNetConf{
     my $self = shift;
     my $http_port = $self->{_dbix}->apache2s->first()->get_column("apache2_ports");
     my $https_port = $self->{_dbix}->apache2s->first()->get_column("apache2_sslports");
-    return {$http_port=>'tcp',
-            $https_port=>'tcp'};
+    return { $http_port  => ['tcp'],
+             $https_port => ['tcp'] };
 }
 
 sub getExecToTest {

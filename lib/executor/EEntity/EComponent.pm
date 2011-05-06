@@ -202,30 +202,50 @@ sub isUp {
 #    $scanner->add_target($ip);
 #        $scanner->fast_scan();
 
-    # Test Services
-    foreach my $j (keys %$net_conf) {
-        my $cmd = "nmap ";
-        if ($net_conf->{$j} eq "udp") {
-            $cmd .= "-sU "; 
-#            $scanner->udp_scan();
-        }
-        else {
-            $cmd .= "-sT ";
-#            $scanner->tcp_connect_scan();
-        }
-        $cmd .= "-p $j $ip | grep $j | cut -d\" \" -f1";
-#        $scanner->add_scan_port($j);
-#        my $results = $scanner->scan();
-#        my $port_state = $results->get_host_list()->get_next()->get_port_list()->get_next()->state();
-        my $port_state = `$cmd`;
-        $log->debug("Check host <$ip> on port $j ($net_conf->{$j}) is <$port_state>");
-        if ($port_state eq "closed"){
-            return 0;
-        }
-#        $scanner->reset_scan_ports();
-     }
-    return 1;
+	# Test Services
+	while(my ($port, $protocols) = each %$net_conf) {
+		my $cmd = "nmap ";
+		foreach my $proto (@$protocols) {
+			if ($proto eq "udp") {
+            	$cmd .= "-sU "; 
+	        }
+        	else {
+            	$cmd .= "-sT ";
+	        }
+    	    $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f1";
+			my $port_state = `$cmd`;
+       	 	$log->debug("Check host <$ip> on port $port ($proto) is <$port_state>");
+        	if ($port_state eq "closed"){
+            	return 0;
+       		}
+		}
+	}
+	return 1;
 }
+    # Test Services
+#    foreach my $j (keys %$net_conf) {
+#        my $cmd = "nmap ";
+#        if ($net_conf->{$j} eq "udp") {
+#            $cmd .= "-sU "; 
+##            $scanner->udp_scan();
+#        }
+#        else {
+#            $cmd .= "-sT ";
+##            $scanner->tcp_connect_scan();
+#        }
+#        $cmd .= "-p $j $ip | grep $j | cut -d\" \" -f1";
+##        $scanner->add_scan_port($j);
+##        my $results = $scanner->scan();
+##        my $port_state = $results->get_host_list()->get_next()->get_port_list()->get_next()->state();
+#        my $port_state = `$cmd`;
+#        $log->debug("Check host <$ip> on port $j ($net_conf->{$j}) is <$port_state>");
+#        if ($port_state eq "closed"){
+#            return 0;
+#        }
+##        $scanner->reset_scan_ports();
+#     }
+#    return 1;
+
 
 1;
 
