@@ -63,6 +63,8 @@ if ( -d "../" . $comp_info{templates_dir} ) {
     delete $comp_info{templates_dir};
 }
 
+# Add desc file
+`cp $component_xml_file /tmp/$archive_root_dir`;
 
 # Tar directory and move tarball in this script dir (tools)
 print "Create archive...\n";

@@ -169,7 +169,8 @@ sub execute{
 	my $root_dir_name = $1;
 	
 	# retrieve package info
-	$cmd = "cat /tmp/$root_dir_name/info.xml";
+	my $desc_filename = $root_dir_name;
+	$cmd = "cat /tmp/$root_dir_name/$desc_filename.xml";
 	$cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
 	if ( $cmd_res->{stderr} ne '') {
 		$errmsg = "While reading component archive info : $cmd_res->{stderr}";
