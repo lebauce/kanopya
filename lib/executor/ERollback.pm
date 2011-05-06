@@ -130,7 +130,7 @@ sub undo {
     while ($tmp && $tmp->{function}) {
         my $fn = $tmp->{function};
         my $args = $tmp->{parameters};
-        $log->debug("undo $fn with parameters: ", Dumper  $args);
+        #$log->debug("undo $fn with parameters: ", Dumper  $args);
 	$fn->(@$args);
         $tmp = $tmp->{prev_item};
     }

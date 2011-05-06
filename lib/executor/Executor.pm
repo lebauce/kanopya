@@ -147,7 +147,7 @@ sub run {
    				} else {
    					# rollback transaction
    					eval { $adm->{db}->txn_rollback; };
-   					$adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
+   					$adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
    					$log->error("Error during execution : $error");
    					$op->delete();
    				}

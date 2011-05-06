@@ -47,7 +47,7 @@ sub createDisk {
 	my $lv_id = $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
 					lvm2_lv_filesystem =>$args{filesystem}, lvm2_lv_size => $args{size},
 					econtext => $args{econtext}, lvm2_vg_name => $vg->{vgname});
-    if ((! exists $args{erollback} or ! defined $args{erollback})){
+    if (( exists $args{erollback} and defined $args{erollback})){
            $args{erollback}->add(function   =>$self->can('removeDisk'),
 	                            parameters => [$self,
 	                                           "name", $args{name},
