@@ -166,7 +166,6 @@ sub prepare {
 
 sub execute {
 	my $self = shift;
-	$self->SUPER::execute();
 	
 	my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
 	
@@ -179,25 +178,33 @@ sub execute {
 
 	# Get etc iscsi target information
 	
-	my $sysimg_root_export = {
-		iscsitarget1_target_name=>$target_name,
-		mountpoint=>"/",
-		mount_option=>""
-	};
-	
-	$sysimg_root_export->{econtext} = $self->{nas}->{econtext};
-	my $target_id = $self->{_objs}->{component_export}->addTarget(%$sysimg_root_export);
-	delete $sysimg_root_export->{econtext};															  
-	
+#	my $sysimg_root_export = {
+#		iscsitarget1_target_name=>$target_name,
+#		mountpoint=>"/",
+#		mount_option=>""
+#	};
+#	
+#	$sysimg_root_export->{econtext} = $self->{nas}->{econtext};
+#	my $target_id = $self->{_objs}->{component_export}->addTarget(%$sysimg_root_export);
+#	delete $sysimg_root_export->{econtext};															  
+#	
 	my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
-	
-	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id	=> $target_id,
-												iscsitarget1_lun_number	=> 0,
+#	
+#	$self->{_objs}->{component_export}->addLun(iscsitarget1_target_id	=> $target_id,
+#												iscsitarget1_lun_number	=> 0,
+#												iscsitarget1_lun_device	=> "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
+#												iscsitarget1_lun_typeio	=> "fileio",
+#												iscsitarget1_lun_iomode	=> $si_access_mode,
+#												iscsitarget1_target_name=>$target_name,
+#												econtext 				=> $self->{nas}->{econtext});
+
+    $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number	=> 0,
 												iscsitarget1_lun_device	=> "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
 												iscsitarget1_lun_typeio	=> "fileio",
 												iscsitarget1_lun_iomode	=> $si_access_mode,
 												iscsitarget1_target_name=>$target_name,
-												econtext 				=> $self->{nas}->{econtext});
+												econtext 				=> $self->{nas}->{econtext},
+												erollback               => $self->{erollback});
 	# generate new configuration file
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 	$log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now exported with target <$target_name>");

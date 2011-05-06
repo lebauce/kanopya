@@ -70,10 +70,6 @@ __PACKAGE__->add_columns(
   },
   "iscsitarget1_target_name",
   { data_type => "char", is_nullable => 0, size => 128 },
-  "mountpoint",
-  { data_type => "char", is_nullable => 1, size => 64 },
-  "mount_option",
-  { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("iscsitarget1_target_id");
 __PACKAGE__->add_unique_constraint("iscsitarget1_UNIQUE", ["iscsitarget1_target_name"]);

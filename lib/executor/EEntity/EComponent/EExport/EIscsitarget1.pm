@@ -47,14 +47,48 @@ sub generateTargetname {
 	return $res;
 }
 
+sub addExport {
+	my $self = shift;
+	my %args  = @_;
+	
+		if ((! exists $args{iscsitarget1_lun_number} or ! defined $args{iscsitarget1_lun_number}) ||
+		(! exists $args{iscsitarget1_lun_device} or ! defined $args{iscsitarget1_lun_device}) ||
+		(! exists $args{iscsitarget1_lun_typeio} or ! defined $args{iscsitarget1_lun_typeio}) ||
+		(! exists $args{iscsitarget1_lun_iomode} or ! defined $args{iscsitarget1_lun_iomode}) ||
+		(! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name})||
+		(! exists $args{econtext} or ! defined $args{econtext})) {
+		$errmsg = "EComponent::EExport::EIscsitarget1->addLun needs a iscsitarget1_target_id, iscsitarget1_lun_number, iscsitarget1_lun_device, iscsitarget1_lun_typeio and iscsitarget1_lun_iomode named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+	}
+	
+    my $target_id = $self->addTarget(iscsitarget1_target_name   =>$args{iscsitarget1_target_name},
+                                     econtext                   =>$args{econtext});
+	
+	my $lun_id = $self->addLun(iscsitarget1_target_id	=> $target_id,
+												iscsitarget1_lun_number	=> $args{iscsitarget1_lun_number},
+												iscsitarget1_lun_device	=> $args{iscsitarget1_lun_device},
+												iscsitarget1_lun_typeio	=> $args{iscsitarget1_lun_typeio},
+												iscsitarget1_lun_iomode	=> $args{iscsitarget1_lun_iomode},
+												iscsitarget1_target_name=> $args{iscsitarget1_target_name},
+												econtext 				=> $args{econtext});
+#    if(exists $args{erollback}) {
+#        $args{erollback}->add(function   =>$self->can('removeDisk'),
+#	                            parameters => [$self,
+#	                                           "name", $args{name},
+#	                                           "econtext", $args{econtext}]);
+##    }
+}
+
+sub removeExport {
+    
+}
 
 sub addTarget {
 	my $self = shift;
 	my %args  = @_;	
 
 	if ((! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name}) ||
-		(! exists $args{mountpoint} or ! defined $args{mountpoint}) ||
-		(! exists $args{mount_option} or ! defined $args{mount_option})||
 		(! exists $args{econtext} or ! defined $args{econtext})) {
 		$errmsg = "EComponent::EExport::EIscsitarget1->addTarget needs a iscsitarget1_targetname,econtext,mount_option and mountpoint named argument!";
 		$log->error($errmsg);

@@ -191,16 +191,14 @@ sub addTarget {
 	my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name}) ||
-		(! exists $args{mountpoint} or ! defined $args{mountpoint}) ||
-		(! exists $args{mount_option} or ! defined $args{mount_option})) {
-		$errmsg = "Component::Export::Iscsitarget1->addTarget needs a iscsitarget1_targetname and mountpoint named argument!";
+	if ((! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name})) {
+		$errmsg = "Component::Export::Iscsitarget1->addTarget needs a iscsitarget1_targetname named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $iscsitarget1_rs = $self->{_dbix}->iscsitarget1_targets;
 	my $res = $iscsitarget1_rs->create(\%args);
-	$log->info("New target <$args{iscsitarget1_target_name}> added with mount point <$args{mountpoint}> and options <$args{mount_option}> and return " .$res->get_column("iscsitarget1_target_id"));
+	$log->info("New target <$args{iscsitarget1_target_name}> added and return " .$res->get_column("iscsitarget1_target_id"));
 	return $res->get_column("iscsitarget1_target_id");
 }
 
