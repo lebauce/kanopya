@@ -61,7 +61,13 @@ my %info = (
 print "Generate package info...\n";
 XMLout( \%info, RootName => 'info', OutputFile => "/tmp/$xml_filename" );
 
-print "=> /tmp/$xml_filename\n";
+print "=> /tmp/$xml_filename generated\n";
+print "# Now you can do:\n";
+print "#################\n";
+print "#> mv /tmp/$xml_filename component_package_desc\n";
+print "# edit xml to add/remove files\n";
+print "#> perl package_component.pl component_package_desc/$xml_filename\n";
+print "#################\n";
 
 sub getComponentInfo {
     my %comp_info = ();
