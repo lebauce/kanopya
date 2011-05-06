@@ -53,6 +53,7 @@ sub new {
 
 	my $host = $args{host};
 	
+	# TODO manage apache port! retrieve port used from apache component
 	my $cmd = 	'curl -A "mozilla/4.0 (compatible; cURL 7.10.5-pre2; Linux 2.4.20)"';
 	$cmd .=		' -m 12 -s -L -k -b /tmp/bbapache_cookiejar.curl';
 	$cmd .=		' -c /tmp/bbapache_cookiejar.curl';
