@@ -200,8 +200,7 @@ sub getConf {
 			push @data_hosts, {
 			    domain_name =>$host->get_column('dhcpd3_hosts_domain_name'),
 			    domain_name_server => $host->get_column('dhcpd3_hosts_domain_name_server'),
-			    ntp_server => $host->get_column('dhcpd3_hosts_ntp_server'),
-				ip_address => $host->get_column('dhcpd3_hosts_ipaddr'),
+			    ip_address => $host->get_column('dhcpd3_hosts_ipaddr'),
 				ntp_server => $host->get_column('dhcpd3_hosts_ntp_server'),
 				mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
 				hostname => $host->get_column('dhcpd3_hosts_hostname'), 

@@ -30,7 +30,7 @@
 		<td class="label">System image :</td><td>
         <TMPL_IF NAME=systemimages_forshared>
         <input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared : 
-		<select name="systemimage_id">
+		<select name="systemimage_forshared">
 		<TMPL_LOOP NAME=systemimages_forshared>
 			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
 		</TMPL_LOOP>	
@@ -38,7 +38,7 @@
         </TMPL_IF>
         <TMPL_IF NAME=systemimages_fordedicated>
         <input type="radio" name="si_shareordedicate" value="dedicated" />dedicated : 
-        <select name="systemimage_id">
+        <select name="systemimage_fordedicated">
 		<TMPL_LOOP NAME=systemimages_fordedicated>
 			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
 		</TMPL_LOOP>	

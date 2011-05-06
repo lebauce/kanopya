@@ -574,11 +574,13 @@ sub addComponent {
 	my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
 	my $component_instance_id = $componentinstance->save();
 
+	my $internal_cluster = Entity::Cluster->getCluster(hash => {cluster_name => 'adm'});
+	$log->info('linternal cluster;'.Dumper($internal_cluster));
 	# Insert default configuration in db
 	# Remark: we must get concrete instance here because the component->new (above) return an Entity::Component and not a concrete child component
 	#		  There must be a way to do this more properly (component management).
 	my $concrete_component = Entity::Component->getInstance(id => $component_instance_id);
-	$concrete_component->insertDefaultConfiguration();
+	$concrete_component->insertDefaultConfiguration(internal_cluster => $internal_cluster);
 	return $component_instance_id;
 }
 
