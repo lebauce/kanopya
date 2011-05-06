@@ -129,7 +129,7 @@ sub view_clustermonitoring : Runmode {
 	$tmpl->param('CLUSTER_NAME' => $cluster_name);
 	
 	
-	my $period = 'day';
+	my $period = 'hour';
 	#TODO retrieve from conf
 	my ($graph_dir, $graph_dir_alias, $graph_subdir) = ("/tmp", "/graph", "monitor/graph");
 	
