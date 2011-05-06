@@ -44,9 +44,16 @@ sub createDisk {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	my $vg = $self->_getEntity()->getMainVg();
-	return $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
+	my $lv_id = $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
 					lvm2_lv_filesystem =>$args{filesystem}, lvm2_lv_size => $args{size},
 					econtext => $args{econtext}, lvm2_vg_name => $vg->{vgname});
+    if ((! exists $args{erollback} or ! defined $args{erollback})){
+           $args{erollback}->add(function   =>$self->can('removeDisk'),
+	                            parameters => [$self,
+	                                           "name", $args{name},
+	                                           "econtext", $args{econtext}]);
+    }
+    return $lv_id;
 }
 =head2 removeDisk
 

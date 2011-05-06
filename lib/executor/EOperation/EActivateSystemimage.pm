@@ -200,7 +200,7 @@ sub execute {
 												econtext 				=> $self->{nas}->{econtext});
 	# generate new configuration file
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
-		
+	$log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now exported with target <$target_name>");
 	# set system image active in db
 	$self->{_objs}->{systemimage}->setAttr(name => 'active', value => 1);
 	$self->{_objs}->{systemimage}->save();

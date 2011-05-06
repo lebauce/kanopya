@@ -132,7 +132,7 @@ sub run {
    			        throw $error;
    			    }
    			    else {
-   			        $op->execute();
+   			        $op->process();
    				     $op->finish();
    			    }
    			};

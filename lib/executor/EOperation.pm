@@ -158,7 +158,8 @@ sub prepare {
 	$log->debug("Class is : $id");
 	$self->{userid} = $self->_getOperation()->getAttr(attr_name => "user_id");
 	$log->debug("Change user by user_id : $self->{userid}");	
-	my $adm = Administrator->new();
+#	my $adm = Administrator->new();
+	$self->{erollback} = ERollback->new();
 	#$adm->changeUser(user_id => $self->{userid});
 }
 
@@ -177,7 +178,25 @@ sub prepare {
 
 =cut
 
-sub execute {}
+#sub execute {}
+
+sub process{
+    	my $self = shift;
+#	$self->SUPER::execute();
+	my $adm = Administrator->new();
+
+    eval {
+        $self->execute();
+    };
+    if ($@){
+        my $error = $@;
+		$errmsg = "Operation <".ref($self)."> failed an error occured :\n$error\nOperation will be rollbacked";
+		$log->error($errmsg);
+		$self->{erollback}->undo();
+        throw Kanopya::Exception::Execution::Rollbacked(error => $errmsg);
+
+    }
+}
 
 =head2 finish
 

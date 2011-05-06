@@ -177,8 +177,6 @@ sub prepare {
 	$self->{nas} = {};
 	$self->{executor} = {};
 	
-	$self->{erollback} = ERollback->new();
-	
 	# First review params 
 	## Put in lowcase mac address
 	$params->{motherboard_mac_address} = lc($params->{motherboard_mac_address});
@@ -256,20 +254,16 @@ sub prepare {
 
 sub execute{
 	
-	my $self = shift;
-	$self->SUPER::execute();
-	my $adm = Administrator->new();
+    my $self = shift;
+#	$self->SUPER::execute();
+    my $adm = Administrator->new();
+    #TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
+    my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $self->{_objs}->{motherboard}->getEtcName(),
+                                                                 size        => "52M",
+                                                                 filesystem  => "ext3",
+                                                                 econtext    => $self->{nas}->{econtext},
+                                                                 erollback   => $self->{erollback});
 
-    eval {
-        #TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
-        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $self->{_objs}->{motherboard}->getEtcName(),
-                                                                    size        => "52M",
-                                                                    filesystem  => "ext3",
-                                                                    econtext    => $self->{nas}->{econtext});;
-	    $self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
-	                            parameters => [$self->{_objs}->{component_storage},
-	                                           "name", $self->{_objs}->{motherboard}->getEtcName(),
-	                                            "econtext", $self->{nas}->{econtext}]);
         $self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
         $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> etc disk is now created");
         if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
@@ -281,15 +275,7 @@ sub execute{
         # AddMotherboard finish, just save the Entity in DB
         $self->{_objs}->{motherboard}->save();
         $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> is now created");
-    };
-    if ($@){
-        my $error = $@;
-		$errmsg = "Operation EAddMotherboard failed an error occured :\n$error";
-		$log->error($errmsg);
-		$self->{erollback}->undo();
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 
-    }
 }
 
 =head1 DIAGNOSTICS

@@ -80,6 +80,10 @@ use Exception::Class (
 	isa => 'Kanopya::Exception',
 	description => 'Command execution failed',
     },
+    Kanopya::Exception::Execution::Rollbacked => {
+	isa => 'Kanopya::Exception::Execution',
+	description => 'Operation execution rollbacked',
+	},
     Kanopya::Exception::Execution::OperationReported => {
 	isa => 'Kanopya::Exception::Execution',
 	description => 'Operation execution reported',

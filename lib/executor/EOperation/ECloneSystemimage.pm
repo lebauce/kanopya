@@ -142,13 +142,13 @@ sub prepare {
 	}
 	
 	my $params = $self->_getOperation()->getParams();
-
+	$self->{erollback} = ERollback->new();
 	$self->{_objs} = {};
 	$self->{nas} = {};
 	$self->{executor} = {};
 
     #### Get instance of Systemimage Entity
-	$log->info("Load systemimage instance");
+	$log->debug("Load systemimage instance");
     eval {
 	   $self->{_objs}->{systemimage_source} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
@@ -164,7 +164,7 @@ sub prepare {
 
 
     #### Create new systemimage instance
-	$log->info("Create new systemimage instance");
+	$log->debug("Create new systemimage instance");
     eval {
 	   $self->{_objs}->{systemimage} = Entity::Systemimage->new(%$params);
     };
@@ -215,40 +215,58 @@ sub prepare {
 sub execute {
 	my $self = shift;
 	$self->SUPER::execute();
-		
-	my $devs = $self->{_objs}->{systemimage_source}->getDevices();
-	my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-	my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-	
-	# creation of etc and root devices based on systemimage source devices
-	$log->info('etc device creation for new systemimage');
-	my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $etc_name,
+	eval {
+        my $devs = $self->{_objs}->{systemimage_source}->getDevices();
+        my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+        my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+        
+        # creation of etc and root devices based on systemimage source devices
+        $log->info('etc device creation for new systemimage');
+        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $etc_name,
 													size => $devs->{etc}->{lvsize},
 													filesystem => $devs->{etc}->{filesystem},
 													econtext => $self->{nas}->{econtext});
-	$log->info('etc device creation for new systemimage');													
-	my $root_id = $self->{_objs}->{component_storage}->createDisk(name => $root_name,
+		$self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
+                                parameters => [$self->{_objs}->{component_storage},
+                                               "name", $etc_name,
+                                               "econtext", $self->{nas}->{econtext}]);
+	   $log->info('etc device creation for new systemimage');													
+	   my $root_id = $self->{_objs}->{component_storage}->createDisk(name => $root_name,
 													size => $devs->{root}->{lvsize},
 													filesystem => $devs->{root}->{filesystem},
 													econtext => $self->{nas}->{econtext});
+		$self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
+                                parameters => [$self->{_objs}->{component_storage},
+                                               "name", $root_name,
+                                               "econtext", $self->{nas}->{econtext}]);
+
+	   # copy of systemimage source data to systemimage devices												
+	   $log->info('etc device fill with systemimage source data for new systemimage');
+	   my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";
+	   my $result = $self->{nas}->{econtext}->execute(command => $command);
+	   # TODO dd command execution result checking
 	
-	# copy of systemimage source data to systemimage devices												
-	$log->info('etc device fill with systemimage source data for new systemimage');
-	my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";
-	my $result = $self->{nas}->{econtext}->execute(command => $command);
-	# TODO dd command execution result checking
+	   $log->info('root device fill with systemimage source data for new systemimage');
+	   $command = "dd if=/dev/$devs->{root}->{vgname}/$devs->{root}->{lvname} of=/dev/$devs->{root}->{vgname}/$root_name bs=1M";
+	   $result = $self->{nas}->{econtext}->execute(command => $command);
+	   # TODO dd command execution result checking
 	
-	$log->info('root device fill with systemimage source data for new systemimage');
-	$command = "dd if=/dev/$devs->{root}->{vgname}/$devs->{root}->{lvname} of=/dev/$devs->{root}->{vgname}/$root_name bs=1M";
-	$result = $self->{nas}->{econtext}->execute(command => $command);
-	# TODO dd command execution result checking
-	
-	$self->{_objs}->{systemimage}->setAttr(name => "etc_device_id", value => $etc_id);
-	$self->{_objs}->{systemimage}->setAttr(name => "root_device_id", value => $root_id);
-	$self->{_objs}->{systemimage}->setAttr(name => "active", value => 0);
+	   $self->{_objs}->{systemimage}->setAttr(name => "etc_device_id", value => $etc_id);
+	   $self->{_objs}->{systemimage}->setAttr(name => "root_device_id", value => $root_id);
+	   $self->{_objs}->{systemimage}->setAttr(name => "active", value => 0);
 		
-	$self->{_objs}->{systemimage}->save();
-	$self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(systemimage_source_id => $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id'));
+	   $self->{_objs}->{systemimage}->save();
+	   $self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(systemimage_source_id => $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id'));
+       $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is cloned');
+    };
+    if ($@){
+        my $error = $@;
+        $errmsg = "Operation EAddMotherboard failed an error occured :\n$error";
+        $log->error($errmsg);
+        $self->{erollback}->undo();
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+
+    }
 }
 
 1;

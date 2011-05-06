@@ -161,12 +161,12 @@ sub prepare {
 sub execute {
 	my $self = shift;
 	$self->SUPER::execute();
-	
+
 	# set cluster active in db
 	$self->{_objs}->{cluster}->setAttr(name => 'active', value => 1);
 	$self->{_objs}->{cluster}->save();
 	$log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now active");
-		
+
 }
 
 =head1 DIAGNOSTICS
