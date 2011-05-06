@@ -91,12 +91,12 @@ Related object: L<AdministratorDB::Schema::Result::Apache2>
 
 =cut
 
-__PACKAGE__->has_many(
-  "apache2s",
-  "AdministratorDB::Schema::Result::Apache2",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->has_many(
+#  "apache2s",
+#  "AdministratorDB::Schema::Result::Apache2",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 =head2 atftpd0s
 
