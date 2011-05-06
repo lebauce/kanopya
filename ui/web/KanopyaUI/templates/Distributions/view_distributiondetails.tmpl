@@ -14,8 +14,6 @@
 <tr><td colspan="2">&nbsp;</td>
 <td class="actions" rowspan="<TMPL_VAR NAME=components_count>">
 <span class="desc">This list show components which can be installed on a system image based on this distribution.</span><br /><br />
-<a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/distributions/form_uploadcomponent?distribution_id=<TMPL_VAR NAME=distribution_id>', 'Component Upload', 600, 200, '');">Upload a component</a><br />
-<span class="desc">Upload a new component for this distribution.</span><br /><br />
 </td></tr>
 <TMPL_LOOP NAME=components_list>
 <tr><td class="label2"><span id="<TMPL_VAR NAME=component_id>" class="bold"><TMPL_VAR NAME=component_name><TMPL_VAR NAME=component_version></span> - <TMPL_VAR NAME=component_category></td>

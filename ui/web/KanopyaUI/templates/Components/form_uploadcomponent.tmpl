@@ -4,8 +4,8 @@
 </head>
 <body>
 <style type="text/css">@import url(/css/form.css);</style>
-<div class="title">Component upload on distribution<br /><TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
-<form method="POST" action="/cgi/kanopya.cgi/distributions/process_uploadcomponent" enctype="multipart/form-data">
+<div class="title">Component upload and deploy<br /><TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
+<form method="POST" action="/cgi/kanopya.cgi/components/process_uploadcomponent" enctype="multipart/form-data">
 <table class="form">
 <tr>
 	<td><input type="file" name="componentfile" size="32" />
@@ -13,7 +13,6 @@
 </tr>
 </table>
 <div class="buttons">
-<input type="hidden" name="distribution_id" value="<TMPL_VAR NAME=distribution_id>" />
 <input type="submit" value="ok"/>
 <input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
