@@ -1,4 +1,4 @@
-# EUploadComponentOnDistribution.pm - Operation class implementing component installation on systemimage
+# EDeployComponent.pm - Operation class implementing component deployment 
 
 # Copyright (C) 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
@@ -23,7 +23,7 @@
 
 =head1 NAME
 
-EOperation::EUploadComponentOnDistribution - Operation class implementing component installation on systemimage
+EOperation::EDeployComponent - Operation class implementing component deployment
 
 =head1 SYNOPSIS
 
@@ -37,7 +37,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EUploadComponentOnDistribution;
+package EOperation::EDeployComponent;
 use base "EOperation";
 
 use strict;
@@ -45,6 +45,7 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use XML::Simple;
 use Kanopya::Exceptions;
 use Entity::Cluster;
 use Entity::Systemimage;
@@ -56,11 +57,6 @@ our $VERSION = '1.00';
 
 
 =head2 new
-
-    my $op = EOperation::EUploadComponentOnDistribution->new();
-
-    # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
-    # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
 
 =cut
 
@@ -108,34 +104,33 @@ sub prepare {
 
     # Check if internal_cluster exists
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EUploadComponentOnDistribution->prepare need an internal_cluster named argument!";
+		$errmsg = "EDeployComponent->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
     
     # Get Operation parameters
 	my $params = $self->_getOperation()->getParams();
-    $self->{_objs} = {};
-    eval {
-        $self->{_objs}->{distribution} = Entity::Distribution->get(id => $params->{distribution_id});
-        };
-    if($@) {
-        my $err = $@;
-    	$errmsg = "EOperation::EUploadComponentOnDistribution->prepare : distribution_id $params->{distribution_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
     
-    $self->{_path} = $params->{path};
-    
-#TODO test if tarball is good and contains good element
+    $self->{_file_path} = $params->{file_path};
+	
+	$self->{_file_path} =~ /.*\/(.*)$/;
+	my $file_name = $1;
+	$self->{_file_name} = $file_name; 
 
-    if($@) {
-        my $err = $@;
-    	$errmsg = "EOperation::EInstallComponentInSystemImage->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+	# Check tarball name and retrieve component info from tarball name (temporary. TODO: component def xml file) 
+    if ((not defined $file_name) || $file_name !~ /component_(.*)_([a-zA-Z]+)([0-9]+)\.tar/) {
+		$errmsg = "Incorrect component tarball name";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my ($comp_cat, $comp_name, $comp_version) = ($1, $2, $3);
+	$self->{comp_category} = $comp_cat; 
+	$self->{comp_name} = $comp_name;
+	$self->{comp_version} = $comp_version;
+    
+	#TODO test if tarball is good and contains good element
+
 
     ### Check Parameters and context
     eval {
@@ -143,11 +138,17 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateCluster failed an error occured :\n$error";
+		$errmsg = "Operation DeployComponent failed an error occured :\n$error";
 		$log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
+
+	# Get contexts
+	$self->{executor}->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+	$self->loadContext( internal_cluster => $args{internal_cluster}, service => 'nas' );
+	
+	
 }
 
 sub execute{
@@ -155,8 +156,124 @@ sub execute{
 	$log->debug("Before EOperation exec");
 	$self->SUPER::execute();
 	
+	$log->debug("Deploy component '$self->{comp_name}' version $self->{comp_version} category '$self->{comp_category}'");
+	
+	my $comp_fullname_lc = lc $self->{comp_name} . $self->{comp_version};
+	my ($cmd, $cmd_res);
+	
+	# untar component archive on local /tmp/<tar_root>
+	$log->debug("Deploy files from archive '$self->{_file_path}'");
+	$cmd = "tar -xf $self->{_file_path} -C /tmp"; 
+	$cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+	
+	$self->{_file_name} =~ /(.*)\.tar/; 
+	my $root_dir_name = $1;
+	
+	# retrieve package info
+	$cmd = "cat /tmp/$root_dir_name/info.xml";
+	$cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+	if ( $cmd_res->{stderr} ne '') {
+		$errmsg = "While reading component archive info : $cmd_res->{stderr}";
+        throw Kanopya::Exception::Internal(error => $errmsg);		
+	}
+	
+	# Build info struct
+	my $package_info = XMLin( "$cmd_res->{stdout}", ForceArray => ['nas', 'executor'] );
+	
+	# TODO check validity of package info (needed keys, compatibility of packager version and this operation,... )
+	#$log->debug(Dumper $package_info);
+	
+	# Send files from local tmp to dest path on specified internal cluster
+	for my $srv ('nas', 'executor') {
+		my $files = $package_info->{$srv};
+		next if (not defined $files);
+		for my $file (@$files) {
+			$self->{$srv}->{econtext}->send( 	src  => "/tmp/$root_dir_name/" . $file->{src},
+												dest => "/opt/kanopya/" . $file->{dest} );	
+		}
+	}
+	
+	# Send templates files (actually cp in local)
+	if (defined $package_info->{templates_dir}) {
+		$package_info->{templates_dir} =~ /(.*)\/([^\/]*)$/;
+		my $path = $1; 
+		$cmd = "cp -r /tmp/$root_dir_name/$package_info->{templates_dir} /opt/kanopya/$path";
+		$cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+	}
+	
+	# Retriev admin db conf
+	# TODO Better way to acces db info
+	my $config = XMLin("/opt/kanopya/conf/libkanopya.conf");
+	my ($dbname, $dbuser, $dbpwd, $dbhost, $dbport) = ( $config->{dbconf}->{name},
+													  	$config->{dbconf}->{user},
+													  	$config->{dbconf}->{password},
+													  	$config->{dbconf}->{host},
+													  	$config->{dbconf}->{port});
+	
+	# create tables 
+	# Use local context (executor) to create tables in (potentially) remote db
+	if (defined $package_info->{tables_file}) {
+		my $tables_file = "/tmp/$root_dir_name/" . $package_info->{tables_file};
+		#TODO check if tables_file is in archive (or in local /tmp) because mysql don't do error if file doesn't exist
+		$cmd = "mysql -u $dbuser -p$dbpwd -h $dbhost -P $dbport < '$tables_file'";
+		$cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+		if ( $cmd_res->{stderr} =~ "ERROR" ) {
+			$errmsg = "While creating component tables : $cmd_res->{stderr}";
+			$log->error($errmsg);
+	        throw Kanopya::Exception::Internal(error => $errmsg);		
+		}
+		$log->debug("DB tables created");
+	}	
+	
+	# Register
+	$self->_registerComponentInDB( dbname => $dbname, dbuser => $dbuser, dbpwd => $dbpwd, dbhost => $dbhost, dbport => $dbport );
 
-		
+	
+	
+}		
+
+=head2 _registerComponentInDB
+	
+	Class : Private
+	
+	Desc : Insert component in component table, insert default template and provide component on default distribution
+	
+	Args : db connection infos
+	
+	Throw Exception if execution fail or cmd return error
+	
+=cut
+
+sub _registerComponentInDB {
+	my $self = shift;
+	my %args = @_;
+	
+	my ($comp_name, $comp_version, $comp_cat) = ($self->{comp_name}, $self->{comp_version}, $self->{comp_category});
+	my $comp_fullname_lc = lc $comp_name . $comp_version;
+	
+	my $sql_cmd = "SET foreign_key_checks=0;";
+	
+	# Register Component
+	$sql_cmd .= "SET \@eid_new_component = (SELECT MAX(component_id) FROM component) + 1;";
+	$sql_cmd .= "INSERT INTO component VALUES (\@eid_new_component,'$comp_name','$comp_version','$comp_cat');";
+	
+	# Insert template
+	$sql_cmd .= "SET \@eid_new_component_template = (SELECT MAX(component_template_id) FROM component_template) + 1;";
+	$sql_cmd .= "INSERT INTO component_template VALUES (\@eid_new_component_template,'default_$comp_fullname_lc','/templates/components/$comp_fullname_lc', \@eid_new_component);";
+	
+	# provide component on default distribution (1)
+	$sql_cmd .= "INSERT INTO component_provided VALUES (\@eid_new_component,1);";
+	$sql_cmd .=  "SET foreign_key_checks=1;";
+	
+	# Execute sql cmd
+	my $cmd = "mysql -u $args{dbuser} -p$args{dbpwd} -h $args{dbhost} -P $args{dbport} $args{dbname} -e \"$sql_cmd\"";
+	my $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);	
+	
+	# Throw execption if cmd failed
+	if ( $cmd_res->{stderr} =~ "ERROR" ) {
+		$errmsg = "While creating component tables : $cmd_res->{stderr}";
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
 }
 
 =head1 DIAGNOSTICS
