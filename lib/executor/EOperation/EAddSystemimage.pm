@@ -106,7 +106,6 @@ sub prepare {
 	
 	my $adm = Administrator->new();
 	my $params = $self->_getOperation()->getParams();
-	$self->{erollback} = ERollback->new();
 	
 	$self->{_objs} = {};
 	$self->{nas} = {};
@@ -163,33 +162,27 @@ sub prepare {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
     my $adm = Administrator->new();
 
-    eval{
         my $devs = $self->{_objs}->{distribution}->getDevices();
         my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
         my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
 
         # creation of etc and root devices based on distribution devices
         $log->info('etc device creation for new systemimage');
-        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $etc_name,
-                                                                     size => $devs->{etc}->{lvsize},
-                                                                     filesystem => $devs->{etc}->{filesystem},
-                                                                     econtext => $self->{nas}->{econtext});
-        $self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
-                                parameters => [$self->{_objs}->{component_storage},
-                                               "name", $etc_name,
-                                               "econtext", $self->{nas}->{econtext}]);
+        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name           => $etc_name,
+                                                                     size           => $devs->{etc}->{lvsize},
+                                                                     filesystem     => $devs->{etc}->{filesystem},
+                                                                     econtext       => $self->{nas}->{econtext},
+                                                                     erollback     => $self->{erollback});
+
         $log->info('etc device creation for new systemimage');
-        my $root_id = $self->{_objs}->{component_storage}->createDisk(name => $root_name,
-                                                                      size => $devs->{root}->{lvsize},
-                                                                      filesystem => $devs->{root}->{filesystem},
-                                                                      econtext => $self->{nas}->{econtext});
-        $self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
-                                parameters => [$self->{_objs}->{component_storage},
-                                               "name", $root_name,
-                                               "econtext", $self->{nas}->{econtext}]);
+        my $root_id = $self->{_objs}->{component_storage}->createDisk(name          => $root_name,
+                                                                      size          => $devs->{root}->{lvsize},
+                                                                      filesystem    => $devs->{root}->{filesystem},
+                                                                      econtext      => $self->{nas}->{econtext},
+                                                                      erollback     => $self->{erollback});
+
         # copy of distribution data to systemimage devices												
         $log->info('etc device fill with distribution data for new systemimage');
         my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";
@@ -207,15 +200,7 @@ sub execute {
 
         $self->{_objs}->{systemimage}->save();
         $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is added');
-    };
-    if ($@){
-        my $error = $@;
-        $errmsg = "Operation EAddMotherboard failed an error occured :\n$error";
-        $log->error($errmsg);
-        $self->{erollback}->undo();
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 
-    }
 }
 
 =head1 DIAGNOSTICS

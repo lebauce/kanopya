@@ -154,22 +154,15 @@ sub prepare {
 
 sub execute{
 	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
 	
-	my $vg = $self->{_objs}->{ecomp_lvm}->_getEntity()->getMainVg();
-	$self->{_objs}->{ecomp_lvm}->lvCreate(
-		lvm2_vg_id 			=> $self->{params}->{vg_id},
-	    lvm2_lv_name 		=> $self->{params}->{disk_name},
-		lvm2_lv_filesystem 	=>$self->{params}->{filesystem},
-		lvm2_lv_size 		=> $self->{params}->{size},
-		econtext 			=> $self->{cluster_econtext},
-		lvm2_vg_name 		=> $vg->{vgname}
-	);
-	
-	
-	
-	
+	my $adm = Administrator->new();
+    $self->{_objs}->{ecomp_lvm}->createDisk(name       => $self->{params}->{disk_name},
+                                            size       => $self->{params}->{size},
+                                            filesystem => $self->{params}->{filesystem},
+                                            econtext   => $self->{cluster_econtext},
+                                            erollback  => $self->{erollback});
+
+	$log->info("New Logical volume <" . $self->{params}->{disk_name} . "> created");
 }
 
 =head1 DIAGNOSTICS

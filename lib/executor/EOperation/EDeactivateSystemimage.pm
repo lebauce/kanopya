@@ -184,9 +184,6 @@ sub prepare {
 
 sub execute{
 	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
 	my $adm = Administrator->new();
 	
 	my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
@@ -197,19 +194,17 @@ sub execute{
 	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
 												iscsitarget1_lun_device => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}");
 
-	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id 	=> $lun_id,
-												  iscsitarget1_target_id=>$target_id);
-	$self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id		=>$target_id,
-													 iscsitarget1_target_name 	=> $target_name,
-													 econtext 					=> $self->{nas}->{econtext});
-																  
+    $self->{_objs}->{component_export}->removeExport(iscsitarget1_lun_id        => $lun_id,
+                                                     econtext                   => $self->{nas}->{econtext},
+                                                     iscsitarget1_target_name   => $target_name,
+                                                     iscsitarget1_target_id     => $target_id);
 	# generate new configuration file
 	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
 		
 	# set system image active in db
 	$self->{_objs}->{systemimage}->setAttr(name => 'active', value => 0);
 	$self->{_objs}->{systemimage}->save();
-		
+    $log->info("System Image <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') ."> deactivated");
 }
 
 __END__

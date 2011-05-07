@@ -126,7 +126,7 @@ sub prepare {
 
 sub execute {
 	my $self = shift;
-	$self->SUPER::execute();
+
 	my $adm = Administrator->new();
 	my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
 	my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
@@ -147,19 +147,18 @@ sub execute {
 
 # Save the new cluster in db
 	$self->{_objs}->{cluster}->save();
-	$log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
-	
-	# automatically add systems components
-	if($systemimage) {
-		my $components = $systemimage->getInstalledComponents(); 
-		foreach my $comp (@$components) {
-			if(($comp->{component_category} eq 'System') || ($comp->{component_category} eq 'Monitoragent')) {
-				$self->{_objs}->{cluster}->addComponent(component_id => $comp->{component_id});
-				$log->info("Component $comp->{component_name} automatically added");
-			} 	
-		}
-		
-	}
+
+    # automatically add systems components
+    if($systemimage) {
+        my $components = $systemimage->getInstalledComponents(); 
+        foreach my $comp (@$components) {
+            if(($comp->{component_category} eq 'System') || ($comp->{component_category} eq 'Monitoragent')) {
+                $self->{_objs}->{cluster}->addComponent(component_id => $comp->{component_id});
+                $log->info("Component $comp->{component_name} automatically added");
+            }
+        }
+    }
+    $log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
 }
 
 =head1 DIAGNOSTICS

@@ -111,15 +111,12 @@ sub prepare {
 	my $self = shift;
 	my %args = @_;
 	$self->SUPER::prepare();
-
-	$log->info("Operation preparation");
-
+	
 	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
 		$errmsg = "EDeactivateMotherboard->prepare need an internal_cluster named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
-
 	my $params = $self->_getOperation()->getParams();
 	
 	# Instantiate motherboard and so check if exists
@@ -146,15 +143,11 @@ sub prepare {
 
 sub execute{
 	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
-	
-	
+
 	# set motherboard active in db
 	$self->{_objs}->{motherboard}->setAttr(name => 'active', value => 0);
 	$self->{_objs}->{motherboard}->save();
-		
+    $log->info("Motherboard <". $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_mac_address') ."> deactivated");
 }
 
 

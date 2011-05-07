@@ -179,26 +179,24 @@ sub prepare {
 
 sub execute{
 	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
 	
 	# other big if...
 	if($self->{component_name} eq 'Iscsitarget') {
-	
-		my $disk_targetname = $self->{_objs}->{ecomp_iscsitarget}->generateTargetname(name => $self->{params}->{export_name});
-		my $target_id = $self->{_objs}->{ecomp_iscsitarget}->addTarget(
-		                                               iscsitarget1_target_name		=> $disk_targetname,
-													   mountpoint		=> "unused",
-													   mount_option	=> "unused",
-													   econtext			=> $self->{cluster_econtext});
-		$self->{_objs}->{ecomp_iscsitarget}->addLun(iscsitarget1_lun_number => 0,
-		                                            iscsitarget1_lun_device => $self->{params}->{device},
-		                                            iscsitarget1_target_id => $target_id,
-		                                            iscsitarget1_lun_typeio => $self->{params}->{typeio},
-		                                            iscsitarget1_lun_iomode => $self->{params}->{iomode},
-		                                            iscsitarget1_target_name => $disk_targetname,
-		                                            econtext			=> $self->{cluster_econtext});
-		$self->{_objs}->{ecomp_iscsitarget}->generate(econtext => $self->{cluster_econtext});
+        my $disk_targetname = $self->{_objs}->{ecomp_iscsitarget}->generateTargetname(name => $self->{params}->{export_name});
+
+        $self->{_objs}->{ecomp_iscsitarget}->addExport(iscsitarget1_lun_number	=> 0,
+                                                      iscsitarget1_lun_device	=> $self->{params}->{device},
+                                                      iscsitarget1_lun_typeio	=> $self->{params}->{typeio},
+                                                      iscsitarget1_lun_iomode	=> $self->{params}->{iomode},
+                                                      iscsitarget1_target_name  => $disk_targetname,
+                                                      econtext 				=> $self->{cluster_econtext},
+                                                      erollback               => $self->{erollback});
+        my $eroll_add_export = $self->{erollback}->getLastInserted();
+
+        $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
+        $self->{_objs}->{ecomp_iscsitarget}->generate(econtext  => $self->{cluster_econtext},
+                                                      erollback => $self->{erollback});
+        $log->info("Add IScsi Export of device <$self->{params}->{device}>");
 	}
 	
 	elsif($self->{component_name} eq 'Nfsd') {
@@ -214,7 +212,7 @@ sub execute{
 		 );
 		
 		$self->{_objs}->{ecomp_nfsd}->update_exports(econtext => $self->{cluster_econtext});
-		
+        $log->info("Add NFS Export of device <$self->{params}->{device}>");
 	}
 	
 }

@@ -250,7 +250,7 @@ sub welcome {
     print "This script will configure your Kanopya instance\n";
     print "We advise to install Kanopya instance on a dedicated server\n";
     print "First please validate the user licence\n";
-    print `cat /opt/kanopya/Licence`;
+    print `cat /opt/kanopya/UserLicence`;
     print "\nDo you accept the licence ? (y/n)\n";
     chomp($validate_licence= <STDIN>);
     if ($validate_licence ne 'y'){

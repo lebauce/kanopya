@@ -5,6 +5,7 @@ use Date::Simple (':all');
 use Log::Log4perl "get_logger";
 use Template;
 use String::Random;
+use General;
 
 use base "EEntity::EComponent::EExport";
 
@@ -51,16 +52,11 @@ sub addExport {
 	my $self = shift;
 	my %args  = @_;
 	
-		if ((! exists $args{iscsitarget1_lun_number} or ! defined $args{iscsitarget1_lun_number}) ||
-		(! exists $args{iscsitarget1_lun_device} or ! defined $args{iscsitarget1_lun_device}) ||
-		(! exists $args{iscsitarget1_lun_typeio} or ! defined $args{iscsitarget1_lun_typeio}) ||
-		(! exists $args{iscsitarget1_lun_iomode} or ! defined $args{iscsitarget1_lun_iomode}) ||
-		(! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name})||
-		(! exists $args{econtext} or ! defined $args{econtext})) {
-		$errmsg = "EComponent::EExport::EIscsitarget1->addLun needs a iscsitarget1_target_id, iscsitarget1_lun_number, iscsitarget1_lun_device, iscsitarget1_lun_typeio and iscsitarget1_lun_iomode named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+	General::checkParams(args => \%args,
+	                     required => ['iscsitarget1_lun_number','econtext',
+	                                  'iscsitarget1_lun_device', 'iscsitarget1_lun_typeio',
+	                                  'iscsitarget1_target_name']);
+
 	
     my $target_id = $self->addTarget(iscsitarget1_target_name   =>$args{iscsitarget1_target_name},
                                      econtext                   =>$args{econtext});
@@ -72,16 +68,29 @@ sub addExport {
 												iscsitarget1_lun_iomode	=> $args{iscsitarget1_lun_iomode},
 												iscsitarget1_target_name=> $args{iscsitarget1_target_name},
 												econtext 				=> $args{econtext});
-#    if(exists $args{erollback}) {
-#        $args{erollback}->add(function   =>$self->can('removeDisk'),
-#	                            parameters => [$self,
-#	                                           "name", $args{name},
-#	                                           "econtext", $args{econtext}]);
-##    }
+    if(exists $args{erollback}) {
+        $args{erollback}->add(function   =>$self->can('removeExport'),
+	                          parameters => [$self,
+	                                           "iscsitarget1_lun_id", $lun_id,
+	                                           "iscsitarget1_target_name", $args{iscsitarget1_target_name},
+	                                           "iscsitarget1_target_id", $target_id,
+	                                           "econtext", $args{econtext}]);
+    }
 }
 
 sub removeExport {
-    
+	my $self = shift;
+	my %args  = @_;
+	
+	General::checkParams(args => \%args,
+	                     required => ['iscsitarget1_lun_id','econtext',
+	                                  'iscsitarget1_target_name', 'iscsitarget1_target_id']);
+	
+    $self->removeLun(iscsitarget1_lun_id    => $args{iscsitarget1_lun_id},
+                    iscsitarget1_target_id  => $args{iscsitarget1_target_id});
+	$self->removeTarget(iscsitarget1_target_id      => $args{iscsitarget1_target_id},
+                        iscsitarget1_target_name    => $args{iscsitarget1_target_name},
+                        econtext                    => $args{econtext});
 }
 
 sub addTarget {
@@ -316,7 +325,11 @@ sub generate {
 						 input_file => "ietd.conf.tt",
 						 output => "/iet/ietd.conf",
 						 data => $data);
-	 	 
+    if(exists $args{erollback}){
+        $args{erollback}->add(function   =>$self->can('generate'),
+	                            parameters => [$self,
+	                                           "econtext", $args{econtext}]);
+    }
 }
 
 

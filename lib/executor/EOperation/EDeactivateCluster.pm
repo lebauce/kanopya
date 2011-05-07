@@ -154,14 +154,11 @@ sub prepare {
 
 sub execute{
 	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	
 	
 	# set cluster active in db
 	$self->{_objs}->{cluster}->setAttr(name => 'active', value => 0);
 	$self->{_objs}->{cluster}->save();
-		
+    $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . "> deactivated");
 }
 
 

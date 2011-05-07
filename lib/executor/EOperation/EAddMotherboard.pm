@@ -253,9 +253,8 @@ sub prepare {
 }
 
 sub execute{
-	
     my $self = shift;
-#	$self->SUPER::execute();
+
     my $adm = Administrator->new();
     #TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
     my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $self->{_objs}->{motherboard}->getEtcName(),
@@ -263,7 +262,6 @@ sub execute{
                                                                  filesystem  => "ext3",
                                                                  econtext    => $self->{nas}->{econtext},
                                                                  erollback   => $self->{erollback});
-
         $self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
         $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> etc disk is now created");
         if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
@@ -272,6 +270,7 @@ sub execute{
             my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(powersupplyport_number => $self->{_objs}->{powersupplyport_number});
             $self->{_objs}->{motherboard}->setAttr(name=>'motherboard_powersupply_id', value=>$powersupply_id);
         }
+
         # AddMotherboard finish, just save the Entity in DB
         $self->{_objs}->{motherboard}->save();
         $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> is now created");

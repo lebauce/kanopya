@@ -142,7 +142,6 @@ sub prepare {
 	}
 	
 	my $params = $self->_getOperation()->getParams();
-	$self->{erollback} = ERollback->new();
 	$self->{_objs} = {};
 	$self->{nas} = {};
 	$self->{executor} = {};
@@ -214,31 +213,24 @@ sub prepare {
 
 sub execute {
 	my $self = shift;
-	$self->SUPER::execute();
-	eval {
+
         my $devs = $self->{_objs}->{systemimage_source}->getDevices();
         my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
         my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
         
         # creation of etc and root devices based on systemimage source devices
         $log->info('etc device creation for new systemimage');
-        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name => $etc_name,
-													size => $devs->{etc}->{lvsize},
-													filesystem => $devs->{etc}->{filesystem},
-													econtext => $self->{nas}->{econtext});
-		$self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
-                                parameters => [$self->{_objs}->{component_storage},
-                                               "name", $etc_name,
-                                               "econtext", $self->{nas}->{econtext}]);
+        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $etc_name,
+                                                                    size        => $devs->{etc}->{lvsize},
+                                                                    filesystem  => $devs->{etc}->{filesystem},
+                                                                    econtext    => $self->{nas}->{econtext},
+                                                                    erollback   => $self->{erollback});
 	   $log->info('etc device creation for new systemimage');													
 	   my $root_id = $self->{_objs}->{component_storage}->createDisk(name => $root_name,
-													size => $devs->{root}->{lvsize},
-													filesystem => $devs->{root}->{filesystem},
-													econtext => $self->{nas}->{econtext});
-		$self->{erollback}->add(function   =>$self->{_objs}->{component_storage}->can('removeDisk'),
-                                parameters => [$self->{_objs}->{component_storage},
-                                               "name", $root_name,
-                                               "econtext", $self->{nas}->{econtext}]);
+                                                                    size => $devs->{root}->{lvsize},
+                                                                    filesystem => $devs->{root}->{filesystem},
+                                                                    econtext => $self->{nas}->{econtext},
+                                                                    erollback   => $self->{erollback});
 
 	   # copy of systemimage source data to systemimage devices												
 	   $log->info('etc device fill with systemimage source data for new systemimage');
@@ -258,15 +250,7 @@ sub execute {
 	   $self->{_objs}->{systemimage}->save();
 	   $self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(systemimage_source_id => $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id'));
        $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is cloned');
-    };
-    if ($@){
-        my $error = $@;
-        $errmsg = "Operation EAddMotherboard failed an error occured :\n$error";
-        $log->error($errmsg);
-        $self->{erollback}->undo();
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 
-    }
 }
 
 1;
