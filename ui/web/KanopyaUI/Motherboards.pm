@@ -163,7 +163,7 @@ sub process_addmotherboard : Runmode {
 	);
 	if($query->param('powersupplycard_id') ne "none") {
 		$params{powersupplycard_id} = $query->param('powersupplycard_id'),
-		$params{powersupplyport_number} => $query->param('powersupplyport_number'),
+		$params{powersupplyport_number} = $query->param('powersupplyport_number'),
     }
     my $motherboard = Entity::Motherboard->new(%params);     
 	eval { $motherboard->create() };
@@ -243,14 +243,24 @@ sub view_motherboarddetails : Runmode {
 	my $methods = $emotherboard->getPerms();
 	if($methods->{'setperm'}->{'granted'}) { $tmpl->param('can_setperm' => 1); }
 	
-	eval {
-		my $emmodel = Entity::Motherboardmodel->get(id => $emotherboard->getAttr(name => 'motherboardmodel_id'));
+	my $mmodel_id = $emotherboard->getAttr(name => 'motherboardmodel_id');
+	if($mmodel_id) {
+	    eval {
+		my $emmodel = Entity::Motherboardmodel->get(id => $mmodel_id);
 		$tmpl->param('motherboard_model' => $emmodel->getAttr(name =>'motherboardmodel_brand')." ".$emmodel->getAttr(name => 'motherboardmodel_name'));
-	};
-	eval {
-		my $epmodel = Entity::Processormodel->get(id => $emotherboard->getAttr(name => 'processormodel_id'));
+	    };
+	}
+	else { $tmpl->param('motherboard_model' => 'not defined'); }
+	
+	my $pmodel_id = $emotherboard->getAttr(name => 'processormodel_id');
+	if($pmodel_id) {	
+	    eval {
+		my $epmodel = Entity::Processormodel->get(id => $pmodel_id);
 		$tmpl->param('processor_model' => $epmodel->getAttr(name =>'processormodel_brand')." ".$epmodel->getAttr(name => 'processormodel_name'));
-	};
+	    };
+	} 
+	else { $tmpl->param('processor_model' => 'not defined'); }
+
 	eval {
 		my $ekernel = Entity::Kernel->get(id => $emotherboard->getAttr(name => 'kernel_id'));
 		$tmpl->param('motherboard_kernel' => $ekernel->getAttr('name' => 'kernel_name'));

@@ -103,8 +103,8 @@ CREATE TABLE `harddisk` (
 
 CREATE TABLE `motherboard` (
   `motherboard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboardmodel_id` int(8) unsigned NOT NULL,
-  `processormodel_id` int(8) unsigned NOT NULL,
+  `motherboardmodel_id` int(8) unsigned NULL DEFAULT NULL,
+  `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
   `motherboard_serial_number` char(64) NOT NULL,
   `motherboard_powersupply_id` int(8) unsigned,
