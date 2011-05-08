@@ -47,12 +47,12 @@ SET @Guest_group_id = 14;
 
 -- system user
 INSERT INTO `user` VALUES 
-(1,1,'executer','executer','executer','executer',NULL,CURRENT_DATE(),NULL,'executer');
+(1,1,'executer','[% admin_password %]','executer','executer',NULL,CURRENT_DATE(),NULL,'executer');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- predefined user
 INSERT INTO `user` VALUES
-(2,1,'admin','admin','Administrator','','admin@somewhere.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
+(2,1,'admin','[% admin_password %]','Administrator','','admin@somewhere.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); 
 INSERT INTO `ingroups` VALUES (@Admin_group_id, @eid); SET @eid := @eid +1;
 

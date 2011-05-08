@@ -14,20 +14,23 @@
   />
   <genfiles>
     <executor.conf template="executor.conf.tt">
-      <datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
+      <datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
     </executor.conf>
 	<executor-log.conf template="executor-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</executor-log.conf>
 	<libkanopya.conf template="administrator.conf.tt">
-		<datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip"/>
+		<datas db_user="dbuser" admin_password="dbpassword1" logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" dbport="dbport" dbip="dbip"/>
 	</libkanopya.conf>
 	<monitor.conf template="monitor.conf.tt">
-		<datas internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
+		<datas admin_password="dbpassword1" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
 	</monitor.conf>	
 	<monitor-log.conf template="monitor-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</monitor-log.conf>
+	<orchestrator.conf template="orchestrator.conf.tt">
+		<datas admin_password="dbpassword1"/>
+	</orchestrator.conf>
 	<orchestrator-log.conf template="orchestrator-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</orchestrator-log.conf>
@@ -52,7 +55,7 @@
        pattern="^\w+$"
        search_command=""/>
     <dbpassword1
-       question="What is the password for database user"
+       question="What is the password for kanopya user"
        default="K4n0pY4"
        is_searchable="0" 
        is_secret="1"
