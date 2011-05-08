@@ -1,20 +1,17 @@
 # Cluster.pm - This object allows to manipulate cluster configuration
-# Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology sas.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
@@ -314,89 +311,10 @@ sub deactivate {
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
 }
 
-=head2 checkAttr
-
-	Desc : This function check if new object data are correct and sort attrs between extended and global
-	args:
-		class : String : Real class to check
-		data : hashref : Entity data to be checked
-	return : hashref of hashref : a hashref containing 2 hashref, global attrs and extended ones
-
-=cut
-
-sub checkAttrs {
-	# Remove class
-	shift;
-	my %args = @_;
-	my (%global_attrs, %ext_attrs);
-	my $struct = ATTR_DEF;
-
-	if (! exists $args{attrs} or ! defined $args{attrs}) {
-		$errmsg = "Entity::Cluster->checkAttrs need an data hash and class named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
-	my $attrs = $args{attrs};
-	foreach my $attr (keys(%$attrs)) {
-		if (exists $struct->{$attr}){
-			if($attrs->{$attr} !~ m/($struct->{$attr}->{pattern})/){
-				$errmsg = "Entity::Cluster->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
-				$log->error($errmsg);
-				$log->debug("Can't match $struct->{$attr}->{pattern} with $attrs->{$attr}");
-				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-			}
-			if ($struct->{$attr}->{is_extended}){
-				$ext_attrs{$attr} = $attrs->{$attr};
-			}
-			else { $global_attrs{$attr} = $attrs->{$attr}; }
-		}
-		else {
-			$errmsg = "Entity::Cluster->checkAttrs detect a wrong attr $attr !";
-			$log->error($errmsg);
-			throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-		}
-	}
-	foreach my $attr (keys(%$struct)) {
-		if (($struct->{$attr}->{is_mandatory}) &&
-			(! exists $attrs->{$attr})) {
-				$errmsg = "Entity::Cluster->checkAttrs detect a missing attribute $attr !";
-				$log->error($errmsg);
-				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-			}
-	}
-
-	return {global => \%global_attrs, extended => \%ext_attrs};
+sub getAttrDef{
+    return ATTR_DEF;
 }
 
-=head2 checkAttr
-
-	Desc : This function check new object attribute
-	args:
-		name : String : Attribute name
-		value : String : Attribute value
-	return : No return value only throw exception if error
-
-=cut
-
-sub checkAttr{
-	my $self = shift;
-	my %args = @_;
-	my $struct = ATTR_DEF;
-
-	if ((! exists $args{name} or ! defined $args{name}) ||
-		(! exists $args{value} or ! defined $args{value})) {
-		$errmsg = "Entity::Cluster->checkAttr need a name and value named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	if (!exists $struct->{$args{name}}){
-		$errmsg = "Entity::Cluster->checkAttr invalid name $struct->{$args{name}}";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# Here check attr value
-}
 
 =head2 toString
 
