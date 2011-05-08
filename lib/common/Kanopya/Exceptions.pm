@@ -61,66 +61,66 @@ Kanopya has it own exception to manage internal error and show to user comprehen
 
 use Exception::Class (
     Kanopya::Exception => {
-	description => "Kanopya General Exception",
-	fields => [ 'level', 'request' ],
+    description => "Kanopya General Exception",
+    fields => [ 'level', 'request' ],
     },
     Kanopya::Exception::DB => {
-	isa => 'Kanopya::Exception',
-	description => 'Kanopya Database exception',
+    isa => 'Kanopya::Exception',
+    description => 'Kanopya Database exception',
     },
     Kanopya::Exception::Network => {
-	isa => 'Kanopya::Exception',
-	description => 'MicroCluster SSH communication exception',
+    isa => 'Kanopya::Exception',
+    description => 'MicroCluster SSH communication exception',
     },
     Kanopya::Exception::Internal => {
-	isa => 'Kanopya::Exception',
-	description => 'Kanopya Internal exception',
+    isa => 'Kanopya::Exception',
+    description => 'Kanopya Internal exception',
     },
     Kanopya::Exception::Internal::WrongValue => {
-	isa => 'Kanopya::Exception::Internal',
-	description => 'Wrong Value',
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Wrong Value',
     },
     Kanopya::Exception::Internal::IncorrectParam => {
-	isa => 'Kanopya::Exception::Internal',
-	description => 'Wrong attribute or parameter',
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Wrong attribute or parameter',
     },
     Kanopya::Exception::Internal::MissingParam => {
-	isa => 'Kanopya::Exception::Internal',
-	description => 'Parameter missing or undefined',
-	fields => [ 'sub_name', 'param_name' ],
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Parameter missing or undefined',
+    fields => [ 'sub_name', 'param_name' ],
     },
     Kanopya::Exception::Execution => {
-	isa => 'Kanopya::Exception',
-	description => 'Command execution failed',
+    isa => 'Kanopya::Exception',
+    description => 'Command execution failed',
     },
     Kanopya::Exception::Execution::Rollbacked => {
-	isa => 'Kanopya::Exception::Execution',
-	description => 'Operation execution rollbacked',
-	},
+    isa => 'Kanopya::Exception::Execution',
+    description => 'Operation execution rollbacked',
+    },
     Kanopya::Exception::Execution::OperationReported => {
-	isa => 'Kanopya::Exception::Execution',
-	description => 'Operation execution reported',
-	},
-	Kanopya::Exception::AuthenticationRequired => {
-	isa => 'Kanopya::Exception',
-	description => 'Authentication required',
-	},
-	Kanopya::Exception::AuthenticationFailed => {
-	isa => 'Kanopya::Exception',
-	description => 'Incorrect Login/Password values pair',
-	},
-	Kanopya::Exception::Permission => {
-	isa => 'Kanopya::Exception',
-	description => 'Kanopya Permission Exception'
-	},
-	Kanopya::Exception::Permission::Denied => {
-	isa => 'Kanopya::Exception::Permission',
-	description => 'Permission denied'
-	},
-	Kanopya::Exception::OperationAlreadyEnqueued => {
-	isa => 'Kanopya::Exception',
-	description => 'Operation already enqueued' 	
-	},
+    isa => 'Kanopya::Exception::Execution',
+    description => 'Operation execution reported',
+    },
+    Kanopya::Exception::AuthenticationRequired => {
+    isa => 'Kanopya::Exception',
+    description => 'Authentication required',
+    },
+    Kanopya::Exception::AuthenticationFailed => {
+    isa => 'Kanopya::Exception',
+    description => 'Incorrect Login/Password values pair',
+    },
+    Kanopya::Exception::Permission => {
+    isa => 'Kanopya::Exception',
+    description => 'Kanopya Permission Exception'
+    },
+    Kanopya::Exception::Permission::Denied => {
+    isa => 'Kanopya::Exception::Permission',
+    description => 'Permission denied'
+    },
+    Kanopya::Exception::OperationAlreadyEnqueued => {
+    isa => 'Kanopya::Exception',
+    description => 'Operation already enqueued'     
+    },
     
     
 );
@@ -131,17 +131,17 @@ use Exception::Class (
 
 # Override method called when exception is stringified
 sub Kanopya::Exception::full_message {
- 	my $self = shift;
-	
-	my $except_string = "## EXCEPTION : " . $self->description . " ##";
-	$except_string .= "\n" . $self->message if ($self->message ne "");
+     my $self = shift;
+    
+    my $except_string = "## EXCEPTION : " . $self->description . " ##";
+    $except_string .= "\n" . $self->message if ($self->message ne "");
 
-	# Show fields	
-	for my $field ( $self->Fields ) {
-		$except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
-	}
+    # Show fields    
+    for my $field ( $self->Fields ) {
+        $except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
+    }
 
- 	return $except_string;
+     return $except_string;
 
 }
 

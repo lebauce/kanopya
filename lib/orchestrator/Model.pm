@@ -21,22 +21,22 @@ use Kanopya::Exceptions;
 
 
 =head2 calculate
-	
-	Class : Public virtual (must be implemented by child)
-	
-	Desc : 	Interface for calculating the quality of the Internet service
-	 		(e.g. performance, availability, cost, etc.)
-	 		according to underlying system configuration, workload characteristics and workload amount
-	
-	Args :
-	
-	Return :
-	
+    
+    Class : Public virtual (must be implemented by child)
+    
+    Desc :     Interface for calculating the quality of the Internet service
+             (e.g. performance, availability, cost, etc.)
+             according to underlying system configuration, workload characteristics and workload amount
+    
+    Args :
+    
+    Return :
+    
 =cut
 
 sub calculate {
-	my $self = shift;
-	throw Kanopya::Exception::Internal(error => "Model interface method not implemented by " . ref $self);
+    my $self = shift;
+    throw Kanopya::Exception::Internal(error => "Model interface method not implemented by " . ref $self);
 }
 
 

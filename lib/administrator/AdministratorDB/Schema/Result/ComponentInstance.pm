@@ -361,9 +361,9 @@ my @comp_files = readdir(DIR);
 closedir(DIR);
 # Load components relationship
 for my $comp_file (@comp_files) {
-	if ($comp_file =~ /(.*)\.pm/) {
-		__PACKAGE__->load_components("+AdministratorDB::Component::$1");
-	}
+    if ($comp_file =~ /(.*)\.pm/) {
+        __PACKAGE__->load_components("+AdministratorDB::Component::$1");
+    }
 }
 
 1;

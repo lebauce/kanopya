@@ -51,96 +51,96 @@ my $errmsg;
 
 =head2 new
 
-	Class : Private (use EntityRights::build method to retrieve an EntityRights::* instance)
-	
-	Desc : constructor method
-	
-	args:
-		schema : AdministratorDB::Schema object : DBIx database schema
-		entity_id : scalar (int) : user entity_id 
-		
-	return: EntityRights::User instance
+    Class : Private (use EntityRights::build method to retrieve an EntityRights::* instance)
+    
+    Desc : constructor method
+    
+    args:
+        schema : AdministratorDB::Schema object : DBIx database schema
+        entity_id : scalar (int) : user entity_id 
+        
+    return: EntityRights::User instance
 
 =cut
 
 sub new {
-	my $class = shift;
-	my %args = @_;
-	
-	if(not exists $args{entity_id} or not defined $args{entity_id}) {
-		$errmsg = "EntityRights::User->new need a entity_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	} 
-	
-	if(not exists $args{schema} or not defined $args{schema}) {
-		$errmsg = "EntityRights::User->new need a schema named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
+    my $class = shift;
+    my %args = @_;
+    
+    if(not exists $args{entity_id} or not defined $args{entity_id}) {
+        $errmsg = "EntityRights::User->new need a entity_id named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    } 
+    
+    if(not exists $args{schema} or not defined $args{schema}) {
+        $errmsg = "EntityRights::User->new need a schema named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 
-	my $self = { 
-		schema => $args{schema},
-		user_entity_id => $args{entity_id}, 
-		user_id => $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id")
-	};
-	bless $self, $class;
-	return $self;
+    my $self = { 
+        schema => $args{schema},
+        user_entity_id => $args{entity_id}, 
+        user_id => $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id")
+    };
+    bless $self, $class;
+    return $self;
 }
 
 =head2 checkPerm
 
-	Class: Public
-	
-	Desc: verify permission access method 
+    Class: Public
+    
+    Desc: verify permission access method 
 
-	args: 
-		method : scalar (string) : method name to check
-		entity_id : scalar (int) : entity_id of entity concerned
-		
-	return: scalar(int) : 1 if permission granted, 0 otherwise   
+    args: 
+        method : scalar (string) : method name to check
+        entity_id : scalar (int) : entity_id of entity concerned
+        
+    return: scalar(int) : 1 if permission granted, 0 otherwise   
 
 =cut
 
 sub checkPerm {
-	my $self = shift;
-	my %args = @_;
-	
-	if(not exists $args{method} or not defined $args{method}) {
-		$errmsg = "EntityRights::User->checkPerm need a method named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	
-	if(not exists $args{entity_id} or not defined $args{entity_id}) {
-		$errmsg = "EntityRights::User->checkPerm need a entity_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	
-	my $consumer_ids = $self->SUPER::_getEntityIds(entity_id => $self->{user_entity_id});
-	my $consumed_ids = $self->SUPER::_getEntityIds(entity_id => $args{entity_id});
-	
-	my $row = $self->{schema}->resultset('Entityright')->search(
-		{
-			entityright_consumer_id => $consumer_ids,
-			entityright_consumed_id => $consumed_ids,
-			entityright_method => $args{method}
-		},
-		#{ select => [
-		#	'entityright_consumer_id',
-		#	'entityright_consumed_id',
-		#	'entityright_method' ],
-		#	order_by => { -desc => ['entityright_rights']},
-		#}
-	)->first;
-	if($row) { 
-		#$log->debug("row exists !");
-		return 1;
-	} else {
-		#$log->debug("row doesnt exist !");
-		return 0;	
-	}
+    my $self = shift;
+    my %args = @_;
+    
+    if(not exists $args{method} or not defined $args{method}) {
+        $errmsg = "EntityRights::User->checkPerm need a method named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    
+    if(not exists $args{entity_id} or not defined $args{entity_id}) {
+        $errmsg = "EntityRights::User->checkPerm need a entity_id named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    
+    my $consumer_ids = $self->SUPER::_getEntityIds(entity_id => $self->{user_entity_id});
+    my $consumed_ids = $self->SUPER::_getEntityIds(entity_id => $args{entity_id});
+    
+    my $row = $self->{schema}->resultset('Entityright')->search(
+        {
+            entityright_consumer_id => $consumer_ids,
+            entityright_consumed_id => $consumed_ids,
+            entityright_method => $args{method}
+        },
+        #{ select => [
+        #    'entityright_consumer_id',
+        #    'entityright_consumed_id',
+        #    'entityright_method' ],
+        #    order_by => { -desc => ['entityright_rights']},
+        #}
+    )->first;
+    if($row) { 
+        #$log->debug("row exists !");
+        return 1;
+    } else {
+        #$log->debug("row doesnt exist !");
+        return 0;    
+    }
 }
 
 

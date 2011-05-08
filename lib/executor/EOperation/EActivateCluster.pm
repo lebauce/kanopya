@@ -89,56 +89,56 @@ sub _init {
 
 sub _checkOp{
     my $self = shift;
-	my %args = @_;
+    my %args = @_;
     
     # check if system image used is active 
     my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name => 'systemimage_id'));
     if(not $systemimage->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::EActivateCluster->new : cluster's systemimage is not activated";
-	    	$log->error($errmsg);
-	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            $errmsg = "EOperation::EActivateCluster->new : cluster's systemimage is not activated";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
     # check if cluster is not active
     if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
-	    	$log->error($errmsg);
-	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            $errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
     # Check if internal_cluster exists
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EActivateCluster->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "EActivateCluster->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
     
     # Get Operation parameters
-	my $params = $self->_getOperation()->getParams();
+    my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
- 	# Cluster instantiation
+     # Cluster instantiation
     eval {
-    	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
     ### Check Parameters and context
@@ -147,21 +147,21 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateCluster failed an error occured :\n$error";
-		$log->error($errmsg);
+        $errmsg = "Operation ActivateCluster failed an error occured :\n$error";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
 }
 
 sub execute {
-	my $self = shift;
-	$self->SUPER::execute();
+    my $self = shift;
+    $self->SUPER::execute();
 
-	# set cluster active in db
-	$self->{_objs}->{cluster}->setAttr(name => 'active', value => 1);
-	$self->{_objs}->{cluster}->save();
-	$log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now active");
+    # set cluster active in db
+    $self->{_objs}->{cluster}->setAttr(name => 'active', value => 1);
+    $self->{_objs}->{cluster}->save();
+    $log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now active");
 
 }
 

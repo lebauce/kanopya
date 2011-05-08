@@ -55,8 +55,8 @@ our $VERSION = '1.00';
 
     my $op = EOperation::EActivateMotherboard->new();
 
-	# Operation::EActivateMotherboard->new creates a new ActivateMotherboard operation.
-	# RETURN : EOperation::EActivateMotherboard : Operation activate motherboard on execution side
+    # Operation::EActivateMotherboard->new creates a new ActivateMotherboard operation.
+    # RETURN : EOperation::EActivateMotherboard : Operation activate motherboard on execution side
 
 =cut
 
@@ -72,86 +72,86 @@ sub new {
 
 =head2 _init
 
-	$op->_init();
-	# This private method is used to define some hash in Operation
+    $op->_init();
+    # This private method is used to define some hash in Operation
 
 =cut
 
 sub _init {
-	my $self = shift;
-	$self->{_objs} = {};
-	return;
+    my $self = shift;
+    $self->{_objs} = {};
+    return;
 }
 
 sub checkOp{
     my $self = shift;
-	my %args = @_;
-	
+    my %args = @_;
+    
     # check if motherboard is not active
     $log->debug("checking motherboard active value <$args{params}->{motherboard_id}>");
-   	if($self->{_objs}->{motherboard}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::EActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
-	    	$log->error($errmsg);
-	    	throw Kanopya::Exception::Internal(error => $errmsg);
+       if($self->{_objs}->{motherboard}->getAttr(name => 'active')) {
+            $errmsg = "EOperation::EActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
 }
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	$log->info("Operation preparation");
+    $log->info("Operation preparation");
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EActivateMotherboard->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "EActivateMotherboard->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
 
-	my $params = $self->_getOperation()->getParams();
-	
-	# Instantiate motherboard and so check if exists
+    my $params = $self->_getOperation()->getParams();
+    
+    # Instantiate motherboard and so check if exists
     $log->debug("checking motherboard existence with id <$params->{motherboard_id}>");
     eval {
-    	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+        $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
     };
     if($@) {
-    	$errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal(error => $errmsg);
+        $errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-	
+    
     eval {
         $self->checkOp(params => $params);
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
-		$log->error($errmsg);
+        $errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
 sub execute{
-	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
-	
-	
-	# set motherboard active in db
-	$self->{_objs}->{motherboard}->setAttr(name => 'active', value => 1);
-	$self->{_objs}->{motherboard}->save();
-	$log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> is now active");
+    my $self = shift;
+    $log->debug("Before EOperation exec");
+    $self->SUPER::execute();
+    $log->debug("After EOperation exec and before new Adm");
+    
+    
+    # set motherboard active in db
+    $self->{_objs}->{motherboard}->setAttr(name => 'active', value => 1);
+    $self->{_objs}->{motherboard}->save();
+    $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> is now active");
 }
 
 =head1 DIAGNOSTICS

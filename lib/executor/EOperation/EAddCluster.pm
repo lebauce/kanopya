@@ -72,77 +72,77 @@ sub new {
 
 =head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
+    $op->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
-	my $self = shift;
+    my $self = shift;
 
-	return;
+    return;
 }
 
 =head2 prepare
 
-	$op->prepare();
+    $op->prepare();
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-	my $params = $self->_getOperation()->getParams();
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $adm = Administrator->new();
+    my $params = $self->_getOperation()->getParams();
 
-	$self->{_objs} = {};
+    $self->{_objs} = {};
     
     # Cluster instantiation
     eval {
-    	$self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
+        $self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EAddCluster->prepare : cluster_id $params->{cluster_name} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $errmsg = "EOperation::EAddCluster->prepare : cluster_id $params->{cluster_name} does not find\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
 
 }
 
 
 
 sub execute {
-	my $self = shift;
+    my $self = shift;
 
-	my $adm = Administrator->new();
-	my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
-	my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
-	my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
-	my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));;
-	
-	if($si_location eq 'diskless') {
-		if(not $si_shared) {
-			$systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
-			$systemimage->save();
-		} 
-	}
+    my $adm = Administrator->new();
+    my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
+    my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
+    my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
+    my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));;
+    
+    if($si_location eq 'diskless') {
+        if(not $si_shared) {
+            $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
+            $systemimage->save();
+        } 
+    }
 
 # Create cluster directory
-	my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
-	$self->{econtext}->execute(command => $command);
-	$log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
+    my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
+    $self->{econtext}->execute(command => $command);
+    $log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
 # Save the new cluster in db
-	$self->{_objs}->{cluster}->save();
+    $self->{_objs}->{cluster}->save();
 
     # automatically add systems components
     if($systemimage) {

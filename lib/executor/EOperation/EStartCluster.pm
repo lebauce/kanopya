@@ -69,64 +69,64 @@ sub new {
 
 =head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
+    $op->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
-	my $self = shift;
+    my $self = shift;
 
-	return;
+    return;
 }
 
 =head2 prepare
 
-	$op->prepare();
+    $op->prepare();
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EStartCluster->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $adm = Administrator->new();
-	my $params = $self->_getOperation()->getParams();
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "EStartCluster->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    
+    my $adm = Administrator->new();
+    my $params = $self->_getOperation()->getParams();
 
-	$self->{_objs} = {};
-	
-	# Get cluster to start from param
-	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs} = {};
+    
+    # Get cluster to start from param
+    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
 }
 
 sub execute {
-	my $self = shift;
-	$self->SUPER::execute();
-	my $adm = Administrator->new();
-		
-	$log->info('getting minimum number of nodes to start');
-	my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');	
-	$log->info('getting free motherboards');
-#	my @free_motherboards = Entity::Motherboard->getMotherboards(hash => { active => 1, motherboard_state => 'down'});
-#	
-#	my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
-#	
+    my $self = shift;
+    $self->SUPER::execute();
+    my $adm = Administrator->new();
+        
+    $log->info('getting minimum number of nodes to start');
+    my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');    
+    $log->info('getting free motherboards');
+#    my @free_motherboards = Entity::Motherboard->getMotherboards(hash => { active => 1, motherboard_state => 'down'});
+#    
+#    my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
+#    
 #
-#	for(my $i=0 ; $i < $nodes_to_start ; $i++) {
-#		my $motherboard = pop @free_motherboards;
-#		$self->{_objs}->{cluster}->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id'));
-#	} 	
+#    for(my $i=0 ; $i < $nodes_to_start ; $i++) {
+#        my $motherboard = pop @free_motherboards;
+#        $self->{_objs}->{cluster}->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id'));
+#    }     
 
-	# Just call Master node addition, other node will be add by the state manager
+    # Just call Master node addition, other node will be add by the state manager
     $self->{_objs}->{cluster}->addNode();
-	$self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'starting:'.time);
-	$self->{_objs}->{cluster}->save();
+    $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'starting:'.time);
+    $self->{_objs}->{cluster}->save();
 }
 
 1;

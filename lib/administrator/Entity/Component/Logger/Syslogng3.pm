@@ -72,7 +72,7 @@ B<Return>  : a new Entity::Component::Logger::Syslogng3 from Kanopya Database
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub get {
@@ -80,10 +80,10 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Component::Logger::Syslogng3->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Component::Logger::Syslogng3->get need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args );
    return $self;
 }
@@ -99,100 +99,100 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-		(! exists $args{component_id} or ! defined $args{component_id})){ 
-		$errmsg = "Entity::Component::Logger::Syslogng3->new need a cluster_id and a component_id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    
+    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+        (! exists $args{component_id} or ! defined $args{component_id})){ 
+        $errmsg = "Entity::Component::Logger::Syslogng3->new need a cluster_id and a component_id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
+    my $self = shift;
 
-	my $conf = {};
+    my $conf = {};
 
-	my @logs = ();
-	my @entries = ();
-	my $confindb = $self->{_dbix}->syslogng3s->first();
-	if($confindb) {
-		# Get entries
-	   	my $entry_rs = $confindb->syslogng3_entries;
-	   	while (my $entry_row = $entry_rs->next){
-	   		my $param_rs = $entry_row->syslogng3_entry_params;
-			my @params = ();
-			while (my $param_row = $param_rs->next) {
-				push @params, {
-								'content' => $param_row->get_column('syslogng3_entry_param_content') } ;
-			}
-			push @entries, { 
-								type => $entry_row->get_column('syslogng3_entry_type'),
-								name => $entry_row->get_column('syslogng3_entry_name'),
-								params => \@params };
-	   	}
-		
-	   	# Get logs
-	   	my $log_rs = $confindb->syslogng3_logs;
-	   	while (my $log_row = $log_rs->next){
-	   		my $log_param_rs = $log_row->syslogng3_log_params;
-	   		my @log_params = ();
-	   		while (my $log_param_row = $log_param_rs->next){
-				push @log_params, { 
-									type => $log_param_row->get_column('syslogng3_log_param_entrytype'),
-									name => $log_param_row->get_column('syslogng3_log_param_entryname') };
-	   		
-	   		}
-	   		push @logs, { params => \@log_params };
-	   }
-	
-	}
+    my @logs = ();
+    my @entries = ();
+    my $confindb = $self->{_dbix}->syslogng3s->first();
+    if($confindb) {
+        # Get entries
+           my $entry_rs = $confindb->syslogng3_entries;
+           while (my $entry_row = $entry_rs->next){
+               my $param_rs = $entry_row->syslogng3_entry_params;
+            my @params = ();
+            while (my $param_row = $param_rs->next) {
+                push @params, {
+                                'content' => $param_row->get_column('syslogng3_entry_param_content') } ;
+            }
+            push @entries, { 
+                                type => $entry_row->get_column('syslogng3_entry_type'),
+                                name => $entry_row->get_column('syslogng3_entry_name'),
+                                params => \@params };
+           }
+        
+           # Get logs
+           my $log_rs = $confindb->syslogng3_logs;
+           while (my $log_row = $log_rs->next){
+               my $log_param_rs = $log_row->syslogng3_log_params;
+               my @log_params = ();
+               while (my $log_param_row = $log_param_rs->next){
+                push @log_params, { 
+                                    type => $log_param_row->get_column('syslogng3_log_param_entrytype'),
+                                    name => $log_param_row->get_column('syslogng3_log_param_entryname') };
+               
+               }
+               push @logs, { params => \@log_params };
+       }
+    
+    }
 
-	$conf->{entries} = \@entries;
-	$conf->{logs} = \@logs;
-	return $conf;
+    $conf->{entries} = \@entries;
+    $conf->{logs} = \@logs;
+    return $conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-	
-	# delete old conf		
-	my $conf_row = $self->{_dbix}->syslogng3s->first();
-	$conf_row->delete() if (defined $conf_row); 
+    my $self = shift;
+    my ($conf) = @_;
+    
+    # delete old conf        
+    my $conf_row = $self->{_dbix}->syslogng3s->first();
+    $conf_row->delete() if (defined $conf_row); 
 
-	# create
-	$conf_row = $self->{_dbix}->syslogng3s->create( {} );
-	
-	# Store entries
-	foreach my $entry (@{ $conf->{entries} }) {
-		my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry->{entry_name},
-																syslogng3_entry_type => $entry->{entry_type} } );
-			foreach my $param (@{ $entry->{params} }) {
-				$entry_row->syslogng3_entry_params->create( { syslogng3_entry_param_content => $param->{content} } );
-			}	
-	} 
-	
-	# Store logs
-	foreach my $log ( @{ $conf->{logs} }) {
-		my $log_row = $conf_row->syslogng3_logs->create( {} );
-		foreach my $param (@{ $log->{log_params} }) {
-			$log_row->syslogng3_log_params->create( { syslogng3_log_param_entrytype => $param->{type},
-													  syslogng3_log_param_entryname => $param->{name} });
-		}
-	}
-	
+    # create
+    $conf_row = $self->{_dbix}->syslogng3s->create( {} );
+    
+    # Store entries
+    foreach my $entry (@{ $conf->{entries} }) {
+        my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry->{entry_name},
+                                                                syslogng3_entry_type => $entry->{entry_type} } );
+            foreach my $param (@{ $entry->{params} }) {
+                $entry_row->syslogng3_entry_params->create( { syslogng3_entry_param_content => $param->{content} } );
+            }    
+    } 
+    
+    # Store logs
+    foreach my $log ( @{ $conf->{logs} }) {
+        my $log_row = $conf_row->syslogng3_logs->create( {} );
+        foreach my $param (@{ $log->{log_params} }) {
+            $log_row->syslogng3_log_params->create( { syslogng3_log_param_entrytype => $param->{type},
+                                                      syslogng3_log_param_entryname => $param->{name} });
+        }
+    }
+    
 }
 
 sub getNetConf {
@@ -200,10 +200,10 @@ sub getNetConf {
 }
 
 sub getLogDirectories {
-	my $self = shift;
-	
-	#TODO retrieve log dirs from conf (= param of driver file in destination used)
-	return ("/var/log/kanopya/");
+    my $self = shift;
+    
+    #TODO retrieve log dirs from conf (= param of driver file in destination used)
+    return ("/var/log/kanopya/");
 }
 
 =head1 DIAGNOSTICS

@@ -40,7 +40,7 @@ B<Return>  : a new Entity::Component::Export::Nfsd3 from Kanopya Database
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub get {
@@ -48,10 +48,10 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Component::Export::Nfsd31->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Component::Export::Nfsd31->get need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
    return $self;
 }
@@ -70,281 +70,281 @@ B<throws>  :
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-		(! exists $args{component_id} or ! defined $args{component_id})){ 
-		$errmsg = "Entity::Component::Export::Nfsd3->new need a cluster_id and a component_id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    
+    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+        (! exists $args{component_id} or ! defined $args{component_id})){ 
+        $errmsg = "Entity::Component::Export::Nfsd3->new need a cluster_id and a component_id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
-	my %conf = ( );
-	
-	my $conf_row = $self->{_dbix}->nfsd3s->first;
-	if($conf_row) {
-		$conf{nfsd3_statdopts} = $conf_row->get_column('nfsd3_statdopts');
-		$conf{nfsd3_need_gssd} = $conf_row->get_column('nfsd3_need_gssd');
-		$conf{nfsd3_rpcnfsdcount} = $conf_row->get_column('nfsd3_rpcnfsdcount');
-		$conf{nfsd3_rpcnfsdpriority} = $conf_row->get_column('nfsd3_rpcnfsdpriority');
-		$conf{nfsd3_rpcmountopts} = $conf_row->get_column('nfsd3_rpcmountopts');
-		$conf{nfsd3_need_svcgssd} = $conf_row->get_column('nfsd3_need_svcgssd');
-		$conf{nfsd3_rpcsvcgssdopts} = $conf_row->get_column('nfsd3_rpcsvcgssdopts');
-		
-		my @exports = ();
-		my $conf_exports = $conf_row->nfsd3_exports;
-		while (my $export_row = $conf_exports->next) {
-			my $client_rs = $export_row->nfsd3_exportclients;
-			my @clients = ();
-			while (my $client_row = $client_rs->next) {
-				push @clients, {
-					nfsd3_exportclient_name => $client_row->get_column('nfsd3_exportclient_name'),
-					nfsd3_exportclient_options => $client_row->get_column('nfsd3_exportclient_options'),
-				}
-			}
-			push @exports, { 
-				nfsd3_export_path => $export_row->get_column('nfsd3_export_path'),
-				clients => \@clients,
-			};		
-		}
-		$conf{exports} = \@exports;
-	}
-	else {
-		$conf{nfsd3_statdopts} = '';
-		$conf{nfsd3_need_gssd} = 'no';
-		$conf{nfsd3_rpcnfsdcount} = '8';
-		$conf{nfsd3_rpcnfsdpriority} = '0';
-		$conf{nfsd3_rpcmountopts} = '';
-		$conf{nfsd3_need_svcgssd} = 'no';
-		$conf{nfsd3_rpcsvcgssdopts} = '';
-		$conf{exports} = [];
-	}
-	
-	return \%conf;
+    my $self = shift;
+    my %conf = ( );
+    
+    my $conf_row = $self->{_dbix}->nfsd3s->first;
+    if($conf_row) {
+        $conf{nfsd3_statdopts} = $conf_row->get_column('nfsd3_statdopts');
+        $conf{nfsd3_need_gssd} = $conf_row->get_column('nfsd3_need_gssd');
+        $conf{nfsd3_rpcnfsdcount} = $conf_row->get_column('nfsd3_rpcnfsdcount');
+        $conf{nfsd3_rpcnfsdpriority} = $conf_row->get_column('nfsd3_rpcnfsdpriority');
+        $conf{nfsd3_rpcmountopts} = $conf_row->get_column('nfsd3_rpcmountopts');
+        $conf{nfsd3_need_svcgssd} = $conf_row->get_column('nfsd3_need_svcgssd');
+        $conf{nfsd3_rpcsvcgssdopts} = $conf_row->get_column('nfsd3_rpcsvcgssdopts');
+        
+        my @exports = ();
+        my $conf_exports = $conf_row->nfsd3_exports;
+        while (my $export_row = $conf_exports->next) {
+            my $client_rs = $export_row->nfsd3_exportclients;
+            my @clients = ();
+            while (my $client_row = $client_rs->next) {
+                push @clients, {
+                    nfsd3_exportclient_name => $client_row->get_column('nfsd3_exportclient_name'),
+                    nfsd3_exportclient_options => $client_row->get_column('nfsd3_exportclient_options'),
+                }
+            }
+            push @exports, { 
+                nfsd3_export_path => $export_row->get_column('nfsd3_export_path'),
+                clients => \@clients,
+            };        
+        }
+        $conf{exports} = \@exports;
+    }
+    else {
+        $conf{nfsd3_statdopts} = '';
+        $conf{nfsd3_need_gssd} = 'no';
+        $conf{nfsd3_rpcnfsdcount} = '8';
+        $conf{nfsd3_rpcnfsdpriority} = '0';
+        $conf{nfsd3_rpcmountopts} = '';
+        $conf{nfsd3_need_svcgssd} = 'no';
+        $conf{nfsd3_rpcsvcgssdopts} = '';
+        $conf{exports} = [];
+    }
+    
+    return \%conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my($conf) = @_;
-	
-	for my $export ( @{ $conf->{exports} } ) {
-		CLIENT:
-		for my $client ( @{ $export->{clients} } ) {
-			$self->createExport(device => $export->{nfsd3_export_path},
-								client_name => $client->{nfsd3_exportclient_name},
-								client_options => $client->{nfsd3_exportclient_options});
-			last CLIENT; #Temporary: we can create only one client with one export
-		}		
-	}
+    my $self = shift;
+    my($conf) = @_;
+    
+    for my $export ( @{ $conf->{exports} } ) {
+        CLIENT:
+        for my $client ( @{ $export->{clients} } ) {
+            $self->createExport(device => $export->{nfsd3_export_path},
+                                client_name => $client->{nfsd3_exportclient_name},
+                                client_options => $client->{nfsd3_exportclient_options});
+            last CLIENT; #Temporary: we can create only one client with one export
+        }        
+    }
 
-#	my $self = shift;
-#	my($conf) = @_;
-#	
-#	# delete old conf		
-#	my $conf_row = $self->{_dbix}->nfsd3s->first();
-#	$conf_row->delete() if (defined $conf_row); 
+#    my $self = shift;
+#    my($conf) = @_;
+#    
+#    # delete old conf        
+#    my $conf_row = $self->{_dbix}->nfsd3s->first();
+#    $conf_row->delete() if (defined $conf_row); 
 #
-#	# create
-#	$conf_row = $self->{_dbix}->nfsd3s->create( {
-#		nfsd3_statdopts => $conf->{nfsd3_statdopts},
-#		nfsd3_need_gssd => $conf->{nfsd3_need_gssd},
-#		nfsd3_rpcnfsdcount => $conf->{nfsd3_rpcnfsdcount},
-#		nfsd3_rpcnfsdpriority => $conf->{nfsd3_rpcnfsdpriority},
-#		nfsd3_rpcmountopts => $conf->{nfsd3_rpcmountopts},
-#		nfsd3_need_svcgssd => $conf->{nfsd3_need_svcgssd},
-#		nfsd3_rpcsvcgssdopts => $conf->{nfsd3_rpcsvcgssdopts},
-#	} );
-#	
-#	# exports
-#	foreach my $export (@{ $conf->{exports} }) {
-#		my $export_row = $conf_row->nfsd3_exports->create({
-#			nfsd3_export_path => $export->{nfsd3_export_path}
-#		});
-#		# clients options														
-#		foreach my $client (@{ $export->{clients} }) {
-#			$export_row->nfsd3_exportclients->create(
-#			{	
-#				nfsd3_exportclient_name => $client->{nfsd3_exportclient_name},
-#				nfsd3_exportclient_options => $client->{nfsd3_exportclient_options},
-#			});
-#		}	
-#	} 
+#    # create
+#    $conf_row = $self->{_dbix}->nfsd3s->create( {
+#        nfsd3_statdopts => $conf->{nfsd3_statdopts},
+#        nfsd3_need_gssd => $conf->{nfsd3_need_gssd},
+#        nfsd3_rpcnfsdcount => $conf->{nfsd3_rpcnfsdcount},
+#        nfsd3_rpcnfsdpriority => $conf->{nfsd3_rpcnfsdpriority},
+#        nfsd3_rpcmountopts => $conf->{nfsd3_rpcmountopts},
+#        nfsd3_need_svcgssd => $conf->{nfsd3_need_svcgssd},
+#        nfsd3_rpcsvcgssdopts => $conf->{nfsd3_rpcsvcgssdopts},
+#    } );
+#    
+#    # exports
+#    foreach my $export (@{ $conf->{exports} }) {
+#        my $export_row = $conf_row->nfsd3_exports->create({
+#            nfsd3_export_path => $export->{nfsd3_export_path}
+#        });
+#        # clients options                                                        
+#        foreach my $client (@{ $export->{clients} }) {
+#            $export_row->nfsd3_exportclients->create(
+#            {    
+#                nfsd3_exportclient_name => $client->{nfsd3_exportclient_name},
+#                nfsd3_exportclient_options => $client->{nfsd3_exportclient_options},
+#            });
+#        }    
+#    } 
 }
 
 # return directory where a device will be mounted for nfs export 
 sub getMountDir {
-	my $self = shift;
-	my %args = @_;
-	if(! exists $args{device} or ! defined $args{device}) {
-		$errmsg = "EComponent::EExport::ENfsd3->getMountDir needs a device named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $dir = $args{device};
-	$dir =~ s/\//_/g;
-	return "/nfsexports/".$dir;
+    my $self = shift;
+    my %args = @_;
+    if(! exists $args{device} or ! defined $args{device}) {
+        $errmsg = "EComponent::EExport::ENfsd3->getMountDir needs a device named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $dir = $args{device};
+    $dir =~ s/\//_/g;
+    return "/nfsexports/".$dir;
 }
 
 =head2 addExport
-	
-	Desc : This function add new export to the db component
-	args : export_id, client_name, client_options 
+    
+    Desc : This function add new export to the db component
+    args : export_id, client_name, client_options 
 
 =cut
 
 sub addExport {
-	my $self = shift;
-	my %args = @_;
-	if (! exists $args{device} or ! defined $args{device}) {
-		$errmsg = "Component::Export::Nfsd3->addExport needs a device named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $component = $self->{_dbix}->nfsd3s->first;
-	my $export = $component->nfsd3_exports->create({
-		nfsd3_export_path => $args{device}
-	});
-	return $export->get_column('nfsd3_export_id')
+    my $self = shift;
+    my %args = @_;
+    if (! exists $args{device} or ! defined $args{device}) {
+        $errmsg = "Component::Export::Nfsd3->addExport needs a device named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $component = $self->{_dbix}->nfsd3s->first;
+    my $export = $component->nfsd3_exports->create({
+        nfsd3_export_path => $args{device}
+    });
+    return $export->get_column('nfsd3_export_id')
 }
 
 =head2 addExportClient
-	
-	Desc : This function a new client with options to an export.
-	args : export_id, client_name, client_options 
+    
+    Desc : This function a new client with options to an export.
+    args : export_id, client_name, client_options 
 
 =cut
 
 sub addExportClient {
-	my $self = shift;
+    my $self = shift;
     my %args = @_;
 
-	if ((! exists $args{export_id} or ! defined $args{export_id}) ||
-		(! exists $args{client_name} or ! defined $args{client_name}) ||
-		(! exists $args{client_options} or ! defined $args{client_options})) {
-		$errmsg = "Component::Export::Nfsd3->addExportClient needs a export_id, client_name and client_options named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $component = $self->{_dbix}->nfsd3s->first;
-	my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}})->nfsd3_exportclients;
-	my $exportclient = $exportclient_rs->create({
-		nfsd3_exportclient_name => $args{client_name},
-		nfsd3_exportclient_options => $args{client_options}
-	});
-	return $exportclient->get_column('nfsd3_exportclient_id')
+    if ((! exists $args{export_id} or ! defined $args{export_id}) ||
+        (! exists $args{client_name} or ! defined $args{client_name}) ||
+        (! exists $args{client_options} or ! defined $args{client_options})) {
+        $errmsg = "Component::Export::Nfsd3->addExportClient needs a export_id, client_name and client_options named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $component = $self->{_dbix}->nfsd3s->first;
+    my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}})->nfsd3_exportclients;
+    my $exportclient = $exportclient_rs->create({
+        nfsd3_exportclient_name => $args{client_name},
+        nfsd3_exportclient_options => $args{client_options}
+    });
+    return $exportclient->get_column('nfsd3_exportclient_id')
 }
 
 =head2 removeExport
-	
-	Desc : This function delete an export and all its clients
-	args : export_id
+    
+    Desc : This function delete an export and all its clients
+    args : export_id
 
 =cut
 
 sub removeExport {
-	my $self = shift;
-	my %args  = @_;
-	if (! exists $args{nfsd3_export_id} or ! defined $args{nfsd3_export_id}) {
-		$errmsg = "Component::Export::Nfsd3->removeExport needs an nfsd3_export_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $component = $self->{_dbix}->nfsd3s->first;
-	return $component->nfsd3_exports->find($args{nfsd3_export_id})->delete();
+    my $self = shift;
+    my %args  = @_;
+    if (! exists $args{nfsd3_export_id} or ! defined $args{nfsd3_export_id}) {
+        $errmsg = "Component::Export::Nfsd3->removeExport needs an nfsd3_export_id named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $component = $self->{_dbix}->nfsd3s->first;
+    return $component->nfsd3_exports->find($args{nfsd3_export_id})->delete();
 }
 
 =head2 removeExportClient
-	
-	Desc : This function delete a client from an export
-	args : client_id
+    
+    Desc : This function delete a client from an export
+    args : client_id
 
 =cut
 
 sub removeExportClient {
-	my $self = shift;
-	my %args  = @_;	
-	if (! exists $args{client_id} or ! defined $args{client_id}) {
-		$errmsg = "Component::Export::Nfsd3->removeExportClient needs a client_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	#return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
+    my $self = shift;
+    my %args  = @_;    
+    if (! exists $args{client_id} or ! defined $args{client_id}) {
+        $errmsg = "Component::Export::Nfsd3->removeExportClient needs a client_id named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    #return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();    
 }
 
 
 # return a data structure to pass to the template processor for /etc/exports file
 sub getTemplateDataExports {
-	my $self = shift;
-	my $data = {};
-	my $general_config = $self->{_dbix}->nfsd3s->first;
-	if(not $general_config) {
-		# TODO throw exception then no configuration
-	} 
-	
-	$data->{nfsd3_exports} = [];
-	my $exports_rs = $general_config->nfsd3_exports;
-	while(my $export = $exports_rs->next) {
-		my $record = {};
-		$record->{path} = $self->getMountDir(device => $export->get_column('nfsd3_export_path'));
-		$record->{clients} = [];
-		my $clients_rs = $export->nfsd3_exportclients;
-		while(my $client = $clients_rs->next) {
-			my $tmp = {
-				name => $client->get_column('nfsd3_exportclient_name'),
-				options => $client->get_column('nfsd3_exportclient_options')
-			};	
-			push @{$record->{clients}}, $tmp; 	
-		}
-		push @{$data->{nfsd3_exports}}, $record; 	
-	}
- 	return $data;
+    my $self = shift;
+    my $data = {};
+    my $general_config = $self->{_dbix}->nfsd3s->first;
+    if(not $general_config) {
+        # TODO throw exception then no configuration
+    } 
+    
+    $data->{nfsd3_exports} = [];
+    my $exports_rs = $general_config->nfsd3_exports;
+    while(my $export = $exports_rs->next) {
+        my $record = {};
+        $record->{path} = $self->getMountDir(device => $export->get_column('nfsd3_export_path'));
+        $record->{clients} = [];
+        my $clients_rs = $export->nfsd3_exportclients;
+        while(my $client = $clients_rs->next) {
+            my $tmp = {
+                name => $client->get_column('nfsd3_exportclient_name'),
+                options => $client->get_column('nfsd3_exportclient_options')
+            };    
+            push @{$record->{clients}}, $tmp;     
+        }
+        push @{$data->{nfsd3_exports}}, $record;     
+    }
+     return $data;
 }
 
 # return a data structure to pass to the template processor for /etc/default/nfs-common file
 sub getTemplateDataNfsCommon {
-	my $self = shift;
-	my $data = {};
-	my $general_config = $self->{_dbix}->nfsd3s->first;
-	if(not $general_config) {
-		# TODO throw exception then no configuration
-	} 
-	$data->{nfsd3_statdopts} = $general_config->get_column('nfsd3_statdopts');
-	$data->{nfsd3_need_gssd} = $general_config->get_column('nfsd3_need_gssd');
-	
-	return $data;
+    my $self = shift;
+    my $data = {};
+    my $general_config = $self->{_dbix}->nfsd3s->first;
+    if(not $general_config) {
+        # TODO throw exception then no configuration
+    } 
+    $data->{nfsd3_statdopts} = $general_config->get_column('nfsd3_statdopts');
+    $data->{nfsd3_need_gssd} = $general_config->get_column('nfsd3_need_gssd');
+    
+    return $data;
 }
 
 # return a data structure to pass to the template processor for /etc/default/nfs-kernel-server file
 sub getTemplateDataNfsKernelServer {
-	my $self = shift;
-	my $data = {};
-	my $general_config = $self->{_dbix}->nfsd3s->first;
-	if(not $general_config) {
-		# TODO throw exception then no configuration
-	} 
-	$data->{nfsd3_rpcnfsdcount} = $general_config->get_column('nfsd3_rpcnfsdcount');
-	$data->{nfsd3_rpcnfsdpriority} = $general_config->get_column('nfsd3_rpcnfsdpriority');
-	$data->{nfsd3_rpcmountopts} = $general_config->get_column('nfsd3_rpcmountopts');
-	$data->{nfsd3_need_svcgssd} = $general_config->get_column('nfsd3_need_svcgssd');
-	$data->{nfsd3_rpcsvcgssdopts} = $general_config->get_column('nfsd3_rpcsvcgssdopts');
-	
-	return $data;   
+    my $self = shift;
+    my $data = {};
+    my $general_config = $self->{_dbix}->nfsd3s->first;
+    if(not $general_config) {
+        # TODO throw exception then no configuration
+    } 
+    $data->{nfsd3_rpcnfsdcount} = $general_config->get_column('nfsd3_rpcnfsdcount');
+    $data->{nfsd3_rpcnfsdpriority} = $general_config->get_column('nfsd3_rpcnfsdpriority');
+    $data->{nfsd3_rpcmountopts} = $general_config->get_column('nfsd3_rpcmountopts');
+    $data->{nfsd3_need_svcgssd} = $general_config->get_column('nfsd3_need_svcgssd');
+    $data->{nfsd3_rpcsvcgssdopts} = $general_config->get_column('nfsd3_rpcsvcgssdopts');
+    
+    return $data;   
 }
 
 =head2 createExport
-	
-	Desc : This function enqueue a ECreateExport operation
-	args : client_name, device, options
-	
+    
+    Desc : This function enqueue a ECreateExport operation
+    args : client_name, device, options
+    
 =cut
 
 sub createExport {
@@ -353,16 +353,16 @@ sub createExport {
     if((! exists $args{client_name} or ! defined $args{client_name})||
        (! exists $args{device} or ! defined $args{device}) ||
        (! exists $args{client_options} or ! defined $args{client_options})) {
-	   	$errmsg = "createExport needs device, client_name and client_options named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $admin = Administrator->new();
-	
+           $errmsg = "createExport needs device, client_name and client_options named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $admin = Administrator->new();
+    
     my %params = $self->getAttrs();
     $log->debug("New Operation CreateExport with attrs : " . %params);
     Operation->enqueue(
-    	priority => 200,
+        priority => 200,
         type     => 'CreateExport',
         params   => {
             component_instance_id => $self->getAttr(name=>'component_instance_id'),

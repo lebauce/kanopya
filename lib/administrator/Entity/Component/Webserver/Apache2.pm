@@ -72,7 +72,7 @@ B<Return>  : a new Entity::Component::Webserver::Apache2 from Kanopya Database
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub get {
@@ -80,10 +80,10 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Component::Webserver::Apache2->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Component::Webserver::Apache2->get need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args);
    return $self;
 }
@@ -100,21 +100,21 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-		(! exists $args{component_id} or ! defined $args{component_id})){ 
-		$errmsg = "Entity::Component::Webserver::Apache2->new need a cluster_id and a component_id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    
+    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+        (! exists $args{component_id} or ! defined $args{component_id})){ 
+        $errmsg = "Entity::Component::Webserver::Apache2->new need a cluster_id and a component_id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
@@ -135,7 +135,7 @@ B<Return>  : None
 B<Comment>  : None
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub addVirtualhost {
@@ -156,24 +156,24 @@ B<Return>  : hash ref table containing all virtualhost, hash ref are composed by
 B<Comment>  : None
 B<throws>  : 
     B<Kanopya::Exception> When apache2 component instance is not already saved in db
-	
+    
 =cut
 
 sub getVirtualhostConf{
-	my $self = shift;
+    my $self = shift;
 
-	if(! $self->{_dbix}->in_storage) {
-		$errmsg = "Entity::Component::Webserver::Apache2->getVirtualhostConf must be called on an already save instance";
-		$log->error($errmsg);
-		throw Kanopya::Exception(error => $errmsg);
-	}
-	my $virtualhost_rs = $self->{_dbix}->apache2s->first->apache2_virtualhosts;
-	my @tab_virtualhosts = ();
-	while (my $virtualhost_row = $virtualhost_rs->next){
-		my %virtualhost = $virtualhost_row->get_columns();
-		push @tab_virtualhosts, \%virtualhost;
-	}
-	return \@tab_virtualhosts;
+    if(! $self->{_dbix}->in_storage) {
+        $errmsg = "Entity::Component::Webserver::Apache2->getVirtualhostConf must be called on an already save instance";
+        $log->error($errmsg);
+        throw Kanopya::Exception(error => $errmsg);
+    }
+    my $virtualhost_rs = $self->{_dbix}->apache2s->first->apache2_virtualhosts;
+    my @tab_virtualhosts = ();
+    while (my $virtualhost_row = $virtualhost_rs->next){
+        my %virtualhost = $virtualhost_row->get_columns();
+        push @tab_virtualhosts, \%virtualhost;
+    }
+    return \@tab_virtualhosts;
 }
 
 =head2 getGeneralConf
@@ -189,20 +189,20 @@ B<Return>  : hash ref containing apache 2 general conf, hash is composed by :
 B<Comment>  : None
 B<throws>  : 
     B<Kanopya::Exception> When apache2 component instance is not already saved in db
-	
+    
 =cut
 
 sub getGeneralConf{
-	my $self = shift;
+    my $self = shift;
 
-	if(! $self->{_dbix}->in_storage) {
-		$errmsg = "Entity::Component::Webserver::Apache2->getGeneralConf must be called on an already save instance";
-		$log->error($errmsg);
-		throw Kanopya::Exception(error => $errmsg);
-	}
-	my %apache2_conf = $self->{_dbix}->apache2s->first->get_columns();
-	$log->debug("Apache2 conf return is : " . Dumper(%apache2_conf));
-	return \%apache2_conf;
+    if(! $self->{_dbix}->in_storage) {
+        $errmsg = "Entity::Component::Webserver::Apache2->getGeneralConf must be called on an already save instance";
+        $log->error($errmsg);
+        throw Kanopya::Exception(error => $errmsg);
+    }
+    my %apache2_conf = $self->{_dbix}->apache2s->first->get_columns();
+    $log->debug("Apache2 conf return is : " . Dumper(%apache2_conf));
+    return \%apache2_conf;
 }
 
 =head2 getConf
@@ -224,46 +224,46 @@ B<Return>  : hash ref containing apache 2 global conf, hash is composed by :
         B<apache2_virtualhost_errorlog> : I<String> : file path for error log.
 B<Comment>  : None
 B<throws>  : None
-	
+    
 =cut
 sub getConf {
-	my $self = shift;
-	my $apache2_conf = {
-		apache2_id => undef,
-		apache2_loglevel => undef,
-		apache2_serverroot => undef,
-		apache2_ports => undef,
-		apache2_sslports => undef,
-		apache2_virtualhosts => [
-			{ apache2_virtualhost_id => undef,
-			  apache2_virtualhost_servername => undef,
-			  apache2_virtualhost_sslenable => undef,
-			  apache2_virtualhost_serveradmin => undef,
-			  apache2_virtualhost_documentroot => undef,
-			  apache2_virtualhost_log => undef,
-			  apache2_virtualhost_errorlog => undef,
-			},
-		]
-	};
-	
-	my $lineindb = $self->{_dbix}->apache2s->first;
-	if(defined $lineindb) {
-		my %dbconf = $lineindb->get_columns();
-		$apache2_conf = \%dbconf;
+    my $self = shift;
+    my $apache2_conf = {
+        apache2_id => undef,
+        apache2_loglevel => undef,
+        apache2_serverroot => undef,
+        apache2_ports => undef,
+        apache2_sslports => undef,
+        apache2_virtualhosts => [
+            { apache2_virtualhost_id => undef,
+              apache2_virtualhost_servername => undef,
+              apache2_virtualhost_sslenable => undef,
+              apache2_virtualhost_serveradmin => undef,
+              apache2_virtualhost_documentroot => undef,
+              apache2_virtualhost_log => undef,
+              apache2_virtualhost_errorlog => undef,
+            },
+        ]
+    };
+    
+    my $lineindb = $self->{_dbix}->apache2s->first;
+    if(defined $lineindb) {
+        my %dbconf = $lineindb->get_columns();
+        $apache2_conf = \%dbconf;
 
-		my $virtualhost_rs = $lineindb->apache2_virtualhosts;
-		my @tab_virtualhosts = ();
-		while (my $virtualhost_row = $virtualhost_rs->next){
-			my %virtualhost = $virtualhost_row->get_columns();
-			delete $virtualhost{'apache2_id'};
-			push @tab_virtualhosts, \%virtualhost;
-		}
-		$apache2_conf->{apache2_virtualhosts} = \@tab_virtualhosts;
-		$log->debug("APACHE2 configuration exists in db: ".Dumper $apache2_conf);
-		
-	}
+        my $virtualhost_rs = $lineindb->apache2_virtualhosts;
+        my @tab_virtualhosts = ();
+        while (my $virtualhost_row = $virtualhost_rs->next){
+            my %virtualhost = $virtualhost_row->get_columns();
+            delete $virtualhost{'apache2_id'};
+            push @tab_virtualhosts, \%virtualhost;
+        }
+        $apache2_conf->{apache2_virtualhosts} = \@tab_virtualhosts;
+        $log->debug("APACHE2 configuration exists in db: ".Dumper $apache2_conf);
+        
+    }
 
-	return $apache2_conf;
+    return $apache2_conf;
 }
 
 =head2 setConf
@@ -289,53 +289,53 @@ B<throws>  : None
 =cut
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-	
-	$log->debug("APACHE2 configuration to save in db: ".Dumper $conf);
-	my $virtualhosts = $conf->{apache2_virtualhosts};
-	delete $conf->{apache2_virtualhosts};
-	
-	if(not $conf->{apache2_id}) {
-		# new configuration -> create	
-		my $row = $self->{_dbix}->apache2s->create($conf);
-		$self->{_dbix}->apache2s->clear_cache();
-		foreach my $vh (@$virtualhosts) {
-			$vh->{apache2_virtualhost_id} = undef;
-			$self->{_dbix}->apache2s->first()->apache2_virtualhosts->create($vh);
-		}
-		
-	} else {
-		# old configuration -> update
-		 $self->{_dbix}->apache2s->update($conf);
-		 my $virtualhosts_indb = $self->{_dbix}->apache2s->first()->apache2_virtualhosts;
-		 
-		 # update existing virtual hosts
-		 while(my $vhost_indb = $virtualhosts_indb->next) {
-		 	my $found = 0;
-		 	my $vhost_data;
-		 	foreach	my $vhost_to_update (@$virtualhosts) {
-		 		if($vhost_to_update->{apache2_virtualhost_id} == $vhost_indb->get_column('apache2_virtualhost_id')) {
-		 			$found = 1;
-		 			$vhost_data = $vhost_to_update;
-		 			last;
-		 		}
-		 	}
-		 	if($found) {
-		 		$vhost_indb->update($vhost_data);
-		 	} else {
-		 		$vhost_indb->delete();
-		 	}
-		 }
-		 
-		 # create new virtual hosts
-		foreach	my $vh (@$virtualhosts) {
-			if ($vh->{apache2_virtualhost_id} == 0) {
-					$vh->{apache2_virtualhost_id} = undef;
-					$virtualhosts_indb->create($vh);
-			}
-		}
-	}	
+    my $self = shift;
+    my ($conf) = @_;
+    
+    $log->debug("APACHE2 configuration to save in db: ".Dumper $conf);
+    my $virtualhosts = $conf->{apache2_virtualhosts};
+    delete $conf->{apache2_virtualhosts};
+    
+    if(not $conf->{apache2_id}) {
+        # new configuration -> create    
+        my $row = $self->{_dbix}->apache2s->create($conf);
+        $self->{_dbix}->apache2s->clear_cache();
+        foreach my $vh (@$virtualhosts) {
+            $vh->{apache2_virtualhost_id} = undef;
+            $self->{_dbix}->apache2s->first()->apache2_virtualhosts->create($vh);
+        }
+        
+    } else {
+        # old configuration -> update
+         $self->{_dbix}->apache2s->update($conf);
+         my $virtualhosts_indb = $self->{_dbix}->apache2s->first()->apache2_virtualhosts;
+         
+         # update existing virtual hosts
+         while(my $vhost_indb = $virtualhosts_indb->next) {
+             my $found = 0;
+             my $vhost_data;
+             foreach    my $vhost_to_update (@$virtualhosts) {
+                 if($vhost_to_update->{apache2_virtualhost_id} == $vhost_indb->get_column('apache2_virtualhost_id')) {
+                     $found = 1;
+                     $vhost_data = $vhost_to_update;
+                     last;
+                 }
+             }
+             if($found) {
+                 $vhost_indb->update($vhost_data);
+             } else {
+                 $vhost_indb->delete();
+             }
+         }
+         
+         # create new virtual hosts
+        foreach    my $vh (@$virtualhosts) {
+            if ($vh->{apache2_virtualhost_id} == 0) {
+                    $vh->{apache2_virtualhost_id} = undef;
+                    $virtualhosts_indb->create($vh);
+            }
+        }
+    }    
 }
 
 sub getNetConf{

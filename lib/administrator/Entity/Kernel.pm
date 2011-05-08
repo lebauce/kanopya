@@ -28,21 +28,21 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	kernel_name => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
-	kernel_version => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
-	kernel_desc => { pattern => '^.*$', is_mandatory => 0, is_extended => 0 },
+    kernel_name => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
+    kernel_version => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
+    kernel_desc => { pattern => '^.*$', is_mandatory => 0, is_extended => 0 },
 
 };
 
-sub methods {	
-	return {
-		'get'		=> {'description' => 'view this kernel', 
-						'perm_holder' => 'entity',
-		},
-		'setperm'	=> {'description' => 'set permissions on this kernel', 
-						'perm_holder' => 'entity',
-		},
-	};
+sub methods {    
+    return {
+        'get'        => {'description' => 'view this kernel', 
+                        'perm_holder' => 'entity',
+        },
+        'setperm'    => {'description' => 'set permissions on this kernel', 
+                        'perm_holder' => 'entity',
+        },
+    };
 }
 
 =head2 get
@@ -54,24 +54,24 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Kernel->new need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $admin = Administrator->new();
-   	my $dbix_kernel = $admin->{db}->resultset('Kernel')->find($args{id});
-   	if(not defined $dbix_kernel) {
-   		$errmsg = "Entity::Kernel->get : id <$args{id}> not found !";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-   	} 
-   	my $entity_id = $dbix_kernel->entitylink->get_column('entity_id');
-   	my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-   	if(not $granted) {
-   		throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get kernel with id $args{id}");
-   	}
-	
+        $errmsg = "Entity::Kernel->new need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    
+    my $admin = Administrator->new();
+       my $dbix_kernel = $admin->{db}->resultset('Kernel')->find($args{id});
+       if(not defined $dbix_kernel) {
+           $errmsg = "Entity::Kernel->get : id <$args{id}> not found !";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+       } 
+       my $entity_id = $dbix_kernel->entitylink->get_column('entity_id');
+       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+       if(not $granted) {
+           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get kernel with id $args{id}");
+       }
+    
    my $self = $class->SUPER::get( %args,  table => "Kernel");
    return $self;
 }
@@ -81,18 +81,18 @@ sub get {
 =cut
 
 sub getKernels {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	my @objs = ();
+    my @objs = ();
     my ($rs, $entity_class);
 
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getKernels need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Kernel");
+    if ((! exists $args{hash} or ! defined $args{hash})) { 
+        $errmsg = "Entity::getKernels need a type and a hash named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    my $adm = Administrator->new();
+       return $class->SUPER::getEntities( %args,  type => "Kernel");
 }
 
 =head2 new
@@ -100,17 +100,17 @@ sub getKernels {
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
 
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Kernel");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
+    # Check attrs ad throw exception if attrs missed or incorrect
+    my $attrs = $class->checkAttrs(attrs => \%args);
+    
+    # We create a new DBIx containing new entity (only global attrs)
+    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Kernel");
+    
+    # Set the extended parameters
+    $self->{_ext_attrs} = $attrs->{extended};
 
     return $self;
 
@@ -128,14 +128,14 @@ sub getAttrDef{
 
 =head2 toString
 
-	desc: return a string representation of the entity
+    desc: return a string representation of the entity
 
 =cut
 
 sub toString {
-	my $self = shift;
-	my $string = $self->{_dbix}->get_column('kernel_name');
-	return $string;
+    my $self = shift;
+    my $string = $self->{_dbix}->get_column('kernel_name');
+    return $string;
 }
 
 1;

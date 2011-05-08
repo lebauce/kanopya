@@ -23,15 +23,15 @@ sub view_publicips : StartRunmode {
 #    my $publicips = $self->{'admin'}->getPublicIPs();
    
     $tmpl->param('titlepage' => "Public IPs View");
-	$tmpl->param('mClusters' => 1);
-	$tmpl->param('submNetworks' => 1);
-	$tmpl->param('USERID' => 1234);
-	$tmpl->param('PUBLICIPS' => $publicips);
-	$tmpl->param('username' => $self->session->param('username'));
-	
-	$output .= $tmpl->output();
+    $tmpl->param('mClusters' => 1);
+    $tmpl->param('submNetworks' => 1);
+    $tmpl->param('USERID' => 1234);
+    $tmpl->param('PUBLICIPS' => $publicips);
+    $tmpl->param('username' => $self->session->param('username'));
+    
+    $output .= $tmpl->output();
         
-    return $output;	
+    return $output;    
 }
 
 sub form_addpublicip : Runmode {
@@ -41,9 +41,9 @@ sub form_addpublicip : Runmode {
     my $output = '';
     $tmpl->param($errors) if $errors;
 
-	
-	$output .= $tmpl->output();
-	return $output;
+    
+    $output .= $tmpl->output();
+    return $output;
 }
 
 sub process_addpublicip : Runmode {
@@ -54,39 +54,39 @@ sub process_addpublicip : Runmode {
     
     my $query = $self->query();
     eval {
-    	$self->{adm}->{manager}->{network}->newPublicIP(
-    		ip_address => $query->param('ip_address'),
-    		ip_mask => $query->param('ip_mask'),
-    		gateway => $query->param('gateway') ne '' ? $query->param('gateway') : undef, 
-    	);
+        $self->{adm}->{manager}->{network}->newPublicIP(
+            ip_address => $query->param('ip_address'),
+            ip_mask => $query->param('ip_mask'),
+            gateway => $query->param('gateway') ne '' ? $query->param('gateway') : undef, 
+        );
     };
     if($@) { 
-		my $error = $@;
-		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added.'); }
+        my $error = $@;
+        $self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+    } else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added.'); }
     return $self->close_window();
 }
 
 sub _addpublicip_profile {
-	return {
-		required => ['ip_address', 'ip_mask'],
-		msgs => {
-				any_errors => 'some_errors',
-				prefix => 'err_'
-		},
-	};
+    return {
+        required => ['ip_address', 'ip_mask'],
+        msgs => {
+                any_errors => 'some_errors',
+                prefix => 'err_'
+        },
+    };
 }
 
 sub process_removepublicip : Runmode {
-	my $self = shift;
-	my $query = $self->query();
+    my $self = shift;
+    my $query = $self->query();
     eval {
-    	$self->{adm}->{manager}->{network}->delPublicIP(publicip_id => $query->param('publicip_id'));
+        $self->{adm}->{manager}->{network}->delPublicIP(publicip_id => $query->param('publicip_id'));
     };
     if($@) { 
-		my $error = $@;
-		$self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
-	} else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed.'); }
+        my $error = $@;
+        $self->{adm}->addMessage(from => 'Administrator',level => 'error', content => $error); 
+    } else { $self->{adm}->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed.'); }
     $self->redirect('/cgi/kanopya.cgi/networks/view_publicips');
 }
 

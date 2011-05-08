@@ -28,10 +28,10 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	user_id => {pattern => 'm//s', is_mandatory => 0, is_extended => 0},
-	message_type => {pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-	message_content => {pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-	message_creationdate => {pattern => 'm//s', is_mandatory => 0, is_extended => 0},
+    user_id => {pattern => 'm//s', is_mandatory => 0, is_extended => 0},
+    message_type => {pattern => 'm//s', is_mandatory => 1, is_extended => 0},
+    message_content => {pattern => 'm//s', is_mandatory => 1, is_extended => 0},
+    message_creationdate => {pattern => 'm//s', is_mandatory => 0, is_extended => 0},
 };
 
 sub get {
@@ -39,41 +39,41 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Message->new need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Message->new need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args,  table => "Message");
    return $self;
 }
 
 sub getMessages {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	my @objs = ();
+    my @objs = ();
     my ($rs, $entity_class);
 
-	if ((! exists $args{hash} or ! defined $args{hash})) { 
-		$errmsg = "Entity::getMessages need a type and a hash named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-   	return $class->SUPER::getEntities( %args,  type => "Message");
+    if ((! exists $args{hash} or ! defined $args{hash})) { 
+        $errmsg = "Entity::getMessages need a type and a hash named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    my $adm = Administrator->new();
+       return $class->SUPER::getEntities( %args,  type => "Message");
 }
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
 
-	# Check attrs ad throw exception if attrs missed or incorrect
-	my $attrs = $class->checkAttrs(attrs => \%args);
-	
-	# We create a new DBIx containing new entity (only global attrs)
-	my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Message");
-	
-	# Set the extended parameters
-	$self->{_ext_attrs} = $attrs->{extended};
+    # Check attrs ad throw exception if attrs missed or incorrect
+    my $attrs = $class->checkAttrs(attrs => \%args);
+    
+    # We create a new DBIx containing new entity (only global attrs)
+    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Message");
+    
+    # Set the extended parameters
+    $self->{_ext_attrs} = $attrs->{extended};
 
     return $self;
 
@@ -82,9 +82,9 @@ sub new {
 sub extension { return undef; }
 
 sub save {
-	my $self = shift;
-	$self->{_dbix}->set_column({'message_creationdate' => \"> CURRENT_DATE()"});
-	$self->SUPER::save($self);
+    my $self = shift;
+    $self->{_dbix}->set_column({'message_creationdate' => \"> CURRENT_DATE()"});
+    $self->SUPER::save($self);
 }
 
 sub getAttrDef{

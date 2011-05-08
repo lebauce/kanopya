@@ -75,96 +75,96 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
 
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
-	my $conf = {};
+    my $self = shift;
+    my $conf = {};
 
-	my $conf_rs = $self->{_dbix}->mounttable1s;
-	my @mountdefs = ();
-	while (my $conf_row = $conf_rs->next) {
-		push @mountdefs, { 	mounttable1_id => $conf_row->get_column('mounttable1_id'),
-							mounttable1_device => $conf_row->get_column('mounttable1_device'),
-							mounttable1_mountpoint => $conf_row->get_column('mounttable1_mountpoint'),
-							mounttable1_filesystem => $conf_row->get_column('mounttable1_filesystem'),
-							mounttable1_options => $conf_row->get_column('mounttable1_options'),
-							mounttable1_dumpfreq => $conf_row->get_column('mounttable1_dumpfreq'),
-							mounttable1_passnum => $conf_row->get_column('mounttable1_passnum'),
-						};
-	}
-	
-	$conf->{mountdefs} = \@mountdefs;
-	return $conf;
+    my $conf_rs = $self->{_dbix}->mounttable1s;
+    my @mountdefs = ();
+    while (my $conf_row = $conf_rs->next) {
+        push @mountdefs, {     mounttable1_id => $conf_row->get_column('mounttable1_id'),
+                            mounttable1_device => $conf_row->get_column('mounttable1_device'),
+                            mounttable1_mountpoint => $conf_row->get_column('mounttable1_mountpoint'),
+                            mounttable1_filesystem => $conf_row->get_column('mounttable1_filesystem'),
+                            mounttable1_options => $conf_row->get_column('mounttable1_options'),
+                            mounttable1_dumpfreq => $conf_row->get_column('mounttable1_dumpfreq'),
+                            mounttable1_passnum => $conf_row->get_column('mounttable1_passnum'),
+                        };
+    }
+    
+    $conf->{mountdefs} = \@mountdefs;
+    return $conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-	$log->debug("la conf récupérée depuis le component mountab : ".Dumper ($conf));
-	my $mountdefs_conf = $conf->{mounttable_mountdefs};
-	
-	# for each mount definition , we search it in db for update or deletion
-	my $mountdefs_rs = $self->{_dbix}->mounttable1s;
-	while(my $mountdef_row = $mountdefs_rs->next) {
-		my $found = 0;
-		my $mountdef_data;
-		my $id = $mountdef_row->get_column('mounttable1_id');
-		foreach	my $mountdef_conf (@$mountdefs_conf) {
-		 	if($mountdef_conf->{mounttable1_id} == $id) {
-		 		$found = 1;
-		 		$mountdef_data = $mountdef_conf;
-		 		last;
-		 	}
-		}
-		if($found) {
-	 		$mountdef_row->update($mountdef_data);
-	 	} else {
-	 		$mountdef_row->delete();
-	 	}	 
-	}
-	
-	foreach	my $mtdef (@$mountdefs_conf) {
-		if (not exists $mtdef->{mounttable1_id}) {
-				$self->{_dbix}->mounttable1s->create($mtdef);
-		}
-	}
+    my $self = shift;
+    my ($conf) = @_;
+    $log->debug("la conf récupérée depuis le component mountab : ".Dumper ($conf));
+    my $mountdefs_conf = $conf->{mounttable_mountdefs};
+    
+    # for each mount definition , we search it in db for update or deletion
+    my $mountdefs_rs = $self->{_dbix}->mounttable1s;
+    while(my $mountdef_row = $mountdefs_rs->next) {
+        my $found = 0;
+        my $mountdef_data;
+        my $id = $mountdef_row->get_column('mounttable1_id');
+        foreach    my $mountdef_conf (@$mountdefs_conf) {
+             if($mountdef_conf->{mounttable1_id} == $id) {
+                 $found = 1;
+                 $mountdef_data = $mountdef_conf;
+                 last;
+             }
+        }
+        if($found) {
+             $mountdef_row->update($mountdef_data);
+         } else {
+             $mountdef_row->delete();
+         }     
+    }
+    
+    foreach    my $mtdef (@$mountdefs_conf) {
+        if (not exists $mtdef->{mounttable1_id}) {
+                $self->{_dbix}->mounttable1s->create($mtdef);
+        }
+    }
 }
 
 # Insert default configuration in db for this component 
 sub insertDefaultConfiguration() {
-	my $self = shift;
-	
-	my @default_conf = (
-		{ 	mounttable1_device => 'proc', mounttable1_mountpoint => '/proc', mounttable1_filesystem => 'proc',
-			mounttable1_options => 'nodev,noexec,nosuid', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
-		{ 	mounttable1_device => 'sysfs', mounttable1_mountpoint => '/sys', mounttable1_filesystem => 'sysfs',
-			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
-		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/tmp', mounttable1_filesystem => 'tmpfs',
-			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
-		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/tmp', mounttable1_filesystem => 'tmpfs',
-			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
-		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/run', mounttable1_filesystem => 'tmpfs',
-			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
-		{ 	mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/lock', mounttable1_filesystem => 'tmpfs',
-			mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
-	);
-	
-	foreach my $row (@default_conf) {
-		$self->{_dbix}->mounttable1s->create( $row );
-	}
+    my $self = shift;
+    
+    my @default_conf = (
+        {     mounttable1_device => 'proc', mounttable1_mountpoint => '/proc', mounttable1_filesystem => 'proc',
+            mounttable1_options => 'nodev,noexec,nosuid', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+        {     mounttable1_device => 'sysfs', mounttable1_mountpoint => '/sys', mounttable1_filesystem => 'sysfs',
+            mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+        {     mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/tmp', mounttable1_filesystem => 'tmpfs',
+            mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+        {     mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/tmp', mounttable1_filesystem => 'tmpfs',
+            mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+        {     mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/run', mounttable1_filesystem => 'tmpfs',
+            mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+        {     mounttable1_device => 'tmpfs', mounttable1_mountpoint => '/var/lock', mounttable1_filesystem => 'tmpfs',
+            mounttable1_options => 'defaults', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
+    );
+    
+    foreach my $row (@default_conf) {
+        $self->{_dbix}->mounttable1s->create( $row );
+    }
 }
 
 =head1 DIAGNOSTICS

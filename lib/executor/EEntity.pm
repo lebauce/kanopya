@@ -57,20 +57,20 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data})) { 
-		$errmsg = "EEntity->new ($class) need a data named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
+        $errmsg = "EEntity->new ($class) need a data named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
         
-#   	$log->debug("Class is : $class");
+#       $log->debug("Class is : $class");
     my $self = { _entity => $args{data}};
     bless $self, $class;
     return $self;
 }
 
 sub _getEntity{
-	my $self = shift;
-	return $self->{_entity};
+    my $self = shift;
+    return $self->{_entity};
 }
 
 1;

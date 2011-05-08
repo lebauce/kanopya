@@ -72,60 +72,60 @@ sub new {
 
 =head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
+    $op->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
-	my $self = shift;
+    my $self = shift;
 
-	return;
+    return;
 }
 
 sub checkOp{
     my $self = shift;
-	my %args = @_;
+    my %args = @_;
     
     # check if cluster is not active
     $log->debug("checking cluster active value <$args{params}->{cluster_id}>");
-   	if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
-	    	$log->error($errmsg);
-	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+       if($self->{_objs}->{cluster}->getAttr(name => 'active')) {
+            $errmsg = "EOperation::EActivateCluster->new : cluster $args{params}->{cluster_id} is already active";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
 =head2 prepare
 
-	$op->prepare();
+    $op->prepare();
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
-		$errmsg = "ERemoveCluster->prepare need an internal_cluster named argument!"; 
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $adm = Administrator->new();
-	my $params = $self->_getOperation()->getParams();
+    if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
+        $errmsg = "ERemoveCluster->prepare need an internal_cluster named argument!"; 
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $adm = Administrator->new();
+    my $params = $self->_getOperation()->getParams();
 
-	$self->{_objs} = {};
+    $self->{_objs} = {};
 
- 	# Cluster instantiation
+     # Cluster instantiation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>");
     eval {
-    	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
     # cluster systemimage instanciation
@@ -138,42 +138,42 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateCluster failed an error occured :\n$error";
-		$log->error($errmsg);
+        $errmsg = "Operation ActivateCluster failed an error occured :\n$error";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-	## Instanciate context 
-	# Get context for nas
-	$self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-	
+    ## Instanciate context 
+    # Get context for nas
+    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+    
 }
 
 sub execute {
-	my $self = shift;
-	$self->SUPER::execute();
-	my $adm = Administrator->new();
+    my $self = shift;
+    $self->SUPER::execute();
+    my $adm = Administrator->new();
 
     # Remove cluster directory
     my $command = "rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
-	$self->{econtext}->execute(command => $command);
-	$log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
+    $self->{econtext}->execute(command => $command);
+    $log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
-	 # if systemimage defined (always true...?) and dedicated, back to shared state and deactivate it
-	 if($self->{_objs}->{systemimage}) {
-	 	if($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')){
-	 		$self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
-	 		$self->{_objs}->{systemimage}->save();
-	 		
-	 		Operation->enqueue(
-    			priority => 2000,
-        		type     => 'DeactivateSystemimage',
-        		params   => {systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id')},
-    		);
-	 	}
-	 }
-	
-	$self->{_objs}->{cluster}->delete();
+     # if systemimage defined (always true...?) and dedicated, back to shared state and deactivate it
+     if($self->{_objs}->{systemimage}) {
+         if($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')){
+             $self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
+             $self->{_objs}->{systemimage}->save();
+             
+             Operation->enqueue(
+                priority => 2000,
+                type     => 'DeactivateSystemimage',
+                params   => {systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id')},
+            );
+         }
+     }
+    
+    $self->{_objs}->{cluster}->delete();
 }
 
 =head1 DIAGNOSTICS

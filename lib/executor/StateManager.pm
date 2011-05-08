@@ -92,17 +92,17 @@ Executor::_init is a private method used to define internal parameters.
 =cut
 
 sub _init {
-	my $self = shift;
-	
-	$self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
-	if ((! exists $self->{config}->{user}->{name} ||
-		 ! defined exists $self->{config}->{user}->{name}) &&
-		(! exists $self->{config}->{user}->{password} ||
-		 ! defined exists $self->{config}->{user}->{password})){ 
-		throw Kanopya::Exception::Internal::IncorrectParam(error => "StateManager->new need user definition in config file!"); }
-	my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
-								 password => $self->{config}->{user}->{password});
-	return;
+    my $self = shift;
+    
+    $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
+    if ((! exists $self->{config}->{user}->{name} ||
+         ! defined exists $self->{config}->{user}->{name}) &&
+        (! exists $self->{config}->{user}->{password} ||
+         ! defined exists $self->{config}->{user}->{password})){ 
+        throw Kanopya::Exception::Internal::IncorrectParam(error => "StateManager->new need user definition in config file!"); }
+    my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
+                                 password => $self->{config}->{user}->{password});
+    return;
 }
 
 sub checkNodeUp {
@@ -111,9 +111,9 @@ sub checkNodeUp {
     if ((!defined $args{cluster} or !exists $args{cluster})||
         (!defined $args{motherboard} or !exists $args{motherboard}) ||
         (!defined $args{executor_ip} or !exists $args{executor_ip})){
-            $errmsg = "StateManager::updateNodeStatus need a cluster and motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::updateNodeStatus need a cluster and motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     if ($args{motherboard}->getAttr(name => "motherboard_state") ne "up"){
@@ -127,22 +127,22 @@ sub checkNodeUp {
 
     my $node_ip = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
     if (!$node_ip) {
-        $errmsg = "Node without IP!";	
+        $errmsg = "Node without IP!";    
         $log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
     eval {
         $host_econtext = EFactory::newEContext(ip_source => $args{executor_ip}, ip_destination => $node_ip);};
     if ($@) {
         return 0;
     }
-   	foreach my $i (keys %$components) {
-   	    print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
-   	    my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
-   	    if (!$tmp_ecomp->isUp(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
-   	        return 0;
-   	    }
-	}
+       foreach my $i (keys %$components) {
+           print "\tBrowse component : " .$components->{$i}->getComponentAttr()->{component_name}."\n";
+           my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
+           if (!$tmp_ecomp->isUp(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
+               return 0;
+           }
+    }
 
     return $node_available;
 }
@@ -156,77 +156,77 @@ Executor->run() run the executor server.
 =cut
 
 sub run {
-	my $self = shift;
-	my $running = shift;
-	
-	my $adm = Administrator->new();
-	$adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya State Manager started.");
-   	while ($$running) {
+    my $self = shift;
+    my $running = shift;
+    
+    my $adm = Administrator->new();
+    $adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya State Manager started.");
+       while ($$running) {
         # First Check Motherboard Status
         my @motherboards = Entity::Motherboard->getMotherboards(hash => {motherboard_state => {'!=','down'}});
-#   	    my @moth_index = keys %$motherboards;
-		foreach my $mb (@motherboards) {
-			eval {
-		  		my $emotherboard = EFactory::newEEntity(data => $mb);
-	      		my $is_up = $emotherboard->checkUp();
-		  		updateMotherboardStatus(pingable => $is_up, motherboard=>$mb);
-		  	};
-		  	if($@) {
-		  		my $exception = $@;
-		  		$adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
-   				$log->error($exception);
-		  	}
-   	    }
+#           my @moth_index = keys %$motherboards;
+        foreach my $mb (@motherboards) {
+            eval {
+                  my $emotherboard = EFactory::newEEntity(data => $mb);
+                  my $is_up = $emotherboard->checkUp();
+                  updateMotherboardStatus(pingable => $is_up, motherboard=>$mb);
+              };
+              if($@) {
+                  my $exception = $@;
+                  $adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
+                   $log->error($exception);
+              }
+           }
 
 
-   	    my @clusters = Entity::Cluster->getClusters(hash=>{cluster_state => {'!=' => 'down'}});
-   	    foreach my $cluster (@clusters) {
+           my @clusters = Entity::Cluster->getClusters(hash=>{cluster_state => {'!=' => 'down'}});
+           foreach my $cluster (@clusters) {
             
             # Second Check node status
-   	        $log->debug("cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n");
-   	        my $motherboards = $cluster->getMotherboards();
-   	        my @moth_index = keys %$motherboards;
-   	        foreach my $mb (@moth_index) {
-		        eval {
-		        	my $srv_available = checkNodeUp(motherboard=>$motherboards->{$mb}, 
-		        	                                cluster=>$cluster,
-		        	                                executor_ip=>Entity::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
-		        	updateNodeStatus(motherboard=>$motherboards->{$mb}, services_available => $srv_available, cluster => $cluster);
-		        };
-		        if($@) {
-		            my $exception = $@;
-		            $adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
-		            $log->error($exception);
-		        }
-   	        }
-   	        eval {
-   	        updateClusterStatus(motherboards=>$motherboards,cluster=>$cluster);};
-		        if($@) {
-		            my $exception = $@;
-		            $adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
-		            $log->error($exception);
-		        }
-   	    }
-   	    
-   		sleep 10;
-   	}
+               $log->debug("cluster get is <" . $cluster->getAttr(name=>'cluster_name'). ">\n");
+               my $motherboards = $cluster->getMotherboards();
+               my @moth_index = keys %$motherboards;
+               foreach my $mb (@moth_index) {
+                eval {
+                    my $srv_available = checkNodeUp(motherboard=>$motherboards->{$mb}, 
+                                                    cluster=>$cluster,
+                                                    executor_ip=>Entity::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
+                    updateNodeStatus(motherboard=>$motherboards->{$mb}, services_available => $srv_available, cluster => $cluster);
+                };
+                if($@) {
+                    my $exception = $@;
+                    $adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
+                    $log->error($exception);
+                }
+               }
+               eval {
+               updateClusterStatus(motherboards=>$motherboards,cluster=>$cluster);};
+                if($@) {
+                    my $exception = $@;
+                    $adm->addMessage(from => 'State-manager', level => 'error', content => $exception);
+                    $log->error($exception);
+                }
+           }
+           
+           sleep 10;
+       }
 
-   	$log->debug("condition become false : $$running"); 
-   	$adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopya State Manager stopped");
+       $log->debug("condition become false : $$running"); 
+       $adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopya State Manager stopped");
 }
 
 ################################### MOTHERBOARD STATES METHOD PART
 sub motherboardBroken{
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::motherboardBroken need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::motherboardBroken need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
     my $mb_mac = $args{motherboard}->getAttr(name=>"motherboard_mac_address");
     print "motherboard". $mb_mac." broken\n";
     my $adm = Administrator->new();
-	$adm->addMessage(from => 'State-manager', level => 'info', content => "Motherboard with mac address <$mb_mac> is now broken");
+    $adm->addMessage(from => 'State-manager', level => 'info', content => "Motherboard with mac address <$mb_mac> is now broken");
     $args{motherboard}->setAttr(name=>"motherboard_state", value => "broken:".time);
     $args{motherboard}->save();
 }
@@ -234,10 +234,10 @@ sub motherboardBroken{
 sub motherboardRepaired{
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::motherboardBroken need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::motherboardBroken need a motherboard named argument!";    
+            $log->error($errmsg);
+            
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     $args{motherboard}->setAttr(name=>"motherboard_state", value => "up");
     $args{motherboard}->save();
@@ -246,9 +246,9 @@ sub motherboardRepaired{
 sub motherboardStopped{
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::motherboardStopped need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::motherboardStopped need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     $args{motherboard}->setAttr(name=>"motherboard_state", value => "down");
     $args{motherboard}->save();
@@ -263,9 +263,9 @@ sub motherboardStopped{
 sub motherboardStarted{
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::motherboardStarted need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::motherboardStarted need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     $args{motherboard}->setAttr(name=>"motherboard_state", value => "up");
     $args{motherboard}->save();
@@ -283,9 +283,9 @@ sub motherboardStarted{
 sub nodeBroken{
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::nodeBroken need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::nodeBroken need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     print "motherboard". $args{motherboard}->getAttr(name=>"motherboard_mac_address")." broken\n";
     $args{motherboard}->setNodeState(state => "broken:".time);
@@ -294,9 +294,9 @@ sub nodeBroken{
 sub nodeRepaired{
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::nodeRepaired need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::nodeRepaired need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     $args{motherboard}->setNodeState(state => "in");
 }
@@ -304,18 +304,18 @@ sub nodeRepaired{
 sub nodeOut{
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::nodeOut need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::nodeOut need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 
 sub nodeIn {
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::nodeIn need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::nodeIn need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     $args{motherboard}->setNodeState(state => "in");
 
@@ -326,9 +326,9 @@ sub nodeIn {
 sub incorrectMotherboard {
     my %args = @_;
     if ((!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::incorrectMotherboard need a motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::incorrectMotherboard need a motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     my $error = "Wrong motherboard <". $args{motherboard}->getAttr(name=>'motherboard_mac_address')."> must not be in cluster";
     throw Kanopya::Exception::Internal(error => $error);
@@ -339,9 +339,9 @@ sub incorrectStates {
     if ((!defined $args{motherboard} or !exists $args{motherboard})||
         ((!defined $args{services_available} or !exists $args{services_available})&&
          (!defined $args{pingable} or !exists $args{pingable}))){
-            $errmsg = "StateManager::incorrectStates need a motherboard and (pingable or services_available) named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::incorrectStates need a motherboard and (pingable or services_available) named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     my $state = $args{pingable} || $args{services_available};
     my $error = "Wrong state <$state> for motherboard <". $args{motherboard}->getAttr(name=>'motherboard_mac_address').">\n";
@@ -353,26 +353,26 @@ sub testPreGoingInNode {
     
     if ((!defined $args{cluster} or !exists $args{cluster})||
         (!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::testPreGoingInNode need a cluster and motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::testPreGoingInNode need a cluster and motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
     my $components= $args{cluster}->getComponents(category => "all");
     my $protoToTest;
     my $cluster_ready = 1;
 
-   	foreach my $i (keys %$components) {
-   	    if ($cluster_ready){
+       foreach my $i (keys %$components) {
+           if ($cluster_ready){
         $cluster_ready = $components->{$i}->readyNodeAddition(motherboard_id => $args{motherboard}->getAttr(name => "motherboard_id"));}
-   	    $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
-	}
+           $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
+    }
 
     if ($cluster_ready) {
     $log->debug("StateManager::testPreGoingInNode before enqueueing Startnode with motherboard_id <" .
                 $args{motherboard}->getAttr(name=>'motherboard_id')."> and cluster_id <" .
                 $args{cluster}->getAttr(name=>'cluster_id').">");
-	Operation->enqueue(
-    	priority => 200,
+    Operation->enqueue(
+        priority => 200,
         type     => 'StartNode',
         params   => {cluster_id => $args{cluster}->getAttr(name=>'cluster_id'),
                      motherboard_id => $args{motherboard}->getAttr(name=>'motherboard_id')});
@@ -384,25 +384,25 @@ sub testPreGoingOutNode {
     
     if ((!defined $args{cluster} or !exists $args{cluster})||
         (!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::testPreGoingOutNode need a cluster and motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::testPreGoingOutNode need a cluster and motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
     my $components= $args{cluster}->getComponents(category => "all");
     my $protoToTest;
     my $cluster_ready = 1;
 
-   	foreach my $i (keys %$components) {
+       foreach my $i (keys %$components) {
         $cluster_ready = $components->{$i}->readyNodeRemoving(motherboard_id => $args{motherboard}->getAttr(name => "motherboard_id")) && $cluster_ready;
-   	    $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
-	}
+           $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
+    }
 
     if ($cluster_ready) {
     $log->debug("StateManager::testPreGoingOutNode before enqueueing StopNode with motherboard_id <" .
                 $args{motherboard}->getAttr(name=>'motherboard_id')."> and cluster_id <" .
                 $args{cluster}->getAttr(name=>'cluster_id').">");
-	Operation->enqueue(
-    	priority => 200,
+    Operation->enqueue(
+        priority => 200,
         type     => 'StopNode',
         params   => {cluster_id => $args{cluster}->getAttr(name=>'cluster_id'),
                      motherboard_id => $args{motherboard}->getAttr(name=>'motherboard_id')},
@@ -434,9 +434,9 @@ sub updateMotherboardStatus {
     my %args = @_;
     if ((!defined $args{pingable} or !exists $args{pingable})||
         (!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::updateMotherboardStatus need a pingable and motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::updateMotherboardStatus need a pingable and motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
         }
     my %actions = (0 => { up        => \&motherboardBroken,
                           starting  => \&testStartingMotherboard,
@@ -486,8 +486,8 @@ sub updateClusterStatus {
             } else {
                 $adm->addMessage(from => 'State-manger', level => 'info', content => "Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now up !");
                 $log->info("Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now up !");
-   	            $args{cluster}->setAttr(name=>"cluster_state", value => "up");
-   	            $args{cluster}->save();
+                   $args{cluster}->setAttr(name=>"cluster_state", value => "up");
+                   $args{cluster}->save();
             }
         }
         else {
@@ -499,18 +499,18 @@ sub updateClusterStatus {
         if (!scalar keys %$motherboards){
             $adm->addMessage(from => 'State-manger', level => 'info', content => "Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now down !");
             $log->info("Cluster <".$args{cluster}->getAttr(name=>"cluster_name").">. is now down !");
-   	        $args{cluster}->setAttr(name=>"cluster_state", value => "down");
-   	        $args{cluster}->save();
+               $args{cluster}->setAttr(name=>"cluster_state", value => "down");
+               $args{cluster}->save();
         }
 # A case is not managed, when master_node flag change of motherboard because of failover during cluster stopping
         if( scalar keys %$motherboards == 1){
-   	        if (!$master_id){
-   	           $errmsg = "Last node in cluster is not master node ! My god...";	
-		       $log->error($errmsg);
-		      throw Kanopya::Exception::Internal(error => $errmsg);
+               if (!$master_id){
+                  $errmsg = "Last node in cluster is not master node ! My god...";    
+               $log->error($errmsg);
+              throw Kanopya::Exception::Internal(error => $errmsg);
             }
             if ($motherboards->{$master_id}->getNodeState() eq "in"){
-   	            my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
+                   my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
                               motherboard_id => $master_id);
                 $log->debug("New Operation PreStopNode with attrs : " . %params);
                 eval {
@@ -538,7 +538,7 @@ sub updateClusterStatus {
             ############################################################################
             eval {
                 Operation->enqueue(
-    	                       priority => 200,
+                               priority => 200,
                                type     => 'PreStopNode',
                                params   => \%params);};
             if ($@){
@@ -557,9 +557,9 @@ sub updateNodeStatus {
     if ((!defined $args{services_available} or !exists $args{services_available})||
         (!defined $args{motherboard} or !exists $args{motherboard}) ||
         (!defined $args{cluster} or !exists $args{cluster})){
-            $errmsg = "StateManager::updateNodeStatus need a srv_available and motherboard named argument!";	
-		    $log->error($errmsg);
-		    throw Kanopya::Exception::Internal(error => $errmsg);
+            $errmsg = "StateManager::updateNodeStatus need a srv_available and motherboard named argument!";    
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
     # state pregoingout is impossible when node is not available (it has to be repaired before)
     my %actions = (0 => { in        => \&nodeBroken,

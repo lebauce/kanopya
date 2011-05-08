@@ -75,51 +75,51 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
 
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
+    my $self = shift;
 
-	my $conf = { memcached1_port => "11211" };
+    my $conf = { memcached1_port => "11211" };
 
-	my $confindb = $self->{_dbix}->memcached1s->first();
-	if($confindb) {
-		my %row = $confindb->get_columns(); 
-		$conf = \%row;
-	}
+    my $confindb = $self->{_dbix}->memcached1s->first();
+    if($confindb) {
+        my %row = $confindb->get_columns(); 
+        $conf = \%row;
+    }
 
-	return $conf;
+    return $conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-	
-	# delete old conf		
-	my $conf_row = $self->{_dbix}->memcached1s->first();
-	$conf_row->delete() if (defined $conf_row); 
+    my $self = shift;
+    my ($conf) = @_;
+    
+    # delete old conf        
+    my $conf_row = $self->{_dbix}->memcached1s->first();
+    $conf_row->delete() if (defined $conf_row); 
 
-	# create
-	$conf_row = $self->{_dbix}->memcached1s->create( $conf );
+    # create
+    $conf_row = $self->{_dbix}->memcached1s->create( $conf );
 }
 
 # Commented because we want check this component only on master node
 #sub getNetConf {
-#	my $self = shift;
-#	my $conf = $self->getConf();
-#	return { $conf->{memcached1_port} => 'tcp' };
+#    my $self = shift;
+#    my $conf = $self->getConf();
+#    return { $conf->{memcached1_port} => 'tcp' };
 #}
 
 

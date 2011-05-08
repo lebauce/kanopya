@@ -60,32 +60,32 @@ our $VERSION = '1.00';
 
 =head2 _getOperation
 
-	Class : Private
-	
-	Desc : This function return _operation (type : Operation) stored into EOperation.
-	
-	args: None
-	
-	return : Operation : a hashref containing 2 hashref, global attrs and extended ones
+    Class : Private
+    
+    Desc : This function return _operation (type : Operation) stored into EOperation.
+    
+    args: None
+    
+    return : Operation : a hashref containing 2 hashref, global attrs and extended ones
 
 =cut
 
 sub _getOperation{
-	my $self = shift;
-	return $self->{_operation};
+    my $self = shift;
+    return $self->{_operation};
 }
 
 =head2 new
 
-	Class : Public
-	
-	Desc : This abstract method creates a new eoperation object.
-	
-	Args :
-		data : Operation : Operation get from Database)
-		
-	Return : Eoperation, this class could not be instanciated !!
-	
+    Class : Public
+    
+    Desc : This abstract method creates a new eoperation object.
+    
+    Args :
+        data : Operation : Operation get from Database)
+        
+    Return : Eoperation, this class could not be instanciated !!
+    
 
 =cut
 
@@ -94,103 +94,103 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data})) { 
-		$errmsg = "EOperation->new ($class) need a data named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-   	}
+        $errmsg = "EOperation->new ($class) need a data named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+       }
     
     
-   	$log->debug("Class is : $class");
+       $log->debug("Class is : $class");
     my $self = { 
-    	_operation => $args{data},
-    	duration_report => 20 	# default duration to wait during operation reporting (in seconds) 
+        _operation => $args{data},
+        duration_report => 20     # default duration to wait during operation reporting (in seconds) 
     };
     bless $self, $class;
-	$self->_init();
+    $self->_init();
 
     return $self;
 }
 
 =head2 _init
 
-	Class : Private
-	
-	Desc : This is a private method used to define internal parameters.
-	
-	Args :
+    Class : Private
+    
+    Desc : This is a private method used to define internal parameters.
+    
+    Args :
             None
-		
-	Return : Nothing
+        
+    Return : Nothing
 
 
 =cut
 
 sub _init {
-	my $self = shift;
-	$self->{internal_cluster} = {};
-	return;
+    my $self = shift;
+    $self->{internal_cluster} = {};
+    return;
 }
 
 =head2 prepare
 
-	Class : Public
-	
-	Desc : This method is the first method execute during eoperation execution.
-	Its goal is to prepare the operation execution. In this method args are
-	checked, entities and eentities need by operation execution 
-	( ex : cluster, motherboard, component, ecomponent, econtext ...) are load in $self
-	
-	Args :
-		None
-		
-	Return : Nothing
-	
-	Throw
+    Class : Public
+    
+    Desc : This method is the first method execute during eoperation execution.
+    Its goal is to prepare the operation execution. In this method args are
+    checked, entities and eentities need by operation execution 
+    ( ex : cluster, motherboard, component, ecomponent, econtext ...) are load in $self
+    
+    Args :
+        None
+        
+    Return : Nothing
+    
+    Throw
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	
-	my $id = $self->_getOperation();
-	$log->debug("Class is : $id");
-	$self->{userid} = $self->_getOperation()->getAttr(attr_name => "user_id");
-	$log->debug("Change user by user_id : $self->{userid}");	
-#	my $adm = Administrator->new();
-	$self->{erollback} = ERollback->new();
-	#$adm->changeUser(user_id => $self->{userid});
+    my $self = shift;
+    
+    my $id = $self->_getOperation();
+    $log->debug("Class is : $id");
+    $self->{userid} = $self->_getOperation()->getAttr(attr_name => "user_id");
+    $log->debug("Change user by user_id : $self->{userid}");    
+#    my $adm = Administrator->new();
+    $self->{erollback} = ERollback->new();
+    #$adm->changeUser(user_id => $self->{userid});
 }
 
 =head2 execute
 
-	Class : Public
-	
-	Desc : This method is the real execution method.
-	
-	Args :
-		None
-		
-	Return : Nothing
-	
-	Throw
+    Class : Public
+    
+    Desc : This method is the real execution method.
+    
+    Args :
+        None
+        
+    Return : Nothing
+    
+    Throw
 
 =cut
 
 #sub execute {}
 
 sub process{
-    	my $self = shift;
-#	$self->SUPER::execute();
-	my $adm = Administrator->new();
+        my $self = shift;
+#    $self->SUPER::execute();
+    my $adm = Administrator->new();
 
     eval {
         $self->execute();
     };
     if ($@){
         my $error = $@;
-		$errmsg = "Operation <".ref($self)."> failed an error occured :\n$error\nOperation will be rollbacked";
-		$log->error($errmsg);
-		$self->{erollback}->undo();
+        $errmsg = "Operation <".ref($self)."> failed an error occured :\n$error\nOperation will be rollbacked";
+        $log->error($errmsg);
+        $self->{erollback}->undo();
         throw Kanopya::Exception::Execution::Rollbacked(error => $errmsg);
 
     }
@@ -198,61 +198,61 @@ sub process{
 
 =head2 finish
 
-	Class : Public
-	
-	Desc : This method is the last execution operation method called. 
-	It is used to clean and finalize operation execution
-	
-	Args :
-		None
-		
-	Return : Nothing
-	
-	Throw
+    Class : Public
+    
+    Desc : This method is the last execution operation method called. 
+    It is used to clean and finalize operation execution
+    
+    Args :
+        None
+        
+    Return : Nothing
+    
+    Throw
 
 =cut
 sub finish {}
 
 sub report {
-	my $self = shift;
-	$log->debug("Reporting operation with duration_report : $self->{duration_report}");
-	$self->_getOperation()->setHopedExecutionTime(value => $self->{duration_report});
+    my $self = shift;
+    $log->debug("Reporting operation with duration_report : $self->{duration_report}");
+    $self->_getOperation()->setHopedExecutionTime(value => $self->{duration_report});
 }
 
 sub delete {
-	my $self = shift;
-	my $adm = Administrator->new();
-	$self->{_operation}->delete();	
+    my $self = shift;
+    my $adm = Administrator->new();
+    $self->{_operation}->delete();    
 }
 
 sub execute {}
 
 =head2
-	
-	Class : Public
-	
-	Desc : load in $self->{ args{service} }->{econtext} the context correponding to the specified service
-	
-	Args : service : service name (e.g. 'nas', 'bootserver', 'executor', 'monitor')
-	
+    
+    Class : Public
+    
+    Desc : load in $self->{ args{service} }->{econtext} the context correponding to the specified service
+    
+    Args : service : service name (e.g. 'nas', 'bootserver', 'executor', 'monitor')
+    
 =cut
 
 sub loadContext {
-	my $self = shift;
-	my %args = @_;
-	
-	General::checkParams( args => \%args, required => ['internal_cluster', 'service'] );
-	
-	# Retrieve executor ip (used for source all context)
-	if (not defined $self->{exec_cluster_ip}) {
-		my $exec_cluster = Entity::Cluster->get(id => $args{internal_cluster}->{'executor'});
-		$self->{exec_cluster_ip} = $exec_cluster->getMasterNodeIp();
-	}
-	
-	my $cluster = Entity::Cluster->get(id => $args{internal_cluster}->{$args{service}});
-	my $serv_ip = $cluster->getMasterNodeIp();
-	$self->{$args{service}}->{econtext} = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $serv_ip);
-	
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams( args => \%args, required => ['internal_cluster', 'service'] );
+    
+    # Retrieve executor ip (used for source all context)
+    if (not defined $self->{exec_cluster_ip}) {
+        my $exec_cluster = Entity::Cluster->get(id => $args{internal_cluster}->{'executor'});
+        $self->{exec_cluster_ip} = $exec_cluster->getMasterNodeIp();
+    }
+    
+    my $cluster = Entity::Cluster->get(id => $args{internal_cluster}->{$args{service}});
+    my $serv_ip = $cluster->getMasterNodeIp();
+    $self->{$args{service}}->{econtext} = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $serv_ip);
+    
 }
 
 =head1 DIAGNOSTICS

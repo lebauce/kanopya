@@ -49,11 +49,11 @@ my $VERSION = "1.00";
 =cut
 
 sub new {
-	my $class = shift;
-	my %args = @_;
-		
-	my $self = {
-		function    => undef,
+    my $class = shift;
+    my %args = @_;
+        
+    my $self = {
+        function    => undef,
         parameters  => undef,
         next_item   => undef,
         prev_item   => undef,
@@ -69,23 +69,23 @@ sub new {
 =cut
 
 sub add {
-	my $self = shift;
+    my $self = shift;
     my %args = @_;
     
-	General::checkParams(args => \%args,
-	                     required => ['function', 'parameters']);
+    General::checkParams(args => \%args,
+                         required => ['function', 'parameters']);
 #    if((! exists $args{function} or ! defined $args{function}) or
-#	   (! exists $args{parameters} or ! defined $args{parameters})) {
-#		$errmsg = "ERollback->add need function and parameters named arguments";
-#		$log->error($errmsg);
-#		throw Kanopya::Exception::Internal(error => $errmsg);   	
-#	}
+#       (! exists $args{parameters} or ! defined $args{parameters})) {
+#        $errmsg = "ERollback->add need function and parameters named arguments";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg);       
+#    }
     $self->{last_inserted} = undef;
     $log->debug("add rollback func $args{function}");
     if(not defined $self->{function}) {
-    	$self->{function} = $args{function};
-    	$self->{parameters} = $args{parameters};
-    	$self->{last_inserted} = $self;
+        $self->{function} = $args{function};
+        $self->{parameters} = $args{parameters};
+        $self->{last_inserted} = $self;
     } else {
         if ($self->{before}){
             my $eroll = $self->find(erollback => $self->{before});
@@ -129,8 +129,8 @@ sub add {
 sub find {
     my $self = shift;
     my %args = @_;
-	General::checkParams(args => \%args,
-	                     required => ['erollback']);
+    General::checkParams(args => \%args,
+                         required => ['erollback']);
     my $tmp = $self;
 
     while ($tmp->{'next_item'}) {
@@ -144,16 +144,16 @@ sub find {
 sub insertNextErollBefore{
     my $self = shift;
     my %args = @_;
-	General::checkParams(args => \%args,
-	                     required => ['erollback']);
+    General::checkParams(args => \%args,
+                         required => ['erollback']);
     $self->{before} = $args{erollback};
 }
 
 sub insertNextErollAfter{
     my $self = shift;
     my %args = @_;
-	General::checkParams(args => \%args,
-	                     required => ['erollback']);
+    General::checkParams(args => \%args,
+                         required => ['erollback']);
     $self->{after} = $args{erollback};
 }
 
@@ -166,7 +166,7 @@ sub getLastInserted{
 =cut
 
 sub _last {
-	my $self = shift;
+    my $self = shift;
     my $tmp = $self;
 
     while ($tmp->{'next_item'}) {
@@ -180,7 +180,7 @@ sub _last {
 =cut
 
 sub recursive_del {
-	my $self = shift;
+    my $self = shift;
     if ($self->{'next_item'}) {
         $self->{'next_item'}->recursive_del();
     }
@@ -192,14 +192,14 @@ sub recursive_del {
 =cut
 
 sub undo {
-	my $self = shift;
+    my $self = shift;
     my $tmp = $self->_last;
 
     while ($tmp && $tmp->{function}) {
         my $fn = $tmp->{function};
         my $args = $tmp->{parameters};
         $log->info("undo $fn ");
-	$fn->(@$args);
+    $fn->(@$args);
         $tmp = $tmp->{prev_item};
     }
     $self->recursive_del;

@@ -87,26 +87,26 @@ sub _init {
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	$log->info("Operation preparation");
+    $log->info("Operation preparation");
 
     # Check if internal_cluster exists
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "ECreateExport->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "ECreateExport->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
     
     # Get Operation parameters
-	my $params = $self->_getOperation()->getParams();
+    my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
     
 
@@ -116,8 +116,8 @@ sub prepare {
         (! exists $params->{filesystem} or ! defined $params->{filesystem}) ||
         (! exists $params->{vg_id} or ! defined $params->{vg_id})){
         my $error = $@;
-		$errmsg = "Operation ECreateLogicalVolume failed, missing parameters";
-		$log->error($errmsg);
+        $errmsg = "Operation ECreateLogicalVolume failed, missing parameters";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     $self->{params} = $params;
@@ -125,40 +125,40 @@ sub prepare {
     my $comp_lvm = Entity::Component::Storage::Lvm2->get(id => $params->{component_instance_id});
     my $comp_desc = $comp_lvm->getComponentAttr();
     if (! $comp_desc->{component_name} eq "Lvm") {
-		$errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
     my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
     $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
     if (!($self->{_objs}->{cluster}->getAttr(name=>"cluster_state") eq "up")){
         $errmsg = "Cluster has to be up !";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     
     # Instanciate executor Cluster
-	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
     
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
-	
-	$self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
-	
+    
+    $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
+    
 }
 
 sub execute{
-	my $self = shift;
-	
-	my $adm = Administrator->new();
+    my $self = shift;
+    
+    my $adm = Administrator->new();
     $self->{_objs}->{ecomp_lvm}->createDisk(name       => $self->{params}->{disk_name},
                                             size       => $self->{params}->{size},
                                             filesystem => $self->{params}->{filesystem},
                                             econtext   => $self->{cluster_econtext},
                                             erollback  => $self->{erollback});
 
-	$log->info("New Logical volume <" . $self->{params}->{disk_name} . "> created");
+    $log->info("New Logical volume <" . $self->{params}->{disk_name} . "> created");
 }
 
 =head1 DIAGNOSTICS

@@ -73,7 +73,7 @@ B<Return>  : a new Entity::Component::Storage::Lvm2 from Kanopya Database
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub get {
@@ -81,10 +81,10 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Component::Storage::Lvm2->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Component::Storage::Lvm2->get need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
    return $self;
 }
@@ -100,132 +100,132 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-		(! exists $args{component_id} or ! defined $args{component_id})){ 
-		$errmsg = "Entity::Component::Storage::Lvm2->new need a cluster_id and a component_id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    
+    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+        (! exists $args{component_id} or ! defined $args{component_id})){ 
+        $errmsg = "Entity::Component::Storage::Lvm2->new need a cluster_id and a component_id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getMainVg{
-	my $self = shift;
-	my $vgname = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_name');
-	my $vgid = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_id');
-	$log->debug("Main VG founds, its id is <$vgid>");
-	#TODO getMainVg, return id or name ?
-	return {vgid => $vgid, vgname =>$vgname};
+    my $self = shift;
+    my $vgname = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_name');
+    my $vgid = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_id');
+    $log->debug("Main VG founds, its id is <$vgid>");
+    #TODO getMainVg, return id or name ?
+    return {vgid => $vgid, vgname =>$vgname};
 }
 
 sub getVg {
     my $self = shift;
-	my %args = @_;
-	
-	if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id})) { 
-		$errmsg = "Lvm2->getVg need a lvm2_vg_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	return  $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->get_column('lvm2_vg_name');
+    my %args = @_;
+    
+    if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id})) { 
+        $errmsg = "Lvm2->getVg need a lvm2_vg_id named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    return  $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->get_column('lvm2_vg_name');
 }
 
 sub lvCreate{
-	my $self = shift;
-	my %args = @_;
-	
-	if ((! exists $args{lvm2_lv_name} or ! defined $args{lvm2_lv_name}) ||
-		(! exists $args{lvm2_lv_size} or ! defined $args{lvm2_lv_size}) ||
-		(! exists $args{lvm2_lv_filesystem} or ! defined $args{lvm2_lv_filesystem}) ||
-		(! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id})) { 
-		$errmsg = "Lvm2->LvCreate need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	$log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_lv_size is $args{lvm2_lv_size}, lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, lvm2_vg_id is $args{lvm2_vg_id}");
-	my $lv_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs;
-	my $res = $lv_rs->create(\%args);
-	
-	$log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
-	return $res->get_column("lvm2_lv_id");
+    my $self = shift;
+    my %args = @_;
+    
+    if ((! exists $args{lvm2_lv_name} or ! defined $args{lvm2_lv_name}) ||
+        (! exists $args{lvm2_lv_size} or ! defined $args{lvm2_lv_size}) ||
+        (! exists $args{lvm2_lv_filesystem} or ! defined $args{lvm2_lv_filesystem}) ||
+        (! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id})) { 
+        $errmsg = "Lvm2->LvCreate need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_lv_size is $args{lvm2_lv_size}, lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, lvm2_vg_id is $args{lvm2_vg_id}");
+    my $lv_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs;
+    my $res = $lv_rs->create(\%args);
+    
+    $log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
+    return $res->get_column("lvm2_lv_id");
 }
 
 sub vgSizeUpdate{
-	my $self = shift;
-	my %args = @_;
-	
-	if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
-		(! exists $args{lvm2_vg_freespace} or ! defined $args{lvm2_vg_freespace})) { 
-		$errmsg = "Lvm2->vgSizeUpdate need lvm2_vg_id and lvm2_vg_freespace named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $vg_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}});
-	delete $args{lvm2_vg_id};
-	return $vg_rs->update(\%args);
+    my $self = shift;
+    my %args = @_;
+    
+    if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
+        (! exists $args{lvm2_vg_freespace} or ! defined $args{lvm2_vg_freespace})) { 
+        $errmsg = "Lvm2->vgSizeUpdate need lvm2_vg_id and lvm2_vg_freespace named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $vg_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}});
+    delete $args{lvm2_vg_id};
+    return $vg_rs->update(\%args);
 }
 
 sub lvRemove{
-	my $self = shift;
-	my %args = @_;
-	
-	if ((! exists $args{lvm2_lv_name} or ! defined $args{lvm2_lv_name}) ||
-		(! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id})) { 
-		$errmsg = "Lvm2->LvRemove need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    my $self = shift;
+    my %args = @_;
+    
+    if ((! exists $args{lvm2_lv_name} or ! defined $args{lvm2_lv_name}) ||
+        (! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id})) { 
+        $errmsg = "Lvm2->LvRemove need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
 # ICI Recuperer le bon vg et ensuite suivre le lien lv et new dedans
-	$log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_vg_id is $args{lvm2_vg_id}");
-	my $lv_row = $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->lvm2_lvs->single({lvm2_lv_name => $args{lvm2_lv_name}});
-	$lv_row->delete();
-	$log->info("lvm2 logical volume $args{lvm2_lv_name} deleted from database");
+    $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_vg_id is $args{lvm2_vg_id}");
+    my $lv_row = $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->lvm2_lvs->single({lvm2_lv_name => $args{lvm2_lv_name}});
+    $lv_row->delete();
+    $log->info("lvm2 logical volume $args{lvm2_lv_name} deleted from database");
 }
 
 sub getConf {
-	my $self = shift;
+    my $self = shift;
 
-	my $conf = {};
-	my $lineindb = $self->{_dbix}->lvm2_vgs->first;
-	if(defined $lineindb) {
-		my %dbconf = $lineindb->get_columns();
-		$conf = \%dbconf;
-		
-		my $lv_rs = $lineindb->lvm2_lvs;
-		my @tab_lv = ();
-		while (my $lv_row = $lv_rs->next){
-			my %lv = $lv_row->get_columns();
-			delete $lv{'lvm2_vg_id'};
-			push @tab_lv, \%lv;
-		}
-		$conf->{lvm2_lvs} = \@tab_lv;
-	}
-	
-	return $conf;
+    my $conf = {};
+    my $lineindb = $self->{_dbix}->lvm2_vgs->first;
+    if(defined $lineindb) {
+        my %dbconf = $lineindb->get_columns();
+        $conf = \%dbconf;
+        
+        my $lv_rs = $lineindb->lvm2_lvs;
+        my @tab_lv = ();
+        while (my $lv_row = $lv_rs->next){
+            my %lv = $lv_row->get_columns();
+            delete $lv{'lvm2_vg_id'};
+            push @tab_lv, \%lv;
+        }
+        $conf->{lvm2_lvs} = \@tab_lv;
+    }
+    
+    return $conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
+    my $self = shift;
+    my ($conf) = @_;
 
-	my $vg_id = $conf->{lvm2_vg_id};
-	for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
-		$self->createLogicalVolume(	vg_id => $vg_id,
-									disk_name => $new_lv->{lvm2_lv_name},
-									size => $new_lv->{lvm2_lv_size},
-									filesystem => $new_lv->{lvm2_lv_filesystem});
-	}
+    my $vg_id = $conf->{lvm2_vg_id};
+    for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
+        $self->createLogicalVolume(    vg_id => $vg_id,
+                                    disk_name => $new_lv->{lvm2_lv_name},
+                                    size => $new_lv->{lvm2_lv_size},
+                                    filesystem => $new_lv->{lvm2_lv_filesystem});
+    }
 
 }
 
@@ -236,16 +236,16 @@ sub createLogicalVolume {
        (! exists $args{size} or ! defined $args{size}) ||
        (! exists $args{filesystem} or ! defined $args{filesystem}) ||
        (! exists $args{vg_id} or ! defined $args{vg_id})) {
-	   	$errmsg = "CreateLogicalVolume needs disk_name, size and filesystem named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $admin = Administrator->new();
-	
+           $errmsg = "CreateLogicalVolume needs disk_name, size and filesystem named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $admin = Administrator->new();
+    
     my %params = $self->getAttrs();
     $log->debug("New Operation CreateLogicalVolume with attrs : " . %params);
     Operation->enqueue(
-    	priority => 200,
+        priority => 200,
         type     => 'CreateLogicalVolume',
         params   => {
             component_instance_id => $self->getAttr(name=>'component_instance_id'),

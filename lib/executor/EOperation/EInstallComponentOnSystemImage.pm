@@ -86,46 +86,46 @@ sub _init {
 
 sub checkOp{
     my $self = shift;
-	my %args = @_;
+    my %args = @_;
     
 
 }
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	$log->info("Operation preparation");
+    $log->info("Operation preparation");
 
     # Check if internal_cluster exists
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EInstallComponentInSystemImage->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "EInstallComponentInSystemImage->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
     
     # Get Operation parameters
-	my $params = $self->_getOperation()->getParams();
+    my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
- 	# Cluster instantiation
+     # Cluster instantiation
     #TODO Get Systemimage
 
 
 
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EInstallComponentInSystemImage->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $errmsg = "EOperation::EInstallComponentInSystemImage->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
     ### Check Parameters and context
@@ -134,20 +134,20 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateCluster failed an error occured :\n$error";
-		$log->error($errmsg);
+        $errmsg = "Operation ActivateCluster failed an error occured :\n$error";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
 }
 
 sub execute{
-	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	
+    my $self = shift;
+    $log->debug("Before EOperation exec");
+    $self->SUPER::execute();
+    
 
-		
+        
 }
 
 =head1 DIAGNOSTICS

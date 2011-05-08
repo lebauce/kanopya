@@ -35,13 +35,13 @@ sub new {
 
 
 sub preStartNode {
-	my $self = shift;
-	my %args = @_;
-	my $pleskpanel = $self->_getEntity();
-	my $conf = $pleskpanel->getConf();
-	my $motherboard = $args{motherboard};
-	$motherboard->setAttr(name => 'motherboard_hostname', value => $conf->{pleskpanel10_hostname});
-	$motherboard->save();
+    my $self = shift;
+    my %args = @_;
+    my $pleskpanel = $self->_getEntity();
+    my $conf = $pleskpanel->getConf();
+    my $motherboard = $args{motherboard};
+    $motherboard->setAttr(name => 'motherboard_hostname', value => $conf->{pleskpanel10_hostname});
+    $motherboard->save();
 }
 
 1;

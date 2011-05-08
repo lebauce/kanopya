@@ -48,152 +48,152 @@ my $errmsg;
 sub enqueue {
     my $class = shift;
     my %args = @_;
-	if ((! exists $args{priority} or ! defined $args{priority}) ||
-		(! exists $args{type} or ! defined $args{type}) ||
-		(! exists $args{params} or ! defined $args{params})) {
-			$errmsg = "Operation->enqueue need a priority, params and type named argument!";
-			$log->error($errmsg); 
-			throw Kanopya::Exception::Internal(error => $errmsg); 
-	}
-	my $params = $args{params};
-	my @hash_keys = keys %$params;
-	foreach my $key (@hash_keys) {
-	    if (! defined $params->{$key}){
-	        $errmsg = "Operation->enqueue needs defined params";
-			$log->error($errmsg); 
-			throw Kanopya::Exception::Internal(error => $errmsg);
-	    }
-	}
-	my $adm = Administrator->new();
-	my $nbparams = scalar(@hash_keys);
-	my $whereclause = [];
-	while( my ($key, $value) = each %{$args{params}}) {
-		$log->debug("key $key value $value");
-		push @$whereclause, {name => $key, value =>$value};
-	}
-		
-	my $op_rs = $adm->{db}->resultset('Operation')->search(
-		{	type => $args{type}, 
-			-or => $whereclause,
-		},
-		{ 	select => [{ count => 'operation_parameters.operation_id', -as => 'mycount'}],
-			join => 'operation_parameters',
-			group_by => 'operation_parameters.operation_id',
-			having => { 'mycount' => $nbparams }
-		}
-	);
-	my @rows = $op_rs->all;
-	if(scalar(@rows)) {
-		$errmsg = "An operation with exactly same parameters already enqueued !";
-		throw Kanopya::Exception::OperationAlreadyEnqueued(error => $errmsg);
-	}
-	
-	#$log->debug("-------------------> total count : ".(scalar(@rows)));
-	   
+    if ((! exists $args{priority} or ! defined $args{priority}) ||
+        (! exists $args{type} or ! defined $args{type}) ||
+        (! exists $args{params} or ! defined $args{params})) {
+            $errmsg = "Operation->enqueue need a priority, params and type named argument!";
+            $log->error($errmsg); 
+            throw Kanopya::Exception::Internal(error => $errmsg); 
+    }
+    my $params = $args{params};
+    my @hash_keys = keys %$params;
+    foreach my $key (@hash_keys) {
+        if (! defined $params->{$key}){
+            $errmsg = "Operation->enqueue needs defined params";
+            $log->error($errmsg); 
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+    }
+    my $adm = Administrator->new();
+    my $nbparams = scalar(@hash_keys);
+    my $whereclause = [];
+    while( my ($key, $value) = each %{$args{params}}) {
+        $log->debug("key $key value $value");
+        push @$whereclause, {name => $key, value =>$value};
+    }
+        
+    my $op_rs = $adm->{db}->resultset('Operation')->search(
+        {    type => $args{type}, 
+            -or => $whereclause,
+        },
+        {     select => [{ count => 'operation_parameters.operation_id', -as => 'mycount'}],
+            join => 'operation_parameters',
+            group_by => 'operation_parameters.operation_id',
+            having => { 'mycount' => $nbparams }
+        }
+    );
+    my @rows = $op_rs->all;
+    if(scalar(@rows)) {
+        $errmsg = "An operation with exactly same parameters already enqueued !";
+        throw Kanopya::Exception::OperationAlreadyEnqueued(error => $errmsg);
+    }
+    
+    #$log->debug("-------------------> total count : ".(scalar(@rows)));
+       
     my $operation = Operation->new(%args);
     $operation->save();
 }
 
 sub new {
     my $class = shift;
-	my %args = @_;
-	my $self = {};
-	if ((! exists $args{priority} or ! defined $args{priority}) ||
-		(! exists $args{type} or ! defined $args{type}) ||
-		(! exists $args{params} or ! defined $args{params})) {
-			$errmsg = "Operation->new need a priority, params and type named argument!";
-			$log->error($errmsg); 
-			throw Kanopya::Exception::Internal(error => $errmsg); 
-	}
-	my $adm = Administrator->new();
-	
-	my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef; 
-	my $execution_rank = $adm->_get_lastRank() + 1;
-	my $user_id = $adm->{_rightchecker}->{user_id};
-	
-	$self->{_dbix} = $adm->_newDbix( table => 'Operation', row => { 	type => $args{type},
-																	execution_rank => $execution_rank,
-																	user_id => $user_id,
-																	priority => $args{priority},
-																	creation_date => \"CURRENT_DATE()",
-																	creation_time => \"CURRENT_TIME()",
-																	hoped_execution_time => $hoped_execution_time
-																	});
+    my %args = @_;
+    my $self = {};
+    if ((! exists $args{priority} or ! defined $args{priority}) ||
+        (! exists $args{type} or ! defined $args{type}) ||
+        (! exists $args{params} or ! defined $args{params})) {
+            $errmsg = "Operation->new need a priority, params and type named argument!";
+            $log->error($errmsg); 
+            throw Kanopya::Exception::Internal(error => $errmsg); 
+    }
+    my $adm = Administrator->new();
+    
+    my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef; 
+    my $execution_rank = $adm->_get_lastRank() + 1;
+    my $user_id = $adm->{_rightchecker}->{user_id};
+    
+    $self->{_dbix} = $adm->_newDbix( table => 'Operation', row => {     type => $args{type},
+                                                                    execution_rank => $execution_rank,
+                                                                    user_id => $user_id,
+                                                                    priority => $args{priority},
+                                                                    creation_date => \"CURRENT_DATE()",
+                                                                    creation_time => \"CURRENT_TIME()",
+                                                                    hoped_execution_time => $hoped_execution_time
+                                                                    });
     $self->{_params} = $args{params};
-	bless $self, $class;
+    bless $self, $class;
 
     return $self;
 }
 
 =head2 get
-	
-	Class : Public
-	
-	Desc : This method instanciate Operation.
-	
-	Args :
-		data : DBIx class: object data
-		params : hashref : Operation parameters
-	Return : Operation, this class could not be instanciated !!
-	
+    
+    Class : Public
+    
+    Desc : This method instanciate Operation.
+    
+    Args :
+        data : DBIx class: object data
+        params : hashref : Operation parameters
+    Return : Operation, this class could not be instanciated !!
+    
 =cut
 
 sub get {
     my $class = shift;
     my %args = @_;
-	my $self = {};
-	if ((! exists $args{id} or ! defined $args{id})) {
-			$errmsg = "Operation->get need an id named argument!";
-			$log->error($errmsg); 
-			throw Kanopya::Exception::Internal(error => $errmsg); 
-	}
-	my $adm = Administrator->new();
-	$self->{_dbix} = $adm->{db}->resultset( "Operation" )->find(  $args{id});
-#	$self->{_dbix} = $adm->getRow(id=>$args{id}, table => "Operation");
-	# Get Operation parameters
-	my $params_rs = $self->{_dbix}->operation_parameters;
-	my %params;
-	while ( my $param = $params_rs->next ) {
-		$params{ $param->name } = $param->value;
-	}
-	$self->{_params} = \%params;
-	$log->debug("Parameters ", Dumper (%params));
+    my $self = {};
+    if ((! exists $args{id} or ! defined $args{id})) {
+            $errmsg = "Operation->get need an id named argument!";
+            $log->error($errmsg); 
+            throw Kanopya::Exception::Internal(error => $errmsg); 
+    }
+    my $adm = Administrator->new();
+    $self->{_dbix} = $adm->{db}->resultset( "Operation" )->find(  $args{id});
+#    $self->{_dbix} = $adm->getRow(id=>$args{id}, table => "Operation");
+    # Get Operation parameters
+    my $params_rs = $self->{_dbix}->operation_parameters;
+    my %params;
+    while ( my $param = $params_rs->next ) {
+        $params{ $param->name } = $param->value;
+    }
+    $self->{_params} = \%params;
+    $log->debug("Parameters ", Dumper (%params));
     bless $self, $class;
     return $self;
 
 }
 
 =head2 getNextOp
-	
-	Class : Public
-	
-	Desc : This method return next operation to execute
+    
+    Class : Public
+    
+    Desc : This method return next operation to execute
 
-	Returns the concrete Operation with the execution_rank min 
-	
+    Returns the concrete Operation with the execution_rank min 
+    
 =cut
 
 sub getNextOp {
-	my $adm = Administrator->new();
-	# Get all operation
-	my $all_ops = $adm->_getDbixFromHash( table => 'Operation', hash => {});
-	#$log->debug("Get Operation $all_ops");
-	
-	# Choose the next operation to be treated :
-	# if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
-	# unless operation is not execute at this moment
-	#$log->error("Time is : ", time);
-	my $opdata = $all_ops->search( 
-		{ -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
-		{ order_by => { -asc => 'execution_rank' }}   
-	)->next();
-	if (! defined $opdata){
-	    #$log->info("No operation in queue");
-	    return;
-	}
-	my $op = Operation->get(id => $opdata->get_column("operation_id"));
-	$log->info("Operation execution: ".$op->getAttr(attr_name => 'type'));
-	return $op;
+    my $adm = Administrator->new();
+    # Get all operation
+    my $all_ops = $adm->_getDbixFromHash( table => 'Operation', hash => {});
+    #$log->debug("Get Operation $all_ops");
+    
+    # Choose the next operation to be treated :
+    # if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
+    # unless operation is not execute at this moment
+    #$log->error("Time is : ", time);
+    my $opdata = $all_ops->search( 
+        { -or => [ hoped_execution_time => undef, hoped_execution_time => {'<',time}] }, 
+        { order_by => { -asc => 'execution_rank' }}   
+    )->next();
+    if (! defined $opdata){
+        #$log->info("No operation in queue");
+        return;
+    }
+    my $op = Operation->get(id => $opdata->get_column("operation_id"));
+    $log->info("Operation execution: ".$op->getAttr(attr_name => 'type'));
+    return $op;
 }
 
 sub getType{
@@ -202,121 +202,121 @@ sub getType{
 }
 
 =head2 delete
-	
-	Class : Public
-	
-	Desc : This method delete Operation and its parameters
-	
+    
+    Class : Public
+    
+    Desc : This method delete Operation and its parameters
+    
 =cut
 
 sub delete {
-	my $self = shift;
+    my $self = shift;
 
-	my $params_rs = $self->{_dbix}->operation_parameters;
-	$params_rs->delete;
-	$self->{_dbix}->delete();
-	$log->info(ref($self)." deleted from database (removed from execution list)");
+    my $params_rs = $self->{_dbix}->operation_parameters;
+    $params_rs->delete;
+    $self->{_dbix}->delete();
+    $log->info(ref($self)." deleted from database (removed from execution list)");
 }
 
 =head2 getAttr
-	
-	Class : Public
-	
-	Desc : This method return operation Attr specified in args
-	
-	args :
-		attr_name : String : Attribute name
-	
-	Return : String : Parameter specified
-	
+    
+    Class : Public
+    
+    Desc : This method return operation Attr specified in args
+    
+    args :
+        attr_name : String : Attribute name
+    
+    Return : String : Parameter specified
+    
 =cut
 
 sub getAttr {
-	my $self = shift;
+    my $self = shift;
     my %args = @_;
-	my $value;
+    my $value;
 
-	if (! exists $args{attr_name} or ! defined $args{attr_name}) { 
-		$errmsg = "Operation->getAttr need an attr_name named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
+    if (! exists $args{attr_name} or ! defined $args{attr_name}) { 
+        $errmsg = "Operation->getAttr need an attr_name named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 
-	if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
-		$value = $self->{_dbix}->get_column( $args{attr_name} );
-		$log->debug(ref($self) . " getAttr of $args{attr_name} : $value");
-	} else {
-		$errmsg = "Operation->getAttr : Wrong value asked!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	return $value;
+    if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
+        $value = $self->{_dbix}->get_column( $args{attr_name} );
+        $log->debug(ref($self) . " getAttr of $args{attr_name} : $value");
+    } else {
+        $errmsg = "Operation->getAttr : Wrong value asked!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    return $value;
 }
 
 =head2 getParams
-	
-	Class : Public
-	
-	Desc : This method returns all params 
-	
-	Return : hashref : all parameters of operation
+    
+    Class : Public
+    
+    Desc : This method returns all params 
+    
+    Return : hashref : all parameters of operation
 =cut
 
 sub getParams {
-	my $self = shift;
-	my %params;
+    my $self = shift;
+    my %params;
 
-	my $params_rs = $self->{_dbix}->operation_parameters;
-	while (my $param = $params_rs->next){
-		$params{$param->name} = $param->value;
-	}
-	return \%params;
+    my $params_rs = $self->{_dbix}->operation_parameters;
+    while (my $param = $params_rs->next){
+        $params{$param->name} = $param->value;
+    }
+    return \%params;
 }
 
 =head2 save
 
-	Class : Public
-	
-	Desc : Save operation and its params
-	args : 
-		op : Entity::Operation::OperationType : 
-			concrete Entity::Operation type (Real Operation type (AddMotherboard, MigrateNode, ...))
+    Class : Public
+    
+    Desc : Save operation and its params
+    args : 
+        op : Entity::Operation::OperationType : 
+            concrete Entity::Operation type (Real Operation type (AddMotherboard, MigrateNode, ...))
 
 =cut
 
 sub save {
-	my $self = shift;
+    my $self = shift;
 
-	my $newentity = $self->{_dbix}->insert;
-	my $params = $self->{_params};
-	
-	foreach my $k (keys %$params) {
-		$self->{_dbix}->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );}
-	$log->info(ref($self)." saved to database (added in execution list)");
+    my $newentity = $self->{_dbix}->insert;
+    my $params = $self->{_params};
+    
+    foreach my $k (keys %$params) {
+        $self->{_dbix}->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );}
+    $log->info(ref($self)." saved to database (added in execution list)");
 }
 
 =head setHopedExecutionTime
-	modify the field value hoped_execution_time in database
-	arg: value : duration in seconds 
+    modify the field value hoped_execution_time in database
+    arg: value : duration in seconds 
 =cut
 
 sub setHopedExecutionTime {
-	my $self = shift;
-	my %args = @_;
-	if (! exists $args{value} or ! defined $args{value}) { 
-		$errmsg = "Operation->setHopedExecutionTime need a value named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $t = time + $args{value};
-	$self->{_dbix}->set_column('hoped_execution_time', $t);
-	$self->{_dbix}->update;
-	$log->debug("hoped_execution_time updated with value : $t");
+    my $self = shift;
+    my %args = @_;
+    if (! exists $args{value} or ! defined $args{value}) { 
+        $errmsg = "Operation->setHopedExecutionTime need a value named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    my $t = time + $args{value};
+    $self->{_dbix}->set_column('hoped_execution_time', $t);
+    $self->{_dbix}->update;
+    $log->debug("hoped_execution_time updated with value : $t");
 }
 
 sub setProcessing {
-	my $self = shift;
-	$self->{_dbix}->update({'execution_rank' => 0});
+    my $self = shift;
+    $self->{_dbix}->update({'execution_rank' => 0});
 }
 
 1;

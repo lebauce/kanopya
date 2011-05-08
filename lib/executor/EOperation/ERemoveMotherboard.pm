@@ -72,26 +72,26 @@ sub new {
 
 =head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
+    $op->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
-	my $self = shift;
+    my $self = shift;
 
-	return;
+    return;
 }
 
 sub checkOp{
     my $self = shift;
-	my %args = @_;
-	
+    my %args = @_;
+    
     # check if motherboard is not active
     $log->debug("checking motherboard active value <$args{params}->{motherboard_id}>");
-   	if($self->{_objs}->{motherboard}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::EActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
-	    	$log->error($errmsg);
-	    	throw Kanopya::Exception::Internal(error => $errmsg);
+       if($self->{_objs}->{motherboard}->getAttr(name => 'active')) {
+            $errmsg = "EOperation::EActivateMotherboard->new : motherboard $args{params}->{motherboard_id} is already active";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
 }
@@ -99,90 +99,90 @@ sub checkOp{
 
 =head2 prepare
 
-	$op->prepare();
+    $op->prepare();
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
-		$errmsg = "ERemoveMotherboard->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	$log->debug("After Eoperation prepare and before get Administrator singleton");
-	my $params = $self->_getOperation()->getParams();
+    if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
+        $errmsg = "ERemoveMotherboard->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    $log->debug("After Eoperation prepare and before get Administrator singleton");
+    my $params = $self->_getOperation()->getParams();
 
-	$self->{_objs} = {};
-	$self->{nas} = {};
-	$self->{executor} = {};
+    $self->{_objs} = {};
+    $self->{nas} = {};
+    $self->{executor} = {};
 
     # Instantiate motherboard and so check if exists
     $log->debug("checking motherboard existence with id <$params->{motherboard_id}>");
     eval {
-    	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+        $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
     };
     if($@) {
-    	$errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal(error => $errmsg);
+        $errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-	
+    
     eval {
         $self->checkOp(params => $params);
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
-		$log->error($errmsg);
+        $errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-	## Instanciate Clusters
-	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
-	# Instanciate executor Cluster
-	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    ## Instanciate Clusters
+    # Instanciate nas Cluster 
+    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    # Instanciate executor Cluster
+    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 
-	## Get Internal IP
-	# Get Internal Ip address of Master node of cluster Executor
-	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-	# Get Internal Ip address of Master node of cluster nas
-	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	
-	
-	## Instanciate context 
-	# Get context for nas
-	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-		
-	## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
-	# Instanciate Cluster Storage component.
-	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2");
-	$log->debug("Value return by getcomponent ". ref($tmp));
-	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-	
+    ## Get Internal IP
+    # Get Internal Ip address of Master node of cluster Executor
+    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
+    # Get Internal Ip address of Master node of cluster nas
+    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+    
+    
+    ## Instanciate context 
+    # Get context for nas
+    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
+        
+    ## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
+    # Instanciate Cluster Storage component.
+    my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
+                                         version => "2");
+    $log->debug("Value return by getcomponent ". ref($tmp));
+    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
+    
 }
 
 sub execute{
-	my $self = shift;
-	$self->SUPER::execute();
-	my ($powersupplycard,$powersupplyid);
+    my $self = shift;
+    $self->SUPER::execute();
+    my ($powersupplycard,$powersupplyid);
 
-	my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
-	if ($powersupplycard_id) {
-		$powersupplycard = Entity::Powersupplycard(id => $powersupplycard_id);
-		$powersupplyid = $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id');
-	}
-	$self->{_objs}->{component_storage}->removeDisk(name => $self->{_objs}->{motherboard}->getEtcName(), econtext => $self->{nas}->{econtext});
-	$self->{_objs}->{motherboard}->delete();
-	if ($powersupplycard_id){
-		$log->debug("Deleting powersupply with id <$powersupplyid> on the card : <$powersupplycard>");
-		$powersupplycard->delPowerSupply(powersupply_id => $powersupplyid);
-	}
+    my $powersupplycard_id = $self->{_objs}->{motherboard}->getPowerSupplyCardId();
+    if ($powersupplycard_id) {
+        $powersupplycard = Entity::Powersupplycard(id => $powersupplycard_id);
+        $powersupplyid = $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_powersupply_id');
+    }
+    $self->{_objs}->{component_storage}->removeDisk(name => $self->{_objs}->{motherboard}->getEtcName(), econtext => $self->{nas}->{econtext});
+    $self->{_objs}->{motherboard}->delete();
+    if ($powersupplycard_id){
+        $log->debug("Deleting powersupply with id <$powersupplyid> on the card : <$powersupplycard>");
+        $powersupplycard->delPowerSupply(powersupply_id => $powersupplyid);
+    }
 }
 
 __END__

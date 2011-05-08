@@ -75,57 +75,57 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
 
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
+    my $self = shift;
 
-	my $conf = { php5_session_handler => "files", php5_session_path => "/var/lib/php5" };
+    my $conf = { php5_session_handler => "files", php5_session_path => "/var/lib/php5" };
 
-	my $confindb = $self->{_dbix}->php5s->first();
-	if($confindb) {
-		my %row = $confindb->get_columns(); 
-		$conf = \%row;		
-	}
+    my $confindb = $self->{_dbix}->php5s->first();
+    if($confindb) {
+        my %row = $confindb->get_columns(); 
+        $conf = \%row;        
+    }
 
-	return $conf;
+    return $conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-	
-	if(not $conf->{php5_id}) {
-		# new configuration -> create
-		$self->{_dbix}->php5s->create($conf);
-	} else {
-		# old configuration -> update
-		$self->{_dbix}->php5s->update($conf);
-	}
-	
+    my $self = shift;
+    my ($conf) = @_;
+    
+    if(not $conf->{php5_id}) {
+        # new configuration -> create
+        $self->{_dbix}->php5s->create($conf);
+    } else {
+        # old configuration -> update
+        $self->{_dbix}->php5s->update($conf);
+    }
+    
 }
 
 # Insert default configuration in db for this component 
 sub insertDefaultConfiguration() {
-	my $self = shift;
-	
-	my $default_conf = {
-		php5_session_path => "/var/lib/php5",
-	};
-	
-	$self->{_dbix}->php5s->create( $default_conf );
+    my $self = shift;
+    
+    my $default_conf = {
+        php5_session_path => "/var/lib/php5",
+    };
+    
+    $self->{_dbix}->php5s->create( $default_conf );
 }
 
 =head1 DIAGNOSTICS

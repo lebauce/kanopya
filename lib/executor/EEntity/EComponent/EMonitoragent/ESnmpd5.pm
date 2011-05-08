@@ -34,63 +34,63 @@ sub new {
 
 # generate snmpd configuration files on node
 sub addNode {
-	my $self = shift;
-	my %args = @_;
-	
-	if((! exists $args{econtext} or ! defined $args{econtext}) ||
-		(! exists $args{motherboard} or ! defined $args{motherboard}) ||
-		(! exists $args{mount_point} or ! defined $args{mount_point})) {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd5->configureNode needs a motherboard, mount_point and econtext named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $conf = $self->_getEntity()->getConf();
-	
-	# generation of /etc/default/snmpd 
-	my $data = {};
+    my $self = shift;
+    my %args = @_;
+    
+    if((! exists $args{econtext} or ! defined $args{econtext}) ||
+        (! exists $args{motherboard} or ! defined $args{motherboard}) ||
+        (! exists $args{mount_point} or ! defined $args{mount_point})) {
+        $errmsg = "EComponent::EMonitoragent::ESnmpd5->configureNode needs a motherboard, mount_point and econtext named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    
+    my $conf = $self->_getEntity()->getConf();
+    
+    # generation of /etc/default/snmpd 
+    my $data = {};
     $data->{node_ip_address} = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
-    $data->{options} = $conf->{options};   	
-	
-	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-						 template_dir => "/templates/components/snmpd",
-						 input_file => "default_snmpd.tt", output => "/default/snmpd",
-					 	 data => $data);
-						 
-	# generation of /etc/snmpd/snmpd.conf 
+    $data->{options} = $conf->{options};       
+    
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/snmpd",
+                         input_file => "default_snmpd.tt", output => "/default/snmpd",
+                          data => $data);
+                         
+    # generation of /etc/snmpd/snmpd.conf 
     $data = {};
     $data->{monitor_server_ip} = $conf->{monitor_server_ip};
 
-	$self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-						 template_dir => "/templates/components/snmpd",
-						 input_file => "snmpd.conf.tt", output => "/snmp/snmpd.conf",
-					 	 data => $data);
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/snmpd",
+                         input_file => "snmpd.conf.tt", output => "/snmp/snmpd.conf",
+                          data => $data);
 
-	
-	# add snmpd init scripts
-	$self->addInitScripts(
-		etc_mountpoint => $args{mount_point},
-		econtext => $args{econtext},
-		scriptname => 'snmpd',
-		startvalue => 20,
-		stopvalue => 20
-	);
-	 	 
+    
+    # add snmpd init scripts
+    $self->addInitScripts(
+        etc_mountpoint => $args{mount_point},
+        econtext => $args{econtext},
+        scriptname => 'snmpd',
+        startvalue => 20,
+        stopvalue => 20
+    );
+          
 }
 
 # Reload snmp process
 sub reload {
-	my $self = shift;
-	my %args = @_;
-	
-	if(! exists $args{econtext} or ! defined $args{econtext}) {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd5->reload needs an econtext named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $command = "invoke-rc.d snmpd restart";
-	my $result = $args{econtext}->execute(command => $command);
-	return undef;
+    my $self = shift;
+    my %args = @_;
+    
+    if(! exists $args{econtext} or ! defined $args{econtext}) {
+        $errmsg = "EComponent::EMonitoragent::ESnmpd5->reload needs an econtext named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $command = "invoke-rc.d snmpd restart";
+    my $result = $args{econtext}->execute(command => $command);
+    return undef;
 }
 
 1;

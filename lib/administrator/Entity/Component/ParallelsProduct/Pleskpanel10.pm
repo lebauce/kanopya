@@ -73,7 +73,7 @@ B<Return>  : a new Entity::Component::ParallelsProduct::Pleskpanel10 from Kanopy
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub get {
@@ -81,10 +81,10 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Component::ParallelsProduct::Pleskpanel10->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Component::ParallelsProduct::Pleskpanel10->get need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
    return $self;
 }
@@ -100,55 +100,55 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-		(! exists $args{component_id} or ! defined $args{component_id})){ 
-		$errmsg = "Entity::Component::ParallelsProduct::Pleskpanel10->new need a cluster_id and a component_id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    
+    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+        (! exists $args{component_id} or ! defined $args{component_id})){ 
+        $errmsg = "Entity::Component::ParallelsProduct::Pleskpanel10->new need a cluster_id and a component_id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
-	#TODO Load from file of default values ?
-	my $pleskpanel10_conf = {
-		pleskpanel10_id => undef,
-		pleskpanel10_hostname => "hostname",
-	};
-	
-	my $confindb = $self->{_dbix}->pleskpanel10s->first();
-	if($confindb) {
-	   $pleskpanel10_conf = {
-			pleskpanel10_id => $confindb->get_column('pleskpanel10_id'),
-			pleskpanel10_hostname => $confindb->get_column('pleskpanel10_hostname'),
-	   };
-	}
-	return $pleskpanel10_conf; 
+    my $self = shift;
+    #TODO Load from file of default values ?
+    my $pleskpanel10_conf = {
+        pleskpanel10_id => undef,
+        pleskpanel10_hostname => "hostname",
+    };
+    
+    my $confindb = $self->{_dbix}->pleskpanel10s->first();
+    if($confindb) {
+       $pleskpanel10_conf = {
+            pleskpanel10_id => $confindb->get_column('pleskpanel10_id'),
+            pleskpanel10_hostname => $confindb->get_column('pleskpanel10_hostname'),
+       };
+    }
+    return $pleskpanel10_conf; 
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-		
-	if(not $conf->{pleskpanel10_id}) {
-		# new configuration -> create
-		$self->{_dbix}->pleskpanel10s->create($conf);
-	} else {
-		# old configuration -> update
-		$self->{_dbix}->pleskpanel10s->update($conf);
-	}
+    my $self = shift;
+    my ($conf) = @_;
+        
+    if(not $conf->{pleskpanel10_id}) {
+        # new configuration -> create
+        $self->{_dbix}->pleskpanel10s->create($conf);
+    } else {
+        # old configuration -> update
+        $self->{_dbix}->pleskpanel10s->update($conf);
+    }
 }
 
 

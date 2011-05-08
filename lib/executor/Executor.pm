@@ -85,17 +85,17 @@ Executor::_init is a private method used to define internal parameters.
 =cut
 
 sub _init {
-	my $self = shift;
-	
-	$self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
-	if ((! exists $self->{config}->{user}->{name} ||
-		 ! defined exists $self->{config}->{user}->{name}) &&
-		(! exists $self->{config}->{user}->{password} ||
-		 ! defined exists $self->{config}->{user}->{password})){ 
-		throw Kanopya::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
-	my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
-								 password => $self->{config}->{user}->{password});
-	return;
+    my $self = shift;
+    
+    $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
+    if ((! exists $self->{config}->{user}->{name} ||
+         ! defined exists $self->{config}->{user}->{name}) &&
+        (! exists $self->{config}->{user}->{password} ||
+         ! defined exists $self->{config}->{user}->{password})){ 
+        throw Kanopya::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
+    my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
+                                 password => $self->{config}->{user}->{password});
+    return;
 }
 
 =head2 run
@@ -105,60 +105,60 @@ Executor->run() run the executor server.
 =cut
 
 sub run {
-	my $self = shift;
-	my $running = shift;
-	
-	my $adm = Administrator->new();
-	$adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
-   	while ($$running) {
-   		my $opdata = Operation::getNextOp();
-   		if ($opdata){
-	   		# start transaction
-	   		$opdata->setProcessing();
-	   		my $op = EFactory::newEOperation(op => $opdata);
-   			$log->info("New operation (".ref($op).") retrieve ; execution processing");
-   			$adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
-   			$adm->{db}->txn_begin;
-   			eval {
-   			    eval {
-   			        $op->prepare(internal_cluster => $self->{config}->{cluster});
-   			    };
-   			    if ($@) {
-   			        my $error = $@;
-   			        throw $error;
-   			    }
-   			    else {
-   			        $op->process();
-   				     $op->finish();
-   			    }
-   			};
-			if ($@) {
-   				my $error = $@;
-   				if($error->isa('Kanopya::Exception::Execution::OperationReported')) {
-   					$op->report();
-   					# commit transaction
-   					$adm->{db}->txn_commit;
-   					$adm->addMessage(from => 'Executor', level => 'info', content => ref($op)." reported");
-   					$log->debug("Operation ".ref($op)." reported");
-   				} else {
-   					# rollback transaction
-   					eval { $adm->{db}->txn_rollback; };
-   					$adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
-   					$log->error("Error during execution : $error");
-   					$op->delete();
-   				}
-   			} else {
-   				# commit transaction
-   				$adm->{db}->txn_commit;
-   				$adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");	
-   				$op->delete();
-   			}
-   			
-   		}
-   		else { sleep 5; }
-   	}
-   	$log->debug("condition become false : $$running"); 
-   	$adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopya Executor stopped");
+    my $self = shift;
+    my $running = shift;
+    
+    my $adm = Administrator->new();
+    $adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
+       while ($$running) {
+           my $opdata = Operation::getNextOp();
+           if ($opdata){
+               # start transaction
+               $opdata->setProcessing();
+               my $op = EFactory::newEOperation(op => $opdata);
+               $log->info("New operation (".ref($op).") retrieve ; execution processing");
+               $adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
+               $adm->{db}->txn_begin;
+               eval {
+                   eval {
+                       $op->prepare(internal_cluster => $self->{config}->{cluster});
+                   };
+                   if ($@) {
+                       my $error = $@;
+                       throw $error;
+                   }
+                   else {
+                       $op->process();
+                        $op->finish();
+                   }
+               };
+            if ($@) {
+                   my $error = $@;
+                   if($error->isa('Kanopya::Exception::Execution::OperationReported')) {
+                       $op->report();
+                       # commit transaction
+                       $adm->{db}->txn_commit;
+                       $adm->addMessage(from => 'Executor', level => 'info', content => ref($op)." reported");
+                       $log->debug("Operation ".ref($op)." reported");
+                   } else {
+                       # rollback transaction
+                       eval { $adm->{db}->txn_rollback; };
+                       $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
+                       $log->error("Error during execution : $error");
+                       $op->delete();
+                   }
+               } else {
+                   # commit transaction
+                   $adm->{db}->txn_commit;
+                   $adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
+                   $op->delete();
+               }
+               
+           }
+           else { sleep 5; }
+       }
+       $log->debug("condition become false : $$running"); 
+       $adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopya Executor stopped");
 }
 
 =head2 execnrun
@@ -168,50 +168,50 @@ Executor->execnround((run => $nbrun)) run the executor server for only one round
 =cut
 
 sub execnround {
-	my $self = shift;
-	my %args = @_;
+    my $self = shift;
+    my %args = @_;
 
-	my $adm = Administrator->new();
+    my $adm = Administrator->new();
 
-   	while ($args{run}) {
-   	    $args{run} -= 1;
-   		my $opdata = Operation::getNextOp();
-   		if ($opdata){
-	   		# start transaction
-	   		my $op = EFactory::newEOperation(op => $opdata);
-   			$log->info("New operation (".ref($op).") retrieve ; execution processing");
-   			$adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
-   			$adm->{db}->txn_begin;
-   			eval {
-   			    eval {
-   			        $op->prepare(internal_cluster => $self->{config}->{cluster});
-   			    };
-   			    if ($@) {
-   			        my $error = $@;
-   				    $adm->{db}->txn_rollback;
-#   				    $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
-#   				    $log->error("Error during operation evaluation :\n$error");
-   				    $op->delete();
-   			        throw $error;
-   			    }
-   			    else {
-   			        $op->execute();
-   				    $op->finish();
-   			    }
-   			};
-			if ($@) {
-   				my $error = $@;
+       while ($args{run}) {
+           $args{run} -= 1;
+           my $opdata = Operation::getNextOp();
+           if ($opdata){
+               # start transaction
+               my $op = EFactory::newEOperation(op => $opdata);
+               $log->info("New operation (".ref($op).") retrieve ; execution processing");
+               $adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
+               $adm->{db}->txn_begin;
+               eval {
+                   eval {
+                       $op->prepare(internal_cluster => $self->{config}->{cluster});
+                   };
+                   if ($@) {
+                       my $error = $@;
+                       $adm->{db}->txn_rollback;
+#                       $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording: $error");
+#                       $log->error("Error during operation evaluation :\n$error");
+                       $op->delete();
+                       throw $error;
+                   }
+                   else {
+                       $op->execute();
+                       $op->finish();
+                   }
+               };
+            if ($@) {
+                   my $error = $@;
                 throw $error;
-   			} else {
-   				# commit transaction
-   				$adm->{db}->txn_commit;
-   				$adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");	
-   				$op->delete();
-   			}
-   			
-   		}
-   		else { sleep 5; }
-   	}
+               } else {
+                   # commit transaction
+                   $adm->{db}->txn_commit;
+                   $adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
+                   $op->delete();
+               }
+               
+           }
+           else { sleep 5; }
+       }
 }
 
 

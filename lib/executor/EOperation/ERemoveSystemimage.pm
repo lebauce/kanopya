@@ -72,65 +72,65 @@ sub new {
 
 =head2 _init
 
-	$op->_init() is a private method used to define internal parameters.
+    $op->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
-	my $self = shift;
+    my $self = shift;
 
-	return;
+    return;
 }
 
 sub checkOp{
     my $self = shift;
-	my %args = @_;
+    my %args = @_;
     
     
     # check if systemimage is not active
     $log->debug("checking systemimage active value <".$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id').">");
-   	if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::ERemoveSystemiamge->new : systemimage <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') ."> is already active";
-	    	$log->error($errmsg);
-	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+       if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+            $errmsg = "EOperation::ERemoveSystemiamge->new : systemimage <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') ."> is already active";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
 =head2 prepare
 
-	$op->prepare();
+    $op->prepare();
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EAddSystemimage->prepare need an internal_cluster named argument!"; 
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $params = $self->_getOperation()->getParams();
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "EAddSystemimage->prepare need an internal_cluster named argument!"; 
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    
+    my $params = $self->_getOperation()->getParams();
 
-	$self->{_objs} = {};
-	$self->{nas} = {};
-	$self->{executor} = {};
+    $self->{_objs} = {};
+    $self->{nas} = {};
+    $self->{executor} = {};
 
 #### Get instance of Systemimage Entity
-	$log->info("Load systemimage instance");
+    $log->info("Load systemimage instance");
     eval {
-	   $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+       $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
     ### Check Parameters and context
     eval {
@@ -138,53 +138,53 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
-		$log->error($errmsg);
+        $errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-	## Instanciate Clusters
-	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
-	# Instanciate executor Cluster
-	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    ## Instanciate Clusters
+    # Instanciate nas Cluster 
+    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    # Instanciate executor Cluster
+    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
 
-	## Get Internal IP
-	# Get Internal Ip address of Master node of cluster Executor
-	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-	# Get Internal Ip address of Master node of cluster nas
-	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	
-	## Instanciate context 
-	# Get context for nas
-	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-		
-	## Instanciate Component needed (here LVM on nas cluster)
-	# Instanciate Cluster Storage component.
-	my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-										 version => "2");
-	
-	$self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
+    ## Get Internal IP
+    # Get Internal Ip address of Master node of cluster Executor
+    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
+    # Get Internal Ip address of Master node of cluster nas
+    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+    
+    ## Instanciate context 
+    # Get context for nas
+    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
+        
+    ## Instanciate Component needed (here LVM on nas cluster)
+    # Instanciate Cluster Storage component.
+    my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
+                                         version => "2");
+    
+    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 }
 
 sub execute{
-	my $self = shift;
-	$self->SUPER::execute();
-		
-	my $devs = $self->{_objs}->{systemimage}->getDevices();
-	my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-	my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-	
-	# creation of etc and root devices based on distribution devices
-	$log->info("etc device deletion for systemimage");
-	$self->{_objs}->{component_storage}->removeDisk(name => $etc_name, econtext => $self->{nas}->{econtext});
+    my $self = shift;
+    $self->SUPER::execute();
+        
+    my $devs = $self->{_objs}->{systemimage}->getDevices();
+    my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+    my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+    
+    # creation of etc and root devices based on distribution devices
+    $log->info("etc device deletion for systemimage");
+    $self->{_objs}->{component_storage}->removeDisk(name => $etc_name, econtext => $self->{nas}->{econtext});
 
-	$log->info("etc device deletion for systemimage");													
-	$self->{_objs}->{component_storage}->removeDisk(name => $root_name, econtext => $self->{nas}->{econtext});
-	
-	# TODO update vg freespace
-		
-	$self->{_objs}->{systemimage}->delete();
+    $log->info("etc device deletion for systemimage");                                                    
+    $self->{_objs}->{component_storage}->removeDisk(name => $root_name, econtext => $self->{nas}->{econtext});
+    
+    # TODO update vg freespace
+        
+    $self->{_objs}->{systemimage}->delete();
 }
 
 =head1 DIAGNOSTICS

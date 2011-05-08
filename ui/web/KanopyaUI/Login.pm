@@ -39,44 +39,44 @@ sub form_login : StartRunmode {
 # login form processing
 
 sub process_login : Runmode {
-	my $self = shift;
-	use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
+    my $self = shift;
+    use CGI::Application::Plugin::ValidateRM (qw/check_rm/); 
     my ($results, $err_page) = $self->check_rm('form_login', '_login_profile');
     return $err_page if $err_page;
-	
-	my $query = $self->query();
-	my $login = $query->param('login');
-	my $password = $query->param('password');  
-	
-	# here we check if login and password match
-	eval { Administrator::authenticate(login => $login, password => $password); };
-	if($@) { 
-		$log->error("Authentication failed for login ", $login);
-		$self->redirect('/cgi/kanopya.cgi/login'); 
-	} else { 
-		$self->session->param('EID', "$ENV{EID}");
-		$self->session->param('username', "$login");
-		$self->session->flush();
-		$log->info("Authentication succeed for login ", $login);
-		$self->redirect('/cgi/kanopya.cgi/systemstatus');
-	}
+    
+    my $query = $self->query();
+    my $login = $query->param('login');
+    my $password = $query->param('password');  
+    
+    # here we check if login and password match
+    eval { Administrator::authenticate(login => $login, password => $password); };
+    if($@) { 
+        $log->error("Authentication failed for login ", $login);
+        $self->redirect('/cgi/kanopya.cgi/login'); 
+    } else { 
+        $self->session->param('EID', "$ENV{EID}");
+        $self->session->param('username', "$login");
+        $self->session->flush();
+        $log->info("Authentication succeed for login ", $login);
+        $self->redirect('/cgi/kanopya.cgi/systemstatus');
+    }
 }
 
 sub _login_profile {
-	return {
-    	required => ['login', 'password'],
+    return {
+        required => ['login', 'password'],
         msgs => {
-        	any_errors => 'some_errors',
+            any_errors => 'some_errors',
             prefix => 'err_'
         },
-	};    
+    };    
 }
 
 sub process_logout : Runmode {
-	my $self = shift;
-	$self->session_delete;
-	$log->info("Logout and session delete for login ", $self->session->param('username'));
-	$self->redirect('/cgi/kanopya.cgi/login/form_login');
+    my $self = shift;
+    $self->session_delete;
+    $log->info("Logout and session delete for login ", $self->session->param('username'));
+    $self->redirect('/cgi/kanopya.cgi/login/form_login');
 }
 
 
