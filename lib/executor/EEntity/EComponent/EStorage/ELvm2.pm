@@ -4,7 +4,6 @@ use base "EEntity::EComponent::EStorage";
 use strict;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-
 use Kanopya::Exceptions;
 my $log = get_logger("executor");
 my $errmsg;

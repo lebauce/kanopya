@@ -178,7 +178,6 @@ sub execute {
 	# Get etc iscsi target information
 	my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
 
-
     $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number	=> 0,
 												iscsitarget1_lun_device	=> "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
 												iscsitarget1_lun_typeio	=> "fileio",
