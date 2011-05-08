@@ -221,11 +221,15 @@ print "done\n";
 # We remove the initial tftp line from inetd conf file and restart the service
 system('sed -i s/^tftp.*// /etc/inetd.conf');
 system('invoke-rc.d inetutils-inetd restart');
+
 # We restart atftpd with the new configuration
 system('invoke-rc.d atftpd restart');
+
 # We restart atftpd with the new configuration
 system('echo "" > /etc/iet/ietd.conf');
+system('echo "ISCSITARGET_ENABLE=true\n" > /etc/default/iscsitarget');
 system('invoke-rc.d iscsitarget restart');
+
 # We restart atftpd with the new configuration
 useTemplate(template=>"status.conf.tt",datas=>{internal_network=>$answers->{internal_net_add}},conf=>"/etc/apache2/mod-enabled/status.conf",include=>$conf_vars->{install_template_dir});
 system('a2enmod status');
