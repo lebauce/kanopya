@@ -28,8 +28,8 @@ sub adminComponentsDef {
     																	{ label => 'dhcpd', name => 'dhcpd'},
     																	{ label => 'atftpd', name => 'atftpd'}] },
     			],[
-    				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'}] },
-    				{ id => 'Execute', label => 'Executor', comps => [{ label => 'executor', name => 'kanopya-executor'}] },
+    				{ id => 'Harddisk', label => 'NAS server', comps => [{ label => 'ietd', name => 'ietd'}, {label => 'nfsd', name => 'nfsd'},{label => 'mountd', name => 'rpc.mountd'},{label=>'statd', name => 'rpc.statd'}] },
+    				{ id => 'Execute', label => 'Executor', comps => [{ label => 'executor', name => 'kanopya-executor'}, {label => 'state-manager', name => 'kanopya-state-manager'}] },
     			],[
     				{ id => 'Monitor', label => 'Monitor', comps => [{ label => 'collector', name => 'kanopya-collector'}, { label => 'grapher', name => 'kanopya-grapher'}] },
     				{ id => 'Orchestrator', label => 'Orchestrator', comps => [{ label => 'orchestrator', name => 'kanopya-orchestrator'}] },
