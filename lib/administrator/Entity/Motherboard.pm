@@ -255,12 +255,8 @@ sub stopToBeNode{
 	my $self = shift;
 	my %args = @_;
 	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})){
-		$errmsg = "Motherboard->stopToBeNode need a cluster_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
 	my $row = $self->{_dbix}->node;
+	$log->debug("node <".$self->getAttr(name=>"motherboard_mac_address")."> stop to be node");
 	if(not defined $row) {
 		$errmsg = "Entity::Motherboard->stopToBeNode : node representing motherboard ".$self->getAttr(name=>"motherboard_mac_address")." and cluster $args{cluster_id} not found!";
 		$log->error($errmsg);

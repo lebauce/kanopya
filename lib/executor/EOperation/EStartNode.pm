@@ -188,6 +188,10 @@ sub prepare {
 sub execute {
     my $self = shift;
     my $adm = Administrator->new();
+
+    # Insert previous rollback here
+    $self->{erollback}->add(function   =>$self->{_objs}->{motherboard}->can('stopToBeNode'),
+                              parameters => [$self->{_objs}->{motherboard}]);
     
     ## Clone system image etc on motherboard etc
     # Get system image etc
@@ -270,17 +274,21 @@ sub execute {
                                                 dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver"),
                                                 kernel_id                       => $motherboard_kernel_id,
                                                 erollback                       => $self->{erollback});
-    
-    $log->info('generate dhcp configuration file');
+    my $eroll_add_dhcp_host = $self->{erollback}->getLastInserted();
+    # generate new configuration file
+    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_dhcp_host);
     $self->{_objs}->{component_dhcpd}->generate(econtext    => $self->{bootserver}->{econtext},
                                                 erollback   => $self->{erollback});
-    $log->info('restart dhcp service');
+    my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
+    # generate new configuration file
+    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
     $self->{_objs}->{component_dhcpd}->reload(econtext  => $self->{bootserver}->{econtext},
                                               erollback => $self->{erollback});
+    $log->info('Update Admin Dhcp server');
     
     #Update Motherboard internal ip
-
-    my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcp3_subnet_id => $subnet);
+    $log->info("get subnet <$subnet>");
+    my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
 
     my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_internal_address => $motherboard_ip,
                                                  ipv4_internal_mask => $subnet_hash{'dhcpd3_subnet_mask'});
@@ -326,6 +334,7 @@ sub execute {
     # finaly we start the node
     my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
     $emotherboard->start(econtext =>$self->{executor}->{econtext});
+    #throw Kanopya::Exception::Internal::WrongValue(error => "test rollback");
 }
 
 sub _generateNodeConf {

@@ -136,8 +136,8 @@ sub getSubNet {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['dhcpd3_subnet_id']);
-
-    my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcp3_subnet_id});
+    
+    my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id});
     return $dhcpd3_subnet->get_columns();
 }
 
@@ -231,7 +231,6 @@ sub addHost {
                                       'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
 
     my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
-
     my $res = $dhcpd3_hosts_rs->create(\%args);
     return $res->get_column('dhcpd3_hosts_id');
 }

@@ -43,8 +43,11 @@ sub addHost {
                                       'dhcpd3_hosts_mac_address', 'dhcpd3_hosts_hostname',
                                       'kernel_id', "dhcpd3_hosts_ntp_server",
                                       'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
+    my $erollback = $args{erollback};
+    delete $args{erollback};
 
     my $host_id = $self->_getEntity()->addHost(%args);
+    $args{erollback} = $erollback;
 
     if(exists $args{erollback}) {
         $args{erollback}->add(function   =>$self->can('removeHost'),

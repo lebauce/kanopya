@@ -80,6 +80,7 @@ sub add {
 #		$log->error($errmsg);
 #		throw Kanopya::Exception::Internal(error => $errmsg);   	
 #	}
+    $self->{last_inserted} = undef;
     $log->debug("add rollback func $args{function}");
     if(not defined $self->{function}) {
     	$self->{function} = $args{function};
@@ -99,6 +100,7 @@ sub add {
             } else{
                 $self=$eroll->{prev_item};
             }
+            $self->{last_inserted} = $eroll->{prev_item};
             $self->{before} = undef;
         }elsif ($self->{after}){
             my $eroll = $self->find(erollback => $self->{after});
@@ -111,13 +113,15 @@ sub add {
             if($tmp) {
                 $tmp->{prev_item} = $eroll->{next_item};
             }
+            $self->{last_inserted} = $eroll->{next_item};
             $self->{after} = undef;
         }else {
             my $last = $self->_last();
             $last->{next_item} = ERollback->new();
             $last->{next_item}->{function} = $args{function};
             $last->{next_item}->{parameters} = $args{parameters};
-        	$last->{next_item}->{prev_item} = $last;
+            $last->{next_item}->{prev_item} = $last;
+            $self->{last_inserted} = $last->{next_item};
         }
     }
 }

@@ -129,7 +129,7 @@ sub halt {
 		throw Kanopya::Exception::Internal(error => $errmsg);
 	}
     my $command = 'halt';
-	my $result = $args{node_econtext}->execute(command => $command);
+#	my $result = $args{node_econtext}->execute(command => $command);
 	my $state = 'stopping:'.time;
 	$self->_getEntity()->setAttr(name => 'motherboard_state', value => $state);
 	$self->_getEntity()->save();
