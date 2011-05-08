@@ -243,6 +243,7 @@ sub execute {
 	my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName());
 
 	# Get etc iscsi target information
+	################################################################################
 	my $node_etc_export ={iscsitarget1_target_name=>$target_name,
 					 mountpoint=>"/etc",
 					 mount_option=>""};
@@ -469,17 +470,17 @@ sub _generateFstabConf{
 	
 	$log->debug("Get targetid with the following pattern : " . '%'."$args{root_dev}->{lvname}");
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
-	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
+	my $root_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $root_target_id);
 	$log->debug("Get targetid with the following pattern : " . '%'."$args{etc_dev}->{lvname}");
 	my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
-	my $etc_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $etc_target_id);
+	my $etc_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $etc_target_id);
 	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
 	my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";  
 		
-	my $vars = {etc_dev			=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_target->{target}."-lun-0",
+	my $vars = {etc_dev			=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_targetname."-lun-0",
    	    		etc_fs			=> $args{etc_dev}->{filesystem},
 				etc_options		=> "defaults",
-				root_dev		=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_target->{target}."-lun-0",
+				root_dev		=> "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_targetname."-lun-0",
 				root_fs			=> $args{root_dev}->{filesystem},
 				root_options	=> $root_options
 				
@@ -629,7 +630,7 @@ sub _generateBootConf {
 #	my $adm = Administrator->new();
 	
 	my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
-	my $root_target = $self->{_objs}->{component_export}->_getEntity()->getTarget(iscsitarget1_target_id => $root_target_id);
+	my $root_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $root_target_id);
 	my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";
 	my $vars ={ root_fs			=> $args{root_dev}->{filesystem},
 				etc_fs			=> $args{etc_dev}->{filesystem},
@@ -637,7 +638,7 @@ sub _generateBootConf {
 				etc_target		=> $args{etc_export}->{iscsitarget1_target_name},
    	    		etc_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				etc_port		=> "3260",
-				root_target		=> $root_target->{target},
+				root_target		=> $root_targetname,
    	    		root_ip			=> $self->{nas}->{obj}->getMasterNodeIp(),
 				root_port		=> "3260",
 				root_mount_opts => $root_options,

@@ -229,6 +229,8 @@ sub delete {
 	$self->{_operation}->delete();	
 }
 
+sub execute {}
+
 =head2
 	
 	Class : Public

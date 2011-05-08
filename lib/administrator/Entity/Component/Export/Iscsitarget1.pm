@@ -63,6 +63,7 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Administrator;
+use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -122,6 +123,20 @@ sub new {
 
 }
 
+sub getLun{
+	my $self = shift;
+    my %args = @_;
+    General::checkParams(args => \%args,
+	                     required => ['iscsitarget1_lun_id','iscsitarget1_target_id']);
+
+	my $lun_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->find($args{iscsitarget1_lun_id});
+    return {
+            iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
+            iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
+            iscsitarget1_lun_typeio => $lun_row->get_column('iscsitarget1_lun_typeio'),
+            iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
+    };
+}
 
 sub getConf {
 	my $self = shift;
@@ -292,22 +307,17 @@ sub removeTarget{
 	return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();	
 }
 
-sub getTarget {
+sub getTargetName {
 	my $self = shift;
 	my %args  = @_;	
 	if (! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) {
-		$errmsg = "Component::Export::Iscsitarget1->getTarget needs an iscsitarget1_target_id named argument!";
+		$errmsg = "Component::Export::Iscsitarget1->getTargetName needs an iscsitarget1_target_id named argument!";
 		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 	}
 	
 	my $target_raw = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
-	my $export ={};
-	$export->{target} = $target_raw->get_column('iscsitarget1_target_name');
-	$export->{mountpoint} = $target_raw->get_column('mountpoint');
-	$export->{mount_option} = $target_raw->get_column('mount_option');
-
-	return $export;
+    return $target_raw->get_column('iscsitarget1_target_name');
 }
 
 # return a data structure to pass to the template processor 

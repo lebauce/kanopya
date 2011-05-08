@@ -50,6 +50,7 @@ use Kanopya::Exceptions;
 use EFactory;
 use Template;
 use Entity::Cluster;
+use General;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -118,12 +119,7 @@ sub prepare {
 
 	$log->info("Operation preparation");
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EDeactivateSystemimage->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
 	my $params = $self->_getOperation()->getParams();
 
 #### Get instance of Systemimage Entity
@@ -197,9 +193,13 @@ sub execute{
     $self->{_objs}->{component_export}->removeExport(iscsitarget1_lun_id        => $lun_id,
                                                      econtext                   => $self->{nas}->{econtext},
                                                      iscsitarget1_target_name   => $target_name,
-                                                     iscsitarget1_target_id     => $target_id);
+                                                     iscsitarget1_target_id     => $target_id,
+                                                     erollback                  => $self->{erollback});
+    my $eroll_del_export = $self->{erollback}->getLastInserted();
 	# generate new configuration file
-	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
+	$self->{erollback}->insertNextErollBefore(erollback=>$eroll_del_export);
+	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext},
+	                                             erollback  => $self->{erollback});
 		
 	# set system image active in db
 	$self->{_objs}->{systemimage}->setAttr(name => 'active', value => 0);

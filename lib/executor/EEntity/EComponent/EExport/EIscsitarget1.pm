@@ -55,7 +55,7 @@ sub addExport {
 	General::checkParams(args => \%args,
 	                     required => ['iscsitarget1_lun_number','econtext',
 	                                  'iscsitarget1_lun_device', 'iscsitarget1_lun_typeio',
-	                                  'iscsitarget1_target_name']);
+	                                  'iscsitarget1_target_name', 'iscsitarget1_lun_iomode']);
 
 	
     my $target_id = $self->addTarget(iscsitarget1_target_name   =>$args{iscsitarget1_target_name},
@@ -81,16 +81,35 @@ sub addExport {
 sub removeExport {
 	my $self = shift;
 	my %args  = @_;
+	my $lun;
+	my $log_content;
 	
 	General::checkParams(args => \%args,
 	                     required => ['iscsitarget1_lun_id','econtext',
 	                                  'iscsitarget1_target_name', 'iscsitarget1_target_id']);
-	
+
+    if(exists $args{erollback}) {
+        $lun = $self->_getEntity()->getLun(  iscsitarget1_lun_id     => $args{iscsitarget1_lun_id},
+                                                iscsitarget1_target_id  => $args{iscsitarget1_target_id});
+    }
     $self->removeLun(iscsitarget1_lun_id    => $args{iscsitarget1_lun_id},
                     iscsitarget1_target_id  => $args{iscsitarget1_target_id});
 	$self->removeTarget(iscsitarget1_target_id      => $args{iscsitarget1_target_id},
                         iscsitarget1_target_name    => $args{iscsitarget1_target_name},
                         econtext                    => $args{econtext});
+    $log_content = "Remove Export with targetname <". $args{iscsitarget1_target_name}.">";
+    if(exists $args{erollback}) {
+        $args{erollback}->add(function   =>$self->can('addExport'),
+	                          parameters => [$self,
+	                                           "iscsitarget1_lun_number", $lun->{iscsitarget1_lun_number},
+	                                           "iscsitarget1_lun_device", $lun->{iscsitarget1_lun_device},
+	                                           "iscsitarget1_lun_typeio", $lun->{iscsitarget1_lun_typeio},
+	                                           "iscsitarget1_lun_iomode", $lun->{iscsitarget1_lun_iomode},
+	                                           "iscsitarget1_target_name", $args{iscsitarget1_target_name},
+	                                           "econtext", $args{econtext}]);
+	   $log_content .= " and will be rollbacked with add export of disk <" .$lun->{iscsitarget1_lun_device}.">";
+    }
+    $log->debug($log_content);
 }
 
 sub addTarget {
