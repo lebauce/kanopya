@@ -53,6 +53,11 @@ sub view_systemimages : StartRunmode {
     my $methods = Entity::Systemimage->getPerms();
     if($methods->{'create'}->{'granted'}) { $tmpl->param('can_create' => 1); }
     
+    my @edistros = Entity::Distribution->getDistributions(hash => {});
+    if(not scalar(@edistros)) {
+		$tmpl->param('can_create' => 0);
+	}
+    
     return $tmpl->output();
 }
 
