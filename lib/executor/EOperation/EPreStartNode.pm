@@ -176,12 +176,6 @@ sub execute {
         $tmp->preStartNode(motherboard => $self->{_objs}->{motherboard}, 
                             cluster => $self->{_objs}->{cluster});
     }
-
-}
-
-sub finish {
-    my $self = shift;
-    
     $self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
                                                 master_node => 0);
     $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingin");

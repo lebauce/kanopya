@@ -446,7 +446,7 @@ sub getAttr {
 
     if ( $data->has_column( $args{name} ) ) {
         $value = $data->get_column( $args{name} );
-        if (defined $args{name}){
+        if (defined $value){
             $log->debug(ref($self) . " getAttr of $args{name} : <$value>");
             }
         else {

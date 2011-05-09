@@ -175,12 +175,9 @@ sub execute {
         $tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
                             cluster => $self->{_objs}->{cluster});
     }
-}
-
-sub finish {
-    my $self = shift;
     $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingout");
 }
+
 
 1;
 __END__

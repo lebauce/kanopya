@@ -258,7 +258,7 @@ sub stopToBeNode{
     my $row = $self->{_dbix}->node;
     $log->debug("node <".$self->getAttr(name=>"motherboard_mac_address")."> stop to be node");
     if(not defined $row) {
-        $errmsg = "Entity::Motherboard->stopToBeNode : node representing motherboard ".$self->getAttr(name=>"motherboard_mac_address")." and cluster $args{cluster_id} not found!";
+        $errmsg = "Entity::Motherboard->stopToBeNode : node representing motherboard ".$self->getAttr(name=>"motherboard_mac_address")."  not found!";
         $log->error($errmsg);
         throw Kanopya::Exception::DB(error => $errmsg);
     }

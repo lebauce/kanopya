@@ -196,6 +196,9 @@ sub process{
     }
 }
 
+sub cancel {
+    
+}
 =head2 finish
 
     Class : Public

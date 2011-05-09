@@ -115,8 +115,16 @@ sub start {
         close($sock);
     }
     my $state = "starting:".time;
+    my $entity = $self->_getEntity();
     $self->_getEntity()->setAttr(name => 'motherboard_state', value => $state);
     $self->_getEntity()->save();
+    if(exists $args{erollback}) {
+        $args{erollback}->add(function   =>$entity->can('save'),
+                              parameters => [$entity]);
+        $args{erollback}->add(function   =>$entity->can('setAttr'),
+                              parameters => [$entity, "name" ,"motherboard_state",
+                                            "value", "down"]);
+    }
 }
 
 sub halt {

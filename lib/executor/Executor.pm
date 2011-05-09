@@ -129,7 +129,6 @@ sub run {
                    }
                    else {
                        $op->process();
-                        $op->finish();
                    }
                };
             if ($@) {
@@ -141,14 +140,24 @@ sub run {
                        $adm->addMessage(from => 'Executor', level => 'info', content => ref($op)." reported");
                        $log->debug("Operation ".ref($op)." reported");
                    } else {
-                       # rollback transaction
-                       eval { $adm->{db}->txn_rollback; };
+                        # rollback transaction
+                        eval { $adm->{db}->txn_rollback; };
+                        $log->info("Rollback, Cancel operation will be call");
+                        eval {
+                            $adm->{db}->txn_begin;
+                            $op->cancel();
+                            $adm->{db}->txn_commit;};
+                        if ($@){
+                            my $error = $@;
+                            $log->error("Error during operation cancel :\n$error");
+                        }
                        $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
                        $log->error("Error during execution : $error");
                        $op->delete();
                    }
                } else {
                    # commit transaction
+                   $op->finish();
                    $adm->{db}->txn_commit;
                    $adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
                    $op->delete();

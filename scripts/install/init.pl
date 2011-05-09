@@ -228,12 +228,12 @@ system('invoke-rc.d iscsitarget restart');
 
 # We enable apache2 modules, configure them and restart it
 system('a2enmod status');
-system('a2enmod fcgid');
 
-useTemplate(template=>"status.conf.tt",datas=>{internal_network=>$answers->{internal_net_add}},conf=>"/etc/apache2/mod-enabled/status.conf",include=>$conf_vars->{install_template_dir});
+useTemplate(template=>"status.conf.tt",datas=>{internal_network=>$answers->{internal_net_add}},conf=>"/etc/apache2/mods-enabled/status.conf",include=>$conf_vars->{install_template_dir});
 my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidConnectTimeout 20\n</IfModule>\n";
 
-system("echo '$fcgid_conf' > /etc/apache2/mods-enabled/fcgid.conf");
+system("echo '$fcgid_conf' > /etc/apache2/mods-available/fcgid.conf");
+system('a2enmod fcgid');
 
 system('invoke-rc.d apache2 restart');
 

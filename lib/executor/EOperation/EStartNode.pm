@@ -185,6 +185,12 @@ sub prepare {
 
 }
 
+sub cancel {
+    my $self = shift;
+    $log->info("Cancel start node, we will try to remove node link for <" . $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") . ">");
+    $self->{_objs}->{motherboard}->stopToBeNode();
+}
+
 sub execute {
     my $self = shift;
     my $adm = Administrator->new();
@@ -222,23 +228,6 @@ sub execute {
     $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
     $self->{_objs}->{component_export}->generate(econtext   => $self->{nas}->{econtext},
                                                  erollback  => $self->{erollback});
-                                                 
-#    my $node_etc_export ={iscsitarget1_target_name=>$target_name,
-#                     mountpoint=>"/etc",
-#                     mount_option=>""};
-#    $node_etc_export->{econtext} = $self->{nas}->{econtext};
-#    my $target_id = $self->{_objs}->{component_export}->addTarget(%$node_etc_export);
-#    delete $node_etc_export->{econtext};                                                              
-#    $self->{_objs}->{component_export}->addLun(iscsitarget1_target_id    => $target_id,
-#                                                iscsitarget1_lun_number    => 0,
-#                                                iscsitarget1_lun_device    => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
-#                                                iscsitarget1_lun_typeio    => "fileio",
-#                                                iscsitarget1_lun_iomode    => "wb",
-#                                                iscsitarget1_target_name=>$target_name,
-#                                                econtext                 => $self->{nas}->{econtext});
-#    
-#    # 
-#    $self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
         
     ## ADD Motherboard in the dhcp
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
@@ -257,7 +246,7 @@ sub execute {
     
     # Configure DHCP Component
     my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
-    my $motherboard_kernel_id;# = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+    my $motherboard_kernel_id;
     my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
     if ($tmp_kernel_id) {
         $motherboard_kernel_id = $tmp_kernel_id;
@@ -318,7 +307,8 @@ sub execute {
         $tmp->addNode(motherboard   => $self->{_objs}->{motherboard}, 
                       mount_point   => "/mnt/$node_dev->{etc}->{lvname}",
                       cluster       => $self->{_objs}->{cluster},
-                      econtext      => $self->{nas}->{econtext});
+                      econtext      => $self->{nas}->{econtext},
+                      erollback     => $self->{erollback});
     }
 
     # Umount Motherboard etc
@@ -333,8 +323,8 @@ sub execute {
     
     # finaly we start the node
     my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
-    $emotherboard->start(econtext =>$self->{executor}->{econtext});
-    #throw Kanopya::Exception::Internal::WrongValue(error => "test rollback");
+    $emotherboard->start(econtext =>$self->{executor}->{econtext},erollback => $self->{erollback});
+    throw Kanopya::Exception::Internal::WrongValue(error => "test rollback");
 }
 
 sub _generateNodeConf {
