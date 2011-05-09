@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Entity::Component;
 use Data::Dumper;
 use Administrator;
 use Log::Log4perl "get_logger";
@@ -195,6 +196,27 @@ sub getProvidedComponents {
     }
     return $components;
 }
+
+=head updateProvidedComponents
+
+update components provided by this distribution
+
+=cut
+
+sub updateProvidedComponents {
+    my $self = shift;
+    if(! $self->{_dbix}->in_storage) {
+        $errmsg = "Entity::Distribution->updateProvidedComponents must be called on an already save instance";
+        $log->error($errmsg);
+        throw Kanopya::Exception(error => $errmsg);
+    }
+    my $components = Entity::Component->getComponents();
+    foreach my $c (@$components) {
+		$self->{_dbix}->components_provided->find_or_create({component_id => $c->{component_id}});
+	}
+}
+
+
 
 =head2 toString
 
