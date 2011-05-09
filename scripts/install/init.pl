@@ -241,6 +241,7 @@ system('invoke-rc.d apache2 restart');
 
 # Launching Kanopya's init scripts
 system('invoke-rc.d kanopya-executor restart');
+system('invoke-rc.d kanopya-state-manager restart');
 system('invoke-rc.d kanopya-collector restart');
 system('invoke-rc.d kanopya-grapher restart');
 system('invoke-rc.d kanopya-orchestrator restart');

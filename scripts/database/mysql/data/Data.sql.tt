@@ -138,7 +138,8 @@ INSERT INTO `operationtype` VALUES
 (28,'InstallComponentOnSystemImage'),
 (29,'DeployComponent'),
 (30,'CreateLogicalVolume'),
-(31,'CreateExport');
+(31,'CreateExport'),
+(32,'DeployDistribution');
 
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
@@ -172,6 +173,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,29); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,30); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,31); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,32); SET @eid := @eid +1;
 
 -- components list
 INSERT INTO `component` VALUES 
