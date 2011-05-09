@@ -187,17 +187,16 @@ sub prepare {
 
 sub cancel {
     my $self = shift;
-    $log->info("Cancel start node, we will try to remove node link for <" . $self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") . ">");
-    $self->{_objs}->{motherboard}->stopToBeNode();
+
+    my $params = $self->_getOperation()->getParams();
+    my $motherboard = Entity::Motherboard->get(id => $params->{motherboard_id});
+    $log->info("Cancel start node, we will try to remove node link for <" . $motherboard->getAttr(name=>"motherboard_mac_address") . ">");
+    $motherboard->stopToBeNode();
 }
 
 sub execute {
     my $self = shift;
     my $adm = Administrator->new();
-
-    # Insert previous rollback here
-    $self->{erollback}->add(function   =>$self->{_objs}->{motherboard}->can('stopToBeNode'),
-                              parameters => [$self->{_objs}->{motherboard}]);
     
     ## Clone system image etc on motherboard etc
     # Get system image etc
@@ -324,7 +323,6 @@ sub execute {
     # finaly we start the node
     my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
     $emotherboard->start(econtext =>$self->{executor}->{econtext},erollback => $self->{erollback});
-    throw Kanopya::Exception::Internal::WrongValue(error => "test rollback");
 }
 
 sub _generateNodeConf {
