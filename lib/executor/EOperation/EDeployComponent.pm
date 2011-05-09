@@ -45,6 +45,7 @@ use XML::Simple;
 use Kanopya::Exceptions;
 use Entity::Cluster;
 use Entity::Systemimage;
+use Entity::Distribution;
 use EFactory;
 
 my $log = get_logger("executor");
@@ -224,8 +225,11 @@ sub execute{
     # Register
     $self->_registerComponentInDB( dbname => $dbname, dbuser => $dbuser, dbpwd => $dbpwd, dbhost => $dbhost, dbport => $dbport );
 
-    
-    
+    # update distribution provided components list
+    my @distributions = Entity::Distribution->getDistributions(hash => {});
+    foreach my $distrib (@distributions) {
+		$distrib->updateProvidedComponents();
+	}
 }        
 
 =head2 _registerComponentInDB
