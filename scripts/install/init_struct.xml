@@ -78,33 +78,11 @@
        search_command=""/>
     <!-- Kanopya server conf -->
     <kanopya_server_domain_name
-       question="What is your Kanopya server domain name"
+       question="What is your Kanopya-server domain name"
        default=""
        is_searchable="1"
        search_command="domainname"
        pattern="^[a-z0-9-]+(\.[a-z0-9-]+)+$"/>
-    <!--
-       <public_net_interface
-	  question="Which Kanopya server network interface will be used for public access"
-	  default="eth0"
-	  is_searchable="n"
-	  search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
-       <publicnet_add
-	  question="what is the gateway for this network"
-	  default=""
-	  is_searchable="0"
-	  search_command=""/>
-       <public_net_mask
-	  question="which mask is associated to this network"
-	  default="255.255.255.0"
-	  is_searchable="0"
-	  search_command=""/>
-       <internal_net_gateway
-	  question="which gateway is associated to this network"
-	  default="255.255.255.0"
-	  is_searchable="0"
-	  search_command=""/>
-       -->
     <!-- Kanopya config-->
     <internal_net_interface
        question="Which Kanopya server network interface will be used to administrate infrastructure"
