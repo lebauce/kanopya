@@ -244,6 +244,9 @@ system('invoke-rc.d kanopya-grapher restart');
 system('invoke-rc.d kanopya-orchestrator restart');
 print "\ninitial configuration: done.\n";
 print "You can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
+print "To Connect to Kanopya web use :\n";
+print "user : <admin>\n";
+print "user : <$answers->{dbpassword1}>\n";
 
 
 ##########################################################################################
