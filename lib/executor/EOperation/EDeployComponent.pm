@@ -115,7 +115,7 @@ sub prepare {
     $self->{_file_name} = $file_name; 
 
     # Check tarball name and retrieve component info from tarball name (temporary. TODO: component def xml file) 
-    if ((not defined $file_name) || $file_name !~ /component_(.*)_([a-zA-Z]+)([0-9]+)\.tar/) {
+    if ((not defined $file_name) || $file_name !~ /component_(.*)_([a-zA-Z]+)([0-9]+)\.tar\.bz2/) {
         $errmsg = "Incorrect component tarball name";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -158,10 +158,10 @@ sub execute{
     
     # untar component archive on local /tmp/<tar_root>
     $log->debug("Deploy files from archive '$self->{_file_path}'");
-    $cmd = "tar -xf $self->{_file_path} -C /tmp"; 
+    $cmd = "tar -jxf $self->{_file_path} -C /tmp"; 
     $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
     
-    $self->{_file_name} =~ /(.*)\.tar/; 
+    $self->{_file_name} =~ /(.*)\.tar\.bz2/; 
     my $root_dir_name = $1;
     
     # retrieve package info

@@ -68,7 +68,7 @@ if ( -d "../" . $comp_info{templates_dir} ) {
 
 # Tar directory and move tarball in this script dir (tools)
 print "Create archive...\n";
-my $tar_name = $archive_root_dir . ".tar";
+my $tar_name = $archive_root_dir . ".tar.bz2";
 `cd /tmp && tar -cjf $tar_name $archive_root_dir && mv $tar_name $ROOT_PATH/tools`;
 
 
