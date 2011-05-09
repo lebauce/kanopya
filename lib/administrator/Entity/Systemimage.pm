@@ -25,6 +25,7 @@ use Administrator;
 use Operation;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -214,11 +215,7 @@ sub installComponent {
     my $self = shift;
     my %args = @_;
     
-    if (! exists $args{component_id} or ! defined $args{component_id}) {
-        $errmsg = "Entity::Systemimage->installComponent needs a component_id parameter!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args=>\%args,required=>["component_id"]);
     
     my %params = ();
     $params{systemimage_id} = $self->getAttr(name => 'systemimage_id');
@@ -230,6 +227,15 @@ sub installComponent {
         type     => 'InstallComponentOnSystemImage',
         params   => \%params,
     );
+}
+
+sub installedComponentLinkCreation {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args=>\%args,required=>["component_id"]);
+    $args{systemimage_id} = $self->getAttr(name=>"systemimage_id");
+    $self->{_dbix}->components_installed->create(\%args);
 }
 
 =head2 update
@@ -269,13 +275,9 @@ sub getAttrDef{
 sub clone {
     my $self = shift;
     my %args = @_;
+    
+    General::checkParams(args=>\%args,required=>["systemimage_name", "systemimage_desc"]);
 
-    if ((! exists $args{systemimage_name} or ! defined $args{systemimage_name})||
-        (! exists $args{systemimage_desc} or ! defined $args{systemimage_desc})) {
-        $errmsg = "Entity::Systemimage->clone needs a systemimage_name and systemimage_desc parameter!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
     my $sysimg_id = $self->getAttr(name => 'systemimage_id');
     if (! defined $sysimg_id) {
         $errmsg = "Entity::Systemimage->clone needs a distribution_id parameter!";
@@ -406,6 +408,8 @@ sub getInstalledComponents {
 sub cloneComponentsInstalledFrom {
     my $self = shift;
     my %args = @_;
+    
+    
     if(! exists $args{systemimage_source_id} or ! defined $args{systemimage_source_id}) {
         $errmsg = "Entity::Systemimage->cloneComponentsInstalled needs a systemimage_source_id parameter!";
         $log->error($errmsg);

@@ -170,7 +170,7 @@ sub execute{
     $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
     if ( $cmd_res->{stderr} ne '') {
         $errmsg = "While reading component archive info : $cmd_res->{stderr}";
-        throw Kanopya::Exception::Internal(error => $errmsg);        
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # Build info struct

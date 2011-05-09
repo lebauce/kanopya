@@ -113,13 +113,11 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
-
     General::checkParams(args => \%args, required => ["internal_cluster"]);
     my $params = $self->_getOperation()->getParams();
 
 #### Get instance of Systemimage Entity
-    $log->info("Load systemimage instance");
+    $log->debug("Load systemimage instance");
     eval {
        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
@@ -143,34 +141,19 @@ sub prepare {
     } 
 
     #### Instanciate Clusters
-    $log->info("Get Internal Clusters");
     # Instanciate nas Cluster 
     $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
     $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
-    # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
-    $log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
-        
-    #### Get Internal IP
-    $log->info("Get Internal Cluster IP");
-    # Get Internal Ip address of Master node of cluster Executor
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    $log->debug("Executor ip is : <$exec_ip>");
-    # Get Internal Ip address of Master node of cluster nas
-    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-    $log->debug("Nas ip is : <$nas_ip>");
+
+    # Load NAS Econtext
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
     
-    #### Instanciate context 
-    $log->info("Get Internal Cluster context");
-    # Get context for nas
-    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-    $log->debug("Get econtext for nas with ip ($nas_ip) and ref " . ref($self->{nas}->{econtext}));
     
     ## Instanciate Component needed (here ISCSITARGET on nas )
     # Instanciate Export component.
     $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
                                                                                       version=> "1"));
-    $log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
+    $log->debug("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
 
 }
 

@@ -88,6 +88,12 @@ sub checkOp{
     my $self = shift;
     my %args = @_;
     
+    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
+       if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+            $errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is active";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
 
 }
 
@@ -105,49 +111,57 @@ sub prepare {
 
     $log->info("Operation preparation");
 
-    # Check if internal_cluster exists
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EInstallComponentInSystemImage->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
-     # Cluster instantiation
-    #TODO Get Systemimage
-
-
-
+    #### Get instance of Systemimage Entity
+    $log->debug("Load systemimage instance");
+    eval {
+       $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+    };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EInstallComponentInSystemImage->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+        $errmsg = "EOperation::EDeactivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
-    ### Check Parameters and context
+    $self->{_objs}->{component_id} = $params->{component_id};
+
     eval {
         $self->checkOp(params => $params);
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Operation ActivateCluster failed an error occured :\n$error";
+        $errmsg = "Operation InstallComponent on systemimage failed an error occured :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    #### Instanciate Clusters
+    # Instanciate nas Cluster 
+    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
+
+    # Load NAS Econtext
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
+    
+    ## Instanciate Component needed (here ISCSITARGET on nas )
+    # Instanciate Export component.
+    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Lvm",
+                                                                                      version=> "2"));
+    $log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_storage}));
 
 }
 
 sub execute{
     my $self = shift;
-    $log->debug("Before EOperation exec");
-    $self->SUPER::execute();
     
-
-        
+    $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_id => $self->{_objs}->{component_id});
+    
 }
 
 =head1 DIAGNOSTICS
