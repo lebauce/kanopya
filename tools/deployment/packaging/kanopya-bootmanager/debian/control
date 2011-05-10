@@ -10,4 +10,4 @@ Vcs-Git: git://git.kanopya.org/mcs/mcs.git
 Package: kanopya-bootmanager
 Architecture: all
 Depends: atftpd, isc-dhcp-server, ntp, ntpdate, openssh-client, openssh-server, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libexception-class-perl, libxml-simple-perl, libtest-simple-perl, liberror-perl
-Description: Boot manager manages boot. Great. 
+Description: Boot manager manages Kanopya boot. It includes PXE. 

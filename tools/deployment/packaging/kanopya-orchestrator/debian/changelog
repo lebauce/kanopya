@@ -1,5 +1,11 @@
 kanopya-orchestrator (0.9) stable; urgency=low
 
+  * Kanopya first dev release for public
+
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 10 May 2011 10:56:51 +0200
+
+kanopya-orchestrator (0.8) stable; urgency=low
+
   * Initial Release.
 
  -- Hedera Dev Team <dev@hederatech.com>  Mon, 31 Jan 2011 15:33:47 +0100

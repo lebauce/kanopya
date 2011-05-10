@@ -1,26 +1,8 @@
-kanopya (1.1) stable; urgency=low
-
-  * fifth release 
-
- -- maxime <maxime@maxbox>  Wed, 30 Mar 2011 15:57:05 +0200
-
-kanopya (1.0) stable; urgency=low
-
-  * fourth release 
-
- -- Hedera Dev Team <dev@hederatech.com>  Wed, 30 Mar 2011 15:46:28 +0200
-
-kanopya (1.0) stable; urgency=low
-
-  * third Release.
-
- -- Hedera Dev Team <dev@hederatech.com>  Mon, 25 Mar 2011 14:02:05 +0100
-
 kanopya (0.9) stable; urgency=low
 
-  * second Release.
+  * First dev public version
 
- -- Hedera Dev Team <dev@hederatech.com>  Mon, 25 Feb 2011 14:02:05 +0100
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 10 May 2011 10:58:25 +0200
 
 kanopya (0.8) stable; urgency=low
 

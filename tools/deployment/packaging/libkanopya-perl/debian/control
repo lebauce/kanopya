@@ -11,4 +11,4 @@ Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 Package: libkanopya-perl
 Architecture: all
 Depends: ${perl:Depends}, debconf (>= 0.5) | debconf-2.0, mysql-client, mysql-server, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libexception-class-perl, libxml-simple-perl, libnetaddr-ip-perl, libdbix-class-perl, libdbix-class-schema-loader-perl, libtest-simple-perl, liberror-perl
-Description: libkanopya llow to manipulate kanopya data object.
+Description: libkanopya allows to manipulate kanopya data object.

@@ -1,5 +1,11 @@
 kanopya-webui (0.9) stable; urgency=low
 
+  * First development public version
+
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 10 May 2011 10:55:15 +0200
+
+kanopya-webui (0.9) stable; urgency=low
+
   * Initial Release.
 
  -- Hedera Dev Team <dev@hederatech.com>  Mon, 31 Jan 2011 16:31:31 +0100
