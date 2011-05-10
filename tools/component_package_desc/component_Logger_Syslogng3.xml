@@ -1,4 +1,4 @@
-<info tables_file="scripts/database/mysql/schemas/components/syslogng3.sql" templates_dir="templates/components/syslogng3">
+<info tables_file="scripts/database/mysql/schemas/components/syslogng3.sql" templates_dir="templates/components/syslogng">
   <description name="Syslogng" category="Logger" version="3" />
   <executor dest="lib/executor/EEntity/EComponent/ELogger/ESyslogng3.pm" src="lib/executor/EEntity/EComponent/ELogger/ESyslogng3.pm" />
   <meta packager_version="0.1" />
