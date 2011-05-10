@@ -17,6 +17,7 @@ use base 'KanopyaUI::CGI';
 use strict;
 use warnings;
 use Entity::Distribution;
+use Operation;
 
 # distributions listing page
 
