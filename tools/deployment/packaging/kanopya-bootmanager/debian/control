@@ -4,8 +4,8 @@ Priority: optional
 Maintainer: Hedera Dev Team <dev@hederatech.com>
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.4
-Homepage: http://hederatech.org
-Vcs-Git: git://git.kanopya.org/mcs/administrator.git
+Homepage: http://kanopya.org
+Vcs-Git: git://git.kanopya.org/mcs/mcs.git
 
 Package: kanopya-bootmanager
 Architecture: all
