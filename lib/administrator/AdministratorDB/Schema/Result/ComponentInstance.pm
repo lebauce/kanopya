@@ -211,12 +211,12 @@ Related object: L<AdministratorDB::Schema::Result::Keepalived1>
 
 =cut
 
-__PACKAGE__->might_have(
-  "keepalived1",
-  "AdministratorDB::Schema::Result::Keepalived1",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->might_have(
+#  "keepalived1",
+#  "AdministratorDB::Schema::Result::Keepalived1",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 =head2 lvm2_vgs
 
@@ -241,12 +241,12 @@ Related object: L<AdministratorDB::Schema::Result::Memcached1>
 
 =cut
 
-__PACKAGE__->has_many(
-  "memcached1s",
-  "AdministratorDB::Schema::Result::Memcached1",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->has_many(
+#  "memcached1s",
+#  "AdministratorDB::Schema::Result::Memcached1",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 =head2 mounttable1s
 
@@ -331,12 +331,12 @@ Related object: L<AdministratorDB::Schema::Result::Syslogng3>
 
 =cut
 
-__PACKAGE__->has_many(
-  "syslogng3s",
-  "AdministratorDB::Schema::Result::Syslogng3",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->has_many(
+#  "syslogng3s",
+#  "AdministratorDB::Schema::Result::Syslogng3",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-05-04 15:05:42

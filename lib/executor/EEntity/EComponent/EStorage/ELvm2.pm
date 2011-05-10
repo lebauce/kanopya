@@ -19,6 +19,8 @@ use strict;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
+use General;
+
 my $log = get_logger("executor");
 my $errmsg;
 # contructor
@@ -47,15 +49,8 @@ createDisk ( name, size, filesystem, econtext )
 sub createDisk {
     my $self = shift;
     my %args = @_;
-    
-    if ((! exists $args{name} or ! defined $args{name}) ||
-        (! exists $args{size} or ! defined $args{size}) ||
-        (! exists $args{filesystem} or ! defined $args{filesystem})||
-        (! exists $args{econtext} or ! defined $args{econtext})) { 
-        $errmsg = "ELvm2->createDisk need a name, size and filesystem named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args=>\%args, required=>["name", "size", "filesystem", "econtext"]);
+
     my $vg = $self->_getEntity()->getMainVg();
     my $lv_id = $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
                     lvm2_lv_filesystem =>$args{filesystem}, lvm2_lv_size => $args{size},
@@ -83,12 +78,8 @@ sub removeDisk{
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{name} or ! defined $args{name}) ||
-        (! exists $args{econtext} or ! defined $args{econtext})) { 
-        $errmsg = "ELvm2->removeDisk need a name and econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args=>\%args, required=>["name", "econtext"]);
+
     my $vg = $self->_getEntity()->getMainVg();
 
     return $self->lvRemove(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
@@ -113,16 +104,9 @@ sub lvCreate{
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{lvm2_lv_name} or ! defined $args{lvm2_lv_name}) ||
-        (! exists $args{lvm2_lv_size} or ! defined $args{lvm2_lv_size}) ||
-        (! exists $args{lvm2_lv_filesystem} or ! defined $args{lvm2_lv_filesystem}) ||
-        (! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
-        (! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
-        $errmsg = "ELvm2->createLV need a lvm2_lv_name, lvm2_lv_size, lvm2_vg_id and lvm2_lv_filesystem named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args=>\%args, required=>["lvm2_lv_name", "lvm2_lv_size",
+                                                  "lvm2_lv_filesystem", "econtext", 
+                                                  "lvm2_vg_id", "lvm2_vg_name"]);
 
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
     $log->debug("lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}");
@@ -135,7 +119,10 @@ sub lvCreate{
     }
     
     my $newdevice = "/dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
-    $self->mkfs(device => $newdevice, fstype => $args{lvm2_lv_filesystem}, econtext => $args{econtext});
+    if (! defined $args{"noformat"}){
+        $self->mkfs(device => $newdevice, fstype => $args{lvm2_lv_filesystem}, econtext => $args{econtext});
+    }
+    delete $args{noformat};
     
     $self->vgSpaceUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
                         lvm2_vg_name => $args{lvm2_vg_name});

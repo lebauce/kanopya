@@ -223,7 +223,7 @@ sub execute{
     }    
     
     # Register
-    $self->_registerComponentInDB( dbname => $dbname, dbuser => $dbuser, dbpwd => $dbpwd, dbhost => $dbhost, dbport => $dbport );
+    $self->_registerComponentInDB(templates_directory=>$package_info->{templates_dir});
 
 #   TODO call component data sql (for specific data insertion)
 #   create new component and call init method on it
@@ -231,7 +231,9 @@ sub execute{
 
     # update distribution provided components list
     my @distributions = Entity::Distribution->getDistributions(hash => {});
+    $log->info ("Go through distribution list of size <".(scalar @distributions).">");
     foreach my $distrib (@distributions) {
+        $log->info("Update component on distribution <".$distrib->getAttr(name=>"distribution_name").">");
 		$distrib->updateProvidedComponents();
 	}
 }        
@@ -255,25 +257,14 @@ sub _registerComponentInDB {
     my ($comp_name, $comp_version, $comp_cat) = ($self->{comp_name}, $self->{comp_version}, $self->{comp_category});
     my $comp_fullname_lc = lc $comp_name . $comp_version;
     
-    my $sql_cmd = "SET foreign_key_checks=0;";
     
-    # Register Component
-    $sql_cmd .= "SET \@eid_new_component = (SELECT MAX(component_id) FROM component) + 1;";
-    $sql_cmd .= "INSERT INTO component VALUES (\@eid_new_component,'$comp_name','$comp_version','$comp_cat');";
-    
-    # Insert template
-    $sql_cmd .= "SET \@eid_new_component_template = (SELECT MAX(component_template_id) FROM component_template) + 1;";
-    $sql_cmd .= "INSERT INTO component_template VALUES (\@eid_new_component_template,'default_$comp_fullname_lc','/templates/components/$comp_fullname_lc', \@eid_new_component);";
-    
-    # Execute sql cmd
-    my $cmd = "mysql -u $args{dbuser} -p$args{dbpwd} -h $args{dbhost} -P $args{dbport} $args{dbname} -e \"$sql_cmd\"";
-    my $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);    
-    
-    # Throw execption if cmd failed
-    if ( $cmd_res->{stderr} =~ "ERROR" ) {
-        $errmsg = "While creating component tables : $cmd_res->{stderr}";
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    my $adm = Administrator->new();
+
+    my $component_id = $adm->registerComponent(component_name=>$comp_name, component_version => $comp_version, component_category=>$comp_cat);
+
+    $adm->registerTemplate(component_template_directory => $args{templates_directory},
+                           component_template_name      => "default_$comp_fullname_lc",
+                           component_id                 => $component_id);
 }
 
 =head1 DIAGNOSTICS

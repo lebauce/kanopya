@@ -1,22 +1,37 @@
 #!/usr/bin/perl -w
 
 # microcluster chroot environment to customize system image
+use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 use strict;
 use warnings;
-use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
+use Term::ReadKey;
 use Administrator;
 use Entity::Systemimage;
 
+my $currentuser = `whoami`;
+chomp($currentuser);
+if($currentuser ne 'root') {
+    die("You must be root to use this script.\n");
+}
+
 my ($sysimg_name) = @ARGV;
 if(not defined $sysimg_name) {
-	print "We must specify systemimage name to chroot\n";
-	print "Usage: systemimage_chroot.pl sysimage_name\n";
+	print "We must specify systemimage name to chroot ; this systemimage must be deactivated\n";
+	print "Usage: systemimage_chroot.pl sysimage_name \n";
 	exit 1;
 } 
 
-Administrator::authenticate(login => 'admin', password => 'admin');
+my ($login, $passwd);
+print "User login : ";
+chomp($login = <STDIN>);
+print "password for login $login : ";
+ReadMode('noecho');
+chomp($passwd = <STDIN>);
+ReadMode('original');
 
-my $admin = Administrator->new(login => 'admin', password => 'admin');
+Administrator::authenticate(login => $login, password => $passwd);
+
+my $admin = Administrator->new();
 my @systemimages = Entity::Systemimage->getSystemimages(hash => {systemimage_name => $sysimg_name});
 if(not scalar @systemimages) {
 	die("System image $sysimg_name not found !\n");
@@ -25,6 +40,11 @@ if(not scalar @systemimages) {
 } 
 
 my $systemimage = pop @systemimages;
+
+if($systemimage->getAttr(name => 'active')) {
+    die($sysimg_name." is still active. Deactivate it before using this script.\n");
+}
+
 my $devices = $systemimage->getDevices();
 my $root_device = "/dev/".$devices->{root}->{vgname}."/".$devices->{root}->{lvname};
 my $etc_device = "/dev/".$devices->{etc}->{vgname}."/".$devices->{etc}->{lvname};

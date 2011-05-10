@@ -305,56 +305,56 @@ sub getRow {
     
 =cut
 
-sub getEntity {
-    my $self = shift;
-    my %args = @_;
-    
-    # entity_dbix will contain resultset row integrated into Entity
-    # entity_class is Entity Class
-    my ($entity_dbix, $entity_class);
-
-    if ((! exists $args{type} or ! defined $args{type}) ||
-        (! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Administrator->getEntity need a type and an id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
-    
-    $log->debug( "getEntity( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
-    $log->debug( "_getDbix with table = $args{type} and id = $args{id}");
-    $entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
-    
-    # Test if Dbix is get
-    if ( defined $entity_dbix ) {
-        $log->debug( "_getEntityClass with type = $args{type}");
-        if (! exists $args{class_path} or ! defined $args{class_path}){
-             $entity_class = $self->_getEntityClass(type => $args{type});}
-        else {
-            $entity_class = $self->_getEntityClass(type => $args{type}, class_path => $args{class_path});}
-
-        # Extension Entity Management
-        my $extension = $entity_class->extension();
-        if ($extension){
-            $log->debug("GetEntity with extension");
-            my %attrs;
-            my $ext_attrs_rs = $entity_dbix->search_related( $extension );
-            while ( my $param = $ext_attrs_rs->next ) {
-                $attrs{ $param->name } = $param->value;
-            }
-            my $entity = $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix, ext_attrs => \%attrs); 
-            $log->info(ref($entity)." retrieved from database");
-            return $entity;
-        } else {
-            my $entity = $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix );
-            $log->info(ref($entity)." retrieved from database");
-            return $entity;
-        }
-    } else {
-        $errmsg = "Administrator::getEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-}
+#sub getEntity {
+#    my $self = shift;
+#    my %args = @_;
+#    
+#    # entity_dbix will contain resultset row integrated into Entity
+#    # entity_class is Entity Class
+#    my ($entity_dbix, $entity_class);
+#
+#    if ((! exists $args{type} or ! defined $args{type}) ||
+#        (! exists $args{id} or ! defined $args{id})) { 
+#        $errmsg = "Administrator->getEntity need a type and an id named argument!";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg); 
+#    }
+#    
+#    $log->debug( "getEntity( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
+#    $log->debug( "_getDbix with table = $args{type} and id = $args{id}");
+#    $entity_dbix = $self->_getDbix( table => $args{type}, id => $args{id} );
+#    
+#    # Test if Dbix is get
+#    if ( defined $entity_dbix ) {
+#        $log->debug( "_getEntityClass with type = $args{type}");
+#        if (! exists $args{class_path} or ! defined $args{class_path}){
+#             $entity_class = $self->_getEntityClass(type => $args{type});}
+#        else {
+#            $entity_class = $self->_getEntityClass(type => $args{type}, class_path => $args{class_path});}
+#
+#        # Extension Entity Management
+#        my $extension = $entity_class->extension();
+#        if ($extension){
+#            $log->debug("GetEntity with extension");
+#            my %attrs;
+#            my $ext_attrs_rs = $entity_dbix->search_related( $extension );
+#            while ( my $param = $ext_attrs_rs->next ) {
+#                $attrs{ $param->name } = $param->value;
+#            }
+#            my $entity = $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix, ext_attrs => \%attrs); 
+#            $log->info(ref($entity)." retrieved from database");
+#            return $entity;
+#        } else {
+#            my $entity = $entity_class->new( rightschecker => $self->{_rightschecker}, data => $entity_dbix );
+#            $log->info(ref($entity)." retrieved from database");
+#            return $entity;
+#        }
+#    } else {
+#        $errmsg = "Administrator::getEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!"; 
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg);
+#    }
+#}
 
 =head2 getEntities
     
@@ -370,45 +370,45 @@ sub getEntity {
     
 =cut
 
-sub getEntities {
-    my $self = shift;
-    my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
-
-    if ((! exists $args{type} or ! defined $args{type}) ||
-        (! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Administrator->_getEntityFromHash need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-    $log->debug( "getEntityFromHash( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
-    $log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
-    $rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
-    $log->debug('resultset count:'.$rs->count());
-    $log->debug( "_getEntityClass with type = $args{type}");
-    if (! exists $args{class_path} or ! defined $args{class_path}){
-         $entity_class = $self->_getEntityClass(type => $args{type});}
-    else {
-        $entity_class = $self->_getEntityClass(type => $args{type}, class_path => $args{class_path});}
-
-    my $extension = $entity_class->extension();
-
-    while ( my $raw = $rs->next ) {
-        my $obj;
-        if ($extension){
-            my %attrs;
-            my $ext_attrs_rs = $raw->search_related( $extension );
-            while ( my $param = $ext_attrs_rs->next ) {
-                $attrs{ $param->name } = $param->value;}
-            $obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
-        else {
-            $obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
-        push @objs, $obj;
-    }
-    return  @objs;
-}
+#sub getEntities {
+#    my $self = shift;
+#    my %args = @_;
+#    my @objs = ();
+#    my ($rs, $entity_class);
+#
+#    if ((! exists $args{type} or ! defined $args{type}) ||
+#        (! exists $args{hash} or ! defined $args{hash})) { 
+#        $errmsg = "Administrator->_getEntityFromHash need a type and a hash named argument!";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg);
+#    }
+#    
+#    $log->debug( "getEntityFromHash( ".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ");" );
+#    $log->debug( "_getDbix with table = $args{type} and hash = $args{hash}");
+#    $rs = $self->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
+#    $log->debug('resultset count:'.$rs->count());
+#    $log->debug( "_getEntityClass with type = $args{type}");
+#    if (! exists $args{class_path} or ! defined $args{class_path}){
+#         $entity_class = $self->_getEntityClass(type => $args{type});}
+#    else {
+#        $entity_class = $self->_getEntityClass(type => $args{type}, class_path => $args{class_path});}
+#
+#    my $extension = $entity_class->extension();
+#
+#    while ( my $raw = $rs->next ) {
+#        my $obj;
+#        if ($extension){
+#            my %attrs;
+#            my $ext_attrs_rs = $raw->search_related( $extension );
+#            while ( my $param = $ext_attrs_rs->next ) {
+#                $attrs{ $param->name } = $param->value;}
+#            $obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw, ext_attrs => \%attrs);}
+#        else {
+#            $obj = $entity_class->new(rightschecker => $self->{_rightschecker}, data => $raw );}
+#        push @objs, $obj;
+#    }
+#    return  @objs;
+#}
 
 =head2 countEntities 
 
@@ -827,47 +827,63 @@ sub _getEntityClass{
     return $entity_class;
 }
 
-sub getNodes {
+sub registerComponent {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{cluster_id} or ! defined $args{cluster_id}) {
-        $errmsg = "Administrator->getNodes need a cluster_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    my $nodes = $self->{db}->resultset('Node')->search({ cluster_id => $args{cluster_id}});
-    my $motherboards = [];
-    while (my $n = $nodes->next) {
-        push @$motherboards, $self->getEntity(type => 'Motherboard', id => $n->get_column('motherboard_id'));
-    }
-    return $motherboards;
+    
+    General::checkParams(args=>\%args, required => ["component_name", "component_version", "component_category"]);
+    return $self->{db}->resultset('Component')->create(\%args)->get_column("component_id");
 }
 
-
-sub getComponent {
+sub registerTemplate {
     my $self = shift;
     my %args = @_;
-
-    if ((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) { 
-        $errmsg = "Administrator->getComponent needs a component_instance_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
     
-    my $comp_instance_row = $self->{db}->resultset("ComponentInstance")->find(
-        { component_instance_id => $args{component_instance_id} }, 
-        { '+columns' => [ "component_id.component_name",
-                          "component_id.component_version",
-                          "component_id.component_category"], 
-        join => ["component_id"]});    
-    
-    return $self->getEntity (
-                class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
-                    $comp_instance_row->get_column('component_name') . 
-                    $comp_instance_row->get_column('component_version'),
-                id => $comp_instance_row->get_column('component_instance_id'),
-                type => "ComponentInstance");
+    General::checkParams(args=>\%args, required => ["component_template_name", "component_template_directory", "component_id"]);
+    return $self->{db}->resultset('ComponentTemplate')->create(\%args)->get_column("component_template_id");
 }
+
+#sub getNodes {
+#    my $self = shift;
+#    my %args = @_;
+#    if (! exists $args{cluster_id} or ! defined $args{cluster_id}) {
+#        $errmsg = "Administrator->getNodes need a cluster_id named argument!";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg);
+#    }
+#    my $nodes = $self->{db}->resultset('Node')->search({ cluster_id => $args{cluster_id}});
+#    my $motherboards = [];
+#    while (my $n = $nodes->next) {
+#        push @$motherboards, $self->getEntity(type => 'Motherboard', id => $n->get_column('motherboard_id'));
+#    }
+#    return $motherboards;
+#}
+
+
+#sub getComponent {
+#    my $self = shift;
+#    my %args = @_;
+#
+#    if ((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) { 
+#        $errmsg = "Administrator->getComponent needs a component_instance_id named argument!";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+#    }
+#    
+#    my $comp_instance_row = $self->{db}->resultset("ComponentInstance")->find(
+#        { component_instance_id => $args{component_instance_id} }, 
+#        { '+columns' => [ "component_id.component_name",
+#                          "component_id.component_version",
+#                          "component_id.component_category"], 
+#        join => ["component_id"]});    
+#    
+#    return $self->getEntity (
+#                class_path => "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
+#                    $comp_instance_row->get_column('component_name') . 
+#                    $comp_instance_row->get_column('component_version'),
+#                id => $comp_instance_row->get_column('component_instance_id'),
+#                type => "ComponentInstance");
+#}
 
 ########################################
 ## methodes for fast usage in web ui ##

@@ -2,12 +2,8 @@ lvm2
 iscsitarget1
 openiscsi2
 apache2
-keepalived1
 atftpd0
 dhcpd3
 snmpd5
-syslogng3
 nfsd3
-php5
-memcached1
 mounttable1
