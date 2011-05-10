@@ -10,4 +10,4 @@ Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 Package: kanopya-storage
 Architecture: all
 Depends: lvm2, openssh-client, openssh-server, iscsitarget, iscsitarget-dkms, libkanopya-perl, kanopya-core
-Description: Storage provides all dependencies for a proper SAN install.
+Description: Kanopya Storage provides all dependencies for a proper SAN install (iscsitarget and nfs).

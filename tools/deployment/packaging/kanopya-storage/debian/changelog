@@ -1,5 +1,11 @@
 kanopya-storage (0.9) stable; urgency=low
 
+  * Frst public dev release
+
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 10 May 2011 10:54:22 +0200
+
+kanopya-storage (0.8) stable; urgency=low
+
   * Initial Release.
 
  -- Hedera Dev Team <dev@hederatech.com>  Mon, 31 Jan 2011 15:22:37 +0100

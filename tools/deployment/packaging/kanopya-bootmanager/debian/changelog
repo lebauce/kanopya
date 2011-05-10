@@ -1,5 +1,11 @@
 kanopya-bootmanager (0.9) stable; urgency=low
 
+  * First public dev version
+
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 10 May 2011 10:30:02 +0200
+
+kanopya-bootmanager (0.8) stable; urgency=low
+
   * Initial Release.
 
  -- Hedera Dev Team <dev@hederatech.com>  Mon, 31 Jan 2011 16:13:43 +0100

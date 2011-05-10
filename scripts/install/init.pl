@@ -237,6 +237,8 @@ my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidC
 system("echo '$fcgid_conf' > /etc/apache2/mods-available/fcgid.conf");
 system('a2enmod fcgid');
 
+system("ln -sf /opt/kanopya/templates /templates");
+
 system('invoke-rc.d apache2 restart');
 
 # Launching Kanopya's init scripts
