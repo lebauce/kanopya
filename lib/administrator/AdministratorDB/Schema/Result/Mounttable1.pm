@@ -114,7 +114,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("mounttable1_id");
 __PACKAGE__->add_unique_constraint(
   "mounttable1_unique1",
-  ["mounttable1_device", "mounttable1_mountpoint"],
+  ["component_instance_id", "mounttable1_device", "mounttable1_mountpoint"],
 );
 
 =head1 RELATIONS
