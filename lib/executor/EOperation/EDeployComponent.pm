@@ -225,6 +225,10 @@ sub execute{
     # Register
     $self->_registerComponentInDB(templates_directory=>$package_info->{templates_dir});
 
+#   TODO call component data sql (for specific data insertion)
+#   create new component and call init method on it
+
+
     # update distribution provided components list
     my @distributions = Entity::Distribution->getDistributions(hash => {});
     $log->info ("Go through distribution list of size <".(scalar @distributions).">");
