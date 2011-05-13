@@ -20,7 +20,7 @@ use Entity::Component;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Entity::Cluster;
-use Entity::Component;
+use Operation;
 use JSON;
 
 my $log = get_logger("webui");

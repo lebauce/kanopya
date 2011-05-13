@@ -193,7 +193,7 @@ sub execute{
         $cmd = "dd if=/tmp/$disk_type"."_$self->{distribution_name}_$self->{distribution_version}.img of=/dev/$vg->{vgname}/$disk_type".
                "_$self->{distribution_name}_$self->{distribution_version} bs=1M";
          $log->debug($cmd);
- #       $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
         $self->{_objs}->{distribution}->setAttr(name => "$disk_type"."_device_id", value => $self->{$disk_type});
     }
     $self->{_objs}->{distribution}->save();

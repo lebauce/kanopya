@@ -117,7 +117,7 @@ sub _init {
     $log->debug("Initialise ssh connection to $self->{ip}");
     my $m  = GRID::Machine->new(
         ssh => '/usr/bin/ssh',
-        sshoptions => 'StrictHostKeyChecking=no UserKnownHostsFile=/dev/null',
+        sshoptions => '',
         host => "root\@$self->{ip}",    # host to contact
         prefix => '/tmp/perl5lib',                # directory on remote host to install perl code
         startdir => '/tmp',                        # initial working directory on remote host
