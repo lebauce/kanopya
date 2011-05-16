@@ -165,7 +165,7 @@ useTemplate(template => 'Data.sql.tt', datas => \%datas, conf => $conf_vars->{da
 
 ###############Creation of database user
 my $root_passwd;
-print "Please enter your root database user :\n";
+print "Please enter your root database user password :\n";
 ReadMode('noecho');
 chomp($root_passwd = <STDIN>);
 ReadMode('original');
@@ -248,10 +248,10 @@ system('invoke-rc.d kanopya-collector restart');
 system('invoke-rc.d kanopya-grapher restart');
 system('invoke-rc.d kanopya-orchestrator restart');
 print "\ninitial configuration: done.\n";
-print "You can now visit http://localhost/cgi/kanopya.cgi and start using Kanopya!\n";
+print "You can now visit http://$internal_ip_add/cgi/kanopya.cgi and start using Kanopya!\n";
 print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
-print "user : <$answers->{dbpassword1}>\n";
+print "password : <$answers->{dbpassword1}>\n";
 
 
 ##########################################################################################
