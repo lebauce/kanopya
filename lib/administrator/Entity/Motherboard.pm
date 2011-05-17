@@ -23,6 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Operation;
+use General;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -156,39 +157,32 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Motherboard->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    General::checkParams(args => \%args, required => ['id']);
+
+    my $admin = Administrator->new();
+    my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
+    if(not defined $motherboard) {
+        $errmsg = "Entity::Motherboard->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    } 
+    my $entity_id = $motherboard->entitylink->get_column('entity_id');
+    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard with id $args{id}");
     }
-   
-       my $admin = Administrator->new();
-       my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
-       if(not defined $motherboard) {
-           $errmsg = "Entity::Motherboard->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       } 
-       my $entity_id = $motherboard->entitylink->get_column('entity_id');
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard with id $args{id}");
-       }
-   
-       my $self = $class->SUPER::get( %args, table=>"Motherboard");
-       $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
-       return $self;
+
+    my $self = $class->SUPER::get( %args, table=>"Motherboard");
+    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "motherboarddetails");
+    return $self;
 }
 
 sub setNodeState {
     my $self = shift;
     my %args = @_;
-    # check arguments
-    if((! exists $args{state} or ! defined $args{state})) {
-           $errmsg = "Entity::Motherboard->setNodeState needs a state named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['state']);
+
     $self->{_dbix}->node->update({'node_state' => $args{state}});
 }
 
@@ -215,12 +209,8 @@ sub becomeNode{
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id}) ||
-        (! exists $args{master_node} or ! defined $args{master_node})){
-        $errmsg = "Entity::Motherboard->becomeNode need a cluster_id and a master_node named argument!";
-        $log->error($errmsg);    
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['cluster_id','master_node']);
+
     my $adm = Administrator->new();
     my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
                                             motherboard_id =>$self->getAttr(name=>'motherboard_id'),
@@ -253,7 +243,6 @@ sub becomeMasterNode{
 
 sub stopToBeNode{
     my $self = shift;
-    my %args = @_;
     
     my $row = $self->{_dbix}->node;
     $log->debug("node <".$self->getAttr(name=>"motherboard_mac_address")."> stop to be node");
@@ -273,25 +262,18 @@ sub getMotherboards {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getMotherboards need a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-       return $class->SUPER::getEntities( %args,  type => "Motherboard");
+    General::checkParams(args => \%args, required => ['hash']);
+
+    return $class->SUPER::getEntities( %args,  type => "Motherboard");
 }
 
 sub getMotherboard {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getMotherboard need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-       my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
+    General::checkParams(args => \%args, required => ['hash']);
+
+    my @Motherboards = $class->SUPER::getEntities( %args,  type => "Motherboard");
     return pop @Motherboards;
 }
 
@@ -299,11 +281,8 @@ sub getMotherboardFromIP {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{ipv4_internal_ip} or ! defined $args{ipv4_internal_ip})) { 
-        $errmsg = "Entity::getMotherboardFromIP need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['ipv4_internal_ip']);
+
     my $adm = Administrator->new();
     my $net_id = $adm->{manager}->{network}->getInternalIPid(%args);
     return $class->SUPER::getEntities( hash=>{motherboard_ipv4_internal_id => $net_id},  type => "Motherboard");
@@ -338,7 +317,6 @@ sub new {
     # Set the extended parameters
     $self->{_ext_attrs} = $attrs->{extended};
     return $self;
-
 }
 
 =head2 create
@@ -384,7 +362,6 @@ sub extension {
 }
 
 sub getHarddisks {
-    
     my $self = shift;
     my $hds = [];
     my $harddisks = $self->{_dbix}->harddisks;
@@ -401,55 +378,38 @@ sub getHarddisks {
 sub addHarddisk {
     my $self = shift;
     my %args = @_;
-        
-    if (! exists $args{device} or ! defined $args{device}) {
-        $errmsg = "Entity::Motherboard->addHarddisk need a device named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['device']);
     
     my $adm = Administrator->new();
     # addHarddisk method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addHarddisk');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a hard disk to this motherboard");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addHarddisk');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a hard disk to this motherboard");
+    }
     
     $self->{_dbix}->harddisks->create({
         harddisk_device => $args{device},
         motherboard_id => $self->getAttr(name => 'motherboard_id'), 
-    });
-    
+    });   
 }
 
 sub removeHarddisk {
     my $self = shift;
     my %args = @_;
-        
-    if (! exists $args{harddisk_id} or ! defined $args{harddisk_id}) {
-        $errmsg = "Entity::Motherboard->removeHarddisk need a harddisk_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['harddisk_id']);
 
     my $adm = Administrator->new();
     # removeHarddisk method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeHarddisk');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a hard disk from this motherboard");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeHarddisk');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a hard disk from this motherboard");
+    }
 
     my $hd = $self->{_dbix}->harddisks->find($args{harddisk_id});
     $hd->delete();
-
 }
-
-
-
-
-
-
-
 
 sub activate{
     my $self = shift;
@@ -468,8 +428,6 @@ sub deactivate{
                    type     => 'DeactivateMotherboard',
                    params   => {motherboard_id => $self->getAttr(name=>'motherboard_id')});
 }
-
-
 
 =head2 toString
 
@@ -496,6 +454,7 @@ sub getEtcName {
 return Mac address with separator : replaced by _
 
 =cut
+
 sub getMacName {
     my $self = shift;
     my $mac = $self->getAttr(name => "motherboard_mac_address");
@@ -503,12 +462,12 @@ sub getMacName {
     return $mac;
 }
 
-
 =head2 getEtcDev
 
 get etc attributes used by this motherboard
 
 =cut
+
 sub getEtcDev {
     my $self = shift;
     if(! $self->{_dbix}->in_storage) {
@@ -538,18 +497,15 @@ sub getInternalIP {
         return $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $self->getAttr(name=>"motherboard_ipv4_internal_id"));
     }
     return {};
-#    if($self->{_dbix}->)
+
 }
 
 sub setInternalIP{
     my $self = shift;
     my %args = @_;
-    if (! exists $args{ipv4_internal_address} or ! defined $args{ipv4_internal_address} || 
-        ! exists $args{ipv4_internal_mask} or ! defined $args{ipv4_internal_mask}) {
-        $errmsg = "Motherboard->setInternalIP need ipv4_internal_address and ipv4_internal_mask named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['ipv4_internal_address','ipv4_internal_mask']);
+
     my $adm = Administrator->new();
     my $net_id = $adm->{manager}->{network}->newInternalIP(%args);
     $self->setAttr(name => "motherboard_ipv4_internal_id", value => $net_id);

@@ -24,6 +24,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
 use Kanopya::Exceptions;
+use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -47,12 +48,9 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
-    if ((! exists $args{schemas} or ! defined $args{schemas})||
-        (! exists $args{internalnetwork} or ! defined $args{internalnetwork})){
-        $errmsg = "NetworkManager->new schemas and internalnetwork named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['schemas', 'internalnetwork']);
+    
     $self->{db} = $args{schemas};
     $self->{internalnetwork} = $args{internalnetwork};
     bless $self, $class;
@@ -72,14 +70,9 @@ add new route to a public ip given its id
 sub addRoute {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
-        ! exists $args{ip_destination} or ! defined $args{ip_destination} || 
-        ! exists $args{gateway} or ! defined $args{gateway} ||
-        ! exists $args{context} or ! defined $args{context}) {
-        $errmsg = "NetworkManager->addRoute need publicip_id, ip_destination and gateway named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['publicip_id', 'ip_destination', 'gateway', 'context']);
+    
     # check valid ip_destination and gateway format
     my $destinationip = new NetAddr::IP($args{ip_destination});
     if(not defined $destinationip) {
@@ -153,12 +146,9 @@ add a new public ip address
 sub newPublicIP {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{ip_address} or ! defined $args{ip_address} || 
-        ! exists $args{ip_mask} or ! defined $args{ip_mask}) {
-        $errmsg = "NetworkManager->newPublicIP need ip_address and ip_mask named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['ip_address', 'ip_mask']);
+    
     # ip format valid ?
     my $pubip = new NetAddr::IP($args{ip_address}, $args{ip_mask});
     if(not defined $pubip) { 
@@ -196,11 +186,9 @@ sub newPublicIP {
 sub getInternalIPId{
     my $self = shift;
     my %args = @_;
-    if (! exists $args{ipv4_internal_address} or ! defined $args{ipv4_internal_address}) {
-        $errmsg = "NetworkManager->getInternalIPId need ipv4_internal_address named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['ipv4_internal_address']);
+
     my $internal_ip_row = $self->{db}->resultset('Ipv4Internal')->find({ipv4_internal_address => $args{ipv4_internal_address},key=>"ipv4_internal_address_UNIQUE"});
     return $internal_ip_row->get_column("ipv4_internal_id");
 }
@@ -208,11 +196,9 @@ sub getInternalIPId{
 sub getInternalIP{
     my $self = shift;
     my %args = @_;
-    if (! exists $args{ipv4_internal_id} or ! defined $args{ipv4_internal_id}) {
-        $errmsg = "NetworkManager->getInternalIP need ipv4_internal_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['ipv4_internal_id']);
+
     my %internal_ip_row = $self->{db}->resultset('Ipv4Internal')->find($args{ipv4_internal_id})->get_columns();
     return \%internal_ip_row;
 }
@@ -232,12 +218,9 @@ sub newInternalIP {
     #TODO This method
     my $self = shift;
     my %args = @_;
-    if (! exists $args{ipv4_internal_address} or ! defined $args{ipv4_internal_address} || 
-        ! exists $args{ipv4_internal_mask} or ! defined $args{ipv4_internal_mask}) {
-        $errmsg = "NetworkManager->newInternalIP need ipv4_internal_address and ipv4_internal_mask named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['ipv4_internal_address','ipv4_internal_mask']);
+
     # ip format valid ?
     my $internalip = new NetAddr::IP($args{ipv4_internal_address}, $args{ipv4_internal_mask});
     if(not defined $internalip) { 
@@ -329,11 +312,8 @@ sub delPublicIP {
     my $self = shift;
     my %args = @_;
     # arguments checking
-    if (! exists $args{publicip_id} or ! defined $args{publicip_id}) { 
-        $errmsg = "NetworkManager->delPublicIP need a publicip_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['publicip_id']);
     
     # getting the row    
     my $row = $self->{db}->resultset('Ipv4Public')->find( $args{publicip_id} );
@@ -359,11 +339,8 @@ sub delInternalIP {
     my $self = shift;
     my %args = @_;
     # arguments checking
-    if (! exists $args{ipv4_internal_id} or ! defined $args{ipv4_internal_id}) { 
-        $errmsg = "NetworkManager->delInternalIP need a ipv4_internal_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['ipv4_internal_id']);
     
     # getting the row    
     my $row = $self->{db}->resultset('Ipv4Internal')->find( $args{ipv4_internal_id} );
@@ -390,12 +367,8 @@ associate public ip and cluster
 sub setClusterPublicIP {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
-        ! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
-        $errmsg = "NetworkManager->setClusterPublicIP need publicip_id and cluster_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['publicip_id', 'cluster_id']);
     
     my $row = $self->{db}->resultset('Ipv4Public')->find($args{publicip_id});
     # getting public ip row
@@ -427,12 +400,8 @@ associate public ip and cluster
 sub unsetClusterPublicIP {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{publicip_id} or ! defined $args{publicip_id} ||
-        ! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
-        $errmsg = "NetworkManager->unsetClusterPublicIP need publicip_id and cluster_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['publicip_id','cluster_id']);
     
     my $row = $self->{db}->resultset('Ipv4Public')->find($args{publicip_id});
     # getting public ip row
@@ -469,11 +438,8 @@ delRoute delete a route given its id
 sub delRoute {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{route_id} or ! defined $args{route_id}) {
-        $errmsg = "NetworkManager->delRoute need a route_id named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['route_id']);
     
     my $row = $self->{db}->resultset('Ipv4Route')->find($args{route_id});
     if(not defined $row) {
@@ -488,12 +454,8 @@ sub delRoute {
 sub setClusterRoute {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{ipv4_route_id} or ! defined $args{ipv4_route_id} ||
-        ! exists $args{cluster_id} or ! defined $args{cluster_id}) { 
-        $errmsg = "NetworkManager->setClusterRoute need ipv4_route_id and cluster_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['ipv4_route_id','cluster_id']);
     
 #    my $row = $self->{db}->resultset('ClusterIpv4Route')->search({cluster_id => $args{cluster_id}, ipv4_route_id =>$args{ipv4_route_id}});
 #    # getting public ip row

@@ -83,12 +83,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-        (! exists $args{component_id} or ! defined $args{component_id})){ 
-        $errmsg = "Entity::Component->new need a cluster_id and a component_id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['cluster_id','component_id']);
     
     my $admin = Administrator->new();
     my $template_id = undef;
@@ -149,6 +144,8 @@ sub get {
     my $class = shift;
     my %args = @_;
 
+     General::checkParams(args => \%args, required => ['id']);
+
     if ((! exists $args{id} or ! defined $args{id})) { 
         $errmsg = "Entity::Component->get need an id named argument!";    
         $log->error($errmsg);
@@ -166,28 +163,24 @@ sub getInstance {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component->getInstance need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   
-       my $adm = Administrator->new;
-       my $comp_instance_row = $adm->{db}->resultset("ComponentInstance")->find(
-        { component_instance_id => $args{id} }, 
-        { '+columns' => [ "component.component_name",
-                          "component.component_version",
-                          "component.component_category"], 
-        join => ["component"]}
+    General::checkParams(args => \%args, required => ['id']);
+  
+    my $adm = Administrator->new;
+    my $comp_instance_row = $adm->{db}->resultset("ComponentInstance")->find(
+     { component_instance_id => $args{id} }, 
+     { '+columns' => [ "component.component_name",
+                       "component.component_version",
+                       "component.component_category"], 
+     join => ["component"]}
     );
-       
-       $class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
-                    $comp_instance_row->get_column('component_name') . 
-                    $comp_instance_row->get_column('component_version');
-    my $class_loc = General::getLocFromClass( entityclass => $class);
-    require $class_loc;                  
-       my $self = $class->get( %args, table=>"ComponentInstance");
-       return $self;
+    
+    $class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
+                 $comp_instance_row->get_column('component_name') . 
+                 $comp_instance_row->get_column('component_version');
+   my $class_loc = General::getLocFromClass( entityclass => $class);
+   require $class_loc;                  
+   my $self = $class->get( %args, table=>"ComponentInstance");
+   return $self;
 }
 
 =head2 delete
@@ -288,7 +281,6 @@ B<throws>  : None
 
 sub getComponentAttr {
     my $self = shift;
-    my %args = @_;
     my $componentAttr = {};
     
     $componentAttr->{component_name} = $self->{_dbix}->component->get_column('component_name');

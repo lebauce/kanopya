@@ -23,6 +23,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
+use General;
 use Parse::BooleanLogic;
 
 my $log = get_logger("administrator");
@@ -44,16 +45,13 @@ my $errmsg;
 sub new {
     my $class = shift;
     my %args = @_;
-    my $self = {};
-    if (! exists $args{schemas} or ! defined $args{schemas}){
-        $errmsg = "RulesManager->new needz schemas named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    $self->{db} = $args{schemas};
+        
+    General::checkParams(args => \%args, required => ['schemas']);
     
-    $self->{parser} = Parse::BooleanLogic->new( operators => [qw(& |)] );
-    
+    my $self = {
+        db     => $args{schemas},
+        parser => Parse::BooleanLogic->new( operators => [qw(& |)] ),
+    };
     bless $self, $class;
     $log->info("New Rules Manager Loaded");
     return $self;

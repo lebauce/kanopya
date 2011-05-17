@@ -23,6 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -53,11 +54,7 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Kernel->new need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['id']);
     
     my $admin = Administrator->new();
        my $dbix_kernel = $admin->{db}->resultset('Kernel')->find($args{id});
@@ -86,13 +83,10 @@ sub getKernels {
     my @objs = ();
     my ($rs, $entity_class);
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getKernels need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['hash']);
+
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "Kernel");
+    return $class->SUPER::getEntities( %args,  type => "Kernel");
 }
 
 =head2 new

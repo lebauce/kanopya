@@ -42,6 +42,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
 use Administrator;
+use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -61,12 +62,8 @@ sub checkAttrs {
     my %args = @_;
     my (%global_attrs, %ext_attrs);
     my $attr_def = $self->getAttrDef();
-    #print Dumper $attr_def;
-    if (! exists $args{attrs} or ! defined $args{attrs}){ 
-        $errmsg = "Entity::Motherboard->checkAttrs need an attrs hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }    
+    
+    General::checkParams(args => \%args, required => ['attrs']);  
 
     my $attrs = $args{attrs};
     foreach my $attr (keys(%$attrs)) {
@@ -145,12 +142,8 @@ sub getEntities {
     my @objs = ();
     my ($rs, $entity_class);
 
-    if ((! exists $args{type} or ! defined $args{type}) ||
-        (! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getEntities need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['type', 'hash']);
+
     my $adm = Administrator->new();
     
     $rs = $adm->_getDbixFromHash( table => $args{type}, hash => $args{hash} );
@@ -192,12 +185,9 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
-    if ((! exists $args{attrs} or ! defined $args{attrs}) ||
-        (! exists $args{table} or ! defined $args{table})) {
-        $errmsg = "Entity->new need an attrs and table named argument!";      
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['attrs', 'table']);
+    
     my $adm = Administrator->new();
 #    my $rc = $adm->getRightChecker();
     # We create a new DBIx containing new entity (only global attrs)
@@ -224,12 +214,8 @@ sub get {
     my $class = shift;
     my %args = @_;
     
-    if ((! exists $args{id} or ! defined $args{id}) ||
-        (! exists $args{table} or ! defined $args{table})) {
-        $errmsg = "Entity->get need an id and table named argument!";      
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['id', 'table']);
+    
     my $adm = Administrator->new();
     my $dbix = $adm->getRow(id=>$args{id}, table => $args{table});
     $log->debug("Named arguments: id = <$args{id}> , table = <$args{table}>");
@@ -284,11 +270,8 @@ sub getExtendedAttrs {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{ext_table} or ! defined $args{ext_table})) {
-        $errmsg = "Entity->getExtendedAttrs need an ext_table named argument!";      
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['ext_table']);
+    
     my $ext_attrs_rs = $self->{_dbix}->search_related( $args{ext_table} );
     if (! defined $ext_attrs_rs){
         $log->debug("No extended Attrs");
@@ -412,11 +395,7 @@ sub setAttrs {
     my $self = shift;
     my %args = @_;
 
-    if (! exists $args{attrs} or ! defined $args{attrs}) { 
-        $errmsg = "Entity->setAttrs need an attrs hash named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['attrs']);
 
     my $attrs = $args{attrs};
     while ( (my $col, my $value) = each %$attrs ) {
@@ -438,11 +417,7 @@ sub getAttr {
     my $data = $self->{_dbix};
     my $value = undef;
     
-    if (! exists $args{name} or ! defined $args{name}) { 
-        $errmsg = "Entity->getAttrs need a name named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['name']);
 
     if ( $data->has_column( $args{name} ) ) {
         $value = $data->get_column( $args{name} );
@@ -554,17 +529,7 @@ sub addPerm {
     my %args = @_;
     my $class = ref $self;
     
-    if (! exists $args{method} or ! defined $args{method}) { 
-        $errmsg = "Entity::addPerm need a method named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-    if (! exists $args{entity_id} or ! defined $args{entity_id}) { 
-        $errmsg = "Entity::addPerm need a entity_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['method', 'entity_id']);
     
     my $adm = Administrator->new();
        
@@ -633,8 +598,6 @@ sub delete {
     my $data = $self->{_dbix};
 
     my $adm = Administrator->new();
-    
-
 
     my $relation = lc(ref $self);
     $relation =~ s/.*\:\://g;

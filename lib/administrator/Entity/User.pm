@@ -22,6 +22,7 @@ use base "Entity";
 use strict;
 use warnings;
 use Kanopya::Exceptions;
+use General;
 use Log::Log4perl "get_logger";
 
 our $VERSION = "1.00";
@@ -98,31 +99,27 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::User->get need an id named argument!";    
+    General::checkParams(args => \%args, required => ['id']);
+      
+    my $admin = Administrator->new();
+    my $dbix_user = $admin->{db}->resultset('User')->find($args{id});
+    if(not defined $dbix_user) {
+        $errmsg = "Entity::User->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }       
+    
+    my $entity_id = $dbix_user->entitylink->get_column('entity_id');
+    $log->debug("checking get permission on entity_id : $entity_id");
+    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    if(not $granted) {
+        $errmsg = "Permission denied to get user with id $args{id}";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        throw Kanopya::Exception::Permission::Denied(error => $errmsg);
     }
-      
-      my $admin = Administrator->new();
-       my $dbix_user = $admin->{db}->resultset('User')->find($args{id});
-       if(not defined $dbix_user) {
-           $errmsg = "Entity::User->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       }       
-       
-       my $entity_id = $dbix_user->entitylink->get_column('entity_id');
-       $log->debug("checking get permission on entity_id : $entity_id");
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           $errmsg = "Permission denied to get user with id $args{id}";
-           $log->error($errmsg);
-           throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-       }
-      
-      my $self = $class->SUPER::get( %args,  table => "User");
-       return $self;
+   
+    my $self = $class->SUPER::get( %args,  table => "User");
+    return $self;
 }
 
 =head2 getUsers
@@ -139,13 +136,15 @@ sub getUsers {
     my $class = shift;
     my %args = @_;
     
+    General::checkParams(args => \%args, required => ['hash']);
+    
     if ((! exists $args{hash} or ! defined $args{hash})) { 
         $errmsg = "Entity::User->getUsers need a hash named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "User");
+    return $class->SUPER::getEntities( %args,  type => "User");
 }
 
 =head2 new
@@ -181,14 +180,14 @@ sub create {
     my $self = shift;
     my $admin = Administrator->new();
     my $mastergroup_eid = $self->getMasterGroupEid();
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
-       }
-       
-       $self->{_dbix}->user_creationdate(\'NOW()');
-       $self->{_dbix}->user_lastaccess(undef);
-       $self->save();
+    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
+    }
+    
+    $self->{_dbix}->user_creationdate(\'NOW()');
+    $self->{_dbix}->user_lastaccess(undef);
+    $self->save();
 }
 
 =head2 update
@@ -199,10 +198,10 @@ sub update {
     my $self = shift;
     my $adm = Administrator->new();
     # update method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
+    }
     # TODO update implementation
 }
 
@@ -214,12 +213,12 @@ sub remove {
     my $self = shift;
     my $adm = Administrator->new();
     # delete method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(
-               error => "Permission denied to delete user with id ".$self->getAttr(name =>'user_id')
-           );
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(
+            error => "Permission denied to delete user with id ".$self->getAttr(name =>'user_id')
+        );
+    }
     $self->SUPER::delete();
 }
 

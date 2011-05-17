@@ -128,13 +128,7 @@ sub loadConfig {
 sub authenticate {
     my %args = @_;
     
-    if(not exists $args{login} or not defined $args{login}) {
-        $errmsg = "Administrator::authenticate need a login named argument!";
-        throw Kanopya::Exception::Internal(error => $errmsg); 
-    } elsif(not exists $args{password} or not defined $args{password}) {
-        $errmsg = "Administrator::authenticate need a password named argument!";
-        throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    General::checkParams(args => \%args, required => ['login', 'password']);
     
     #$log->debug("login: ".$args{login}." password: ".$args{password});
     
@@ -187,12 +181,8 @@ sub authenticate {
 
 sub buildEntityRights {
     my %args =  @_;
-    
-    if(not exists $args{schema} or not defined $args{schema}) {
-        $errmsg = "EntityRights::build need a schema named argument";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['schema']);
     
     my $user = $args{schema}->resultset('User')->search({ 'user_entity.entity_id' => $ENV{EID}},
          { join => ['user_entity'] }
@@ -264,16 +254,11 @@ sub getRow {
     my $self = shift;
     my %args = @_;
     
+    General::checkParams(args => \%args, required => ['id', 'table']);
+    
     # entity_dbix will contain resultset row integrated into Entity
     # entity_class is Entity Class
     my ($entity_dbix, $entity_class);
-
-    if ((! exists $args{id} or ! defined $args{id}) ||
-        (! exists $args{table} or ! defined $args{table})) { 
-        $errmsg = "Administrator->getRow need a table and an id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
     $entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
 
     # Test if Dbix is get
@@ -422,11 +407,9 @@ sub getRow {
 sub countEntities {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{type} or ! defined $args{type}) { 
-        $errmsg = "Administrator->countEntities need a type named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    
+    General::checkParams(args => \%args, required => ['type']);
+    
     my $count = $self->{db}->resultset($args{type})->count;
     $log->debug("Total number of entities $args{type} : $count");
     return $count;
@@ -451,12 +434,7 @@ sub newEntity {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{type} or ! defined $args{type}) ||
-        (! exists $args{params} or ! defined $args{params})) { 
-        $errmsg = "Administrator->newEntity need params and type named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    General::checkParams(args => \%args, required => ['type', 'params']); 
 
     $log->debug("newEntity(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )).")");
 
@@ -507,13 +485,8 @@ sub newOp {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{priority} or ! defined $args{priority}) ||
-        (! exists $args{type} or ! defined $args{type}) ||
-        (! exists $args{params} or ! defined $args{params})) {
-            $errmsg = "Administrator->newOp need a priority, params and type named argument!";
-            $log->error($errmsg); 
-            throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    General::checkParams(args => \%args, required => ['type', 'priority', 'params']);
+    
     #TODO Check if operation is allowed
     my $rank = $self->_get_lastRank() + 1;
     my $user_id = $self->{_rightschecker}->{_user};
@@ -641,11 +614,9 @@ sub getNextOp {
 sub changeUser {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{user_id} or ! defined $args{user_id}) { 
-        $errmsg = "Administrator->changeUser need a user_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    
+    General::checkParams(args => \%args, required => ['user_id']);
+    
     my $nextuser = $self->getEntity(type => "User",id => $args{user_id});
     $self->{_rightschecker}->{_userbackup} = $self->{_rightschecker}->{_user};
     $self->{_rightschecker}->{_user} = $nextuser;
@@ -667,6 +638,8 @@ sub changeUser {
 sub _getDbix {
     my $self = shift;
     my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['id', 'table']);
     
     if ((! exists $args{table} or ! defined $args{table}) ||
         (! exists $args{id} or ! defined $args{id})) { 
@@ -705,12 +678,7 @@ sub _getDbixFromHash {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{table} or ! defined $args{table}) ||
-        (! exists $args{hash} or ! defined $args{hash})) {
-            $errmsg = "Administrator->_getDbixFromHash need a table and hash named argument!";
-            $log->error($errmsg); 
-            throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['table', 'hash']);
 
     my $dbix;
     my $entitylink = lc($args{table})."_entity";
@@ -751,11 +719,7 @@ sub _getAllDbix {
     my $self = shift;
     my %args = @_;
 
-    if (! exists $args{table} or ! defined $args{table}) { 
-        $errmsg = "Administrator->_getAllData need a table named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['table']);
 
     my $entitylink = lc($args{table})."_entity";
     return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ], 
@@ -780,12 +744,7 @@ sub _newDbix {
     my %args  = @_;    
     #$args{params} = {} if !$args{params};    
 
-    if ((! exists $args{table} or ! defined $args{table}) ||
-        (! exists $args{row} or ! defined $args{row})) {
-        $errmsg = "Administrator->_newData need a table and row named argument!";
-        $log->error($errmsg);         
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['table', 'row']);
 
     my $new_obj = $self->{db}->resultset($args{table} )->new( $args{row});
     return $new_obj;
@@ -807,11 +766,7 @@ sub _getEntityClass{
     my %args = @_;
     my $entity_class;
 
-    if (! exists $args{type} or ! defined $args{type}) {
-        $errmsg = "Administrator->_getEntityClass a type named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['type']);
 
     if (defined $args{class_path} && exists $args{class_path}){
         $entity_class = $args{class_path}}
@@ -893,13 +848,9 @@ sub registerTemplate {
 sub addMessage {
     my $self = shift;
     my %args = @_;
-    if ((! exists $args{level} or ! defined $args{level}) ||
-        (! exists $args{from} or ! defined $args{from}) ||
-        (! exists $args{content} or ! defined $args{content})){
-        $errmsg = "Administrator->addMessage need a level, from and content named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['level', 'from', 'content']);
+    
     $self->{db}->resultset('Message')->create({
         user_id => $self->{_rightschecker}->{_user},
         message_from => $args{from},

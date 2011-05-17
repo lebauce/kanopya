@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use General;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -38,13 +39,10 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Message->new need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args,  table => "Message");
-   return $self;
+    General::checkParams(args => \%args, required => ['id']);
+
+    my $self = $class->SUPER::get( %args,  table => "Message");
+    return $self;
 }
 
 sub getMessages {
@@ -53,13 +51,10 @@ sub getMessages {
     my @objs = ();
     my ($rs, $entity_class);
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getMessages need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['hash']);
+
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "Message");
+    return $class->SUPER::getEntities( %args,  type => "Message");
 }
 
 sub new {
