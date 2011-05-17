@@ -120,8 +120,8 @@ sub login_used {
         my $dfv = shift;
         $dfv->name_this('login_used');
         my $login = $dfv->get_current_constraint_value();
-        my $admin = Administrator->new(login => 'admin', password => 'admin');
-        my @euser = $admin->getEntities(type => 'User', hash => { user_login => $login });
+        my $admin = Administrator->new();
+        my @euser = Entity::User->getUsers(hash => { user_login => $login });
         return (scalar(@euser) < 1);
     }
 }
