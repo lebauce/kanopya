@@ -1,0 +1,51 @@
+#!/usr/bin/perl
+
+# Take a file name as param
+# The file contains list of mac adress
+# This script enqueue operation AddMotherboard for each mac adress
+
+use lib </opt/kanopya/lib/*>;
+
+use Data::Dumper;
+use Log::Log4perl qw(:easy);
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
+
+use Administrator;
+
+
+my %args = (login =>'admin', password => 'K4n0pY4');
+
+my $addmotherboard_op;
+
+Administrator::authenticate( %args );
+my $adm = Administrator->new();
+
+$data_file=$ARGV[0];
+open(DATA, $data_file) || die("Could not open file '$data_file'!");
+my $n = 1;
+while (<DATA>) {
+    if ($_ =~ /^([a-f0-9:]*)$/) {
+	print "Add motherboard $1\n";
+
+	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
+	    motherboard_mac_address => $1, 
+	    kernel_id => 1, 
+	    motherboard_serial_number => "SN$n",
+	    powersupplyport_number => $n,
+#           powersupplycard_id => 1,
+	    motherboardmodel_id => 7,
+	    processormodel_id => 2,
+	    active => 1
+		    });
+	$n++;
+	
+    } else {
+	chomp $_;
+	print "Skip invalid: $_\n";
+    }
+}
+close(DATA);
+
+
+
+
