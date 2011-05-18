@@ -11,11 +11,9 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n'});
 
 use Administrator;
-
+use Entity::Motherboard;
 
 my %args = (login =>'admin', password => 'K4n0pY4');
-
-my $addmotherboard_op;
 
 Administrator::authenticate( %args );
 my $adm = Administrator->new();
@@ -28,7 +26,7 @@ while (<DATA>) {
     if ($_ =~ /^([A-F0-9:]*)$/) {
 	print "Add motherboard $1\n";
 
-	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
+	my $mb = Entity::Motherboard->new(
 	    motherboard_mac_address => $1, 
 	    kernel_id => 1, 
 	    motherboard_serial_number => "SN$n",
@@ -37,7 +35,8 @@ while (<DATA>) {
 	    motherboardmodel_id => 7,
 	    processormodel_id => 2,
 	    active => 1
-		    });
+	    );
+	$mb->create();
 	$n++;
 	
     } else {
