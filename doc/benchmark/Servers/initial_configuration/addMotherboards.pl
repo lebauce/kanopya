@@ -21,10 +21,11 @@ Administrator::authenticate( %args );
 my $adm = Administrator->new();
 
 $data_file=$ARGV[0];
+die "Need a file name param" if (not defined $data_file);
 open(DATA, $data_file) || die("Could not open file '$data_file'!");
 my $n = 1;
 while (<DATA>) {
-    if ($_ =~ /^([a-f0-9:]*)$/) {
+    if ($_ =~ /^([A-F0-9:]*)$/) {
 	print "Add motherboard $1\n";
 
 	$adm->newOp(type => "AddMotherboard", priority => '100', params => { 
