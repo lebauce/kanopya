@@ -30,7 +30,7 @@ while (<DATA>) {
 	    motherboard_mac_address => $1, 
 	    kernel_id => 1, 
 	    motherboard_serial_number => "SN$n",
-	    powersupplyport_number => $n,
+#	    powersupplyport_number => $n,
 #           powersupplycard_id => 1,
 	    motherboardmodel_id => 7,
 	    processormodel_id => 2,
