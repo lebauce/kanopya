@@ -35,7 +35,7 @@ use constant ATTR_DEF => {
                           is_mandatory => 1,
                           is_extended => 0 },
     
-    systemimage_desc => { pattern => '^\w*$',
+    systemimage_desc => { pattern => '^[\w\s]*$',
                           is_mandatory => 1,
                           is_extended => 0 },
     systemimage_dedicated => { pattern => '^(0|1)$',

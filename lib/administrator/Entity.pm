@@ -70,7 +70,7 @@ sub checkAttrs {
         if (exists $attr_def->{$attr}){
             $log->debug("Field <$attr> and value in attrs <$attrs->{$attr}>");
             if($attrs->{$attr} !~ m/($attr_def->{$attr}->{pattern})/){
-                $errmsg = "Entity::Motherboard->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
+                $errmsg = (ref $self) . "->checkAttrs detect a wrong value ($attrs->{$attr}) for param : $attr";
                 $log->error($errmsg);
                 $log->debug("Can't match $attr_def->{$attr}->{pattern} with $attrs->{$attr}");
                 throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -83,7 +83,7 @@ sub checkAttrs {
             }
         }
         else {
-            $errmsg = "Entity::Motherboard->checkAttrs detect a wrong attr $attr !";
+            $errmsg = (ref $self) . "->checkAttrs detect a wrong attr $attr !";
             $log->error($errmsg);
             throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         }
