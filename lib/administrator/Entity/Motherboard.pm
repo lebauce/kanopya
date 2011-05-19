@@ -81,7 +81,7 @@ use constant ATTR_DEF => {
               motherboard_powersupply_id=> {pattern         => '^\w*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
-              motherboard_desc            => {pattern         => '\w*',
+              motherboard_desc            => {pattern         => '^[\w\s]*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
               active                    => {pattern         => '^[01]$',
