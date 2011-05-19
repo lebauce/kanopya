@@ -354,7 +354,11 @@ sub _generateNodeConf {
 #    $self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
     
     $log->info("Generate Network Conf");
-    $self->_generateNetConf(mount_point=>$args{mount_point});
+    # 
+    if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
+        $self->_generateNetConf(mount_point=>$args{mount_point});
+    }
+    
     
     $log->info("Generate resolv.conf");
     $self->_generateResolvConf(mount_point=>$args{mount_point});
@@ -506,12 +510,8 @@ sub _generateHosts {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
-        (! exists $args{nodes} or ! defined $args{nodes})) { 
-        $errmsg = "EOperation::EStartNode->generateHosts need a mount_point and nodes named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["mount_point"]);
+    
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -540,11 +540,8 @@ sub _generateNetConf {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-        $errmsg = "EOperation::EStartNode->generateNetConf need a mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['mount_point']);
+    
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -615,11 +612,8 @@ sub _generateResolvConf{
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-        $errmsg = "EOperation::EStartNode->generateResolvConf need a mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['mount_point']);
+
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
     
