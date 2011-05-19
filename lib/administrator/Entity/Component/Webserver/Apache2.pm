@@ -338,6 +338,28 @@ sub setConf {
     }    
 }
 
+sub insertDefaultConfiguration {
+    my $self = shift;
+    my %args = @_;
+    my $apache2_conf = {
+        apache2_loglevel => 'debug',
+        apache2_serverroot => '/srv',
+        apache2_ports => 80,
+        apache2_sslports => 443,
+        apache2_virtualhosts => [
+            {
+              apache2_virtualhost_servername => 'www.yourservername.com',
+              apache2_virtualhost_sslenable => 'no',
+              apache2_virtualhost_serveradmin => 'admin@mycluster.com',
+              apache2_virtualhost_documentroot => '/srv',
+              apache2_virtualhost_log => '/tmp/apache_access.log',
+              apache2_virtualhost_errorlog => '/tmp/apache_error.log',
+            },
+        ]
+    };
+    $self->{_dbix}->apache2s->create($apache2_conf);
+}
+
 sub getNetConf{
     my $self = shift;
     my $http_port = $self->{_dbix}->apache2s->first()->get_column("apache2_ports");
