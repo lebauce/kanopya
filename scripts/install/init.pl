@@ -225,7 +225,7 @@ system('invoke-rc.d atftpd restart');
 
 # We restart atftpd with the new configuration
 system('echo "" > /etc/iet/ietd.conf');
-system('echo "ISCSITARGET_ENABLE=true\n" > /etc/default/iscsitarget');
+system('echo "ISCSITARGET_ENABLE=true" > /etc/default/iscsitarget');
 system('invoke-rc.d iscsitarget restart');
 
 # We enable apache2 modules, configure them and restart it
