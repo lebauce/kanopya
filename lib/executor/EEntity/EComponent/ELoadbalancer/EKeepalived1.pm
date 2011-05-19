@@ -18,6 +18,7 @@ use Date::Simple (':all');
 use Log::Log4perl "get_logger";
 use Template;
 use String::Random;
+use General;
 
 use base "EEntity::EComponent::ELoadbalancer";
 
@@ -29,7 +30,6 @@ my $errmsg;
 sub new {
     my $class = shift;
     my %args = @_;
-
     my $self = $class->SUPER::new( %args );
     return $self;
 }
@@ -180,11 +180,8 @@ sub reload {
     my $self = shift;
     my %args = @_;
     
-    if(! exists $args{econtext} or ! defined $args{econtext}) {
-        $errmsg = "EComponent::ELoadbalancer::EKeepalived->reload needs an econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['econtext']);
+
     my $command = "invoke-rc.d keepalived reload";
     my $result = $args{econtext}->execute(command => $command);
     return undef;
@@ -194,83 +191,36 @@ sub reload {
 sub generateKeepalived {
     my $self = shift;
     my %args = @_;
-    if((! exists $args{econtext} or ! defined $args{econtext}) || 
-        (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateKeepalived needs a econtext and mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-        
-    my $config = {
-        INCLUDE_PATH => '/templates/components/keepalived',
-        INTERPOLATE  => 1,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace 
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE => 1,                   # desactive par defaut
-    };
     
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-    # create Template object
-    my $template = Template->new($config);
-    my $input = "keepalived.conf.tt";
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
+    
     my $data = $self->_getEntity()->getTemplateDataKeepalived();
-    
-    $template->process($input, $data, "/tmp/".$tmpfile) || do {
-        $errmsg = "EComponent::ELoadbalancer::EKeepalived1->generate : error during template generation : $template->error;";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);    
-    };
-    $args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/keepalived/keepalived.conf");    
-    unlink "/tmp/$tmpfile";              
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/keepalived",
+                         input_file => "keepalived.conf.tt", output => "/keepalived/keepalived.conf", data => $data);         
 }
 
 # generate /etc/default/ipvsadm configuration file for the master node
 sub generateIpvsadm {
     my $self = shift;
     my %args = @_;
-    if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{mount_point} or ! defined $args{mount_point})){
-        $errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateIpvsadm needs a econtext and mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-        
-    my $config = {
-        INCLUDE_PATH => '/templates/components/keepalived',
-        INTERPOLATE  => 1,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace 
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE => 1,                   # desactive par defaut
-    };
     
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-    # create Template object
-    my $template = Template->new($config);
-    my $input = "default_ipvsadm.tt";
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
+    
     my $data = $self->_getEntity()->getTemplateDataIpvsadm();
-    
-    $template->process($input, $data, "/tmp/".$tmpfile) || do {
-        $errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateIpvsadm : error during template generation : $template->error;";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);    
-    };
-    $args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}."/default/ipvsadm");    
-    unlink "/tmp/$tmpfile";        
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/keepalived",
+                         input_file => "default_ipvsadm.tt", output => "/default/ipvsadm", data => $data);
 }
 
 # add network_routes script to the node 
 sub addnetwork_routes {
     my $self = shift;
     my %args = @_;
-    if((! exists $args{econtext} or ! defined $args{econtext}) || 
-        (! exists $args{mount_point} or ! defined $args{mount_point}) ||
-        (! exists $args{loadbalancer_internal_ip} or ! defined $args{loadbalancer_internal_ip})) {
-        $errmsg = "EComponent::ELoadbalancer::EKeepalived1->generateKeepalived needs a econtext, mount_point and loadbalancer_internal_ip named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'loadbalancer_internal_ip']);
+    
+    
 
     my $config = {
         INCLUDE_PATH => '/templates/components/keepalived',
