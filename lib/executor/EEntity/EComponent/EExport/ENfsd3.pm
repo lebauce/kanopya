@@ -12,13 +12,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EExport::ENfsd3;
+use base "EEntity::EComponent::EExport";
 
 use strict;
 use Log::Log4perl "get_logger";
-use Template;
+use General;
 use String::Random;
-
-use base "EEntity::EComponent::EExport";
+use Template;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -28,7 +28,6 @@ my $errmsg;
 sub new {
     my $class = shift;
     my %args = @_;
-
     my $self = $class->SUPER::new( %args );
     return $self;
 }
@@ -41,16 +40,12 @@ sub reload {
 sub MountDevice {
     my $self = shift;
     my %args = @_;
-    if((! exists $args{econtext} or ! defined $args{econtext}) ||
-      (! exists $args{device} or ! defined $args{device})) {
-        $errmsg = "EComponent::EExport::ENfsd3->mkMountDirectory needs a econtext and device named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['econtext','device']);
 
     # create directory if necessary
     my $dir = $self->_getEntity()->getMountDir(device => $args{device});
-    my $command = "mkdir -p $dir";
+    my $command = "mkdir -p $dir; chmod 777 $dir";
     $args{econtext}->execute(command => $command);
 
     # check if nothing is mounted on directory
@@ -68,12 +63,9 @@ sub MountDevice {
 sub addExport {
     my $self = shift;
     my %args = @_;
-    if ((! exists $args{device} or ! defined $args{device}) ||
-        (! exists $args{econtext} or ! defined $args{econtext})) {
-        $errmsg = "EComponent::EExport::EIscsitarget1->addExport needs a device and econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['econtext', 'device']);
+    
     my $export_id = $self->_getEntity()->addExport(device => $args{device});
     $self->MountDevice(device => $args{device}, econtext => $args{econtext});
     return $export_id;
@@ -82,13 +74,9 @@ sub addExport {
 sub addExportClient {
     my $self = shift;
     my %args = @_;
-    if ((! exists $args{export_id} or ! defined $args{export_id}) ||
-        (! exists $args{client_name} or ! defined $args{client_name}) ||
-        (! exists $args{client_options} or ! defined $args{client_options})) {
-        $errmsg = "EComponent::EExport::ENfsd3->addExportClient needs a export_id, client_name and client_options named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['export_id','client_name','client_options']);
+    
     $self->_getEntity()->addExportClient(
         export_id => $args{export_id},
         client_name => $args{client_name},
@@ -99,11 +87,9 @@ sub addExportClient {
 sub update_exports {
     my $self = shift;
     my %args = @_;
-    if(! exists $args{econtext} or ! defined $args{econtext}) {
-        $errmsg = "EComponent::EExport::ENfsd3->update_exports needs a econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['econtext']);
+
     $self->generate_exports(econtext => $args{econtext});
     my $command = "/usr/sbin/exportfs -r";
     $args{econtext}->execute(command => $command);
@@ -113,11 +99,8 @@ sub update_exports {
 sub generate_nfs_common {
     my $self = shift;
     my %args = @_;
-    if(! exists $args{econtext} or ! defined $args{econtext}) {
-        $errmsg = "EComponent::EExport::ENfsd3->generate_nfs_common needs a econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['econtext']);
         
     my $config = {
         INCLUDE_PATH => '/templates/components/nfsd3',
@@ -147,11 +130,8 @@ sub generate_nfs_common {
 sub generate_nfs_kernel_server {
     my $self = shift;
     my %args = @_;
-    if(! exists $args{econtext} or ! defined $args{econtext}) {
-        $errmsg = "EComponent::EExport::ENfsd3->generate_nfs_kernel_server needs a econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['econtext']);
         
     my $config = {
         INCLUDE_PATH => '/templates/components/nfsd3',
@@ -181,11 +161,8 @@ sub generate_nfs_kernel_server {
 sub generate_exports {
     my $self = shift;
     my %args = @_;
-    if(! exists $args{econtext} or ! defined $args{econtext}) {
-        $errmsg = "EComponent::EExport::ENfsd3->generate_exports needs a econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['econtext']);
         
     my $config = {
         INCLUDE_PATH => '/templates/components/nfsd3',
