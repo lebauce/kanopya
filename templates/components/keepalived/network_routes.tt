@@ -13,15 +13,7 @@ PATH=/sbin:/bin
 . /lib/lsb/init-functions
 
 
-case "\$1" in
-  start)
-        echo 'Adding default gateway to loadbalancer ip : [% gateway %]'
-        /sbin/route add default gw [% gateway %]
-        ;;  
-  
- stop)
-        ;;
 
- *)        
-        ;;
-esac
+echo 'Adding default gateway to loadbalancer ip : [% gateway %]'
+/sbin/route add default gw [% gateway %]
+
