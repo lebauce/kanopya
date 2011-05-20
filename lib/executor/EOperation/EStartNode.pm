@@ -565,6 +565,10 @@ sub _generateNetConf {
     $template->process($input, {interfaces => \@interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");    
     unlink "/tmp/$tmpfile"; 
+    
+    # disable network deconfiguration during halt
+    unlink "$args{mount_point}/rc0.d/S35networking";
+    
 }
 
 sub _generateBootConf {
