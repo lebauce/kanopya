@@ -354,10 +354,8 @@ sub _generateNodeConf {
 #    $self->generateHosts(mount_point=>$args{mount_point}, nodes => $args{nodes});
     
     $log->info("Generate Network Conf");
-    # 
-    if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
-        $self->_generateNetConf(mount_point=>$args{mount_point});
-    }
+    $self->_generateNetConf(mount_point=>$args{mount_point});
+    
     
     
     $log->info("Generate resolv.conf");
@@ -550,9 +548,21 @@ sub _generateNetConf {
     my $input = "network_interfaces.tt";
     #TODO Get ALL network interface !
     #TODO Manage virtual IP for master node
-    my $interfaces = $self->{_objs}->{cluster}->getPublicIps();
-    $log->debug(Dumper($interfaces));
-    $template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
+    my @interfaces = ();
+    my $ip = $self->{_objs}->{motherboard}->getInternalIP();
+    my $eth0 = {
+        name => 'eth0',
+        address => $ip->{ipv4_internal_address},
+        netmask => $ip->{ipv4_internal_mask},
+    };
+    push(@interfaces, $eth0);    
+    
+    if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
+        @interfaces = (@interfaces, @{$self->{_objs}->{cluster}->getPublicIps()});
+    }
+    
+    $log->debug(Dumper(@interfaces));
+    $template->process($input, {interfaces => \@interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");    
     unlink "/tmp/$tmpfile"; 
 }
