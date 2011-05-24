@@ -1,4 +1,4 @@
-<info tables_file="scripts/database/mysql/schemas/components/keepalived1.sql" templates_dir="templates/components/keepalived1">
+<info tables_file="scripts/database/mysql/schemas/components/keepalived1.sql" templates_dir="templates/components/keepalived">
   <description name="Keepalived" category="Loadbalancer" version="1" />
   <executor dest="lib/executor/EEntity/EComponent/ELoadbalancer/EKeepalived1.pm" src="lib/executor/EEntity/EComponent/ELoadbalancer/EKeepalived1.pm" />
   <meta packager_version="0.1" />
