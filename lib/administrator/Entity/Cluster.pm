@@ -41,7 +41,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    cluster_desc            =>  {pattern        => '\w*', # Impossible to check char used because of \n doesn't match with \w
+    cluster_desc            =>  {pattern        => '^[\w\s]*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -156,28 +156,24 @@ sub get {
     my $class = shift;
     my %args = @_;
     
-    if (! exists $args{id} or ! defined $args{id}) {
-        $errmsg = "Entity::Cluster->new need an id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    General::checkParams(args => \%args, required => ['id']);
+    
+    my $admin = Administrator->new();
+    my $dbix_cluster = $admin->{db}->resultset('Cluster')->find($args{id});
+    if(not defined $dbix_cluster) {
+        $errmsg = "Entity::Cluster->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }       
+    
+    my $entity_id = $dbix_cluster->entitylink->get_column('entity_id');
+    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
     }
-
-       my $admin = Administrator->new();
-       my $dbix_cluster = $admin->{db}->resultset('Cluster')->find($args{id});
-       if(not defined $dbix_cluster) {
-           $errmsg = "Entity::Cluster->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       }       
-       
-       my $entity_id = $dbix_cluster->entitylink->get_column('entity_id');
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
-       }
-       my $self = $class->SUPER::get( %args,  table => "Cluster");
-       $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
-       return $self;
+    my $self = $class->SUPER::get( %args,  table => "Cluster");
+    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
+    return $self;
 }
 
 =head2 getClusters
@@ -190,24 +186,18 @@ sub getClusters {
     my @objs = ();
     my ($rs, $entity_class);
 
-    if ((! exists $args{hash} or ! defined $args{hash})) {
-        $errmsg = "Entity::getClusters need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-       return $class->SUPER::getEntities( %args,  type => "Cluster");
+    General::checkParams(args => \%args, required => ['hash']);
+
+    return $class->SUPER::getEntities( %args,  type => "Cluster");
 }
 
 sub getCluster {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{hash} or ! defined $args{hash})) {
-        $errmsg = "Entity::getClusters need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-       my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
+    General::checkParams(args => \%args, required => ['hash']);
+
+    my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
     return pop @clusters;
 }
 
@@ -343,11 +333,8 @@ sub getComponents {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{category} or ! defined $args{category})) {
-        $errmsg = "Entity::Cluster->getComponent need a category named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['category']);
+
 #    my $adm = Administrator->new();
     my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
                                             { '+columns' => [ "component.component_name",
@@ -394,12 +381,7 @@ sub getComponent{
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{name} or ! defined $args{name}) ||
-        (! exists $args{version} or ! defined $args{version})) {
-        $errmsg = "Entity::Cluster->getComponent needs a name, version and administrator named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['name','version']);
 
     my $hash = {'component.component_name' => $args{name}, 'component.component_version' => $args{version}};
     my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
@@ -436,7 +418,6 @@ sub getComponent{
 
 sub getSystemImage {
     my $self = shift;
-    my %args = @_;
     my $systemimage_id = $self->getAttr(name => 'systemimage_id');
     if($systemimage_id) {
         return Entity::Systemimage->get(id => $systemimage_id);
@@ -482,12 +463,8 @@ this is the first step of cluster setting
 sub addComponent {
     my $self = shift;
     my %args = @_;
-    # check arguments
-    if((! exists $args{component_id} or ! defined $args{component_id})) {
-           $errmsg = "Entity::Cluster->addComponent needs component_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['component_id']);
 
     my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
     my $component_instance_id = $componentinstance->save();
@@ -512,12 +489,9 @@ from this cluster
 sub removeComponent {
     my $self = shift;
     my %args = @_;
-    # check arguments
-    if((! exists $args{component_instance_id} or ! defined $args{component_instance_id})) {
-           $errmsg = "Entity::Cluster->removeComponent needs a component_instance_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['component_instance_id']);
+
     my $component_instance = Entity::Component->get(id => $args{component_instance_id});
     $component_instance->delete;
 
@@ -534,7 +508,6 @@ sub removeComponent {
 
 sub getMotherboards {
     my $self = shift;
-    #my %args = @_;
 
     my $motherboard_rs = $self->{_dbix}->nodes;
     my %motherboards;
@@ -636,11 +609,8 @@ sub addNode {
 sub removeNode {
     my $self = shift;
     my %args = @_;
-    if((! exists $args{motherboard_id} or ! defined $args{motherboard_id})) {
-           $errmsg = "Entity::Cluster->addNode needs motherboard_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['motherboard_id']);
         
     my $adm = Administrator->new();
     # removeNode method concerns an existing entity so we use his entity_id

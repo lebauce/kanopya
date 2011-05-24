@@ -342,7 +342,8 @@ sub _generateNodeConf {
     $log->info("Generate Udev Conf");
     $self->_generateUdevConf(mount_point=>$args{mount_point});
     
-    #$log->info("Generate Fstab Conf");
+    # /etc/fstab is now managed by mounttable1 system component
+    
     #$self->_generateFstabConf(    mount_point=>$args{mount_point}, 
     #                            root_dev => $args{root_dev}, 
     #                            etc_dev => $args{etc_dev});
@@ -355,6 +356,8 @@ sub _generateNodeConf {
     $log->info("Generate Network Conf");
     $self->_generateNetConf(mount_point=>$args{mount_point});
     
+    
+    
     $log->info("Generate resolv.conf");
     $self->_generateResolvConf(mount_point=>$args{mount_point});
 #TODO generateRouteConf
@@ -364,6 +367,9 @@ sub _generateNodeConf {
                             root_dev => $args{root_dev},
                             etc_dev => $args{etc_dev},
                             etc_targetname => $args{etc_targetname});##############
+
+    $log->info("Generate ntpdate Conf");
+    $self->_generateNtpdateConf(mount_point=>$args{mount_point});
 }
 
 sub _generateHostnameConf {
@@ -404,55 +410,55 @@ sub _generateUdevConf{
     unlink "/tmp/$tmpfile";
 }
 
-sub _generateFstabConf{
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args=>\%args, required => ["mount_point","root_dev","etc_dev"]);
-
-    my $rand = new String::Random;
-    my $template = Template->new($config);
-    my $tmpfile = $rand->randpattern("cccccccc");
-    my $input = "fstab.tt";
-    
-    $log->debug("Get targetid with the following pattern : " . '%'."$args{root_dev}->{lvname}");
-    my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
-    my $root_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $root_target_id);
-    $log->debug("Get targetid with the following pattern : " . '%'."$args{etc_dev}->{lvname}");
-    my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
-    my $etc_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $etc_target_id);
-    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-    my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";  
-        
-    my $vars = {etc_dev            => "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_targetname."-lun-0",
-                   etc_fs            => $args{etc_dev}->{filesystem},
-                etc_options        => "defaults",
-                root_dev        => "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_targetname."-lun-0",
-                root_fs            => $args{root_dev}->{filesystem},
-                root_options    => $root_options
-                
-       };
-          
-       my $components = $self->{_objs}->{components};
-       $vars->{mounts_iscsi} = [];
-    foreach my $i (keys %$components) {
-        my $tmp = $components->{$i};
-        $log->debug("Found component of type : " . ref($tmp));
-        if ($components->{$i}->isa("Entity::Component::Exportclient")) {
-            $log->debug("The cluster component is an Exportclient");
-            #TODO Check if it is an ExportClient and call generic method/
-            if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
-                $log->debug("The cluster component is an Openiscsi2");
-                my $iscsi_export = $components->{$i};
-                $vars->{mounts_iscsi} = $iscsi_export->getExports();
-               }
-        }
-    }
-    $log->debug(Dumper($vars));
-       $template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
-    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/fstab");    
-    unlink "/tmp/$tmpfile";
-}
+#sub _generateFstabConf{
+#    my $self = shift;
+#    my %args = @_;
+#    
+#    General::checkParams(args=>\%args, required => ["mount_point","root_dev","etc_dev"]);
+#
+#    my $rand = new String::Random;
+#    my $template = Template->new($config);
+#    my $tmpfile = $rand->randpattern("cccccccc");
+#    my $input = "fstab.tt";
+#    
+#    $log->debug("Get targetid with the following pattern : " . '%'."$args{root_dev}->{lvname}");
+#    my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
+#    my $root_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $root_target_id);
+#    $log->debug("Get targetid with the following pattern : " . '%'."$args{etc_dev}->{lvname}");
+#    my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
+#    my $etc_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $etc_target_id);
+#    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+#    my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";  
+#        
+#    my $vars = {etc_dev            => "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_targetname."-lun-0",
+#                   etc_fs            => $args{etc_dev}->{filesystem},
+#                etc_options        => "defaults",
+#                root_dev        => "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_targetname."-lun-0",
+#                root_fs            => $args{root_dev}->{filesystem},
+#                root_options    => $root_options
+#                
+#       };
+#          
+#       my $components = $self->{_objs}->{components};
+#       $vars->{mounts_iscsi} = [];
+#    foreach my $i (keys %$components) {
+#        my $tmp = $components->{$i};
+#        $log->debug("Found component of type : " . ref($tmp));
+#        if ($components->{$i}->isa("Entity::Component::Exportclient")) {
+#            $log->debug("The cluster component is an Exportclient");
+#            #TODO Check if it is an ExportClient and call generic method/
+#            if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+#                $log->debug("The cluster component is an Openiscsi2");
+#                my $iscsi_export = $components->{$i};
+#                $vars->{mounts_iscsi} = $iscsi_export->getExports();
+#               }
+#        }
+#    }
+#    $log->debug(Dumper($vars));
+#       $template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
+#    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/fstab");    
+#    unlink "/tmp/$tmpfile";
+#}
 
 sub _generateKanopyaHalt{
     my $self = shift;
@@ -502,12 +508,8 @@ sub _generateHosts {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
-        (! exists $args{nodes} or ! defined $args{nodes})) { 
-        $errmsg = "EOperation::EStartNode->generateHosts need a mount_point and nodes named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["mount_point"]);
+    
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -536,11 +538,8 @@ sub _generateNetConf {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-        $errmsg = "EOperation::EStartNode->generateNetConf need a mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['mount_point']);
+    
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -549,11 +548,27 @@ sub _generateNetConf {
     my $input = "network_interfaces.tt";
     #TODO Get ALL network interface !
     #TODO Manage virtual IP for master node
-    my $interfaces = $self->{_objs}->{cluster}->getPublicIps();
-    $log->debug(Dumper($interfaces));
-    $template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
+    my @interfaces = ();
+    my $ip = $self->{_objs}->{motherboard}->getInternalIP();
+    my $eth0 = {
+        name => 'eth0',
+        address => $ip->{ipv4_internal_address},
+        netmask => $ip->{ipv4_internal_mask},
+    };
+    push(@interfaces, $eth0);    
+    
+    if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
+        @interfaces = (@interfaces, @{$self->{_objs}->{cluster}->getPublicIps()});
+    }
+    
+    $log->debug(Dumper(@interfaces));
+    $template->process($input, {interfaces => \@interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");    
     unlink "/tmp/$tmpfile"; 
+    
+    # disable network deconfiguration during halt
+    unlink "$args{mount_point}/rc0.d/S35networking";
+    
 }
 
 sub _generateBootConf {
@@ -611,11 +626,8 @@ sub _generateResolvConf{
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-        $errmsg = "EOperation::EStartNode->generateResolvConf need a mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['mount_point']);
+
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
     
@@ -633,6 +645,24 @@ sub _generateResolvConf{
     
     $template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/resolv.conf");    
+    unlink "/tmp/$tmpfile";
+}
+
+sub _generateNtpdateConf {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args=>\%args, required => ["mount_point"]); 
+    
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+    my $template = Template->new($config);
+    my $input = "ntpdate.tt";
+    my $data = {
+      ntpservers => $self->{bootserver}->{obj}->getMasterNodeIp(),
+    };
+    $template->process($input, $data, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate ntpdate conf ". $template->error()."\n");
+    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/default/ntpdate");    
     unlink "/tmp/$tmpfile";
 }
 

@@ -23,6 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -66,24 +67,20 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Powersupplycardmodel->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['id']);
     
     my $adm = Administrator->new();
-       my $powersupplycardmodel = $adm->{db}->resultset('Powersupplycardmodel')->find($args{id});
-       if(not defined $powersupplycardmodel) {
-           $errmsg = "Entity::Powersupplycardmodel->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       } 
-       my $entity_id = $powersupplycardmodel->entitylink->get_column('entity_id');
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get powersupply card model with id $args{id}");
-       }
+    my $powersupplycardmodel = $adm->{db}->resultset('Powersupplycardmodel')->find($args{id});
+    if(not defined $powersupplycardmodel) {
+        $errmsg = "Entity::Powersupplycardmodel->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    } 
+    my $entity_id = $powersupplycardmodel->entitylink->get_column('entity_id');
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get powersupply card model with id $args{id}");
+    }
     
    my $self = $class->SUPER::get( %args, table=>"Powersupplycardmodel");
    return $self;
@@ -92,14 +89,11 @@ sub get {
 sub getPowersupplycardmodels {
     my $class = shift;
     my %args = @_;
-    
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getPowersupplycardmodels need a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['hash']);
+
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "Powersupplycardmodel");
+    return $class->SUPER::getEntities( %args,  type => "Powersupplycardmodel");
 }
 
 sub new {
@@ -149,10 +143,10 @@ sub remove {
     my $self = shift;
     my $adm = Administrator->new();
     # delete method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this powersupply card model");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this powersupply card model");
+    }
     $self->SUPER::delete();
 }
 

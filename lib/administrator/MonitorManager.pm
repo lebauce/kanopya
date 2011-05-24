@@ -23,6 +23,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
+use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -44,11 +45,9 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
-    if (! exists $args{schemas} or ! defined $args{schemas}){
-        $errmsg = "MonitorManager->new needs schemas named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['schemas']);
+    
     $self->{db} = $args{schemas};
     
     bless $self, $class;
@@ -118,6 +117,8 @@ sub getIndicatorSets {
 sub getCollectedSets {
     my $self = shift;
     my %args = @_;
+    
+    
     
     return $self->getIndicatorSets( search => [{ 'collects.cluster_id' => $args{cluster_id} },  { join => ['collects'] }] );
 }

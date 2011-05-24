@@ -23,6 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -67,26 +68,22 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Motherboardmodel->new need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['id']);
     
     my $adm = Administrator->new();
-       my $motherboardmodel = $adm->{db}->resultset('Motherboardmodel')->find($args{id});
-       if(not defined $motherboardmodel) {
-           $errmsg = "Entity::Motherboardmodel->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       } 
-       my $entity_id = $motherboardmodel->entitylink->get_column('entity_id');
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard model with id $args{id}");
-       }
-      my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
-       return $self;
+    my $motherboardmodel = $adm->{db}->resultset('Motherboardmodel')->find($args{id});
+    if(not defined $motherboardmodel) {
+        $errmsg = "Entity::Motherboardmodel->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    } 
+    my $entity_id = $motherboardmodel->entitylink->get_column('entity_id');
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get motherboard model with id $args{id}");
+    }
+    my $self = $class->SUPER::get( %args,  table => "Motherboardmodel");
+    return $self;
 }
 
 =head2 getMotherboardmodels
@@ -97,13 +94,10 @@ sub getMotherboardmodels {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getMotherboardmodels need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['hash']);
+    
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "Motherboardmodel");
+    return $class->SUPER::getEntities( %args,  type => "Motherboardmodel");
 }
 
 =head2 new
@@ -134,12 +128,12 @@ sub create {
     my $self = shift;
     my $adm = Administrator->new();
     my $mastergroup_eid = $self->getMasterGroupEid();
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new motherboardmodel");
-       }
-       
-       $self->save();
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new motherboardmodel");
+    }
+    
+    $self->save();
 }
 
 =head2 update
@@ -156,10 +150,10 @@ sub remove {
     my $self = shift;
     my $adm = Administrator->new();
     # delete method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this motherboard model");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'remove');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to delete this motherboard model");
+    }
     $self->SUPER::delete();
 }
 

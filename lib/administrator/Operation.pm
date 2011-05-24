@@ -38,7 +38,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-
+use General;
 use Kanopya::Exceptions;
 
 my $log = get_logger("administrator");
@@ -48,13 +48,9 @@ my $errmsg;
 sub enqueue {
     my $class = shift;
     my %args = @_;
-    if ((! exists $args{priority} or ! defined $args{priority}) ||
-        (! exists $args{type} or ! defined $args{type}) ||
-        (! exists $args{params} or ! defined $args{params})) {
-            $errmsg = "Operation->enqueue need a priority, params and type named argument!";
-            $log->error($errmsg); 
-            throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    
+    General::checkParams(args => \%args, required => ['priority','type','params']);
+    
     my $params = $args{params};
     my @hash_keys = keys %$params;
     foreach my $key (@hash_keys) {
@@ -98,13 +94,9 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
-    if ((! exists $args{priority} or ! defined $args{priority}) ||
-        (! exists $args{type} or ! defined $args{type}) ||
-        (! exists $args{params} or ! defined $args{params})) {
-            $errmsg = "Operation->new need a priority, params and type named argument!";
-            $log->error($errmsg); 
-            throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    
+    General::checkParams(args => \%args, required => ['priority','type','params']);
+    
     my $adm = Administrator->new();
     
     my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef; 
@@ -142,11 +134,9 @@ sub get {
     my $class = shift;
     my %args = @_;
     my $self = {};
-    if ((! exists $args{id} or ! defined $args{id})) {
-            $errmsg = "Operation->get need an id named argument!";
-            $log->error($errmsg); 
-            throw Kanopya::Exception::Internal(error => $errmsg); 
-    }
+    
+    General::checkParams(args => \%args, required => ['id']);
+
     my $adm = Administrator->new();
     $self->{_dbix} = $adm->{db}->resultset( "Operation" )->find(  $args{id});
 #    $self->{_dbix} = $adm->getRow(id=>$args{id}, table => "Operation");
@@ -236,11 +226,7 @@ sub getAttr {
     my %args = @_;
     my $value;
 
-    if (! exists $args{attr_name} or ! defined $args{attr_name}) { 
-        $errmsg = "Operation->getAttr need an attr_name named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['attr_name']);
 
     if ( $self->{_dbix}->has_column( $args{attr_name} ) ) {
         $value = $self->{_dbix}->get_column( $args{attr_name} );
@@ -303,11 +289,9 @@ sub save {
 sub setHopedExecutionTime {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{value} or ! defined $args{value}) { 
-        $errmsg = "Operation->setHopedExecutionTime need a value named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['value']);
+    
     my $t = time + $args{value};
     $self->{_dbix}->set_column('hoped_execution_time', $t);
     $self->{_dbix}->update;

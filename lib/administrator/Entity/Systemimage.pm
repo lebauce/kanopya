@@ -35,7 +35,7 @@ use constant ATTR_DEF => {
                           is_mandatory => 1,
                           is_extended => 0 },
     
-    systemimage_desc => { pattern => '^\w*$',
+    systemimage_desc => { pattern => '^[\w\s]*$',
                           is_mandatory => 1,
                           is_extended => 0 },
     systemimage_dedicated => { pattern => '^(0|1)$',
@@ -99,30 +99,26 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::SystemImage->get need an id named argument!";    
+    General::checkParams(args => \%args, required => ['id']);
+ 
+    my $adm = Administrator->new();
+    my $dbix_systemimage = $adm->{db}->resultset('Systemimage')->find($args{id});
+    if(not defined $dbix_systemimage) {
+        $errmsg = "Entity::Systemiamge->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }       
+    
+    my $entity_id = $dbix_systemimage->entitylink->get_column('entity_id');
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    if(not $granted) {
+        $errmsg = "Permission denied to get system image with id $args{id}";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        throw Kanopya::Exception::Permission::Denied(error => $errmsg);
     }
        
-       my $adm = Administrator->new();
-       my $dbix_systemimage = $adm->{db}->resultset('Systemimage')->find($args{id});
-       if(not defined $dbix_systemimage) {
-           $errmsg = "Entity::Systemiamge->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       }       
-       
-       my $entity_id = $dbix_systemimage->entitylink->get_column('entity_id');
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           $errmsg = "Permission denied to get system image with id $args{id}";
-           $log->error($errmsg);
-           throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-       }
-       
-       my $self = $class->SUPER::get( %args, table=>"Systemimage");
-       return $self;
+    my $self = $class->SUPER::get( %args, table=>"Systemimage");
+    return $self;
 }
 
 =head2 getSystemimages
@@ -139,25 +135,19 @@ sub getSystemimages {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getSystemimage need a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['hash']);
+
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "Systemimage");
+    return $class->SUPER::getEntities( %args,  type => "Systemimage");
 }
 
 sub getSystemimage {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getSystemimage need a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-       my @systemimages = $class->SUPER::getEntities( %args,  type => "Systemimage");
+    General::checkParams(args => \%args, required => ['hash']);
+
+    my @systemimages = $class->SUPER::getEntities( %args,  type => "Systemimage");
     return pop @systemimages;
 }
 
@@ -234,6 +224,7 @@ sub installedComponentLinkCreation {
     my %args = @_;
     
     General::checkParams(args=>\%args,required=>["component_id"]);
+    
     $args{systemimage_id} = $self->getAttr(name=>"systemimage_id");
     $self->{_dbix}->components_installed->create(\%args);
 }
@@ -246,10 +237,10 @@ sub update {
     my $self = shift;
     my $adm = Administrator->new();
     # update method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'update');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to update this entity");
+    }
     # TODO update implementation
 }
 
@@ -409,12 +400,8 @@ sub cloneComponentsInstalledFrom {
     my $self = shift;
     my %args = @_;
     
-    
-    if(! exists $args{systemimage_source_id} or ! defined $args{systemimage_source_id}) {
-        $errmsg = "Entity::Systemimage->cloneComponentsInstalled needs a systemimage_source_id parameter!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['systemimage_source_id']);
+
     my $si_source = Entity::Systemimage->get(id => $args{systemimage_source_id});
     my $rs = $si_source->{_dbix}->components_installed->search;
     while(my $component = $rs->next) {

@@ -25,6 +25,7 @@ use Kanopya::Exceptions;
 use Entity::Component;
 use Data::Dumper;
 use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -32,7 +33,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     distribution_name => {pattern => '^[a-zA-Z]*$', is_mandatory => 1, is_extended => 0},
     distribution_version => {pattern => '^[0-9\.]+$', is_mandatory => 1, is_extended => 0},
-    distribution_desc => {pattern => '^.*$', is_mandatory => 0, is_extended => 0},
+    distribution_desc => {pattern => '^[\w\s]*$', is_mandatory => 0, is_extended => 0},
     etc_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0},
     root_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0}
 };
@@ -59,19 +60,15 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Distribution->new need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+    General::checkParams(args => \%args, required => ['id']);
+   
     my $adm = Administrator->new();
-       my $dbix_distribution = $adm->{db}->resultset('Distribution')->find($args{id});
-       if(not defined $dbix_distribution) {
-           $errmsg = "Entity::Distribution->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       }       
+    my $dbix_distribution = $adm->{db}->resultset('Distribution')->find($args{id});
+    if(not defined $dbix_distribution) {
+        $errmsg = "Entity::Distribution->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }       
        
        my $entity_id = $dbix_distribution->entitylink->get_column('entity_id');
        my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
@@ -95,13 +92,10 @@ sub getDistributions {
     my @objs = ();
     my ($rs, $entity_class);
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getDistributions need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['hash']);
+
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "Distribution");
+    return $class->SUPER::getEntities( %args,  type => "Distribution");
 }
 
 =head2 new

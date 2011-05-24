@@ -23,6 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Administrator;
+use General;
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
@@ -83,27 +84,23 @@ sub get {
     my $class = shift;
     my %args = @_;
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::PowerSupplyCard->new need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['id']);
     
     my $admin = Administrator->new();
-       my $powersupplycard = $admin->{db}->resultset('Powersupplycard')->find($args{id});
-       if(not defined $powersupplycard) {
-           $errmsg = "Entity::Powersupplycard->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       } 
-       my $entity_id = $powersupplycard->entitylink->get_column('entity_id');
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get power supply card with id $args{id}");
-       }
-   
-       my $self = $class->SUPER::get( %args,  table => "Powersupplycard");
-       return $self;
+    my $powersupplycard = $admin->{db}->resultset('Powersupplycard')->find($args{id});
+    if(not defined $powersupplycard) {
+        $errmsg = "Entity::Powersupplycard->get : id <$args{id}> not found !";    
+     $log->error($errmsg);
+     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    } 
+    my $entity_id = $powersupplycard->entitylink->get_column('entity_id');
+    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get power supply card with id $args{id}");
+    }
+
+    my $self = $class->SUPER::get( %args,  table => "Powersupplycard");
+    return $self;
 }
 
 =head2 getPowerSupplyCards
@@ -116,13 +113,10 @@ sub getPowerSupplyCards {
     my @objs = ();
     my ($rs, $entity_class);
 
-    if ((! exists $args{hash} or ! defined $args{hash})) { 
-        $errmsg = "Entity::getPowerSupplyCards need a type and a hash named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['hash']);
+
     my $adm = Administrator->new();
-       return $class->SUPER::getEntities( %args,  type => "Powersupplycard");
+    return $class->SUPER::getEntities( %args,  type => "Powersupplycard");
 }
 
 =head2 new
@@ -246,24 +240,18 @@ Desc : This function insert a new power supply card in Kanopya
 sub getMotherboardPort{
     my $self = shift;
     my %args = @_;
-    $log->debug("PowerSupplyCard->getMotherboardPort");
-    if ((! exists $args{motherboard_powersupply_id} or ! defined $args{motherboard_powersupply_id})){
-        $errmsg = "PowerSupplyCard->getMotherboardPort need a motherboard_powersupply_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['motherboard_powersupply_id']);
+
     return $self->{_dbix}->powersupplies->find($args{motherboard_powersupply_id})->get_column('powersupplyport_number');
 }
 
 sub addPowerSupplyPort {
     my $self = shift;
     my %args = @_;
-    $log->debug("PowerSupplyCard->AddPowerSupplyPort");
-    if (! exists $args{powersupplyport_number} or ! defined $args{powersupplyport_number}){
-        $errmsg = "PowerSupplyCard->AddPowerSupplyPort need a powersupplyport_number named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['powersupplyport_number']);
+
     my $powersupply_schema = $self->{_dbix}->powersupplies;
     my $powersupply = $powersupply_schema->create({
                                 powersupplycard_id => $self->getAttr(name=>"powersupplycard_id"),
@@ -275,11 +263,9 @@ sub addPowerSupplyPort {
 sub isPortUsed {
     my $self = shift;
     my %args = @_;
-    if ((! exists $args{powersupplyport_number} or ! defined $args{powersupplyport_number})){
-        $errmsg = "Powersupplycard->isPortUsed need a powersupplyport_number named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['powersupplyport_number']);
+
     my $psp = $self->{_dbix}->powersupplies->single({powersupplyport_number=>$args{powersupplyport_number}});
     if ($psp){
         return $psp->get_column("powersupply_id");
@@ -290,22 +276,18 @@ sub isPortUsed {
 sub delPowerSupply {
     my $self = shift;
     my %args = @_;
-    if ((! exists $args{powersupply_id} or ! defined $args{powersupply_id})){
-        $errmsg = "Powersupplycard->delPowerSupply need a powersupply_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['powersupply_id']);
+
     my $powersupply = $self->{_dbix}->powersupplies->find($args{powersupply_id})->delete();
 }
 
 sub getPowerSupply {
     my $self = shift;
     my %args = @_;
-    if ((! exists $args{powersupply_id} or ! defined $args{powersupply_id})){
-        $errmsg = "Powersupplycard->getPowerSupply need a powersupply_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    
+    General::checkParams(args => \%args, required => ['powersupply_id']);
+
     my $row = $self->{db}->resultset('Powersupply')->find($args{powersupply_id});
     my $powersupply = { powersupplycard_id => $row->get_column('powersupplycard_id'),
                         powersupplyport_id => $row->get_column('powersupplyport_id')};

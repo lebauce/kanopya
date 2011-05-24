@@ -40,7 +40,7 @@ use strict;
 use warnings;
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
-
+use General;
 our $VERSION = "1.00";
 
 my $log = get_logger("administrator");
@@ -62,11 +62,7 @@ sub _getEntityIds {
     my $self = shift;
     my %args = @_;
     
-    if (! exists $args{entity_id} or ! defined $args{entity_id}) { 
-        $errmsg = "EntityRights->_getEntityIds: need an entity_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['entity_id']);
 
     my $ids = [];
     # TODO verifier que l'entity_id fournis exists en base
@@ -106,23 +102,7 @@ sub addPerm {
     my $self = shift;
     my %args = @_;
     
-    if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
-        $errmsg = "EntityRights::addPerm need a consumer_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-    if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
-        $errmsg = "EntityRights::addPerm need a consumed_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-    if (! exists $args{method} or ! defined $args{method}) { 
-        $errmsg = "EntityRights::addPerm need a method named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['consumer_id', 'consumed_id', 'method']);
     
     # TODO verifier que la methode donnée en argument exists sur l'entity
     # représentée par consumed_id
@@ -147,23 +127,8 @@ sub addPerm {
 sub updatePerms {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
-        $errmsg = "EntityRights::addPerm need a consumer_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
     
-    if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
-        $errmsg = "EntityRights::addPerm need a consumed_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-    if (! exists $args{methods} or ! defined $args{methods}) { 
-        $errmsg = "EntityRights::addPerm need a methods named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['consumer_id', 'consumed_id', 'methods']);
     
     my $methods = $args{methods};
     # we remove actuals perms not in methods argument
@@ -198,18 +163,9 @@ sub updatePerms {
 sub getGrantedMethods {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{consumer_id} or ! defined $args{consumer_id}) { 
-        $errmsg = "EntityRights::getGrantedMethods need a consumer_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
     
-    if (! exists $args{consumed_id} or ! defined $args{consumed_id}) { 
-        $errmsg = "EntityRights::getGrantedMethods need a consumed_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
+    General::checkParams(args => \%args, required => ['consumer_id', 'consumed_id']);
+   
     my @methods = ();
     my $resultset = $self->{schema}->resultset('Entityright')->search(
         { entityright_consumer_id => $args{consumer_id},

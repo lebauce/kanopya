@@ -43,6 +43,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
+use General;
 
 our $VERSION = "1.00";
 
@@ -67,17 +68,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    if(not exists $args{entity_id} or not defined $args{entity_id}) {
-        $errmsg = "EntityRights::User->new need a entity_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    } 
-    
-    if(not exists $args{schema} or not defined $args{schema}) {
-        $errmsg = "EntityRights::User->new need a schema named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['entity_id', 'schema']);
 
     my $self = { 
         schema => $args{schema},
