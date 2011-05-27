@@ -33,7 +33,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     distribution_name => {pattern => '^[a-zA-Z]*$', is_mandatory => 1, is_extended => 0},
     distribution_version => {pattern => '^[0-9\.]+$', is_mandatory => 1, is_extended => 0},
-    distribution_desc => {pattern => '^.*$', is_mandatory => 0, is_extended => 0},
+    distribution_desc => {pattern => '^[\w\s]*$', is_mandatory => 0, is_extended => 0},
     etc_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0},
     root_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0}
 };

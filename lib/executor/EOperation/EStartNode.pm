@@ -356,6 +356,8 @@ sub _generateNodeConf {
     $log->info("Generate Network Conf");
     $self->_generateNetConf(mount_point=>$args{mount_point});
     
+    
+    
     $log->info("Generate resolv.conf");
     $self->_generateResolvConf(mount_point=>$args{mount_point});
 #TODO generateRouteConf
@@ -506,12 +508,8 @@ sub _generateHosts {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point}) ||
-        (! exists $args{nodes} or ! defined $args{nodes})) { 
-        $errmsg = "EOperation::EStartNode->generateHosts need a mount_point and nodes named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["mount_point"]);
+    
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -540,11 +538,8 @@ sub _generateNetConf {
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-        $errmsg = "EOperation::EStartNode->generateNetConf need a mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['mount_point']);
+    
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -553,11 +548,27 @@ sub _generateNetConf {
     my $input = "network_interfaces.tt";
     #TODO Get ALL network interface !
     #TODO Manage virtual IP for master node
-    my $interfaces = $self->{_objs}->{cluster}->getPublicIps();
-    $log->debug(Dumper($interfaces));
-    $template->process($input, {interfaces => $interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
+    my @interfaces = ();
+    my $ip = $self->{_objs}->{motherboard}->getInternalIP();
+    my $eth0 = {
+        name => 'eth0',
+        address => $ip->{ipv4_internal_address},
+        netmask => $ip->{ipv4_internal_mask},
+    };
+    push(@interfaces, $eth0);    
+    
+    if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
+        @interfaces = (@interfaces, @{$self->{_objs}->{cluster}->getPublicIps()});
+    }
+    
+    $log->debug(Dumper(@interfaces));
+    $template->process($input, {interfaces => \@interfaces}, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal::IncorrectParam(error => "Error when generate net conf ". $template->error()."\n");
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/network/interfaces");    
     unlink "/tmp/$tmpfile"; 
+    
+    # disable network deconfiguration during halt
+    unlink "$args{mount_point}/rc0.d/S35networking";
+    
 }
 
 sub _generateBootConf {
@@ -615,11 +626,8 @@ sub _generateResolvConf{
     my $self = shift;
     my %args = @_;
     
-    if ((! exists $args{mount_point} or ! defined $args{mount_point})) { 
-        $errmsg = "EOperation::EStartNode->generateResolvConf need a mount_point named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['mount_point']);
+
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
     

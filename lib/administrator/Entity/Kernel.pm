@@ -31,7 +31,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     kernel_name => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
     kernel_version => { pattern => '^.*$', is_mandatory => 1, is_extended => 0 },
-    kernel_desc => { pattern => '^.*$', is_mandatory => 0, is_extended => 0 },
+    kernel_desc => { pattern => '^[\w\s]*$', is_mandatory => 0, is_extended => 0 },
 
 };
 

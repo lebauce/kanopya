@@ -35,7 +35,7 @@ use constant ATTR_DEF => {
                                         is_mandatory    => 1,
                                         is_extended        => 0,
                                         is_editable        => 0},
-            user_desc            => {pattern            => '\w*', # Impossible to check char used because of \n doesn't match with \w
+            user_desc            => {pattern            => '^[\w\s]*$', # Impossible to check char used because of \n doesn't match with \w
                                         is_mandatory    => 0,
                                         is_extended     => 0,
                                         is_editable        => 1},
