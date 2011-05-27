@@ -18,15 +18,15 @@
 	<tr id='rules_head'><th colspan='6'>Condition</th><th colspan='2' class='then_head'></th><th>Action</th><th>Node selection</th></tr>
 	
 	<tr id='rule_model' class="hidden">
-		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
-		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>trans func</td>
-		<td><span class='time_laps editable'>laps</span> sec</td>
-		<td class='comp_op editable_choice' choices='&lt;,&gt;'>comp op</td>
-		<td class='thresh_value editable' cond_id=''>threshold</td>
+		<td class='indicator_name editable_choice new_edit' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
+		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
+		<td><span class='time_laps editable'>60</span> sec</td>
+		<td class='comp_op editable_choice new_edit' choices='&lt;,&gt;'>comp op</td>
+		<td class='thresh_value editable new_edit' cond_id=''>threshold</td>
 		<td class='remove_cond'></td>
 		<td class='op_col' op_id=''></td>
 		<td class='then_col'></td>
-		<td class='action_col editable_choice' choices='Add node,Remove node'>action</td>
+		<td class='action_col editable_choice new_edit' choices='Add node,Remove node'>action</td>
 		<td class='node_selection'>rand</td>
 	</tr>
 	

@@ -119,8 +119,8 @@ alert('remove');
  		}
  		
  		new_rule.removeClass('new_rule');
- 		new_rule.find('.editable_choice').click( toggleChoiceMode ).addClass('clickable').addClass('new_edit');
- 		new_rule.find('.editable').click( toggleEditMode ).addClass('clickable').addClass('new_edit');
+ 		new_rule.find('.editable_choice').click( toggleChoiceMode ).addClass('clickable');//.addClass('new_edit');
+ 		new_rule.find('.editable').click( toggleEditMode ).addClass('clickable');//.addClass('new_edit');
 	 	new_rule.find('.remove_cond').click( removeCond ).addClass('clickable');	
  		
  	} ).addClass('clickable');
