@@ -187,7 +187,7 @@ sub view_controller : Runmode {
     my $cluster_id = $query->param('cluster_id');
     my $graph_name_prefix = "cluster$cluster_id" .  "_controller_server_";
 
-    $tmpl->param('GRAPHS' => [     { graph => "/graph/" . $graph_name_prefix . "load.png"},
+    $tmpl->param('GRAPHS' => [  { graph => "/graph/" . $graph_name_prefix . "load.png"},
                                 { graph => "/graph/" . $graph_name_prefix . "latency.png"},
                                 { graph => "/graph/" . $graph_name_prefix . "abortrate.png"},
                                 { graph => "/graph/" . $graph_name_prefix . "throughput.png"},
