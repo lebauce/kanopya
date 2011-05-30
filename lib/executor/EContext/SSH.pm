@@ -32,17 +32,17 @@ EComponent is an abstract class of component objects
 
 =cut
 package EContext::SSH;
+use base "EContext";
 
 use strict;
 use warnings;
-use Data::Dumper;
 use Net::Ping;
-use GRID::Machine qw/is_operative/;
+use Net::OpenSSH;
 
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
-use base "EContext";
+use General;
 use Kanopya::Exceptions;
 
 my $log = get_logger("executor");
@@ -50,13 +50,6 @@ my $errmsg;
 
 $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
 
-=head $sshcontexts
-
-store EContext::SSH instances to avoid many ssh connections on the same host 
-
-=cut
-
-my $sshcontexts = {};
 
 =head2 new
 
@@ -67,15 +60,6 @@ constructor
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    # WARNINGS THIS CODE CAUSE GRID::Machine to fail execution the second time we use 
-    # the EContext (error is : Premature EOF received at ...GRID/Machine.pm line 323)
-
-    # do not reinstanciate existing ssh context, reuse 
-#    if(exists $sshcontexts->{$args{ip}}) {
-#        $log->info("EContext::SSH instance for $args{ip} retrieved");
-#        return $sshcontexts->{$args{ip}};
-#    }
     
     my $self = {
         ip => $args{ip},
@@ -92,17 +76,7 @@ sub new {
     }
     $p->close();
     $log->debug("Remote econtext ssh instanciate");
-    # TODO better checking with is_operative
-       #my $host = "root\@$args{ip}";
-       # to verify if connection to $host can be done,
-    # try to connect with $host and execute hostname in less than 1 seconds 
-    #$log->debug("using GRID::Machine::is_operative to test the connection");
-    #eval { is_operative('ssh', $host, 'hostname', 1); };
-    #if($@) {    
-    #    throw Kanopya::Exception::Network(error => "EContext::SSH->new : $@"); 
-    #}
     bless $self, $class;
-    #$sshcontexts->{$args{ip}} = $self;    
     return $self;
 }
 
@@ -115,18 +89,24 @@ sub new {
 sub _init {
     my $self = shift;
     $log->debug("Initialise ssh connection to $self->{ip}");
-    my $m  = GRID::Machine->new(
-        ssh => '/usr/bin/ssh',
-        sshoptions => '-o StrictHostKeyChecking=no',
-        host => "root\@$self->{ip}",    # host to contact
-        prefix => '/tmp/perl5lib',                # directory on remote host to install perl code
-        startdir => '/tmp',                        # initial working directory on remote host
-        log => '/tmp/rperl$$.log',                # execution stdout on remote host 
-        err => '/tmp/rperl$$.err',                # execution stderr on remote host
-        cleanup => 1,                            # delete stdout and stderr files when finish
-        sendstdout => 1                            # ?
+    my %opts = (
+        user        => 'root',                   # user login
+        port        => 22,                       # TCP port number where the server is running
+        key_path    => '~/.ssh/id_rsa',          # Use the key stored on the given file path for authentication
+        ssh_cmd     => '/usr/bin/ssh',           # full path to OpenSSH ssh binary
+        scp_cmd     => '/usr/bin/scp',           # full path to OpenSSH scp binary
+        master_opts => [
+         -o => "StrictHostKeyChecking=no" 
+        ],
     );
-    $self->{machine} = $m;
+    
+    my $ssh = Net::OpenSSH->new($self->{ip}, %opts);
+    if($ssh->error) {
+        my $errmsg = "SSH connection failed: " . $ssh->error;  
+        $log->error($errmsg);
+        throw Kanopya::Exception::Network(error => $errmsg);
+    } 
+    $self->{ssh} = $ssh;
 }
 
 
@@ -146,11 +126,8 @@ execute ( command )
 sub execute {
     my $self = shift;
     my %args = @_;
-    if(! exists $args{command} or ! defined $args{command}) {
-        $errmsg = "EContext::SSH->execute need a command named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
-    }
+    
+    General::checkParams(args => %args, required => ['command']);
     
     if($args{command} =~ m/2>/) {
         $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
@@ -158,7 +135,7 @@ sub execute {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
     }
         
-    if(not exists $self->{machine}) {
+    if(not exists $self->{ssh}) {
         $log->debug("Initialize ssh connection on $self->{ip}");
         $self->_init();
     }    
@@ -166,24 +143,25 @@ sub execute {
     my $result = {};
     my $command = $args{command};
     $log->debug("Command execute is : <$command>");
-    my $r = $self->{machine}->system($command);
-    if(not $r->ok) {
-        $errmsg = "EContext::SSH->execute RPC failed";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Network(error => $errmsg);
-    }
-    $result->{exitcode} = $r->errcode; # TODO URGENT voir le code de grid::machine pour qu'il retourne le errcode
-    $result->{stdout} = $r->stdout;
-    chomp($result->{stdout});
-    $result->{stderr} = $r->stderr;
-    chomp($result->{stderr});
+    my ($stdout, $stderr) = $self->{ssh}->capture2($command);
+        
+    $result->{stdout} = $stdout;
+    $result->{stderr} = $stderr;
+    $result->{exitcode} = 0;
     $log->debug("Command stdout is : '$result->{stdout}'");
     $log->debug("Command stderr is : '$result->{stderr}'");
-    if($result->{stderr}) {
-        $errmsg = "EContext::SSH->execute : got stderr: $result->{stderr}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
+    my $error = $self->{ssh}->error; 
+    if($error) {
+         if($error =~ /child exited with code (\d)/) {
+             $result->{exitcode} = $1;
+             
+         } else {
+             $errmsg = "EContext::SSH->execute : error occured during execution: ".$error;
+             $log->error($errmsg);
+             throw Kanopya::Exception::Execution(error => $errmsg); 
+         }
     }
+    $log->debug("Command exitcode is : '$result->{exitcode}'"); 
     return $result;    
 }
 
@@ -202,26 +180,24 @@ send(src => $srcfullpath, dest => $destfullpath)
 sub send {
     my $self = shift;
     my %args = @_;
+    
+    General::checkParams(args => %args, required => ['src', 'dest']);
     #TODO check to be sure src and dest are full path to files
-    if((! exists $args{src} or ! defined $args{src}) ||
-       (! exists $args{dest} or ! defined $args{dest})) {
-        $errmsg = "EContext::SSH->execute need a src and dest named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
-    }
+
     if(not -e $args{src}) {
         $errmsg = "EContext::SSH->execute src file $args{src} no found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     
-    if(not exists $self->{machine}) {
+    if(not exists $self->{ssh}) {
         $log->debug("Initialize ssh connection on $self->{ip}");
         $self->_init();
     }
-    my $result = $self->{machine}->put([$args{src}], $args{dest});
+    
+    my $success = $self->{ssh}->scp_put({}, $args{src}, $args{dest});
     # return TRUE if success
-    if(not $result) {
+    if(not $success) {
         $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
@@ -229,16 +205,7 @@ sub send {
 }
     
 
-=head2 DESTROY
 
-    destructor : remove stored instance    
-    
-=cut
-
-sub DESTROY {
-    my $self = shift;
-    delete $sshcontexts->{$self->{ip}};
-}
 
 1;
 
