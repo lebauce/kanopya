@@ -212,6 +212,8 @@ sub _generateAuthorizedKeys {
     my $rsapubkey_cmd = "cat /root/.ssh/id_rsa.pub > $mount_point/root/.ssh/authorized_keys";
     $self->{nas}->{econtext}->execute(command => $rsapubkey_cmd);
     
+    my $sync_cmd = "sync";
+    $self->{nas}->{econtext}->execute(command => $sync_cmd);
     my $umount_cmd = "umount $mount_point";
     $self->{nas}->{econtext}->execute(command => $umount_cmd);
 }
