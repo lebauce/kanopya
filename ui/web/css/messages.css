@@ -60,7 +60,7 @@ td.content { text-align: left; }
 .Executor { background-image: url('/images/icons/execute.png'); }
 .Monitor { background-image: url('/images/icons/monitor.png'); }
 .Orchestrator { background-image: url('/images/icons/orchestrator.png'); }
-.Planner { background-image: url('/images/icons/planner.png'); }
+.StateManager { background-image: url('/images/icons/eye.png'); }
 .info { background-image: url('/images/icons/info.png'); }
 .warning { background-image: url('/images/icons/warning.png'); }
 .error { background-image: url('/images/icons/error.png'); }
