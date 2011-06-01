@@ -173,6 +173,35 @@ sub view_orchestrator_settings : StartRunmode {
     return $tmpl->output();
 }
 
+sub view_controller_settings : Runmode {
+    my $self = shift;
+    my $errors = shift;
+    my $query = $self->query();
+    my $tmpl = $self->load_tmpl('Orchestrator/view_controller_settings.tmpl');
+    
+    my $cluster_id = $query->param('cluster_id') || 0;
+
+    my $rules_manager = $self->{'adm'}->{manager}->{rules};
+    
+    # SLA
+    my $qos_constraints = $rules_manager->getClusterQoSConstraints( cluster_id => $cluster_id );
+    $tmpl->param('QOS_CONSTRAINTS_LATENCY' => $qos_constraints->{max_latency});
+    $tmpl->param('QOS_CONSTRAINTS_ABORT_RATE' => $qos_constraints->{max_abort_rate} * 100);
+
+    # Model parameters
+    my $workload_characteristic = $rules_manager->getClusterModelParameters( cluster_id => $cluster_id );
+    $tmpl->param('WORKLOAD_VISIT_RATIO' => $workload_characteristic->{visit_ratio});
+    $tmpl->param('WORKLOAD_SERVICE_TIME' => $workload_characteristic->{service_time} * 1000);
+    $tmpl->param('WORKLOAD_DELAY' => $workload_characteristic->{delay} * 1000);
+    $tmpl->param('WORKLOAD_THINK_TIME' => $workload_characteristic->{think_time} * 1000);
+
+    $tmpl->param('TITLEPAGE' => "Controller settings");
+    $tmpl->param('MCLUSTERS' => 1);
+    $tmpl->param('SUBMCLUSTERS' => 1);
+    
+    return $tmpl->output();
+}
+
 sub view_controller : Runmode {
     my $self = shift;
     my $errors = shift;
