@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 #We modify fast cgi conf:
-sed s/\ .fcgi/\ .cgi/ /etc/apache2/mods-enabled/fcgid.conf > tmp && mv tmp /etc/apache2/mods-enabled/fcgid.conf
+sed -i s/\ .fcgi/\ .cgi/ /etc/apache2/mods-available/fcgid.conf
 
 #we install the apache virtual host config for kanopya web ui
 cp /opt/kanopya/ui/web/virtualhost.conf /etc/apache2/sites-available/default || true
