@@ -283,8 +283,16 @@ sub removeRealserver {
 
 sub getConf {
     my $self = shift;
-    my $keepalived1_conf = {};
-    # TODO retrieve keepalived configuration
+    my $row = $self->{_dbix}->keepalived1;
+    my $keepalived1_conf = {
+        keepalived_id          => $row->get_column('keepalived_id'),
+        daemon_method           => $row->get_column('daemon_method'),
+        notification_email      => $row->get_column('notification_email'),
+        notification_email_from => $row->get_column('notification_email_from'),
+        smtp_server             => $row->get_column('smtp_server'),
+        smtp_connect_timeout    => $row->get_column('smtp_connect_timeout'),
+    };
+    
     return $keepalived1_conf;
 }
 
@@ -297,7 +305,16 @@ sub getConf {
 
 sub setConf {
     my $self = shift;
-    # TODO register keepalived configuration
+    my ($conf) = @_;
+    if(not $conf->{keepalived_id}) {
+         # new configuration -> create    
+         $self->{_dbix}->create_related('keepalived1', $conf);
+         
+         
+    } else {
+        # old configuration -> update
+         $self->{_dbix}->keepalived1->update($conf);
+    }
 }
 
 # return a data structure to pass to the template processor for ipvsadm file
@@ -352,9 +369,13 @@ sub insertDefaultConfiguration() {
     my $self = shift;
     
     my $default_conf = {
-        daemon_method => 'both',
-        iface => 'eth0',
-        smtp_server => '10.0.0.1',
+        daemon_method           => 'both',
+        iface                   => 'eth0',
+        notification_email      => 'admin@mycluster.com',
+        notification_email_from => 'keepalived@mycluster.com',
+        smtp_server             => '127.0.0.1',
+        smtp_connect_timeout    => 30,
+        lvs_id                  => 'MAIN_LVS' 
     };
     
     $self->{_dbix}->create_related('keepalived1', $default_conf);

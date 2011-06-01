@@ -137,10 +137,10 @@ sub calculate {
     
     
     #my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
-    my $throughput = ( 1 / $latency ); # Test
+    my $throughput = ( 1 / $latency );  # Logical throughput
     
     return (
-        latency => $latency,            # ms (mean time for execute client request)
+        latency => $latency,              # ms (mean time for execute client request)
         abort_rate => $abort_rate,        # %  (rejected_request/total_request)
         throughput => $throughput,        # req/sec (successful requests per sec) = reply rate?
     );    

@@ -5,11 +5,18 @@
 </style>
 <script type="text/javascript" src="/js/extern/jquery.js"></script>
 <script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
-<script type="text/javascript" src="/js/monitor.js"></script>
+<script type="text/javascript" src="/js/extern/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="/js/extern/jqplot.dateAxisRenderer.min.js"></script>
+<script type="text/javascript" src="/js/monitor_plot.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/css/jquery.jqplot.css" />
 <div id="content">
 
+<div id="chartdiv" style="height:400px;width:300px; "></div>
 
 <!--button id='fold_all'>fold</button-->
+
+
 
 <table id='graphchoices'>
 <tr>
@@ -43,21 +50,6 @@
 </tr>
 </table>
 
-<table id='graph_table' class="graphview simplelisting">
-	<tr>
-		<td></td><td id='nodecount_graph'><img class='autorefresh' src="<TMPL_VAR NAME=NODECOUNT_GRAPH>" alt="kanopya-grapher must be running to see graph"/></td>
-	</tr>
-	<tr>
-		<td id='<TMPL_VAR NAME=CLUSTER_NAME>' class='node_selector imgMonitCluster'><TMPL_VAR NAME=CLUSTER_NAME></td>
-		<td id='<TMPL_VAR NAME=CLUSTER_NAME>_content' class='content_container'></td>
-	</tr>
-	<TMPL_LOOP NAME=NODES>
-		<tr>
-			<td id='<TMPL_VAR NAME=ID>' class='node_selector imgMonitMotherboard'><TMPL_VAR NAME=NAME><TMPL_IF NAME=MASTER> (master) </TMPL_IF></td>
-			<td id='<TMPL_VAR NAME=ID>_content' class='content_container'></td>
-		</tr>
-	</TMPL_LOOP>
-</table>
 
 <div class="actions">
 <a class="action imgSettings" href="/cgi/kanopya.cgi/monitoring/view_clustermonitoring_settings?cluster_id=<TMPL_VAR NAME=CLUSTER_ID>">settings</a>

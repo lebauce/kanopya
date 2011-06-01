@@ -377,4 +377,21 @@ sub process_customgraph : Runmode {
      $self->redirect('/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id') . "&custom" . "#monitoring");
 }
 
+
+sub view_clustermonitoring_plot : Runmode {
+    my $self = shift;
+    my $errors = shift;
+    my $tmpl = $self->load_tmpl('Monitor/view_clustermonitoring_plot.tmpl');
+    $tmpl->param('titlepage' => "Clusters - Clusters");
+    $tmpl->param('mClusters' => 1);
+    $tmpl->param('submClusters' => 1);
+    $tmpl->param('username' => $self->session->param('username'));
+    
+    my $cluster_id = $self->query()->param('cluster_id');
+    
+    $tmpl->param('TITLEPAGE' => "Cluster's activity plot");
+    #$tmpl->param('MENU_CLUSTERSMANAGEMENT' => 1);
+    
+    return $tmpl->output();
+}
 1;
