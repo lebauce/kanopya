@@ -30,7 +30,7 @@ my $building_dir = $kanopya_packages.'/builder';
 #package's debian directory path#
 my $kanopya_debian = $kanopya_packages.'/'.$package.'/debian';
 #print $kanopya_debian."\n";
-unless ( -d $temp_kanopya_dir ){mkdir $temp_kanopya_dir}   
+unless ( -d $temp_kanopya_dir ){mkdir $temp_kanopya_dir}
 #we prompt for version update
 print "Building $package \n";
 print "Do you want to update the changelog of the package? [y/n]: ";
@@ -47,7 +47,7 @@ if ($prompt eq 'y'){
         #gather only version number, valid for Debian)
         my $this='(\d*\.\d*)';
         my @f=grep /$this/,$line;
-        $f[0] =~ $this; 
+        $f[0] =~ $this;
         $version = $1;
 	chdir $building_dir;
 }elsif ($prompt eq 'n'){
@@ -59,7 +59,7 @@ if ($prompt eq 'y'){
         #gather only version number, valid for Debian)
         my $this='(\d*\.\d*)';
         my @f=grep /$this/,$line;
-        $f[0] =~ $this; 
+        $f[0] =~ $this;
         $version = $1;
 }
 #package's directory#
@@ -72,13 +72,13 @@ my $line;
 LINE:
 while( defined( $line = <FILE> ) )
 {
-	chomp ($line);	
+	chomp ($line);
 	if ($line eq "none"){ last LINE; }
 	my $final = $this_package."".$line;
 	#we gather directories - lines ended by a "/" in the conf file#
 	if ( $final =~ m/\/$/){
 		system ("mkdir -p $final");
-		system ("cp -r $orig_kanopya_dir$line* $this_package$line"); 
+		system ("cp -r $orig_kanopya_dir$line* $this_package$line");
 	#we gather files that are not directories#
 	#script is static and find files under sbin, conf, and scripts/init directories#
 	}else{
@@ -105,5 +105,5 @@ my $build_logs = $this_package."-logs";
 mkdir $build_logs;
 chdir $temp_kanopya_dir;
 system ('cp -r *.dsc *.build *.changes '.$ARGV[0].'_'.$version.'.tar.gz '.$build_logs);
-system ("tar czf $build_logs.tar.gz $build_logs"); 
+system ("tar czf $build_logs.tar.gz $build_logs");
 system ("rm -rf $build_logs");

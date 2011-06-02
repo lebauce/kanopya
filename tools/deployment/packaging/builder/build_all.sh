@@ -15,4 +15,4 @@
 ./package_builder.pl kanopya-monitor
 ./package_builder.pl kanopya-orchestrator
 ./package_builder.pl kanopya-dev
-./package_builder.pl kanopya 
+./package_builder.pl kanopya
