@@ -106,6 +106,8 @@ sub execute {
 #    my $nodes = $adm->{manager}->{node}->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));    
     
     if(not scalar keys %$motherboards) {
+        $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping:'.time);
+        $self->{_objs}->{cluster}->save();
         $errmsg = "EStopCluster->execute : this cluster with id $self->{_objs}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
