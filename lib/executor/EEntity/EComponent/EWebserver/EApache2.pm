@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -74,9 +74,7 @@ sub addNode {
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => "/templates/components/apache2",
                          input_file => "status.conf.tt", output => '/apache2/mods-enabled/status.conf', data => $data);
-    
-    
-    
+
     $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
                                 econtext => $args{econtext}, 
                                 scriptname => 'apache2', 
