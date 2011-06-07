@@ -1,4 +1,4 @@
-<info tables_file="scripts/database/mysql/schemas/components/memcached1.sql" templates_dir="templates/components/memcached1">
+<info tables_file="scripts/database/mysql/schemas/components/memcached1.sql" templates_dir="templates/components/memcached">
   <description name="Memcached" category="ProxyCache" version="1" />
   <executor dest="lib/executor/EEntity/EComponent/EProxyCache/EMemcached1.pm" src="lib/executor/EEntity/EComponent/EProxyCache/EMemcached1.pm" />
   <meta packager_version="0.1" />

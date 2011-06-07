@@ -197,13 +197,12 @@ div#footer {
 .imgPermission { background-image: url("/images/icons/permission.png"); }
 .imgListing { background-image: url("/images/icons/list.png"); }
 .imgCluster { background-image: url("/images/icons/cluster.png"); }
-.imgEye { background-image: url("/images/icons/eye.png"); }
+.imgEye, .imgStateManager { background-image: url("/images/icons/eye.png"); }
 .imgDatabase { background-image: url("/images/icons/database.png"); }
 .imgBoot { background-image: url("/images/icons/boot.png"); }
 .imgExecute { background-image: url("/images/icons/execute.png"); }
 .imgMonitor { background-image: url("/images/icons/monitor.png"); }
 .imgHarddisk { background-image: url("/images/icons/harddisk.png"); }
-.imgPlanner { background-image: url("/images/icons/planner.png"); }
 .imgOrchestrator { background-image: url("/images/icons/orchestrator.png"); }
 .imgRedcross { background-image: url("/images/icons/error.png"); }
 .imgLightning { background-image: url("/images/icons/lightning.png"); }

@@ -1,6 +1,6 @@
 conf/components.conf opt/kanopya/conf
 sbin/* opt/kanopya/sbin
 lib/executor/* opt/kanopya/lib/executor
-init/* etc/init.d
+scripts/init/* etc/init.d
 templates/* opt/kanopya/templates
 t/executor/* opt/kanopya/t/executor

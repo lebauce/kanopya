@@ -1,11 +1,17 @@
-libkanopya-perl (0.9) stable; urgency=low
+libkanopya-perl (0.2.1) stable; urgency=low
 
-  * First development version available for public
+  * Second release of first public version
 
- -- Hedera Dev Team <dev@hederatech.com>  Tue, 10 May 2011 10:28:18 +0200
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 07 Jun 2011 00:25:13 +0200
 
-libkanopya-perl (0.8) stable; urgency=low
+libkanopya-perl (0.1.9) stable; urgency=low
+
+  * First dev public version
+
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 10 May 2011 10:58:25 +0200
+
+libkanopya-perl (0.1.8) stable; urgency=low
 
   * Initial Release.
 
- -- Hedera Dev Team <dev@hederatech.com>  Fri, 03 Dec 2010 15:57:59 +0100
+ -- Hedera Dev Team <dev@hederatech.com>  Mon, 31 Jan 2011 14:02:05 +0100

@@ -9,7 +9,7 @@
 	schemas_dir="/opt/kanopya/scripts/database/mysql/schemas"
 	data_dir="/opt/kanopya/scripts/database/mysql/data/"
 	data_sql="/opt/kanopya/scripts/database/mysql/data/Data.sql"
-	schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"	
+	schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"
 	apache_user="www-data"
   />
   <genfiles>
@@ -24,7 +24,7 @@
 	</libkanopya.conf>
 	<monitor.conf template="monitor.conf.tt">
 		<datas admin_password="dbpassword1" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
-	</monitor.conf>	
+	</monitor.conf>
 	<monitor-log.conf template="monitor-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</monitor-log.conf>
@@ -34,11 +34,11 @@
 	<orchestrator-log.conf template="orchestrator-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</orchestrator-log.conf>
-	<state-manager-log.conf template="state-manager-log.conf.tt">	
+	<state-manager-log.conf template="state-manager-log.conf.tt">
 		<datas logdir="log_directory"/>
 	</state-manager-log.conf>
 
-	<components.conf template="components.conf.tt">	
+	<components.conf template="components.conf.tt">
 		<datas />
 	</components.conf>
 
@@ -57,13 +57,13 @@
     <dbpassword1
        question="What is the password for kanopya user"
        default="K4n0pY4"
-       is_searchable="0" 
+       is_searchable="0"
        is_secret="1"
        search_command=""/>
     <dbpassword2
        question="Please repeat Kanopya user's password"
        default="K4n0pY4"
-       is_searchable="0" 
+       is_searchable="0"
        is_secret="1"
        search_command=""/>
     <dbip
@@ -89,7 +89,7 @@
        default=""
        is_searchable="n"
        pattern="^\d+$"
-       search_command="echo -n `ifconfig | grep Link| awk '{print $1}'`"/>
+       search_command="echo -n `ifconfig -a -s | awk 'NR!=1 { print $1 }'`"/>
     <internal_net_add
        question="What is the address of the network that will be used by node managed by Kanopya: this network will be booked for Kanopya!"
        default="10.0.0.0"
