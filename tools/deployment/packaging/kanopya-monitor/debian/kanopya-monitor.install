@@ -1,4 +1,4 @@
 sbin/* opt/kanopya/sbin
-init/* etc/init.d
+scripts/init/* etc/init.d
 lib/monitor/* opt/kanopya/lib/monitor
 t/monitor/* opt/kanopya/t/monitor
