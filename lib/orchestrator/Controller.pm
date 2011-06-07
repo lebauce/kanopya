@@ -113,7 +113,7 @@ sub getClusterConf {
 
     my $cluster = $args{cluster};
     
-    return {nb_nodes => 1, mpl => 1500};    
+    return {nb_nodes => 1, mpl => 150};    
 }
 
 sub getWorkload {
