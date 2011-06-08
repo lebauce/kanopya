@@ -311,6 +311,8 @@ sub execute {
     }
 
     # Umount Motherboard etc
+    my $sync_cmd = "sync";
+    $self->{nas}->{econtext}->execute(command => $sync_cmd);
     my $umount_cmd = "umount /mnt/$node_dev->{etc}->{lvname}";
     $self->{nas}->{econtext}->execute(command => $umount_cmd);
     my $rmdir_cmd = "rmdir /mnt/$node_dev->{etc}->{lvname}";
