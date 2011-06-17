@@ -200,7 +200,7 @@ sub isUp {
 
     # Test Services
     while(my ($port, $protocols) = each %$net_conf) {
-        my $cmd = "nmap ";
+        my $cmd = "nmap -n ";
         foreach my $proto (@$protocols) {
             if ($proto eq "udp") {
                 $cmd .= "-sU "; 
