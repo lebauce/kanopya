@@ -284,7 +284,7 @@ sub getMotherboardFromIP {
     General::checkParams(args => \%args, required => ['ipv4_internal_ip']);
 
     my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->getInternalIPid(%args);
+    my $net_id = $adm->{manager}->{network}->getInternalIPId( ipv4_internal_address => $args{ipv4_internal_ip} );
     return $class->SUPER::getEntities( hash=>{motherboard_ipv4_internal_id => $net_id},  type => "Motherboard");
 }
 
