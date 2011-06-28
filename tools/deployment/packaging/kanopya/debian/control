@@ -9,5 +9,5 @@ Vcs-Git: git://git.kanopya.org/mcs/executor.git
 
 Package: kanopya
 Architecture: all
-Depends: libkanopya-perl, kanopya-core, kanopya-webui, kanopya-monitor, kanopya-bootmanager, kanopya-orchestrator, kanopya-storage, kanopya-dev 
+Depends: libkanopya-perl, kanopya-core, kanopya-webui, kanopya-monitor, kanopya-bootmanager, kanopya-orchestrator, kanopya-storage, kanopya-dev bzip2
 Description: Meta provides a full Kanopya install

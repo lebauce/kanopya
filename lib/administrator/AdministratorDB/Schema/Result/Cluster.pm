@@ -119,6 +119,14 @@ __PACKAGE__->table("cluster");
 
 =cut
 
+=head2 cluster_prev_state
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
+=cut
+
 __PACKAGE__->add_columns(
   "cluster_id",
   {
@@ -165,6 +173,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "cluster_state",
   { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
+  "cluster_prev_state",
+  { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("cluster_id");
 __PACKAGE__->add_unique_constraint("cluster_name_UNIQUE", ["cluster_name"]);

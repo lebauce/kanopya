@@ -7,7 +7,7 @@ SET @eid := 1;
 --
 
 -- system groups
-INSERT INTO `gp` VALUES 
+INSERT INTO `gp` VALUES
 (1,'User','User', 'User master group containing all users',1),
 (2,'Processormodel','Processormodel','Processormodel master group containing all processor models',1),
 (3,'Motherboardmodel','Motherboardmodel','Motherboardmodel master group containing all motherboard models',1),
@@ -46,19 +46,19 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,14); SE
 SET @Guest_group_id = 14;
 
 -- system user
-INSERT INTO `user` VALUES 
+INSERT INTO `user` VALUES
 (1,1,'executor','[% admin_password %]','Kanopya','Executor','dev@hederatech.com',CURRENT_DATE(),NULL,'User used by executor');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- predefined user
 INSERT INTO `user` VALUES
 (2,1,'admin','[% admin_password %]','Kanopya','Administrator','dev@hederatech.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2);
 INSERT INTO `ingroups` VALUES (@Admin_group_id, @eid); SET @eid := @eid +1;
 
 INSERT INTO `user` VALUES (3,0,'guest','guest','Guest','','guest@somewhere.com',CURRENT_DATE(),NULL,'Guest user with limited permissions.');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3); 
-INSERT INTO `ingroups` VALUES (@Guest_group_id, @eid); 
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3);
+INSERT INTO `ingroups` VALUES (@Guest_group_id, @eid);
 SET @guest_user_eid = @eid;
 SET @eid := @eid +1;
 
@@ -107,7 +107,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,9); SET @eid := @eid +1;
 
 -- operation types list
-INSERT INTO `operationtype` VALUES 
+INSERT INTO `operationtype` VALUES
 (1,'AddMotherboard'),
 (2,'ModifyMotherboard'),
 (3,'RemoveMotherboard'),
@@ -139,7 +139,8 @@ INSERT INTO `operationtype` VALUES
 (29,'DeployComponent'),
 (30,'CreateLogicalVolume'),
 (31,'CreateExport'),
-(32,'DeployDistribution');
+(32,'DeployDistribution'),
+(33,'CleanNode');
 
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
@@ -174,9 +175,10 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,30); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,31); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,32); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,33); SET @eid := @eid +1;
 
 -- components list
-INSERT INTO `component` VALUES 
+INSERT INTO `component` VALUES
 (1,'Lvm','2','Storage'),
 (2,'Apache','2','Webserver'),
 (3,'Iscsitarget','1','Export'),
@@ -215,7 +217,7 @@ INSERT INTO `component_template` VALUES (5,'mounttable','/templates/components/m
 INSERT INTO `component_template` VALUES (6,'nfsd','/templates/components/nfsd3', 8);
 
 
--- initial components instance for admin cluster: 
+-- initial components instance for admin cluster:
 INSERT INTO `component_instance` VALUES (1,1,1,NULL),(2,1,2,1),(3,1,3,NULL),(4,1,5,2),(5,1,6,NULL),(6,1,7,3),(7,1,8,6);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,2); SET @eid := @eid +1;
@@ -250,13 +252,13 @@ INSERT INTO `nfsd3` VALUES(1,7,NULL,'no',8,0,NULL,'no',NULL);
 
 
 -- Monitoring
-INSERT INTO `indicatorset` VALUES 
+INSERT INTO `indicatorset` VALUES
 (1,'mem','SnmpProvider','GAUGE', null, 'Total'),
 (2,'cpu','SnmpProvider','COUNTER', null, 'User+Idle+Wait+Nice+Syst+Kernel+Interrupt'),
 (3,'apache_stats','ApacheProvider','DERIVE', 'Apache', null),
 (4,'apache_workers','ApacheProvider','GAUGE', 'Apache', null);
 
-INSERT INTO `indicator` VALUES 
+INSERT INTO `indicator` VALUES
 (1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1),
 (2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1),
 (3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1),

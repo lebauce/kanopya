@@ -1,4 +1,4 @@
-# EPostStopNode.pm - Operation class node removing from cluster operation
+# ECleanNode.pm - Operation class node removing from cluster operation
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EOperation::EPostStopNode - Operation class implementing node removing operation
+EOperation::ECleanNode - Operation class implementing node removing operation
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EPostStopNode;
+package EOperation::ECleanNode;
 use base "EOperation";
 
 use strict;
@@ -52,7 +52,7 @@ our $VERSION = '1.00';
 
 =head2 new
 
-EOperation::EPostStopNode->new creates a new EPostStopNode operation.
+EOperation::ECleanNode->new creates a new ECleanNode operation.
 
 =cut
 
@@ -83,11 +83,11 @@ sub checkOp{
     my $self = shift;
     my %args = @_;
     
-    if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
-        my $msg = "Node is still in stopping state.";
-        $log->error($msg);
-        throw Kanopya::Exception::Execution::OperationReported(error => $msg);
-    }
+#    if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
+#        my $msg = "Node is still in stopping state.";
+#        $log->error($msg);
+#        throw Kanopya::Exception::Execution::OperationReported(error => $msg);
+#    }
  
 }
 
@@ -106,7 +106,7 @@ sub prepare {
     $log->info("Operation preparation");
 
     if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EPostStopNode->prepare need an internal_cluster named argument!";
+        $errmsg = "ECleanNode->prepare need an internal_cluster named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
