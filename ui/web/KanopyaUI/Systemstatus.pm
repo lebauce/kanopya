@@ -158,7 +158,8 @@ sub get_log : Runmode {
     
     my $log_id = $query->param('log_id');
 
-    my $log_str = `tail -50 $log_id`;
+    # Get the last n lines of files in reverse order (more recent message first)
+    my $log_str = `tail -50 $log_id | tac`;
     
     $log_str = CGI::escapeHTML($log_str);
     #$log_str =~ s/\n/<br\/>/g;
