@@ -203,7 +203,9 @@ sub getLogDirectories {
     my $self = shift;
     
     #TODO retrieve log dirs from conf (= param of driver file in destination used)
-    return ("/var/log/kanopya/");
+    return ("/var/log/kanopya/",        # default log dir for kanopya services
+            "/var/log/kanopya_nodes/",  # default log dir for nodes log
+            );
 }
 
 =head1 DIAGNOSTICS
