@@ -288,7 +288,8 @@ sub process_deactivatesystemimage : Runmode {
         else { $exception->rethrow(); }
     }
     else {    
-        $self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'system image activation adding to execution queue'); 
+        my $msg = "System Image '".$esystemimage->getAttr(name => 'systemimage_name')."' deactivation enqueued";
+        $self->{adm}->addMessage(from => 'Administrator', level => 'info', content => $msg); 
         $self->redirect('/cgi/kanopya.cgi/systemimages/view_systemimages');
     } 
 }
