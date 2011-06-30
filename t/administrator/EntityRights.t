@@ -13,7 +13,7 @@ use Test::Exception;
 BEGIN { 
 	use_ok('Administrator'); 
 	use_ok('Entity::User');
-	use_ok('Entity::Groups');
+	use_ok('Entity::Gp');
 }
 
 BEGIN {
