@@ -92,7 +92,7 @@ sub _init {
     my %opts = (
         user        => 'root',                   # user login
         port        => 22,                       # TCP port number where the server is running
-        key_path    => '~/.ssh/id_rsa',          # Use the key stored on the given file path for authentication
+        key_path    => '/root/.ssh/kanopya_rsa', # Use the key stored on the given file path for authentication
         ssh_cmd     => '/usr/bin/ssh',           # full path to OpenSSH ssh binary
         scp_cmd     => '/usr/bin/scp',           # full path to OpenSSH scp binary
         master_opts => [

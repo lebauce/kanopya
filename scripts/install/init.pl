@@ -110,6 +110,18 @@ system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating 
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
 print "done\n";
 
+######################
+# SSH key generation #
+######################
+if((! -e '/root/.ssh/kanopya_rsa') && (! -e '/root/.ssh/kanopya_rsa.pub')) {
+    if(! -e "/root/.ssh") {
+        system("mkdir -p /root/.ssh") == 0 or die "error while creating /root/.ssh directory: $!";
+    } 
+
+  system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa");
+  print "New SSH keys generated for kanopya\n";
+}
+
 ########################
 #Services configuration#
 ########################

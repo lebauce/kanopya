@@ -209,7 +209,7 @@ sub _generateAuthorizedKeys {
     my $mount_cmd = "mount /dev/$si_devices->{root}->{vgname}/$si_devices->{root}->{lvname} $mount_point";
     $self->{nas}->{econtext}->execute(command => $mount_cmd);
     
-    my $rsapubkey_cmd = "cat /root/.ssh/id_rsa.pub > $mount_point/root/.ssh/authorized_keys";
+    my $rsapubkey_cmd = "cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
     $self->{nas}->{econtext}->execute(command => $rsapubkey_cmd);
     
     my $sync_cmd = "sync";
