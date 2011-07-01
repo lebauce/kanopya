@@ -1,7 +1,7 @@
 #! /bin/bash
 ### BEGIN INIT INFO
 # Provides:           kanopya-grapher
-# Required-Start:     $network $remote_fs $syslog
+# Required-Start:     mysql
 # Required-Stop:      $network $remote_fs $syslog
 # Default-Start:      2 3 4 5
 # Default-Stop:       0 1 6
