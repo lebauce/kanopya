@@ -275,8 +275,9 @@ sub process_activatesystemimage : Runmode {
 sub process_deactivatesystemimage : Runmode {
     my $self = shift;
     my $query = $self->query();
+    my $esystemimage;
     eval {
-        my $esystemimage = Entity::Systemimage->get(id => $query->param('systemimage_id'));
+        $esystemimage = Entity::Systemimage->get(id => $query->param('systemimage_id'));
         $esystemimage->deactivate();
     };
     if($@) {
