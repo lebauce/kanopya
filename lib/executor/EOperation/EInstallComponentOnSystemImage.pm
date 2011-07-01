@@ -90,7 +90,7 @@ sub checkOp{
     
     $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
        if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is active";
+            $errmsg = "EOperation::EInstallComponentOnSystemImage->checkOp : system image is active";
             $log->error($errmsg);
             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
