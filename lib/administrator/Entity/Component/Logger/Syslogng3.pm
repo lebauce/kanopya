@@ -199,6 +199,62 @@ sub getNetConf {
     return { 514 => ['udp'] };
 }
 
+=head2 insertDefaultConfiguration
+	
+	Class : Public
+	
+	Desc : The default syslog-ng configuration for a node is to send all logs to kanopya admin 
+	
+	
+=cut
+
+sub insertDefaultConfiguration {
+    my $self = shift;
+    my %args = @_;
+    
+    # Retrieve admin ip
+    my $admin_ip = "0.0.0.0";
+    if(defined $args{internal_cluster}) {    
+        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
+    } 
+    
+    # Conf to send all node logs to admin
+    my $conf = {
+        syslogng3_logs => [ {
+            syslogng3_log_params => [
+                {
+                    syslogng3_log_param_entrytype => "source",
+                    syslogng3_log_param_entryname => "s_all_local"
+                },
+                {
+                    syslogng3_log_param_entrytype => "destination",
+                    syslogng3_log_param_entryname => "d_kanopya_admin"
+                },
+            ],
+        } ],
+        syslogng3_entries => [ 
+            {
+                syslogng3_entry_name => 's_all_local',
+                syslogng3_entry_type => 'source',
+                syslogng3_entry_params => [
+                    { syslogng3_entry_param_content => 'internal()' },
+                    { syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
+                    { syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
+                ]
+            },
+            {
+                syslogng3_entry_name => 'd_kanopya_admin',
+                syslogng3_entry_type => 'destination',
+                syslogng3_entry_params => [{
+                      syslogng3_entry_param_content => "udp('$admin_ip')",
+                }]
+            },
+       ]
+    };
+    $self->{_dbix}->syslogng3s->create($conf);
+}
+
+
 sub getLogDirectories {
     my $self = shift;
     
