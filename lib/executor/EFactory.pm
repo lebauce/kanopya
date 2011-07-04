@@ -68,7 +68,7 @@ sub newEOperation{
     
     eval { require $location; };
     if ($@){
-        $errmsg = "EFactory->newEOperation : require locaction failed (location is $location)";
+        $errmsg = "EFactory->newEOperation : require '$location' failed : $@";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
