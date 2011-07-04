@@ -41,7 +41,6 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
 use Kanopya::Exceptions;
 use EFactory;
 use Template;
@@ -50,7 +49,7 @@ use General;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
 
 =head2 new
 
@@ -87,17 +86,27 @@ sub _init {
     return;
 }
 
-sub checkOp{
+sub checkOp {
     my $self = shift;
     my %args = @_;
+    my $sysimg_name = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+       
+    # check if systemimage is active
+    if(!$self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+        $errmsg = "EOperation::EDeactivateSystemimage->checkOp : system image '$sysimg_name' is already deactivated";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
     
-    
-    # check if systemimage is not active
-    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
-       if(!$self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is already active";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    # check if no active cluster is using this systemimage
+    my @clusters = Entity::Cluster->getClusters(hash => {
+        systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id'),
+        active => 1,
+    });
+    if(scalar(@clusters)) {
+        $errmsg = "EOperation::EDeactivateSystemimage->checkOp : At least one active cluster use system image '$sysimg_name'";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
@@ -130,16 +139,8 @@ sub prepare {
     $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
     ### Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    } 
-
+    $self->checkOp(params => $params);
+    
     #### Instanciate Clusters
     # Instanciate nas Cluster 
     $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
@@ -157,7 +158,7 @@ sub prepare {
 
 }
 
-sub execute{
+sub execute {
     my $self = shift;
     my $adm = Administrator->new();
     
@@ -185,6 +186,8 @@ sub execute{
     $self->{_objs}->{systemimage}->save();
     $log->info("System Image <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') ."> deactivated");
 }
+
+1;
 
 __END__
 
