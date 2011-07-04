@@ -69,8 +69,7 @@ sub motherboardBroken{
     
     General::checkParams(args => \%args, required => ['motherboard']);
           
-    $args{motherboard}->setAttr(name=>"motherboard_state", value => "broken:".time);
-    $args{motherboard}->save();
+    $args{motherboard}->setState('state' => "broken");
     
     logMotherboardStateChange(
         level => 'warning',
@@ -84,8 +83,7 @@ sub motherboardRepaired{
     
     General::checkParams(args => \%args, required => ['motherboard']);
     
-    $args{motherboard}->setAttr(name=>"motherboard_state", value => "up");
-    $args{motherboard}->save();
+    $args{motherboard}->setState('state' => "up");
     
     logMotherboardStateChange(
         level => 'info',
@@ -99,8 +97,7 @@ sub motherboardStopped{
    
     General::checkParams(args => \%args, required => ['motherboard']);
    
-    $args{motherboard}->setAttr(name=>"motherboard_state", value => "down");
-    $args{motherboard}->save();
+    $args{motherboard}->setState('state' => "down");
     
     logMotherboardStateChange(
         level => 'info',
@@ -121,8 +118,7 @@ sub motherboardStarted{
     
     General::checkParams(args => \%args, required => ['motherboard']);
     
-    $args{motherboard}->setAttr(name=>"motherboard_state", value => "up");
-    $args{motherboard}->save();
+    $args{motherboard}->setState('state' => "up");
     
     logMotherboardStateChange(
         level => 'info',
@@ -171,15 +167,28 @@ sub incorrectStates {
 
 
 sub testStartingMotherboard{
-    # Motherboard is Starting and is unpingable
-    #TODO Test how long motherboard starting
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['pingable', 'motherboard','begin_time']);
+    my $diff_time = time() - $args{begin_time};
+    #TODO get max boot time for the motherboard from its model
+    my $motherboard_start_max_time = 240;
+    if($diff_time>$motherboard_start_max_time) {
+        $args{motherboard}->setState('state'=> 'broken');
+    }
 }
 
 
 sub testStoppingMotherboard{
-    #If node is in
-    # Foreach component TestReadytoBeRemoved
-    #TODO Test how long motherboard stoping
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['pingable', 'motherboard','begin_time']);
+    my $diff_time = time() - $args{begin_time};
+    #TODO get max boot time for the motherboard from its model
+    my $motherboard_stop_max_time = 240;
+    if($diff_time>$motherboard_stop_max_time) {
+        $args{motherboard}->setState('state'=> 'broken');
+    }
 }
 ######################## UPDATE METHOD
 

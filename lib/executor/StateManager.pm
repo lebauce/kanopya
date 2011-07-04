@@ -127,7 +127,7 @@ sub run {
     while ($$running) {
         # First Check Motherboard status
         $log->debug("<<< Motherboards status changes >>>");
-        my @motherboards = Entity::Motherboard->getMotherboards(hash => {motherboard_state => {'!=','down'}});
+        my @motherboards = Entity::Motherboard->getMotherboards(hash => {-not => {motherboard_state => {'like','down%'}}});
         foreach my $mb (@motherboards) {
             eval {
                   my $emotherboard = EFactory::newEEntity(data => $mb);
@@ -143,7 +143,7 @@ sub run {
 
         # Second Check clusters's nodes status
         $log->debug("<<< Clusters'nodes status changes >>>");
-        my @clusters = Entity::Cluster->getClusters(hash=>{cluster_state => {'!=' => 'down'}});
+        my @clusters = Entity::Cluster->getClusters(hash=>{-not => {cluster_state => {'like','down%'}}});
         foreach my $cluster (@clusters) {
                         
             $log->debug("On cluster " . $cluster->getAttr(name=>'cluster_name')." ...");

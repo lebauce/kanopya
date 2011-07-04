@@ -70,11 +70,11 @@ sub checkNodeUp {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['cluster', 'motherboard', 'executor_ip']);
-    
-    if ($args{motherboard}->getAttr(name => "motherboard_state") ne "up"){
+    my $adm = Administrator->new();
+    if ($args{motherboard}->getAttr(name => "motherboard_state") !~ /^up:.*/){
         return 0;
     }
-   
+
     my $components= $args{cluster}->getComponents(category => "all");
     my $protoToTest;
     my $node_available = 1;
@@ -90,6 +90,9 @@ sub checkNodeUp {
         $host_econtext = EFactory::newEContext(ip_source => $args{executor_ip}, ip_destination => $node_ip);
     };
     if ($@) {
+        $adm->addMessage(from => 'StateManager', level => 'info', content => "Kanopya could not connect to node <"
+                        .$args{motherboard}->getAttr(name=>"motherboard_hostname")."> with ip <"
+                        . $node_ip ."> in cluster <".$args{cluster}->getAttr(name=>"cluster_name").">");
         return 0;
     }
     
@@ -97,6 +100,10 @@ sub checkNodeUp {
         $log->debug("Browse component : " .$components->{$i}->getComponentAttr()->{component_name});
         my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
         if (!$tmp_ecomp->isUp(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
+            $adm->addMessage(from => 'StateManager', level => 'info', content => "Kanopya detects a component \""
+            .$components->{$i}->getComponentAttr()->{component_name}."\" not available on node \""
+            .$args{motherboard}->getAttr(name=>"motherboard_hostname")."\" with ip \""
+            . $node_ip ."\" in cluster \"".$args{cluster}->getAttr(name=>"cluster_name")."\"");
             return 0;
         }
     }
@@ -259,6 +266,7 @@ sub updateNodeStatus {
    my $node_state = $args{motherboard}->getNodeState();
    my @tmp = split(/:/, $node_state);
    $node_state = $tmp[0];
+   print "Node state <$node_state>";
    my $method = $actions{$args{services_available}}->{$node_state} || \&incorrectStates;
    $method->(services_available=>$args{services_available},motherboard=>$args{motherboard}, cluster=>$args{cluster});
 }

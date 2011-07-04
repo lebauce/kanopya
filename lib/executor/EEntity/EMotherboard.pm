@@ -114,10 +114,8 @@ sub start {
         printf $sock $s;
         close($sock);
     }
-    my $state = "starting:".time;
     my $entity = $self->_getEntity();
-    $self->_getEntity()->setAttr(name => 'motherboard_state', value => $state);
-    $self->_getEntity()->save();
+    $self->_getEntity()->setState('state'=> 'starting');
     if(exists $args{erollback}) {
         $args{erollback}->add(function   =>$entity->can('save'),
                               parameters => [$entity]);

@@ -55,12 +55,8 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 sub newEOperation{
     my %args = @_;
-    
-    if (! exists $args{op} or ! defined $args{op}) { 
-        $errmsg = "EntityFactory::newEOperation need an op named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['op']);
     my $data = $args{op};
     my $class = "EOperation::E". $args{op}->getType();
 #    $log->debug("EOperation class is $class"); 
@@ -86,11 +82,7 @@ EFactory::newEEntity($objdata) instanciates a new object EEntity from Entity.
 sub newEEntity {
     my %args = @_;
     
-    if (! exists $args{data} or ! defined $args{data}) { 
-        $errmsg = "EntityFactory::newEEntity need a data named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ['data']);
     my $data = $args{data};
     my $class = General::getClassEEntityFromEntity(entity => $data);
 #    $log->debug("GetClassEEntityFromEntity return $class"); 
@@ -115,13 +107,8 @@ EFactory::newEContext(ip_source, ip_destination) instanciates a new object ECont
 
 sub newEContext {
     my %args = @_;
-    if ((! exists $args{ip_source} or ! defined $args{ip_source}) ||
-        (! exists $args{ip_destination} or ! defined $args{ip_destination})) { 
-        $errmsg = "EFactory::newEContext need ip_source and ip_destination named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
 
+    General::checkParams(args => \%args, required => ['ip_source', 'ip_destination']);
     if (!ip_is_ipv4($args{ip_source})){
         $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
         $log->error($errmsg);
@@ -145,6 +132,8 @@ sub newEContext {
         return $ssh;
     }
 }
+
+
 
 1;
 
