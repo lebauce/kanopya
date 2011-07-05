@@ -228,6 +228,10 @@ print "done\n";
 #######################
 #Services manipulation#
 #######################
+# We change the syslog-ng configuration and restart the service
+system("cp $conf_vars->{install_template_dir}"."syslog-ng.conf /etc/syslog-ng/");
+system('invoke-rc.d syslog-ng restart');
+
 # We remove the initial tftp line from inetd conf file and restart the service
 system('sed -i s/^tftp.*// /etc/inetd.conf');
 system('invoke-rc.d inetutils-inetd restart');
@@ -252,6 +256,10 @@ system('a2enmod fcgid');
 system("ln -sf /opt/kanopya/templates /templates");
 
 system('invoke-rc.d apache2 restart');
+
+# We allow snmp access
+useTemplate(template=>"snmpd.conf.tt",datas=>{internal_ip_add=>$internal_ip_add,conf=>"/etc/snmp/snmpd.conf",include=>$conf_vars->{install_template_dir});
+system('invoke-rc.d snmpd restart');
 
 # Launching Kanopya's init scripts
 system('invoke-rc.d kanopya-executor restart');
