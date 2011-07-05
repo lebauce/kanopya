@@ -239,7 +239,9 @@ sub insertDefaultConfiguration {
                 syslogng3_entry_params => [
                     { syslogng3_entry_param_content => 'internal()' },
                     { syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
-                    { syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
+                    
+                    # Kernel logs: this conf doesn't work for current version of syslog-ng
+                    #{ syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
                 ]
             },
             {
