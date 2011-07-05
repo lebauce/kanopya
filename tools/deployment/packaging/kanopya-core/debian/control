@@ -10,5 +10,5 @@ Vcs-Git: git://git.kanopya.org/mcs/executor.git
 
 Package: kanopya-core
 Architecture: all
-Depends: ${perl:Depends}, bzip2, openssh-server, openssh-client, ntp, ntpdate, nmap, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libxml-simple-perl, libexception-class-perl, libstring-random-perl, libnetaddr-ip-perl, libdate-simple-perl, libproc-pid-file-perl, libkanopya-perl, libnet-openssh-perl, etherwake, libtemplate-perl, libtest-pod-perl
+Depends: ${perl:Depends}, syslog-ng, bzip2, openssh-server, openssh-client, ntp, ntpdate, nmap, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libxml-simple-perl, libexception-class-perl, libstring-random-perl, libnetaddr-ip-perl, libdate-simple-perl, libproc-pid-file-perl, libkanopya-perl, libnet-openssh-perl, etherwake, libtemplate-perl, libtest-pod-perl
 Description: Core package contains kanopya executor and state manager. they apply conf on nodes
