@@ -155,7 +155,9 @@ sub collectSet {
     my %args = @_;    
     
     my $set = $self->{db}->resultset('Indicatorset')->search( { indicatorset_name => $args{set_name} } )->first;
-    $set->create_related( 'collects', { cluster_id => $args{cluster_id} } );    
+    if (defined $set) {
+        $set->create_related( 'collects', { cluster_id => $args{cluster_id} } );
+    }
 }
 
 =head2 collectSets
