@@ -125,6 +125,8 @@ sub view_logs : Runmode {
     } else {
         my @log_dirs = $logger_comp->getLogDirectories();
         
+        # Very simple log dirs browsing (according to very simple ui build using .tmpl file)
+        # TODO better tree structure and display (json, js,...)
         for $path (@log_dirs) {
             my $dir_error;
             my @files_info = ();
@@ -134,6 +136,11 @@ sub view_logs : Runmode {
                 my @files = grep { -f "$path$_" } split(" ", $ls_output);
                 # Built tmpl struct
                 @files_info = map { { path=>$path, filename=>$_} } @files;
+                
+                # We get subdir and add them to the log dir list (ugly: we lose tree structure)
+                my @dirs = grep { -d "$path$_" } split(" ", $ls_output);
+                @dirs = map { $path . $_ . '/'  } @dirs;
+                push @log_dirs, @dirs;
             }
             
             push @dirs_info, { path => $path, dir_locked => $dir_error, files => \@files_info };
