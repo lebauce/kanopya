@@ -259,6 +259,7 @@ system('invoke-rc.d apache2 restart');
 
 # We allow snmp access
 useTemplate(template=>"snmpd.conf.tt",datas=>{internal_ip_add=>$internal_ip_add,conf=>"/etc/snmp/snmpd.conf",include=>$conf_vars->{install_template_dir});
+useTemplate(template=>"snmpd_default.tt",datas=>{internal_ip_add=>$internal_ip_add,conf=>"/etc/default/snmpd",include=>$conf_vars->{install_template_dir});
 system('invoke-rc.d snmpd restart');
 
 # Launching Kanopya's init scripts
