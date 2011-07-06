@@ -365,7 +365,7 @@ sub getNetConf{
     my $http_port = $self->{_dbix}->apache2s->first()->get_column("apache2_ports");
     my $https_port = $self->{_dbix}->apache2s->first()->get_column("apache2_sslports");
     return { $http_port  => ['tcp'],
-             $https_port => ['tcp'] };
+             $https_port => ['tcp', 'ssl'] };
 }
 
 sub getClusterizationType { return 'loadbalanced'; }
