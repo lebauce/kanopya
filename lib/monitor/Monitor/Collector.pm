@@ -37,6 +37,7 @@ sub new {
     return $self;
 }
 
+# DEPRECATED! TODO: remove
 sub onStateChanged {
     my $self = shift;
     my %args = @_;    
@@ -73,6 +74,7 @@ sub onStateChanged {
 
 =cut
 
+# DEPRECATED! TODO: remove
 sub _manageHostState {
     my $self = shift;
     my %args = @_;
@@ -177,7 +179,9 @@ sub updateHostData {
             # Skip this set if associated component is not on this host #
             #############################################################
             if (defined $set->{'component'} && $set->{'component'} ne 'base' &&    
-                0 == grep { $_ eq $set->{'component'} } @{$args{components}} ) {
+                #0 == grep { $_ eq $set->{'component'} } @{$args{components}} 
+                ! exists $args{components}->{ $set->{'component'} }
+                ) {
                 $log->info("[$host] No component '$set->{'component'}' to monitor on this host");
                 next SET;
             }
@@ -199,7 +203,7 @@ sub updateHostData {
                 my $data_provider = $providers{$provider_class};
                 if (not defined $data_provider) {
                     require "DataProvider/$provider_class.pm";
-                    $data_provider = $provider_class->new( host => $host );
+                    $data_provider = $provider_class->new( host => $host, component =>  $args{'components'}->{ $set->{'component'} } );
                     $providers{$provider_class} = $data_provider;
                 }
                 
@@ -359,7 +363,7 @@ sub updateClusterData{
     my $cluster_name = $cluster->getAttr( name => "cluster_name" );
     
     my @mbs = values %{ $cluster->getMotherboards( ) };
-    my @in_node_mb = grep { $_->getNodeState() eq 'in' } @mbs; 
+    my @in_node_mb = grep { $_->getNodeState() =~ '^in' } @mbs; 
     
     
     # Group indicators values by set
@@ -445,7 +449,8 @@ sub update {
             my $monitored_sets = $monitor_manager->getCollectedSets( cluster_id => $cluster->getAttr( name => "cluster_id") );
             # Get components of this cluster
             my $components = $cluster->getComponents(category => 'all');
-            my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
+            #my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
+            my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } values %$components;
             # Collect data for nodes in the cluster
             foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
                 if ( $mb->getNodeState() eq 'in' ) {
@@ -453,7 +458,7 @@ sub update {
                     my %params = (
                         host_ip => $host_ip,
                         host_state => $mb->getAttr( name => "motherboard_state" ),
-                        components => \@components_name,
+                        components => \%components_by_name,
                         sets => $monitored_sets,
                     );
                     if ($THREADED) {
