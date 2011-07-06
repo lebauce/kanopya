@@ -50,7 +50,7 @@ sub addNode {
     # generation of /etc/default/snmpd 
     my $data = {};
     $data->{node_ip_address} = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
-    $data->{options} = $conf->{options};       
+    $data->{options} = $conf->{snmpd_options};       
     
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => "/templates/components/snmpd",
