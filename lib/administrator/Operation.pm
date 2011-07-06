@@ -203,6 +203,25 @@ sub delete {
     my $self = shift;
 
     my $params_rs = $self->{_dbix}->operation_parameters;
+    my $adm = Administrator->new();
+    my $op_status = "Done";
+    if ($self->{cancelled}){
+        $op_status = "Cancelled";
+    }
+    my $params = $self->getParams();
+    my $new_old_op = $adm->_newDbix( table => 'OldOperation', row => {type => $self->getAttr(attr_name =>"type"),
+                                                                    user_id => $self->getAttr(attr_name =>"user_id"),
+                                                                    priority => $self->getAttr(attr_name =>"priority"),
+                                                                    creation_date =>$self->getAttr(attr_name =>"creation_date"),
+                                                                    creation_time => $self->getAttr(attr_name =>"creation_time"),
+                                                                    execution_date => \"CURRENT_DATE()",
+                                                                    execution_time => \"CURRENT_TIME()",
+                                                                    execution_status => $op_status,
+                                                                    });
+    $new_old_op->insert;
+    foreach my $k (keys %$params) {
+        $new_old_op->create_related( 'old_operation_parameters', { name => $k, value => $params->{$k} } );}
+
     $params_rs->delete;
     $self->{_dbix}->delete();
     $log->info(ref($self)." deleted from database (removed from execution list)");

@@ -1,0 +1,17 @@
+/var/log/kanopya/*.log {
+	weekly
+	missingok
+	rotate 52
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+	postrotate
+		/etc/init.d/kanopya-collector restart > /dev/null
+		/etc/init.d/kanopya-grapher > /dev/null
+		/etc/init.d/kanopya-executor > /dev/null
+		/etc/init.d/kanopya-orchestrator > /dev/null
+		/etc/init.d/kanopya-state-manager > /dev/null
+	endscript
+}

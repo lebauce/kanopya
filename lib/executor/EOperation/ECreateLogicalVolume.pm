@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Cluster;
-use Entity::Component::Storage::Lvm2;;
+use Entity::Component::Lvm2;;
 use EFactory;
 
 my $log = get_logger("executor");
@@ -121,8 +121,8 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     $self->{params} = $params;
-    # Test if component instance id is really a Entity::Component::Export::Iscsitarget
-    my $comp_lvm = Entity::Component::Storage::Lvm2->get(id => $params->{component_instance_id});
+    # Test if component instance id is really a Entity::Component::Iscsitarget
+    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_instance_id});
     my $comp_desc = $comp_lvm->getComponentAttr();
     if (! $comp_desc->{component_name} eq "Lvm") {
         $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";

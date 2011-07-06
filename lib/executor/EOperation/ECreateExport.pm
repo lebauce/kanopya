@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Cluster;
-use Entity::Component::Export::Iscsitarget1;
+use Entity::Component::Iscsitarget1;
 use EFactory;
 
 my $log = get_logger("executor");

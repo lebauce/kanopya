@@ -179,7 +179,7 @@ sub prepare {
 #sub execute {}
 
 sub process{
-        my $self = shift;
+    my $self = shift;
 #    $self->SUPER::execute();
     my $adm = Administrator->new();
 
@@ -192,13 +192,19 @@ sub process{
         $log->error($errmsg);
         $self->{erollback}->undo();
         throw Kanopya::Exception::Execution::Rollbacked(error => $errmsg);
-
     }
 }
 
 sub cancel {
+    my $self = shift;
+    $self->{_operation}->{cancelled} = 1;
+    $self->_cancel;
+}
+
+sub _cancel {
     
 }
+
 =head2 finish
 
     Class : Public

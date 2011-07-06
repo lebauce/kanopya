@@ -3,7 +3,7 @@
 --   it under the terms of the GNU Affero General Public License as
 --   published by the Free Software Foundation, either version 3 of the
 --   License, or (at your option) any later version.
--- 
+--
 --   This program is distributed in the hope that it will be useful,
 --   but WITHOUT ANY WARRANTY; without even the implied warranty of
 --   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -116,7 +116,7 @@ CREATE TABLE `motherboard` (
   `motherboard_internal_ip` char(15) DEFAULT NULL,
   `motherboard_hostname` char(32) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
-  `motherboard_state` char(32) NOT NULL DEFAULT 'down', 
+  `motherboard_state` char(32) NOT NULL DEFAULT 'down',
   PRIMARY KEY (`motherboard_id`),
   UNIQUE KEY `motherboard_internal_ip_UNIQUE` (`motherboard_internal_ip`),
   UNIQUE KEY `motherboard_mac_address_UNIQUE` (`motherboard_mac_address`),
@@ -216,7 +216,7 @@ CREATE TABLE `cluster` (
   `active` int(1) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
-  `cluster_state` char(32) NOT NULL DEFAULT 'down', 
+  `cluster_state` char(32) NOT NULL DEFAULT 'down',
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -297,6 +297,43 @@ CREATE TABLE `operation_parameter` (
   KEY `fk_operation_parameter_1` (`operation_id`),
   CONSTRAINT `fk_operation_parameter_1` FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `old_operation`
+--
+
+CREATE TABLE `old_operation` (
+  `old_operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `type` char(64) NOT NULL,
+  `user_id` int(8) unsigned NOT NULL,
+  `priority` int(2) unsigned NOT NULL,
+  `creation_date` date NOT NULL,
+  `creation_time` time NOT NULL,
+  `execution_date` date NOT NULL,
+  `execution_time` time NOT NULL,
+  `execution_status` char(32) NOT NULL,
+  PRIMARY KEY (`old_operation_id`),
+  KEY `fk_old_operation_queue_1` (`user_id`),
+  KEY `fk_old_operation_queue_2` (`type`),
+  CONSTRAINT `fk_old_operation_queue_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_old_operation_queue_2` FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `operation_parameter`
+--
+
+CREATE TABLE `old_operation_parameter` (
+  `old_operation_param_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `name` char(64) NOT NULL,
+  `value` char(255) NOT NULL,
+  `old_operation_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`old_operation_param_id`),
+  KEY `fk_old_operation_parameter_1` (`old_operation_id`),
+  CONSTRAINT `fk_old_operation_parameter_1` FOREIGN KEY (`old_operation_id`) REFERENCES `old_operation` (`old_operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 --
 -- Table structure for table `systemimage`
@@ -669,7 +706,7 @@ CREATE TABLE `graph` (
   `graph_type` char(32) NOT NULL,
   `graph_percent` int(1) unsigned,
   `graph_sum` int(1) unsigned,
-  `graph_indicators` char(128), 
+  `graph_indicators` char(128),
   PRIMARY KEY (`indicatorset_id`, `cluster_id`),
   KEY `fk_graph_1` (`indicatorset_id`),
   KEY `fk_graph_2` (`cluster_id`),

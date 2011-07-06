@@ -1,8 +1,8 @@
 <info tables_file="scripts/database/mysql/schemas/components/memcached1.sql" templates_dir="templates/components/memcached">
   <description name="Memcached" category="ProxyCache" version="1" />
-  <executor dest="lib/executor/EEntity/EComponent/EProxyCache/EMemcached1.pm" src="lib/executor/EEntity/EComponent/EProxyCache/EMemcached1.pm" />
+  <executor dest="lib/executor/EEntity/EComponent/EMemcached1.pm" src="lib/executor/EEntity/EComponent/EMemcached1.pm" />
   <meta packager_version="0.1" />
-  <nas dest="lib/administrator/Entity/Component/ProxyCache/Memcached1.pm" src="lib/administrator/Entity/Component/ProxyCache/Memcached1.pm" />
+  <nas dest="lib/administrator/Entity/Component/Memcached1.pm" src="lib/administrator/Entity/Component/Memcached1.pm" />
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Memcached1.pm" src="lib/administrator/AdministratorDB/Schema/Result/Memcached1.pm" />
   <nas dest="scripts/database/mysql/schemas/components/memcached1.sql" src="scripts/database/mysql/schemas/components/memcached1.sql" />
   <nas dest="lib/administrator/AdministratorDB/Component/Memcached1Instance.pm" src="lib/administrator/AdministratorDB/Component/Memcached1Instance.pm" />
