@@ -1,8 +1,8 @@
 <info tables_file="scripts/database/mysql/schemas/components/keepalived1.sql" templates_dir="templates/components/keepalived">
   <description name="Keepalived" category="Loadbalancer" version="1" />
-  <executor dest="lib/executor/EEntity/EComponent/ELoadbalancer/EKeepalived1.pm" src="lib/executor/EEntity/EComponent/ELoadbalancer/EKeepalived1.pm" />
+  <executor dest="lib/executor/EEntity/EComponent/EKeepalived1.pm" src="lib/executor/EEntity/EComponent/EKeepalived1.pm" />
   <meta packager_version="0.1" />
-  <nas dest="lib/administrator/Entity/Component/Loadbalancer/Keepalived1.pm" src="lib/administrator/Entity/Component/Loadbalancer/Keepalived1.pm" />
+  <nas dest="lib/administrator/Entity/Component/Keepalived1.pm" src="lib/administrator/Entity/Component/Keepalived1.pm" />
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Keepalived1.pm" src="lib/administrator/AdministratorDB/Schema/Result/Keepalived1.pm" />
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Keepalived1Realserver.pm" src="lib/administrator/AdministratorDB/Schema/Result/Keepalived1Realserver.pm" />
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Keepalived1Virtualserver.pm" src="lib/administrator/AdministratorDB/Schema/Result/Keepalived1Virtualserver.pm" />

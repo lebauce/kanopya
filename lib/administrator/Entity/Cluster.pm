@@ -356,7 +356,8 @@ sub getComponents {
         if (($args{category} eq "all")||
             ($args{category} eq $comp_category)){
             $log->debug("One component instance found with " . ref($comp_instance_row));
-            my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+#            my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+            my $class= "Entity::Component::" . $comp_name . $comp_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
             $comps{$comp_instance_id} = $class->get(id =>$comp_instance_id);
@@ -401,7 +402,8 @@ sub getComponent{
     my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
     my $comp_name = $comp_instance_row->get_column('component_name');
     my $comp_version = $comp_instance_row->get_column('component_version');
-    my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+#    my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+    my $class= "Entity::Component::" . $comp_name . $comp_version;
     my $loc = General::getLocFromClass(entityclass=>$class);
     eval { require $loc; };
     return "$class"->get(id =>$comp_instance_id);
@@ -423,7 +425,7 @@ sub getSystemImage {
         return Entity::Systemimage->get(id => $systemimage_id);
     } else {
         # only admin cluster has no systemimage ?
-        return undef;
+        return;
     }
 }
 

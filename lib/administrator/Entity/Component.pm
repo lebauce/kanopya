@@ -174,9 +174,11 @@ sub getInstance {
      join => ["component"]}
     );
     
-    $class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
-                 $comp_instance_row->get_column('component_name') . 
-                 $comp_instance_row->get_column('component_version');
+#    $class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
+#                 $comp_instance_row->get_column('component_name') . 
+#                 $comp_instance_row->get_column('component_version');
+    $class = "Entity::Component::" . $comp_instance_row->get_column('component_name') 
+                                   . $comp_instance_row->get_column('component_version');
    my $class_loc = General::getLocFromClass( entityclass => $class);
    require $class_loc;                  
    my $self = $class->get( %args, table=>"ComponentInstance");

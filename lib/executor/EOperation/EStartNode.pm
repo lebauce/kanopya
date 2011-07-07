@@ -185,7 +185,7 @@ sub prepare {
 
 }
 
-sub cancel {
+sub _cancel {
     my $self = shift;
 
     my $params = $self->_getOperation()->getParams();
@@ -483,8 +483,8 @@ sub _generateKanopyaHalt{
     foreach my $i (keys %$components) {
         my $tmp = $components->{$i};
         #TODO Check if it is an ExportClient and call generic method/
-        if ($components->{$i}->isa("Entity::Component::Exportclient")) {
-            if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+        if ($components->{$i}->isa("Entity::Component")) {
+            if ($components->{$i}->isa("Entity::Component::Openiscsi2")){
                 $log->debug("The cluster component is an Openiscsi2");
                 my $iscsi_export = $components->{$i};
                 $vars->{data_exports} = $iscsi_export->getExports();
@@ -604,8 +604,8 @@ sub _generateBootConf {
     $vars->{additional_devices} = "etc";
     my $components = $self->{_objs}->{components};
     foreach my $i (keys %$components) {
-        if ($components->{$i}->isa("Entity::Component::Exportclient")) {
-            if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
+        if ($components->{$i}->isa("Entity::Component")) {
+            if ($components->{$i}->isa("Entity::Component::Openiscsi2")){
                 my $iscsi_export = $components->{$i};
                 $vars->{mounts_iscsi} = $iscsi_export->getExports();
                 my $tmp = $vars->{mounts_iscsi};

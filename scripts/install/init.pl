@@ -116,7 +116,7 @@ print "done\n";
 if((! -e '/root/.ssh/kanopya_rsa') && (! -e '/root/.ssh/kanopya_rsa.pub')) {
     if(! -e "/root/.ssh") {
         system("mkdir -p /root/.ssh") == 0 or die "error while creating /root/.ssh directory: $!";
-    } 
+    }
 
   system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa");
   print "New SSH keys generated for kanopya\n";
@@ -252,15 +252,20 @@ my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidC
 
 system("echo '$fcgid_conf' > /etc/apache2/mods-available/fcgid.conf");
 system('a2enmod fcgid');
-
+#TODO : Test if non exist
 system("ln -sf /opt/kanopya/templates /templates");
 
 system('invoke-rc.d apache2 restart');
+
 
 # We allow snmp access
 useTemplate(template=>"snmpd.conf.tt",datas=>{internal_ip_add=>$internal_ip_add},conf=>"/etc/snmp/snmpd.conf",include=>$conf_vars->{install_template_dir});
 useTemplate(template=>"snmpd_default.tt",datas=>{internal_ip_add=>$internal_ip_add},conf=>"/etc/default/snmpd",include=>$conf_vars->{install_template_dir});
 system('invoke-rc.d snmpd restart');
+
+# Configure log rotate
+system('cp $conf_vars->{install_template_dir}/logrotate-kanopya /etc/logrotate.d/');
+
 
 # Launching Kanopya's init scripts
 system('invoke-rc.d kanopya-executor restart');
@@ -273,6 +278,7 @@ print "You can now visit http://$internal_ip_add/cgi/kanopya.cgi and start using
 print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
+
 
 
 ##########################################################################################
