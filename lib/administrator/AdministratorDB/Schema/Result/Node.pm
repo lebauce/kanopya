@@ -54,6 +54,15 @@ __PACKAGE__->table("node");
 
 =cut
 
+=head2 node_prev_state
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 20
+
+=cut
+
+
 __PACKAGE__->add_columns(
   "node_id",
   {
@@ -79,6 +88,8 @@ __PACKAGE__->add_columns(
   "master_node",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "node_state",
+  { data_type => "char", is_nullable => 1, size => 20 },
+  "node_prev_state",
   { data_type => "char", is_nullable => 1, size => 20 },
 );
 __PACKAGE__->set_primary_key("node_id");

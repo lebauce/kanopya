@@ -119,6 +119,14 @@ __PACKAGE__->table("motherboard");
 
 =cut
 
+=head2 motherboard_prev_state
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
+=cut
+
 __PACKAGE__->add_columns(
   "motherboard_id",
   {
@@ -185,6 +193,8 @@ __PACKAGE__->add_columns(
   },
   "motherboard_state",
   { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
+  "motherboard_prev_state",
+  { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("motherboard_id");
 __PACKAGE__->add_unique_constraint("motherboard_internal_ip_UNIQUE", ["motherboard_internal_ip"]);

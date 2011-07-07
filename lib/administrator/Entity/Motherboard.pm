@@ -182,14 +182,31 @@ sub setNodeState {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['state']);
+    my $node_state = $args{state};
+    my $prev_state = $self->getNodeState();
+    print "new state $args{state} and old one $prev_state\n";
+#    $self->{_dbix}->node->set_columns({'node_prev_state' => $prev_state,
+#                                  'node_state' => $node_state . ":" . time});
+#    $self->{_dbix}->node->save();
+    $self->{_dbix}->node->update({'node_prev_state' => $prev_state,
+                                  'node_state' => $node_state . ":" . time})->discard_changes();
 
-    $self->{_dbix}->node->update({'node_state' => $args{state}});
 }
 
 sub getNodeState {
     my $self = shift;
 
     return $self->{_dbix}->node->get_column('node_state');
+}
+
+sub setState {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['state']);
+    
+    $self->{_dbix}->update({"motherboard_prev_state" => $self->getAttr(name=>"motherboard_state")});
+    $self->{_dbix}->update({"motherboard_state" => $args{state}.":".time});
 }
 
 =head2 Entity::Motherboard->becomeNode (%args)

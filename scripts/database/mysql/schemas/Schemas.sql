@@ -3,7 +3,7 @@
 --   it under the terms of the GNU Affero General Public License as
 --   published by the Free Software Foundation, either version 3 of the
 --   License, or (at your option) any later version.
--- 
+--
 --   This program is distributed in the hope that it will be useful,
 --   but WITHOUT ANY WARRANTY; without even the implied warranty of
 --   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -116,7 +116,8 @@ CREATE TABLE `motherboard` (
   `motherboard_internal_ip` char(15) DEFAULT NULL,
   `motherboard_hostname` char(32) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
-  `motherboard_state` char(32) NOT NULL DEFAULT 'down', 
+  `motherboard_state` char(32) NOT NULL DEFAULT 'down',
+  `motherboard_prev_state` char(32),
   PRIMARY KEY (`motherboard_id`),
   UNIQUE KEY `motherboard_internal_ip_UNIQUE` (`motherboard_internal_ip`),
   UNIQUE KEY `motherboard_mac_address_UNIQUE` (`motherboard_mac_address`),
@@ -216,7 +217,8 @@ CREATE TABLE `cluster` (
   `active` int(1) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
-  `cluster_state` char(32) NOT NULL DEFAULT 'down', 
+  `cluster_state` char(32) NOT NULL DEFAULT 'down',
+  `cluster_prev_state` char(32),
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -244,6 +246,7 @@ CREATE TABLE `node` (
   `motherboard_id` int(8) unsigned NOT NULL,
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(20),
+  `node_prev_state` char(20),
   PRIMARY KEY (`node_id`),
   UNIQUE `cluster_id` (`cluster_id`,`motherboard_id`),
   UNIQUE `fk_node_2` (`motherboard_id`),
@@ -669,7 +672,7 @@ CREATE TABLE `graph` (
   `graph_type` char(32) NOT NULL,
   `graph_percent` int(1) unsigned,
   `graph_sum` int(1) unsigned,
-  `graph_indicators` char(128), 
+  `graph_indicators` char(128),
   PRIMARY KEY (`indicatorset_id`, `cluster_id`),
   KEY `fk_graph_1` (`indicatorset_id`),
   KEY `fk_graph_2` (`cluster_id`),
