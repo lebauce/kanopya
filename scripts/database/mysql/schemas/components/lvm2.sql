@@ -39,7 +39,7 @@ CREATE TABLE `lvm2_lv` (
   `lvm2_lv_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `lvm2_vg_id` int(8) unsigned NOT NULL,
   `lvm2_lv_name` char(32) NOT NULL,
-  `lvm2_lv_size` int(8) unsigned NOT NULL,
+  `lvm2_lv_size` char(32) NOT NULL,
   `lvm2_lv_freespace` int(8) NOT NULL,
   `lvm2_lv_filesystem` char(10) NOT NULL,
   PRIMARY KEY (`lvm2_lv_id`),

@@ -1,6 +1,6 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
-<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/extern/jquery.js"></script>
 <script type="text/javascript" src="/js/components.js"></script>
 <div id="content">
 <h2>Cluster <TMPL_VAR NAME=CLUSTER_NAME> - Apache2 Configuration</h2>
@@ -10,11 +10,13 @@
 <input class="conf_simple_value" type="hidden" name="cluster_id" value="<TMPL_VAR NAME=cluster_id>"/>
 <input class="conf_simple_value" type="hidden" name="apache2_id" value="<TMPL_VAR NAME=apache2_id>"/>
 <input class="conf_simple_value" type="hidden" name="component_name" value="Apache2"/>
+
+<input type="hidden" name="TOREMOVE" value="<TMPL_VAR NAME=apache2_phpsession_dir>"/>
+
 <table>
 <tr><td>server root :</td><td><input class="conf_simple_value" type="text" name="apache2_serverroot" value="<TMPL_VAR NAME=apache2_serverroot>"/></td></tr>
 <tr><td>http ports :</td><td><input class="conf_simple_value" type="text" name="apache2_ports" value="<TMPL_VAR NAME=apache2_ports>"/></td></tr>
 <tr><td>ssl ports :</td><td><input class="conf_simple_value" type="text" name="apache2_sslports" value="<TMPL_VAR NAME=apache2_sslports>"/></td></tr>
-<tr><td>php sessions directory :</td><td><input class="conf_simple_value" type="text" name="apache2_phpsession_dir" value="<TMPL_VAR NAME=apache2_phpsession_dir>"/></td></tr>
 <tr><td>log level :</td><td>
 <select class="conf_simple_value" name="apache2_loglevel">
 <option id="debug" value="debug">debug</option>

@@ -1,22 +1,18 @@
 # ERollback.pm -  
 
-# Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
@@ -35,16 +31,16 @@ package ERollback;
 use strict;
 use warnings;
 use Data::Dumper;
+use General;
 use Log::Log4perl "get_logger";
-use vars qw(@ISA $VERSION);
+
 
 my $log = get_logger("executor");
 my $errmsg;
 
-use lib "../../Common/Lib";
-use McsExceptions;
+use Kanopya::Exceptions;
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+my $VERSION = "1.00";
 
 =head2 new
 
@@ -53,14 +49,14 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 =cut
 
 sub new {
-	my $class = shift;
-	my %args = @_;
-		
-	my $self = {
-		function => undef,
-        parameters => undef,
-        next_item => undef,
-        prev_item => undef,
+    my $class = shift;
+    my %args = @_;
+        
+    my $self = {
+        function    => undef,
+        parameters  => undef,
+        next_item   => undef,
+        prev_item   => undef,
     };
     bless $self, $class;
     return $self;
@@ -73,33 +69,104 @@ sub new {
 =cut
 
 sub add {
-	my $self = shift;
+    my $self = shift;
     my %args = @_;
-    if((! exists $args{function} or ! defined $args{function}) or
-	   (! exists $args{parameters} or ! defined $args{parameters})) {
-		$errmsg = "ERollback->add need function and parameters named arguments";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);   	
-	}
     
+    General::checkParams(args => \%args,
+                         required => ['function', 'parameters']);
+#    if((! exists $args{function} or ! defined $args{function}) or
+#       (! exists $args{parameters} or ! defined $args{parameters})) {
+#        $errmsg = "ERollback->add need function and parameters named arguments";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg);       
+#    }
+    $self->{last_inserted} = undef;
+    $log->debug("add rollback func $args{function}");
     if(not defined $self->{function}) {
-    	$self->{function} = $args{function};
-    	$self->{parameters} = $args{parameters};
+        $self->{function} = $args{function};
+        $self->{parameters} = $args{parameters};
+        $self->{last_inserted} = $self;
     } else {
-    	my $last = $self->_last;
-        $last->{next_item} = ERollback->new();
-        $last->{next_item}->{function} = $args{function};
-        $last->{next_item}->{parameters} = $args{parameters};
-    	$last->{next_item}->{prev_item} = $last;
+        if ($self->{before}){
+            my $eroll = $self->find(erollback => $self->{before});
+            my $tmp = $eroll->{prev_item};
+            $eroll->{prev_item} = ERollback->new();
+            $eroll->{prev_item}->{function} = $args{function};
+            $eroll->{prev_item}->{parameters} = $args{parameters};
+            $eroll->{prev_item}->{prev_item} = $tmp;
+            $eroll->{prev_item}->{next_item} =$eroll;
+            if($tmp) {
+                $tmp->{next_item} = $eroll->{prev_item};
+            } else{
+                $self=$eroll->{prev_item};
+            }
+            $self->{last_inserted} = $eroll->{prev_item};
+            $self->{before} = undef;
+        }elsif ($self->{after}){
+            my $eroll = $self->find(erollback => $self->{after});
+            my $tmp = $eroll->{next_item};
+            $eroll->{next_item} = ERollback->new();
+            $eroll->{next_item}->{function} = $args{function};
+            $eroll->{next_item}->{parameters} = $args{parameters};
+            $eroll->{next_item}->{prev_item} = $eroll;
+            $eroll->{next_item}->{next_item} =$tmp;
+            if($tmp) {
+                $tmp->{prev_item} = $eroll->{next_item};
+            }
+            $self->{last_inserted} = $eroll->{next_item};
+            $self->{after} = undef;
+        }else {
+            my $last = $self->_last();
+            $last->{next_item} = ERollback->new();
+            $last->{next_item}->{function} = $args{function};
+            $last->{next_item}->{parameters} = $args{parameters};
+            $last->{next_item}->{prev_item} = $last;
+            $self->{last_inserted} = $last->{next_item};
+        }
     }
 }
 
+sub find {
+    my $self = shift;
+    my %args = @_;
+    General::checkParams(args => \%args,
+                         required => ['erollback']);
+    my $tmp = $self;
+
+    while ($tmp->{'next_item'}) {
+        if ($tmp == $args{erollback}){
+            return $tmp;
+        }
+        $tmp = $tmp->{'next_item'};
+    }
+    return $tmp;
+}
+sub insertNextErollBefore{
+    my $self = shift;
+    my %args = @_;
+    General::checkParams(args => \%args,
+                         required => ['erollback']);
+    $self->{before} = $args{erollback};
+}
+
+sub insertNextErollAfter{
+    my $self = shift;
+    my %args = @_;
+    General::checkParams(args => \%args,
+                         required => ['erollback']);
+    $self->{after} = $args{erollback};
+}
+
+sub getLastInserted{
+    my $self = shift;
+    return $self->{last_inserted};
+}
 =head2 _last
 
 =cut
 
 sub _last {
-	my $self = shift;
+    my $self = shift;
     my $tmp = $self;
 
     while ($tmp->{'next_item'}) {
@@ -113,7 +180,7 @@ sub _last {
 =cut
 
 sub recursive_del {
-	my $self = shift;
+    my $self = shift;
     if ($self->{'next_item'}) {
         $self->{'next_item'}->recursive_del();
     }
@@ -125,14 +192,14 @@ sub recursive_del {
 =cut
 
 sub undo {
-	my $self = shift;
+    my $self = shift;
     my $tmp = $self->_last;
 
-    while ($tmp) {
+    while ($tmp && $tmp->{function}) {
         my $fn = $tmp->{function};
         my $args = $tmp->{parameters};
-        $log->debug("undo with parameters: ", Dumper  $args);
-	$fn->(@$args);
+        $log->info("undo $fn ");
+    $fn->(@$args);
         $tmp = $tmp->{prev_item};
     }
     $self->recursive_del;

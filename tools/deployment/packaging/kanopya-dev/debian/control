@@ -4,11 +4,11 @@ Priority: optional
 Maintainer: Hedera Dev Team <dev@hederatech.com>
 Build-Depends: debhelper (>= 7.0.50~), perl (>=5.10.0)
 Standards-Version: 3.8.4
-Homepage: <http://hederatech.org>
+Homepage: http://hederatech.org
 Vcs-Git: git://git.kanopya.org/mcs/executor.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/executor.git;a=summary
 
 Package: kanopya-dev
 Architecture: all
-Depends: libkanopya-perl 
+Depends: libkanopya-perl, libterm-readkey-perl
 Description: The dev package contains the database's scripts.

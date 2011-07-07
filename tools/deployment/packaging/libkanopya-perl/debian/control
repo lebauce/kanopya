@@ -4,11 +4,11 @@ Priority: optional
 Maintainer: Hedera Dev Team <dev@hederatech.com>
 Build-Depends: debhelper (>= 7.0.50~), perl (>=5.10.0)
 Standards-Version: 3.8.4
-Homepage: <http://hederatech.org>
+Homepage: http://hederatech.org
 Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/administrator.git;a=summary
 
 Package: libkanopya-perl
 Architecture: all
 Depends: ${perl:Depends}, debconf (>= 0.5) | debconf-2.0, mysql-client, mysql-server, liblog-log4perl-perl, liblog-dispatch-perl, libdata-dumper-simple-perl, libexception-class-perl, libxml-simple-perl, libnetaddr-ip-perl, libdbix-class-perl, libdbix-class-schema-loader-perl, libtest-simple-perl, liberror-perl
-Description: libkanopya llow to manipulate kanopya data object.
+Description: libkanopya allows to manipulate kanopya data object.

@@ -12,7 +12,6 @@ CREATE TABLE `apache2` (
   `apache2_loglevel` char(64) NOT NULL,
   `apache2_ports` char(32) NOT NULL,
   `apache2_sslports` char(32) NOT NULL,
-  `apache2_phpsession_dir` char(64) NOT NULL,
   `apache2_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`apache2_id`),
   KEY `fk_apache2_1` (`component_instance_id`),

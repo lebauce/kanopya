@@ -2,29 +2,31 @@
 <TMPL_INCLUDE NAME="menu.tmpl">
 <style type="text/css">
 @import url(/css/listing.css);
+@import url(/css/details.css);
 </style>
-<script type="text/javascript" src="/js/jquery.js"></script>
-<script type="text/javascript" src="/js/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/extern/jquery.js"></script>
+<script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
 <script type="text/javascript" src="/js/atooltype.jquery.js"></script>
-<script type="text/javascript" src="/js/kanopiaui-tools.js"></script>
 <script type="text/javascript" src="/js/orchestrator.js"></script>
+<script type="text/javascript" src="/js/details.js"></script>
 
 <div id="content">
 
 <table id="rules_table" class='simplelisting rulesview'>
-	<caption>Cluster scaling rules <span class='info'>&nbsp;</span></caption>
+	<!--caption>Cluster scaling rules <span class='info'>&nbsp;</span></caption-->
+	<caption>Cluster scaling rules</caption>
 	<tr id='rules_head'><th colspan='6'>Condition</th><th colspan='2' class='then_head'></th><th>Action</th><th>Node selection</th></tr>
 	
 	<tr id='rule_model' class="hidden">
-		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
-		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>trans func</td>
-		<td><span class='time_laps editable'>laps</span> sec</td>
-		<td class='comp_op editable_choice' choices='&lt;,&gt;'>comp op</td>
-		<td class='thresh_value editable' cond_id=''>threshold</td>
+		<td class='indicator_name editable_choice new_edit' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
+		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
+		<td><span class='time_laps editable'>60</span> sec</td>
+		<td class='comp_op editable_choice new_edit' choices='&lt;,&gt;'>comp op</td>
+		<td class='thresh_value editable new_edit' cond_id=''>threshold</td>
 		<td class='remove_cond'></td>
 		<td class='op_col' op_id=''></td>
 		<td class='then_col'></td>
-		<td class='action_col editable_choice' choices='Add node,Remove node'>action</td>
+		<td class='action_col editable_choice new_edit' choices='Add node,Remove node'>action</td>
 		<td class='node_selection'>rand</td>
 	</tr>
 	
@@ -50,11 +52,11 @@
 			</tr>
 		</TMPL_LOOP>
 	</TMPL_LOOP>
-	
+		
 </table>	
 
 <table id="optim_table" class='simplelisting rulesview'>
-	<caption>Service level agreement<span class='info'>&nbsp;</span></caption>
+	<caption>Scale down conditions</caption>
 	<tr id='rules_head'><th colspan='6'>Condition</th></tr>
 	
 	<tr id='condition_model' class="hidden">
@@ -79,6 +81,22 @@
 	</TMPL_LOOP>
 	
 </table>
+
+<!--
+<table id="sla_table" class='simplelisting rulesview'>
+	<caption>QoS constraints (SLA)</caption>
+	<tr><td>Max latency</td><td><TMPL_VAR NAME=QOS_CONSTRAINTS_LATENCY> ms</td></tr>
+	<tr><td>Max abort rate</td><td><TMPL_VAR NAME=QOS_CONSTRAINTS_ABORT_RATE> %</td></tr>
+</table>
+
+<table id="workload_table" class='simplelisting rulesview'>
+	<caption>Workload characteristic</caption>
+	<tr><td>Visit ratio</td><td><TMPL_VAR NAME=WORKLOAD_VISIT_RATIO></td></tr>
+	<tr><td>Service time</td><td><TMPL_VAR NAME=WORKLOAD_SERVICE_TIME> ms</td></tr>
+	<tr><td>Delay</td><td><TMPL_VAR NAME=WORKLOAD_DELAY> ms</td></tr>
+	<tr><td>Think time</td><td><TMPL_VAR NAME=WORKLOAD_THINK_TIME> ms</td></tr>
+</table>
+-->
 
 <!--table class='rulesview simplelisting'>
 <caption>Nodes control</caption>

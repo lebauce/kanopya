@@ -1,0 +1,38 @@
+[% # Commentaire de template %]
+# Test de commentaire directement
+default-lease-time 6000;
+max-lease-time 6000;
+option space pxelinux;
+option pxelinux.magic code 208 = string;
+option pxelinux.configfile code 209 = text;
+filename = "pxelinux.0";
+log-facility syslog;
+
+[% FOREACH subnet = subnets %]
+subnet [% subnet.net %] netmask [% subnet.mask %] {
+site-option-space "pxelinux";
+option subnet-mask [% subnet.mask %];
+next-server [% server_ip %];
+option pxelinux.magic f1:00:74:7e;
+if exists dhcp-parameter-request-list {
+ option dhcp-parameter-request-list = concat(option dhcp-parameter-request-list,d0,d1,d2,d3);
+}
+[% FOREACH node = subnet.nodes %]
+host [% node.hostname %] {
+hardware ethernet [% node.mac_address %];
+fixed-address [% node.ip_address %];
+option domain-name-servers [% node.domain_name_server %];
+option domain-name "[% node.domain_name %]";
+option ntp-servers [% node.ntp_server %];
+#server-name [% server_name %];
+option host-name "[% node.hostname %]";
+option pxelinux.configfile "pxelinux.cfg/[% node.kernel_version %].cfg";
+}
+[% END %]
+}
+[% END %]
+
+[% PERL %]
+ # perl code goes here
+# print "Test d'execution de code perl dans le template";
+[% END %]

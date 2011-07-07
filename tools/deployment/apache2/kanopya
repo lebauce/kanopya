@@ -20,8 +20,7 @@
 		    	Options Indexes MultiViews FollowSymLinks
 		    	AllowOverride None
 		        Order deny,allow
-		        Deny from all
-				Allow from localhost    
+				Allow from all    
 		</Directory>
 
 

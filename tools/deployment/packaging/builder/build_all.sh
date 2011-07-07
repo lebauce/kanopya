@@ -4,8 +4,9 @@
 #@Date: 11/02/11
 #@Args: package's version number
 
-#this script aims to build all the kanopya's package at the same time, and has to be launch in the same dir than the other packages building scripts.
 
+
+#this script aims to build all the kanopya's package at the same time, and has to be launch in the same dir than the other packages building scripts.
 
 ./package_builder.pl libkanopya-perl $1
 ./package_builder.pl kanopya-bootmanager $1

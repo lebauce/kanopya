@@ -1,22 +1,18 @@
 # EEntity.pm - Entity is the highest general execution object
 
-# Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
@@ -61,20 +57,20 @@ sub new {
     my %args = @_;
     
     if ((! exists $args{data} or ! defined $args{data})) { 
-		$errmsg = "EEntity->new ($class) need a data named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);
+        $errmsg = "EEntity->new ($class) need a data named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
         
-#   	$log->debug("Class is : $class");
+#       $log->debug("Class is : $class");
     my $self = { _entity => $args{data}};
     bless $self, $class;
     return $self;
 }
 
 sub _getEntity{
-	my $self = shift;
-	return $self->{_entity};
+    my $self = shift;
+    return $self->{_entity};
 }
 
 1;

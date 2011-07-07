@@ -385,7 +385,6 @@ tools/deployment/packaging/administrator/debian/executor/DEBIAN/control
 tools/deployment/packaging/administrator/debian/executor/DEBIAN/md5sums
 tools/deployment/packaging/administrator/debian/executor/DEBIAN/postinst
 tools/deployment/packaging/administrator/debian/executor/DEBIAN/postrm
-tools/deployment/packaging/administrator/debian/executor/etc/kanopya/executor.conf
 tools/deployment/packaging/administrator/debian/executor/sbin/kanopya-executor
 tools/deployment/packaging/administrator/debian/executor/usr/share/doc/executor/changelog.gz
 tools/deployment/packaging/administrator/debian/executor/usr/share/doc/executor/copyright
@@ -625,8 +624,8 @@ ui/web/images/smalllogo.png
 ui/web/js/atooltip.jquery.js
 ui/web/js/custom.js
 ui/web/js/details.js
-ui/web/js/jquery-ui.js
-ui/web/js/jquery.js
+ui/web/js/extern/jquery-ui.js
+ui/web/js/extern/jquery.js
 ui/web/js/kanopiaui-tools.js
 ui/web/js/listingtools.js
 ui/web/js/messages.js

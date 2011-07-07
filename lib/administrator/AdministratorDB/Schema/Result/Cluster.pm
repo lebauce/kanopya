@@ -62,6 +62,36 @@ __PACKAGE__->table("cluster");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 cluster_si_location
+
+  data_type: 'enum'
+  extra: {list => ["local","diskless"]}
+  is_nullable: 0
+
+=head2 cluster_si_access_mode
+
+  data_type: 'enum'
+  extra: {list => ["ro","rw"]}
+  is_nullable: 0
+
+=head2 cluster_si_shared
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
+=head2 cluster_domainname
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 64
+
+=head2 cluster_nameserver
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
 =head2 active
 
   data_type: 'integer'
@@ -109,6 +139,24 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "cluster_priority",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "cluster_si_location",
+  {
+    data_type => "enum",
+    extra => { list => ["local", "diskless"] },
+    is_nullable => 0,
+  },
+  "cluster_si_access_mode",
+  {
+    data_type => "enum",
+    extra => { list => ["ro", "rw"] },
+    is_nullable => 0,
+  },
+  "cluster_si_shared",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "cluster_domainname",
+  { data_type => "char", is_nullable => 0, size => 64 },
+  "cluster_nameserver",
+  { data_type => "char", is_nullable => 0, size => 15 },
   "active",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "systemimage_id",
@@ -258,6 +306,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 qos_constraints
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::QosConstraint>
+
+=cut
+
+__PACKAGE__->has_many(
+  "qos_constraints",
+  "AdministratorDB::Schema::Result::QosConstraint",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 rules
 
 Type: has_many
@@ -273,9 +336,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workload_characteristics
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/x77xBZ0yWrX6UUEONYKTQ
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkloadCharacteristic>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workload_characteristics",
+  "AdministratorDB::Schema::Result::WorkloadCharacteristic",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-26 14:21:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oAyb8QR7eMhzKwS0bjgREA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

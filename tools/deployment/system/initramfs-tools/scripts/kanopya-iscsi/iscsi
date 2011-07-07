@@ -1,0 +1,41 @@
+#!/bin/sh
+
+PREREQ=""
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case $1 in
+# get pre-requisites
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+. /scripts/kanopya-functions
+. $CONFIGFILE
+
+if [ ! -x /sbin/iscsistart ]; then
+	panic "/sbin/iscsistart no found in this initrd."
+fi
+
+# load iscsi modules
+modprobe iscsi_tcp
+modprobe crc32c
+
+do_iscsi_login root
+
+for d in $additional_devices; do
+    do_iscsi_login $d
+done
+
+do_mount root
+
+for d in $additional_devices; do
+    do_mount $d
+done
+
+exit 0

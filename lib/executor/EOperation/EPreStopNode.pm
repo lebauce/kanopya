@@ -1,22 +1,18 @@
 # EPreStopNode.pm - Operation class implementing Cluster creation operation
 
-# Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
@@ -74,8 +70,8 @@ my $config = {
 
     my $op = EOperation::EPreStopNode->new();
 
-	# Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-	# RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
+    # Operation::EAddMotherboard->new creates a new AddMotheboard operation.
+    # RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
 
 =cut
 
@@ -92,91 +88,96 @@ sub new {
 
 =head2 _init
 
-	$op->_init();
-	# This private method is used to define some hash in Operation
+    $op->_init();
+    # This private method is used to define some hash in Operation
 
 =cut
 
 sub _init {
-	my $self = shift;
-	$self->{nas} = {};
-	$self->{executor} = {};
-	$self->{bootserver} = {};
-	$self->{monitor} = {};
-	$self->{_objs} = {};
-	return;
+    my $self = shift;
+    $self->{nas} = {};
+    $self->{executor} = {};
+    $self->{bootserver} = {};
+    $self->{monitor} = {};
+    $self->{_objs} = {};
+    return;
 }
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	$log->info("EPreStopNode Operation preparation");
+    $log->info("EPreStopNode Operation preparation");
 
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EPreStopNode->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "EPreStopNode->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
 
-	my $params = $self->_getOperation()->getParams();
+    my $params = $self->_getOperation()->getParams();
 
-	
-	#### Get instance of Cluster Entity
-	$log->info("Load cluster instance");
-	$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
-	$log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
+    
+    #### Get instance of Cluster Entity
+    $log->info("Load cluster instance");
+    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
-	#### Get cluster components Entities
-	$log->info("Load cluster component instances");
-	$self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
-	$log->debug("Load all component from cluster");
+    #### Get cluster components Entities
+    $log->info("Load cluster component instances");
+    $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
+    $log->debug("Load all component from cluster");
 
-	# Get instance of Motherboard Entity
-	$log->info("Load Motherboard instance");
-	$self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
-	$log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+    # Get instance of Motherboard Entity
+    $log->info("Load Motherboard instance");
+    $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+    $log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
     if ($node_count > 1 && $master_node_id == $params->{motherboard_id}){
         $errmsg = "Node <$params->{motherboard_id}> is master node and not alone";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
+#        my %params = ( cluster_id => $params->{cluster_id},
+#                       motherboard_id => $params->{motherboard_id},);
+#        $log->debug("New Operation PreStopNode with attrs : " . %params);
+#        Operation->enqueue(
+#            priority => $self->_getOperation()->getAttr(attr_name => "priority") -10,
+#            type     => 'PreStopNode',
+#            params   => \%params);
+#        throw Kanopya::Exception::Internal(error => $errmsg);
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 
 sub execute {
-	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
-	my $adm = Administrator->new();
-	
-
-	my $components = $self->{_objs}->{components};
-	$log->info('Processing cluster components configuration for this node');
-    $self->{cluster_need_wait} = 0;
-	foreach my $i (keys %$components) {		
-		my $tmp = EFactory::newEEntity(data => $components->{$i});
-		$log->debug("component is ".ref($tmp));
-		$tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
-							cluster => $self->{_objs}->{cluster});
-	}
-}
-
-sub finish {
     my $self = shift;
+    $log->debug("Before EOperation exec");
+    $self->SUPER::execute();
+    $log->debug("After EOperation exec and before new Adm");
+    my $adm = Administrator->new();
+    
+
+    my $components = $self->{_objs}->{components};
+    $log->info('Processing cluster components configuration for this node');
+    $self->{cluster_need_wait} = 0;
+    foreach my $i (keys %$components) {        
+        my $tmp = EFactory::newEEntity(data => $components->{$i});
+        $log->debug("component is ".ref($tmp));
+        $tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
+                            cluster => $self->{_objs}->{cluster});
+    }
     $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingout");
 }
+
 
 1;
 __END__

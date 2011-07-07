@@ -43,6 +43,7 @@ use strict;
 use warnings;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
+use General;
 
 our $VERSION = "1.00";
 
@@ -51,60 +52,50 @@ my $errmsg;
 
 =head2 new
 
-	Class : Private (use EntityRights::build method to retrieve an EntityRights::* instance)
-	
-	Desc : constructor method
-	
-	args:
-		schema : AdministratorDB::Schema object : DBIx database schema
-		entity_id : scalar (int) : user entity_id 
-		
-	return: EntityRights::System instance
+    Class : Private (use EntityRights::build method to retrieve an EntityRights::* instance)
+    
+    Desc : constructor method
+    
+    args:
+        schema : AdministratorDB::Schema object : DBIx database schema
+        entity_id : scalar (int) : user entity_id 
+        
+    return: EntityRights::System instance
 
 =cut
 
 sub new {
-	my $class = shift;
-	my %args = @_;
-	
-	if(not exists $args{entity_id} or not defined $args{entity_id}) {
-		$errmsg = "EntityRights::User->new need a entity_id named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	} 
-	
-	if(not exists $args{schema} or not defined $args{schema}) {
-		$errmsg = "EntityRights::User->new need a schema named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
+    my $class = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['entity_id', 'schema']);
 
-	my $self = { 
-		schema => $args{schema},
-		user_entity_id => $args{entity_id},
-		user_id => $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id")		
-	};
-	#$log->debug("User Entity ID <$ENV{EID}> and user id is <" . $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id") . ">");
-	bless $self, $class;
-	return $self;
+    my $self = { 
+        schema => $args{schema},
+        user_entity_id => $args{entity_id},
+        user_id => $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id")        
+    };
+    #$log->debug("User Entity ID <$ENV{EID}> and user id is <" . $args{schema}->resultset("UserEntity")->find({entity_id => $ENV{EID}}, key => "entity_id")->get_column("user_id") . ">");
+    bless $self, $class;
+    return $self;
 }
 
 =head2 checkPerm
 
-	Class: Public
-	
-	Desc: verify permission access method 
+    Class: Public
+    
+    Desc: verify permission access method 
 
-	args: 
-		method : scalar (string) : method name to check
-		entity_id : scalar (int) : entity_id of entity concerned
-		
-	return: scalar(int) : already 1
+    args: 
+        method : scalar (string) : method name to check
+        entity_id : scalar (int) : entity_id of entity concerned
+        
+    return: scalar(int) : already 1
 
 =cut
 
 sub checkPerm {
-	return 1;
+    return 1;
 }
 
 1;

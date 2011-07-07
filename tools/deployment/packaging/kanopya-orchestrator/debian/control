@@ -4,10 +4,10 @@ Priority: optional
 Maintainer: Hedera Dev Team <dev@hederatech.com>
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.4
-Homepage: <http://hederatech.org>
+Homepage: http://hederatech.org
 Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 
 Package: kanopya-orchestrator
 Architecture: all
 Depends: openssh-client, kanopya-monitor, libkanopya-perl, libparse-booleanlogic-perl  
-Description: Orchestrator orchester the datas. Awesome!
+Description: Nowaday Orchestrator is a powerful trap manager allowing to resize clusters using indicators from monitor 

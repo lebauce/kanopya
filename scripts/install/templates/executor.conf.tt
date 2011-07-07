@@ -1,0 +1,5 @@
+<config logdir="[% logdir %]">
+	<internalnetwork ip="[% internal_net_add %]" mask="[% internal_net_mask %]"/>
+	<user name="executor" password="[% admin_password %]" />
+	<cluster executor="1" bootserver="1" nas="1" monitor="1"/>
+</config>

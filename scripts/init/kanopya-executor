@@ -1,7 +1,7 @@
 #! /bin/bash
 ### BEGIN INIT INFO
-# Provides:           mcexecutor
-# Required-Start:     $network $remote_fs $syslog
+# Provides:           kanopya-executor
+# Required-Start:     mysql sshd
 # Required-Stop:      $network $remote_fs $syslog
 # Default-Start:      2 3 4 5
 # Default-Stop:       0 1 6
@@ -19,9 +19,11 @@ set -e
 PATH="/opt/kanopya/sbin:$PATH"
 DAEMON="/opt/kanopya/sbin/kanopya-executor"
 EXEC="kanopya-executor"
+NAME="Kanopya executor"
+CONF_FILE="/opt/kanopya/conf/executor.conf"
 PIDFILE="/var/run/$EXEC.pid"
 
-test -x /opt/kanopya/sbin/kanopya-executor || exit 0
+test -x "/opt/kanopya/sbin/$EXEC" || exit 0
 
 # Defaults
 PERL5LIB=\
@@ -36,54 +38,61 @@ KANOPYA_EXECUTOR_OPTS=''
 # Reads config file (will override defaults above)
 [ -r /etc/default/kanopya ] && . /etc/default/kanopya
 
+RUN_DAEMON=$KANOPYA_EXECUTOR_RUN
+DAEMON_OPTS=$KANOPYA_EXECUTOR_OPTS
+
+#### Generic part
+
 # Cd to / before starting any daemons.
 cd /
 
-echo "Welcome in mcexecutor start stop script"
-echo "env variable are :"
-echo "PERL5LIB : $PERL5LIB"
-echo "KANOPYA_EXECUTOR_RUN : $KANOPYA_EXECUTOR_RUN"
-echo "KANOPYA_EXECUTOR_OPTS : $KANOPYA_EXECUTOR_OPTS"
+status=0;
+status_of_proc -p $PIDFILE $DAEMON $EXEC > /dev/null || status=$?
 
 case "$1" in
   start)
-    if [ -f $PIDFILE ]; then
-	log_daemon_msg "Kanopya executor already running"
+    if [ $status == 0 ]; then
+		log_success_msg "$NAME already running"
     else
-	log_daemon_msg "Starting Kanopya executor services:"
-	if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
-	    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
-		-- $KANOPYA_EXECUTOR_OPTS
-	    log_progress_msg " Kanopya executor"
-	fi
-    fi
+		log_success_msg "Starting $NAME service"
+		if [ "$RUN_DAEMON" = "yes" -a -f $CONF_FILE ]; then
+		    start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
+			-- $DAEMON_OPTS
+		fi
+    fi  	
     ;;
   stop)
-    log_daemon_msg "Stopping Kanopya executor service:"
-    start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
-    log_progress_msg " kanopya executor"
-    echo "rm $PIDFILE"
-    rm $PIDFILE
+  	
+  	if [ $status == 0 ]; then
+  		log_success_msg "Stopping $NAME service"
+    	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+    	if [ -f $PIDFILE ]; then
+    		rm $PIDFILE
+    	fi
+    else
+    	log_success_msg "$NAME not started"
+    fi
     ;;
   restart)
-    log_daemon_msg "Restarting network management services:"
-    if [ "$KANOPYA_EXECUTOR_RUN" = "yes" -a -f /opt/kanopya/conf/executor.conf ]; then
-	start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 	
-	rm $PIDFILE
-    fi
-    # Allow the daemons time to exit completely.
-    sleep 2
+    log_success_msg "Restarting $NAME service"
+    if [ $status == 0 ]; then
+	    if [ "$RUN_DAEMON" = "yes" -a -f $CONF_FILE ]; then
+			start-stop-daemon --quiet --stop --pidfile $PIDFILE --oknodo 
+			if [ -f $PIDFILE ]; then
+				rm $PIDFILE
+			fi
+	    fi
+	    # Allow the daemons time to exit completely.
+	    sleep 2
+	fi
     start-stop-daemon --quiet --start --background --oknodo --make-pidfile --pidfile $PIDFILE --exec $DAEMON \
-	    -- $KANOPYA_EXECUTOR_OPTS
-    log_progress_msg " Kanopya executor"
+	    -- $DAEMON_OPTS
     ;;
   status)
-    status=0
-    status_of_proc /opt/kanopya/sbin/kanopya-executor kanopya-executor || status=$?
-    exit $status
+  	status_of_proc $DAEMON $EXEC  && exit 0 || exit $?
     ;;
   *)
-    echo "Usage: /etc/init.d/kanopya-executor {start|stop|restart|reload|force-reload|status}"
+    echo "Usage: $0 {start|stop|restart|status}"
     exit 1
 esac
 

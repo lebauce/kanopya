@@ -1,22 +1,18 @@
 # EDeactivateSystemimage.pm - Operation class implementing systemimage deactivation operation
 
-# Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
@@ -45,22 +41,22 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use vars qw(@ISA $VERSION);
 use Kanopya::Exceptions;
 use EFactory;
 use Template;
 use Entity::Cluster;
+use General;
 
 my $log = get_logger("executor");
 my $errmsg;
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
+
 
 =head2 new
 
     my $op = EOperation::EDeactivateSystemimage->new();
 
-	# Operation::EDeactivateSystemimage->new creates a new DeactivateSystemimage operation.
-	# RETURN : EOperation::EDeactivateSystemimage : Operation deactive systemimage on execution side
+    # Operation::EDeactivateSystemimage->new creates a new DeactivateSystemimage operation.
+    # RETURN : EOperation::EDeactivateSystemimage : Operation deactive systemimage on execution side
 
 =cut
 
@@ -77,140 +73,121 @@ sub new {
 
 =head2 _init
 
-	$op->_init();
-	# This private method is used to define some hash in Operation
+    $op->_init();
+    # This private method is used to define some hash in Operation
 
 =cut
 
 sub _init {
-	my $self = shift;
-	$self->{nas} = {};
-	$self->{executor} = {};
-	$self->{_objs} = {};
-	return;
+    my $self = shift;
+    $self->{nas} = {};
+    $self->{executor} = {};
+    $self->{_objs} = {};
+    return;
 }
 
-sub checkOp{
+sub checkOp {
     my $self = shift;
-	my %args = @_;
+    my %args = @_;
+    my $sysimg_name = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+       
+    # check if systemimage is active
+    if(!$self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+        $errmsg = "EOperation::EDeactivateSystemimage->checkOp : system image '$sysimg_name' is already deactivated";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
     
-    
-    # check if systemimage is not active
-    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
-   	if(!$self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-	    	$errmsg = "EOperation::EActivateSystemiamge->new : cluster $args{params}->{systemimage_id} is already active";
-	    	$log->error($errmsg);
-	    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    # check if no active cluster is using this systemimage
+    my @clusters = Entity::Cluster->getClusters(hash => {
+        systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id'),
+        active => 1,
+    });
+    if(scalar(@clusters)) {
+        $errmsg = "EOperation::EDeactivateSystemimage->checkOp : At least one active cluster use system image '$sysimg_name'";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	$log->info("Operation preparation");
-
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EDeactivateSystemimage->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
-	my $params = $self->_getOperation()->getParams();
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    my $params = $self->_getOperation()->getParams();
 
 #### Get instance of Systemimage Entity
-	$log->info("Load systemimage instance");
+    $log->debug("Load systemimage instance");
     eval {
-	   $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+       $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EDeactivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $errmsg = "EOperation::EDeactivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-	$log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
     ### Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-		$errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
-		$log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    } 
+    $self->checkOp(params => $params);
+    
+    #### Instanciate Clusters
+    # Instanciate nas Cluster 
+    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 
-	#### Instanciate Clusters
-	$log->info("Get Internal Clusters");
-	# Instanciate nas Cluster 
-	$self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
-	$log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
-	# Instanciate executor Cluster
-	$self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
-	$log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
-		
-	#### Get Internal IP
-	$log->info("Get Internal Cluster IP");
-	# Get Internal Ip address of Master node of cluster Executor
-	my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-	$log->debug("Executor ip is : <$exec_ip>");
-	# Get Internal Ip address of Master node of cluster nas
-	my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-	$log->debug("Nas ip is : <$nas_ip>");
-	
-	#### Instanciate context 
-	$log->info("Get Internal Cluster context");
-	# Get context for nas
-	$self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-	$log->debug("Get econtext for nas with ip ($nas_ip) and ref " . ref($self->{nas}->{econtext}));
-	
-	## Instanciate Component needed (here ISCSITARGET on nas )
-	# Instanciate Export component.
-	$self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-																					  version=> "1"));
-	$log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
+    # Load NAS Econtext
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
+    
+    
+    ## Instanciate Component needed (here ISCSITARGET on nas )
+    # Instanciate Export component.
+    $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
+                                                                                      version=> "1"));
+    $log->debug("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
 
 }
 
-sub execute{
-	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	$log->debug("After EOperation exec and before new Adm");
-	my $adm = Administrator->new();
-	
-	my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
-	
-	my $target_name = $sysimg_dev->{root}->{lvname};
-	my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $target_name);
+sub execute {
+    my $self = shift;
+    my $adm = Administrator->new();
+    
+    my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
+    
+    my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $sysimg_dev->{root}->{lvname});
+    my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $sysimg_dev->{root}->{lvname});
 
-	my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
-												iscsitarget1_lun_device => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}");
+    my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
+                                                iscsitarget1_lun_device => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}");
 
-	$self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id 	=> $lun_id,
-												  iscsitarget1_target_id=>$target_id);
-	$self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id		=>$target_id,
-													 iscsitarget1_target_name 	=> $target_name,
-													 econtext 					=> $self->{nas}->{econtext});
-																  
-	# generate new configuration file
-	$self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
-		
-	# set system image active in db
-	$self->{_objs}->{systemimage}->setAttr(name => 'active', value => 0);
-	$self->{_objs}->{systemimage}->save();
-		
+    $self->{_objs}->{component_export}->removeExport(iscsitarget1_lun_id        => $lun_id,
+                                                     econtext                   => $self->{nas}->{econtext},
+                                                     iscsitarget1_target_name   => $target_name,
+                                                     iscsitarget1_target_id     => $target_id,
+                                                     erollback                  => $self->{erollback});
+    my $eroll_del_export = $self->{erollback}->getLastInserted();
+    # generate new configuration file
+    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_del_export);
+    $self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext},
+                                                 erollback  => $self->{erollback});
+        
+    # set system image active in db
+    $self->{_objs}->{systemimage}->setAttr(name => 'active', value => 0);
+    $self->{_objs}->{systemimage}->save();
+    $log->info("System Image <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') ."> deactivated");
 }
+
+1;
 
 __END__
 

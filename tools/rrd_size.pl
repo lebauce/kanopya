@@ -2,7 +2,6 @@
 
 # This script estimates the size of rrd files according to the current monitoring configuration
 
-use lib qw(/workspace/mcs/Common/Lib);
 
 use strict;
 use warnings;

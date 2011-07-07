@@ -11,6 +11,8 @@ auto [% interface.name %]
 iface [% interface.name %] inet static
       address [% interface.address %]
       netmask [% interface.netmask %]
+      [% IF interface.gateway %]
       gateway [% interface.gateway %]
+      [% END %]
 
 [% END %]

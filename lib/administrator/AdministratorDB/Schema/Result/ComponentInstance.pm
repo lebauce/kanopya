@@ -91,12 +91,12 @@ Related object: L<AdministratorDB::Schema::Result::Apache2>
 
 =cut
 
-__PACKAGE__->has_many(
-  "apache2s",
-  "AdministratorDB::Schema::Result::Apache2",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->has_many(
+#  "apache2s",
+#  "AdministratorDB::Schema::Result::Apache2",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 =head2 atftpd0s
 
@@ -211,12 +211,12 @@ Related object: L<AdministratorDB::Schema::Result::Keepalived1>
 
 =cut
 
-__PACKAGE__->might_have(
-  "keepalived1",
-  "AdministratorDB::Schema::Result::Keepalived1",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->might_have(
+#  "keepalived1",
+#  "AdministratorDB::Schema::Result::Keepalived1",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 =head2 lvm2_vgs
 
@@ -229,6 +229,51 @@ Related object: L<AdministratorDB::Schema::Result::Lvm2Vg>
 __PACKAGE__->has_many(
   "lvm2_vgs",
   "AdministratorDB::Schema::Result::Lvm2Vg",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 memcached1s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Memcached1>
+
+=cut
+
+#__PACKAGE__->has_many(
+#  "memcached1s",
+#  "AdministratorDB::Schema::Result::Memcached1",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
+
+=head2 mounttable1s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Mounttable1>
+
+=cut
+
+__PACKAGE__->has_many(
+  "mounttable1s",
+  "AdministratorDB::Schema::Result::Mounttable1",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 nfsd3s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Nfsd3>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nfsd3s",
+  "AdministratorDB::Schema::Result::Nfsd3",
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -247,6 +292,21 @@ __PACKAGE__->has_many(
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
+
+=head2 php5s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Php5>
+
+=cut
+
+#__PACKAGE__->has_many(
+#  "php5s",
+#  "AdministratorDB::Schema::Result::Php5",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 =head2 snmpd5s
 
@@ -271,16 +331,17 @@ Related object: L<AdministratorDB::Schema::Result::Syslogng3>
 
 =cut
 
-__PACKAGE__->has_many(
-  "syslogng3s",
-  "AdministratorDB::Schema::Result::Syslogng3",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
+#__PACKAGE__->has_many(
+#  "syslogng3s",
+#  "AdministratorDB::Schema::Result::Syslogng3",
+#  { "foreign.component_instance_id" => "self.component_instance_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8LrBWFEd0dFNcaPaeQNckQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-05-04 15:05:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XKBAccz1BPd0drl4orRjlA
+
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
@@ -289,4 +350,20 @@ __PACKAGE__->has_one(
   "AdministratorDB::Schema::Result::ComponentInstanceEntity",
     { "foreign.component_instance_id" => "self.component_instance_id" },
     { cascade_copy => 0, cascade_delete => 0 });
+
+
+#########################################
+# Load components relationship
+#########################################
+# Get list of component instance relathionship files
+opendir(DIR, "/opt/kanopya/lib/administrator/AdministratorDB/Component");
+my @comp_files = readdir(DIR);
+closedir(DIR);
+# Load components relationship
+for my $comp_file (@comp_files) {
+    if ($comp_file =~ /(.*)\.pm/) {
+        __PACKAGE__->load_components("+AdministratorDB::Component::$1");
+    }
+}
+
 1;

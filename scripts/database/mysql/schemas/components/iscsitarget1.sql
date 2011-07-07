@@ -10,8 +10,6 @@ CREATE TABLE `iscsitarget1_target` (
   `iscsitarget1_target_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `component_instance_id` int(8) unsigned NOT NULL,
   `iscsitarget1_target_name` char(128) NOT NULL,
-  `mountpoint` char(64) DEFAULT NULL,
-  `mount_option` char(32) DEFAULT NULL,
   PRIMARY KEY (`iscsitarget1_target_id`),
   UNIQUE KEY `iscsitarget1_UNIQUE` (`iscsitarget1_target_name`),
   KEY `fk_iscsitarget1_1` (`component_instance_id`),

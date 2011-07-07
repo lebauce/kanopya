@@ -1,20 +1,17 @@
 # Openiscsi2.pm -open iscsi component (iscsi client) (Adminstrator side)
-# Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 august 2010
@@ -73,8 +70,8 @@ B<args>    :
 B<Return>  : a new Entity::Component::Exportclient::Openiscsi2 from Kanopya Database
 B<Comment>  : To modify configuration use concrete class dedicated method
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    
 =cut
 
 sub get {
@@ -82,10 +79,10 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Component::Exportclient::Openiscsi2->get need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Component::Exportclient::Openiscsi2->get need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
    return $self;
 }
@@ -100,73 +97,80 @@ B<Return>  : a new Entity::Component::Exportclient::Openiscsi2 from parameters.
 B<Comment>  : Like all component, instantiate it creates a new empty component instance.
         You have to populate it with dedicated methods.
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-		(! exists $args{component_id} or ! defined $args{component_id})){ 
-		$errmsg = "Entity::Component::Exportclient::Openiscsi2->new need a cluster_id and a component_id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    
+    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+        (! exists $args{component_id} or ! defined $args{component_id})){ 
+        $errmsg = "Entity::Component::Exportclient::Openiscsi2->new need a cluster_id and a component_id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
-	my %conf = ( );
-	
-	my $conf_rs = $self->{_dbix}->openiscsi2s;
-	my @imports = ();
-	while (my $conf_row = $conf_rs->next) {
-		my %import = $conf_row->get_columns();
-		delete $import{component_instance_id};
-		push @imports, \%import;
-	}
-	
-	$conf{imports} = \@imports;
-	
-	return \%conf;
+    my $self = shift;
+    my %conf = ( );
+    
+    my $conf_rs = $self->{_dbix}->openiscsi2s;
+    my @imports = ();
+    while (my $conf_row = $conf_rs->next) {
+        my %import = $conf_row->get_columns();
+        delete $import{component_instance_id};
+        push @imports, \%import;
+    }
+    
+    $conf{imports} = \@imports;
+    
+    return \%conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-	
-	$self->{_dbix}->openiscsi2s->delete_all();
-	
-	for my $import ( @{ $conf->{imports} } ) {
-		delete $import->{openiscsi2_id};
-		$self->{_dbix}->openiscsi2s->create( $import );
-	}
-	
+    my $self = shift;
+    my ($conf) = @_;
+    
+    $self->{_dbix}->openiscsi2s->delete_all();
+    
+    for my $import ( @{ $conf->{imports} } ) {
+        delete $import->{openiscsi2_id};
+        $self->{_dbix}->openiscsi2s->create( $import );
+    }
+    
 }
 
 sub getExports {
-	my $self = shift;
-	my $export_rs = $self->{_dbix}->openiscsi2s;
-	my @tab_exports =();
-	while (my $export_row = $export_rs->next){
-		my $export ={};
-		$export->{target} = $export_row->get_column('openiscsi2_target');
-		$export->{ip} = $export_row->get_column('openiscsi2_server');
-		$export->{port} = $export_row->get_column('openiscsi2_port');
-		$export->{mount_point} = $export_row->get_column('openiscsi2_mount_point');
-		$export->{options} = $export_row->get_column('openiscsi2_mount_options');
-		$export->{fs} = $export_row->get_column('openiscsi2_filesystem');
-		push @tab_exports, $export;
-	}
-	$log->debug("asked openiscsi import : " . Dumper(@tab_exports));
-	return \@tab_exports;
+    my $self = shift;
+    my $export_rs = $self->{_dbix}->openiscsi2s;
+    my @tab_exports =();
+    my $i =0;
+    while (my $export_row = $export_rs->next){
+        my $export ={};
+        $export->{name} = "device" . $i;
+        $export->{target} = $export_row->get_column('openiscsi2_target');
+        $export->{ip} = $export_row->get_column('openiscsi2_server');
+        $export->{port} = $export_row->get_column('openiscsi2_port');
+        $export->{mount_point} = $export_row->get_column('openiscsi2_mount_point');
+        $export->{options} = $export_row->get_column('openiscsi2_mount_options');
+        $export->{fs} = $export_row->get_column('openiscsi2_filesystem');
+        $i++;
+        push @tab_exports, $export;
+    }
+    $log->debug("asked openiscsi import : " . Dumper(@tab_exports));
+    return \@tab_exports;
+}
+
+sub getExportsList {
+    
 }
 
 =head1 DIAGNOSTICS

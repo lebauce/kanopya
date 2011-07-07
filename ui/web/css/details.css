@@ -16,6 +16,20 @@ span.title {
 	cursor: pointer;
 }
 
+table caption.title {
+	color: #AA8b22;
+    font-weight: bold;
+    font-size: 1.2em;   
+    background-color: white;
+    padding: 0 10px; 
+    text-decoration: underline;
+    position: relative;
+    top: -20px;
+	margin-left: 20px;
+	cursor: pointer;
+	border: 2px dotted  #AAA;
+}
+
 .state {
 	background-position: left;
 	background-repeat:  no-repeat;

@@ -1,0 +1,14 @@
+<info tables_file="scripts/database/mysql/schemas/components/syslogng3.sql" templates_dir="templates/components/syslogng">
+  <description name="Syslogng" category="Logger" version="3" />
+  <executor dest="lib/executor/EEntity/EComponent/ELogger/ESyslogng3.pm" src="lib/executor/EEntity/EComponent/ELogger/ESyslogng3.pm" />
+  <meta packager_version="0.1" />
+  <nas dest="lib/administrator/Entity/Component/Logger/Syslogng3.pm" src="lib/administrator/Entity/Component/Logger/Syslogng3.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/Syslogng3EntryParam.pm" src="lib/administrator/AdministratorDB/Schema/Result/Syslogng3EntryParam.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/Syslogng3Entry.pm" src="lib/administrator/AdministratorDB/Schema/Result/Syslogng3Entry.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/Syslogng3LogParam.pm" src="lib/administrator/AdministratorDB/Schema/Result/Syslogng3LogParam.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/Syslogng3Log.pm" src="lib/administrator/AdministratorDB/Schema/Result/Syslogng3Log.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/Syslogng3.pm" src="lib/administrator/AdministratorDB/Schema/Result/Syslogng3.pm" />
+  <nas dest="scripts/database/mysql/schemas/components/syslogng3.sql" src="scripts/database/mysql/schemas/components/syslogng3.sql" />
+  <nas dest="lib/administrator/AdministratorDB/Component/Syslogng3Instance.pm" src="lib/administrator/AdministratorDB/Component/Syslogng3Instance.pm" />
+  <nas dest="ui/web/KanopyaUI/templates/Components/form_syslogng3.tmpl" src="ui/web/KanopyaUI/templates/Components/form_syslogng3.tmpl" />
+</info>

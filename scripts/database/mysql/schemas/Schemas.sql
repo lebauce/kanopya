@@ -1,3 +1,17 @@
+--   Copyright © 2011 Hedera Technology SAS
+--   This program is free software: you can redistribute it and/or modify
+--   it under the terms of the GNU Affero General Public License as
+--   published by the Free Software Foundation, either version 3 of the
+--   License, or (at your option) any later version.
+-- 
+--   This program is distributed in the hope that it will be useful,
+--   but WITHOUT ANY WARRANTY; without even the implied warranty of
+--   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--   GNU Affero General Public License for more details.
+--
+--   You should have received a copy of the GNU Affero General Public License
+--   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 DROP DATABASE IF EXISTS `administrator`;
 
 CREATE DATABASE `administrator`;
@@ -70,17 +84,31 @@ CREATE TABLE `motherboardmodel` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+
+--
+-- Table structure for table `harddisk`
+--
+CREATE TABLE `harddisk` (
+  `harddisk_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `motherboard_id` int(8) unsigned NOT NULL,
+  `harddisk_device` char(32) NOT NULL,
+  PRIMARY KEY (`harddisk_id`),
+  KEY `fk_harddisk_1` (`motherboard_id`),
+  CONSTRAINT `fk_harddisk_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `motherboard`
 --
 
 CREATE TABLE `motherboard` (
   `motherboard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboardmodel_id` int(8) unsigned NOT NULL,
-  `processormodel_id` int(8) unsigned NOT NULL,
+  `motherboardmodel_id` int(8) unsigned NULL DEFAULT NULL,
+  `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
   `motherboard_serial_number` char(64) NOT NULL,
   `motherboard_powersupply_id` int(8) unsigned,
+  `motherboard_ipv4_internal_id` int(8) unsigned  DEFAULT NULL,
   `motherboard_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `motherboard_mac_address` char(18) NOT NULL,
@@ -97,11 +125,13 @@ CREATE TABLE `motherboard` (
   KEY `fk_motherboard_3` (`kernel_id`),
   KEY `fk_motherboard_4` (`etc_device_id`),
   KEY `fk_motherboard_5` (`motherboard_powersupply_id`),
+  KEY `fk_motherboard_6` (`motherboard_ipv4_internal_id`),
   CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_motherboard_6` FOREIGN KEY (`motherboard_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -136,13 +166,15 @@ CREATE TABLE `powersupply` (
 CREATE TABLE `powersupplycard` (
   `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `powersupplycard_name` char(64) NOT NULL,
-  `powersupplycard_ip` char(15) DEFAULT NULL,
+  `ipv4_internal_id` int(8) unsigned DEFAULT NULL,
   `powersupplycardmodel_id` int(8) unsigned DEFAULT NULL,
   `powersupplycard_mac_address` char(32) NOT NULL,
   `active` int(1),
   PRIMARY KEY (`powersupplycard_id`),
   KEY `fk_powersupplycardmodel` (`powersupplycardmodel_id`),
-  CONSTRAINT `fk_powersupplycardmodel` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY `fk_powersupplycard_ipv4_internal_id` (`ipv4_internal_id`),
+  CONSTRAINT `fk_powersupplycardmodel` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_powersupplycard_ipv4_internal_id` FOREIGN KEY (`ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -176,6 +208,11 @@ CREATE TABLE `cluster` (
   `cluster_min_node` int(2) unsigned NOT NULL,
   `cluster_max_node` int(2) unsigned NOT NULL,
   `cluster_priority` int(1) unsigned NOT NULL,
+  `cluster_si_location` ENUM('local','diskless') NOT NULL,
+  `cluster_si_access_mode` ENUM('ro','rw') NOT NULL,
+  `cluster_si_shared` int(1) unsigned NOT NULL,
+  `cluster_domainname` char(64) NOT NULL,
+  `cluster_nameserver` char(15) NOT NULL,
   `active` int(1) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
@@ -269,6 +306,7 @@ CREATE TABLE `systemimage` (
   `systemimage_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
+  `systemimage_dedicated` int(1) unsigned NOT NULL DEFAULT 0,
   `distribution_id` int(8) unsigned NOT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `root_device_id` int(8) unsigned DEFAULT NULL,
@@ -356,6 +394,7 @@ CREATE TABLE `cluster_ipv4_route` (
   PRIMARY KEY (`cluster_ipv4_route_id`),
   KEY `fk_cluster_ipv4_route_1` (`cluster_id`),
   KEY `fk_cluster_ipv4_route_2` (`ipv4_route_id`),
+  UNIQUE KEY `index4` (`cluster_id`,`ipv4_route_id`),
   CONSTRAINT `fk_cluster_ipv4_route_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_cluster_ipv4_route_2` FOREIGN KEY (`ipv4_route_id`) REFERENCES `ipv4_route` (`ipv4_route_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -503,6 +542,10 @@ CREATE TABLE `component_template_attr` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Orchestrator tables
+--
+
+--
 -- Table structure for orchestrator table `condition`
 --
 
@@ -535,11 +578,42 @@ CREATE TABLE `rule` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for orchestrator table `workload_characteristic`
+--
+
+CREATE TABLE `workload_characteristic` (
+  `wc_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `wc_visit_ratio` int(8) NOT NULL,
+  `wc_service_time` int(8) NOT NULL,
+  `wc_delay` int(8) NOT NULL,
+  `wc_think_time` int(8) NOT NULL,
+  `cluster_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`wc_id`),
+  KEY `fk_wc_1` (`cluster_id`),
+  CONSTRAINT `fk_wc_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for orchestrator table `qos_constraint`
+--
+
+CREATE TABLE `qos_constraint` (
+  `constraint_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `constraint_max_latency` int(8) NOT NULL,
+  `constraint_max_abort_rate` int(8) NOT NULL,
+  `cluster_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`constraint_id`),
+  KEY `fk_constraint_1` (`cluster_id`),
+  CONSTRAINT `fk_constraint_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
 -- Monitor tables
 --
 
 --
--- Table structure for table `indicatorset`
+-- Table structure for table `indicatorset` (monitor)
 --
 
 CREATE TABLE `indicatorset` (
@@ -554,7 +628,7 @@ CREATE TABLE `indicatorset` (
 
 
 --
--- Table structure for table `indicator`
+-- Table structure for table `indicator` (monitor)
 --
 
 CREATE TABLE `indicator` (
@@ -572,7 +646,7 @@ CREATE TABLE `indicator` (
 
 
 --
--- Table structure for table `collect`
+-- Table structure for table `collect` (monitor)
 --
 
 CREATE TABLE `collect` (
@@ -586,7 +660,7 @@ CREATE TABLE `collect` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `graph`
+-- Table structure for table `graph` (monitor)
 --
 
 CREATE TABLE `graph` (

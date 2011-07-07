@@ -1,7 +1,6 @@
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Test::More 'no_plan';
-use lib qw (/workspace/mcs/Administrator/Lib /workspace/mcs/Common/Lib /workspace/mcs/Executor/Lib);
 
 #Log::Log4perl->init('../Conf/log.conf');
 #my $log = get_logger("executor");
@@ -14,7 +13,7 @@ my $exectest = "ExecTest";
 note("Use Tests");
 use_ok(Administrator);
 use_ok(Executor);
-use_ok(McsExceptions);
+use_ok(Kanopya::Exceptions);
 
 note("Load Administrator tests");
 my %args = (login =>'xebech', password => 'pass');
@@ -39,9 +38,9 @@ eval {
 if ($@){
 	print "Exception catch, its type is : " . ref($@);
 	print Dumper $@;
-	if ($@->isa('Mcs::Exception')) 
+	if ($@->isa('Kanopya::Exception')) 
    	{
-		print "Mcs Exception\n";
+		print "Kanopya Exception\n";
    }
 	
 }

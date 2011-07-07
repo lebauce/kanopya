@@ -1,7 +1,7 @@
 <TMPL_INCLUDE NAME="header.tmpl">
 <TMPL_INCLUDE NAME="menu.tmpl">
 <style type="text/css">@import url(/css/details.css);</style>
-<script type="text/javascript" src="/js/jquery.js"></script>
+<script type="text/javascript" src="/js/extern/jquery.js"></script>
 <script type="text/javascript" src="/js/details.js"></script>
 
 <div id="content">
@@ -72,6 +72,9 @@ activate</a><br />
 <TMPL_ELSE><td></td></TMPL_IF>
 </tr>
 <tr><td class="label">Kernel :</td><td><TMPL_VAR NAME=kernel></td></tr>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Domain name :</td><td><TMPL_VAR NAME=cluster_domainname></td></tr>
+<tr><td class="label">Name server :</td><td><TMPL_VAR NAME=cluster_nameserver></td></tr>
 </table>
 
 <hr/>
@@ -85,7 +88,7 @@ activate</a><br />
 </td></tr>
 <TMPL_LOOP NAME=publicip_list>
 <tr><td class="label2"><TMPL_VAR NAME=address> / <TMPL_VAR NAME=netmask> (gateway: <TMPL_VAR NAME=gateway>)</td>
-<td class="action"><a class="imgRemove">remove</a>
+<td class="action"><a class="imgRemove" href="/cgi/kanopya.cgi/clusters/process_unsetpublicipfromcluster?cluster_id=<TMPL_VAR NAME=cluster_id>&publicip_id=<TMPL_VAR NAME=publicip_id>">remove</a>
 <input type="hidden" value="<TMPL_VAR NAME=name>"/>
 <td></tr>
 </TMPL_LOOP>
@@ -118,8 +121,10 @@ activate</a><br />
 <TMPL_ELSE>
 <tr><td colspan="2">no defined component.</td>
 <td class="actions">
+<TMPL_IF NAME=link_addcomponent>
 <a class="imgAdding" href="javascript:openform('/cgi/kanopya.cgi/clusters/form_addcomponenttocluster?cluster_id=<TMPL_VAR NAME=cluster_id>', 'Add a component', 500, 200, '');">add a component</a><br />
 <span class="desc">Add a new component to this cluster.</span><br /><br />
+</TMPL_IF>
 </td></tr>
 </TMPL_IF>
 </table>

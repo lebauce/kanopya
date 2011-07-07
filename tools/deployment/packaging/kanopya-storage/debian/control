@@ -4,10 +4,10 @@ Priority: optional
 Maintainer: Hedera Dev Team <dev@hederatech.com>
 Build-Depends: debhelper (>= 7)
 Standards-Version: 3.8.4
-Homepage: <http://hederatech.org>
+Homepage: http://hederatech.org
 Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 
 Package: kanopya-storage
 Architecture: all
-Depends: lvm2, ntp, ntpdate, openssh-client, openssh-server, iscsitarget, libkanopya-perl, kanopya-core
-Description: Storage provides all dependencies for a proper SAN install.
+Depends: lvm2, openssh-client, openssh-server, iscsitarget, iscsitarget-dkms, nfs-kernel-server, libkanopya-perl, kanopya-core
+Description: Kanopya Storage provides all dependencies for a proper SAN install (iscsitarget and nfs).

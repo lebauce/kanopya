@@ -1,20 +1,17 @@
 # Dhcpserver.pm - Dhcp server component generalisation (Adminstrator side)
-# Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 24 sept 2010
@@ -82,22 +79,22 @@ To save data in DB call save() on returned obj (after modification)
 Like all component, instantiate it creates a new empty component instance.
 You have to populate it with dedicated methods.
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
-	
-	if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-		(! exists $args{component_id} or ! defined $args{component_id})){ 
-		$errmsg = "Entity::Component::Dhcpserver->new need a cluster_id and a component_id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    
+    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
+        (! exists $args{component_id} or ! defined $args{component_id})){ 
+        $errmsg = "Entity::Component::Dhcpserver->new need a cluster_id and a component_id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 }
@@ -111,8 +108,8 @@ B<args>    :
 B<Return>  : a new Entity::Component::Dhcpserver from Kanopya Database
 B<Comment>  : To modify data in DB call save() on returned obj (after modification)
 B<throws>  : 
-    B<Mcs::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
+    
 =cut
 
 sub get {
@@ -120,10 +117,10 @@ sub get {
     my %args = @_;
 
     if ((! exists $args{id} or ! defined $args{id})) { 
-		$errmsg = "Entity::Component::Dhcpserver->new need an id named argument!";	
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+        $errmsg = "Entity::Component::Dhcpserver->new need an id named argument!";    
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
    my $self = $class->SUPER::get( %args);
    return $self;
 }
@@ -131,7 +128,7 @@ sub get {
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
-Exception : Mcs::Exception::Internal::IncorrectParam
+Exception : Kanopya::Exception::Internal::IncorrectParam
 
 =head1 CONFIGURATION AND ENVIRONMENT
 

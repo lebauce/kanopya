@@ -1,3 +1,16 @@
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EMonitoragent::ESnmpd5;
 
 use strict;
@@ -21,82 +34,63 @@ sub new {
 
 # generate snmpd configuration files on node
 sub addNode {
-	my $self = shift;
-	my %args = @_;
-	
-	if((! exists $args{econtext} or ! defined $args{econtext}) ||
-		(! exists $args{motherboard} or ! defined $args{motherboard}) ||
-		(! exists $args{mount_point} or ! defined $args{mount_point})) {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd5->configureNode needs a motherboard, mount_point and econtext named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	
-	my $config = {
-	    INCLUDE_PATH => "/templates/components/mcssnmpd", #$self->_getEntity()->getTemplateDirectory(),
-	    INTERPOLATE  => 1,               # expand "$var" in plain text
-	    POST_CHOMP   => 0,               # cleanup whitespace 
-	    EVAL_PERL    => 1,               # evaluate Perl code blocks
-	    RELATIVE => 1,                   # desactive par defaut
-	};
-	
-	my $conf = $self->_getEntity()->getConf();
-	my $rand = new String::Random;
-	my $template = Template->new($config);
-	
-	# generation of /etc/default/snmpd 
-	my $tmpfile = $rand->randpattern("cccccccc");
-	my $input = "default_snmpd.tt";
+    my $self = shift;
+    my %args = @_;
+    
+    if((! exists $args{econtext} or ! defined $args{econtext}) ||
+        (! exists $args{motherboard} or ! defined $args{motherboard}) ||
+        (! exists $args{mount_point} or ! defined $args{mount_point})) {
+        $errmsg = "EComponent::EMonitoragent::ESnmpd5->configureNode needs a motherboard, mount_point and econtext named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    
+    my $conf = $self->_getEntity()->getConf();
+    
+    # generation of /etc/default/snmpd 
     my $data = {};
-    $data->{node_ip_address} = $args{motherboard}->getAttr(name => 'motherboard_internal_ip');
-    $data->{options} = $conf->{options};
-   	
-	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
-	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/default/snmpd');	
-	unlink "/tmp/$tmpfile";
-	
-	# generation of /etc/snmpd/snmpd.conf 
-	$tmpfile = $rand->randpattern("cccccccc");
-	$input = "snmpd.conf.tt";
+    $data->{node_ip_address} = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
+    $data->{options} = $conf->{snmpd_options};       
+    
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/snmpd",
+                         input_file => "default_snmpd.tt", output => "/default/snmpd",
+                          data => $data);
+                         
+    # generation of /etc/snmpd/snmpd.conf 
     $data = {};
     $data->{monitor_server_ip} = $conf->{monitor_server_ip};
-       	
-	$template->process($input, $data, "/tmp/".$tmpfile) || do {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd->generate : error during template generation : $template->error;";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal(error => $errmsg);	
-	};
-	$args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point}.'/snmp/snmpd.conf');	
-	unlink "/tmp/$tmpfile";
-	
-	# add snmpd init scripts
-	$self->addInitScripts(
-		etc_mountpoint => $args{mount_point},
-		econtext => $args{econtext},
-		scriptname => 'snmpd',
-		startvalue => 20,
-		stopvalue => 20
-	);
-	 	 
+
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/snmpd",
+                         input_file => "snmpd.conf.tt", output => "/snmp/snmpd.conf",
+                          data => $data);
+
+    
+    # add snmpd init scripts
+    $self->addInitScripts(
+        etc_mountpoint => $args{mount_point},
+        econtext => $args{econtext},
+        scriptname => 'snmpd',
+        startvalue => 20,
+        stopvalue => 20
+    );
+          
 }
 
 # Reload snmp process
 sub reload {
-	my $self = shift;
-	my %args = @_;
-	
-	if(! exists $args{econtext} or ! defined $args{econtext}) {
-		$errmsg = "EComponent::EMonitoragent::ESnmpd5->reload needs an econtext named argument!";
-		$log->error($errmsg);
-		throw Mcs::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-	my $command = "invoke-rc.d snmpd restart";
-	my $result = $args{econtext}->execute(command => $command);
-	return undef;
+    my $self = shift;
+    my %args = @_;
+    
+    if(! exists $args{econtext} or ! defined $args{econtext}) {
+        $errmsg = "EComponent::EMonitoragent::ESnmpd5->reload needs an econtext named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    my $command = "invoke-rc.d snmpd restart";
+    my $result = $args{econtext}->execute(command => $command);
+    return undef;
 }
 
 1;

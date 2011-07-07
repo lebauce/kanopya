@@ -15,7 +15,7 @@ use Data::Dumper;
 my $test_instantiation = "Instantiation test";
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'admin' );
+    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
     my @args = ();
     note ("Execution begin");
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
@@ -36,21 +36,26 @@ eval {
                         $test_instantiation;
 
     ########################### Test cluster extended
-    note("Test Cluster extended");
+    #note("Test Cluster extended");
     my $c1 = Entity::Cluster->new(cluster_name => "foobar", 
-                                                       cluster_min_node => "1",
-                                                       cluster_max_node => "2",
-                                                       cluster_priority => "100",
-                                                       systemimage_id => "1",
-                                                       cluster_toto => "testextended");
+				  cluster_min_node => "1",
+				  cluster_max_node => "2",
+				  cluster_priority => "100",
+				  cluster_nameserver => '127.0.0.1',
+				  cluster_si_access_mode => 'ro',
+				  cluster_si_location => 'diskless',
+				  cluster_domainname => 'my.domain',
+				  cluster_si_shared => '1',
+				  systemimage_id => "1",);
+    
     isa_ok($c1, "Entity::Cluster", $test_instantiation);
-    is ($c1->getAttr(name=>'cluster_toto'), "testextended", 'Access to extended parameter from new cluster');
+    #is ($c1->getAttr(name=>'cluster_toto'), "testextended", 'Access to extended parameter from new cluster');
     $c1->create();
     $executor->execnround(run => 1);
 
     # Test cluster->get
     my $c2 = Entity::Cluster->getCluster(hash => {'cluster_name'=>'foobar'});
-    is ($c2->getAttr(name=>'cluster_toto'), "testextended", "Get extended attr from a cluster load from db");
+    #is ($c2->getAttr(name=>'cluster_toto'), "testextended", "Get extended attr from a cluster load from db");
 
     # Test Cluster Activate
     note( "Test Cluster management");

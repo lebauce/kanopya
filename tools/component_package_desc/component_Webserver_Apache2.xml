@@ -1,0 +1,11 @@
+<info tables_file="scripts/database/mysql/schemas/components/apache2.sql" templates_dir="templates/components/apache2">
+  <description name="Apache" category="Webserver" version="2" />
+  <executor dest="lib/executor/EEntity/EComponent/EWebserver/EApache2.pm" src="lib/executor/EEntity/EComponent/EWebserver/EApache2.pm" />
+  <meta packager_version="0.1" />
+  <nas dest="lib/administrator/Entity/Component/Webserver/Apache2.pm" src="lib/administrator/Entity/Component/Webserver/Apache2.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/Apache2.pm" src="lib/administrator/AdministratorDB/Schema/Result/Apache2.pm" />
+  <nas dest="lib/administrator/AdministratorDB/Schema/Result/Apache2Virtualhost.pm" src="lib/administrator/AdministratorDB/Schema/Result/Apache2Virtualhost.pm" />
+  <nas dest="scripts/database/mysql/schemas/components/apache2.sql" src="scripts/database/mysql/schemas/components/apache2.sql" />
+  <nas dest="lib/administrator/AdministratorDB/Component/Apache2Instance.pm" src="lib/administrator/AdministratorDB/Component/Apache2Instance.pm" />
+  <nas dest="ui/web/KanopyaUI/templates/Components/form_apache2.tmpl" src="ui/web/KanopyaUI/templates/Components/form_apache2.tmpl" />
+</info>

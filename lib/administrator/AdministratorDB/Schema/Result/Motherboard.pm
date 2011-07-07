@@ -31,14 +31,14 @@ __PACKAGE__->table("motherboard");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 processormodel_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 kernel_id
 
@@ -54,6 +54,13 @@ __PACKAGE__->table("motherboard");
   size: 64
 
 =head2 motherboard_powersupply_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=head2 motherboard_ipv4_internal_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -125,14 +132,14 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "processormodel_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "kernel_id",
   {
@@ -144,6 +151,13 @@ __PACKAGE__->add_columns(
   "motherboard_serial_number",
   { data_type => "char", is_nullable => 0, size => 64 },
   "motherboard_powersupply_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "motherboard_ipv4_internal_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -177,6 +191,21 @@ __PACKAGE__->add_unique_constraint("motherboard_internal_ip_UNIQUE", ["motherboa
 __PACKAGE__->add_unique_constraint("motherboard_mac_address_UNIQUE", ["motherboard_mac_address"]);
 
 =head1 RELATIONS
+
+=head2 harddisks
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Harddisk>
+
+=cut
+
+__PACKAGE__->has_many(
+  "harddisks",
+  "AdministratorDB::Schema::Result::Harddisk",
+  { "foreign.motherboard_id" => "self.motherboard_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 motherboardmodel
 
@@ -253,6 +282,21 @@ __PACKAGE__->belongs_to(
   { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 motherboard_ipv4_internal
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Ipv4Internal>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "motherboard_ipv4_internal",
+  "AdministratorDB::Schema::Result::Ipv4Internal",
+  { ipv4_internal_id => "motherboard_ipv4_internal_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 motherboard_entity
 
 Type: might_have
@@ -299,8 +343,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Vik+D8QWi4RW6WYeT+tNVw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-07 12:42:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iUuAjMO1BsvP5NDmOroc3g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

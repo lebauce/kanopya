@@ -1,0 +1,5 @@
+#!/bin/bash -e
+update-rc.d kanopya-executor defaults
+update-rc.d kanopya-state-manager defaults
+chmod +x /etc/init.d/kanopya-executor
+chmod +x /etc/init.d/kanopya-state-manager

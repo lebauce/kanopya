@@ -16,7 +16,7 @@ use_ok('Entity::Motherboard');
 my $test_instantiation = "Instantiation test";
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'admin' );
+    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
     my @args = ();
     note ("Execution begin");
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");

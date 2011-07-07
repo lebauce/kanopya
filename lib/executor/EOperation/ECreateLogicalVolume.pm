@@ -1,22 +1,18 @@
 # ECreateLogicalVolume.pm - Operation class implementing component installation on systemimage
 
-# Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
@@ -85,32 +81,34 @@ sub new {
 sub _init {
     my $self = shift;
     $self->{_objs} = {};
+    $self->{executor} = {};
     return;
 }
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	$log->info("Operation preparation");
+    $log->info("Operation preparation");
 
     # Check if internal_cluster exists
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "ECreateExport->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+        $errmsg = "ECreateExport->prepare need an internal_cluster named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
     
     # Get Operation parameters
-	my $params = $self->_getOperation()->getParams();
+    my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
+    
 
     if ((! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) ||
         (! exists $params->{disk_name} or ! defined $params->{disk_name})||
@@ -118,8 +116,8 @@ sub prepare {
         (! exists $params->{filesystem} or ! defined $params->{filesystem}) ||
         (! exists $params->{vg_id} or ! defined $params->{vg_id})){
         my $error = $@;
-		$errmsg = "Operation ECreateLogicalVolume failed, missing parameters";
-		$log->error($errmsg);
+        $errmsg = "Operation ECreateLogicalVolume failed, missing parameters";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     $self->{params} = $params;
@@ -127,35 +125,40 @@ sub prepare {
     my $comp_lvm = Entity::Component::Storage::Lvm2->get(id => $params->{component_instance_id});
     my $comp_desc = $comp_lvm->getComponentAttr();
     if (! $comp_desc->{component_name} eq "Lvm") {
-		$errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
     my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
     $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
     if (!($self->{_objs}->{cluster}->getAttr(name=>"cluster_state") eq "up")){
         $errmsg = "Cluster has to be up !";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
+    
+    # Instanciate executor Cluster
+    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    
+    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
-	$self->{cluster_econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $masternode_ip);
-	
+    
+    $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
+    
 }
 
 sub execute{
-	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	
-	my $vg = $self->_getEntity()->getMainVg();
-	$self->{_objs}->{ecomp_lvm}->lvCreate(lvm2_vg_id =>$self->{params}->{vg_id},
-	                       lvm2_lv_name => $self->{params}->{disk_name},
-					       lvm2_lv_filesystem =>$self->{params}->{filesystem},
-					       lvm2_lv_size => $self->{params}->{size},
-					       econtext => $self->{cluster_econtext},
-					       lvm2_vg_name => $self->{_objs}->{ecomp_lvm}->_getEntity()->getMainVg(lvm2_vg_id =>$self->{params}->{vg_id}));
+    my $self = shift;
+    
+    my $adm = Administrator->new();
+    $self->{_objs}->{ecomp_lvm}->createDisk(name       => $self->{params}->{disk_name},
+                                            size       => $self->{params}->{size},
+                                            filesystem => $self->{params}->{filesystem},
+                                            econtext   => $self->{cluster_econtext},
+                                            erollback  => $self->{erollback});
+
+    $log->info("New Logical volume <" . $self->{params}->{disk_name} . "> created");
 }
 
 =head1 DIAGNOSTICS

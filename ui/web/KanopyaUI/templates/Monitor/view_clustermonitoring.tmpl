@@ -3,16 +3,13 @@
 <style type="text/css">
 @import url(/css/listing.css);
 </style>
-<script type="text/javascript" src="/js/jquery.js"></script>
-<script type="text/javascript" src="/js/jquery-ui.js"></script>
-<script type="text/javascript" src="/js/custom.js"></script>
-
+<script type="text/javascript" src="/js/extern/jquery.js"></script>
+<script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/monitor.js"></script>
 <div id="content">
 
 
 <!--button id='fold_all'>fold</button-->
-
-
 
 <table id='graphchoices'>
 <tr>
@@ -20,11 +17,11 @@
 <td class='period_selectors'>
 <table class=''>
 <tr><th>
-<a id="period_label">Daily</a>
+<a id="period_label">Hourly</a>
 <ul>
-	<li id='hour' class='period_selector' >Hourly</li>
-	<li id='day'  class='period_selector selected_period' >Daily</li>
-	<li id='custom' class='period_selector' >Custom</li>
+	<li id='hour' class='period_selector selected_period' >Hourly</li>
+	<li id='day'  class='period_selector' >Daily</li>
+	<!--li id='custom' class='period_selector' >Custom</li-->
 </ul>
 </th></tr>
 </table>
@@ -68,9 +65,9 @@
 
 <a class='action imgClock' >Graph period</a>
 <ul class="italic">
-	<li id='hour' class='period_selector' >Hourly</li>
-	<li id='day'  class='period_selector selected_period' >Daily</li>
-	<li id='custom' class='period_selector' >Custom</li>
+	<li id='hour' class='period_selector selected_period' >Hourly</li>
+	<li id='day'  class='period_selector' >Daily</li>
+	<!--li id='custom' class='period_selector' >Custom</li-->
 </ul>
 
 </div>

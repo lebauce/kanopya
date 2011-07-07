@@ -1,22 +1,18 @@
 # EInstallComponentOnSystemImage.pm - Operation class implementing component installation on systemimage
 
-# Copyright (C) 2009, 2010, 2011, 2012, 2013
-#   Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to the
-# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USA.
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
@@ -90,68 +86,82 @@ sub _init {
 
 sub checkOp{
     my $self = shift;
-	my %args = @_;
+    my %args = @_;
     
+    $log->debug("checking systemimage active value <$args{params}->{systemimage_id}>");
+       if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+            $errmsg = "EOperation::EInstallComponentOnSystemImage->checkOp : system image is active";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
 
 }
 
 =head2 prepare
 
-	$op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare(internal_cluster => \%internal_clust);
 
 =cut
 
 sub prepare {
-	
-	my $self = shift;
-	my %args = @_;
-	$self->SUPER::prepare();
+    
+    my $self = shift;
+    my %args = @_;
+    $self->SUPER::prepare();
 
-	$log->info("Operation preparation");
+    $log->info("Operation preparation");
 
-    # Check if internal_cluster exists
-	if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-		$errmsg = "EInstallComponentInSystemImage->prepare need an internal_cluster named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     # Get Operation parameters
-	my $params = $self->_getOperation()->getParams();
+    my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
- 	# Cluster instantiation
-    #TODO Get Systemimage
-
-
-
+    #### Get instance of Systemimage Entity
+    $log->debug("Load systemimage instance");
+    eval {
+       $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+    };
     if($@) {
         my $err = $@;
-    	$errmsg = "EOperation::EInstallComponentInSystemImage->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-    	$log->error($errmsg);
-    	throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        $errmsg = "EOperation::EDeactivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
-    ### Check Parameters and context
+    $self->{_objs}->{component_id} = $params->{component_id};
+
     eval {
         $self->checkOp(params => $params);
     };
     if ($@) {
         my $error = $@;
-		$errmsg = "Operation ActivateCluster failed an error occured :\n$error";
-		$log->error($errmsg);
+        $errmsg = "Operation InstallComponent on systemimage failed an error occured :\n$error";
+        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    #### Instanciate Clusters
+    # Instanciate nas Cluster 
+    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
+
+    # Load NAS Econtext
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
+    
+    ## Instanciate Component needed (here ISCSITARGET on nas )
+    # Instanciate Export component.
+    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Lvm",
+                                                                                      version=> "2"));
+    $log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_storage}));
 
 }
 
 sub execute{
-	my $self = shift;
-	$log->debug("Before EOperation exec");
-	$self->SUPER::execute();
-	
-
-		
+    my $self = shift;
+    
+    $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_id => $self->{_objs}->{component_id});
+    
 }
 
 =head1 DIAGNOSTICS
