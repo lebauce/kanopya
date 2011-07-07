@@ -18,19 +18,19 @@
 
 =head1 NAME
 
-<Entity::Component::[% component_category %]::[% component_name %]> <[% component_name %] component concret class>
+<Entity::Component::[% component_name %]> <[% component_name %] component concret class>
 
 =head1 VERSION
 
-This documentation refers to <Entity::Component::[% component_category %]::[% component_name %]> version 1.0.0.
+This documentation refers to <Entity::Component::[% component_name %]> version 1.0.0.
 
 =head1 SYNOPSIS
 
-use <Entity::Component::[% component_category %]::[% component_name %]>;
+use <Entity::Component::[% component_name %]>;
 
 my $component_instance_id = 2; # component instance id
 
-Entity::Component::[% component_category %]::[% component_name %]->get(id=>$component_instance_id);
+Entity::Component::[% component_name %]->get(id=>$component_instance_id);
 
 # Cluster id
 
@@ -40,19 +40,19 @@ my $cluster_id = 3;
 
 my $component_id =2 
 
-Entity::Component::[% component_category %]::[% component_name %]->new(component_id=>$component_id, cluster_id=>$cluster_id);
+Entity::Component::[% component_name %]->new(component_id=>$component_id, cluster_id=>$cluster_id);
 
 =head1 DESCRIPTION
 
-Entity::Component::[% component_category %]::[% component_name %] is class allowing to instantiate a [% component_name %] component
+Entity::Component::[% component_name %] is class allowing to instantiate a [% component_name %] component
 This Entity is empty but present methods to set configuration.
 
 =head1 METHODS
 
 =cut
 
-package Entity::Component::[% component_category %]::[% component_name %];
-use base "Entity::Component::[% component_category %]";
+package Entity::Component::[% component_name %];
+use base "Entity::Component";
 
 use strict;
 use warnings;
@@ -70,7 +70,7 @@ B<Desc>    : This method allows to create a new instance of [% component_categor
 B<args>    : 
     B<component_id> : I<Int> : Identify component. Refer to component identifier table
     B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::[% component_category %]::[% component_name %] from parameters.
+B<Return>  : a new Entity::Component::[% component_name %] from parameters.
 B<Comment>  : Like all component, instantiate it creates a new empty component instance.
         You have to populate it with dedicated methods.
 B<throws>  : 
@@ -119,10 +119,17 @@ sub setConf {
 
 sub getNetConf {
 
-	#TODO return { port => protocol }
+	#TODO return { port => [protocol] }
  
 }
 
+sub insertDefaultConfiguration {
+    my $self = shift;
+    my %args = @_;
+    my $conf = { };
+    
+    $self->{_dbix}->[% master_table_name %]s->create($conf);    
+}
 
 =head1 DIAGNOSTICS
 

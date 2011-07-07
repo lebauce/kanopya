@@ -1,10 +1,24 @@
-package EEntity::EComponent::E[% component_category %]::E[% component_name %];
+#    Copyright © 2011 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+package EEntity::EComponent::E[% component_name %];
 
 use strict;
 use Template;
 use String::Random;
-use base "EEntity::EComponent::E[% component_category %]";
+use base "EEntity::EComponent";
 use Log::Log4perl "get_logger";
+use General;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -24,13 +38,7 @@ sub configureNode {
 	my $self = shift;
 	my %args = @_;
 	
-	if((! exists $args{econtext} or ! defined $args{econtext}) ||
-		(! exists $args{motherboard} or ! defined $args{motherboard}) ||
-		(! exists $args{mount_point} or ! defined $args{mount_point})) {
-		$errmsg = "EComponent::EMonitoragent::E[% component_name %]->configureNode needs a motherboard, mount_point and econtext named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+	General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
 
 	#TODO insert configuration files generation
 }
@@ -39,12 +47,7 @@ sub addNode {
 	my $self = shift;
 	my %args = @_;
 	
-	if((! exists $args{econtext} or ! defined $args{econtext}) ||
-		(! exists $args{mount_point} or ! defined $args{mount_point})) {
-		$errmsg = "EComponent::E[% component_category %]::E[% component_name %]->addNode needs a motherboard, mount_point and econtext named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
+	General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
 	
 	$self->configureNode(%args);
 	
@@ -56,12 +59,7 @@ sub reload {
 	my $self = shift;
 	my %args = @_;
 	
-	if(! exists $args{econtext} or ! defined $args{econtext}) {
-		$errmsg = "EComponent::E[% component_category %]::E[% component_name %]->reload needs an econtext named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-	}
-
+	General::checkParams(args => \%args, required => ['econtext']);
 
 }
 

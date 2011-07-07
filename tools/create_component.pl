@@ -17,7 +17,7 @@ createComp();
 
 sub createComp {
 	my %comp_info = getComponentInfo();
-	checkValidCategory( category => $comp_info{category} );
+	#checkValidCategory( category => $comp_info{category} );
 	genFiles( name => $comp_info{name}, category => $comp_info{category}, version => $comp_info{version} );
 	#showTodo();
 }
@@ -34,17 +34,6 @@ sub getComponentInfo {
 	return %comp_info;
 }
 
-sub checkValidCategory {
-	my %args = @_;
-	
-	for my $dir ( 	$ROOT_PATH . $PATHS{component} . $args{category}, 
-					$ROOT_PATH . $PATHS{ecomponent} . 'E' . $args{category} ) {					
-		if ( not -d $dir ) {
-	    	mkdir($dir);
-		}
-	}
-}
-
 sub genFiles {
 	my %args = @_;
 	
@@ -58,10 +47,8 @@ sub genFiles {
 	);
 	
 	my %files = (
-	    "ComponentCategory.pm.tt"=> $ROOT_PATH . $PATHS{component} 	. "$comp_cat.pm",
-	    "Component.pm.tt" 		 => $ROOT_PATH . $PATHS{component} 	. "$comp_cat/$comp_name.pm",
-	    "EComponentCategory.pm.tt" => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_cat.pm",
-	    "EComponent.pm.tt" 		 => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_cat/E$comp_name.pm",
+	    "Component.pm.tt" 		 => $ROOT_PATH . $PATHS{component} 	. "$comp_name.pm",
+	    "EComponent.pm.tt" 		 => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_name.pm",
 	    "ComponentTable.sql.tt"  => $ROOT_PATH . $PATHS{table} 		. "$comp_name_lc.sql",
 	    "form_component.tmpl.tt" => $ROOT_PATH . $PATHS{form} 		. "form_$comp_name_lc.tmpl",
 		
