@@ -201,7 +201,9 @@ sub isUp {
     # Test Services
     while(my ($port, $protocols) = each %$net_conf) {
         my $cmd = "nmap -n ";
+        PROTO:
         foreach my $proto (@$protocols) {
+            next PROTO if ($proto eq "ssl");
             if ($proto eq "udp") {
                 $cmd .= "-sU "; 
             }

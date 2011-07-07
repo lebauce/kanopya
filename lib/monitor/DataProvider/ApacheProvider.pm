@@ -52,14 +52,21 @@ sub new {
 
 
     my $host = $args{host};
+    my $component = $args{component};
     
-    # TODO manage apache port! retrieve port used from apache component
+    # Retrieve the apache port which doesn't use ssl
+    my $net_conf = $component->getNetConf();
+    my ($port, $protocols);
+    while(($port, $protocols) = each %$net_conf) {
+        last if (0 == grep {$_ eq 'ssl'} @$protocols );
+    }
+    
     my $cmd =     'curl -A "mozilla/4.0 (compatible; cURL 7.10.5-pre2; Linux 2.4.20)"';
     $cmd .=        ' -m 12 -s -L -k -b /tmp/bbapache_cookiejar.curl';
     $cmd .=        ' -c /tmp/bbapache_cookiejar.curl';
     $cmd .=        ' -H "Pragma: no-cache" -H "Cache-control: no-cache"';
     $cmd .=        ' -H "Connection: close"';
-    $cmd .=        " $host/server-status?auto";
+    $cmd .=        " $host:$port/server-status?auto";
     
     $self->{_cmd} = $cmd;
     $self->{_host} = $host;
