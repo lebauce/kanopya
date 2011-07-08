@@ -75,52 +75,52 @@ B<Comment>  : Like all component, instantiate it creates a new empty component i
         You have to populate it with dedicated methods.
 B<throws>  : 
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-	
+    
 =cut
 
 sub new {
-	my $class = shift;
+    my $class = shift;
     my %args = @_;
 
-	# We create a new DBIx containing new entity
-	my $self = $class->SUPER::new( %args);
+    # We create a new DBIx containing new entity
+    my $self = $class->SUPER::new( %args);
 
     return $self;
 
 }
 
 sub getConf {
-	my $self = shift;
+    my $self = shift;
 
-	my $conf = {};
+    my $conf = {};
 
-	my $confindb = $self->{_dbix}->[% master_table_name %]s->first();
-	if($confindb) {
-		
-		#TODO build conf hash with db data
-		
-	}
+    my $confindb = $self->{_dbix}->[% master_table_name %]s->first();
+    if($confindb) {
+        
+        #TODO build conf hash with db data
+        
+    }
 
-	return $conf;
+    return $conf;
 }
 
 sub setConf {
-	my $self = shift;
-	my ($conf) = @_;
-	
-	if(not $conf->{[% master_table_name %]_id}) {
-		# new configuration -> create
-		$self->{_dbix}->[% master_table_name %]s->create($conf);
-	} else {
-		# old configuration -> update
-		$self->{_dbix}->[% master_table_name %]s->update($conf);
-	}
+    my $self = shift;
+    my ($conf) = @_;
+    
+    if(not $conf->{[% master_table_name %]_id}) {
+        # new configuration -> create
+        $self->{_dbix}->[% master_table_name %]s->create($conf);
+    } else {
+        # old configuration -> update
+        $self->{_dbix}->[% master_table_name %]s->update($conf);
+    }
 }
 
 sub getNetConf {
 
-	#TODO return { port => [protocol] }
- 
+    #TODO return { port => [protocol] }
+
 }
 
 sub insertDefaultConfiguration {

@@ -35,31 +35,31 @@ sub new {
 
 # generate configuration files on node
 sub configureNode {
-	my $self = shift;
-	my %args = @_;
-	
-	General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
 
-	#TODO insert configuration files generation
+    #TODO insert configuration files generation
 }
 
 sub addNode {
-	my $self = shift;
-	my %args = @_;
-	
-	General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
-	
-	$self->configureNode(%args);
-	
-	#TODO addInitScript(..) if there is a daemon associated to this component
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    
+    $self->configureNode(%args);
+    
+    #TODO addInitScript(..) if there is a daemon associated to this component
 }
 
 # Reload process
 sub reload {
-	my $self = shift;
-	my %args = @_;
-	
-	General::checkParams(args => \%args, required => ['econtext']);
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext']);
 
 }
 
