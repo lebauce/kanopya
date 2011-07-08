@@ -76,15 +76,15 @@ sub genFiles {
 sub showTodo {
 	print "####################################\n";
 	print "1. Edit generated files\n";
-	print "2. Create related tables in db: ";
-	print "    > cd /opt/kanopya/scripts/database/mysql/sbin";
-	print "    > sh create_component_table.sh <...>";
-	print "3. Generate dbix schema for each related tables:";
-	print "    > perl MakeSchema.pl <table_name>";
-	print "x. add component in db table 'component'";
-	print "x. Test";
-	print "x. Doc";
-	print "x. create component definition xml";
+	print "2. Create related tables in db: \n";
+	print "    > cd /opt/kanopya/scripts/database/mysql/sbin\n";
+	print "    > sh create_component_table.sh <...>\n";
+	print "3. Generate dbix schema for each related tables:\n";
+	print "    > perl MakeSchema.pl <table_name>\n";
+	print "x. add component in db table 'component'\n";
+	print "x. Test\n";
+	print "x. Doc\n";
+	print "x. create component definition xml\n";
 	#print "2. Install comp in db and make schema\n";
-	print "3. Install component on a system image\n";
+	print "x. Install component on a system image\n";
 }
