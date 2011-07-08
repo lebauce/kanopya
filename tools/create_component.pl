@@ -11,6 +11,7 @@ my %PATHS = (
 	ecomponent 	=> "lib/executor/EEntity/EComponent/",
 	table 		=> "scripts/database/mysql/schemas/components/",
 	form 		=> "ui/web/KanopyaUI/templates/Components/",
+	relationship => "lib/administrator/AdministratorDB/Component/"
 );
 
 createComp();
@@ -19,7 +20,7 @@ sub createComp {
 	my %comp_info = getComponentInfo();
 	#checkValidCategory( category => $comp_info{category} );
 	genFiles( name => $comp_info{name}, category => $comp_info{category}, version => $comp_info{version} );
-	#showTodo();
+	showTodo();
 }
 
 sub getComponentInfo {
@@ -47,11 +48,11 @@ sub genFiles {
 	);
 	
 	my %files = (
-	    "Component.pm.tt" 		 => $ROOT_PATH . $PATHS{component} 	. "$comp_name.pm",
-	    "EComponent.pm.tt" 		 => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_name.pm",
-	    "ComponentTable.sql.tt"  => $ROOT_PATH . $PATHS{table} 		. "$comp_name_lc.sql",
-	    "form_component.tmpl.tt" => $ROOT_PATH . $PATHS{form} 		. "form_$comp_name_lc.tmpl",
-		
+	    "Component.pm.tt" 		 => $ROOT_PATH . $PATHS{component} 	. "$comp_name.pm",                # DB management
+	    "EComponent.pm.tt" 		 => $ROOT_PATH . $PATHS{ecomponent} . "E$comp_name.pm",               # Execution
+	    "ComponentTable.sql.tt"  => $ROOT_PATH . $PATHS{table} 		. "$comp_name_lc.sql",            # DB tables def
+	    "form_component.tmpl.tt" => $ROOT_PATH . $PATHS{form} 		. "form_$comp_name_lc.tmpl",      # web ui
+		"ComponentInstance.pm.tt" => $ROOT_PATH . $PATHS{relationship} . "$comp_name" . "Instance.pm",# instance relationship
 	);
 	
 	my $config = {
@@ -75,6 +76,15 @@ sub genFiles {
 sub showTodo {
 	print "####################################\n";
 	print "1. Edit generated files\n";
-	print "2. Install comp in db and make schema\n";
+	print "2. Create related tables in db: ";
+	print "    > cd /opt/kanopya/scripts/database/mysql/sbin";
+	print "    > sh create_component_table.sh <...>";
+	print "3. Generate dbix schema for each related tables:";
+	print "    > perl MakeSchema.pl <table_name>";
+	print "x. add component in db table 'component'";
+	print "x. Test";
+	print "x. Doc";
+	print "x. create component definition xml";
+	#print "2. Install comp in db and make schema\n";
 	print "3. Install component on a system image\n";
 }

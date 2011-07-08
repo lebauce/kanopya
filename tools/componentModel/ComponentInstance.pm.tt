@@ -1,0 +1,10 @@
+package AdministratorDB::Component::[% component_name %]Instance;
+
+AdministratorDB::Schema::Result::ComponentInstance->has_many(
+  "[% master_table_name %]s",
+  "AdministratorDB::Schema::Result::[% component_name %]",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+1;
