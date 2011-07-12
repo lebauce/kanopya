@@ -39,6 +39,8 @@ sub configureNode {
 
     my $conf = $self->_getEntity()->getConf();
 
+    my $template_path = $args{template_path} || "/templates/components/php5";
+
     # Generation of php.ini
     my $data = { 
                 session_handler => $conf->{php5_session_handler},
@@ -51,7 +53,7 @@ sub configureNode {
         $data->{session_path} = "tcp://$masternodeip:$port";
     }
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/php5",
+                         template_dir => $template_path,
                          input_file => "php.ini.tt", output => "/php5/apache2/php.ini", data => $data);
 }
 

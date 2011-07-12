@@ -45,12 +45,28 @@ eval {
     my $econtext = EContext::Local->new();
     my $ecomp = EEntity::EComponent::EHAProxy1->new( data => $comp );
     
-    for my $dest_dir ("/tmp/haproxy", "/tmp/default") {
-        `mkdir $dest_dir` if not -d $dest_dir;
+    my $mount_point = "/tmp";
+
+    my %generated_files = (
+	'haproxy' => ['haproxy.cfg'],
+	'default' => ['haproxy'],
+    );
+
+    for my $dest_dir (keys %generated_files) {
+        `mkdir -p $mount_point/$dest_dir`;
     }
     
-    $ecomp->configureNode( econtext => $econtext, mount_point => "/tmp", template_path => "/opt/kanopya/templates/components/haproxy", motherboard => "" );
+    $ecomp->configureNode( econtext => $econtext, mount_point => $mount_point,
+			   template_path => "/opt/kanopya/templates/components/haproxy",
+			   motherboard => "",
+			   cluster => $cluster);
     
+    while ( my ($dest_dir, $files) =  each %generated_files ) {
+        for my $file (@$files) {
+	    ok( -f "$mount_point/$dest_dir/$file", "File generated: $file" );
+	}
+    }
+
     #use File::Compare;
     
     #my $file_compare = File::Compare::compare_text("/tmp/syslog-ng/syslog-ng.conf", "syslog-ng.conf.good");

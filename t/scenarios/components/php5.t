@@ -7,10 +7,10 @@ use Test::More 'no_plan';
 BEGIN {
       use_ok( 'Administrator' );
       use_ok( 'Entity::Cluster' );
-      use_ok( 'Entity::Component::Library::Php5' );
+      use_ok( 'Entity::Component::Php5' );
 }
 
-Administrator::authenticate(login => "admin", password => "admin");
+Administrator::authenticate(login => "admin", password => "K4n0pY4");
 
 my $adm = Administrator->new();
 
@@ -19,22 +19,34 @@ eval {
     
 	
 
-	my $comp = Entity::Component::Library::Php5->new( );
+    # We instanciate a new component
+    my $comp = Entity::Component::Php5->new( cluster_id => 1, component_id => 15 );
 	
 #	$comp->setConf( $new_conf );
 	
-	#my $data = $comp->getConf();
+
+ $comp->setConf( { php5_session_handler => "YYYYYYYYYYYYYYYY" } );	
+
+    use Data::Dumper;
+    my $data = $comp->getConf();
+    print Dumper $data;
+
+    use EEntity::EComponent::EPhp5;
+    use EContext::Local;
+    my $econtext = EContext::Local->new();
+    my $ecomp = EEntity::EComponent::EPhp5->new( data => $comp );
 	
-	use EEntity::EComponent::ELibrary::EPhp5;
-	use EContext::Local;
-	my $econtext = EContext::Local->new();
-	my $ecomp = EEntity::EComponent::ELibrary::EPhp5->new( data => $comp );
+    my $mount_point = "/tmp";
+    $dest_dir = $mount_point . "/php5/apache2/";
+    `mkdir -p $dest_dir` if not -d $dest_dir;
 	
-	$dest_dir = "/tmp/components";
-	`mkdir $dest_dir` if not -d $dest_dir;
+   
+
+    # Test file generation without conf
+    $ecomp->configureNode( econtext => $econtext, mount_point => $mount_point, template_path => "/opt/kanopya/templates/components/php5", motherboard => "" );
 	
-	$ecomp->configureNode( econtext => $econtext, mount_point => "/tmp", template_path => ".", motherboard => "" );
-	
+    # 
+
 	#use File::Compare;
 	#my $file_compare = File::Compare::compare_text("/tmp/syslog-ng/syslog-ng.conf", "syslog-ng.conf.good");
 	#is( $file_compare, 0, "Good generated file");

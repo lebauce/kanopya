@@ -27,7 +27,7 @@ my $nb_tiers =1;
 my %workload_class = ( visit_ratio => [1],
 		       service_time => [0.001],
 		       delay => [0],
-		       think_time => 0.1 );
+		       think_time => 10 );
 my @AC = (1);
 my @LC = (150);
 
