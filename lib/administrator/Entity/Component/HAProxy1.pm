@@ -122,8 +122,8 @@ sub getNetConf {
     my $conf = $self->getConf();
     
     return { $conf->{haproxy1_http_frontend_port} => ['tcp'],
-             $conf->{haproxy1_https_frontend_port} => ['tcp', 'ssl'] }
- 
+             $conf->{haproxy1_https_frontend_port} => ['tcp', 'ssl'] };
+
 }
 
 sub insertDefaultConfiguration {

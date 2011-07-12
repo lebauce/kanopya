@@ -119,7 +119,7 @@ sub setConf {
 
 sub getNetConf {
 
-    #TODO return { port => [protocol] }
+    #TODO return { port => [protocol] };
 
 }
 
