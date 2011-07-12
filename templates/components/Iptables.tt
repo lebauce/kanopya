@@ -1,0 +1,26 @@
+#!/bin/ssh
+# Vider les tables filter
+iptables -t filter -F
+# Vider les règles personnelles
+iptables -t filter -X
+iptables -t nat -X
+# interdir  toute connexion entrante 
+iptables -t filter -P INPUT DROP
+# Les connexions destinées à être routées sont acceptées par défaut
+iptables -t filter -P FORWARD ACCEPT
+# Les connexions sortantes sont acceptées par défaut
+iptables -t filter -P OUTPUT ACCEPT
+# Pas de filtrage sur l'interface de "loopback"
+iptables -t filter -A INPUT -i lo -j ACCEPT
+# Accepter le protocole ICMP (notamment le ping)
+iptables -t filter -A INPUT -p icmp -j ACCEPT
+# Accepter le protocole IGMP (pour le multicast)
+iptables -t filter -A  INPUT -p igmp -j ACCEPT
+# Accepter les packets entrants relatifs à des connexions déjà
+# établies : cela va plus vite que de devoir réexaminer toutes
+# les règles pour chaque paquet.
+iptables -t filter -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+
+[% FOREACH component=components %]
+iptables -t filter -A INPUT -p [% component.protocole %] --dport [% component.ports %] -j ACCEPT
