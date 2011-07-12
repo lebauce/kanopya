@@ -117,8 +117,12 @@ sub setConf {
 }
 
 sub getNetConf {
-
-    #TODO return { port => [protocol] }
+    my $self = shift;
+    
+    my $conf = $self->getConf();
+    
+    return { $conf->{haproxy1_http_frontend_port} => ['tcp'],
+             $conf->{haproxy1_https_frontend_port} => ['tcp', 'ssl'] }
  
 }
 

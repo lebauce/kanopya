@@ -58,7 +58,6 @@ sub configureNode {
     # send default haproxy conf (allowing haproxy to be started with init script)
     $args{econtext}->send(src => $template_path . "/haproxy_default", dest => $args{mount_point} . "/default/haproxy");
     
-    
 }
 
 sub addNode {
@@ -69,7 +68,11 @@ sub addNode {
     
     $self->configureNode(%args);
     
-    #TODO addInitScript(..) if there is a daemon associated to this component
+    $self->addInitScripts(  etc_mountpoint => $args{mount_point}, 
+                            econtext => $args{econtext}, 
+                            scriptname => 'haproxy', 
+                            startvalue => '20', 
+                            stopvalue => '20');
 }
 
 # Reload process
