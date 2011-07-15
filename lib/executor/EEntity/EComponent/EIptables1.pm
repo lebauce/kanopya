@@ -19,6 +19,7 @@ use String::Random;
 use base "EEntity::EComponent";
 use Log::Log4perl "get_logger";
 use General;
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -38,53 +39,81 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
         
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point','cluster']);
      #TODO insert configuration files generation
     
     my $cluster = $args{cluster};
-    my $components = $cluster->getComponents();
-    
-    my $data = { components => [] };
+    my $components = $cluster->getComponents(category => "all");
+      
+    my $data = {components => []};
+   
     foreach my $component (values %$components) {
         my $netconf = $component->getNetConf();
+       
         while(my ($port, $protocols) = each %$netconf) {
-            my $tmp = {};
-            $tmp->{port} = $port;
-            push (@{$data->{components}}, $tmp);
-            $tmp->{ protocol}= $protocol;
-            if (($tmp->{ protocol}= $protocol) eq 'ssl'){
+                       
+            PROTOCOL:         
+            foreach my $element (@$protocols){
+                if ($element eq 'ssl') {
+                next PROTOCOL; 
                 }
-                else {
-            push (@{$data->{components}}, $tmp);    
+                my $tmp = {};
+                $tmp->{port} = $port;
+                $tmp->{protocol}= $element;
+                push (@{$data->{components}}, $tmp);
             }
-          }
-    }
+         }
+      }
+        my $iptables_secure= $self->_getEntity()->getSecureRule();
+        TABLE:
+        foreach my $element (keys (%$iptables_secure)){
+            if ($$iptables_secure{$element} == 1){
+                $data->{$element} = $$iptables_secure{$element};     
+            }
+        }
+        my $iptables_componenet= $self->_getEntity()->getSecureComponenet();
+#        TABLE:
+#        foreach my $element (keys (%$iptables_secure)){
+#            if ($$iptables_secure{$element} == 1){
+#                $data->{$element} = $$iptables_secure{$element};     
+#            }
+#        }
         
+        
+        print Dumper $iptables_componenet; 
+        
+        
+        
+        
+     
+         
      #my $iptables_conf = $self->_getEntity()->getGeneralConf();   
     #$data->{port} = $iptables_conf->{'module_port'};
     #$data->{portNumber} = $iptables_conf->{'module_number_port'};
    
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/",
-                         input_file => "Iptables.tt", output => "/init.d/firewall", data => $data);             
+                         template_dir => "/templates/components/iptables",
+                         input_file => "Iptables.tt", output => '/init.d/firewall', data => $data);             
 
   
- # status iptables
  
-    $self->addInitScripts(      econtext => $args{econtext}, 
-                                scriptname => 'firewall', 
-                                startvalue => '15', 
-                                stopvalue => '09');
     
 }
 sub addNode {
     my $self = shift;
     my %args = @_;    
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point','cluster']);
     $self->configureNode(%args);
     
     #TODO addInitScript(..) if there is a daemon associated to this component
+    # status iptables 
+    $self->addInitScripts(      etc_mountpoint => $args{mount_point}, 
+                                econtext => $args{econtext}, 
+                                scriptname => 'firewall', 
+                                startvalue => '15', 
+                                stopvalue => '09');
 }
+
 
 # Reload process
 sub activate{
@@ -108,4 +137,3 @@ sub reload {
     return undef;
 }
 1;
-

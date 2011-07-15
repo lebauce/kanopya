@@ -57,7 +57,7 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
+#use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -84,7 +84,6 @@ sub new {
 
     # We create a new DBIx containing new entity
     my $self = $class->SUPER::new( %args);
-
     return $self;
 
 }
@@ -92,31 +91,41 @@ sub new {
 sub getConf {
     my $self = shift;
 
-    my $conf = {};
-
-    $conf->{component_name_mouloud} = "ouai super cocmpoent";
-
-    my $confindb = $self->{_dbix}->iptables1s->first();
-    if($confindb) {
-        
-     
-        
-    }
-
+    my $conf = $self->getSecureRule();
+    $conf->{iptables1_sec_rule_syn_flood } = $conf->{iptables1_sec_rule_syn_flood};
+    $conf->{iptables1_sec_rule_scan_furtif} = $conf->{iptables1_sec_rule_scan_furtif};
+    $conf->{iptables1_sec_rule_ping_mort} = $conf->{iptables1_sec_rule_ping_mort};
+    $conf->{iptables1_sec_rule_anti_spoofing } = $conf->{iptables1_sec_rule_anti_spoofing};
+   
     return $conf;
 }
+
+sub getSecureRule {
+  my $self = shift;
+    my %iptables_sec_rule = $self->{_dbix}->iptables1_sec_rule->get_columns(); 
+    return \%iptables_sec_rule;     
+}
+sub getSecureComponenet{
+    my $self = shift;
+    my $component = $self->{_dbix}->iptables1_component->first; 
+    my $iptables1_component={};
+    $iptables1_component->{component_instance_id}= $component-> get_column('component_instance_id');
+    $iptables1_component->{iptables1_component_cible}= $component-> get_column('iptables1_component_cible');
+    
+    return $iptables1_component;      
+}
+
+
+
+
+
 
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
-    
-    if(not $conf->{iptables1_id}) {
-        # new configuration -> create
-        $self->{_dbix}->iptables1s->create($conf);
-    } else {
-        # old configuration -> update
-        $self->{_dbix}->iptables1s->update($conf);
-    }
+      
+    $self->{_dbix}->iptables1_sec_rule->update($conf);
+    $self->{_dbix}->iptables1_component->update($conf);
 }
 
 sub getNetConf {
@@ -128,10 +137,27 @@ sub getNetConf {
 sub insertDefaultConfiguration {
     my $self = shift;
     my %args = @_;
-    my $conf = { };
-    
-    $self->{_dbix}->iptables1s->create($conf);    
+    my $iptables1_sec_rule_conf = { 
+        iptables1_sec_rule_syn_flood =>0,
+        iptables1_sec_rule_scan_furtif =>0,
+        iptables1_sec_rule_ping_mort =>1,
+        iptables1_sec_rule_anti_spoofing => 1
+    };
+     $self->{_dbix}->create_related('iptables1_sec_rule', $iptables1_sec_rule_conf);
+   
+
 }
+
+sub getSecureTableConf{
+    my $self = shift;
+    my %args = @_;
+    my $secure = {};
+    $self->{_dbix}->iptables1_sec_rule
+       
+}
+
+
+
 
 =head1 DIAGNOSTICS
 
