@@ -65,6 +65,7 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
         { #debug => 1,
           dump_directory => $tmp_dump_dir,
           overwrite_modifications => 1,
+          skip_load_external => 1,
         },
       $connect_info,
     );
