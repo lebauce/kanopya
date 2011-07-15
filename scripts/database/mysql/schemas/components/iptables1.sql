@@ -6,7 +6,7 @@ SET foreign_key_checks=0;
 -- Table structure for table `iptables1_`
 --
 CREATE TABLE `iptables1_sec_rule` (
-  `iptables1_sec_rule_id` int(3) unsigned NOT NULL AUTO_INCREMENT,
+  `iptables1_sec_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `component_instance_id` int(8) unsigned NOT NULL,
   `iptables1_sec_rule_syn_flood`  int(1) unsigned NOT NULL,
   `iptables1_sec_rule_scan_furtif` int(1) unsigned NOT NULL,
@@ -22,9 +22,9 @@ CREATE TABLE `iptables1_sec_rule` (
 
 
 CREATE TABLE `iptables1_component` (
-  `iptables1_component_id` int(3) unsigned NOT NULL AUTO_INCREMENT,
-  `iptables1_sec_rule_id` int(3) unsigned NOT NULL,
-  `component_instance_id` int(8) unsigned NOT NULL,
+  `iptables1_component_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `iptables1_sec_rule_id` int(8) unsigned NOT NULL,
+  `iptables1_component_instance_id` int(8) unsigned NOT NULL,
   `iptables1_component_cible` int(1) unsigned NOT NULL,
    PRIMARY KEY (`iptables1_component_id`),
 

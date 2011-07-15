@@ -90,62 +90,60 @@ sub new {
 
 sub getConf {
     my $self = shift;
-
     my $conf = $self->getSecureRule();
-    $conf->{iptables1_sec_rule_syn_flood } = $conf->{iptables1_sec_rule_syn_flood};
-    $conf->{iptables1_sec_rule_scan_furtif} = $conf->{iptables1_sec_rule_scan_furtif};
-    $conf->{iptables1_sec_rule_ping_mort} = $conf->{iptables1_sec_rule_ping_mort};
-    $conf->{iptables1_sec_rule_anti_spoofing } = $conf->{iptables1_sec_rule_anti_spoofing};
-   
+    $conf->{iptables1_components}= $self->getComponentInstance();
+    $log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
     return $conf;
 }
-
-sub getSecureRule {
-  my $self = shift;
-    my %iptables_sec_rule = $self->{_dbix}->iptables1_sec_rule->get_columns(); 
-    return \%iptables_sec_rule;     
-}
-sub getSecureComponenet{
-    my $self = shift;
-    my $component = $self->{_dbix}->iptables1_component->first; 
-    my $iptables1_component={};
-    $iptables1_component->{component_instance_id}= $component-> get_column('component_instance_id');
-    $iptables1_component->{iptables1_component_cible}= $component-> get_column('iptables1_component_cible');
-    
-    return $iptables1_component;      
-}
-
-
-
-
-
 
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
-      
-    $self->{_dbix}->iptables1_sec_rule->update($conf);
-    $self->{_dbix}->iptables1_component->update($conf);
+   $log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
+    my $iptables1_components= $self->{_dbix}->iptables1_sec_rule->iptables1_components;
+    $iptables1_components->delete();
+    my $components = $conf->{iptables1_components};
+    my $conf1={};
+    foreach my $rule ('iptables1_sec_rule_syn_flood','iptables1_sec_rule_scan_furtif','iptables1_sec_rule_ping_mort','iptables1_sec_rule_anti_spoofing'){
+        $conf1->{$rule}=$conf->{rule};    
+    }
+#    $conf1->{iptables1_sec_rule_syn_flood} = $conf->{iptables1_sec_rule_syn_flood};
+#    $conf1->{iptables1_sec_rule_scan_furtif} = $conf->{iptables1_sec_rule_scan_furtif};
+#    $conf1->{iptables1_sec_rule_ping_mort} = $conf->{iptables1_sec_rule_ping_mort};
+#    $conf1->{iptables1_sec_rule_anti_spoofing } = $conf->{iptables1_sec_rule_anti_spoofing};         
+    $self->{_dbix}->iptables1_sec_rule->update($conf1);
+
+        #create new rule component
+        BOUCLE:
+        foreach    my $component (@$components) {
+            if ($component->{iptables1_component_cible} == 0 ) {
+                next BOUCLE;
+            }
+            {
+             $iptables1_components->create($component); 
+            } 
+        }              
 }
 
 sub getNetConf {
-
     #TODO return { port => [protocol] }
- 
 }
 
 sub insertDefaultConfiguration {
     my $self = shift;
     my %args = @_;
     my $iptables1_sec_rule_conf = { 
-        iptables1_sec_rule_syn_flood =>0,
-        iptables1_sec_rule_scan_furtif =>0,
-        iptables1_sec_rule_ping_mort =>1,
-        iptables1_sec_rule_anti_spoofing => 1
+        iptables1_sec_rule_syn_flood => 1,
+        iptables1_sec_rule_scan_furtif => 0,
+        iptables1_sec_rule_ping_mort => 1,
+        iptables1_sec_rule_anti_spoofing => 1,
+        iptables1_components => [
+        {
+             iptables1_component_cible => 1 
+        }
+        ]
     };
-     $self->{_dbix}->create_related('iptables1_sec_rule', $iptables1_sec_rule_conf);
-   
-
+    $self->{_dbix}->create_related('iptables1_sec_rule',$iptables1_sec_rule_conf);
 }
 
 sub getSecureTableConf{
@@ -156,8 +154,83 @@ sub getSecureTableConf{
        
 }
 
+sub getSecureRule {
+  my $self = shift;
+    my %iptables_sec_rule = $self->{_dbix}->iptables1_sec_rule->get_columns(); 
+    return \%iptables_sec_rule;     
+}
 
+sub getIptables1Component{
+    my $self = shift;
+    my @iptables1_components =();
+    my $components_rs = $self->{_dbix}->iptables1_sec_rule->iptables1_components;
+    while(my $component_instance = $components_rs->next) {
+       push( @iptables1_components, $component_instance->get_column('iptables1_component_instance_id')); 
+    }
+   return \@iptables1_components;
+}
 
+sub getComponentInstance{
+   my $self = shift;
+   #my $var;
+   my $cluster_id = $self->{_dbix}->get_column('cluster_id');
+   my $cluster = Entity::Cluster->get(id => $cluster_id);
+   my $components = $cluster->getComponents(category => "all");  
+   my $data_components = [];
+    foreach my $element (values %$components) {
+        my $netconf = $element->getNetConf();
+        if(!defined($netconf)){
+            next;
+        }
+       push @$data_components, {
+                iptables1_component_instance_id => $element->{_dbix}->get_column('component_instance_id'),
+	            component_name =>  $element->{_dbix}->component->get_column('component_name'),
+	            component_checked => 0  
+        }
+    }                 
+    my $iptables_components= $self->getIptables1Component();
+    my $data=[];
+    foreach my $component_instance (@$data_components){
+            foreach my $iptables_component (@$iptables_components) {
+	              if ($component_instance->{'iptables1_component_instance_id'} == $iptables_component){
+	                  $component_instance->{component_checked} = 1;
+	              }
+	          
+	        } 
+	   push @$data, $component_instance ;
+    }
+return $data;     
+}
+
+sub getStateCheckbox {
+    my $self=shift;
+    my   $data_checkbox=[];
+    my $components_instance=$self->getComponentInstance();
+    my $iptables_components= $self->getIptables1Component();
+     my $data=[];
+        foreach my $component_instance (@$components_instance){
+	       foreach my $iptables_component (@$iptables_components) {
+	          
+	           if ($component_instance->{'iptables1_component_instance_id'} != $iptables_component){
+	            push @$data,{
+	                iptables1_component_instance_id => $component_instance->{'iptables1_component_instance_id'},
+	                component_name => $component_instance->{'component_name'},
+	                component_checked => 0
+	            }
+	            }
+	           else
+	            {
+	             push @$data,{
+	                 iptables1_component_instance_id => $component_instance->{'iptables1_component_instance_id'},
+	                 component_name => $component_instance->{'component_name'},
+	                 component_checked => 1    
+	             }
+	            } 
+	       }
+      }
+    return $data;        
+}
+1;
 
 =head1 DIAGNOSTICS
 
@@ -215,7 +288,4 @@ You should have received a copy of the GNU General Public License
 along with this program; see the file COPYING.  If not, write to the
 Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 Boston, MA 02110-1301 USA.
-
 =cut
-
-1;

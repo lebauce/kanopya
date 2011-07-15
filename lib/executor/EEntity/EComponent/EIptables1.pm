@@ -41,64 +41,54 @@ sub configureNode {
         
     General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point','cluster']);
      #TODO insert configuration files generation
-    
+    my $data = {};
     my $cluster = $args{cluster};
-    my $components = $cluster->getComponents(category => "all");
-      
-    my $data = {components => []};
-   
-    foreach my $component (values %$components) {
-        my $netconf = $component->getNetConf();
-       
-        while(my ($port, $protocols) = each %$netconf) {
-                       
-            PROTOCOL:         
-            foreach my $element (@$protocols){
-                if ($element eq 'ssl') {
-                next PROTOCOL; 
-                }
-                my $tmp = {};
-                $tmp->{port} = $port;
-                $tmp->{protocol}= $element;
-                push (@{$data->{components}}, $tmp);
-            }
-         }
-      }
-        my $iptables_secure= $self->_getEntity()->getSecureRule();
-        TABLE:
-        foreach my $element (keys (%$iptables_secure)){
-            if ($$iptables_secure{$element} == 1){
-                $data->{$element} = $$iptables_secure{$element};     
-            }
-        }
-        my $iptables_componenet= $self->_getEntity()->getSecureComponenet();
-#        TABLE:
-#        foreach my $element (keys (%$iptables_secure)){
-#            if ($$iptables_secure{$element} == 1){
-#                $data->{$element} = $$iptables_secure{$element};     
-#            }
-#        }
-        
-        
-        print Dumper $iptables_componenet; 
-        
-        
-        
-        
-     
-         
-     #my $iptables_conf = $self->_getEntity()->getGeneralConf();   
-    #$data->{port} = $iptables_conf->{'module_port'};
-    #$data->{portNumber} = $iptables_conf->{'module_number_port'};
-   
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/iptables",
-                         input_file => "Iptables.tt", output => '/init.d/firewall', data => $data);             
-
-  
- 
+    my $components = $cluster->getComponents(category => "all"); 
     
+    my $components_instance=$self->_getEntity()->getComponentInstance();
+    my $iptables_components= $self->_getEntity()->getIptables1Component();
+
+    $data = {components => []};
+    foreach my $component_instance (@$components_instance){
+	   foreach my $iptables_component (@$iptables_components) {
+	       if ($component_instance->{'iptables1_component_instance_id'} == $iptables_component){
+	           next;   
+	       }
+	               
+	       my $component = $cluster->getComponentByInstanceId(component_instance_id => $component_instance->{'iptables1_component_instance_id'});
+	       my $netconf = $component->getNetConf();
+           while(my ($port, $protocols) = each %$netconf) {
+                PROTOCOL:         
+                foreach my $element (@$protocols){
+                    if ($element eq 'ssl') {
+                        next PROTOCOL; 
+                    }
+                    my $tmp = {};
+                    $tmp->{port} = $port;
+                    $tmp->{protocol}= $element;
+                    push (@{$data->{components}}, $tmp);
+                }
+           }
+        }     
+     }
+                  
+     my $iptables_secure= $self->_getEntity()->getSecureRule();
+     TABLE:
+     foreach my $element (keys (%$iptables_secure)){
+        if ($$iptables_secure{$element} == 1){
+            $data->{$element} = $$iptables_secure{$element};     
+        }
+     }
+     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+             template_dir => "/templates/components/iptables",
+             input_file => "Iptables.tt", output => '/init.d/firewall', data => $data);             
+               
+     #print Dumper $iptables_components;   
 }
+
+
+
+               
 sub addNode {
     my $self = shift;
     my %args = @_;    
@@ -125,7 +115,10 @@ sub activate{
     my $result = $args{econtext}->execute(command => $command);
     return undef;
 }   
-    
+
+
+
+  
 sub reload {
     my $self = shift;
     my %args = @_;
@@ -136,4 +129,5 @@ sub reload {
     my $result = $args{econtext}->execute(command => $command);
     return undef;
 }
+
 1;

@@ -35,7 +35,16 @@
 		<td>Anti_Spoofing</td>
    </tr>
 </table>
-
+<table class="conf_array_value" id="iptables1_components">
+    <TMPL_LOOP NAME=iptables1_components>
+    <tr class="elem_iptables1_components" name="component">
+    	<th><TMPL_VAR NAME=component_name> : </th>
+    	<td><input class="component_simple_value" type="checkbox" name="iptables1_component_cible"  <TMPL_IF NAME=component_checked>checked</TMPL_IF>/></td>
+    	<td><input class="component_simple_value" type="hidden" name="iptables1_component_instance_id" value="<TMPL_VAR NAME=iptables1_component_instance_id>"/></td>
+    	
+    </tr>
+    </TMPL_LOOP>     
+</table>
 
 
 

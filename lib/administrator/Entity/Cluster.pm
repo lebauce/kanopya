@@ -415,6 +415,35 @@ sub getComponent{
     return "$class"->get(id =>$comp_instance_id);
 }
 
+sub getComponentByInstanceId{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['component_instance_id']);
+
+    my $hash = {'component_instance_id' => $args{component_instance_id}};
+    my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
+                                            { '+columns' => [ "component.component_name",
+                                                              "component.component_version",
+                                                              "component.component_category"],
+                                                    join => ["component"]});
+
+    my $comp_instance_row = $comp_instance_rs->next;
+    if (not defined $comp_instance_row) {
+        throw Kanopya::Exception::Internal(error => "Component with component_instance_id '$args{component_instance_id}' not found on this cluster");
+    }
+    $log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
+    $log->debug("Component instance found with " . ref($comp_instance_row));
+    my $comp_category = $comp_instance_row->get_column('component_category');
+    my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
+    my $comp_name = $comp_instance_row->get_column('component_name');
+    my $comp_version = $comp_instance_row->get_column('component_version');
+    my $class= "Entity::Component::" . $comp_name . $comp_version;
+    my $loc = General::getLocFromClass(entityclass=>$class);
+    eval { require $loc; };
+    return "$class"->get(id =>$comp_instance_id);
+}
+
 =head2 getSystemImage
 
     Desc : This function return the cluster's system image.
