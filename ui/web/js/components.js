@@ -9,8 +9,12 @@ $(document).ready(function(){
  		var conf = {};
  		
  		// Store simple value
- 		root.find( '.' + root.attr('name') + '_simple_value').each( function() {	
- 			conf[$(this).attr('name')] = $(this).attr('value'); 			
+ 		root.find( '.' + root.attr('name') + '_simple_value').each( function() {
+			if ($(this).attr('type') == 'checkbox' ) {
+				conf[$(this).attr('name')] = $(this).attr('checked') ? 1 : 0;
+			} else {
+ 				conf[$(this).attr('name')] = $(this).attr('value');
+			}
  		} );
 
 		// Store array
