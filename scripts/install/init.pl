@@ -264,7 +264,7 @@ useTemplate(template=>"snmpd_default.tt",datas=>{internal_ip_add=>$internal_ip_a
 system('invoke-rc.d snmpd restart');
 
 # Configure log rotate
-system('cp $conf_vars->{install_template_dir}/logrotate-kanopya /etc/logrotate.d/');
+system("cp $conf_vars->{install_template_dir}/logrotate-kanopya /etc/logrotate.d/");
 
 
 # Launching Kanopya's init scripts
