@@ -32,4 +32,38 @@ sub new {
     return $self;
 }
 
+sub addNode {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext','motherboard','mount_point']);
+
+    my $data = $self->_getEntity()->getConf();    
+        
+    # generation of /etc/mysql/my.cnf
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/mysql5",
+                         input_file => "my.cnf.tt", output => "/mysql/my.cnf", data => $data);
+
+    $self->addInitScripts(etc_mountpoint => $args{mount_point}, 
+                                econtext => $args{econtext}, 
+                                scriptname => 'mysql', 
+                                startvalue => '18', 
+                                stopvalue => '02');
+    
+}
+
+sub removeNode {}
+
+sub reload {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext']);
+
+    my $command = "invoke-rc.d mysql restart";
+    my $result = $args{econtext}->execute(command => $command);
+    return undef;
+}
+
 1;

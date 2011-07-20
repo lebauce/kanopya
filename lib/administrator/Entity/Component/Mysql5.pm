@@ -118,6 +118,59 @@ sub new {
     return $self;
 
 }
+
+sub insertDefaultConfiguration {
+    my $self = shift;
+    my $default_conf = {
+        mysql5_id => undef,
+        mysql5_port => 3306,
+        mysql5_datadir => "/var/lib/mysql",
+        mysql5_bindaddress => '127.0.0.1'
+    };
+    
+    $self->{_dbix}->create_related('mysql5', $default_conf);   
+}
+
+sub getConf {
+    my $self = shift;
+    my $mysql5_conf = {
+        mysql5_id => undef,
+        mysql5_port => 3306,
+        mysql5_datadir => "/var/lib/mysql",
+        mysql5_bindaddress => '127.0.0.1'
+    };
+    
+    my $confindb = $self->{_dbix}->mysql5;
+    if($confindb) {
+       $mysql5_conf = {
+           mysql5_id => $confindb->get_column('mysql5_id'),
+           mysql5_port => $confindb->get_column('mysql5_port'),
+           mysql5_datadir => $confindb->get_column('mysql5_datadir'),
+           mysql5_bindaddress => $confindb->get_column('mysql5_bindaddress'),
+       };    
+    }
+    return $mysql5_conf; 
+}
+
+sub setConf {
+    my $self = shift;
+    my ($conf) = @_;
+        
+    if(not $conf->{mysql5_id}) {
+        # new configuration -> create
+        $self->{_dbix}->create_related('mysql5', $conf);
+    } else {
+        # old configuration -> update
+        $self->{_dbix}->mysql5->update($conf);
+    }
+}
+
+sub getNetConf {
+    my $self = shift;
+    my $port = $self->{_dbix}->mysql5->get_column('mysql5_port');
+    return { $port => ['tcp'] };
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
