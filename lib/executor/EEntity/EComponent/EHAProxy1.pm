@@ -64,15 +64,20 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point', 'cluster']);
     
-    $self->configureNode(%args);
+    my $masternodeip = $args{cluster}->getMasterNodeIp();
     
-    $self->addInitScripts(  etc_mountpoint => $args{mount_point}, 
-                            econtext => $args{econtext}, 
-                            scriptname => 'haproxy', 
-                            startvalue => '20', 
-                            stopvalue => '20');
+    # Run only on master node
+    if(not defined $masternodeip) {
+	    $self->configureNode(%args);
+	    
+	    $self->addInitScripts(  etc_mountpoint => $args{mount_point}, 
+	                            econtext => $args{econtext}, 
+	                            scriptname => 'haproxy', 
+	                            startvalue => '20', 
+	                            stopvalue => '20');
+    }
 }
 
 # Reload process
