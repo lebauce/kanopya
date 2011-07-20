@@ -115,13 +115,14 @@ sub start {
         close($sock);
     }
     my $entity = $self->_getEntity();
-    $self->_getEntity()->setState('state'=> 'starting');
+    my $current_state = $self->_getEntity()->getState();
+    $self->_getEntity()->setState(state => 'starting');
     if(exists $args{erollback}) {
         $args{erollback}->add(function   =>$entity->can('save'),
                               parameters => [$entity]);
         $args{erollback}->add(function   =>$entity->can('setAttr'),
                               parameters => [$entity, "name" ,"motherboard_state",
-                                            "value", "down"]);
+                                            "value", $current_state]);
     }
 }
 
@@ -136,9 +137,7 @@ sub halt {
     }
     my $command = 'halt';
     my $result = $args{node_econtext}->execute(command => $command);
-    my $state = 'stopping:'.time;
-    $self->_getEntity()->setAttr(name => 'motherboard_state', value => $state);
-    $self->_getEntity()->save();
+    $self->_getEntity()->setState(state => 'stopping');
 }
 
 sub stop {

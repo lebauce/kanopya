@@ -317,7 +317,7 @@ sub update {
     my $self = shift;
     my %args = @_;
 
-    my @clusters = Entity::Cluster->getClusters( hash => { cluster_state => 'up' } );
+    my @clusters = Entity::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
     for my $cluster (@clusters) {
         my $cluster_name = $cluster->getAttr('name' => 'cluster_name');
         print "CLUSTER: " . $cluster_name . "\n ";
