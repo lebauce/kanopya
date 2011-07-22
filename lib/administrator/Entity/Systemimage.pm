@@ -31,7 +31,7 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    systemimage_name => { pattern => '^[1-9a-zA-Z]*$',
+    systemimage_name => { pattern => '^[0-9a-zA-Z_]*$',
                           is_mandatory => 1,
                           is_extended => 0 },
     
