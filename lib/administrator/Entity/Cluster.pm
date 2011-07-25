@@ -234,7 +234,10 @@ sub create {
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
        }
-    
+    # Before cluster creation check some integrity configuration
+    # Check if min node <
+#    if (){}
+#    
     my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(

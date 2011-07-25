@@ -72,7 +72,10 @@ sub view_clusters : StartRunmode {
     }    
    
     $tmpl->param('clusters_list' => $clusters);
-    if($methods->{'create'}->{'granted'}) { $tmpl->param('can_create' => 1); }
+    if($methods->{'create'}->{'granted'}) { 
+        my @si = Entity::Systemimage->getSystemimages(hash => {});
+        if (scalar @si){
+            $tmpl->param('can_create' => 1); }}
       
     return $tmpl->output();
 }
