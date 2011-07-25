@@ -9,9 +9,9 @@
 	sharedscripts
 	postrotate
 		/etc/init.d/kanopya-collector restart > /dev/null
-		/etc/init.d/kanopya-grapher > /dev/null
-		/etc/init.d/kanopya-executor > /dev/null
-		/etc/init.d/kanopya-orchestrator > /dev/null
-		/etc/init.d/kanopya-state-manager > /dev/null
+		/etc/init.d/kanopya-grapher restart > /dev/null
+		/etc/init.d/kanopya-executor restart > /dev/null
+		/etc/init.d/kanopya-orchestrator restart > /dev/null
+		/etc/init.d/kanopya-state-manager restart > /dev/null
 	endscript
 }
