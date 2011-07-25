@@ -255,7 +255,7 @@ system('a2enmod fcgid');
 
 my $templateslink = '/templates';
 if(not -e $templateslink) {
-    system("ln -sf /opt/kanopya/templates $templateslink"); 
+    system("ln -sf /opt/kanopya/templates $templateslink");
 }
 
 system('invoke-rc.d apache2 restart');

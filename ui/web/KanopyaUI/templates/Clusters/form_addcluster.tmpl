@@ -14,34 +14,34 @@
 	</tr>
 	<tr>
 		<td class="label">Description :</td>
-		<td><textarea cols="50" name="desc" value=""></textarea></td> 
+		<td><textarea cols="50" name="desc" value=""></textarea></td>
 	</tr>
 		<tr>
 		<td class="label">Cluster type :</td>
 		<td>
-		<input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via 
+		<input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via
 		<select name="exporttype" style="width: 50px">
 			<option value="iscsi">ISCSI</option>
-		</select>&nbsp;|&nbsp;
-		<input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local
+		</select>&nbsp;<!--|&nbsp;
+		<input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local -->
 		</td>
 	</tr>
 	<tr>
 		<td class="label">System image :</td><td>
         <TMPL_IF NAME=systemimages_forshared>
-        <input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared : 
+        <input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared :
 		<select name="systemimage_forshared">
 		<TMPL_LOOP NAME=systemimages_forshared>
 			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
-		</TMPL_LOOP>	
+		</TMPL_LOOP>
 		</select>
         </TMPL_IF>
         <TMPL_IF NAME=systemimages_fordedicated>
-        <input type="radio" name="si_shareordedicate" value="dedicated" />dedicated : 
+        <input type="radio" name="si_shareordedicate" value="dedicated" />dedicated :
         <select name="systemimage_fordedicated">
 		<TMPL_LOOP NAME=systemimages_fordedicated>
 			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
-		</TMPL_LOOP>	
+		</TMPL_LOOP>
 		</select>
         </TMPL_IF>
         </td>
@@ -52,7 +52,7 @@
 		<td><select name="min_node">
 		<TMPL_LOOP NAME=nodescount>
 			<option value="<TMPL_VAR NAME=nodes>"><TMPL_VAR NAME=nodes></option>
-		</TMPL_LOOP>	
+		</TMPL_LOOP>
 		</select></td>
 		<span style="color: red"><TMPL_VAR NAME=ERR_MIN_NODE></span></td>
 	</tr>
@@ -61,7 +61,7 @@
 		<td><select name="max_node">
 		<TMPL_LOOP NAME=nodescount>
 			<option value="<TMPL_VAR NAME=nodes>"><TMPL_VAR NAME=nodes></option>
-		</TMPL_LOOP>	
+		</TMPL_LOOP>
 		</select></td>
 		<span style="color: red"><TMPL_VAR NAME=ERR_MAX_NODE></span></td>
 	</tr>
@@ -70,16 +70,16 @@
 		<td><input type="text" name="priority" maxlength="5" size="5"/>
 		<span style="color: red"><TMPL_VAR NAME=err_priority></span></td></td>
 	</tr>
-	
+
 	<tr>
 		<td class="label">Kernel :</td>
 		<td><select name="kernel_id">
 		<option value="0">default motherboard kernel</option>
 		<TMPL_LOOP NAME=kernels_list>
 			<option value="<TMPL_VAR NAME=kernel_id>"><TMPL_VAR NAME=kernel_name></option>
-		</TMPL_LOOP>	
+		</TMPL_LOOP>
 		</select>
-		<span style="color: red"><TMPL_VAR NAME=ERR_KERNEL></span></td>	
+		<span style="color: red"><TMPL_VAR NAME=ERR_KERNEL></span></td>
 	</tr>
 	<tr>
 		<td class="label">Domain name :</td>
@@ -96,8 +96,8 @@
 <input type="submit" value="ok"/>
 <input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
-</form> 
+</form>
 
-</body>	
+</body>
 </html>
 
