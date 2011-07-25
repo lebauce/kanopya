@@ -102,7 +102,7 @@ use constant ATTR_DEF => {
               etc_device_id                => {pattern         => 'm/^\d*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
-            motherboard_state                => {pattern         => '^up|down|starting:\d*|stopping:\d*$',
+            motherboard_state                => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
             motherboard_ipv4_internal_id     => {pattern         => 'm/^\d*$',
@@ -177,36 +177,54 @@ sub get {
     return $self;
 }
 
-sub setNodeState {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['state']);
-    my $node_state = $args{state};
-    my $prev_state = $self->getNodeState();
-    print "new state $args{state} and old one $prev_state\n";
-#    $self->{_dbix}->node->set_columns({'node_prev_state' => $prev_state,
-#                                  'node_state' => $node_state . ":" . time});
-#    $self->{_dbix}->node->save();
-    $self->{_dbix}->node->update({'node_prev_state' => $prev_state,
-                                  'node_state' => $node_state . ":" . time})->discard_changes();
+=head2 getState
 
+=cut
+
+sub getState {
+    my $self = shift;
+    my $state = $self->{_dbix}->get_column('motherboard_state'); 
+    return wantarray ? split(/:/, $state) : $state; 
 }
 
-sub getNodeState {
-    my $self = shift;
+=head2 setState
 
-    return $self->{_dbix}->node->get_column('node_state');
-}
+=cut
 
 sub setState {
     my $self = shift;
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['state']);
+    my $new_state = $args{state};
+    my $current_state = $self->getState();
+    $self->{_dbix}->update({'motherboard_prev_state' => $current_state,
+                            'motherboard_state' => $new_state.":".time})->discard_changes();;
+}
+
+=head2 getNodeState
+
+=cut
+
+sub getNodeState {
+    my $self = shift;
+    my $state = $self->{_dbix}->node->get_column('node_state'); 
+    return wantarray ? split(/:/, $state) : $state;
+}
+
+=head2 setNodeState
+
+=cut
+
+sub setNodeState {
+    my $self = shift;
+    my %args = @_;
     
-    $self->{_dbix}->update({"motherboard_prev_state" => $self->getAttr(name=>"motherboard_state")});
-    $self->{_dbix}->update({"motherboard_state" => $args{state}.":".time});
+    General::checkParams(args => \%args, required => ['state']);
+    my $new_state = $args{state};
+    my $current_state = $self->getNodeState();
+    $self->{_dbix}->node->update({'node_prev_state' => $current_state,
+                                  'node_state' => $new_state . ":" . time})->discard_changes();
 }
 
 =head2 Entity::Motherboard->becomeNode (%args)
@@ -307,7 +325,7 @@ sub getMotherboardFromIP {
 
 sub getFreeMotherboards {
     my $class = shift;
-    my @motherboards = $class->getMotherboards(hash => {active => 1, motherboard_state => 'down'});
+    my @motherboards = $class->getMotherboards(hash => {active => 1, motherboard_state => {-like => 'down:%'}});
     my @free;
     foreach my $m (@motherboards) {
         if(not $m->{_dbix}->node) {

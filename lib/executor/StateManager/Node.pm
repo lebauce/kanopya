@@ -117,7 +117,7 @@ sub nodeBroken{
     my %args = @_;
     General::checkParams(args => \%args, required => ['motherboard']);
        
-    $args{motherboard}->setNodeState(state => "broken:".time);
+    $args{motherboard}->setNodeState(state => 'broken');
     logNodeStateChange(
         ip_address => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
         newstatus => 'broken',

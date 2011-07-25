@@ -136,12 +136,15 @@ sub execute {
         } 
     }
 
-# Create cluster directory
+    # Create cluster directory
     my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
     $self->{econtext}->execute(command => $command);
     $log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
-# Save the new cluster in db
+    # set initial state to down
+    $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down:'.time);
+    
+    # Save the new cluster in db
     $self->{_objs}->{cluster}->save();
 
     # automatically add systems components

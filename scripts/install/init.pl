@@ -29,7 +29,7 @@ use XML::Simple;
 use Data::Dumper;
 
 #Scripts variables, used to set stuff like path, users, etc
-my $install_conf = XMLin("init_struct.xml");
+my $install_conf = XMLin("/opt/kanopya/scripts/install/init_struct.xml");
 my $questions = $install_conf->{questions};
 my $conf_vars = $install_conf->{general_conf};
 my $conf_files = $install_conf->{genfiles};

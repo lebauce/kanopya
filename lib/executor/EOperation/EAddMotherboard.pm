@@ -259,13 +259,18 @@ sub execute{
                                                                  econtext    => $self->{nas}->{econtext},
                                                                  erollback   => $self->{erollback});
         $self->{_objs}->{motherboard}->setAttr(name=>'etc_device_id', value=>$etc_id);
+        
         $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> etc disk is now created");
         if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard})&&
             (exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})){
             my $powersupplycard_id = 1;
             my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(powersupplyport_number => $self->{_objs}->{powersupplyport_number});
             $self->{_objs}->{motherboard}->setAttr(name=>'motherboard_powersupply_id', value=>$powersupply_id);
+            
         }
+
+        # set initial state to down
+        $self->{_objs}->{motherboard}->setAttr(name => 'motherboard_state', value => 'down:'.time);
 
         # AddMotherboard finish, just save the Entity in DB
         $self->{_objs}->{motherboard}->save();

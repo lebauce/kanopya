@@ -162,6 +162,8 @@ sub updateHostData {
     my $self = shift;
     my %args = @_;
 
+
+
     my $start_time = time();
 
     my $host = $args{host_ip};
@@ -453,7 +455,7 @@ sub update {
             my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } values %$components;
             # Collect data for nodes in the cluster
             foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
-                if ( $mb->getNodeState() eq 'in' ) {
+                if ( $mb->getNodeState() =~ '^in' ) {
                     my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
                     my %params = (
                         host_ip => $host_ip,
@@ -527,7 +529,7 @@ sub updateConsumption {
     }
     
     my $consumption = 0;
-    my @up_motherboards = Entity::Motherboard->getMotherboards( hash => { motherboard_state => 'up'} );
+    my @up_motherboards = Entity::Motherboard->getMotherboards( hash => { motherboard_state => { -like => 'up:%'}} );
     for (@up_motherboards) {
         my %model = $_->getModel();
         $consumption += $model{motherboardmodel_consumption};
