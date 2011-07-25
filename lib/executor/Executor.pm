@@ -120,16 +120,16 @@ sub run {
                $adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
                $adm->{db}->txn_begin;
                eval {
-                   eval {
+#                   eval {
                        $op->prepare(internal_cluster => $self->{config}->{cluster});
-                   };
-                   if ($@) {
-                       my $error = $@;
-                       throw $error;
-                   }
-                   else {
+#                   };
+#                   if ($@) {
+#                       my $error = $@;
+#                       throw $error;
+#                   }
+#                   else {
                        $op->process();
-                   }
+#                   }
                };
             if ($@) {
                    my $error = $@;
@@ -141,7 +141,8 @@ sub run {
                        $log->debug("Operation ".ref($op)." reported");
                    } else {
                         # rollback transaction
-                        eval { $adm->{db}->txn_rollback; };
+#                        eval { $adm->{db}->txn_rollback; };
+                        $adm->{db}->txn_rollback;
                         $log->info("Rollback, Cancel operation will be call");
                         eval {
                             $adm->{db}->txn_begin;
@@ -153,16 +154,21 @@ sub run {
                         }
                        $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
                        $log->error("Error during execution : $error");
-                       $op->delete();
+#                       $op->delete();
                    }
                } else {
                    # commit transaction
                    $op->finish();
                    $adm->{db}->txn_commit;
                    $adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
-                   $op->delete();
+#                   $op->delete();
                }
-               
+            eval {$op->delete();};
+            if ($@) {
+                my $error = $@;
+               $log->error("Error during operation deletion : $error"); 
+               $adm->addMessage(from => 'Executor', level => 'error', content => "Error during operation deletion : $error");
+            }
            }
            else { sleep 5; }
        }
