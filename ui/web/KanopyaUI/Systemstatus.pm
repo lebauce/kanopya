@@ -133,7 +133,7 @@ sub view_logs : Runmode {
             my $ls_output = `ls $path` or $dir_error = 1;
             if (not defined $dir_error) {
                 # Select only files
-                my @files = grep { -f "$path$_" } split(" ", $ls_output);
+                my @files = grep { -f "$path$_" and not $_ =~ '\.gz$' } split(" ", $ls_output);
                 # Built tmpl struct
                 @files_info = map { { path=>$path, filename=>$_} } @files;
                 
