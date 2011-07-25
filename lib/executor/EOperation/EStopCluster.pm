@@ -106,8 +106,7 @@ sub execute {
 #    my $nodes = $adm->{manager}->{node}->getNodes(cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'));    
     
     if(not scalar keys %$motherboards) {
-        $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping:'.time);
-        $self->{_objs}->{cluster}->save();
+        $self->{_objs}->{cluster}->setState(state  => 'stopping');
         $errmsg = "EStopCluster->execute : this cluster with id $self->{_objs}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -121,12 +120,13 @@ sub execute {
         }
         # we stop only nodes with 'up' state 
         #TODO gerer les nodes dans un autre état
-        if($motherboards->{$mb_id}->getAttr(name => 'motherboard_state') ne 'up') { next; }
+        my ($state, $timestamp) = $motherboards->{$mb_id}->getState();
+        if($state ne 'up') { next; }
         $self->{_objs}->{cluster}->removeNode(motherboard_id => $mb_id);
     }
-#    $self->{_objs}->{cluster}->removeNode(motherboard_id => $master_node_id);
+#   $self->{_objs}->{cluster}->removeNode(motherboard_id => $master_node_id);
     
-    $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'stopping:'.time);
+    $self->{_objs}->{cluster}->setState(state => 'stopping');
     $self->{_objs}->{cluster}->save();
 }
 

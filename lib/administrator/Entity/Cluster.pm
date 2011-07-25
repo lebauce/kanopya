@@ -85,7 +85,7 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 0,
                                 is_extended     => 0,
                                 is_editable        => 1},
-    cluster_state            => {pattern         => '^up|down|starting:\d*|stopping:\d*$',
+    cluster_state            => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
                                 is_mandatory    => 0,
                                 is_extended     => 0,
                                 is_editable        => 0},
@@ -675,6 +675,33 @@ sub stop {
         type     => 'StopCluster',
         params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
     );
+}
+
+
+
+=head2 getState
+
+=cut
+
+sub getState {
+    my $self = shift;
+    my $state = $self->{_dbix}->get_column('cluster_state'); 
+    return wantarray ? split(/:/, $state) : $state; 
+}
+
+=head2 setState
+
+=cut
+
+sub setState {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['state']);
+    my $new_state = $args{state};
+    my $current_state = $self->getState();
+    $self->{_dbix}->update({'cluster_prev_state' => $current_state,
+                            'cluster_state' => $new_state.":".time})->discard_changes();;
 }
 
 

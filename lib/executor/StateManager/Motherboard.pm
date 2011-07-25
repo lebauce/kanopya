@@ -174,7 +174,7 @@ sub testStartingMotherboard{
     #TODO get max boot time for the motherboard from its model
     my $motherboard_start_max_time = 240;
     if($diff_time>$motherboard_start_max_time) {
-        $args{motherboard}->setState('state'=> 'broken');
+        $args{motherboard}->setState(state => 'broken');
     }
 }
 

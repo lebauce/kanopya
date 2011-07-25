@@ -132,7 +132,8 @@ sub prepare {
     $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
     my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
     $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
-    if (!($self->{_objs}->{cluster}->getAttr(name=>"cluster_state") eq "up")){
+    my ($state, $timestamp) = $self->{_objs}->{cluster}->getState();
+    if ($state ne 'up'){
         $errmsg = "Cluster has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);

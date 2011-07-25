@@ -29,7 +29,7 @@ use XML::Simple;
 use Data::Dumper;
 
 #Scripts variables, used to set stuff like path, users, etc
-my $install_conf = XMLin("init_struct.xml");
+my $install_conf = XMLin("/opt/kanopya/scripts/install/init_struct.xml");
 my $questions = $install_conf->{questions};
 my $conf_vars = $install_conf->{general_conf};
 my $conf_files = $install_conf->{genfiles};
@@ -255,7 +255,7 @@ system('a2enmod fcgid');
 
 my $templateslink = '/templates';
 if(not -e $templateslink) {
-    system("ln -sf /opt/kanopya/templates $templateslink"); 
+    system("ln -sf /opt/kanopya/templates $templateslink");
 }
 
 system('invoke-rc.d apache2 restart');
@@ -267,7 +267,7 @@ useTemplate(template=>"snmpd_default.tt",datas=>{internal_ip_add=>$internal_ip_a
 system('invoke-rc.d snmpd restart');
 
 # Configure log rotate
-system('cp $conf_vars->{install_template_dir}/logrotate-kanopya /etc/logrotate.d/');
+system("cp $conf_vars->{install_template_dir}/logrotate-kanopya /etc/logrotate.d/");
 
 
 # Launching Kanopya's init scripts

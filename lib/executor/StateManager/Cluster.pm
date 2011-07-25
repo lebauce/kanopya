@@ -70,13 +70,14 @@ sub updateClusterStatus {
     General::checkParams(\%args, ['cluster','motherboards']);
    
     my $motherboards = $args{motherboards};
+    my $motherboards_count = scalar(keys %$motherboards);
     # third Check Cluster Status
     my @cluster_state = split(/:/, $args{cluster}->getAttr(name=>"cluster_state"));
     my $master_id = $args{cluster}->getMasterNodeId();
     $log->debug("Cluster status update for cluster <". $args{cluster}->getAttr(name=>'cluster_name'). "> with master_node <$master_id> and state <$cluster_state[0]>\n");
-    if ( $cluster_state[0] eq "starting"){
-        if ($master_id){
-            if ((scalar keys %$motherboards) < $args{cluster}->getAttr(name => "cluster_min_node")){
+    if($cluster_state[0] eq "starting"){
+        if($master_id){
+            if($motherboards_count < $args{cluster}->getAttr(name => "cluster_min_node")){
                 $log->info("Cluster Starting, master node is ok, there are less node than min node");
                 my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"));
                 eval {
@@ -85,12 +86,12 @@ sub updateClusterStatus {
                                        priority => 200,
                                        type     => 'PreStartNode',
                                        params   => \%params);};
-               if ($@){
+                if($@){
                    my $error = $@;
                    if ($error->isa('Kanopya::Exception::OperationAlreadyEnqueued')) {
                        $log->info("PreStartNode operation is already enqueued");
                    }
-               }
+                }
             } else {
                 logClusterStateChange(
                     cluster_name => $args{cluster}->getAttr(name=>"cluster_name"),
@@ -107,8 +108,8 @@ sub updateClusterStatus {
             
         }
     }
-    if (($cluster_state[0] eq "stopping")){
-        if (!scalar keys %$motherboards){
+    if(($cluster_state[0] eq "stopping")){
+        if(!$motherboards_count){
             logClusterStateChange(
                     cluster_name => $args{cluster}->getAttr(name=>"cluster_name"),
                     level => 'info',
@@ -119,14 +120,15 @@ sub updateClusterStatus {
             $args{cluster}->save();
         }
 # A case is not managed, when master_node flag change of motherboard because of failover during cluster stopping
-        if( scalar keys %$motherboards == 1){
-               if (!$master_id){
-                  $errmsg = "Last node in cluster is not master node ! My god...";    
-               $log->error($errmsg);
-              throw Kanopya::Exception::Internal(error => $errmsg);
+        if($motherboards_count == 1){
+            if(! defined $master_id) {
+                $errmsg = "Last node in cluster is not master node ! My god...";    
+                $log->error($errmsg);
+                throw Kanopya::Exception::Internal(error => $errmsg);
             }
-            if ($motherboards->{$master_id}->getNodeState() eq "in"){
-                   my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
+            my @masternode_state = split(/:/, $motherboards->{$master_id}->getNodeState());
+            if($masternode_state[0] eq "in"){
+                my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
                               motherboard_id => $master_id);
                 $log->debug("New Operation PreStopNode with attrs : " . %params);
                 eval {
