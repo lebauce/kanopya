@@ -188,6 +188,9 @@ sub updateHostData {
                 next SET;
             }
 
+			# Skip set if collect is done by an external process
+			next SET if ($set->{'data_provider'} eq 'extern');
+
             ###################################################
             # Build the required var map: ( var_name => oid ) #
             ###################################################
