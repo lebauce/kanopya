@@ -92,25 +92,21 @@ sub getConf {
     my $self = shift;
     my $conf = $self->getSecureRule();
     $conf->{iptables1_components}= $self->getComponentInstance();
-    $log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
+    #$log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
     return $conf;
 }
 
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
-   $log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
+   #$log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper $conf);
     my $iptables1_components= $self->{_dbix}->iptables1_sec_rule->iptables1_components;
     $iptables1_components->delete();
     my $components = $conf->{iptables1_components};
     my $conf1={};
-    foreach my $rule ('iptables1_sec_rule_syn_flood','iptables1_sec_rule_scan_furtif','iptables1_sec_rule_ping_mort','iptables1_sec_rule_anti_spoofing'){
-        $conf1->{$rule}=$conf->{rule};    
-    }
-#    $conf1->{iptables1_sec_rule_syn_flood} = $conf->{iptables1_sec_rule_syn_flood};
-#    $conf1->{iptables1_sec_rule_scan_furtif} = $conf->{iptables1_sec_rule_scan_furtif};
-#    $conf1->{iptables1_sec_rule_ping_mort} = $conf->{iptables1_sec_rule_ping_mort};
-#    $conf1->{iptables1_sec_rule_anti_spoofing } = $conf->{iptables1_sec_rule_anti_spoofing};         
+    foreach my $rule ('iptables1_sec_rule_syn_flood','iptables1_sec_rule_scan_furtif','iptables1_sec_rule_ping_death','iptables1_sec_rule_anti_spoofing'){
+        $conf1->{$rule}=$conf->{$rule};    
+    }         
     $self->{_dbix}->iptables1_sec_rule->update($conf1);
 
         #create new rule component
@@ -135,23 +131,16 @@ sub insertDefaultConfiguration {
     my $iptables1_sec_rule_conf = { 
         iptables1_sec_rule_syn_flood => 1,
         iptables1_sec_rule_scan_furtif => 0,
-        iptables1_sec_rule_ping_mort => 1,
+        iptables1_sec_rule_ping_death => 0,
         iptables1_sec_rule_anti_spoofing => 1,
-        iptables1_components => [
-        {
-             iptables1_component_cible => 1 
-        }
-        ]
+#        iptables1_components => [
+#        {
+#             iptables1_component_cible => 1 
+#        }
+#        ]
     };
     $self->{_dbix}->create_related('iptables1_sec_rule',$iptables1_sec_rule_conf);
-}
-
-sub getSecureTableConf{
-    my $self = shift;
-    my %args = @_;
-    my $secure = {};
-    $self->{_dbix}->iptables1_sec_rule
-       
+    #$self->{_dbix}->iptables1_sec_rule->create($iptables1_sec_rule_conf);
 }
 
 sub getSecureRule {
@@ -167,6 +156,7 @@ sub getIptables1Component{
     while(my $component_instance = $components_rs->next) {
        push( @iptables1_components, $component_instance->get_column('iptables1_component_instance_id')); 
     }
+    $log->debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" . Dumper \@iptables1_components);
    return \@iptables1_components;
 }
 
@@ -192,7 +182,7 @@ sub getComponentInstance{
     my $data=[];
     foreach my $component_instance (@$data_components){
             foreach my $iptables_component (@$iptables_components) {
-	              if ($component_instance->{'iptables1_component_instance_id'} == $iptables_component){
+	              if ($component_instance->{iptables1_component_instance_id} == $iptables_component){
 	                  $component_instance->{component_checked} = 1;
 	              }
 	          
@@ -202,33 +192,12 @@ sub getComponentInstance{
 return $data;     
 }
 
-sub getStateCheckbox {
-    my $self=shift;
-    my   $data_checkbox=[];
-    my $components_instance=$self->getComponentInstance();
-    my $iptables_components= $self->getIptables1Component();
-     my $data=[];
-        foreach my $component_instance (@$components_instance){
-	       foreach my $iptables_component (@$iptables_components) {
-	          
-	           if ($component_instance->{'iptables1_component_instance_id'} != $iptables_component){
-	            push @$data,{
-	                iptables1_component_instance_id => $component_instance->{'iptables1_component_instance_id'},
-	                component_name => $component_instance->{'component_name'},
-	                component_checked => 0
-	            }
-	            }
-	           else
-	            {
-	             push @$data,{
-	                 iptables1_component_instance_id => $component_instance->{'iptables1_component_instance_id'},
-	                 component_name => $component_instance->{'component_name'},
-	                 component_checked => 1    
-	             }
-	            } 
-	       }
-      }
-    return $data;        
+sub getClusterIp{
+    my  $self=shift;
+    my $cluster = Entity::Cluster->get(id => 1);
+    my $clusteradmadresse = $cluster->getMasterNodeIp();
+    return $clusteradmadresse;
+   
 }
 1;
 

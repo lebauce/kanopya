@@ -23,11 +23,12 @@ eval {
     my $comp_id = $adm->registerComponent( component_name => 'Iptables', component_category => 'Firewall', component_version => 1 );
 
     # Get admin cluster
-    my $cluster = Entity::Cluster->get(id => 6);
+    my $cluster = Entity::Cluster->get(id => 2);
 
     # Create a component instance for this cluster
-    my $comp_inst_id = $cluster->addComponent( component_id => $comp_id );
-    
+#    my $comp_inst_id = $cluster->addComponent( component_id => $comp_id );
+    my $comp_inst_id = 35;
+
     # Retrieve component
     #my $comp = $cluster->getComponent( category => 'Logger', name => 'Syslogng', version => 3 );
     my $comp = Entity::Component::Iptables1->get( id => $comp_inst_id );

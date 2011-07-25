@@ -45,7 +45,7 @@ __PACKAGE__->table("iptables1_sec_rule");
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 iptables1_sec_rule_ping_mort
+=head2 iptables1_sec_rule_ping_death
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -78,7 +78,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "iptables1_sec_rule_scan_furtif",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "iptables1_sec_rule_ping_mort",
+  "iptables1_sec_rule_ping_death",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "iptables1_sec_rule_anti_spoofing",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
@@ -119,8 +119,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-07-15 15:24:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CLtBAO+Z3JzgHn3qXoer9g
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-07-25 15:07:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NgvZpQXGrECQwOxEH7mdyA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

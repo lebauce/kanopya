@@ -16,6 +16,10 @@
 
 <table border=0>
    <tr>
+   <td></td>
+   <td>Activate Protection against the following attacks</td>
+   </tr>
+   <tr>
 		<td><input class="conf_simple_value" type="checkbox" name="iptables1_sec_rule_syn_flood"  <TMPL_IF NAME=iptables1_sec_rule_syn_flood>checked</TMPL_IF>/></td>
 		<td>Syn_Flood</td>
    </tr>
@@ -26,13 +30,17 @@
    </tr>
 
    <tr>
-   		<td><input class="conf_simple_value" type="checkbox" name="iptables1_sec_rule_ping_mort"  <TMPL_IF NAME=iptables1_sec_rule_ping_mort>checked</TMPL_IF>/></td>
-   		<td>Ping_Mort</td>
+   		<td><input class="conf_simple_value" type="checkbox" name="iptables1_sec_rule_ping_death"  <TMPL_IF NAME=iptables1_sec_rule_ping_death>checked</TMPL_IF>/></td>
+   		<td>Ping_Death</td>
    </tr>
 
 	<tr>  
 		<td><input class="conf_simple_value" type="checkbox" name="iptables1_sec_rule_anti_spoofing"  <TMPL_IF NAME=iptables1_sec_rule_anti_spoofing>checked</TMPL_IF>/></td>
 		<td>Anti_Spoofing</td>
+   </tr>
+   <tr>
+   <td></td>
+   <td>Filter the following protocols </td>
    </tr>
 </table>
 <table class="conf_array_value" id="iptables1_components">

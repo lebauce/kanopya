@@ -41,21 +41,25 @@ sub configureNode {
         
     General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point','cluster']);
      #TODO insert configuration files generation
-    my $data = {};
     my $cluster = $args{cluster};
+    my $data = {};
+       
     my $components = $cluster->getComponents(category => "all"); 
-    
     my $components_instance=$self->_getEntity()->getComponentInstance();
     my $iptables_components= $self->_getEntity()->getIptables1Component();
-
-    $data = {components => []};
+   
+   #my $adresse=$self->$cluster->getMasterNodeIp();
+    my $clusteraddress=$self->_getEntity()->getClusterIp();
+      $data->{clusteraddress}=$clusteraddress; 
+     $data->{components}=[];
+     COMPONENT:
     foreach my $component_instance (@$components_instance){
-	   foreach my $iptables_component (@$iptables_components) {
-	       if ($component_instance->{'iptables1_component_instance_id'} == $iptables_component){
-	           next;   
+        foreach my $iptables_component (@$iptables_components) {
+	       if ($component_instance->{iptables1_component_instance_id} == $iptables_component){
+	           next COMPONENT;   
 	       }
-	               
-	       my $component = $cluster->getComponentByInstanceId(component_instance_id => $component_instance->{'iptables1_component_instance_id'});
+        }
+	       my $component = $cluster->getComponentByInstanceId(component_instance_id => $component_instance->{iptables1_component_instance_id});
 	       my $netconf = $component->getNetConf();
            while(my ($port, $protocols) = each %$netconf) {
                 PROTOCOL:         
@@ -66,12 +70,14 @@ sub configureNode {
                     my $tmp = {};
                     $tmp->{port} = $port;
                     $tmp->{protocol}= $element;
-                    push (@{$data->{components}}, $tmp);
-                }
-           }
-        }     
+                    push (@{$data->{components}}, $tmp); 
+                    }
+           } 
+        
      }
-                  
+     
+     #$data->{clusteraddress} = $clusteraddress;
+     
      my $iptables_secure= $self->_getEntity()->getSecureRule();
      TABLE:
      foreach my $element (keys (%$iptables_secure)){
@@ -82,8 +88,13 @@ sub configureNode {
      $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
              template_dir => "/templates/components/iptables",
              input_file => "Iptables.tt", output => '/init.d/firewall', data => $data);             
-               
-     #print Dumper $iptables_components;   
+     my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/firewall';
+      my $result = $args{econtext}->execute(command => $command);        
+     $log->debug(Dumper $result);
+     
+#    my $a=$self->_getEntity()->getClusterIp();
+#    $log->debug(">>>>>>>" . Dumper $data);
+#    print Dumper $data ;
 }
 
 

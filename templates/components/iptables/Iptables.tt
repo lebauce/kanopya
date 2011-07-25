@@ -1,27 +1,47 @@
-#!/bin/ssh
-# Vider les tables filter
+#!/bin/sh
+# To empty the tables filter
 iptables -t filter -F
-# Vider les règles personnelles
+
+#To empty the personal rules
 iptables -t filter -X
 iptables -t nat -X
-# interdir  toute connexion entrante 
-iptables -t filter -P INPUT DROP
-# Les connexions destinées à être routées sont acceptées par défaut
-iptables -t filter -P FORWARD ACCEPT
-# Les connexions sortantes sont acceptées par défaut
-iptables -t filter -P OUTPUT ACCEPT
-# Pas de filtrage sur l'interface de "loopback"
-iptables -t filter -A INPUT -i lo -j ACCEPT
-# Accepter le protocole ICMP (notamment le ping)
-iptables -t filter -A INPUT -p icmp -j ACCEPT
-# Accepter le protocole IGMP (pour le multicast)
-iptables -t filter -A  INPUT -p igmp -j ACCEPT
-# Accepter les packets entrants relatifs à des connexions déjà
-# établies : cela va plus vite que de devoir réexaminer toutes
-# les règles pour chaque paquet.
+
+
+
+#to keep connection established: that goes more quickly than to have to re-examine all
+#to put this rule before the drop to authorize connection iscsi
 iptables -t filter -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+#accept all origin master admin  flux 
+[% IF clusteraddress %]
+iptables -t filter -A INPUT -s [% clusteraddress %] -j ACCEPT
+#accept acces with ssh from master admin node
+iptables -t filter -A INPUT -s [% clusteraddress %]  -p tcp --dport 22 -j ACCEPT
+[% END %]
+
+# default politicy,denied all input connection 
+iptables -t filter -P INPUT DROP
+
+# Les connexions destinées à être routées sont acceptées par défaut
+#accept all FORWARD connections,by default
+iptables -t filter -P FORWARD ACCEPT
+
+#accept all OUTPUT connections,by default
+iptables -t filter -P OUTPUT ACCEPT
+
+# No filtering on the interface of “loopback”
+iptables -t filter -A INPUT -i lo -j ACCEPT
+
+# To accept protocol ICMP (in particular the ping)
+iptables -t filter -A INPUT -p icmp -j ACCEPT
+
+# To accept protocol IGMP (for the multicast))
+iptables -t filter -A  INPUT -p igmp -j ACCEPT
+
 #   ==== === ==== === ==== === ==== === ====
-[% IF rule.iptables1_sec_rule_syn_flood %]
+#general secure rules
+
+[% IF iptables1_sec_rule_syn_flood %]
 iptables -A FORWARD -p tcp --syn -m limit --limit 1/second --limit-burst 20 -j ACCEPT
 iptables -A INPUT -p tcp --syn -m limit --limit 1/second --limit-burst 20 -j ACCEPT
 iptables -A OUTPUT -p tcp --syn -m limit --limit 1/second --limit-burst 20 -j ACCEPT
@@ -29,33 +49,38 @@ iptables -A OUTPUT -p tcp --syn -m limit --limit 1/second --limit-burst 20 -j AC
 iptables -A FORWARD -p tcp -m limit --limit 1/second --limit-burst 20 -j ACCEPT
 iptables -A INPUT -p tcp -m limit --limit 1/second --limit-burst 20 -j ACCEPT
 iptables -A OUTPUT -p tcp -m limit --limit 1/second --limit-burst 20 -j ACCEPT
-
+#
 iptables -A FORWARD -p udp -m limit --limit 1/second --limit-burst 20 -j ACCEPT
 iptables -A INPUT -p udp -m limit --limit 1/second --limit-burst 20 -j ACCEPT
 iptables -A OUTPUT -p udp -m limit --limit 1/second --limit-burst 20 -j ACCEPT
-
+#
 iptables -A INPUT -m state --state INVALID -j DROP
 iptables -A FORWARD -m state --state INVALID -j DROP
 iptables -A OUTPUT -m state --state INVALID -j DROP
-
+#
 iptables -A FORWARD -p udp -m limit --limit 1/second -j ACCEPT
 iptables -A FORWARD -p tcp --syn -m limit --limit 1/second -j ACCEPT
-
+#
 iptables -A INPUT -p udp -m limit --limit 1/second -j ACCEPT
 iptables -A INPUT -p tcp --syn -m limit --limit 1/second -j ACCEPT
-
+#
 iptables -A OUTPUT -p udp -m limit --limit 1/second -j ACCEPT
-iptables -A OUTPUT -p tcp --syn -m limit --limit 1/second -j ACCEPT  
+iptables -A OUTPUT -p tcp --syn -m limit --limit 1/second -j ACCEPT 
+# 
 [% END %]
 [% IF iptables1_sec_rule_scan_furtif %]
 iptables -A FORWARD -p TCP --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j ACCEPT
 [% END %]
-[% IF iptables1_sec_rule_ping_mort %]
+#
+[% IF iptables1_sec_rule_ping_death %]
 iptables -A FORWARD -p icmp --icmp-type echo-request -m limit --limit 1/s -j ACCEPT
 [% END %]
+#
 [% IF iptables1_sec_rule_anti_spoofing %]
-iptables -t filter -A FORWARD -i eth0  @réseau -m state --state NEW  -j DROP 
+iptables -t filter -A FORWARD  -m state --state NEW  -j DROP 
 [% END %]
+#
 [% FOREACH component=components %]
 iptables -t filter -A INPUT -p [% component.protocol %] --dport [% component.port %] -j ACCEPT
 [% END %]
+#

@@ -10,7 +10,7 @@ CREATE TABLE `iptables1_sec_rule` (
   `component_instance_id` int(8) unsigned NOT NULL,
   `iptables1_sec_rule_syn_flood`  int(1) unsigned NOT NULL,
   `iptables1_sec_rule_scan_furtif` int(1) unsigned NOT NULL,
-  `iptables1_sec_rule_ping_mort` int(1) unsigned NOT NULL,
+  `iptables1_sec_rule_ping_death` int(1) unsigned NOT NULL,
   `iptables1_sec_rule_anti_spoofing` int(1) unsigned NOT NULL,
 
   PRIMARY KEY (`iptables1_sec_rule_id`),
