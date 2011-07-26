@@ -99,8 +99,8 @@ sub updateClusterStatus {
                     newstatus => 'up',    
                 );
                             
-                $args{cluster}->setAttr(name=>"cluster_state", value => "up");
-                $args{cluster}->save();
+                $args{cluster}->setState(state => "up");
+                
             }
         }
         else {
@@ -116,8 +116,8 @@ sub updateClusterStatus {
                     newstatus => 'down',    
             );
             
-            $args{cluster}->setAttr(name=>"cluster_state", value => "down");
-            $args{cluster}->save();
+            $args{cluster}->setState(state => "down");
+          
         }
 # A case is not managed, when master_node flag change of motherboard because of failover during cluster stopping
         if($motherboards_count == 1){
