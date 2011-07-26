@@ -97,52 +97,52 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 0},
-    
-                                
+
+
     };
 
 sub methods {
     return {
-        'create'    => {'description' => 'create a new cluster', 
+        'create'    => {'description' => 'create a new cluster',
                         'perm_holder' => 'mastergroup',
         },
-        'get'        => {'description' => 'view this cluster', 
+        'get'        => {'description' => 'view this cluster',
                         'perm_holder' => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this cluster', 
+        'update'    => {'description' => 'save changes applied on this cluster',
                         'perm_holder' => 'entity',
         },
-        'remove'    => {'description' => 'delete this cluster', 
+        'remove'    => {'description' => 'delete this cluster',
                         'perm_holder' => 'entity',
         },
-        'addNode'    => {'description' => 'add a node to this cluster', 
+        'addNode'    => {'description' => 'add a node to this cluster',
                         'perm_holder' => 'entity',
         },
-        'removeNode'=> {'description' => 'remove a node from this cluster', 
+        'removeNode'=> {'description' => 'remove a node from this cluster',
                         'perm_holder' => 'entity',
         },
-        'activate'=> {'description' => 'activate this cluster', 
+        'activate'=> {'description' => 'activate this cluster',
                         'perm_holder' => 'entity',
         },
-        'deactivate'=> {'description' => 'deactivate this cluster', 
+        'deactivate'=> {'description' => 'deactivate this cluster',
                         'perm_holder' => 'entity',
         },
-        'start'=> {'description' => 'start this cluster', 
+        'start'=> {'description' => 'start this cluster',
                         'perm_holder' => 'entity',
         },
-        'stop'=> {'description' => 'stop this cluster', 
+        'stop'=> {'description' => 'stop this cluster',
                         'perm_holder' => 'entity',
         },
-        'setperm'    => {'description' => 'set permissions on this cluster', 
+        'setperm'    => {'description' => 'set permissions on this cluster',
                         'perm_holder' => 'entity',
         },
-        'addComponent'    => {'description' => 'add a component to this cluster', 
+        'addComponent'    => {'description' => 'add a component to this cluster',
                         'perm_holder' => 'entity',
         },
-        'removeComponent'    => {'description' => 'remove a component from this cluster', 
+        'removeComponent'    => {'description' => 'remove a component from this cluster',
                         'perm_holder' => 'entity',
         },
-        'configureComponents'    => {'description' => 'configure components of this cluster', 
+        'configureComponents'    => {'description' => 'configure components of this cluster',
                         'perm_holder' => 'entity',
         },
     };
@@ -155,17 +155,17 @@ sub methods {
 sub get {
     my $class = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['id']);
-    
+
     my $admin = Administrator->new();
     my $dbix_cluster = $admin->{db}->resultset('Cluster')->find($args{id});
     if(not defined $dbix_cluster) {
-        $errmsg = "Entity::Cluster->get : id <$args{id}> not found !";    
+        $errmsg = "Entity::Cluster->get : id <$args{id}> not found !";
      $log->error($errmsg);
      throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }       
-    
+    }
+
     my $entity_id = $dbix_cluster->entitylink->get_column('entity_id');
     my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
     if(not $granted) {
@@ -236,8 +236,11 @@ sub create {
        }
     # Before cluster creation check some integrity configuration
     # Check if min node <
-#    if (){}
-#    
+    $log->info("###### Cluster creation with min node <".$self->getAttr(name => "cluster_min_node") . "> and max node <". $self->getAttr(name=>"cluster_max_node").">");
+    if ($self->getAttr(name => "cluster_min_node") > $self->getAttr(name=>"cluster_max_node")){
+	throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
+    }
+
     my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
@@ -468,7 +471,7 @@ this is the first step of cluster setting
 sub addComponent {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['component_id']);
 
     my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
@@ -567,17 +570,17 @@ sub getPublicIps {
 }
 
 =head2 getQoSConstraints
-    
+
     Class : Public
-    
-    Desc : 
-    
+
+    Desc :
+
 =cut
 
 sub getQoSConstraints {
     my $self = shift;
     my %args = @_;
-    
+
     # TODO retrieve from db (it's currently done by RulesManager, move here)
     return { max_latency => 22, max_abort_rate => 0.3 } ;
 }
@@ -588,7 +591,7 @@ sub getQoSConstraints {
 
 sub addNode {
     my $self = shift;
-        
+
     my $adm = Administrator->new();
     # addNode method concerns an existing entity so we use his entity_id
        my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addNode');
@@ -607,16 +610,16 @@ sub addNode {
     );
 }
 
-=head2 removeNode 
+=head2 removeNode
 
 =cut
 
 sub removeNode {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['motherboard_id']);
-        
+
     my $adm = Administrator->new();
     # removeNode method concerns an existing entity so we use his entity_id
        my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeNode');
@@ -625,7 +628,7 @@ sub removeNode {
        }
     my %params = (
         cluster_id => $self->getAttr(name =>"cluster_id"),
-        motherboard_id => $args{motherboard_id}, 
+        motherboard_id => $args{motherboard_id},
     );
     $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
 
@@ -642,14 +645,14 @@ sub removeNode {
 
 sub start {
     my $self = shift;
-    
+
     my $adm = Administrator->new();
     # start method concerns an existing entity so we use his entity_id
        my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
        }
-    
+
     $log->debug("New Operation StartCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(
         priority => 200,
@@ -658,20 +661,20 @@ sub start {
     );
 }
 
-=head2 stop 
+=head2 stop
 
 =cut
 
 sub stop {
     my $self = shift;
-    
+
     my $adm = Administrator->new();
     # stop method concerns an existing entity so we use his entity_id
        my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'stop');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to stop this cluster");
        }
-    
+
     $log->debug("New Operation StopCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
     Operation->enqueue(
         priority => 200,
@@ -688,8 +691,8 @@ sub stop {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('cluster_state'); 
-    return wantarray ? split(/:/, $state) : $state; 
+    my $state = $self->{_dbix}->get_column('cluster_state');
+    return wantarray ? split(/:/, $state) : $state;
 }
 
 =head2 setState
@@ -699,7 +702,7 @@ sub getState {
 sub setState {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
