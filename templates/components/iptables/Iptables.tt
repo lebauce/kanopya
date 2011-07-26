@@ -16,7 +16,6 @@ iptables -t filter -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 [% IF clusteraddress %]
 iptables -t filter -A INPUT -s [% clusteraddress %] -j ACCEPT
 #accept acces with ssh from master admin node
-iptables -t filter -A INPUT -s [% clusteraddress %]  -p tcp --dport 22 -j ACCEPT
 [% END %]
 
 # default politicy,denied all input connection 
