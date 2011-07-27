@@ -63,7 +63,13 @@ sub view_clusters : StartRunmode {
             if($nbnodesup > 0) {
                 $tmp->{nbnodesup} = $nbnodesup;
                 $tmp->{link_activity} = 1;
-            } 
+            }
+         	my $cluster_state = $n->getAttr('name' => 'cluster_state');
+    		for my $state ('up', 'starting', 'stopping', 'down') {
+    			if ( $cluster_state =~ $state ) {
+    				$tmp->{"state_$state"} = 1;
+    			}
+    		}
         } else { 
             $tmp->{active} = 0; 
         }
@@ -305,6 +311,13 @@ sub view_clusterdetails : Runmode {
     $tmpl->param('nbpublicips' => scalar(@$publicips)+1);
     
     # state info
+    my $cluster_state = $ecluster->getAttr('name' => 'cluster_state');
+    for my $state ('up', 'starting', 'stopping', 'down') {
+    	if ( $cluster_state =~ $state ) {
+    		$tmpl->param("state_$state" => 1);
+    	}
+    }  
+    
     my $motherboards = $ecluster->getMotherboards(administrator => $self->{adm});
     my $nbnodesup = scalar(keys(%$motherboards)); 
     my $nodes = [];

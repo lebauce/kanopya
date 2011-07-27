@@ -34,11 +34,12 @@ activate</a><br />
 </TMPL_IF>
 </td></tr><tr>
 <TMPL_IF NAME=active>
-<TMPL_IF NAME=nodes_list>
-<td><span class="state imgUp">Up</span></td>
-<TMPL_ELSE>
-<td><span class="state imgDown">Down</span></td>
-</TMPL_IF>
+
+<TMPL_IF NAME=state_up><td><span class="state imgUp">Up</span></td></TMPL_IF>
+<TMPL_IF NAME=state_down><td><span class="state imgDown">Down</span></td></TMPL_IF>
+<TMPL_IF NAME=state_starting><td><span class="state imgDown">Starting...</span></td></TMPL_IF>
+<TMPL_IF NAME=state_stopping><td><span class="state imgDown">Stopping...</span></td></TMPL_IF>
+
 <TMPL_ELSE>
 <td></td>
 </TMPL_IF>
