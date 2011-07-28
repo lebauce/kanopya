@@ -102,12 +102,9 @@ sub process_addprocessormodel : Runmode {
         processormodel_name => $query->param('name'),
         processormodel_core_num => $query->param('coresnum'),
         processormodel_clock_speed => $query->param('clockspeed'),
-        #processormodel_fsb => $query->param('fsb'),
         processormodel_l2_cache => $query->param('l2cache'),
-        #processormodel_max_consumption => $query->param('consumption'),
         processormodel_max_tdp => $query->param('tdp'),
         processormodel_64bits => $query->param('is64bits'),
-        #processormodel_cpu_flags => $query->param('cpuflags'),
     );
     eval { $procmodel->create(); };
        if($@) {
@@ -123,7 +120,7 @@ sub process_addprocessormodel : Runmode {
 
 sub _addprocessormodel_profile {
     return {
-        required => [ qw(brand name consumption) ],
+        required => [ qw(brand name coresnum clockspeed l2cache tdp is64bits) ],
         msgs => {
                 any_errors => 'some_errors',
                 prefix => 'err_'

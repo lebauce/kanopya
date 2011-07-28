@@ -29,16 +29,13 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    processormodel_brand => { pattern => 'm//s', is_mandatory => 1, is_extended    => 0},
-    processormodel_name => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-     processormodel_core_num => { pattern => 'm//s', is_mandatory => 0, is_extended => 0},
-     processormodel_clock_speed => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-      #processormodel_fsb => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-      processormodel_l2_cache => { pattern => 'm//s', is_mandatory => 1, is_extended    => 0},
-      #processormodel_max_consumption => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-      processormodel_max_tdp => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-      processormodel_64bits => { pattern => 'm//s', is_mandatory => 1, is_extended => 0},
-    #processormodel_cpu_flags => { pattern => 'm//s', is_mandatory => 1, is_extended    => 0},        
+    processormodel_brand           => { pattern => '.*', is_mandatory => 1, is_extended => 0},
+    processormodel_name            => { pattern => '.*', is_mandatory => 1, is_extended => 0},
+    processormodel_core_num        => { pattern => '.*', is_mandatory => 1, is_extended => 0},
+    processormodel_clock_speed     => { pattern => '.*', is_mandatory => 1, is_extended => 0},
+    processormodel_l2_cache        => { pattern => '.*', is_mandatory => 1, is_extended => 0},
+    processormodel_max_tdp         => { pattern => '.*', is_mandatory => 1, is_extended => 0},
+    processormodel_64bits          => { pattern => '.*', is_mandatory => 1, is_extended => 0},        
 };
 
 

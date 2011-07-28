@@ -192,6 +192,14 @@ sub execute {
 
         $self->{_objs}->{systemimage}->save();
         $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is added');
+        
+        my $components = $self->{_objs}->{distribution}->getProvidedComponents(); 
+        foreach my $comp (@$components) {
+            if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
+                $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_id => $comp->{component_id});
+            }
+        }
+    
 
 }
 

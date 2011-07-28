@@ -147,11 +147,11 @@ sub execute {
     # Save the new cluster in db
     $self->{_objs}->{cluster}->save();
 
-    # automatically add systems components
+    # automatically add System|Monitoragent|Logger components
     if($systemimage) {
         my $components = $systemimage->getInstalledComponents(); 
         foreach my $comp (@$components) {
-            if(($comp->{component_category} eq 'System') || ($comp->{component_category} eq 'Monitoragent')) {
+            if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
                 $self->{_objs}->{cluster}->addComponent(component_id => $comp->{component_id});
                 $log->info("Component $comp->{component_name} automatically added");
             }
