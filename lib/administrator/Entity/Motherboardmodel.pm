@@ -29,15 +29,15 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    motherboardmodel_brand => { pattern => 'm//s', is_mandatory => 1, is_extended => 0 },
-    motherboardmodel_name => { pattern => 'm//s', is_mandatory => 1, is_extended => 0 },
-    motherboardmodel_chipset => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
-    motherboardmodel_processor_num => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
-    motherboardmodel_consumption => { pattern => 'm//s', is_mandatory => 1, is_extended => 0 },
-    motherboardmodel_iface_num => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
-    motherboardmodel_ram_slot_num => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
-    motherboardmodel_ram_max => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
-    processormodel_id => { pattern => 'm//s', is_mandatory => 0, is_extended => 0 },
+    motherboardmodel_brand         => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    motherboardmodel_name          => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    motherboardmodel_chipset       => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    motherboardmodel_processor_num => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    motherboardmodel_consumption   => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    motherboardmodel_iface_num     => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    motherboardmodel_ram_slot_num  => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    motherboardmodel_ram_max       => { pattern => '.*', is_mandatory => 1, is_extended => 0 },
+    processormodel_id              => { pattern => '\d*', is_mandatory => 0, is_extended => 0 },
 };
 
 sub methods {

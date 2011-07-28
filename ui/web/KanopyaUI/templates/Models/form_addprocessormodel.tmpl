@@ -17,38 +17,26 @@
 	</tr>
 	<tr>
 		<td class="label">Cores number :</td>
-		<td><input type="text" name="coresnum" size="4" /></td>
+		<td><input type="text" name="coresnum" size="4" /><TMPL_VAR NAME=ERR_CORESNUM></td>
 	</tr>
 	<tr>
 		<td class="label">Clock speed (GHz):</td>
-		<td><input type="text" name="clockspeed" size="10" /></td>
-	</tr>
-	<tr>
-		<td class="label">FSB :</td>
-		<td><input type="text" name="fsb" size="10" /></td>
+		<td><input type="text" name="clockspeed" size="10" /><TMPL_VAR NAME=ERR_CLOCKSPEED></td>
 	</tr>
 	<tr>
 		<td class="label">L2 cache (MB):</td>
-		<td><input type="text" name="l2cache" size="10" /></td>
-	</tr>
-	<tr>
-		<td class="label">Consumption (W):</td>
-		<td><input type="text" name="consumption" size="10" /><TMPL_VAR NAME=ERR_CONSUMPTION></td>
+		<td><input type="text" name="l2cache" size="10" /><TMPL_VAR NAME=ERR_L2CACHE></td>
 	</tr>
 	<tr>
 		<td class="label">TDP (W):</td>
-		<td><input type="text" name="tdp" size="4" /></td>
+		<td><input type="text" name="tdp" size="4" /><TMPL_VAR NAME=ERR_TDP></td>
 	</tr>
 	<tr>
 		<td class="label">64bits :</td>
 		<td><select name="is64bits">
 			<option value="1">yes</option>
 			<option value="0">no</option>
-		</select></td>
-	</tr>
-	<tr>
-		<td class="label">CPU flags :</td>
-		<td><input type="text" name="cpuflags" size="40" /></td>
+		</select><TMPL_VAR NAME=ERR_IS64BITS></td>
 	</tr>
 </table>
 <div class="buttons">
