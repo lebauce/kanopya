@@ -303,7 +303,7 @@ sub updateClusterNodeCount {
     my $self = shift;
     my %args = @_;
     
-    my ($cluster_name, $nodes_state) = ($args{cluster_name}, $args{nodes_state});
+    my ($cluster_name, $nodes_state, $hosts_state) = ($args{cluster_name}, $args{nodes_state}, $args{hosts_state});
     
     # RRD for node count
     my $rrd_file = "$self->{_rrd_base_dir}/nodes_$cluster_name.rrd";
@@ -315,26 +315,41 @@ sub updateClusterNodeCount {
                         'archive' => {     rows => $self->{_period} / $self->{_time_step},
                                         cpoints => 10,
                                         cfunc => "AVERAGE" },
+                        # nodes
                         'data_source' => {     name => 'up', type => 'GAUGE' },
                         'data_source' => {     name => 'starting', type => 'GAUGE' },
                         'data_source' => {     name => 'stopping', type => 'GAUGE' },
                         'data_source' => {     name => 'broken', type => 'GAUGE' },
+                        
+                        # hosts
+#                        'data_source' => {     name => 'host_up', type => 'GAUGE' },
+#                        'data_source' => {     name => 'host_starting', type => 'GAUGE' },
+#                        'data_source' => {     name => 'host_stopping', type => 'GAUGE' },
+#                        'data_source' => {     name => 'host_broken', type => 'GAUGE' },
                     );
         
     }
-        
-    my $up_count = scalar grep { $_ =~ '^in' } @$nodes_state;
-    my $starting_count = scalar grep { $_ =~ 'goingin' } @$nodes_state;
-    my $stopping_count = scalar grep { $_ =~ 'goingout' } @$nodes_state;
-    my $broken_count = scalar grep { $_ =~ 'broken' } @$nodes_state;
+    
+    my %count;
+    
+    # Nodes
+    $count{up} = scalar grep { $_ =~ '^in' } @$nodes_state;
+    $count{starting} = scalar grep { $_ =~ 'goingin' } @$nodes_state;
+    $count{stopping} = scalar grep { $_ =~ 'goingout' } @$nodes_state;
+    $count{broken} = scalar grep { $_ =~ 'broken' } @$nodes_state;
+
+    # hosts
+#    $count{host_up} = scalar grep { $_ =~ '^up' } @$hosts_state;
+#    $count{host_starting} = scalar grep { $_ =~ 'starting' } @$hosts_state;
+#    $count{host_stopping} = scalar grep { $_ =~ 'stopping' } @$hosts_state;
+#    $count{host_broken} = scalar grep { $_ =~ 'broken' } @$hosts_state;
 
     # we want update the rrd at time multiple of time_step (to avoid rrd extrapolation)
     my $time = time();
     my $mod_time = $time % $self->{_time_step};
     $time += ($mod_time > $self->{_time_step} / 2) ? $self->{_time_step} - $mod_time : -$mod_time; 
     eval {
-        $rrd->update( time => $time, values => {     'up' => $up_count, 'starting' => $starting_count,
-                                                    'stopping' => $stopping_count, 'broken' => $broken_count } );
+        $rrd->update( time => $time, values => \%count );
     };
     if ($@) {
         my $error = $@;
@@ -416,8 +431,9 @@ sub updateClusterData{
     $log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
     
     # update cluster node count
+    my @hosts_state = map { $_->getState() } @mbs;
     my @nodes_state = map { $_->getNodeState() } @mbs;
-    $self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state )    
+    $self->updateClusterNodeCount( cluster_name => $cluster_name, nodes_state => \@nodes_state, hosts_state => \@hosts_state )    
 }
 
 =head2 udpate

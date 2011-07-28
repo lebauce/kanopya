@@ -706,7 +706,8 @@ sub graphNodeCount {
     my $self = shift;
     my %args = @_;
     
-    my $alpha = "66";
+    my $alpha_node = "66";
+    my $alpha_host = "33";
     
     my $cluster = $args{cluster};
     
@@ -735,30 +736,32 @@ sub graphNodeCount {
                     
                     'y_grid' => '1:1',
                     
-                    draw =>     {
+                    # NODES
+					draw =>     {
                                     type => 'stack',
                                     dsname => 'up',
-                                    color => "00FF00".$alpha,
+                                    color => "00FF00".$alpha_node,
                                     legend => "up",
                                   },
                     draw =>     {
                                     type => 'stack',
                                     dsname => 'starting',
-                                    color => "0000FF".$alpha,
+                                    color => "0000FF".$alpha_node,
                                     legend => "starting",
                                   },
                     draw =>     {
                                     type => 'stack',
                                     dsname => 'stopping',
-                                    color => "FFFF00".$alpha,
+                                    color => "FFFF00".$alpha_node,
                                     legend => "stopping",
                                   },
-                      draw =>     {
+                  	draw =>     {
                                     type => 'stack',
                                     dsname => 'broken',
-                                    color => "FF0000".$alpha,
+                                    color => "FF0000".$alpha_node,
                                     legend => "broken",
                                   },
+                    
                     );
                     
     `mv $self->{_graph_dir}/tmp/$graph_file $self->{_graph_dir}`;
