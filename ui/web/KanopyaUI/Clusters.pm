@@ -370,28 +370,38 @@ sub view_clusterdetails : Runmode {
     
     # nodes list
     if($nbnodesup) {
-        my $id = $ecluster->getMasterNodeId();
-        if($id) {
-        my $masternode = $motherboards->{ $id };
-        my $tmp = {
-            motherboard_id => $masternode->getAttr(name => 'motherboard_id'),
-            motherboard_hostname => $masternode->getAttr(name => 'motherboard_hostname'),
-            motherboard_internal_ip => $masternode->getInternalIP()->{ipv4_internal_address},
-            link_remove => 0
-        };
-        delete $motherboards->{ $id };
-        push @$nodes, $tmp;
-        }
+        my $master_id = $ecluster->getMasterNodeId();
         while( my ($id, $n) = each %$motherboards) {
-            my $tmp = {};
-            $tmp->{motherboard_id} = $id;
-            $tmp->{cluster_id} = $cluster_id;
-            $tmp->{motherboard_hostname} = $n->getAttr(name => 'motherboard_hostname');     
-            $tmp->{motherboard_internal_ip} = $n->getInternalIP()->{ipv4_internal_address};
+            my $tmp = {
+	            motherboard_id => $id,
+	            motherboard_hostname => $n->getAttr(name => 'motherboard_hostname'),
+	            motherboard_internal_ip => $n->getInternalIP()->{ipv4_internal_address},
+	            cluster_id => $cluster_id,
+	        };
             
-            if(not $methods->{'removeNode'}->{'granted'} ) {
-                $tmp->{link_remove} = 0;
-            } else { $tmp->{link_remove} = 1;}
+            # Manage remove link
+            if ($id == $master_id) {
+            	$tmp->{link_remove} = 0;
+            	$tmp->{master_node} = 1;
+            } else {
+           		if(not $methods->{'removeNode'}->{'granted'} ) {
+                	$tmp->{link_remove} = 0;
+            	} else { $tmp->{link_remove} = 1;} 	
+            }
+
+			# Manage node state
+			my $node_state = $n->getNodeState();
+			# The first elem is the regexp to match with the state and the second elem is the associated state for ui 
+    		for my $state ( ['^in', 'up'],				# node 'in' is displayed as 'Up'
+    						['goingin', 'starting'],    # match pregoingin, goingin, postgoingin and diplayed as starting
+    						['goingout', 'stopping'],	# match pregoingout, goingout, postgoingout and diplayed as stopping
+    						['broken','broken']) {		# broken
+    			if ( $node_state =~ $state->[0] ) {
+    				$tmp->{"state_$state->[1]"} = 1;
+    			}
+    		}
+    		            
+          
             push @$nodes, $tmp;
         }
     }
@@ -419,6 +429,7 @@ sub view_clusterdetails : Runmode {
     
     return $tmpl->output();
 }
+
 
 # TODO cluster edition popup window
 
