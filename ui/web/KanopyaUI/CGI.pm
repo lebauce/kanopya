@@ -28,6 +28,7 @@ sub cgiapp_init {
 sub cgiapp_prerun {
     my $self = shift;
     my $eid = $self->session->param('EID');
+    $self->error_mode("error_occured");
     if(not $eid) {
         $self->session_delete;
         $self->redirect('/cgi/kanopya.cgi/login/form_login');
@@ -51,4 +52,13 @@ sub close_window {
     return $javascript;
 }
 
+sub error_occured {
+    my $self = shift;
+    my $errors = shift;
+
+    my $template = $self->load_tmpl('error.tmpl');
+
+    $template->param(errors => $errors);
+    return $template->output();
+}
 1;

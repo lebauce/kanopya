@@ -63,10 +63,10 @@ sub new {
 
     # Check attrs ad throw exception if attrs missed or incorrect
     my $attrs = $class->checkAttrs(attrs => \%args);
-    
+
     # We create a new DBIx containing new entity (only global attrs)
     my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Message");
-    
+
     # Set the extended parameters
     $self->{_ext_attrs} = $attrs->{extended};
 

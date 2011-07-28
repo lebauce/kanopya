@@ -228,8 +228,9 @@ sub process_addcluster : Runmode {
         }
         else {
 	    $log->error("###### exception get and error_addcluster is called");
-	 #   $exception->rethrow();
-	    return $self->error_addcluster("Error during operation enqueuing : $exception->error");
+	 
+	    $exception->rethrow();
+	 #   return $self->error_occured("Error during operation enqueuing : $exception->error");
 	}
     }
     else {
@@ -239,15 +240,7 @@ sub process_addcluster : Runmode {
 }
 
 
-sub error_addcluster {
-    my $self = shift;
-    my $errors = shift;
 
-    my $template = $self->load_tmpl('error.tmpl');
-
-    $template->param(errors => $errors);
-    return $template->output();
-}
 
 # cluster details page
 
