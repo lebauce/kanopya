@@ -83,7 +83,7 @@ sub motherboardRepaired{
     
     General::checkParams(args => \%args, required => ['motherboard']);
     
-    $args{motherboard}->setState('state' => "up");
+    $args{motherboard}->setState('state' => $args{motherboard}->getPrevState());
     
     logMotherboardStateChange(
         level => 'info',
