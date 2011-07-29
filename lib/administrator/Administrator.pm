@@ -745,7 +745,7 @@ sub getMessages {
     while (my $row = $r->next) {
         push @arr, {
             'from' => $row->get_column('message_from'),
-            'level' => $row->get_column('message_level'),,
+            'level' => $row->get_column('message_level'),
             'date' => $row->get_column('message_creationdate'),
             'time' => $row->get_column('message_creationtime'),
             'content' => $row->get_column('message_content'),

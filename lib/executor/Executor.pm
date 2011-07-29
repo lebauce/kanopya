@@ -53,6 +53,7 @@ use XML::Simple;
 use Data::Dumper;
 use EFactory;
 use Operation;
+use Message;
 
 my $log = get_logger("executor");
 
@@ -109,7 +110,8 @@ sub run {
     my $running = shift;
     
     my $adm = Administrator->new();
-    $adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
+    Message->send(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
+#    $adm->addMessage(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
        while ($$running) {
            my $opdata = Operation::getNextOp();
            if ($opdata){
@@ -117,7 +119,7 @@ sub run {
                $opdata->setProcessing();
                my $op = EFactory::newEOperation(op => $opdata);
                $log->info("New operation (".ref($op).") retrieve ; execution processing");
-               $adm->addMessage(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
+               Message->send(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
                $adm->{db}->txn_begin;
                eval {
 #                   eval {
@@ -137,7 +139,7 @@ sub run {
                        $op->report();
                        # commit transaction
                        $adm->{db}->txn_commit;
-                       $adm->addMessage(from => 'Executor', level => 'info', content => ref($op)." reported");
+                       Message->send(from => 'Executor', level => 'info', content => ref($op)." reported");
                        $log->debug("Operation ".ref($op)." reported");
                    } else {
                         # rollback transaction
@@ -152,28 +154,32 @@ sub run {
                             my $error = $@;
                             $log->error("Error during operation cancel :\n$error");
                         }
-                       $adm->addMessage(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
-                       $log->error("Error during execution : $error");
+                        if (!$error->hidden){
+                            Message->send(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
+                            $log->error("Error during execution : $error");
+                        } else {
+                            $log->info("Warning : $error");
+                        }
 #                       $op->delete();
                    }
                } else {
                    # commit transaction
                    $op->finish();
                    $adm->{db}->txn_commit;
-                   $adm->addMessage(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
+                   Message->send(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
 #                   $op->delete();
                }
             eval {$op->delete();};
             if ($@) {
                 my $error = $@;
                $log->error("Error during operation deletion : $error"); 
-               $adm->addMessage(from => 'Executor', level => 'error', content => "Error during operation deletion : $error");
+               Message->send(from => 'Executor', level => 'error', content => "Error during operation deletion : $error");
             }
            }
            else { sleep 5; }
        }
        $log->debug("condition become false : $$running"); 
-       $adm->addMessage(from => 'Executor', level => 'warning', content => "Kanopya Executor stopped");
+       Message->send(from => 'Executor', level => 'warning', content => "Kanopya Executor stopped");
 }
 
 =head2 execnrun
