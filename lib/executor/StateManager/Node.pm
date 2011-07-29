@@ -44,7 +44,7 @@ package StateManager::Node;
 use strict;
 use warnings;
 
-
+use Message;
 use General;
 use Kanopya::Exceptions;
 use Operation;
@@ -90,7 +90,7 @@ sub checkNodeUp {
         $host_econtext = EFactory::newEContext(ip_source => $args{executor_ip}, ip_destination => $node_ip);
     };
     if ($@) {
-        $adm->addMessage(from => 'StateManager', level => 'info', content => "Kanopya could not connect to node <"
+        Message->send(from => 'StateManager', level => 'info', content => "Kanopya could not connect to node <"
                         .$args{motherboard}->getAttr(name=>"motherboard_hostname")."> with ip <"
                         . $node_ip ."> in cluster <".$args{cluster}->getAttr(name=>"cluster_name").">");
         return 0;
@@ -100,7 +100,7 @@ sub checkNodeUp {
         $log->debug("Browse component : " .$components->{$i}->getComponentAttr()->{component_name});
         my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
         if (!$tmp_ecomp->isUp(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
-            $adm->addMessage(from => 'StateManager', level => 'info', content => "Kanopya detects a component \""
+            Message->send(from => 'StateManager', level => 'info', content => "Kanopya detects a component \""
             .$components->{$i}->getComponentAttr()->{component_name}."\" not available on node \""
             .$args{motherboard}->getAttr(name=>"motherboard_hostname")."\" with ip \""
             . $node_ip ."\" in cluster \"".$args{cluster}->getAttr(name=>"cluster_name")."\"");
@@ -277,7 +277,7 @@ sub logNodeStateChange {
     General::checkParams(args => \%args, required => ['ip_address', 'newstatus', 'level']);
     my $adm = Administrator->new();
     my $msg = "Node with ip address $args{ip_address} is now $args{newstatus}";
-    $adm->addMessage(from => 'StateManager', level => $args{level}, content => $msg);
+    Message->send(from => 'StateManager', level => $args{level}, content => $msg);
     $log->info($msg); 
 }
 

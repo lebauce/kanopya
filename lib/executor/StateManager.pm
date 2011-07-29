@@ -52,6 +52,7 @@ use EFactory;
 use Administrator;
 use Entity::Cluster;
 use Entity::Motherboard;
+use Message;
 
 use StateManager::Motherboard;
 use StateManager::Cluster;
@@ -121,7 +122,7 @@ sub run {
     my $running = shift;
     
     my $adm = Administrator->new();
-    $adm->addMessage(from => 'StateManager', level => 'info', content => "Kanopya State Manager started.");
+    Message->send(from => 'StateManager', level => 'info', content => "Kanopya State Manager started.");
     
     # main loop
     while ($$running) {
@@ -136,7 +137,7 @@ sub run {
             };
             if($@) {
                 my $exception = $@;
-                $adm->addMessage(from => 'StateManager', level => 'error', content => $exception);
+                Message->send(from => 'StateManager', level => 'error', content => $exception);
                 $log->error($exception);
             }
         }
@@ -158,7 +159,7 @@ sub run {
                 };
                 if($@) {
                     my $exception = $@;
-                    $adm->addMessage(from => 'StateManager', level => 'error', content => $exception);
+                    Message->send(from => 'StateManager', level => 'error', content => $exception);
                     $log->error($exception);
                 }
             }
@@ -167,7 +168,7 @@ sub run {
             };
             if($@) {
                 my $exception = $@;
-                $adm->addMessage(from => 'StateManager', level => 'error', content => $exception);
+                Message->send(from => 'StateManager', level => 'error', content => $exception);
                 $log->error($exception);
             }
        }
@@ -175,7 +176,7 @@ sub run {
        sleep 10;
    }
 
-   $adm->addMessage(from => 'StateManager', level => 'warning', content => "Kanopya State Manager stopped");
+   Message->send(from => 'StateManager', level => 'warning', content => "Kanopya State Manager stopped");
 }
 
 

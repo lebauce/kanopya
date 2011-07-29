@@ -44,7 +44,7 @@ package StateManager::Motherboard;
 use strict;
 use warnings;
 
-
+use Message;
 use General;
 use Kanopya::Exceptions;
 use Operation;
@@ -221,7 +221,7 @@ sub logMotherboardStateChange {
     General::checkParams(args => \%args, required => ['mac_address', 'newstatus', 'level']);
     my $adm = Administrator->new();
     my $msg = "Motherboard with mac address $args{mac_address} is now $args{newstatus}";
-    $adm->addMessage(from => 'StateManager', level => $args{level}, content => $msg);
+    Message->send(from => 'StateManager', level => $args{level}, content => $msg);
     $log->info($msg); 
 }
 
