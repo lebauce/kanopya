@@ -51,4 +51,29 @@ sub close_window {
     return $javascript;
 }
 
+=head2 timestamp_format
+
+    Desc : This function return a formatted string according to a timestamp
+
+    args: timestamp: number of seconds
+     
+    return : formatted string with only necessary units, e.g '42h42m42s', '42m42s', '42s'
+
+=cut
+
+sub timestamp_format {
+	my $self = shift;
+    my %args = @_;
+    
+    return 'unk' if (not defined $args{timestamp});
+    
+    my $period = time() - $args{timestamp};
+   	my @time = (int($period/3600), int(($period % 3600) / 60), $period % 60);
+    my $time_str = $time[0] . "h" if ($time[0] > 0);
+    $time_str .= $time[1] . "m" if ($time[0] > 0 || $time[1] > 0);
+    $time_str .= $time[2] . "s"; 
+    
+    return $time_str;
+}
+
 1;
