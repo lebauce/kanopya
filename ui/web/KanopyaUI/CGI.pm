@@ -70,7 +70,8 @@ sub timestamp_format {
     
     my $period = time() - $args{timestamp};
    	my @time = (int($period/3600), int(($period % 3600) / 60), $period % 60);
-    my $time_str = $time[0] . "h" if ($time[0] > 0);
+    my $time_str = "";
+    $time_str .= $time[0] . "h" if ($time[0] > 0);
     $time_str .= $time[1] . "m" if ($time[0] > 0 || $time[1] > 0);
     $time_str .= $time[2] . "s"; 
     
