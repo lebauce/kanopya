@@ -129,7 +129,7 @@ sub nodeRepaired{
     my %args = @_;
     General::checkParams(args => \%args, required => ['motherboard']);
     
-    $args{motherboard}->setNodeState(state => "in");
+    $args{motherboard}->setNodeState(state => $args{motherboard}->getPrevNodeState());
     logNodeStateChange(
         ip_address => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
         newstatus => 'in',

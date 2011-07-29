@@ -154,7 +154,7 @@ sub prepare {
 #            params   => \%params);
 #        throw Kanopya::Exception::Internal(error => $errmsg);
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg, hidden=>1);
     }
 }
 

@@ -1,4 +1,4 @@
-# EAddCluster.pm - Operation class implementing Cluster creation operation
+# EKanopyaMaintenance.pm - Operation class node removing from cluster operation
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,12 +19,12 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EOperation::EKanopyaMaintenance - Operation class implementing node removing operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement node removing operation
 
 =head1 DESCRIPTION
 
@@ -33,7 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EAddCluster;
+package EOperation::EKanopyaMaintenance;
 use base "EOperation";
 
 use strict;
@@ -42,10 +42,8 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use EFactory;
-
-use Entity::Cluster;
-use Entity::Systemimage;
+use String::Random;
+use Message;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -53,9 +51,7 @@ our $VERSION = '1.00';
 
 =head2 new
 
-    my $op = EEntity::EOperation::EAddMotherboard->new();
-
-EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
+EOperation::EKanopyaMaintenance->new creates a new EKanopyaMaintenance operation.
 
 =cut
 
@@ -63,7 +59,6 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -78,8 +73,15 @@ sub new {
 
 sub _init {
     my $self = shift;
-
+    $self->{executor} = {};
     return;
+}
+
+sub checkOp{
+    my $self = shift;
+    my %args = @_;
+    
+ 
 }
 
 =head2 prepare
@@ -89,75 +91,48 @@ sub _init {
 =cut
 
 sub prepare {
+    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    $log->info("Operation preparation");
+
+    my $messages = Message->getMessages(hash=>{});
+    if (scalar @$messages < 1000) {
+        $log->info("Not enough message in database to backup it");
+        throw Kanopya::Exception::Internal(error => "Not enough message in database to backup it", hidden => 1);
     }
-    my $adm = Administrator->new();
-    my $params = $self->_getOperation()->getParams();
-
-    $self->{_objs} = {};
-    
-    # Cluster instantiation
-    eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    else {
+        $self->{messages} = $messages;
     }
-
-    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
 }
-
-
 
 sub execute {
     my $self = shift;
+    $log->debug("Before EOperation exec");
+    $self->SUPER::execute();
 
-    my $adm = Administrator->new();
-    my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
-    my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
-    my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
-    my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));;
-    
-    if($si_location eq 'diskless') {
-        if(not $si_shared) {
-            $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
-            $systemimage->save();
-        } 
+    my $msg_log = "";
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+    my $messages = $self->{messages};
+    open (my $MSGTXT, ">","/tmp/$tmpfile") or throw Kanopya::Exception::Internal(error => "Kanopya could not open tmp file");
+   $msg_log = "msg id\tmsg from\tdate\ttime\tlevel\tmessage content\n";
+    foreach my $msg (@$messages) {
+        $msg_log .= $msg->getAttr(attr_name => "message_id") . "\t";
+        $msg_log .= $msg->getAttr(attr_name => "message_from") . "\t";
+        $msg_log .= $msg->getAttr(attr_name => "message_creationdate") . "\t";
+        $msg_log .= $msg->getAttr(attr_name => "message_creationtime") . "\t";
+        $msg_log .= $msg->getAttr(attr_name => "message_level") . "\t";
+        $msg_log .= $msg->getAttr(attr_name => "message_content") . "\n";
+        $msg->delete();
     }
-
-    # Create cluster directory
-    my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
-    $self->{econtext}->execute(command => $command);
-    $log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
-
-    # set initial state to down
-    $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down:'.time);
-    
-    # Save the new cluster in db
-    $self->{_objs}->{cluster}->save();
-
-    # automatically add System|Monitoragent|Logger components
-    if($systemimage) {
-        my $components = $systemimage->getInstalledComponents(); 
-        foreach my $comp (@$components) {
-            if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
-                $self->{_objs}->{cluster}->addComponent(component_id => $comp->{component_id});
-                $log->info("Component $comp->{component_name} automatically added");
-            }
-        }
-    }
-    $log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
+    print( $MSGTXT "$msg_log");
+    close $MSGTXT;
+    $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "/var/log/kanopya/msg_backup_".time());    
+    unlink "/tmp/$tmpfile";
 }
 
 =head1 DIAGNOSTICS
