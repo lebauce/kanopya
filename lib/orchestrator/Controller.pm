@@ -352,7 +352,7 @@ sub run {
         my $update_duration = time() - $start_time;
         $log->info( "Manage duration : $update_duration seconds" );
         if ( $update_duration > $self->{_time_step} ) {
-            $log->warn("graphing duration > graphing time step (conf)");
+            $log->warn("update duration > update time step (conf)");
         } else {
             sleep( $self->{_time_step} - $update_duration );
         }
