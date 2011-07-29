@@ -62,7 +62,7 @@ Kanopya has it own exception to manage internal error and show to user comprehen
 use Exception::Class (
     Kanopya::Exception => {
     description => "Kanopya General Exception",
-    fields => [ 'level', 'request' ],
+    fields => [ 'level', 'request', 'hidden' ],
     },
     Kanopya::Exception::DB => {
     isa => 'Kanopya::Exception',

@@ -187,6 +187,12 @@ sub getState {
     return wantarray ? split(/:/, $state) : $state; 
 }
 
+sub getPrevState {
+    my $self = shift;
+    my $state = $self->{_dbix}->get_column('motherboard_prev_state'); 
+    return wantarray ? split(/:/, $state) : $state; 
+}
+
 =head2 setState
 
 =cut
@@ -209,6 +215,12 @@ sub setState {
 sub getNodeState {
     my $self = shift;
     my $state = $self->{_dbix}->node->get_column('node_state'); 
+    return wantarray ? split(/:/, $state) : $state;
+}
+
+sub getPrevNodeState {
+    my $self = shift;
+    my $state = $self->{_dbix}->node->get_column('node_prev_state'); 
     return wantarray ? split(/:/, $state) : $state;
 }
 

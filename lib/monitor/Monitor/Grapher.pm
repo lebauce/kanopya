@@ -19,7 +19,7 @@ use List::Util qw(sum);
 use XML::Simple;
 use DateTime::Format::Strptime;
 #use General;
-
+use Message;
 use Data::Dumper;
 
 use base "Monitor";
@@ -863,7 +863,7 @@ sub run {
     my $running = shift;
     
     my $adm = $self->{_admin};
-    $adm->addMessage(from => 'Monitor', level => 'info', content => "Kanopya Grapher started.");
+    Message->send(from => 'Monitor', level => 'info', content => "Kanopya Grapher started.");
     
     while ( $$running ) {
 
@@ -881,7 +881,7 @@ sub run {
 
     }
     
-    $adm->addMessage(from => 'Monitor', level => 'warning', content => "Kanopya Grapher stopped");
+    Message->send(from => 'Monitor', level => 'warning', content => "Kanopya Grapher stopped");
 }
 
 1;

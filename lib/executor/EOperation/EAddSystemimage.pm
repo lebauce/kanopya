@@ -63,10 +63,10 @@ EOperation::EAddSystemimage->new creates a new EAddSystemimage operation.
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     my $self = $class->SUPER::new(%args);
     $self->_init();
-    
+
     return $self;
 }
 
@@ -95,10 +95,10 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
+
     my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
-    
+
     $self->{_objs} = {};
     $self->{nas} = {};
     $self->{executor} = {};
@@ -128,7 +128,7 @@ sub prepare {
     }
 
     ## Instanciate Clusters
-    # Instanciate nas Cluster 
+    # Instanciate nas Cluster
     $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
     # Instanciate executor Cluster
     $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
@@ -138,17 +138,17 @@ sub prepare {
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     # Get Internal Ip address of Master node of cluster nas
     my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-    
-    ## Instanciate context 
+
+    ## Instanciate context
     # Get context for nas
     $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-        
+
     ## Instanciate Component needed (here LVM on nas cluster)
     # Instanciate Cluster Storage component.
     my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
                                          version => "2",
                                          administrator => $adm);
-    
+
     $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
 }
 
@@ -175,7 +175,7 @@ sub execute {
                                                                       econtext      => $self->{nas}->{econtext},
                                                                       erollback     => $self->{erollback});
 
-        # copy of distribution data to systemimage devices                                                
+        # copy of distribution data to systemimage devices
         $log->info('etc device fill with distribution data for new systemimage');
         my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";
         my $result = $self->{nas}->{econtext}->execute(command => $command);
@@ -192,15 +192,13 @@ sub execute {
 
         $self->{_objs}->{systemimage}->save();
         $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is added');
-        
-        my $components = $self->{_objs}->{distribution}->getProvidedComponents(); 
+
+        my $components = $self->{_objs}->{distribution}->getProvidedComponents();
         foreach my $comp (@$components) {
             if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
                 $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_id => $comp->{component_id});
             }
         }
-    
-
 }
 
 =head1 DIAGNOSTICS
@@ -215,7 +213,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 

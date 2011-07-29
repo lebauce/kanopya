@@ -44,7 +44,7 @@ package StateManager::Cluster;
 use strict;
 use warnings;
 
-
+use Message;
 use General;
 use Kanopya::Exceptions;
 use Operation;
@@ -175,7 +175,7 @@ sub logClusterStateChange {
     General::checkParams(args => \%args, required => ['cluster_name', 'newstatus', 'level']);
     my $adm = Administrator->new();
     my $msg = "Cluster $args{cluster_name} is now $args{newstatus}";
-    $adm->addMessage(from => 'StateManager', level => $args{level}, content => $msg);
+    Message->send(from => 'StateManager', level => $args{level}, content => $msg);
     $log->info($msg); 
 }
 
