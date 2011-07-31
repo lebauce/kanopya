@@ -164,7 +164,14 @@ sub postStartNode {}
 sub preStartNode{}
 sub preStopNode{return 0;}
 sub postStopNode{}
+sub cleanNode {
+#    my $class = shift;
+#    my %args = @_;
+#
+#    General::checkParams(args => \%args,
+#                         required => ['motherboard', ]);
 
+}
 sub isUp {
     my $self = shift;
     my %args = @_;

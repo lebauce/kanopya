@@ -213,21 +213,7 @@ sub execute {
     # Generate the target name from the motherboard etc device
     my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName());
 
-    # Generate node etc export
-    ################################################################################
-    $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number    => 0,
-                                                iscsitarget1_lun_device    => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
-                                                iscsitarget1_lun_typeio    => "fileio",
-                                                iscsitarget1_lun_iomode    => "wb",
-                                                iscsitarget1_target_name=>$target_name,
-                                                econtext                 => $self->{nas}->{econtext},
-                                                erollback               => $self->{erollback});
-    my $eroll_add_export = $self->{erollback}->getLastInserted();
-    # generate new configuration file
-    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-    $self->{_objs}->{component_export}->generate(econtext   => $self->{nas}->{econtext},
-                                                 erollback  => $self->{erollback});
-        
+    
     ## ADD Motherboard in the dhcp
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
     my $motherboard_ip = $adm->{manager}->{network}->getFreeInternalIP();
@@ -321,6 +307,21 @@ sub execute {
     # Create node instance
     $self->{_objs}->{motherboard}->setNodeState(state=>"goingin");
     $self->{_objs}->{motherboard}->save();
+    
+    # Generate node etc export
+    ################################################################################
+    $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number    => 0,
+                                                iscsitarget1_lun_device    => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
+                                                iscsitarget1_lun_typeio    => "fileio",
+                                                iscsitarget1_lun_iomode    => "wb",
+                                                iscsitarget1_target_name=>$target_name,
+                                                econtext                 => $self->{nas}->{econtext},
+                                                erollback               => $self->{erollback});
+    my $eroll_add_export = $self->{erollback}->getLastInserted();
+    # generate new configuration file
+    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
+    $self->{_objs}->{component_export}->generate(econtext   => $self->{nas}->{econtext},
+                                                 erollback  => $self->{erollback});
     
     # finaly we start the node
     my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});

@@ -1,4 +1,4 @@
-# EPostStopNode.pm - Operation class node removing from cluster operation
+# EForceStopCluster.pm - Operation class node removing from cluster operation
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EOperation::EPostStopNode - Operation class implementing node removing operation
+EOperation::EForceStopCluster - Operation class implementing node removing operation
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::EPostStopNode;
+package EOperation::EForceStopCluster;
 use base "EOperation";
 
 use strict;
@@ -42,8 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
-use Entity::Systemimage;
+
 use EFactory;
 
 my $log = get_logger("executor");
@@ -52,7 +51,7 @@ our $VERSION = '1.00';
 
 =head2 new
 
-EOperation::EPostStopNode->new creates a new EPostStopNode operation.
+EOperation::EForceStopCluster->new creates a new EForceStopCluster operation.
 
 =cut
 
@@ -79,17 +78,6 @@ sub _init {
     return;
 }
 
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-    
-    if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
-        my $msg = "Node is still in stopping state.";
-        $log->error($msg);
-        throw Kanopya::Exception::Execution::OperationReported(error => $msg);
-    }
- 
-}
 
 =head2 prepare
 
@@ -106,24 +94,14 @@ sub prepare {
     $log->info("Operation preparation");
 
     if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EPostStopNode->prepare need an internal_cluster named argument!";
+        $errmsg = "EForceStopCluster->prepare need an internal_cluster named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
-
     my $params = $self->_getOperation()->getParams();
     
-# Instantiate motherboard and so check if exists
-    $log->debug("checking motherboard existence with id <$params->{motherboard_id}>");
-    eval {
-        $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
-    };
-    if($@) {
-        $errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+
      # Cluster instantiation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>");
     eval {
@@ -141,15 +119,9 @@ sub prepare {
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
     
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+    
+    #### Instanciate cluster nodes.
+    $self->{_objs}->{motherboards} = $self->{_objs}->{cluster}->getMotherboards();
         
     #### Instanciate Clusters
     $log->info("Get Internal Clusters");
@@ -170,24 +142,13 @@ sub prepare {
     $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
     
     ## Instanciate Component needed (here LVM, ISCSITARGET, DHCP and TFTPD on nas and bootserver cluster)
-    # Instanciate Storage component.
-    my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-                                         version => "2");
-    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-    $log->info("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
     # Instanciate Export component.
     $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
                                                                                       version=> "1"));
     $log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
-    # Instanciate tftpd component.
-    $self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Atftpd",
-                                                                                      version=> "0"));
-                                                                                      
-    $log->info("Load tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
     # instanciate dhcpd component.
     $self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $self->{bootserver}->{obj}->getComponent(name=>"Dhcpd",
                                                                                       version=> "3"));
-                                                                                      
     $log->info("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
 }
@@ -198,73 +159,93 @@ sub execute {
     $self->SUPER::execute();
     $log->debug("After EOperation exec and before new Adm");
     my $adm = Administrator->new();
+    my $errmsg;
+    my $nodes = $self->{_objs}->{motherboards};
     
-    # We stop motherboard (to update powersupply)
-    my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
-    $emotherboard->stop();
-
-     $self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
-
-    ## Remove Motherboard in the dhcp
+    
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-    my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
-    my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id            => $subnet,
-                                                                            dhcpd3_hosts_mac_address    => $motherboard_mac);
-    $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id    => $subnet,
-                                                  dhcpd3_hosts_id    => $hostid);
-    ########## Strange : $self->{_objs}->{motherboard}->removeInternalIP();
-    $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
-    
-    $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
-    
-    # component migration
-    my $components = $self->{_objs}->{components};
-    $log->info('Processing cluster components configuration for this node');
-    foreach my $i (keys %$components) {
-        
-        my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($tmp));
-        $tmp->removeNode(motherboard => $self->{_objs}->{motherboard}, 
+
+    foreach my $key (keys %$nodes) {
+       my $node = $nodes->{$key};
+       eval {
+            # Load Node Econtext to check its availability
+            my $node_context = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $node->getInternalIP()->{ipv4_internal_address});
+            
+            # Halt Node
+            my $emotherboard = EFactory::newEEntity(data => $node);
+            $emotherboard->halt(node_econtext =>$node_context);
+        };
+        if ($@) {
+            my $error = $@;
+            $errmsg = "Problem with node <" .$node->getAttr(name=>"motherboard_hostname"). "> during force stop cluster : $error";
+            $log->info($errmsg);
+        }
+        # Update Dhcp component conf
+        my $motherboard_mac = $node->getAttr(name => "motherboard_mac_address");
+        my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id            => $subnet,
+                                                                               dhcpd3_hosts_mac_address    => $motherboard_mac);
+        $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id    => $subnet,
+                                                      dhcpd3_hosts_id    => $hostid);
+
+        # component migration
+        my $components = $self->{_objs}->{components};
+        $log->info('Processing cluster components quick remove for node <'.$node->getAttr(name=>'motherboard_hostname').'>');
+        foreach my $i (keys %$components) {
+            my $tmp = EFactory::newEEntity(data => $components->{$i});
+            $log->debug("component is ".ref($tmp));
+            $tmp->cleanNode(motherboard => $node, 
                             mount_point => '',
                             cluster => $self->{_objs}->{cluster},
                             econtext => $self->{nas}->{econtext});
+        }
+
+        ## Remove motherboard etc export from iscsitarget 
+        my $node_dev = $node->getEtcDev();
+        my $lv_name = $node_dev->{etc}->{lvname};
+        my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $lv_name);
+        my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $lv_name);
+        my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
+                                                                                 iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
+    
+        # clean initiator session 
+        $self->{_objs}->{component_export}->cleanInitiatorSession(
+                                                    econtext => $self->{nas}->{econtext},
+                                                    initiator => $node->getAttr(name => 'motherboard_initiatorname'), 
+                                                );
+        # Remove Target and Lun
+        $self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id       => $lun_id,
+                                                      iscsitarget1_target_id    => $target_id);
+        eval {
+            $self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id         => $target_id,
+                                                             iscsitarget1_target_name     => $target_name,
+                                                             econtext                     => $self->{nas}->{econtext});
+        };
+        if ($@) {
+            my $error = $@;
+            $errmsg = "Problem with node <" .$node->getAttr(name=>"motherboard_hostname"). "> during taget removing : $error";
+            $log->info($errmsg);
+        }
+        $node->setAttr(name => "motherboard_hostname", value => undef);
+        $node->setAttr(name => "motherboard_initiatorname", value => undef);
+        ## Update Motherboard internal ip
+        $node->removeInternalIP();
+        $node->setState(state=>"down");
+        ## finaly save motherboard 
+        $node->save();
+
+        $node->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+
     }
-    
 
 
-    
-    ## Remove motherboard etc export from iscsitarget 
-    my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
-    my $lv_name = $node_dev->{etc}->{lvname};
-    my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $lv_name);
-    my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $lv_name);
-    my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
-                                                iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
-    
-    # clean initiator session 
-    $self->{_objs}->{component_export}->cleanInitiatorSession(
-        econtext => $self->{nas}->{econtext},
-        initiator => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_initiatorname'), 
-    );
-    
-    
-    $self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id     => $lun_id,
-                                                  iscsitarget1_target_id=>$target_id);
-    $self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id        =>$target_id,
-                                                     iscsitarget1_target_name     => $target_name,
-                                                     econtext                     => $self->{nas}->{econtext});
-                                                                  
+
+    ## Generate and reload Dhcp conf
+    $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
+    $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
+
+    # Generate iscsi-target conf
     $self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
-    
-    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
-    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
-    ## Update Motherboard internal ip
-    $self->{_objs}->{motherboard}->removeInternalIP();
-    
-    ## finaly save motherboard 
-    $self->{_objs}->{motherboard}->save();
-
-
+    $self->{_objs}->{cluster}->setState(state=>"down");
 }
 
 =head1 DIAGNOSTICS

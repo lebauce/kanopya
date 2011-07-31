@@ -57,9 +57,14 @@ sub new {
         parameters  => undef,
         next_item   => undef,
         prev_item   => undef,
+        last_inserted => undef,
     };
     bless $self, $class;
     return $self;
+}
+
+sub print {
+    
 }
 
 =head2 add
@@ -74,18 +79,14 @@ sub add {
     
     General::checkParams(args => \%args,
                          required => ['function', 'parameters']);
-#    if((! exists $args{function} or ! defined $args{function}) or
-#       (! exists $args{parameters} or ! defined $args{parameters})) {
-#        $errmsg = "ERollback->add need function and parameters named arguments";
-#        $log->error($errmsg);
-#        throw Kanopya::Exception::Internal(error => $errmsg);       
-#    }
-    $self->{last_inserted} = undef;
+
+#    $self->{last_inserted} = undef;
     $log->debug("add rollback func $args{function}");
     if(not defined $self->{function}) {
         $self->{function} = $args{function};
         $self->{parameters} = $args{parameters};
         $self->{last_inserted} = $self;
+        $log->debug("insert first rollback <".$self->{function}.">");
     } else {
         if ($self->{before}){
             my $eroll = $self->find(erollback => $self->{before});
@@ -100,8 +101,10 @@ sub add {
             } else{
                 $self=$eroll->{prev_item};
             }
+            $log->debug("Insert rollback <".$eroll->{prev_item}->{function}. "> before <".$self->{before}->{function}.">");
             $self->{last_inserted} = $eroll->{prev_item};
             $self->{before} = undef;
+            $log->debug($self->print());
         }elsif ($self->{after}){
             my $eroll = $self->find(erollback => $self->{after});
             my $tmp = $eroll->{next_item};
@@ -114,6 +117,7 @@ sub add {
                 $tmp->{prev_item} = $eroll->{next_item};
             }
             $self->{last_inserted} = $eroll->{next_item};
+            $log->debug("Insert rollback <".$eroll->{next_item}->{function}. "> before <".$self->{after}->{function}.">");
             $self->{after} = undef;
         }else {
             my $last = $self->_last();
@@ -159,6 +163,7 @@ sub insertNextErollAfter{
 
 sub getLastInserted{
     my $self = shift;
+    $log->debug("Get last inserted in rollback <".$self->{last_inserted}->{function}.">");
     return $self->{last_inserted};
 }
 =head2 _last
