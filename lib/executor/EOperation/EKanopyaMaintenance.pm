@@ -114,6 +114,8 @@ sub execute {
     $log->debug("Before EOperation exec");
     $self->SUPER::execute();
 
+
+########## Backup message
     my $msg_log = "";
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -131,8 +133,10 @@ sub execute {
     }
     print( $MSGTXT "$msg_log");
     close $MSGTXT;
-    $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "/var/log/kanopya/msg_backup_".time());    
+    $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "/var/log/kanopya/msg_backup_".time());
     unlink "/tmp/$tmpfile";
+    
+    
 }
 
 =head1 DIAGNOSTICS
