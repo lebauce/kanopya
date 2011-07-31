@@ -190,7 +190,7 @@ sub getMountDir {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     my $dir = $args{device};
-    $dir =~ /^\/dev\/\w+\/(\w+)$/;
+    $dir =~ /^\/dev\/[\w-]+\/([\w-]+)$/;
     return "/nfsexports/".$1;
 }
 
