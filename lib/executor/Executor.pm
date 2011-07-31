@@ -151,10 +151,10 @@ sub oneRun {
                     $adm->{db}->txn_begin;
                     $op->cancel();
                     $adm->{db}->txn_commit;};
-                    if ($@){
-                        my $error = $@;
-                        $log->error("Error during operation cancel :\n$error");
-                    }
+                if ($@){
+                    my $error2 = $@;
+                    $log->error("Error during operation cancel :\n$error2");
+                }
                 if (!$error->hidden){
                     Message->send(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
                     $log->error("Error during execution : $error");} 
