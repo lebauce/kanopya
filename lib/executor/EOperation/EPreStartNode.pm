@@ -182,7 +182,17 @@ sub execute {
 
 }
 
+sub _cancel {
+    my $self = shift;
 
+    my $params = $self->_getOperation()->getParams();
+
+    my $cluster = Entity::Cluster->get(id => $params->{cluster_id});
+    my $motherboards = $cluster->getMotherboards();
+    if (! scalar keys %$motherboards) {
+        $cluster->setState("down");
+    }
+}
 1;
 __END__
 

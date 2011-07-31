@@ -192,6 +192,11 @@ sub _cancel {
     my $motherboard = Entity::Motherboard->get(id => $params->{motherboard_id});
     $log->info("Cancel start node, we will try to remove node link for <" . $motherboard->getAttr(name=>"motherboard_mac_address") . ">");
     $motherboard->stopToBeNode();
+    my $cluster = Entity::Cluster->get(id => $params->{cluster_id});
+    my $motherboards = $cluster->getMotherboards();
+    if (! scalar keys %$motherboards) {
+        $cluster->setState("down");
+    }
 }
 
 sub execute {
