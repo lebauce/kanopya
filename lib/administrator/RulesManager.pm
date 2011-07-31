@@ -230,10 +230,23 @@ sub getClusterModelParameters {
     my $self = shift;
     my %args = @_;
     
+    my $wc = $self->{db}->resultset('WorkloadCharacteristic')->search( cluster_id => $args{cluster_id} )->first;
+    
+    if (defined $wc) {
+    	my %data = (
+    			visit_ratio => $wc->get_column('wc_visit_ratio'),
+                service_time => $wc->get_column('wc_service_time'),
+                delay => $wc->get_column('wc_delay'),
+                think_time => $wc->get_column('wc_think_time') 
+    		);
+    	return \%data;
+    }
+    
     return {    visit_ratio => 1,
-                service_time => 0.002,
-                delay => 0,
-                think_time => 10 };
+                service_time => 2, # ms
+                delay => 0, # ms
+                think_time => 10000 # ms
+			};
 }
 
 sub setClusterModelParameters {
@@ -248,7 +261,12 @@ sub setClusterModelParameters {
                  };
     
     eval {             
-        $self->{db}->resultset('WorloadCharacteristic')->create($row);
+    	my $wc = $self->{db}->resultset('WorkloadCharacteristic')->search( cluster_id => $args{cluster_id} )->first;
+    	if (defined $wc) {
+    		$wc->update($row);
+    	} else {
+        	$self->{db}->resultset('WorkloadCharacteristic')->create($row);
+    	}
     };
     if($@) { 
         $errmsg = "RulesManager->setClusterModelParameters: $@";

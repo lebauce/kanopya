@@ -268,7 +268,7 @@ sub view_motherboarddetails : Runmode {
     
     if($emotherboard->getAttr('name' => 'active')) {
         $tmpl->param('active' => 1);
-        my $state = $emotherboard->getAttr('name' => 'motherboard_state');
+        my ($state, $timestamp) = split ':', $emotherboard->getAttr('name' => 'motherboard_state');
         if($state =~ /up/) {
             $tmpl->param('state_up' => 1);
             eval {
@@ -294,6 +294,7 @@ sub view_motherboarddetails : Runmode {
             $tmpl->param('state_broken' => 1);
             
         }
+        $tmpl->param("state_time" => $self->timestamp_format( timestamp => $timestamp ));
     } else {
         $tmpl->param('active' => 0);
         if($methods->{'activate'}->{'granted'}) { $tmpl->param('can_activate' => 1); }

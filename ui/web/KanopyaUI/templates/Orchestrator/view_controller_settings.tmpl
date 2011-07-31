@@ -21,10 +21,10 @@
 
 <table id="workload_table" class='simplelisting rulesview'>
 	<caption>Workload characteristic</caption>
-	<tr><td>Visit ratio</td><td><TMPL_VAR NAME=WORKLOAD_VISIT_RATIO></td></tr>
-	<tr><td>Service time</td><td><TMPL_VAR NAME=WORKLOAD_SERVICE_TIME> ms</td></tr>
-	<tr><td>Delay</td><td><TMPL_VAR NAME=WORKLOAD_DELAY> ms</td></tr>
-	<tr><td>Think time</td><td><TMPL_VAR NAME=WORKLOAD_THINK_TIME> ms</td></tr>
+	<tr><td>Visit ratio</td><td id='visit_ratio'><TMPL_VAR NAME=WORKLOAD_VISIT_RATIO></td></tr>
+	<tr><td>Service time</td><td id='service_time'><TMPL_VAR NAME=WORKLOAD_SERVICE_TIME></td><td>ms</td></tr>
+	<tr><td>Delay</td><td id='delay'><TMPL_VAR NAME=WORKLOAD_DELAY></td><td>ms</td></tr>
+	<tr><td>Think time</td><td id='think_time'><TMPL_VAR NAME=WORKLOAD_THINK_TIME></td><td>ms</td></tr>
 </table>
 
 

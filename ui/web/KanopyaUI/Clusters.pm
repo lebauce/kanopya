@@ -64,18 +64,19 @@ sub view_clusters : StartRunmode {
                 $tmp->{nbnodesup} = $nbnodesup;
                 $tmp->{link_activity} = 1;
             }
-         	my $cluster_state = $n->getAttr('name' => 'cluster_state');
-    		for my $state ('up', 'starting', 'stopping', 'down') {
-    			if ( $cluster_state =~ $state ) {
-    				$tmp->{"state_$state"} = 1;
-    			}
-    		}
-        } else {
-            $tmp->{active} = 0;
+
+             my $cluster_state = $n->getAttr('name' => 'cluster_state');
+            for my $state ('up', 'starting', 'stopping', 'down', 'broken') {
+                if ( $cluster_state =~ $state ) {
+                    $tmp->{"state_$state"} = 1;
+                }
+            }
+        } else { 
+            $tmp->{active} = 0; 
         }
         $tmp->{cluster_desc} = $n->getAttr(name => 'cluster_desc');
-        push (@$clusters, $tmp);
-    }
+        push (@$clusters, $tmp);    
+    }    
 
     $tmpl->param('clusters_list' => $clusters);
     if($methods->{'create'}->{'granted'}) {
@@ -319,13 +320,14 @@ sub view_clusterdetails : Runmode {
     $tmpl->param('nbpublicips' => scalar(@$publicips)+1);
 
     # state info
-    my $cluster_state = $ecluster->getAttr('name' => 'cluster_state');
-    for my $state ('up', 'starting', 'stopping', 'down') {
-    	if ( $cluster_state =~ $state ) {
-    		$tmpl->param("state_$state" => 1);
-    	}
+    my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
+    for my $state ('up', 'starting', 'stopping', 'down', 'broken') {
+        if ( $cluster_state =~ $state ) {
+            $tmpl->param("state_$state" => 1);
+        }
     }
-
+    $tmpl->param("state_time" => $self->timestamp_format( timestamp => $timestamp ));
+    
     my $motherboards = $ecluster->getMotherboards(administrator => $self->{adm});
     my $nbnodesup = scalar(keys(%$motherboards));
     my $nodes = [];
@@ -381,34 +383,35 @@ sub view_clusterdetails : Runmode {
         my $master_id = $ecluster->getMasterNodeId();
         while( my ($id, $n) = each %$motherboards) {
             my $tmp = {
-	            motherboard_id => $id,
-	            motherboard_hostname => $n->getAttr(name => 'motherboard_hostname'),
-	            motherboard_internal_ip => $n->getInternalIP()->{ipv4_internal_address},
-	            cluster_id => $cluster_id,
-	        };
-
+                motherboard_id => $id,
+                motherboard_hostname => $n->getAttr(name => 'motherboard_hostname'),
+                motherboard_internal_ip => $n->getInternalIP()->{ipv4_internal_address},
+                cluster_id => $cluster_id,
+            };
+            
             # Manage remove link
             if ($id == $master_id) {
-            	$tmp->{link_remove} = 0;
-            	$tmp->{master_node} = 1;
+                $tmp->{link_remove} = 0;
+                $tmp->{master_node} = 1;
             } else {
-           		if(not $methods->{'removeNode'}->{'granted'} ) {
-                	$tmp->{link_remove} = 0;
-            	} else { $tmp->{link_remove} = 1;}
+                if(not $methods->{'removeNode'}->{'granted'} ) {
+                    $tmp->{link_remove} = 0;
+                } else { $tmp->{link_remove} = 1;}
             }
 
-			# Manage node state
-			my $node_state = $n->getNodeState();
-			# The first elem is the regexp to match with the state and the second elem is the associated state for ui
-    		for my $state ( ['^in', 'up'],				# node 'in' is displayed as 'Up'
-    						['goingin', 'starting'],    # match pregoingin, goingin, postgoingin and diplayed as starting
-    						['goingout', 'stopping'],	# match pregoingout, goingout, postgoingout and diplayed as stopping
-    						['broken','broken']) {		# broken
-    			if ( $node_state =~ $state->[0] ) {
-    				$tmp->{"state_$state->[1]"} = 1;
-    			}
-    		}
-
+            # Manage node state
+            my ($node_state, $time_stamp) = $n->getNodeState();
+            # The first elem is the regexp to match with the state and the second elem is the associated state for ui 
+            for my $state ( ['^in', 'up'],                # node 'in' is displayed as 'Up'
+                            ['goingin', 'starting'],    # match pregoingin, goingin and diplayed as starting
+                            ['goingout', 'stopping'],    # match pregoingout, goingout and diplayed as stopping
+                            ['broken','broken']) {        # broken
+                if ( $node_state =~ $state->[0] ) {
+                    $tmp->{"state_$state->[1]"} = 1;
+                }
+            }
+            $tmp->{"real_state"} = $node_state;
+            $tmp->{"state_time"} = $self->timestamp_format( timestamp => $time_stamp );
 
             push @$nodes, $tmp;
         }

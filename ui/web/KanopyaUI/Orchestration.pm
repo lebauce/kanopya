@@ -191,9 +191,9 @@ sub view_controller_settings : Runmode {
     # Model parameters
     my $workload_characteristic = $rules_manager->getClusterModelParameters( cluster_id => $cluster_id );
     $tmpl->param('WORKLOAD_VISIT_RATIO' => $workload_characteristic->{visit_ratio});
-    $tmpl->param('WORKLOAD_SERVICE_TIME' => $workload_characteristic->{service_time} * 1000);
-    $tmpl->param('WORKLOAD_DELAY' => $workload_characteristic->{delay} * 1000);
-    $tmpl->param('WORKLOAD_THINK_TIME' => $workload_characteristic->{think_time} * 1000);
+    $tmpl->param('WORKLOAD_SERVICE_TIME' => $workload_characteristic->{service_time});
+    $tmpl->param('WORKLOAD_DELAY' => $workload_characteristic->{delay});
+    $tmpl->param('WORKLOAD_THINK_TIME' => $workload_characteristic->{think_time});
 
     $tmpl->param('TITLEPAGE' => "Controller settings");
     $tmpl->param('MCLUSTERS' => 1);
@@ -225,5 +225,32 @@ sub view_controller : Runmode {
     return $tmpl->output();
 }
 
+sub save_controller_settings : Runmode {
+    my $self = shift;
+    my $errors = shift;
+    my $query = $self->query();
+    
+    my $cluster_id = $query->param('cluster_id') || 0;
+    
+    
+    my %parameters = (
+    	visit_ratio => $query->param('visit_ratio'),		
+		service_time => $query->param('service_time'),
+		delay => $query->param('delay'),
+		think_time => $query->param('think_time'), 
+    );
+        
+    
+    my $rules_manager = $self->{'adm'}->{manager}->{rules};
+    eval {
+        $rules_manager->setClusterModelParameters( cluster_id => $cluster_id, %parameters );
+    };
+    if ($@) {
+        my $error = $@;
+        return "Error while recording parameters for cluster $cluster_id\n$error";
+    }
+    
+    return "parameters saved for cluster $cluster_id ";
+}
 
 1;

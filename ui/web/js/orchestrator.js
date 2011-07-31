@@ -2,6 +2,7 @@ $(document).ready(function(){
   
   	var url_params = window.location.href.split('?')[1];
   	var save_orchestrator_settings_link = "/cgi/kanopya.cgi/orchestration/save_orchestrator_settings?" + url_params;
+	var save_controller_settings_link = "/cgi/kanopya.cgi/orchestration/save_controller_settings?" + url_params;
   
   	commonInit();
   
@@ -191,7 +192,19 @@ alert('remove');
 		
  	}).addClass('clickable');
  	
- 	
+ 	$('#save_controller_settings').click( function () {
+		loading_start();	
+		var params = {
+				visit_ratio : $('#visit_ratio').text(),
+				service_time : $('#service_time').text(),
+				delay : $('#delay').text(), 
+				think_time : $('#think_time').text(),  
+			};
+		$.get(save_controller_settings_link, params, function(resp) {
+			loading_stop();
+			alert(resp);
+		});
+	}).addClass('clickable');
  	
      //$('a.normalTip').aToolTip(); 
      //$('div.aToolTip').aToolTip();
