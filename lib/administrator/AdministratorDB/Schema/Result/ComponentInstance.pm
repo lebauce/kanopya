@@ -338,6 +338,21 @@ Related object: L<AdministratorDB::Schema::Result::Syslogng3>
 #  { cascade_copy => 0, cascade_delete => 0 },
 #);
 
+=head2 mysql5
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Mysql5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mysql5",
+  "AdministratorDB::Schema::Result::Mysql5",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-05-04 15:05:42
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XKBAccz1BPd0drl4orRjlA
