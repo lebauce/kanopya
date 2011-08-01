@@ -65,8 +65,6 @@ eval {
     $m1->create();
     $executor->execnround(run => 1);
     
-    #initialised $mac_addr
-    $mac_addr='00:ea:01:06:f5:59';
     note( "Test Motherboard extended field");
     my $clone_m1 = Entity::Motherboard->getMotherboard(hash => {motherboard_mac_address => $mac_addr});
     isa_ok($clone_m1,Entity::Motherboard,"Motherboard extended object");
