@@ -190,7 +190,7 @@ sub _cancel {
     my $cluster = Entity::Cluster->get(id => $params->{cluster_id});
     my $motherboards = $cluster->getMotherboards();
     if (! scalar keys %$motherboards) {
-        $cluster->setState("down");
+        $cluster->setState(state => 'down');
     }
 }
 1;
