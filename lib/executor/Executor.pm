@@ -190,7 +190,7 @@ sub execnround {
 
        while ($args{run}) {
            $args{run} -= 1;
-           oneRun();
+           $self->oneRun();
        }
 }
 
