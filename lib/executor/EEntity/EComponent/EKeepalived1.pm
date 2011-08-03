@@ -174,6 +174,35 @@ sub stopNode {
     
 }
 
+sub cleanNode {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'cluster', 'mount_point']);
+    
+    my $keepalived = $self->_getEntity();
+    
+    # remove this motherboard as realserver for each virtualserver of this cluster
+    my $virtualservers = $keepalived->getVirtualservers();
+
+    foreach my $vs (@$virtualservers) {
+       my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id},
+                                                        realserver_ip => $args{motherboard}->getInternalIP()->{ipv4_internal_address});
+
+
+       $keepalived->removeRealserver(
+                virtualserver_id => $vs->{virtualserver_id},
+                realserver_id => $realserver_id);
+    }
+
+    # If masternode then delete virtual server entry in db
+    my $masternodeip = $args{cluster}->getMasterNodeIp();
+    if($masternodeip eq $args{motherboard}->getInternalIP()->{ipv4_internal_address}) {
+        foreach my $vs (@$virtualservers) {
+           $keepalived->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
+        }
+    }
+}
 
 # Reload configuration of keepalived process
 sub reload {
