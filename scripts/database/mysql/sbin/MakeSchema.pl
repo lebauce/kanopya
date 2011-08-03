@@ -17,7 +17,7 @@
 # Created 14 july 2010
 use DBIx::Class::Schema::Loader qw/ make_schema_at /;
 
-use lib '/opt/kanopya/lib/administrator';
+#use lib '/opt/kanopya/lib/administrator';
 
 # INFO
 # We can specify the table we want load with the option 'constraint'

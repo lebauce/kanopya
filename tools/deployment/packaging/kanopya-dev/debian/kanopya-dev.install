@@ -1,3 +1,1 @@
-scripts/database/* /opt/kanopya/scripts/database
-scripts/install/* /opt/kanopya/scripts/install
 tools/*		  /opt/kanopya/tools
