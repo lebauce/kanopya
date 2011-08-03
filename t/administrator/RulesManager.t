@@ -8,7 +8,10 @@ use Log::Log4perl qw(:easy);
 use Test::More 'no_plan';
 use Administrator;
 
-my $adm = Administrator->new( login =>'admin', password => 'admin' );
+
+
+Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
+my $adm = Administrator->new();
 my $rules_manager = $adm->{manager}->{rules};
 
 
