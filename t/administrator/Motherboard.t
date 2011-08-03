@@ -25,7 +25,7 @@ eval {
     note("Test Instanciation Error");
     throws_ok { Entity::Motherboard->new(
 		    motherboard_mac_address => '70:71tbc:6c:2d:b1',
-		    kernel_id => 9,
+		    kernel_id => 1,
 		    motherboard_serial_number => "Wrong Mac",
 		    motherboardmodel_id => 7,
 		    processormodel_id => 2) } qr/checkAttrs detect a wrong value/,
@@ -35,7 +35,7 @@ eval {
     note("Test Motherboard extended");
     my $m1 = Entity::Motherboard->new(
 	motherboard_mac_address => '00:00:00:00:00:00',
-	kernel_id => 9,
+	kernel_id => 1,
 	motherboard_serial_number => "First Motherboard",
 	motherboardmodel_id => 7,
 	processormodel_id => 2,
