@@ -8,7 +8,10 @@ use Log::Log4perl qw(:easy);
 use Test::More 'no_plan';
 use Administrator;
 
-my $adm = Administrator->new( login =>'admin', password => 'admin' );
+
+
+Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
+my $adm = Administrator->new();
 my $monitor_manager = $adm->{manager}->{monitor};
 
 
@@ -36,9 +39,9 @@ eval {
 };
 if($@) {
        my $error = $@;
-       
-       $adm->{db}->txn_rollback;
        print "$error";
+       $adm->{db}->txn_rollback;
+       
        exit 233;
 }
 

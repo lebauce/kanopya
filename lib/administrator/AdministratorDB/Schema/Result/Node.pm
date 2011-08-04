@@ -88,9 +88,9 @@ __PACKAGE__->add_columns(
   "master_node",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "node_state",
-  { data_type => "char", is_nullable => 1, size => 20 },
+  { data_type => "char", is_nullable => 1, size => 32 },
   "node_prev_state",
-  { data_type => "char", is_nullable => 1, size => 20 },
+  { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("node_id");
 __PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "motherboard_id"]);

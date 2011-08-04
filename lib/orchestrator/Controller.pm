@@ -113,7 +113,7 @@ sub getClusterConf {
 
     my $cluster = $args{cluster};
     
-    return {nb_nodes => 1, mpl => 150};    
+    return {nb_nodes => 1, mpl => 500};
 }
 
 sub getWorkload {
@@ -122,8 +122,8 @@ sub getWorkload {
 
     #my $cluster = $args{cluster};
 
-    my $service_info_set = "apache_workers";
-    my $load_metric = "BusyWorkers";
+    my $service_info_set = "haproxy_conn"; #"apache_workers";
+    my $load_metric = "Active"; #"BusyWorkers";
 
 
     my $cluster_name = $args{cluster}->getAttr('name' => 'cluster_name');
@@ -141,8 +141,8 @@ sub getWorkload {
     }
     
     my $workload_amount = $cluster_data_aggreg->{$load_metric};
-    #my $workload_amount = 666;                                                
-                                                                
+    #my $workload_amount = 666;
+
 #    my %workload_class = (     visit_ratio => [1],
 #                            service_time => [0.002],
 #                            delay => [0],
