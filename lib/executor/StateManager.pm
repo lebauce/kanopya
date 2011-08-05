@@ -127,9 +127,11 @@ sub run {
     # main loop
     while ($$running) {
         # First Check Motherboard status
+        
         $log->debug("<<< Motherboards status changes >>>");
         my @motherboards = Entity::Motherboard->getMotherboards(hash => {-not => {motherboard_state => {'like','down%'}}});
         foreach my $mb (@motherboards) {
+            $adm->{db}->txn_begin;
             eval {
                   my $emotherboard = EFactory::newEEntity(data => $mb);
                   my $is_up = $emotherboard->checkUp();
@@ -137,8 +139,11 @@ sub run {
             };
             if($@) {
                 my $exception = $@;
+                $adm->{db}->txn_rollback;
                 Message->send(from => 'StateManager', level => 'error', content => $exception);
                 $log->error($exception);
+            } else {
+                $adm->{db}->txn_commit; 
             }
         }
 
@@ -151,6 +156,7 @@ sub run {
             my $motherboards = $cluster->getMotherboards();
             my @moth_index = keys %$motherboards;
             foreach my $mb (@moth_index) {
+                $adm->{db}->txn_begin;
                 eval {
                     my $srv_available = StateManager::Node::checkNodeUp(motherboard=>$motherboards->{$mb}, 
                                                     cluster=>$cluster,
@@ -159,17 +165,25 @@ sub run {
                 };
                 if($@) {
                     my $exception = $@;
+                    $adm->{db}->txn_rollback;
                     Message->send(from => 'StateManager', level => 'error', content => $exception);
                     $log->error($exception);
+                } else {
+                 $adm->{db}->txn_commit; 
                 }
             }
+            
+            $adm->{db}->txn_begin;
             eval {
                 StateManager::Cluster::updateClusterStatus(motherboards=>$motherboards,cluster=>$cluster);
             };
             if($@) {
                 my $exception = $@;
+                $adm->{db}->txn_rollback;
                 Message->send(from => 'StateManager', level => 'error', content => $exception);
                 $log->error($exception);
+            } else {
+              $adm->{db}->txn_commit; 
             }
        }
            

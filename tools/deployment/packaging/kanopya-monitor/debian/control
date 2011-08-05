@@ -10,5 +10,5 @@ Vcs-Git: git://git.kanopya.org/mcs/executor.git
 
 Package: kanopya-monitor
 Architecture: all
-Depends: ${perl:Depends}, openssh-server, snmpd, libkanopya-perl, libnet-snmp-perl, librrdtool-oo-perl, libdatetime-format-strptime-perl
+Depends: ${perl:Depends}, openssh-server, snmpd, curl, libkanopya-perl, libnet-snmp-perl, librrdtool-oo-perl, libdatetime-format-strptime-perl
 Description: The monitor collects and graphes cluster and node activity
