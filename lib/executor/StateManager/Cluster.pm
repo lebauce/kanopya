@@ -93,14 +93,22 @@ sub updateClusterStatus {
                    }
                 }
             } else {
-                logClusterStateChange(
-                    cluster_name => $args{cluster}->getAttr(name=>"cluster_name"),
-                    level => 'info',
-                    newstatus => 'up',    
-                );
+                my $nodes_states = 1;
+                foreach my $node (keys %$motherboards){
+                    my @node_state = $motherboards->{$node}->getNodeState();
+                    if ($node_state[0] ne "in"){
+                        $nodes_states = 0;
+                    }
+                }
+                if ($nodes_states) {
+                    logClusterStateChange(
+                        cluster_name => $args{cluster}->getAttr(name=>"cluster_name"),
+                        level => 'info',
+                        newstatus => 'up',    
+                    );
                             
-                $args{cluster}->setState(state => "up");
-                
+                    $args{cluster}->setState(state => "up");
+                }
             }
         }
         else {
