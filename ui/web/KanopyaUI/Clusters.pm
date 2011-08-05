@@ -702,6 +702,29 @@ sub process_stopcluster : Runmode {
     }
 }
 
+# cluster force stop processing
+
+sub process_forcestopcluster : Runmode {
+    my $self = shift;
+    my $query = $self->query();
+    eval {
+        my $ecluster = Entity::Cluster->get(id => $query->param('cluster_id'));
+        $ecluster->forceStop();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $self->{adm}->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            $self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $self->{adm}->addMessage(from => 'Administrator', level => 'info', content => 'cluster force stop adding to execution queue');
+        $self->redirect('/cgi/kanopya.cgi/clusters/view_clusterdetails?cluster_id='.$query->param('cluster_id'));
+    }
+}
+
 # cluster node removing processing
 
 sub process_removenode : Runmode {
