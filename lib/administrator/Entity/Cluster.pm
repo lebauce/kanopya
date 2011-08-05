@@ -133,6 +133,9 @@ sub methods {
         'stop'=> {'description' => 'stop this cluster',
                         'perm_holder' => 'entity',
         },
+        'forceStop'=> {'description' => 'force stop this cluster',
+                        'perm_holder' => 'entity',
+        },
         'setperm'    => {'description' => 'set permissions on this cluster',
                         'perm_holder' => 'entity',
         },
@@ -283,6 +286,24 @@ sub remove {
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveCluster',
+        params   => \%params,
+    );
+}
+
+sub forceStop {
+    my $self = shift;
+    my $adm = Administrator->new();
+    # delete method concerns an existing entity so we use his entity_id
+       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'forceStop');
+       if(not $granted) {
+           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to force stop this entity");
+       }
+    my %params;
+    $params{'cluster_id'}= $self->getAttr(name =>"cluster_id");
+    $log->debug("New Operation Force Stop Cluster with attrs : " . %params);
+    Operation->enqueue(
+        priority => 200,
+        type     => 'ForceStopCluster',
         params   => \%params,
     );
 }
