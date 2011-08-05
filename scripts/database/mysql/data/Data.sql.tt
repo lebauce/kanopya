@@ -190,7 +190,8 @@ INSERT INTO `component` VALUES
 (8,'Nfsd', '3', 'Export'),
 (9,'Mounttable','1','System'),
 (10,'Mysql','5','DBMS'),
-(11,'Syslogng','3','Logger');
+(11,'Syslogng','3','Logger'),
+(12,'Iptables','1','Firewall');
 
 -- kernels
 INSERT INTO `kernel` VALUES (1,'2.6.32.33','2.6.32.33','generic kernel with lots of modules');
