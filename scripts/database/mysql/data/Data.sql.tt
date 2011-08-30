@@ -63,14 +63,14 @@ SET @guest_user_eid = @eid;
 SET @eid := @eid +1;
 
 -- processor models
-INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1);
-INSERT INTO `processormodel` VALUES (2,'Intel','Atom D510',2,1.66,1,13,1);
-INSERT INTO `processormodel` VALUES (3,'VIA Nano','L2200',2,1.6,1,13,1);
-INSERT INTO `processormodel` VALUES (4,'Intel','i3-330',2,2.1,3,35,1);
-INSERT INTO `processormodel` VALUES (5,'Intel','i5-430',2,2.4,3,35,1);
-INSERT INTO `processormodel` VALUES (6,'Intel','i7-640M',2,2.8,4,35,1);
-INSERT INTO `processormodel` VALUES (7,'Intel','i7-720QM',4,1.6,6,45,1);
-INSERT INTO `processormodel` VALUES (8,'AMD','Ontario',2,1.6,1,9,1);
+INSERT INTO `processormodel` VALUES (1,'Intel','Atom 330',2,1.6,1,8,1,0);
+INSERT INTO `processormodel` VALUES (2,'Intel','Atom D510',2,1.66,1,13,1,0);
+INSERT INTO `processormodel` VALUES (3,'VIA Nano','L2200',2,1.6,1,13,1,0);
+INSERT INTO `processormodel` VALUES (4,'Intel','i3-330',2,2.1,3,35,1,1);
+INSERT INTO `processormodel` VALUES (5,'Intel','i5-430',2,2.4,3,35,1,1);
+INSERT INTO `processormodel` VALUES (6,'Intel','i7-640M',2,2.8,4,35,1,1);
+INSERT INTO `processormodel` VALUES (7,'Intel','i7-720QM',4,1.6,6,45,1,1);
+INSERT INTO `processormodel` VALUES (8,'AMD','Ontario',2,1.6,1,9,1,1);
 
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,2); SET @eid := @eid +1;

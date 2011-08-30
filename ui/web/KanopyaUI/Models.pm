@@ -44,6 +44,7 @@ sub view_models : StartRunmode {
         $h->{pmodel_l2cache} = $p->getAttr(name => 'processormodel_l2_cache');
         $h->{pmodel_tdp} = $p->getAttr(name => 'processormodel_max_tdp');
         $h->{pmodel_is64} = $p->getAttr(name => 'processormodel_64bits');
+        $h->{pmodel_virt} = $p->getAttr(name => 'processormodel_virtsupport');
         my $methods = $p->getPerms();
         if($methods->{'update'}->{'granted'}) { $h->{can_update} = 1; }
         if($methods->{'remove'}->{'granted'}) { $h->{can_delete} = 1; }
@@ -105,6 +106,7 @@ sub process_addprocessormodel : Runmode {
         processormodel_l2_cache => $query->param('l2cache'),
         processormodel_max_tdp => $query->param('tdp'),
         processormodel_64bits => $query->param('is64bits'),
+        processormodel_virtsupport => $query->param('virtsupport'),
     );
     eval { $procmodel->create(); };
        if($@) {

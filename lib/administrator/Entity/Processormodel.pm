@@ -35,7 +35,8 @@ use constant ATTR_DEF => {
     processormodel_clock_speed     => { pattern => '.*', is_mandatory => 1, is_extended => 0},
     processormodel_l2_cache        => { pattern => '.*', is_mandatory => 1, is_extended => 0},
     processormodel_max_tdp         => { pattern => '.*', is_mandatory => 1, is_extended => 0},
-    processormodel_64bits          => { pattern => '.*', is_mandatory => 1, is_extended => 0},        
+    processormodel_64bits          => { pattern => '.*', is_mandatory => 1, is_extended => 0},
+    processormodel_virtsupport     => { pattern => '(0|1)', is_mandatory => 1, is_extended => 0},        
 };
 
 

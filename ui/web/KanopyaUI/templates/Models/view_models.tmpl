@@ -22,14 +22,15 @@
 </table>
 <table class="simplelisting">
 	<caption>Processor Models</caption>
-	<tr><th>model</th><th>cores</th><th>clock<br/>speed</th><th>L2 cache</th><th>TDP</th><th>64 bits</th><th></th></tr>
+	<tr><th>model</th><th>cores</th><th>clock<br/>speed</th><th>L2 cache</th><th>TDP</th><th>64 bits</th><th>virtualization<br />extensions</th><th></th></tr>
 	<TMPL_LOOP NAME=processormodels_list>
 	<td><TMPL_VAR NAME=pmodel_brand> <span class="bold"><TMPL_VAR NAME=pmodel_name></span></td>
 	<td class="right"><TMPL_VAR NAME=pmodel_corenum></td>
 	<td class="right"><TMPL_VAR NAME=pmodel_clockspeed> GHz</td>
 	<td class="right"><TMPL_VAR NAME=pmodel_l2cache> Mo</td>
 	<td class="right"><TMPL_VAR NAME=pmodel_tdp> W</td>
-	<td><TMPL_IF NAME=pmodel_is64>yes<TMPL_ELSE>no</TMPL_IF></td>
+	<td class="center"><TMPL_IF NAME=pmodel_is64>yes<TMPL_ELSE>no</TMPL_IF></td>
+	<td class="center"><TMPL_IF NAME=pmodel_virt>yes<TMPL_ELSE>no</TMPL_IF></td>
 	<td><TMPL_IF NAME=can_update><a class="imgEdit">edit</a></TMPL_IF>
 	<TMPL_IF NAME=can_delete><br /><a class="imgRemove" href="/cgi/kanopya.cgi/models/process_deleteprocessormodel?processormodel_id=<TMPL_VAR NAME=pmodel_id>">remove</a></TMPL_IF>
 	<TMPL_IF NAME=can_setperm><br /><a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Processormodel&id=<TMPL_VAR NAME=pmodel_id>">permissions</a></TMPL_IF>

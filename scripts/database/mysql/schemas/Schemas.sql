@@ -44,6 +44,7 @@ CREATE TABLE `processormodel` (
   `processormodel_l2_cache` int(2) unsigned NOT NULL,
   `processormodel_max_tdp` int(2) unsigned NOT NULL,
   `processormodel_64bits` int(1) unsigned NOT NULL,
+  `processormodel_virtsupport` int(1) unsigned NOT NULL,
   PRIMARY KEY (`processormodel_id`),
   UNIQUE KEY `processormodel_name_UNIQUE` (`processormodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -92,6 +92,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "processormodel_64bits",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "processormodel_virtsupport",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("processormodel_id");
 __PACKAGE__->add_unique_constraint("processormodel_name_UNIQUE", ["processormodel_name"]);
