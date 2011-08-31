@@ -51,7 +51,8 @@ sub configureNode {
     }
     
     my $publicips =  $args{cluster}->getPublicIps();
-    $data{public_ip} = (shift @$publicips) || "127.0.0.1";
+    my $vip = shift @$publicips;
+    $data{public_ip} = defined $vip ? $vip->{address} : "127.0.0.1";
     
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => $template_path,
