@@ -104,7 +104,7 @@ chomp(@kanopya_pvs);
 #We create the logging directory and give rights to apache user on it
 print "creating the logging directory...";
 if ($answers->{log_directory} !~ /\/$/){
-	$answers->{log_directory} = $answers->{log_directory}.'/';
+    $answers->{log_directory} = $answers->{log_directory}.'/';
 }
 system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating the logging directory: $!";
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
@@ -165,7 +165,7 @@ close ($FILE);
 # first test if mysql server is running
 my $mysqlpidfile = '/var/run/mysqld/mysqld.pid';
 if(not -e $mysqlpidfile) {
-	system('invoke-rc.d mysql start');
+    system('invoke-rc.d mysql start');
 }
 
 my $kernel_version=`uname -r`;
@@ -213,7 +213,7 @@ while( defined( $line = <$FILE> ) )
         chomp ($line);
         # don't proceed empty lines or commented lines
         if((not $line) || ($line =~ /^#/)) {
-        	next;
+            next;
         }
         print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
         system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
@@ -379,8 +379,8 @@ sub matchRegexp{
     if($answers->{$args{question}} !~ m/($questions->{$args{question}}->{pattern})/){
         print "answer <".$answers->{$args{question}}."> does not fit regexp <". $questions->{$args{question}}->{pattern}.">\n";
         return 1;
-	}
-	return 0;
+    }
+    return 0;
 }
 
 ######################################### Methods to check user's parameter
@@ -423,12 +423,12 @@ sub checkIp{
     if ((!defined $args{question} or !exists $args{question})){
         default_error();
     }
-	my $ip = new NetAddr::IP($answers->{$args{question}});
-	if(not defined $ip) {
-	    print "IP <".$answers->{$args{question}}."> seems to be not good";
-	    return 1;
-	}
-	return 0;
+    my $ip = new NetAddr::IP($answers->{$args{question}});
+    if(not defined $ip) {
+        print "IP <".$answers->{$args{question}}."> seems to be not good";
+        return 1;
+    }
+    return 0;
 }
 
 # Check that password is confirmed
@@ -480,19 +480,19 @@ sub default_error{
 ###################################################### Following functions generates conf files for Kanopya
 
 sub genConf {
-	unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir}};
-	my %datas;
-	foreach my $files (keys %$conf_files){
-		foreach my $d (keys %{$conf_files->{$files}->{datas}}){
-			$datas{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
-		}
-		useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});
-	}
+    unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir}};
+    my %datas;
+    foreach my $files (keys %$conf_files){
+        foreach my $d (keys %{$conf_files->{$files}->{datas}}){
+            $datas{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
+        }
+        useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});
+    }
 }
 sub useTemplate{
         my %args=@_;
         my $input=$args{template};
-	my $include=$args{include};
+    my $include=$args{include};
         my $dat=$args{datas};
         my $output=$args{conf};
         my $config = {
