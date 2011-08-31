@@ -58,7 +58,9 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use General;
 use Log::Log4perl "get_logger";
+
 use Data::Dumper;
 
 my $log = get_logger("administrator");
@@ -153,6 +155,10 @@ sub lvCreate{
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
+    
+    my ($value, $unit) = General::convertSizeFormat(size => $args{lvm2_lv_size});
+    $args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
+    
     $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_lv_size is $args{lvm2_lv_size}, lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, lvm2_vg_id is $args{lvm2_vg_id}");
     my $lv_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs;
     my $res = $lv_rs->create(\%args);
@@ -173,6 +179,7 @@ sub vgSizeUpdate{
     }
     my $vg_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}});
     delete $args{lvm2_vg_id};
+    $log->debug("Volume group freespace size update");
     return $vg_rs->update(\%args);
 }
 
@@ -236,7 +243,7 @@ sub createLogicalVolume {
        (! exists $args{size} or ! defined $args{size}) ||
        (! exists $args{filesystem} or ! defined $args{filesystem}) ||
        (! exists $args{vg_id} or ! defined $args{vg_id})) {
-           $errmsg = "CreateLogicalVolume needs disk_name, size and filesystem named argument!";
+        $errmsg = "CreateLogicalVolume needs disk_name, size and filesystem named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -256,6 +263,8 @@ sub createLogicalVolume {
         },
     );
 }
+
+
 
 =head1 DIAGNOSTICS
 

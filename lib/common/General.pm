@@ -48,7 +48,9 @@ use warnings;
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2
+=head2---------+--------------+
+1 row in set (0.00 sec)
+
     
     Class : Public
     
@@ -193,6 +195,60 @@ sub getAsHashRef {
         $res{ $val } = \%e; 
     }
     return \%res;
+}
+
+sub convertSizeFormat {
+    my %args = @_;
+    if(! exists $args{size} or ! defined $args{size}) {
+        $errmsg = "convertSizeFormat needs size named argument";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+    }
+    if($args{size} !~ /^(\d+)([BKMGTPE])$/) {
+        $errmsg = "convertSizeFormat bad size argument $args{size} ; must be XY where X is a positive number and Y a character among B, K, M, G, T, P or E";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+     
+    }
+    return ($1, $2);   
+}
+
+sub convertToBytes {
+    my %args = @_;
+    if((! exists $args{value} or ! defined $args{value}) ||
+       (! exists $args{units} or ! defined $args{units})) {
+        $errmsg = "convertToBytes needs value and units named arguments!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    if($args{units} !~ /^[BKMGTPE]$/) {
+        $errmsg = "convertToBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+    } 
+    my %convert = ('B' => 0, 'K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6);  
+    
+    return $args{value} * (1024**$convert{$args{units}});
+}
+
+sub convertFromBytes {
+    my %args = @_;
+    if((! exists $args{value} or ! defined $args{value}) ||
+       (! exists $args{units} or ! defined $args{units})) {
+        $errmsg = "convertToBytes needs value and units named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    if($args{units} !~ /^[BKMGTPE]$/) {
+        $errmsg = "convertToBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+    } 
+    my %convert = ('B' => 0, 'K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6);  
+    
+    if(! $args{value}) { return 0; }
+    
+    return $args{value} / (1024**$convert{$args{units}}); 
 }
 
 1;
