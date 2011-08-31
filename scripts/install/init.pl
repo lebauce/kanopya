@@ -210,14 +210,14 @@ open ($FILE, "<","$conf_vars->{comp_conf}") or die "error while opening componen
 
 while( defined( $line = <$FILE> ) )
 {
-        chomp ($line);
-        # don't proceed empty lines or commented lines
-        if((not $line) || ($line =~ /^#/)) {
-            next;
-        }
-        print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
-        system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
-        print "done\n";
+    chomp ($line);
+    # don't proceed empty lines or commented lines
+    if((not $line) || ($line =~ /^#/)) {
+        next;
+    }
+    print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
+    system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
+    print "done\n";
 }
 close($FILE);
 print "components DB schemas loaded\n";
@@ -490,19 +490,19 @@ sub genConf {
     }
 }
 sub useTemplate{
-        my %args=@_;
-        my $input=$args{template};
+    my %args=@_;
+    my $input=$args{template};
     my $include=$args{include};
-        my $dat=$args{datas};
-        my $output=$args{conf};
-        my $config = {
-                INCLUDE_PATH => $include,
-                INTERPOLATE  => 1,
-                POST_CHOMP   => 1,
-                EVAL_PERL    => 1,
-        };
-        my $template = Template->new($config);
-        $template->process($input, $dat, $output) || do {
-                print "error while generating $output: $!";
-        };
+    my $dat=$args{datas};
+    my $output=$args{conf};
+    my $config = {
+            INCLUDE_PATH => $include,
+            INTERPOLATE  => 1,
+            POST_CHOMP   => 1,
+            EVAL_PERL    => 1,
+    };
+    my $template = Template->new($config);
+    $template->process($input, $dat, $output) || do {
+            print "error while generating $output: $!";
+    };
 }
