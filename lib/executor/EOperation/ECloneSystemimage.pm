@@ -217,13 +217,13 @@ sub execute {
         # creation of etc and root devices based on systemimage source devices
         $log->info('etc device creation for new systemimage');
         my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $etc_name,
-                                                                    size        => $devs->{etc}->{lvsize},
+                                                                    size        => $devs->{etc}->{lvsize}."B",
                                                                     filesystem  => $devs->{etc}->{filesystem},
                                                                     econtext    => $self->{nas}->{econtext},
                                                                     erollback   => $self->{erollback});
        $log->info('etc device creation for new systemimage');                                                    
        my $root_id = $self->{_objs}->{component_storage}->createDisk(name => $root_name,
-                                                                    size => $devs->{root}->{lvsize},
+                                                                    size => $devs->{root}->{lvsize}."B",
                                                                     filesystem => $devs->{root}->{filesystem},
                                                                     econtext => $self->{nas}->{econtext},
                                                                     erollback   => $self->{erollback});

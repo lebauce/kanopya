@@ -164,7 +164,6 @@ sub prepare {
 
 sub execute{
     my $self = shift;
-
     my ($cmd, $cmd_res);
     
     # untar component archive on local /tmp/<tar_root>
@@ -176,7 +175,9 @@ sub execute{
     
     # Find size of root and etc
     for my $disk_type ("etc","root") {
-        $cmd = "du -sk /tmp/$disk_type"."_$self->{distribution_name}_$self->{distribution_version}.img | awk '{print \$1}'";
+        # get the file size
+        my $file = "/tmp/$disk_type"."_$self->{distribution_name}_$self->{distribution_version}.img";
+        $cmd = "du -s --bytes $file | awk '{print \$1}'";
         $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
         if($cmd_res->{'stderr'}){
             $errmsg = "Error with $disk_type disk acces of <$self->{distribution_name}>";
@@ -184,17 +185,25 @@ sub execute{
              Kanopya::Exception::Internal::WrongValue(error => $errmsg);
         }
         chomp($cmd_res->{'stdout'});
+        # create a new lv with the same size
         $self->{$disk_type} = $self->{_objs}->{component_storage}->createDisk(name => "$disk_type"."_$self->{distribution_name}_$self->{distribution_version}",
-                                                                 size        => $cmd_res->{'stdout'}."K",
+                                                                 size        => $cmd_res->{'stdout'}."B",
                                                                  filesystem  => "ext3",
                                                                  econtext    => $self->{nas}->{econtext},
                                                                  erollback   => $self->{erollback},
                                                                  noformat    => 1);
-        $cmd = "dd if=/tmp/$disk_type"."_$self->{distribution_name}_$self->{distribution_version}.img of=/dev/$vg->{vgname}/$disk_type".
+        
+        # duplicate file content into the new lv
+        $cmd = "dd if=$file of=/dev/$vg->{vgname}/$disk_type".
                "_$self->{distribution_name}_$self->{distribution_version} bs=1M";
          $log->debug($cmd);
         $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
         $self->{_objs}->{distribution}->setAttr(name => "$disk_type"."_device_id", value => $self->{$disk_type});
+    
+        # delete the file
+        $cmd = "rm $file";
+        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    
     }
     $self->{_objs}->{distribution}->save();
 

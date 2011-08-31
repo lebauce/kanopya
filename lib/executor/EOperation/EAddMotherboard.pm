@@ -254,7 +254,7 @@ sub execute{
     my $adm = Administrator->new();
     #TODO Reflechir ou positionne-t-on nos prises de decisions arbitraires (taille d un disque etc, filesystem, ...) dans les objet en question ou dans les operations qui les utilisent
     my $etc_id = $self->{_objs}->{component_storage}->createDisk(name       => $self->{_objs}->{motherboard}->getEtcName(),
-                                                                 size        => "52M",
+                                                                 size        => "52M", 
                                                                  filesystem  => "ext3",
                                                                  econtext    => $self->{nas}->{econtext},
                                                                  erollback   => $self->{erollback});

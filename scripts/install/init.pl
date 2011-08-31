@@ -89,10 +89,11 @@ chomp($internal_net_interface_mac_add);
 #######################
 # VG Analysis
 #We gather the vg's size and free space:
-my $kanopya_vg_sizes= `vgs --noheadings $answers->{vg} --units m -o vg_size,vg_free --nosuffix --separator '|'`;
+my $kanopya_vg_sizes= `vgs --noheadings $answers->{vg} --units B -o vg_size,vg_free --nosuffix --separator '|'`;
 chomp($kanopya_vg_sizes);
 $kanopya_vg_sizes=~ s/^\s+//;
 (my $kanopya_vg_size, my $kanopya_vg_free_space)=split(/\|/,$kanopya_vg_sizes);
+
 #We gather pv's present in the vg
 my @kanopya_pvs= `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
 chomp(@kanopya_pvs);

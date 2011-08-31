@@ -69,9 +69,9 @@ __PACKAGE__->add_columns(
   "lvm2_vg_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "lvm2_vg_freespace",
-  { data_type => "integer", is_nullable => 0 },
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "lvm2_vg_size",
-  { data_type => "integer", is_nullable => 0 },
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 }
 );
 __PACKAGE__->set_primary_key("lvm2_vg_id");
 

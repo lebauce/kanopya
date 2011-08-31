@@ -157,7 +157,7 @@ sub vgSpaceUpdate {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $command = "vgs $args{lvm2_vg_name} --noheadings -o vg_free --nosuffix --units M --rows";
+    my $command = "vgs $args{lvm2_vg_name} --noheadings -o vg_free --nosuffix --units B --rows";
     my $ret = $args{econtext}->execute(command => $command);
     if($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
