@@ -38,7 +38,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point', 'cluster']);
 
     my $template_path = $args{template_path} || "/templates/components/haproxy";
     
@@ -49,7 +49,10 @@ sub configureNode {
         $_ =~ /haproxy1_(.*)/;
         $data{$1} = $conf->{"haproxy1_$1"};
     }
-        
+    
+    my $publicips =  $args{cluster}->getPublicIps();
+    $data{public_ip} = (shift @$publicips) || "127.0.0.1";
+    
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => $template_path,
                          input_file => "haproxy.cfg.tt", output => "/haproxy/haproxy.cfg",
