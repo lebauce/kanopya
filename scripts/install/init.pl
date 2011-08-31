@@ -171,9 +171,26 @@ if(not -e $mysqlpidfile) {
 my $kernel_version=`uname -r`;
 
 ################We generate the Data.sql file and setup database
-my %datas = (kanopya_vg_name => $answers->{vg}, kanopya_vg_size => $kanopya_vg_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $internal_ip_add, ipv4_internal_netmask => $answers->{internal_net_mask}, ipv4_internal_network_ip => $answers->{internal_net_add}, admin_domainname => $answers->{kanopya_server_domain_name}, mb_hw_address => $internal_net_interface_mac_add, admin_password => $answers->{dbpassword1}, admin_kernel=>$kernel_version,tmstp => time());
-useTemplate(template => 'Data.sql.tt', datas => \%datas, conf => $conf_vars->{data_sql}, include => $conf_vars->{data_dir});
-
+my %datas = (
+    kanopya_vg_name          => $answers->{vg},
+    kanopya_vg_size          => $kanopya_vg_size,
+    kanopya_vg_free_space    => $kanopya_vg_free_space,
+    kanopya_pvs              => \@kanopya_pvs,
+    ipv4_internal_ip         => $internal_ip_add,
+    ipv4_internal_netmask    => $answers->{internal_net_mask},
+    ipv4_internal_network_ip => $answers->{internal_net_add},
+    admin_domainname         => $answers->{kanopya_server_domain_name},
+    mb_hw_address            => $internal_net_interface_mac_add,
+    admin_password           => $answers->{dbpassword1},
+    admin_kernel             => $kernel_version,
+    tmstp                    => time()
+);
+useTemplate(
+    template => 'Data.sql.tt',
+    datas    => \%datas,
+    conf     => $conf_vars->{data_sql},
+    include  => $conf_vars->{data_dir}
+);
 
 ###############Creation of database user
 my $root_passwd;
@@ -247,7 +264,14 @@ system('invoke-rc.d iscsitarget restart');
 # We enable apache2 modules, configure them and restart it
 system('a2enmod status');
 
-useTemplate(template=>"status.conf.tt",datas=>{internal_network=>$answers->{internal_net_add}},conf=>"/etc/apache2/mods-enabled/status.conf",include=>$conf_vars->{install_template_dir});
+useTemplate(
+    template => "status.conf.tt",
+    datas    => {
+        internal_network => $answers->{internal_net_add}
+    },
+    conf     => "/etc/apache2/mods-enabled/status.conf",
+    include  => $conf_vars->{install_template_dir}
+);
 my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidConnectTimeout 20\n FcgidIOTimeout 180\n MaxRequestLen 512000000\n</IfModule>\n";
 
 system("echo '$fcgid_conf' > /etc/apache2/mods-available/fcgid.conf");
@@ -262,8 +286,22 @@ system('invoke-rc.d apache2 restart');
 
 
 # We allow snmp access
-useTemplate(template=>"snmpd.conf.tt",datas=>{internal_ip_add=>$internal_ip_add},conf=>"/etc/snmp/snmpd.conf",include=>$conf_vars->{install_template_dir});
-useTemplate(template=>"snmpd_default.tt",datas=>{internal_ip_add=>$internal_ip_add},conf=>"/etc/default/snmpd",include=>$conf_vars->{install_template_dir});
+useTemplate(
+    template => "snmpd.conf.tt",
+    datas    => {
+        internal_ip_add => $internal_ip_add
+    },
+    conf     => "/etc/snmp/snmpd.conf",
+    include  => $conf_vars->{install_template_dir}
+);
+useTemplate(
+    template => "snmpd_default.tt",
+    datas    => {
+        internal_ip_add => $internal_ip_add
+    },
+    conf     => "/etc/default/snmpd",
+    include  => $conf_vars->{install_template_dir}
+);
 system('invoke-rc.d snmpd restart');
 
 # Configure log rotate
