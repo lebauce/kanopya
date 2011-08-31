@@ -164,9 +164,7 @@ close ($FILE);
 ########################
 # first test if mysql server is running
 my $mysqlpidfile = '/var/run/mysqld/mysqld.pid';
-if(not -e $mysqlpidfile) {
-    system('invoke-rc.d mysql start');
-}
+system('invoke-rc.d mysql start') if ( ! -e $mysqlpidfile );
 
 my $kernel_version=`uname -r`;
 
@@ -284,7 +282,6 @@ if(not -e $templateslink) {
 
 system('invoke-rc.d apache2 restart');
 
-
 # We allow snmp access
 useTemplate(
     template => "snmpd.conf.tt",
@@ -320,8 +317,6 @@ print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
 
-
-
 ##########################################################################################
 ##############################FUNCTIONS DECLARATION#######################################
 ##########################################################################################
@@ -335,9 +330,7 @@ sub welcome {
     print `cat /opt/kanopya/UserLicence`;
     print "\nDo you accept the licence ? (y/n)\n";
     chomp($validate_licence= <STDIN>);
-    if ($validate_licence ne 'y'){
-        exit;
-    }
+    exit if ( $validate_licence ne 'y' );
     print "Please answer to the following questions\n";
 }
 ######################################### Methods to prompt user for informations
@@ -347,9 +340,7 @@ sub getConf{
         print "question $i : ". $questions->{$question}->{question} . " (". $questions->{$question}->{default} .")\n";
 
         # Secret activation
-        if(defined $questions->{$question}->{'is_secret'}){
-            ReadMode('noecho');
-        }
+        ReadMode('noecho') if ( defined $questions->{$question}->{'is_secret'} );
         my @searchable_answer;
         # if answer is searchable and has an answer detection, allow user to choose good answer
         if ($questions->{$question}->{is_searchable} eq "n"){
@@ -396,9 +387,7 @@ sub getConf{
             }
         }
         # Secret deactivation
-        if(defined $questions->{$question}->{'is_secret'}){
-            ReadMode('original');
-        }
+        ReadMode('original') if ( defined $questions->{$question}->{'is_secret'} );
         $i++;
         print "\n";
     }
@@ -411,9 +400,7 @@ sub matchRegexp{
         print "Error, did you modify init script ?\n";
         exit;
     }
-    if (!defined $questions->{$args{question}}->{pattern}){
-        default_error();
-    }
+    default_error() if ( ! defined $questions->{$args{question}}->{pattern} );
     if($answers->{$args{question}} !~ m/($questions->{$args{question}}->{pattern})/){
         print "answer <".$answers->{$args{question}}."> does not fit regexp <". $questions->{$args{question}}->{pattern}.">\n";
         return 1;
