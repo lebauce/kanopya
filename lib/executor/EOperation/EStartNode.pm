@@ -418,56 +418,6 @@ sub _generateUdevConf{
     unlink "/tmp/$tmpfile";
 }
 
-#sub _generateFstabConf{
-#    my $self = shift;
-#    my %args = @_;
-#    
-#    General::checkParams(args=>\%args, required => ["mount_point","root_dev","etc_dev"]);
-#
-#    my $rand = new String::Random;
-#    my $template = Template->new($config);
-#    my $tmpfile = $rand->randpattern("cccccccc");
-#    my $input = "fstab.tt";
-#    
-#    $log->debug("Get targetid with the following pattern : " . '%'."$args{root_dev}->{lvname}");
-#    my $root_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{root_dev}->{lvname}");
-#    my $root_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $root_target_id);
-#    $log->debug("Get targetid with the following pattern : " . '%'."$args{etc_dev}->{lvname}");
-#    my $etc_target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'."$args{etc_dev}->{lvname}");
-#    my $etc_targetname = $self->{_objs}->{component_export}->_getEntity()->getTargetName(iscsitarget1_target_id => $etc_target_id);
-#    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-#    my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared') ? "ro,noatime,nodiratime":"defaults";  
-#        
-#    my $vars = {etc_dev            => "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$etc_targetname."-lun-0",
-#                   etc_fs            => $args{etc_dev}->{filesystem},
-#                etc_options        => "defaults",
-#                root_dev        => "/dev/disk/by-path/ip-".$nas_ip.":3260-iscsi-".$root_targetname."-lun-0",
-#                root_fs            => $args{root_dev}->{filesystem},
-#                root_options    => $root_options
-#                
-#       };
-#          
-#       my $components = $self->{_objs}->{components};
-#       $vars->{mounts_iscsi} = [];
-#    foreach my $i (keys %$components) {
-#        my $tmp = $components->{$i};
-#        $log->debug("Found component of type : " . ref($tmp));
-#        if ($components->{$i}->isa("Entity::Component::Exportclient")) {
-#            $log->debug("The cluster component is an Exportclient");
-#            #TODO Check if it is an ExportClient and call generic method/
-#            if ($components->{$i}->isa("Entity::Component::Exportclient::Openiscsi2")){
-#                $log->debug("The cluster component is an Openiscsi2");
-#                my $iscsi_export = $components->{$i};
-#                $vars->{mounts_iscsi} = $iscsi_export->getExports();
-#               }
-#        }
-#    }
-#    $log->debug(Dumper($vars));
-#       $template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
-#    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/fstab");    
-#    unlink "/tmp/$tmpfile";
-#}
-
 sub _generateKanopyaHalt{
     my $self = shift;
     my %args = @_;
