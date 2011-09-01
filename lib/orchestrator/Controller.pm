@@ -113,7 +113,10 @@ sub getClusterConf {
 
     my $cluster = $args{cluster};
     
-    return {nb_nodes => 1, mpl => 500};
+    my @hosts = values %{ $cluster->getMotherboards( ) };
+    my @in_nodes = grep { $_->getNodeState() =~ '^in' } @hosts; 
+    
+    return {nb_nodes => scalar(@in_nodes), mpl => 1000};
 }
 
 sub getWorkload {
@@ -152,7 +155,7 @@ sub getWorkload {
     # Get model parameters for this cluster (tier)
     my $cluster_workload_class = $self->{data_manager}->getClusterModelParameters( cluster_id =>  $cluster_id );
     # Compute workload class (i.e we put param for each cluster in an array representing each tiers) to be used by model 
-    my %workload_class = (     visit_ratio => [ $cluster_workload_class->{visit_ratio} ],
+    my %workload_class = (  visit_ratio => [ $cluster_workload_class->{visit_ratio} ],
                             service_time => [ $cluster_workload_class->{service_time} ],
                             delay => [ $cluster_workload_class->{delay} ],
                             think_time => $cluster_workload_class->{think_time} );

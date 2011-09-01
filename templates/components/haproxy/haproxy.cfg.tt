@@ -50,7 +50,7 @@ frontend http-in
 
 backend servers
     mode http
-    dispatch 127.0.0.1:[% http_backend_port %]
+    dispatch [% public_ip %]:[% http_backend_port %]
 
 
 frontend https-in
@@ -67,7 +67,7 @@ frontend https-in
 
 backend secure_servers
     mode tcp
-    dispatch 127.0.0.1:[% https_backend_port %]
+    dispatch [% public_ip %]:[% https_backend_port %]
 
 
 
