@@ -559,9 +559,14 @@ sub _generateNetConf {
     my @interfaces = ();
     my $ip = $self->{_objs}->{motherboard}->getInternalIP();
     my $eth0 = {
-        name => 'eth0',
+        name => 'br0',
         address => $ip->{ipv4_internal_address},
         netmask => $ip->{ipv4_internal_mask},
+        bridge => 1,
+        bridge_ports => 'eth0',
+        bridge_stp => 'off',
+        bridge_fd => 2,
+        bridge_maxwait => 0,
     };
     push(@interfaces, $eth0);    
     

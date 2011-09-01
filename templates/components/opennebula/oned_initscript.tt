@@ -1,0 +1,29 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          opennebula
+# Required-Start:    $network
+# Required-Stop: 
+# Default-Start:     2 3 4 5
+# Default-Stop:      6
+# Short-Description: start oned server
+### END INIT INFO
+
+PATH=/sbin:/bin
+
+. /lib/lsb/init-functions
+
+
+case $1 in
+    start)
+	su oneadmin -c "export ONE_LOCATION=[% one_location %]; export PATH=$PATH:$ONE_LOCATION/bin; one start"
+	;;
+    stop)
+	su oneadmin -c "one stop"
+	;;
+    *)
+	;;
+esac
+
+
+
+

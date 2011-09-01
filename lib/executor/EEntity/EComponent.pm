@@ -130,8 +130,8 @@ sub generateFile {
     
     General::checkParams( args => \%args, required => ['econtext', 'mount_point','input_file','data','output'] );
     
-    my $template_dir = defined $args{template_dir}     ? $args{template_dir}
-                                                    : $self->_getEntity()->getTemplateDirectory();
+    my $template_dir = defined $args{template_dir} ? $args{template_dir}
+                                                   : $self->_getEntity()->getTemplateDirectory();
     
     my $config = {
         INCLUDE_PATH => $template_dir,
