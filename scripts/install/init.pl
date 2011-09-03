@@ -404,7 +404,7 @@ sub getConf{
     }
 }
 
-sub write_file {
+sub writeFile {
     my ( $path_file, $line ) = @_;
 
     open ($FILE, ">", $path_file)
