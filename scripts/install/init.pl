@@ -330,7 +330,7 @@ sub welcome {
 }
 
 sub getLicence {
-    open ($LICENCE, "<", "/opt/kanopya/UserLicence")
+    open (my $LICENCE, "<", "/opt/kanopya/UserLicence")
         or die "error while opening UserLicence: $!";
     while (<$LICENCE>) {
         print;
