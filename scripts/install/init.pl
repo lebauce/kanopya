@@ -30,22 +30,24 @@ use Data::Dumper;
 
 #Scripts variables, used to set stuff like path, users, etc
 my $install_conf = XMLin("/opt/kanopya/scripts/install/init_struct.xml");
-my $questions = $install_conf->{questions};
-my $conf_vars = $install_conf->{general_conf};
-my $conf_files = $install_conf->{genfiles};
-my $answers ={};
+my $questions    = $install_conf->{questions};
+my $conf_vars    = $install_conf->{general_conf};
+my $conf_files   = $install_conf->{genfiles};
+my $answers      = {};
 
-my %param_test = (dbuser        => \&matchRegexp,
-                  dbpassword1   => sub {},
-                  dbpassword2   => \&comparePassword,
-                  dbip          => \&checkIpOrHostname,
-                  dbport        => \&checkPort,
-                  kanopya_server_domain_name=> \&matchRegexp,
-                  internal_net_interface => \&matchRegexp,
-                  internal_net_add => \&checkIp,
-                  internal_net_mask => \&checkIp,
-                  log_directory => \&matchRegexp,
-                  vg    => \&matchRegexp);
+my %param_test = (
+    dbuser                     => \&matchRegexp,
+    dbpassword1                => sub {},
+    dbpassword2                => \&comparePassword,
+    dbip                       => \&checkIpOrHostname,
+    dbport                     => \&checkPort,
+    kanopya_server_domain_name => \&matchRegexp,
+    internal_net_interface     => \&matchRegexp,
+    internal_net_add           => \&checkIp,
+    internal_net_mask          => \&checkIp,
+    log_directory              => \&matchRegexp,
+    vg                         => \&matchRegexp
+);
 
 #printInitStruct();
 #Welcome message - accepting Licence is mandatory
@@ -61,11 +63,14 @@ genConf();
 #Network setup#
 ###############
 print "calculating the first host address available for this network...";
+
 my $internal_ip_add = NetAddr::IP->new($answers->{internal_net_add}, $answers->{internal_net_mask});
-my @c = split("/",$internal_ip_add->first);
-$internal_ip_add = $c[0];
+my @c               = split("/",$internal_ip_add->first);
+$internal_ip_add    = $c[0];
+
 print "done (first host address is $internal_ip_add)\n";
 print "setting up $answers->{internal_net_interface} ...";
+
 system ("ifconfig $answers->{internal_net_interface} $internal_ip_add") == 0 or die "an error occured while trying to set up nic ($answers->{internal_net_interface}) address: $!";
 
 # generate /etc/network/interfaces
@@ -77,8 +82,8 @@ $interfaces   .= "auto $answers->{internal_net_interface}\niface $answers->{inte
 $interfaces   .= "\taddress $internal_ip_add\n\tnetmask $answers->{internal_net_mask}\n\n";
 $interfaces   .= "# -- end of Kanopya init.pl script generation --\n";
 writeFile('/etc/network/interfaces', $interfaces);
-
 print "done\n";
+
 #We gather the NIC's MAC address
 my $internal_net_interface_mac_add = `ip link list dev $answers->{internal_net_interface} | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
 chomp($internal_net_interface_mac_add);
@@ -87,13 +92,13 @@ chomp($internal_net_interface_mac_add);
 #######################
 # VG Analysis
 #We gather the vg's size and free space:
-my $kanopya_vg_sizes= `vgs --noheadings $answers->{vg} --units B -o vg_size,vg_free --nosuffix --separator '|'`;
+my $kanopya_vg_sizes = `vgs --noheadings $answers->{vg} --units B -o vg_size,vg_free --nosuffix --separator '|'`;
 chomp($kanopya_vg_sizes);
-$kanopya_vg_sizes=~ s/^\s+//;
-(my $kanopya_vg_size, my $kanopya_vg_free_space)=split(/\|/,$kanopya_vg_sizes);
+$kanopya_vg_sizes =~ s/^\s+//;
+my ( $kanopya_vg_size, $kanopya_vg_free_space ) = split(/\|/,$kanopya_vg_sizes);
 
 #We gather pv's present in the vg
-my @kanopya_pvs= `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
+my @kanopya_pvs = `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
 chomp(@kanopya_pvs);
 
 
@@ -102,9 +107,9 @@ chomp(@kanopya_pvs);
 #########################
 #We create the logging directory and give rights to apache user on it
 print "creating the logging directory...";
-if ($answers->{log_directory} !~ /\/$/){
-    $answers->{log_directory} = $answers->{log_directory}.'/';
-}
+$answers->{log_directory} = $answers->{log_directory} . '/'
+    if ( $answers->{log_directory} !~ /\/$/ );
+
 system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating the logging directory: $!";
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
 print "done\n";
@@ -130,16 +135,18 @@ open (my $FILE, "<","/etc/debian_version") or die "error while opening /etc/debi
 my $line;
 my $debian_version;
 while ($line = <$FILE>){
-        if ($line =~ m/^6\./ || $line =~ m/^squeeze/){
-                print 'version stable: '.$line."\n";
-                $debian_version = 'squeeze';
-        }elsif ($line =~ m/^5\./ || $line =~ m/^lenny/){
-                print 'ancienne stable: '.$line."\n";
-                $debian_version = 'lenny';
-        }
+    if ($line =~ m/^6\./ || $line =~ m/^squeeze/) {
+            print 'version stable: '.$line."\n";
+            $debian_version = 'squeeze';
+    }
+    elsif ($line =~ m/^5\./ || $line =~ m/^lenny/) {
+            print 'ancienne stable: '.$line."\n";
+            $debian_version = 'lenny';
+    }
 }
 close ($FILE);
-if ($debian_version eq 'squeeze'){
+
+if ($debian_version eq 'squeeze') {
     writeFile('/etc/dhcp/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n");
     system('invoke-rc.d isc-dhcp-server restart');
 }
@@ -192,17 +199,18 @@ ReadMode('noecho');
 chomp($root_passwd = <STDIN>);
 ReadMode('original');
 #Test user for creation
-my $user=`mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SELECT user FROM mysql.user WHERE user='$answers->{dbuser}';" | grep "$answers->{dbuser}"`;
-if (!$user){
+my $user = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SELECT user FROM mysql.user WHERE user='$answers->{dbuser}';" | grep "$answers->{dbuser}"`;
+if (!$user) {
     print "creating mysql user, please insert root password...\n";
     system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e \"CREATE USER '$answers->{dbuser}' IDENTIFIED BY '$answers->{dbpassword1}'\"") == 0 or die "error while creating mysql user: $!";
     print "done\n";
-}else {
+}
+else {
     print "User $answers->{dbuser} already exists\n";
 }
 
 #We grant all privileges to administrator database for $db_user
-my $grant=`mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep administrator`;
+my $grant = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep administrator`;
 if (!$grant) {
     print "granting all privileges on administrator database to $answers->{dbuser}, please insert root password...\n";
     system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
@@ -212,7 +220,7 @@ if (!$grant) {
 }
 #We now generate the database schemas
 print "generating database schemas...";
-system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";
+system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u $answers->{dbuser} -p $answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";
 print "done\n";
 #We now generate the components schemas
 print "loading component DB schemas...";
@@ -222,9 +230,7 @@ while( defined( $line = <$FILE> ) )
 {
     chomp ($line);
     # don't proceed empty lines or commented lines
-    if((not $line) || ($line =~ /^#/)) {
-        next;
-    }
+    next if (( ! $line ) || ( $line =~ /^#/ ));
     print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
     system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
     print "done\n";
@@ -298,7 +304,6 @@ system('invoke-rc.d snmpd restart');
 
 # Configure log rotate
 system("cp $conf_vars->{install_template_dir}/logrotate-kanopya /etc/logrotate.d/");
-
 
 # Launching Kanopya's init scripts
 system('invoke-rc.d kanopya-executor restart');
@@ -383,9 +388,10 @@ sub getConf{
             }
         }
         if ($questions->{$question}->{is_searchable} eq "n"){
-            if ($answers->{$question} >= scalar @searchable_answer){
+            if ($answers->{$question} >= scalar @searchable_answer) {
                 print "Error you entered a value out of the answer scope.";
-                default_error();}
+                default_error();
+            }
             else {
                 # On transforme la valeur de l'utilisateur par celle de la selection proposee
                 $answers->{$question} = $searchable_answer[$answers->{$question}];
@@ -409,15 +415,19 @@ sub writeFile {
 
 sub matchRegexp{
     my %args = @_;
+
     if ((!defined $args{question} or !exists $args{question})){
         print "Error, did you modify init script ?\n";
         exit;
     }
+
     default_error() if ( ! defined $questions->{$args{question}}->{pattern} );
+
     if($answers->{$args{question}} !~ m/($questions->{$args{question}}->{pattern})/){
         print "answer <".$answers->{$args{question}}."> does not fit regexp <". $questions->{$args{question}}->{pattern}.">\n";
         return 1;
     }
+
     return 0;
 }
 
@@ -425,6 +435,7 @@ sub matchRegexp{
 
 sub checkPort{
     my %args = @_;
+
     if ((!defined $args{question} or !exists $args{question})){
         print "Error, Do you modify init script ?\n";
         exit;
@@ -437,6 +448,7 @@ sub checkPort{
         print "port has to have value between 0 and 65535\n";
         return 1;
     }
+
     return 0;
 }
 
@@ -444,42 +456,53 @@ sub checkPort{
 # Hostname could only be localhost for the moment
 sub checkIpOrHostname{
     my %args = @_;
+
     if ((!defined $args{question} or !exists $args{question})){
         default_error();
     }
+
     if ($answers->{$args{question}} =~ m/localhost/) {
         $answers->{$args{question}} = "127.0.0.1";
     }
-    else{
+    else {
         return checkIp(%args);
     }
+
     return 0;
 }
 
 sub checkIp{
     my %args = @_;
-    if ((!defined $args{question} or !exists $args{question})){
+
+    my $ip = new NetAddr::IP($answers->{$args{question}});
+
+    if ((!defined $args{question} or !exists $args{question})) {
         default_error();
     }
-    my $ip = new NetAddr::IP($answers->{$args{question}});
+
     if(not defined $ip) {
         print "IP <".$answers->{$args{question}}."> seems to be not good";
         return 1;
     }
+
     return 0;
 }
 
 # Check that password is confirmed
-sub comparePassword{
+sub comparePassword {
     my %args = @_;
+
     if ((!defined $args{question} or !exists $args{question})){
         default_error();
     }
+
     if ($answers->{$args{question}} ne $answers->{'dbpassword1'}){
         print "Passwords are differents\n";
         return 1;
     }
+
     ReadMode('original');
+
     return 0;
 }
 
@@ -491,7 +514,7 @@ sub noMethodToTest {
 }
 
 # Print xml struct
-sub printInitStruct{
+sub printInitStruct {
     my $i = 0;
     foreach my $question (keys %$questions){
         print "question $i : ". $questions->{$question}->{question} ."\n";
@@ -501,6 +524,7 @@ sub printInitStruct{
         $i++;
     }
 }
+
 sub printAnswers {
     my $i = 0;
     foreach my $answer (keys %$answers){
@@ -509,30 +533,37 @@ sub printAnswers {
     }
 }
 # Default error message and exit
-sub default_error{
+sub default_error {
         print "Error, did you modify init script ?\n";
         exit;
 }
 
-
 ###################################################### Following functions generates conf files for Kanopya
 
 sub genConf {
-    unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir}};
+    mkdir $conf_vars->{conf_dir} unless ( -d $conf_vars->{conf_dir} );
     my %datas;
     foreach my $files (keys %$conf_files){
         foreach my $d (keys %{$conf_files->{$files}->{datas}}){
             $datas{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
         }
-        useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});
+        useTemplate(
+            template => $conf_files->{$files}->{template},
+            datas    => \%datas,
+            conf     => $conf_vars->{conf_dir} . $files,
+            include  => $conf_vars->{install_template_dir}
+        );
     }
 }
+
 sub useTemplate{
-    my %args=@_;
-    my $input=$args{template};
-    my $include=$args{include};
-    my $dat=$args{datas};
-    my $output=$args{conf};
+    my %args = @_;
+
+    my $input   = $args{template};
+    my $include = $args{include};
+    my $dat     = $args{datas};
+    my $output  = $args{conf};
+
     my $config = {
             INCLUDE_PATH => $include,
             INTERPOLATE  => 1,
@@ -540,6 +571,7 @@ sub useTemplate{
             EVAL_PERL    => 1,
     };
     my $template = Template->new($config);
+
     $template->process($input, $dat, $output) || do {
             print "error while generating $output: $!";
     };
