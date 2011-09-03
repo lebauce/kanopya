@@ -76,9 +76,7 @@ $interfaces   .= "auto lo\niface lo inet loopback\n\n";
 $interfaces   .= "auto $answers->{internal_net_interface}\niface $answers->{internal_net_interface} inet static\n";
 $interfaces   .= "\taddress $internal_ip_add\n\tnetmask $answers->{internal_net_mask}\n\n";
 $interfaces   .= "# -- end of Kanopya init.pl script generation --\n";
-open (my $INTERFACEFILE, ">", '/etc/network/interfaces') or die "an error occured while opening /etc/network/interfaces: $!";
-print $INTERFACEFILE $interfaces;
-close $INTERFACEFILE;
+writeFile('/etc/network/interfaces', $interfaces);
 
 print "done\n";
 #We gather the NIC's MAC address
@@ -142,23 +140,19 @@ while ($line = <$FILE>){
 }
 close ($FILE);
 if ($debian_version eq 'squeeze'){
-        open (my $FILE, ">","/etc/dhcp/dhcpd.conf") or die "an error occured while opening /etc/dhcp/dhcpd.conf: $!";
-        print $FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
-        system('invoke-rc.d isc-dhcp-server restart');
-        close ($FILE);
-}elsif ($debian_version eq 'lenny'){
-        open (my $FILE, ">","/etc/dhcp3/dhcpd.conf") or die "an error occured while opening /etc/dhcp3/dhcpd.conf: $!";
-        print $FILE 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n";
-        system('invoke-rc.d dhcpd restart');
-        close ($FILE);
-}else{
-        print 'we can\'t determine the Debian version you are running, please check /etc/debian_version';
+    writeFile('/etc/dhcp/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n")
+    system('invoke-rc.d isc-dhcp-server restart');
+}
+elsif ($debian_version eq 'lenny') {
+    writeFile('/etc/dhcp3/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n");
+    system('invoke-rc.d dhcpd restart');
+}
+else {
+    print "we can't determine the Debian version you are running, please check /etc/debian_version";
 }
 
 #Atftpd configuration
-open ($FILE, ">","/etc/default/atftpd") or die "an error occured while opening /etc/default/atftpd: $!";
-print $FILE "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $internal_ip_add --maxthread 100 --verbose=5 --logfile=/var/log/tftp.log /tftp\"";
-close ($FILE);
+writeFile('/etc/default/atftpd', "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --bind-address $internal_ip_add --maxthread 100 --verbose=5 --logfile=/var/log/tftp.log /tftp\"");
 
 ########################
 #Database configuration#
@@ -256,8 +250,8 @@ system('invoke-rc.d inetutils-inetd restart');
 system('invoke-rc.d atftpd restart');
 
 # We restart atftpd with the new configuration
-system('echo "" > /etc/iet/ietd.conf');
-system('echo "ISCSITARGET_ENABLE=true" > /etc/default/iscsitarget');
+writeFile('/etc/iet/ietd.conf', '');
+writeFile('/etc/default/iscsitarget', "ISCSITARGET_ENABLE=true");
 system('invoke-rc.d iscsitarget restart');
 
 # We enable apache2 modules, configure them and restart it
@@ -271,9 +265,9 @@ useTemplate(
     conf     => "/etc/apache2/mods-enabled/status.conf",
     include  => $conf_vars->{install_template_dir}
 );
-my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidConnectTimeout 20\n FcgidIOTimeout 180\n MaxRequestLen 512000000\n</IfModule>\n";
 
-system("echo '$fcgid_conf' > /etc/apache2/mods-available/fcgid.conf");
+my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidConnectTimeout 20\n FcgidIOTimeout 180\n MaxRequestLen 512000000\n</IfModule>\n";
+writeFile('/etc/apache2/mods-available/fcgid.conf', $fcgid_conf);
 system('a2enmod fcgid');
 
 my $templateslink = '/templates';
