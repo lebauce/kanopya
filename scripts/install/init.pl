@@ -334,6 +334,16 @@ sub welcome {
     exit if ( $validate_licence ne 'y' );
     print "Please answer to the following questions\n";
 }
+
+sub getLicence {
+    open ($LICENCE, "<", "/opt/kanopya/UserLicence")
+        or die "error while opening UserLicence: $!";
+    while (<$LICENCE>) {
+        print;
+    }
+    close($LICENCE);
+}
+
 ######################################### Methods to prompt user for informations
 sub getConf{
     my $i = 0;
