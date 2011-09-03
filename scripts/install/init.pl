@@ -140,7 +140,7 @@ while ($line = <$FILE>){
 }
 close ($FILE);
 if ($debian_version eq 'squeeze'){
-    writeFile('/etc/dhcp/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n")
+    writeFile('/etc/dhcp/dhcpd.conf', 'ddns-update-style none;'."\n".'default-lease-time 600;'."\n".'max-lease-time 7200;'."\n".'log-facility local7;'."\n".'subnet '.$answers->{internal_net_add}.' netmask '.$answers->{internal_net_mask}.'{}'."\n");
     system('invoke-rc.d isc-dhcp-server restart');
 }
 elsif ($debian_version eq 'lenny') {
