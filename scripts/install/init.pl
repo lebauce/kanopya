@@ -404,6 +404,14 @@ sub getConf{
     }
 }
 
+sub write_file {
+    my ( $path_file, $line ) = @_;
+
+    open ($FILE, ">", $path_file)
+        or die "an error occured while opening $path_file: $!";
+    print $FILE, $line;
+    close($FILE);
+}
 
 sub matchRegexp{
     my %args = @_;
