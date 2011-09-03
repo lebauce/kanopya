@@ -329,7 +329,7 @@ sub welcome {
     print "We advise to install Kanopya instance on a dedicated server\n";
     print "First please validate the user licence\n";
     getLicence();
-    print "\nDo you accept the licence ? (y/n)\n";
+    print "Do you accept the licence ? (y/n)\n";
     chomp($validate_licence= <STDIN>);
     exit if ( $validate_licence ne 'y' );
     print "Please answer to the following questions\n";
