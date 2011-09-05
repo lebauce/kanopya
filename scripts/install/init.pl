@@ -88,7 +88,6 @@ print "done\n";
 my $internal_net_interface_mac_add = `ip link list dev $answers->{internal_net_interface} | egrep "ether [0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}:[0-9a-zA-Z]{2}" | cut -d' ' -f6`;
 chomp($internal_net_interface_mac_add);
 
-
 #######################
 # VG Analysis
 #We gather the vg's size and free space:
@@ -100,7 +99,6 @@ my ( $kanopya_vg_size, $kanopya_vg_free_space ) = split(/\|/,$kanopya_vg_sizes);
 #We gather pv's present in the vg
 my @kanopya_pvs = `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
 chomp(@kanopya_pvs);
-
 
 #########################
 #Directory manipulations#
@@ -136,11 +134,11 @@ my $line;
 my $debian_version;
 while ($line = <$FILE>){
     if ($line =~ m/^6\./ || $line =~ m/^squeeze/) {
-            print 'version stable: '.$line."\n";
+            print 'stable release: ' . $line . "\n";
             $debian_version = 'squeeze';
     }
     elsif ($line =~ m/^5\./ || $line =~ m/^lenny/) {
-            print 'ancienne stable: '.$line."\n";
+            print 'old release: ' . $line . "\n";
             $debian_version = 'lenny';
     }
 }
