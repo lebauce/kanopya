@@ -25,6 +25,7 @@ use strict;
 
 use POSIX;
 use File::Path qw(make_path);
+use File::Copy;
 
 use Term::ReadKey;
 use Template;
@@ -245,7 +246,7 @@ print "done\n";
 #Services manipulation#
 #######################
 # We change the syslog-ng configuration and restart the service
-system("cp $conf_vars->{install_template_dir}"."syslog-ng.conf /etc/syslog-ng/");
+copy("$conf_vars->{install_template_dir}/syslog-ng.conf", '/etc/syslog-ng') || die "Copy failed $!";
 system('invoke-rc.d syslog-ng restart');
 
 # We remove the initial tftp line from inetd conf file and restart the service
@@ -303,7 +304,7 @@ useTemplate(
 system('invoke-rc.d snmpd restart');
 
 # Configure log rotate
-system("cp $conf_vars->{install_template_dir}/logrotate-kanopya /etc/logrotate.d/");
+copy("$conf_vars->{install_template_dir}/logrotate-kanopya", '/etc/logrotate.d') || die "Copy failed $!";
 
 # Launching Kanopya's init scripts
 system('invoke-rc.d kanopya-executor restart');
