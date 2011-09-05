@@ -22,6 +22,7 @@
 #@Date: 23/02/2011
 
 use strict;
+use POSIX;
 use Term::ReadKey;
 use Template;
 use NetAddr::IP;
@@ -166,7 +167,7 @@ writeFile('/etc/default/atftpd', "USE_INETD=false\nOPTIONS=\"--daemon --tftpd-ti
 my $mysqlpidfile = '/var/run/mysqld/mysqld.pid';
 system('invoke-rc.d mysql start') if ( ! -e $mysqlpidfile );
 
-my $kernel_version=`uname -r`;
+my ( $sysname, $nodename, $release, $version, $machine ) = POSIX::uname();
 
 ################We generate the Data.sql file and setup database
 my %datas = (
@@ -180,7 +181,7 @@ my %datas = (
     admin_domainname         => $answers->{kanopya_server_domain_name},
     mb_hw_address            => $internal_net_interface_mac_add,
     admin_password           => $answers->{dbpassword1},
-    admin_kernel             => $kernel_version,
+    admin_kernel             => $release,
     tmstp                    => time()
 );
 useTemplate(
