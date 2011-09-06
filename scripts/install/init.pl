@@ -117,7 +117,7 @@ $answers->{log_directory} = $answers->{log_directory} . '/'
     if ( $answers->{log_directory} !~ /\/$/ );
 
 make_path("$answers->{log_directory}", { verbose => 1 });
-system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
+chown_recursif($conf_vars->{apache_user}, $answers->{log_directory});
 print "done\n";
 
 ######################
