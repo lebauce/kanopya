@@ -26,6 +26,7 @@ use strict;
 use POSIX;
 use File::Path qw(make_path);
 use File::Copy;
+use File::Find;
 
 use Term::ReadKey;
 use Template;
@@ -414,6 +415,20 @@ sub writeFile {
         or die "an error occured while opening $path_file: $!";
     print $FILE, $line;
     close($FILE);
+}
+
+sub chown_recursif {
+    my ( $user_name, $directory ) = @_;
+
+    my ( $user, $pass, $uid, $gid ) = getpwnam($user_name);
+
+    find(
+        sub {
+            chown $uid, $gid, $_
+                or die "Could not chown '$_': $!";
+        },
+        $directory
+    );
 }
 
 sub matchRegexp{
