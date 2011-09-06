@@ -33,6 +33,8 @@ use NetAddr::IP;
 use XML::Simple;
 use Data::Dumper;
 
+die "You must be root to execute this scipts" if ( $< != 0 );
+
 #Scripts variables, used to set stuff like path, users, etc
 my $install_conf = XMLin("/opt/kanopya/scripts/install/init_struct.xml");
 my $questions    = $install_conf->{questions};
