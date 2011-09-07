@@ -57,13 +57,10 @@ my %param_test = (
     vg                         => \&matchRegexp
 );
 
-#printInitStruct();
 #Welcome message - accepting Licence is mandatory
 welcome();
 #Ask questions to users
 getConf();
-#Print user's answers, can be usefull for recap, etc
-#printAnswers();
 #Function used to generate conf files
 genConf();
 
@@ -531,25 +528,6 @@ sub noMethodToTest {
     exit;
 }
 
-# Print xml struct
-sub printInitStruct {
-    my $i = 0;
-    foreach my $question (keys %$questions){
-        print "question $i : ". $questions->{$question}->{question} ."\n";
-        print "default value : ". $questions->{$question}->{default} ."\n";
-        print "question is_searchable : ". $questions->{$question}->{is_searchable} ."\n";
-        print "command to search default : ". $questions->{$question}->{search_command} ."\n";
-        $i++;
-    }
-}
-
-sub printAnswers {
-    my $i = 0;
-    foreach my $answer (keys %$answers){
-        print "answer $i : ". $answers->{$answer} ."\n";
-        $i++;
-    }
-}
 # Default error message and exit
 sub default_error {
         print "Error, did you modify init script ?\n";
