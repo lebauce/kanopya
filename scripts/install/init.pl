@@ -117,7 +117,7 @@ $answers->{log_directory} = $answers->{log_directory} . '/'
     if ( $answers->{log_directory} !~ /\/$/ );
 
 make_path("$answers->{log_directory}", { verbose => 1 });
-chown_recursif($conf_vars->{apache_user}, $answers->{log_directory});
+chownRecursif($conf_vars->{apache_user}, $answers->{log_directory});
 print "done\n";
 
 ######################
@@ -417,7 +417,7 @@ sub writeFile {
     close($FILE);
 }
 
-sub chown_recursif {
+sub chownRecursif {
     my ( $user_name, $directory ) = @_;
 
     my ( $user, $pass, $uid, $gid ) = getpwnam($user_name);
