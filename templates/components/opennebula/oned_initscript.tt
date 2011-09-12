@@ -12,13 +12,17 @@ PATH=/sbin:/bin
 
 . /lib/lsb/init-functions
 
+export ONE_LOCATION=[% install_dir %]
 
 case $1 in
     start)
-	su oneadmin -c "export ONE_LOCATION=[% one_location %]; export PATH=$PATH:$ONE_LOCATION/bin; one start"
+	log_daemon_msg "Starting opennebula server" "oned"
+	su oneadmin -c 'export ONE_LOCATION=[% install_dir %]; export PATH=$ONE_LOCATION/bin:$PATH ; export ONE_AUTH=$ONE_LOCATION/one_auth ; one start'
+	STATUS=$?
+	log_end_msg $STATUS
 	;;
     stop)
-	su oneadmin -c "one stop"
+	su oneadmin -c 'export ONE_LOCATION=[% install_dir %]; export PATH=$ONE_LOCATION/bin:$PATH ; export ONE_AUTH=$ONE_LOCATION/one_auth ; one stop'
 	;;
     *)
 	;;

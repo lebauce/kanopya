@@ -9,9 +9,10 @@ SET foreign_key_checks=0;
 CREATE TABLE `opennebula2` (
   `opennebula2_id` int(8) unsigned NOT NULL AUTO_INCREMENT,  
   `component_instance_id` int(8) unsigned NOT NULL,
+  `install_dir` char(255) NOT NULL DEFAULT '/srv/cloud/one',
   `host_monitoring_interval` int unsigned NOT NULL DEFAULT 600,
   `vm_polling_interval` int unsigned NOT NULL DEFAULT 600,
-  `vm_dir` char(255) NOT NULL DEFAULT '/srv/cld/one/var',
+  `vm_dir` char(255) NOT NULL DEFAULT '/srv/cloud/one/var',
   `scripts_remote_dir` char(255) NOT NULL DEFAULT '/var/tmp/one',
   `image_repository_path` char(255) NOT NULL DEFAULT '/srv/cloud/images',
   `port` int unsigned NOT NULL DEFAULT 2633,

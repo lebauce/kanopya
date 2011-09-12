@@ -135,7 +135,7 @@ sub generateFile {
     
     my $config = {
         INCLUDE_PATH => $template_dir,
-        INTERPOLATE  => 1,               # expand "$var" in plain text
+        INTERPOLATE  => 0,               # expand "$var" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace 
         EVAL_PERL    => 1,               # evaluate Perl code blocks
         RELATIVE => 1,                   # desactive par defaut

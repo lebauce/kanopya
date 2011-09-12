@@ -81,27 +81,19 @@ B<throws>  :
 sub new {
     my $class = shift;
     my %args = @_;
-
-    # We create a new DBIx containing new entity
     my $self = $class->SUPER::new( %args);
-
     return $self;
-
 }
 
 sub getConf {
     my $self = shift;
-
-    my $conf = {};
-
-    my $confindb = $self->{_dbix}->opennebula2s->first();
+    my %conf = ();
+    my $confindb = $self->{_dbix}->opennebula2;
     if($confindb) {
-        
-        #TODO build conf hash with db data
+        %conf = $confindb->get_columns();
         
     }
-
-    return $conf;
+    return \%conf;
 }
 
 sub setConf {
@@ -110,34 +102,52 @@ sub setConf {
     
     if(not $conf->{opennebula2_id}) {
         # new configuration -> create
-        $self->{_dbix}->opennebula2s->create($conf);
+        $self->{_dbix}->create_related('opennebula2', $conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->opennebula2s->update($conf);
+        $self->{_dbix}->opennebula2->update($conf);
     }
 }
 
 sub getNetConf {
-
-    #TODO return { port => [protocol] };
-
+    my $self = shift;
+    my $port = $self->{_dbix}->opennebula2->get_column('port');
+    return { $port => ['tcp'] };
 }
+
+sub needBridge { return 1; }
 
 sub insertDefaultConfiguration {
     my $self = shift;
     my %args = @_;
-    my $conf = { };
-    
-    $self->{_dbix}->opennebula2s->create($conf);    
+    my $conf = {}; # default config is provided by database default fields values
+    $self->{_dbix}->create_related('opennebula2', $conf);    
 }
 
 sub getTemplateDataOned {
- 
- 
- 
+    my $self = shift;
+    my %data = $self->{_dbix}->opennebula2->get_columns();
+    delete $data{opennebula2_id};            
+    delete $data{component_instance_id};
+    return \%data;
 }
 
+sub getTemplateDataOnedInitScript {
+    my $self = shift;
+    my $opennebula =  $self->{_dbix}->opennebula2;
+    my $data = { install_dir => $opennebula->get_column('install_dir') };
+    return $data;
+}
 
+sub getTemplateDataLibvirtbin {
+    my $self = shift;
+    return {}; 
+}
+
+sub getTemplateDataLibvirtd {
+    my $self = shift;
+    return {};
+}
 
 =head1 DIAGNOSTICS
 

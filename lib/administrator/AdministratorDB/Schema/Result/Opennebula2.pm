@@ -33,6 +33,13 @@ __PACKAGE__->table("opennebula2");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 install_dir
+
+  data_type: 'char'
+  default_value: '/srv/cloud/one   '
+  is_nullable: 0
+  size: 255
+
 =head2 host_monitoring_interval
 
   data_type: 'integer'
@@ -50,7 +57,7 @@ __PACKAGE__->table("opennebula2");
 =head2 vm_dir
 
   data_type: 'char'
-  default_value: '/srv/cld/one/var'
+  default_value: '/srv/cloud/one/var'
   is_nullable: 0
   size: 255
 
@@ -99,6 +106,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+    "install_dir",
+  {
+    data_type => "char",
+    default_value => "/srv/cloud/one",
+    is_nullable => 0,
+    size => 255,
+  },
   "host_monitoring_interval",
   {
     data_type => "integer",
@@ -116,7 +130,7 @@ __PACKAGE__->add_columns(
   "vm_dir",
   {
     data_type => "char",
-    default_value => "/srv/cld/one/var",
+    default_value => "/srv/cloud/one/var",
     is_nullable => 0,
     size => 255,
   },
