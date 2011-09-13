@@ -508,12 +508,29 @@ sub _generateNetConf {
     #TODO Manage virtual IP for master node
     my @interfaces = ();
     my $ip = $self->{_objs}->{motherboard}->getInternalIP();
-    my $eth0 = {
-        name => 'eth0',
-        address => $ip->{ipv4_internal_address},
-        netmask => $ip->{ipv4_internal_mask},
-    };
-    push(@interfaces, $eth0);    
+    my %model = $self->{_objs}->{motherboard}->getModel();
+    
+    my $need_bridge= 0;
+    my $components = $self->{_objs}->{components};
+    while(my ($id, $component) = each %$components) {
+        $log->debug(ref($component)." need_bridge: ".$component->needBridge());
+        if($component->needBridge()) {
+            $need_bridge = 1;
+            last;
+        }
+    }
+    
+    my $iface = { name => 'eth0', address => $ip->{ipv4_internal_address}, netmask => $ip->{ipv4_internal_mask}};
+    if($need_bridge) {
+        $iface->{name} = 'br0'; 
+        $iface->{bridge} = 1;
+        $iface->{bridge_ports} = 'eth0';
+        $iface->{bridge_stp} = 'off';
+        $iface->{bridge_fd} = 2;
+        $iface->{bridge_maxwait} = 0;
+    }
+    
+    push(@interfaces, $iface);
     
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
         @interfaces = (@interfaces, @{$self->{_objs}->{cluster}->getPublicIps()});

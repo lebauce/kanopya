@@ -364,6 +364,7 @@ sub insertDefaultConfiguration { }
 sub getClusterizationType{}
 sub getExecToTest{}
 sub getNetConf{}
+sub needBridge{ return 0; }
 
 =head1 DIAGNOSTICS
 
