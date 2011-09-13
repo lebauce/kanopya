@@ -193,8 +193,8 @@ INSERT INTO `component` VALUES
 (9,'Mounttable','1','System'),
 (10,'Mysql','5','DBMS'),
 (11,'Syslogng','3','Logger'),
-(12,'Iptables','1','Firewall');
-
+(12,'Iptables','1','Firewall'),
+(13,'Openldap','1','Annuary');
 -- kernels
 INSERT INTO `kernel` VALUES (1,'2.6.39.3','2.6.39.3','generic kernel with lots of modules');
 
