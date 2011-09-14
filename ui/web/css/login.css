@@ -17,7 +17,7 @@ div#container {
 	padding: 25px;
 }
 
-h2 { text-decoration: underline; }
+h2 { text-decoration: underline;  text-align: center; }
 
 table { margin-top: 20px; width: 100%; font-size: 1em; }
 
