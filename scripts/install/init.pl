@@ -32,7 +32,6 @@ use Term::ReadKey;
 use Template;
 use NetAddr::IP;
 use XML::Simple;
-use Data::Dumper;
 
 die "You must be root to execute this scipts" if ( $< != 0 );
 
