@@ -7,4 +7,8 @@ get '/' => sub {
     template 'index';
 };
 
+get '/login' => sub {
+    template 'login', {},{ layout=>'login' };
+};
+
 true;
