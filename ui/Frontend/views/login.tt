@@ -1,6 +1,6 @@
 <img id="biglogo" src="/images/biglogo.png" alt="" />
 <h2>Microcluster Administrator Access</h2>
-<form method="post">
+<form method="post" action="/login">
     <label for="login">Login: </label>
     <input name="login" id="login" type="text" />
 
@@ -8,4 +8,5 @@
 
     <label for="password">Password: </label>
     <input name="password" id="password" type="password" />
+    <input type="submit" name="loguser" value="ok" />
 </form>

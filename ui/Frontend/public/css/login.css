@@ -42,6 +42,10 @@ input {
     margin-top: 12px;
 }
 
+input[type="submit"] {
+    margin-left: 109px;
+}
+
 img#biglogo {
     margin-bottom: 20px;
 }
