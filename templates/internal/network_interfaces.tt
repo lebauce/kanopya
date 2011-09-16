@@ -14,5 +14,12 @@ iface [% interface.name %] inet static
       [% IF interface.gateway %]
       gateway [% interface.gateway %]
       [% END %]
+      [% IF interface.bridge %]
+      bridge_ports [% interface.bridge_ports %]
+      bridge_stp [% interface.bridge_stp %]
+      bridge_fd [% interface.bridge_fd %]
+      bridge_maxwait [% interface.bridge_maxwait %]
+      [% END %]
 
 [% END %]
+

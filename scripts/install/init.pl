@@ -105,7 +105,7 @@ chomp(@kanopya_pvs);
 #We create the logging directory and give rights to apache user on it
 print "creating the logging directory...";
 if ($answers->{log_directory} !~ /\/$/){
-	$answers->{log_directory} = $answers->{log_directory}.'/';
+    $answers->{log_directory} = $answers->{log_directory}.'/';
 }
 system ("mkdir -p $answers->{log_directory}") == 0 or die "error while creating the logging directory: $!";
 system ("chown -R $conf_vars->{apache_user}.$conf_vars->{apache_user} $answers->{log_directory}") == 0 or die "error while granting rights on $answers->{log_directory} to $conf_vars->{apache_user}: $!";
@@ -165,16 +165,31 @@ close ($FILE);
 ########################
 # first test if mysql server is running
 my $mysqlpidfile = '/var/run/mysqld/mysqld.pid';
-if(not -e $mysqlpidfile) {
-	system('invoke-rc.d mysql start');
-}
+system('invoke-rc.d mysql start') if ( ! -e $mysqlpidfile );
 
 my $kernel_version=`uname -r`;
 
 ################We generate the Data.sql file and setup database
-my %datas = (kanopya_vg_name => $answers->{vg}, kanopya_vg_size => $kanopya_vg_size, kanopya_vg_free_space => $kanopya_vg_free_space, kanopya_pvs => \@kanopya_pvs, ipv4_internal_ip => $internal_ip_add, ipv4_internal_netmask => $answers->{internal_net_mask}, ipv4_internal_network_ip => $answers->{internal_net_add}, admin_domainname => $answers->{kanopya_server_domain_name}, mb_hw_address => $internal_net_interface_mac_add, admin_password => $answers->{dbpassword1}, admin_kernel=>$kernel_version,tmstp => time());
-useTemplate(template => 'Data.sql.tt', datas => \%datas, conf => $conf_vars->{data_sql}, include => $conf_vars->{data_dir});
-
+my %datas = (
+    kanopya_vg_name          => $answers->{vg},
+    kanopya_vg_size          => $kanopya_vg_size,
+    kanopya_vg_free_space    => $kanopya_vg_free_space,
+    kanopya_pvs              => \@kanopya_pvs,
+    ipv4_internal_ip         => $internal_ip_add,
+    ipv4_internal_netmask    => $answers->{internal_net_mask},
+    ipv4_internal_network_ip => $answers->{internal_net_add},
+    admin_domainname         => $answers->{kanopya_server_domain_name},
+    mb_hw_address            => $internal_net_interface_mac_add,
+    admin_password           => $answers->{dbpassword1},
+    admin_kernel             => $kernel_version,
+    tmstp                    => time()
+);
+useTemplate(
+    template => 'Data.sql.tt',
+    datas    => \%datas,
+    conf     => $conf_vars->{data_sql},
+    include  => $conf_vars->{data_dir}
+);
 
 ###############Creation of database user
 my $root_passwd;
@@ -211,14 +226,14 @@ open ($FILE, "<","$conf_vars->{comp_conf}") or die "error while opening componen
 
 while( defined( $line = <$FILE> ) )
 {
-        chomp ($line);
-        # don't proceed empty lines or commented lines
-        if((not $line) || ($line =~ /^#/)) {
-        	next;
-        }
-        print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
-        system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
-        print "done\n";
+    chomp ($line);
+    # don't proceed empty lines or commented lines
+    if((not $line) || ($line =~ /^#/)) {
+        next;
+    }
+    print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql...\n ";
+    system("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{comp_schemas_dir}$line.sql");
+    print "done\n";
 }
 close($FILE);
 print "components DB schemas loaded\n";
@@ -248,7 +263,14 @@ system('invoke-rc.d iscsitarget restart');
 # We enable apache2 modules, configure them and restart it
 system('a2enmod status');
 
-useTemplate(template=>"status.conf.tt",datas=>{internal_network=>$answers->{internal_net_add}},conf=>"/etc/apache2/mods-enabled/status.conf",include=>$conf_vars->{install_template_dir});
+useTemplate(
+    template => "status.conf.tt",
+    datas    => {
+        internal_network => $answers->{internal_net_add}
+    },
+    conf     => "/etc/apache2/mods-enabled/status.conf",
+    include  => $conf_vars->{install_template_dir}
+);
 my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidConnectTimeout 20\n FcgidIOTimeout 180\n MaxRequestLen 512000000\n</IfModule>\n";
 
 system("echo '$fcgid_conf' > /etc/apache2/mods-available/fcgid.conf");
@@ -261,10 +283,23 @@ if(not -e $templateslink) {
 
 system('invoke-rc.d apache2 restart');
 
-
 # We allow snmp access
-useTemplate(template=>"snmpd.conf.tt",datas=>{internal_ip_add=>$internal_ip_add},conf=>"/etc/snmp/snmpd.conf",include=>$conf_vars->{install_template_dir});
-useTemplate(template=>"snmpd_default.tt",datas=>{internal_ip_add=>$internal_ip_add},conf=>"/etc/default/snmpd",include=>$conf_vars->{install_template_dir});
+useTemplate(
+    template => "snmpd.conf.tt",
+    datas    => {
+        internal_ip_add => $internal_ip_add
+    },
+    conf     => "/etc/snmp/snmpd.conf",
+    include  => $conf_vars->{install_template_dir}
+);
+useTemplate(
+    template => "snmpd_default.tt",
+    datas    => {
+        internal_ip_add => $internal_ip_add
+    },
+    conf     => "/etc/default/snmpd",
+    include  => $conf_vars->{install_template_dir}
+);
 system('invoke-rc.d snmpd restart');
 
 # Configure log rotate
@@ -283,8 +318,6 @@ print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
 
-
-
 ##########################################################################################
 ##############################FUNCTIONS DECLARATION#######################################
 ##########################################################################################
@@ -298,9 +331,7 @@ sub welcome {
     print `cat /opt/kanopya/UserLicence`;
     print "\nDo you accept the licence ? (y/n)\n";
     chomp($validate_licence= <STDIN>);
-    if ($validate_licence ne 'y'){
-        exit;
-    }
+    exit if ( $validate_licence ne 'y' );
     print "Please answer to the following questions\n";
 }
 ######################################### Methods to prompt user for informations
@@ -310,9 +341,7 @@ sub getConf{
         print "question $i : ". $questions->{$question}->{question} . " (". $questions->{$question}->{default} .")\n";
 
         # Secret activation
-        if(defined $questions->{$question}->{'is_secret'}){
-            ReadMode('noecho');
-        }
+        ReadMode('noecho') if ( defined $questions->{$question}->{'is_secret'} );
         my @searchable_answer;
         # if answer is searchable and has an answer detection, allow user to choose good answer
         if ($questions->{$question}->{is_searchable} eq "n"){
@@ -359,9 +388,7 @@ sub getConf{
             }
         }
         # Secret deactivation
-        if(defined $questions->{$question}->{'is_secret'}){
-            ReadMode('original');
-        }
+        ReadMode('original') if ( defined $questions->{$question}->{'is_secret'} );
         $i++;
         print "\n";
     }
@@ -374,14 +401,12 @@ sub matchRegexp{
         print "Error, did you modify init script ?\n";
         exit;
     }
-    if (!defined $questions->{$args{question}}->{pattern}){
-        default_error();
-    }
+    default_error() if ( ! defined $questions->{$args{question}}->{pattern} );
     if($answers->{$args{question}} !~ m/($questions->{$args{question}}->{pattern})/){
         print "answer <".$answers->{$args{question}}."> does not fit regexp <". $questions->{$args{question}}->{pattern}.">\n";
         return 1;
-	}
-	return 0;
+    }
+    return 0;
 }
 
 ######################################### Methods to check user's parameter
@@ -424,12 +449,12 @@ sub checkIp{
     if ((!defined $args{question} or !exists $args{question})){
         default_error();
     }
-	my $ip = new NetAddr::IP($answers->{$args{question}});
-	if(not defined $ip) {
-	    print "IP <".$answers->{$args{question}}."> seems to be not good";
-	    return 1;
-	}
-	return 0;
+    my $ip = new NetAddr::IP($answers->{$args{question}});
+    if(not defined $ip) {
+        print "IP <".$answers->{$args{question}}."> seems to be not good";
+        return 1;
+    }
+    return 0;
 }
 
 # Check that password is confirmed
@@ -481,29 +506,29 @@ sub default_error{
 ###################################################### Following functions generates conf files for Kanopya
 
 sub genConf {
-	unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir}};
-	my %datas;
-	foreach my $files (keys %$conf_files){
-		foreach my $d (keys %{$conf_files->{$files}->{datas}}){
-			$datas{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
-		}
-		useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});
-	}
+    unless ( -d $conf_vars->{conf_dir} ){mkdir $conf_vars->{conf_dir}};
+    my %datas;
+    foreach my $files (keys %$conf_files){
+        foreach my $d (keys %{$conf_files->{$files}->{datas}}){
+            $datas{$d} = $answers->{$conf_files->{$files}->{datas}->{$d}};
+        }
+        useTemplate(template => $conf_files->{$files}->{template}, datas => \%datas, conf => $conf_vars->{conf_dir}.$files, include => $conf_vars->{install_template_dir});
+    }
 }
 sub useTemplate{
-        my %args=@_;
-        my $input=$args{template};
-	my $include=$args{include};
-        my $dat=$args{datas};
-        my $output=$args{conf};
-        my $config = {
-                INCLUDE_PATH => $include,
-                INTERPOLATE  => 1,
-                POST_CHOMP   => 1,
-                EVAL_PERL    => 1,
-        };
-        my $template = Template->new($config);
-        $template->process($input, $dat, $output) || do {
-                print "error while generating $output: $!";
-        };
+    my %args=@_;
+    my $input=$args{template};
+    my $include=$args{include};
+    my $dat=$args{datas};
+    my $output=$args{conf};
+    my $config = {
+            INCLUDE_PATH => $include,
+            INTERPOLATE  => 1,
+            POST_CHOMP   => 1,
+            EVAL_PERL    => 1,
+    };
+    my $template = Template->new($config);
+    $template->process($input, $dat, $output) || do {
+            print "error while generating $output: $!";
+    };
 }
