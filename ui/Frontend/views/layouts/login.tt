@@ -8,6 +8,7 @@
     </head>
 
     <body>
+        <img id="biglogo" src="/images/kanopya_logo.png" alt="" />
         <div id="container">
             <% content %>
         </div>

@@ -17,7 +17,7 @@
 div#container {
     margin: auto;
     width: 350px;
-    margin-top: 100px;
+    margin-top: 46px;
     background-color: #FFF;
     border: thin solid #69B033;
     padding: 25px;
@@ -47,7 +47,8 @@ input[type="submit"] {
 }
 
 img#biglogo {
-    margin-bottom: 20px;
+    margin-left: 550px;
+    margin-top: 20px;
 }
 
 .dfv_errors {

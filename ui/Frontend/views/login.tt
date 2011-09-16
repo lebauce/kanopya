@@ -1,5 +1,4 @@
-<img id="biglogo" src="/images/biglogo.png" alt="" />
-<h2>Microcluster Administrator Access</h2>
+<h2>Administration Access</h2>
 <form method="post" action="/login">
     <label for="login">Login: </label>
     <input name="login" id="login" type="text" />
