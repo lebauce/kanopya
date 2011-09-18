@@ -53,7 +53,7 @@ sub new {
 
 sub generateInitiatorname{
     my $self = shift;
-    my %args  = @_;    
+    my %args  = @_;
 
     General::checkParams(args => \%args, required => ['hostname']);
 
@@ -64,8 +64,8 @@ sub generateInitiatorname{
 }
 sub generateTargetname {
     my $self = shift;
-    my %args  = @_;    
-    
+    my %args  = @_;
+
     General::checkParams(args => \%args, required => ['name']);
 
     my $today = today();
@@ -77,16 +77,16 @@ sub generateTargetname {
 sub addExport {
     my $self = shift;
     my %args  = @_;
-    
+
     General::checkParams(args => \%args,
                          required => ['iscsitarget1_lun_number','econtext',
                                       'iscsitarget1_lun_device', 'iscsitarget1_lun_typeio',
                                       'iscsitarget1_target_name', 'iscsitarget1_lun_iomode']);
 
-    
+
     my $target_id = $self->addTarget(iscsitarget1_target_name   =>$args{iscsitarget1_target_name},
                                      econtext                   =>$args{econtext});
-    
+
     my $lun_id = $self->addLun(iscsitarget1_target_id    => $target_id,
                                                 iscsitarget1_lun_number    => $args{iscsitarget1_lun_number},
                                                 iscsitarget1_lun_device    => $args{iscsitarget1_lun_device},
@@ -109,7 +109,7 @@ sub removeExport {
     my %args  = @_;
     my $lun;
     my $log_content;
-    
+
     General::checkParams(args => \%args,
                          required => ['iscsitarget1_lun_id','econtext',
                                       'iscsitarget1_target_name', 'iscsitarget1_target_id']);
@@ -140,7 +140,7 @@ sub removeExport {
 
 sub addTarget {
     my $self = shift;
-    my %args  = @_;    
+    my %args  = @_;
 
     General::checkParams(args => \%args, required => ['iscsitarget1_target_name']);
 
@@ -178,7 +178,7 @@ sub gettid {
     my $tid = $t2[1];
     $log->debug("Tid found <$tid> for target <$args{target_name}>");
     return $tid;
-    
+
 }
 
 sub reload {
@@ -189,7 +189,7 @@ sub reload {
 sub addLun {
     my $self = shift;
     my %args  = @_;
-    
+
     General::checkParams(args => \%args, required => ['iscsitarget1_target_id',"iscsitarget1_lun_number",
                                                      "iscsitarget1_lun_device","iscsitarget1_lun_typeio",
                                                      "iscsitarget1_lun_iomode","iscsitarget1_target_name",
@@ -199,15 +199,15 @@ sub addLun {
     delete $args{iscsitarget1_target_name};
     my $result =  $args{econtext}->execute(command => "ietadm --op new --tid=$tid --lun=$args{iscsitarget1_lun_number} --params Path=$args{iscsitarget1_lun_device},Type=$args{iscsitarget1_lun_typeio},IOMode=$args{iscsitarget1_lun_iomode}");
     delete $args{econtext};
-    return $self->_getEntity()->addLun(%args);    
+    return $self->_getEntity()->addLun(%args);
 }
 
 sub removeLun {
     my $self = shift;
     my %args  = @_;
-    
+
     #TODO In future if need we can just remove a lun.
-    return $self->_getEntity()->removeLun(%args);    
+    return $self->_getEntity()->removeLun(%args);
 }
 
 sub removeTarget {
@@ -216,15 +216,15 @@ sub removeTarget {
 
     General::checkParams(args => \%args, required => ['iscsitarget1_target_id',"iscsitarget1_target_name",
                                                      "econtext"]);
-    
+
     $log->debug('iscsitargetname : '.$args{iscsitarget1_target_name});
-    
+
     # first we clean sessions for this target
     my $tid = $self->cleanTargetSession(targetname => $args{iscsitarget1_target_name}, econtext => $args{econtext});
-        
+
     my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
     delete $args{econtext};
-    return $self->_getEntity()->removeTarget(%args);    
+    return $self->_getEntity()->removeTarget(%args);
 }
 
 =head2 _getIetdSessions
@@ -242,13 +242,13 @@ sub _getIetdSessions {
     my $target_regexp = qr/^tid:([0-9]+)\sname:(.+)/;
     my $session_regexp = qr/^\tsid:([0-9]+)\sinitiator:(.+)/;
     my $connection_regexp = qr/^\t\tcid:([0-9]+)\sip:(.+)state:(.+)\shd:(.+)\sdd:(.+)/;
-    
+
     my $result = $args{econtext}->execute(command => 'cat /proc/net/iet/session');
     my @output = split(/\n/, $result->{stdout});
-    
+
     my ($target, $session, $connection);
     my $ietdsessions = [];
-    
+
     foreach my $line (@output) {
         if($line =~ $target_regexp) {
             $target = { tid => $1, targetname => $2, sessions => [] };
@@ -258,27 +258,27 @@ sub _getIetdSessions {
             push(@{$ietdsessions->[-1]->{sessions}}, $session);
         } elsif($line =~ $connection_regexp) {
             $connection = { cid => $1, ip => $2, state => $3, hd => $4, dd => $5};
-            push(@{$ietdsessions->[-1]->{sessions}->[-1]->{connections}}, $connection); 
+            push(@{$ietdsessions->[-1]->{sessions}->[-1]->{connections}}, $connection);
         }
     }
     return $ietdsessions;
-} 
+}
 
 =head2 cleanTargetSession
 
     argument : targetname, econtext
-    try to remove any sessions on a target 
+    try to remove any sessions on a target
 
-=cut 
+=cut
 
 sub cleanTargetSession {
     my $self = shift;
     my %args  = @_;
     General::checkParams(args => \%args, required => ['targetname',"econtext"]);
 
-    # first, we get actual sessions 
-    my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext}); 
-    
+    # first, we get actual sessions
+    my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext});
+
     # next we clean existing sessions on this target
     foreach my $target (@$ietdsessions) {
         if($target->{targetname} eq $args{targetname}) {
@@ -291,27 +291,27 @@ sub cleanTargetSession {
             }
             return $target->{tid};
         }
-        else { next; } 
+        else { next; }
     }
     return;
-}    
+}
 
 =head2 cleanInitiatorSession
 
     argument : initiator, econtext
-    try to remove all sessions for an initiator 
+    try to remove all sessions for an initiator
 
-=cut 
-    
+=cut
+
 sub cleanInitiatorSession {
     my $self = shift;
     my %args  = @_;
 
     General::checkParams(args => \%args, required => ['initiator',"econtext"]);
 
-    # first, we get actual sessions 
-    my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext}); 
-    
+    # first, we get actual sessions
+    my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext});
+
     # next we clean existing sessions for the given initiatorname
     foreach my $target (@$ietdsessions) {
         foreach my $session(@{$target->{sessions}}) {
@@ -335,7 +335,7 @@ sub generate {
     General::checkParams(args => \%args, required => ["econtext"]);
 
     my $data = $self->_getEntity()->getTemplateData();
-    
+
     $self->generateFile( econtext => $args{econtext},
                          mount_point => "/etc",
                          template_dir => "/templates/components/ietd",

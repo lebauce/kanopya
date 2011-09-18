@@ -94,7 +94,7 @@ sub _init {
 sub _checkOp {
     my $self = shift;
     my %args = @_;
-    
+
     # check if systemimage is not active
        if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
             $errmsg = "EOperation::EActivateSystemimage->new : systemimage <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') ."> is already active";
@@ -110,11 +110,11 @@ sub _checkOp {
 =cut
 
 sub prepare {
-    
+
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
+    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) {
         $errmsg = "EActivateSystemimage->prepare need an internal_cluster named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
@@ -132,7 +132,7 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    
+
     # Check Parameters and context
     eval {
         $self->_checkOp(params => $params);
@@ -142,19 +142,19 @@ sub prepare {
         $errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }    
+    }
 
     # Instanciate Clusters
     $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
     $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
-            
+
     # Get Internal IP
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-        
-    # Instanciate context 
+
+    # Instanciate context
     $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-    
+
     # Instanciate Export component.
     $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
                                                                                       version=> "1"));
@@ -162,12 +162,12 @@ sub prepare {
 
 sub execute {
     my $self = shift;
-    
+
     my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
-    
+
     ## provide root rsa pub key to provide ssh key authentication
     $self->_generateAuthorizedKeys();
-        
+
     ## Update export to allow to motherboard to boot with this systemimage
     my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name'));
 
@@ -192,26 +192,26 @@ sub execute {
     $self->{_objs}->{systemimage}->setAttr(name => 'active', value => 1);
     $self->{_objs}->{systemimage}->save();
     $log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now active");
-        
+
 }
 
 # generate /root/.ssh/authorized_keys file with nas root rsa pub key
 
 sub _generateAuthorizedKeys {
     my $self = shift;
-    
+
     # mount the root systemimage device
     my $si_devices = $self->{_objs}->{systemimage}->getDevices();
     my $mount_point = "/mnt/$si_devices->{root}->{lvm2_lv_name}";
     my $mkdir_cmd = "mkdir -p $mount_point";
     $self->{nas}->{econtext}->execute(command => $mkdir_cmd);
-        
+
     my $mount_cmd = "mount /dev/$si_devices->{root}->{vgname}/$si_devices->{root}->{lvname} $mount_point";
     $self->{nas}->{econtext}->execute(command => $mount_cmd);
-    
+
     my $rsapubkey_cmd = "cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
     $self->{nas}->{econtext}->execute(command => $rsapubkey_cmd);
-    
+
     my $sync_cmd = "sync";
     $self->{nas}->{econtext}->execute(command => $sync_cmd);
     my $umount_cmd = "umount $mount_point";
@@ -231,7 +231,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 
