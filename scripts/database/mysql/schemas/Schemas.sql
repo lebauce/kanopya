@@ -218,10 +218,13 @@ CREATE TABLE `cluster` (
   `active` int(1) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
+  `infrastructure_id` int(8) unsigned DEFAULT NULL,
   `cluster_state` char(32) NOT NULL DEFAULT 'down',
   `cluster_prev_state` char(32),
   PRIMARY KEY (`cluster_id`),
-  UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
+  KEY `fk_cluster_1` (`infrastructure_id`),
+  UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`),
+  CONSTRAINT `fk_cluster_1` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -536,6 +539,33 @@ CREATE TABLE `component_installed` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for `infrastructure`
+--
+
+CREATE TABLE `infrastructure` (
+  `infrastructure_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`infrastructure_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for `tier`
+--
+
+CREATE TABLE `tier` (
+  `tier_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `infrastructure_id` int(8) unsigned NOT NULL,
+  `cluster_id` int(8) unsigned NOT NULL,
+  `tier_type` char(10) NOT NULL,
+  `tier_data_src` char(128) NOT NULL,
+  `kanopya_tier_disk` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`tier_id`),
+  KEY `fk_tier_1` (`infrastructure_id`),
+  KEY `fk_tier_2` (`cluster_id`),
+  CONSTRAINT `fk_tier_1` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_tier_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `component_instance`
 --
 
@@ -543,14 +573,17 @@ CREATE TABLE `component_instance` (
   `component_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `cluster_id` int(8) unsigned NOT NULL,
   `component_id` int(8) unsigned NOT NULL,
+  `tier_id` int(8) unsigned NOT NULL,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`component_instance_id`),
-  KEY `fk_component_instance_1` (`cluster_id`),
+--  KEY `fk_component_instance_1` (`cluster_id`),
   KEY `fk_component_instance_2` (`component_template_id`),
   KEY `fk_component_instance_3` (`component_id`),
-  CONSTRAINT `fk_component_instance_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY `fk_component_instance_4` (`tier_id`),
+--  CONSTRAINT `fk_component_instance_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_2` FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_component_instance_4` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
