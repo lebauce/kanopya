@@ -1,4 +1,7 @@
 .project
 .includepath
+.metadata
+.settings
+
 *~
 Data.sql

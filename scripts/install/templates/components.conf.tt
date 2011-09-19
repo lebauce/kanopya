@@ -10,4 +10,5 @@ mounttable1
 syslogng3
 mysql5
 iptables1
+openldap1
 

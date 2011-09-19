@@ -253,12 +253,11 @@ sub setClusterModelParameters {
     my $self = shift;
     my %args = @_;
     
-    my $row = { cluster_id => $args{cluster_id},
-                wc_visit_ratio => $args{visit_ratio},
-                wc_service_time => $args{service_time},
-                wc_delay => $args{delay},
-                wc_think_time => $args{think_time},
-                 };
+    my $row = { cluster_id => $args{cluster_id} };
+    
+    for my $param ('visit_ratio', 'service_time', 'delay', 'think_time') {
+        $row->{ "wc_" . $param} = $args{$param} if (defined $args{$param});
+    }
     
     eval {             
     	my $wc = $self->{db}->resultset('WorkloadCharacteristic')->search( cluster_id => $args{cluster_id} )->first;
