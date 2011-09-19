@@ -349,10 +349,11 @@ sub computeDiff {
     my %deviations  = ( latency => 0, abort_rate => 0, throughput => 0);
     
     my $weight = 0;
-    for my $metric ('latency', 'abort_rate', 'throughput')
-    if ($curr_perf->{$metric} > 0) {
-        $deviations{$metric} = abs( $model_perf->{$metric} - $curr_perf->{$metric} ) * 100 / $curr_perf->{$metric}; 
-        $weight += $weights{$metric};
+    for my $metric ('latency', 'abort_rate', 'throughput') {
+        if ($curr_perf->{$metric} > 0) {
+            $deviations{$metric} = abs( $model_perf->{$metric} - $curr_perf->{$metric} ) * 100 / $curr_perf->{$metric}; 
+            $weight += $weights{$metric};
+        }
     }
     
     # Here J.Arnaud process a sqrt(pow(dev,2)). Seems useless.
