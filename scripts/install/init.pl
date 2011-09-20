@@ -249,7 +249,7 @@ copy("$conf_vars->{install_template_dir}/syslog-ng.conf", '/etc/syslog-ng') || d
 system('invoke-rc.d syslog-ng restart');
 
 # We remove the initial tftp line from inetd conf file and restart the service
-system('sed -i s/^tftp.*// /etc/inetd.conf');
+deleteLine(qr/^tftp.*/, '/etc/inetd.conf');
 system('invoke-rc.d inetutils-inetd restart');
 
 # We restart atftpd with the new configuration
