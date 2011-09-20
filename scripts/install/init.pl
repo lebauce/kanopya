@@ -410,7 +410,7 @@ sub getConf{
 sub writeFile {
     my ( $path_file, $line ) = @_;
 
-    open ($FILE, ">", $path_file)
+    open (my $FILE, ">", $path_file)
         or die "an error occured while opening $path_file: $!";
     print $FILE, $line;
     close($FILE);
@@ -435,7 +435,7 @@ sub deleteLine {
 
     my $tmp_file_name = $path_file . 'tmp';
 
-    open($FILE, "<", $path_file) or die "an error occured while opening $path_file : $!";
+    open(my $FILE, "<", $path_file) or die "an error occured while opening $path_file : $!";
     open(my $TMP, ">", $tmp_file_name) or die "an error occured while opening $tmp_file_name : $!";
 
     while (<$FILE>) {
