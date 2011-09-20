@@ -1,0 +1,41 @@
+package Login;
+
+use Dancer ':syntax';
+
+use Log::Log4perl "get_logger";
+use Administrator;
+
+my $log = get_logger('webui');
+
+get '/login' => sub {
+    template 'login', {},{ layout=>'login' };
+};
+
+post '/login' => sub {
+    my $user     = param('login');
+    my $password = param('password');
+
+    eval {
+        Administrator::authenticate(
+            login    => $user,
+            password => $password
+        );
+    };
+
+    if ( $@ ) {
+        $log->error('Authentication failed for login ', $user);
+    }
+    else {
+        session EID      => $ENV{EID};
+        session username => $user;
+        $log->info('Authentication succeed for login ', $user);
+    }
+};
+
+get '/logout' => sub {
+    my $user = session('username');
+
+    session->destroy;
+    $log->info('Logout and session delete for login ', $user);
+    redirect '/login';
+};
