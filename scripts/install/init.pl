@@ -430,6 +430,24 @@ sub chownRecursif {
     );
 }
 
+sub deleteLine {
+    my ( $regex, $path_file ) = @_;
+
+    my $tmp_file_name = $path_file . 'tmp';
+
+    open($FILE, "<", $path_file) or die "an error occured while opening $path_file : $!";
+    open(my $TMP, ">", $tmp_file_name) or die "an error occured while opening $tmp_file_name : $!";
+
+    while (<$FILE>) {
+        print $TMP unless m/$regex/;
+    }
+
+    close($FILE);
+    close($TMP);
+
+    rename($tmp_file_name, $path_file)
+}
+
 sub matchRegexp{
     my %args = @_;
 
