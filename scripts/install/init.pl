@@ -278,7 +278,10 @@ system('a2enmod fcgid');
 
 my $templateslink = '/templates';
 if(not -e $templateslink) {
-    system("ln -sf /opt/kanopya/templates $templateslink");
+    eval {
+        symlink('/opt/kanopya/templates', $templateslink);
+    };
+    print "Your system don't support symbolic links", "\n" if $@;
 }
 
 system('invoke-rc.d apache2 restart');
