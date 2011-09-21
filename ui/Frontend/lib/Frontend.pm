@@ -15,7 +15,12 @@ before sub {
 };
 
 get '/' => sub {
-    template 'index';
+    if ( session('username') ) {
+        redirect '/dashboard';
+    }
+    else {
+        redirect '/login';
+    }
 };
 
 true;
