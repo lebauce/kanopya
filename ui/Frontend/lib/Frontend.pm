@@ -2,6 +2,7 @@ package Frontend;
 use Dancer ':syntax';
 
 use Login;
+use Dashboard;
 use Log::Log4perl;
 
 our $VERSION = '0.1';

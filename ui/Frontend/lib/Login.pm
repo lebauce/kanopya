@@ -29,6 +29,7 @@ post '/login' => sub {
         session EID      => $ENV{EID};
         session username => $user;
         $log->info('Authentication succeed for login ', $user);
+        redirect '/dashboard';
     }
 };
 
@@ -39,3 +40,5 @@ get '/logout' => sub {
     $log->info('Logout and session delete for login ', $user);
     redirect '/login';
 };
+
+1;
