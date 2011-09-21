@@ -2,12 +2,17 @@ package Frontend;
 use Dancer ':syntax';
 
 use Login;
-
 use Log::Log4perl;
+
+our $VERSION = '0.1';
 
 Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
 
-our $VERSION = '0.1';
+before sub {
+    if ( ! session('username') && request->path ne '/login' ) {
+        return '/login';
+    }
+};
 
 get '/' => sub {
     template 'index';
