@@ -1,6 +1,6 @@
 package Dashboard;
 
-use Dancer;
+use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 
 use Entity::Cluster;
