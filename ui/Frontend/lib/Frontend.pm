@@ -1,5 +1,5 @@
 package Frontend;
-use Dancer ':syntax';
+use Dancer;
 
 use Login;
 use Dashboard;
