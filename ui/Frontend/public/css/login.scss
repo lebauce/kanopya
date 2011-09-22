@@ -1,14 +1,17 @@
+$purple_color: #69B033;
+$background_color: #FFFFFF;
+
 * {
     margin: 0;
     padding: 0;
     font-family: Monospace;
     font-size: 1.05em;
-    color: #69B033;
+    color: $purple_color;
 }
 
 .small {
     font-size: small;
-    color: #69B033;
+    color: $purple_color;
     text-align: center;
     position: relative;
     top: 20px;
@@ -18,7 +21,7 @@ div#container {
     margin: auto;
     width: 350px;
     margin-top: 46px;
-    background-color: #FFF;
+    background-color: $background_color;
     border: thin solid #69B033;
     padding: 25px;
 }
@@ -39,10 +42,9 @@ label {
 input {
     width: 120px;
     margin-top: 12px;
-}
-
-input[type="submit"] {
+    &[type="submit"] {
     margin-left: 109px;
+    }
 }
 
 img#biglogo {

@@ -1,6 +1,7 @@
 package Frontend;
 use Dancer;
 
+use Dancer::Plugin::Preprocess::Sass;
 use Login;
 use Dashboard;
 use Log::Log4perl;
