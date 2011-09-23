@@ -193,6 +193,9 @@ sub execute {
         $self->{_objs}->{systemimage}->save();
         $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is added');
 
+        my @group = Entity::Gp->getGroups(hash => {gp_name=>'SystemImage'});
+        $group[0]->appendEntity(entity => $self->{_objs}->{systemimage});
+
         my $components = $self->{_objs}->{distribution}->getProvidedComponents();
         foreach my $comp (@$components) {
             if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {

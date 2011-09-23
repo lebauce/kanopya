@@ -277,7 +277,8 @@ sub appendEntity {
     
     General::checkParams(args => \%args, required => ['entity']);
     
-    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
+#    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
+ 	my $entity_id = $args{entity}->{_entity_id};
     $self->{_dbix}->ingroups->create({gp_id => $self->getAttr(name => 'gp_id'), entity_id => $entity_id} );
     return;
 }
