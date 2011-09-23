@@ -220,7 +220,7 @@ if (!$grant) {
 }
 #We now generate the database schemas
 print "generating database schemas...";
-system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u $answers->{dbuser} -p $answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";
+system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";
 print "done\n";
 #We now generate the components schemas
 print "loading component DB schemas...";
