@@ -14,7 +14,7 @@ before sub {
     my $eid = session('EID');
 
     if ( ! session('username') && request->path ne '/login' ) {
-        return '/login';
+        return redirect '/login';
     }
     elsif ( request->path eq '/login' ) {
         return pass;
