@@ -4,10 +4,14 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 
 use Entity::Cluster;
+use Entity::Component;
+
 use Log::Log4perl "get_logger";
 
 get '/dashboard' => sub {
     my $admin_components  = adminComponentsDef();
+    my $components = Entity::Component->getComponentsByCategory();
+
     my @components_status = ();
 
     foreach my $group_count (@{$admin_components}) {
@@ -38,8 +42,8 @@ get '/dashboard' => sub {
     }
 
     template 'dashboard', {
-        title_page => 'Dashboard',
-        username   => session('username')
+        title_page        => 'Dashboard',
+        components_status => \@components_status,
     };
 };
 
