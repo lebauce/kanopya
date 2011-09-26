@@ -213,19 +213,19 @@ sub delete {
 }
 
 sub getComponents {
-	my $class = shift;
-	my $adm = Administrator->new();
-	my $components = $adm->{db}->resultset('Component')->search();
-	my $list = [];
-	while(my $c = $components->next) { 
-		my $tmp = {};
-		$tmp->{component_id} = $c->get_column('component_id');
-		$tmp->{component_name} = $c->get_column('component_name');
-		$tmp->{component_version} = $c->get_column('component_version');
-		$tmp->{component_category} = $c->get_column('component_category');
-		push(@$list, $tmp);
-	} 
-	return $list;
+    my $class = shift;
+    my $adm = Administrator->new();
+    my $components = $adm->{db}->resultset('Component')->search();
+    my $list = [];
+    while(my $c = $components->next) {
+        my $tmp = {};
+        $tmp->{component_id}       = $c->get_column('component_id');
+        $tmp->{component_name}     = $c->get_column('component_name');
+        $tmp->{component_version}  = $c->get_column('component_version');
+        $tmp->{component_category} = $c->get_column('component_category');
+        push(@$list, $tmp);
+    }
+    return $list;
 }
 
 sub getComponentsByCategory {
