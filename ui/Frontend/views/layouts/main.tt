@@ -5,8 +5,15 @@
         <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
         <title><% title_page %></title>
         <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
+        <% FOREACH css IN css_head %>
+            <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
+        <% END %>
 
         <script type="text/javascript" src="/js/kanopyaui-tools.js"></script>
+        <% FOREACH js IN js_head %>
+            <script type="text/javascript" src="/js/<% js %>"></script>
+        <% END %>
+
     </head>
     <body>
         <div id="container">
