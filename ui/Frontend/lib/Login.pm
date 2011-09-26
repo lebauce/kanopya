@@ -7,6 +7,22 @@ use Administrator;
 
 my $log = get_logger('webui');
 
+get qr(/.*) => sub {
+    my $eid = session('EID');
+
+    if ( request->path eq '/login' ) {
+        return pass;
+    }
+    elsif ( ! $eid  ) {
+        return redirect '/login';
+    }
+    else {
+        $ENV{EID}      = $eid;
+        var adm_object => Administrator->new();
+        return pass;
+    }
+};
+
 get '/login' => sub {
     template 'login', {},{ layout=>'login' };
 };
