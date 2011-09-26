@@ -15,6 +15,7 @@ before_template sub {
 
     $tokens->{css_head} = [];
     $tokens->{js_head}  = [];
+    $tokens->{username} = session('username');
 };
 
 get '/' => sub {
