@@ -343,7 +343,7 @@ sub save {
         # CREATE
         my $relation = lc(ref $self);
         $relation =~ s/.*\:\://g;
-        $log->debug("la relation: $relation");
+        $log->debug("The relation is: $relation");
         my $newentity = $self->{_dbix}->insert;
         $component_instance_id = $newentity->get_column("component_instance_id");
         $log->debug("new entity inserted.");
