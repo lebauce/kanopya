@@ -4,6 +4,7 @@ use Dancer;
 use Dancer::Plugin::Preprocess::Sass;
 use Login;
 use Dashboard;
+use Components;
 use Log::Log4perl;
 
 our $VERSION = '0.1';

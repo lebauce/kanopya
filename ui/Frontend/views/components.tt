@@ -1,0 +1,15 @@
+<% css_head.push('listing.css') %>
+
+<table>
+<% FOREACH component IN components_list %>
+    <tr>
+        <td><h1><% component.category %></h1></td>
+    </tr>
+    <% FOREACH details IN component.components %>
+        <tr>
+            <td><span class="bold"><% details.name %></span></td>
+        </tr>
+    <% END %>
+    <hr />
+<% END %>
+</table>
