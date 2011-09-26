@@ -10,21 +10,20 @@ our $VERSION = '0.1';
 
 Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
 
-before sub {
+get qr(/.*) => sub {
     my $eid = session('EID');
 
-    if ( ! session('username') && request->path ne '/login' ) {
-        return redirect '/login';
-    }
-    elsif ( request->path eq '/login' ) {
+    if ( request->path eq '/login' ) {
         return pass;
+    }
+    elsif ( ! $eid  ) {
+        return redirect '/login';
     }
     else {
         $ENV{EID}      = $eid;
         var adm_object => Administrator->new();
         return pass;
     }
-
 };
 
 get '/' => sub {
