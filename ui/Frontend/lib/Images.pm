@@ -46,6 +46,6 @@ get '/images' => sub {
         title_page         => 'Systems - System images',
         distributions_list => _systemimages(),
         can_create         => $can_create,
-    }
-}
+    };
+};
 

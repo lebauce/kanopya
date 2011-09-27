@@ -37,8 +37,8 @@ get '/distributions' => sub {
         eid                => session('EID'),
         distributions_list => _distributions(),
         object             => vars->{adm_object}
-    }
-}
+    };
+};
 
 get '/distributions/:distributionid' => sub {
     # Call for Entity components for Distributions details.
@@ -55,6 +55,6 @@ get '/distributions/:distributionid' => sub {
         distribution_desc     => $edistribution->getAttr(name => 'distribution_desc'),
         components_list       => $components_list,
         components_count      => $nb + 1,
-    }
-}
+    };
+};
 
