@@ -49,3 +49,66 @@ get '/images' => sub {
     };
 };
 
+get '/images/:imageid' => sub {
+
+	my $activate;
+	my $can_setperm; 
+    my $can_activate;
+    my $can_deactivate;
+    my $can_delete; 
+    my $can_installcomponent;
+	my $distribution;
+    my $systemimage_usage;
+
+    my $esystemimage = Entity::Systemimage->get(id => params->{imageid});
+    my $methods = $esystemimage->getPerms();
+    if($methods->{'setperm'}->{'granted'}) { $can_setperm = 1 }
+
+    
+    eval {    
+        my $edistro = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
+        $distribution = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
+    };
+    if(not $esystemimage->getAttr(name => 'active')) {
+        if($methods->{'activate'}->{'granted'}) { $can_activate = 1 }
+        if($methods->{'remove'}->{'granted'}) { $can_delete = 1 }
+    } else {
+        if($methods->{'deactivate'}->{'granted'}) { $can_deactivate = 1 }
+        $active = 1;
+    }
+    if($active) {
+        $systemimage_usage = $esystemimage->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared');
+    } else {
+        $systemimage_usage = '';
+    }
+    
+    my $components_list = $esystemimage->getInstalledComponents();
+    my $nb = scalar(@$components_list);
+    foreach my $c (@$components_list) {
+        delete $c->{component_id};
+    }
+    if(not $methods->{'installcomponent'}->{'granted'}) { $can_installcomponent = 1 }
+
+	template 'images', {
+		title_page       => "Systems - System image's overview",
+		eid              => session('EID'),
+		distributions_list => _systemimages(),
+		object           => vars->{adm_object},
+        activate         => $activate,              
+	    can_setperm      => $can_setperm,           
+	    can_activate     => $can_activate,          
+        can_deactivate   => $can_deactivate,        
+        can_delete       => $can_delete,            
+        can_installcomponent  =>  $can_installcomponent,  
+        distribution          => $distribution,          
+        systemimage_usage     => $systemimage_usage,     
+		systemimage_id => $esystemimage->getAttr(name => 'systemimage_id'),     
+		systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'), 
+		systemimage_desc => $esystemimage->getAttr(name => 'systemimage_desc'), 
+		components_list => $components_list,                                    
+		components_count => $nb + 1,                                            
+ 	}
+}    
+sub form_editsystemimage : Runmode {
+    return "TODO";
+}
