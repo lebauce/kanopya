@@ -12,13 +12,15 @@ sub _systemimages {
 
     foreach my $s (@esystemimages) {
         my $tmp = {};
-        $tmp->{systemimage_id} = $s->getAttr(name => 'systemimage_id');
+        $tmp->{systemimage_id}   = $s->getAttr(name => 'systemimage_id');
         $tmp->{systemimage_name} = $s->getAttr(name => 'systemimage_name');
         $tmp->{systemimage_desc} = $s->getAttr(name => 'systemimage_desc');
+
         eval {
             my $edistro = Entity::Distribution->get(id => $s->getAttr(name => 'distribution_id'));
             $tmp->{distribution} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
         };
+
         $tmp->{active} = $s->getAttr(name => 'active');
         if($tmp->{active}) {
             $tmp->{systemimage_usage} = $s->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared';
@@ -27,6 +29,7 @@ sub _systemimages {
         }
         push (@$systemimages, $tmp);
     }
+
     return $systemimages;
 }
 
@@ -40,7 +43,7 @@ get '/images' => sub {
     if(not scalar(@edistros)) { $can_create = 0 }
 
     template 'images', {
-        title_page       => 'Systems - System images',
+        title_page         => 'Systems - System images',
         distributions_list => _systemimages(),
         can_create         => $can_create,
     }
