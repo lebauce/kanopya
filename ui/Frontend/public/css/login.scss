@@ -1,4 +1,4 @@
-$purple_color: #69B033;
+$purple_color: #7E388A;
 $background_color: #FFFFFF;
 
 * {
@@ -22,7 +22,7 @@ div#container {
     width: 350px;
     margin-top: 46px;
     background-color: $background_color;
-    border: thin solid #69B033;
+    border: thin solid $purple_color;
     padding: 25px;
 }
 
