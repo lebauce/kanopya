@@ -14,7 +14,7 @@ my $log = get_logger("webui");
 sub _distributions {
     my @edistributions = Entity::Distribution->getDistributions(hash => {});
     my $distributions = [];
-    
+
     foreach my $m (@edistributions) {
         my $tmp = {};
         my $methods = $m->getPerms();
@@ -24,20 +24,20 @@ sub _distributions {
         $tmp->{distribution_desc} = $m->getAttr(name => 'distribution_desc');
         if($methods->{'setperm'}->{'granted'}) { $tmp->{'can_setperm'} = 1; }
         #$tmp->{COMPONENTS} = $m->getProvidedComponents();
-               
+
         push (@$distributions, $tmp);
     }
-	return $distributions;
+    return $distributions;
 }
 
 # Distributions template.
 get '/distributions' => sub {
-	template 'distributions', {
-		title_page       => 'Systems - Distributions',
-		eid              => session('EID'),
-		distributions_list => _distributions(),
-		object           => vars->{adm_object}
-	}
+    template 'distributions', {
+        title_page       => 'Systems - Distributions',
+        eid              => session('EID'),
+        distributions_list => _distributions(),
+        object           => vars->{adm_object}
+    }
 }
 
 get '/distributions/:distributionid' => sub {
@@ -45,18 +45,18 @@ get '/distributions/:distributionid' => sub {
     my $edistribution = Entity::Distribution->get(id => params->{distributionid});
     my $components_list = $edistribution->getProvidedComponents();
     my $nb = scalar(@$components_list);
-	
-	# Ṕass the text and arrays to the Distribution template. 
-	template 'distributions_details', {
-		title_page       => "Systems - Distribution's overview",
-		eid              => session('EID'),
-		distribution_id => $edistribution->getAttr(name => 'distribution_id'),
-		distribution_name => $edistribution->getAttr(name => 'distribution_name'),
-		distribution_version => $edistribution->getAttr(name => 'distribution_version'),
-		distribution_desc => $edistribution->getAttr(name => 'distribution_desc'),
-		components_list => $components_list,
-		components_count => $nb + 1,
-		object           => vars->{adm_object}
-	}
+
+    # Ṕass the text and arrays to the Distribution template.
+    template 'distributions_details', {
+        title_page       => "Systems - Distribution's overview",
+        eid              => session('EID'),
+        distribution_id => $edistribution->getAttr(name => 'distribution_id'),
+        distribution_name => $edistribution->getAttr(name => 'distribution_name'),
+        distribution_version => $edistribution->getAttr(name => 'distribution_version'),
+        distribution_desc => $edistribution->getAttr(name => 'distribution_desc'),
+        components_list => $components_list,
+        components_count => $nb + 1,
+        object           => vars->{adm_object}
+    }
 }
 
