@@ -49,14 +49,12 @@ get '/distributions/:distributionid' => sub {
     # Ṕass the text and arrays to the Distribution template.
     template 'distributions_details', {
         title_page       => "Systems - Distribution's overview",
-        eid              => session('EID'),
         distribution_id => $edistribution->getAttr(name => 'distribution_id'),
         distribution_name => $edistribution->getAttr(name => 'distribution_name'),
         distribution_version => $edistribution->getAttr(name => 'distribution_version'),
         distribution_desc => $edistribution->getAttr(name => 'distribution_desc'),
         components_list => $components_list,
         components_count => $nb + 1,
-        object           => vars->{adm_object}
     }
 }
 

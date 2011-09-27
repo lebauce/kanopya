@@ -41,9 +41,7 @@ get '/images' => sub {
 
     template 'images', {
         title_page       => 'Systems - System images',
-        eid              => session('EID'),
         distributions_list => _systemimages(),
-        object           => vars->{adm_object},
         can_create         => $can_create,
     }
 }
