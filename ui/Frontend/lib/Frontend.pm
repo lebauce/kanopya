@@ -28,4 +28,9 @@ get '/' => sub {
     }
 };
 
+any qr{.*} => sub {
+    status 'not_found';
+    template 'special_404', { path => request->path };
+};
+
 true;
