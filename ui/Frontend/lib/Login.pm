@@ -24,6 +24,7 @@ get qr(/.*) => sub {
 };
 
 get '/login' => sub {
+    redirect '/dashboard' if ( session('EID') );
     template 'login', {},{ layout=>'login' };
 };
 
