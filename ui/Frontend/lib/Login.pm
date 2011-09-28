@@ -8,12 +8,14 @@ use Administrator;
 my $log = get_logger('webui');
 
 get qr(/.*) => sub {
-    my $eid = session('EID');
+    my $eid  = session('EID');
+    my $path = request->path;
 
-    if ( request->path eq '/login' ) {
+    if ( $path eq '/login' ) {
         return pass;
     }
     elsif ( ! $eid  ) {
+        session login_redirect_url => $path;
         return redirect '/login';
     }
     else {
@@ -31,6 +33,9 @@ get '/login' => sub {
 post '/login' => sub {
     my $user     = param('login');
     my $password = param('password');
+    my $redirect = session->{login_redirect_url} || '/dashboard';
+
+    $log->error('The url is', session);
 
     eval {
         Administrator::authenticate(
@@ -46,7 +51,8 @@ post '/login' => sub {
         session EID      => $ENV{EID};
         session username => $user;
         $log->info('Authentication succeed for login ', $user);
-        redirect '/dashboard';
+        delete session->{login_redirect_url};
+        redirect $redirect;
     }
 };
 
