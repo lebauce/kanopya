@@ -1,4 +1,4 @@
-package Distributions;
+package Images;
 
 use Dancer ':syntax';
 
@@ -91,9 +91,7 @@ get '/images/:imageid' => sub {
 
 	template 'images', {
 		title_page       => "Systems - System image's overview",
-		eid              => session('EID'),
 		distributions_list => _systemimages(),
-		object           => vars->{adm_object},
         activate         => $activate,              
 	    can_setperm      => $can_setperm,           
 	    can_activate     => $can_activate,          
