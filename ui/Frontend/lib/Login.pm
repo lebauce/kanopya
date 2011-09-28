@@ -35,8 +35,6 @@ post '/login' => sub {
     my $password = param('password');
     my $redirect = session->{login_redirect_url} || '/dashboard';
 
-    $log->error('The url is', session);
-
     eval {
         Administrator::authenticate(
             login    => $user,
