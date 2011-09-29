@@ -364,8 +364,15 @@ sub getNetConf{
     my $self = shift;
     my $http_port = $self->{_dbix}->apache2s->first()->get_column("apache2_ports");
     my $https_port = $self->{_dbix}->apache2s->first()->get_column("apache2_sslports");
-    return { $http_port  => ['tcp'],
-             $https_port => ['tcp', 'ssl'] };
+
+    my %net_conf = ($http_port  => ['tcp']);
+
+    # manage ssl
+    my $virtualhosts = $self->getVirtualhostConf();
+    my $ssl_enable = grep { $_->{apache2_virtualhost_sslenable} == 1 } @$virtualhosts;
+    $net_conf{$https_port} = ['tcp', 'ssl'] if ($ssl_enable);
+
+    return \%net_conf;
 }
 
 sub getClusterizationType { return 'loadbalanced'; }
