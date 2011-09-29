@@ -1,6 +1,7 @@
 package Login;
 
 use Dancer ':syntax';
+use Dancer::Plugin::FormValidator;
 
 use Log::Log4perl "get_logger";
 use Administrator;
@@ -34,6 +35,16 @@ post '/login' => sub {
     my $user     = param('login');
     my $password = param('password');
     my $redirect = session->{login_redirect_url} || '/dashboard';
+
+    my $input_hash = {
+        login    => $user,
+        password => $password
+    };
+
+    my $error = form_validator_error('login', $input_hash);
+    if ( $error ) {
+        return template 'login', { errors => $error }, { layout => 'login' };
+    }
 
     eval {
         Administrator::authenticate(
