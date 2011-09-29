@@ -34,3 +34,8 @@ plugins:
   "Preprocess::Sass":
     paths:
       - css
+  FormValidator:
+    profil_file: 'profiles.pl'
+    msg:
+      single: 'Missing field'
+      several: 'Missing fields'
