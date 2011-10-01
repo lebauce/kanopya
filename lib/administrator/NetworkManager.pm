@@ -49,10 +49,11 @@ sub new {
     my %args = @_;
     my $self = {};
     
-    General::checkParams(args => \%args, required => ['schemas', 'internalnetwork']);
+    General::checkParams(args => \%args, required => ['schemas', 'internalnetwork', 'dmznetwork']);
     
     $self->{db} = $args{schemas};
     $self->{internalnetwork} = $args{internalnetwork};
+    $self->{dmznetwork} = $args{dmznetwork};
     bless $self, $class;
     $log->info("New Network Manager Loaded");
     return $self;
@@ -100,6 +101,44 @@ sub addRoute {
     $log->debug("new route added to public ip");
 }
 
+=head2 getFreeIP
+
+return the first unused ip address in a network
+
+=cut
+
+sub getFreeIP{
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['type']);
+    my $type = $args{type};
+    my $uppertype = ucfirst $args{type};
+    # retrieve internal network from config
+    my $network = new NetAddr::IP(
+        $self->{$type."network"}->{ip},
+        $self->{$type."network"}->{mask},
+    );
+
+    my ($i, $row, $freeip) = 0;
+    
+    # try to find a matching motherboard of each ip of our network    
+    while ($freeip = $network->nth($i)) {
+        $row = $self->{db}->resultset("Ipv4".$uppertype)->find({ "ipv4_".$type ."_address" => $freeip->addr });
+        
+        # if no record is found for this ip address, it is free so we return it
+        if(not defined $row) { 
+                return $freeip->addr; }
+        $log->debug($freeip->addr." is already used");
+        $i++;
+    }
+    if(not defined $freeip) {
+        $errmsg = "NetworkManager->getFree".$type."IP : all ip $type addresses seems to be used !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Network(error => $errmsg);
+    }
+}
+
 =head2 getFreeInternalIP
 
 return the first unused ip address in the internal network
@@ -109,28 +148,40 @@ return the first unused ip address in the internal network
 sub getFreeInternalIP{
     my $self = shift;
     # retrieve internal network from config
-    my $network = new NetAddr::IP(
-        $self->{internalnetwork}->{ip},
-        $self->{internalnetwork}->{mask},
-    );
-    
-    my ($i, $row, $freeip) = 0;
-    
-    # try to find a matching motherboard of each ip of our network    
-    while ($freeip = $network->nth($i)) {
-        $row = $self->{db}->resultset('Ipv4Internal')->find({ ipv4_internal_address => $freeip->addr });
-        
-        # if no record is found for this ip address, it is free so we return it
-        if(not defined $row) { 
-                return $freeip->addr; }
-        $log->debug($freeip->addr." is already used");
-        $i++;
-    }
-    if(not defined $freeip) {
-        $errmsg = "NetworkManager->getFreeInternalIP : all internal ip addresses seems to be used !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Network(error => $errmsg);
-    }
+#    my $network = new NetAddr::IP(
+#        $self->{internalnetwork}->{ip},
+#        $self->{internalnetwork}->{mask},
+#    );
+#    
+#    my ($i, $row, $freeip) = 0;
+#    
+#    # try to find a matching motherboard of each ip of our network    
+#    while ($freeip = $network->nth($i)) {
+#        $row = $self->{db}->resultset('Ipv4Internal')->find({ ipv4_internal_address => $freeip->addr });
+#        
+#        # if no record is found for this ip address, it is free so we return it
+#        if(not defined $row) { 
+#                return $freeip->addr; }
+#        $log->debug($freeip->addr." is already used");
+#        $i++;
+#    }
+#    if(not defined $freeip) {
+#        $errmsg = "NetworkManager->getFreeInternalIP : all internal ip addresses seems to be used !";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Network(error => $errmsg);
+#    }
+    $self->getFreeIP (type=>"internal");
+}
+
+=head2 getFreeDmzIP
+
+return the first unused ip address in the dmz network
+
+=cut
+
+sub getFreeDmzIP{
+    my $self = shift;
+    $self->getFreeIP (type=>"dmz");
 }
 
 =head2 newPublicIP
@@ -167,7 +218,7 @@ sub newPublicIP {
         }
     }
 
-    my $res;    
+    my $res;
     # try to save public ip
     eval {
         my $row = {ipv4_public_address => $pubip->addr, ipv4_public_mask => $pubip->mask};
@@ -190,7 +241,27 @@ sub getInternalIPId{
     General::checkParams(args => \%args, required => ['ipv4_internal_address']);
 
     my $internal_ip_row = $self->{db}->resultset('Ipv4Internal')->find({ipv4_internal_address => $args{ipv4_internal_address},key=>"ipv4_internal_address_UNIQUE"});
+    if (! defined $internal_ip_row){
+        $errmsg = "NetworkManager->getInternalIPId address $args{ipv4_internal_address} was not found";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
     return $internal_ip_row->get_column("ipv4_internal_id");
+}
+
+sub getDmzIPId{
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['ipv4_dmz_address']);
+
+    my $internal_ip_row = $self->{db}->resultset('Ipv4Dmz')->find({ipv4_dmz_address => $args{ipv4_dmz_address},key=>"ipv4_dmz_address_UNIQUE"});
+    if (! defined $internal_ip_row){
+        $errmsg = "NetworkManager->getDmzIPId address $args{ipv4_dmz_address} was not found";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
+    return $internal_ip_row->get_column("ipv4_dmz_id");
 }
 
 sub getInternalIP{
@@ -201,6 +272,57 @@ sub getInternalIP{
 
     my %internal_ip_row = $self->{db}->resultset('Ipv4Internal')->find($args{ipv4_internal_id})->get_columns();
     return \%internal_ip_row;
+}
+
+sub getDmzIP{
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['ipv4_dmz_id']);
+
+    my %dmz_ip_row = $self->{db}->resultset('Ipv4Dmz')->find($args{ipv4_dmz_id})->get_columns();
+    return \%dmz_ip_row;
+}
+
+sub newIP {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['ipv4_address','ipv4_mask', 'type']);
+    my $type = $args{type};
+    my $uppertype = ucfirst($args{type});
+    
+    my $ip = new NetAddr::IP($args{ipv4_address}, $args{ipv4_mask});
+    if(not defined $ip) { 
+        $errmsg = "NetworkManager->newIP : wrong value for ip_address/ip_mask!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    } 
+    
+    my $gateway;
+    if(exists $args{ipv4_default_gw} and defined $args{ipv4_default_gw}) {
+        $gateway = new NetAddr::IP($args{ipv4_default_gw});
+        if(not defined $gateway) {
+            $errmsg = "NetworkManager->newIP : wrong value for gateway!";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+    }
+
+    my $res;    
+    # try to save public ip
+    eval {
+        my $row = {"ipv4_".$type."_address" => $ip->addr, "ipv4_".$type."_mask" => $ip->mask};
+        if($gateway) { $row->{"ipv4_" .$type."internal_default_gw"} = $gateway->addr; }
+        $res = $self->{db}->resultset("Ipv4$uppertype")->create($row);
+        $log->debug("$type ip create and return ". $res->get_column("ipv4_".$type."_id"));
+    };
+    if($@) { 
+        $errmsg = "NetworkManager->new$type"."IP: $@";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg); }
+    $log->debug("new $type ip created");
+    return $res->get_column("ipv4_".$type."_id");
 }
 
 =head2 newInternalIP
@@ -219,43 +341,64 @@ sub newInternalIP {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['ipv4_internal_address','ipv4_internal_mask']);
+    General::checkParams(args => \%args, required => ['ipv4_address','ipv4_mask']);
 
-    # ip format valid ?
-    my $internalip = new NetAddr::IP($args{ipv4_internal_address}, $args{ipv4_internal_mask});
-    if(not defined $internalip) { 
-        $errmsg = "NetworkManager->newInternalIP : wrong value for ip_address/ip_mask!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    } 
-    
-    my $gateway;
-    if(exists $args{ipv4_internal_default_gw} and defined $args{ipv4_internal_default_gw}) {
-        $gateway = new NetAddr::IP($args{ipv4_internal_default_gw});
-        if(not defined $gateway) {
-            $errmsg = "NetworkManager->newInternalIP : wrong value for gateway!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-    }
-
-    my $res;    
-    # try to save public ip
-    eval {
-        my $row = {ipv4_internal_address => $internalip->addr, ipv4_internal_mask => $internalip->mask};
-        if($gateway) { $row->{ipv4_internal_default_gw} = $gateway->addr; }
-        $res = $self->{db}->resultset('Ipv4Internal')->create($row);
-        $log->debug("Public ip create and return ". $res->get_column("ipv4_internal_id"));
-    };
-    if($@) { 
-        $errmsg = "NetworkManager->newInternalIP: $@";
-        $log->error($errmsg);
-        throw Kanopya::Exception::DB(error => $errmsg); }
-    $log->debug("new internal ip created");
-    return $res->get_column("ipv4_internal_id");
+#    # ip format valid ?
+#    my $internalip = new NetAddr::IP($args{ipv4_internal_address}, $args{ipv4_internal_mask});
+#    if(not defined $internalip) { 
+#        $errmsg = "NetworkManager->newInternalIP : wrong value for ip_address/ip_mask!";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::Internal(error => $errmsg);
+#    } 
+#    
+#    my $gateway;
+#    if(exists $args{ipv4_internal_default_gw} and defined $args{ipv4_internal_default_gw}) {
+#        $gateway = new NetAddr::IP($args{ipv4_internal_default_gw});
+#        if(not defined $gateway) {
+#            $errmsg = "NetworkManager->newInternalIP : wrong value for gateway!";
+#            $log->error($errmsg);
+#            throw Kanopya::Exception::Internal(error => $errmsg);
+#        }
+#    }
+#
+#    my $res;    
+#    # try to save public ip
+#    eval {
+#        my $row = {ipv4_internal_address => $internalip->addr, ipv4_internal_mask => $internalip->mask};
+#        if($gateway) { $row->{ipv4_internal_default_gw} = $gateway->addr; }
+#        $res = $self->{db}->resultset('Ipv4Internal')->create($row);
+#        $log->debug("Public ip create and return ". $res->get_column("ipv4_internal_id"));
+#    };
+#    if($@) { 
+#        $errmsg = "NetworkManager->newInternalIP: $@";
+#        $log->error($errmsg);
+#        throw Kanopya::Exception::DB(error => $errmsg); }
+#    $log->debug("new internal ip created");
+#    return $res->get_column("ipv4_internal_id");
+    $args{type} = "internal";
+    return $self->newIP(%args)
 }
 
+=head2 newDmzIP
 
+add a new dmz ip address
+    args: 
+        ip_address
+        ip_mask
+    optional args:
+        gateway
+=cut
+
+sub newDmzIP {
+    #################################
+    #TODO This method
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['ipv4_address','ipv4_mask']);
+    $args{type} = "dmz";
+    return $self->newIP(%args)
+}
 
 =head2 getPublicIPs
 
@@ -335,25 +478,47 @@ sub delPublicIP {
     $log->info("Public ip ($args{publicip_id}) deleted with its routes");
 }
 
+sub delIP {
+    my $self = shift;
+    my %args = @_;
+    # arguments checking
+    
+    General::checkParams(args => \%args, required => ['ipv4_id', 'type']);
+    my $type = $args{type};
+    my $uppertype = ucfirst($args{type});
+
+    # getting the row    
+    my $row = $self->{db}->resultset("Ipv4".$uppertype)->find( $args{ipv4_id} );
+    if(! defined $row) {
+        $errmsg = "NetworkManager->del".$type."IP : ipv4_".$type."_id $args{ipv4_id} not found!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
+    # related routes are automatically deleted due to foreign key 
+    $row->delete;
+    $log->info("$uppertype ip ($args{ipv4_id}) deleted");
+}
+
 sub delInternalIP {
     my $self = shift;
     my %args = @_;
     # arguments checking
     
-    General::checkParams(args => \%args, required => ['ipv4_internal_id']);
+    General::checkParams(args => \%args, required => ['ipv4_id']);
     
-    # getting the row    
-    my $row = $self->{db}->resultset('Ipv4Internal')->find( $args{ipv4_internal_id} );
-    if(! defined $row) {
-        $errmsg = "NetworkManager->delInternalIP : ipv4_internal_id $args{ipv4_internal_id} not found!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::DB(error => $errmsg);
-    }
+    $args{type} = "internal";
+    $self->delIP(%args);
+}
+
+sub delDmzIP {
+    my $self = shift;
+    my %args = @_;
+    # arguments checking
     
-    
-    # related routes are automatically deleted due to foreign key 
-    $row->delete;
-    $log->info("Internal ip ($args{ipv4_internal_id}) deleted");
+    General::checkParams(args => \%args, required => ['ipv4_id']);
+    $args{type} = "dmz";
+    $self->delIP(%args);
+
 }
 
 =head2 setClusterPublicIP

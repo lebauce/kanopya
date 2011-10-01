@@ -237,7 +237,8 @@ sub new {
 
     $self->{manager}->{network} = NetworkManager->new(
         schemas => $schema,
-        internalnetwork => $config->{internalnetwork}
+        internalnetwork => $config->{internalnetwork},
+        dmznetwork => $config->{dmznetwork}
     );
 
     $self->{manager}->{rules} = RulesManager->new( schemas => $schema );
