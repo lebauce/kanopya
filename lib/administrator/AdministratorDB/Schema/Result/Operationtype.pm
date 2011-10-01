@@ -50,6 +50,21 @@ __PACKAGE__->add_unique_constraint("operationtype_name_UNIQUE", ["operationtype_
 
 =head1 RELATIONS
 
+=head2 old_operations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OldOperation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "old_operations",
+  "AdministratorDB::Schema::Result::OldOperation",
+  { "foreign.type" => "self.operationtype_name" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 operations
 
 Type: has_many
