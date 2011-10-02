@@ -1010,5 +1010,25 @@ CREATE TABLE `cluster_entity` (
   CONSTRAINT `fk_cluster_entity_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `tier_entity` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `tier_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`tier_id`),
+  UNIQUE KEY `fk_tier_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_tier_entity_2` (`tier_id`),
+  CONSTRAINT `fk_tier_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_tier_entity_2` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `infrastructure_entity` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `infrastructure_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`infrastructure_id`),
+  UNIQUE KEY `fk_infrastructure_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_infrastructure_entity_2` (`infrastructure_id`),
+  CONSTRAINT `fk_infrastructure_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_infrastructure_entity_2` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;
 
