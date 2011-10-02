@@ -538,6 +538,7 @@ CREATE TABLE `component_installed` (
 --
 
 CREATE TABLE `infrastructure` (
+  `infrastructure_reference` char(64) NOT NULL,
   `infrastructure_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `infrastructure_min_node` int(2) unsigned NOT NULL,
   `infrastructure_max_node` int(2) unsigned NOT NULL,

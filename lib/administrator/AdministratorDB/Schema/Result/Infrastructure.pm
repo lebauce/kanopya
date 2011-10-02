@@ -19,6 +19,12 @@ __PACKAGE__->table("infrastructure");
 
 =head1 ACCESSORS
 
+=head2 infrastructure_reference
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 64
+
 =head2 infrastructure_id
 
   data_type: 'integer'
@@ -58,6 +64,8 @@ __PACKAGE__->table("infrastructure");
 =cut
 
 __PACKAGE__->add_columns(
+  "infrastructure_reference",
+  { data_type => "char", is_nullable => 0, size => 64 },
   "infrastructure_id",
   {
     data_type => "integer",
