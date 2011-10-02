@@ -124,7 +124,7 @@ Related object: L<AdministratorDB::Schema::Result::Ipv4Dmz>
 =cut
 
 __PACKAGE__->has_many(
-  "ipv4_dmzzes",
+  "ipv4_dmzs",
   "AdministratorDB::Schema::Result::Ipv4Dmz",
   { "foreign.tier_id" => "self.tier_id" },
   { cascade_copy => 0, cascade_delete => 0 },
