@@ -124,4 +124,10 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->has_one(
+  "entitylink",
+  "AdministratorDB::Schema::Result::InfrastructureEntity",
+    { "foreign.infrastructure_id" => "self.infrastructure_id" },
+    { cascade_copy => 0, cascade_delete => 0 });
+
 1;
