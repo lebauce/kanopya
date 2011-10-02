@@ -57,7 +57,11 @@ use constant ATTR_DEF => {
     tier_state            => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
                                 is_mandatory    => 0,
                                 is_extended     => 0,
-                                is_editable        => 0}
+                                is_editable        => 0},
+    infrastructure_id     => {pattern        => '^\d*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0}
     };
 
 sub methods {
