@@ -20,9 +20,11 @@ eval {
     note ("Execution begin");
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
 
-    my $infrastructure = Entity::Infrastructure->new( infrastructure_name => "InfrastructureTest",
-				  infrastructure_rank => 3,
-				  infrastructure_data_src => "git://infrastructure_data_repo");
+    my $infrastructure = Entity::Infrastructure->new( infrastructure_reference => "DrupalTest",
+				  infrastructure_min_node => 1,
+				  infrastructure_max_node => 3,
+	infrastructure_domainname => "drupal.hederatech.com",
+	infrastructure_nameserver => "127.0.0.1");
 
     isa_ok($infrastructure, "Entity::Infrastructure");
 

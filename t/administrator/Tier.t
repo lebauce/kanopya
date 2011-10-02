@@ -22,10 +22,11 @@ eval {
 
     my $tier = Entity::Tier->new( tier_name => "TierTest",
 				  tier_rank => 3,
-				  tier_data_src => "git://tier_data_repo");
+				  tier_data_src => "git://tier_data_repo",
+	infrastructure_id => 1);
 
     isa_ok($tier, "Entity::Tier");
-    
+
     $tier->save();
     # Test cluster->get
 #    my $c2 = Entity::Cluster->getCluster(hash => {'cluster_name'=>'foobare'});
