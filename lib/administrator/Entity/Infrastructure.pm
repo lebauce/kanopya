@@ -32,11 +32,19 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 use constant ATTR_DEF => {
-    infrastructure_name            =>  {pattern        => '^\w*$',
+    infrastructure_reference=>  {pattern        => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    infrastructure_desc            =>  {pattern        => '^[\w\s]*$',
+    infrastructure_min_node =>  {pattern         => '^\d*$',
+                                 is_mandatory    => 1,
+                                 is_extended     => 0,
+                                 is_editable        => 1},
+    infrastructure_max_node  => {pattern            => '^\d*$',
+                                 is_mandatory    => 1,
+                                 is_extended        => 0,
+                                 is_editable        => 1},
+    infrastructure_desc            =>  {pattern        => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -44,6 +52,18 @@ use constant ATTR_DEF => {
                                  is_mandatory    => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    infrastructure_state            => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+                                is_mandatory    => 0,
+                                is_extended     => 0,
+                                is_editable        => 0},
+    infrastructure_domainname      => {pattern         => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
+                                is_mandatory    => 1,
+                                is_extended     => 0,
+                                is_editable        => 0},
+    infrastructure_nameserver        => {pattern         => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+                                is_mandatory    => 1,
+                                is_extended     => 0,
+                                is_editable        => 0},
     };
 
 sub methods {
@@ -92,7 +112,7 @@ sub get {
     General::checkParams(args => \%args, required => ['id']);
 
     my $admin = Administrator->new();
-    my $dbix_cluster = $admin->{db}->resultset('Infrastructure')->find($args{id});
+    my $dbix_infrastructure = $admin->{db}->resultset('Infrastructure')->find($args{id});
     if(not defined $dbix_infrastructure) {
         $errmsg = "Entity::Infrastructure->get : id <$args{id}> not found !";
      $log->error($errmsg);
