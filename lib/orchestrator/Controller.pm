@@ -65,7 +65,8 @@ sub init {
     
     $self->{_monitor} = Monitor::Retriever->new( );
     
-    $self->{_time_step} = 30;
+    $self->{_time_step} = 30; # controller update frequency
+    $self->{_time_laps} = 60; # metrics retrieving laps
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     my $model = Model::MVAModel->new();
@@ -135,7 +136,7 @@ sub getWorkload {
 
     my $cluster_data_aggreg = $self->{_monitor}->getClusterData( cluster => $cluster_name,
                                                                  set => $service_info_set,
-                                                                 time_laps => 30);
+                                                                 time_laps => $self->{_time_laps});
 
     print Dumper $cluster_data_aggreg;
         
@@ -167,7 +168,7 @@ sub getMonitoredPerfMetrics {
     
     my $cluster_data_aggreg = $self->{_monitor}->getClusterData( cluster => $cluster_name,
                                                                  set => "haproxy_timers",
-                                                                 time_laps => 30);
+                                                                 time_laps => $self->{_time_laps});
 
     print Dumper $cluster_data_aggreg;
     
@@ -310,8 +311,8 @@ sub modelTuning {
                 
                 my %best_out = $self->{_model}->calculate( %model_params );
                 
-                my $gain =  computeDiff( model_output => \%best_out, monitored_perf => $curr_perf )
-                            - computeDiff( model_output => \%new_out, monitored_perf => $curr_perf );
+                my $gain =  $self->computeDiff( model_output => \%best_out, monitored_perf => $curr_perf )
+                            - $self->computeDiff( model_output => \%new_out, monitored_perf => $curr_perf );
                 
                 if ($gain > $best_gain) {
                     $best_gain = $gain;
@@ -349,10 +350,11 @@ sub computeDiff {
     my %deviations  = ( latency => 0, abort_rate => 0, throughput => 0);
     
     my $weight = 0;
-    for my $metric ('latency', 'abort_rate', 'throughput')
-    if ($curr_perf->{$metric} > 0) {
-        $deviations{$metric} = abs( $model_perf->{$metric} - $curr_perf->{$metric} ) * 100 / $curr_perf->{$metric}; 
-        $weight += $weights{$metric};
+    for my $metric ('latency', 'abort_rate', 'throughput') {
+        if ($curr_perf->{$metric} > 0) {
+            $deviations{$metric} = abs( $model_perf->{$metric} - $curr_perf->{$metric} ) * 100 / $curr_perf->{$metric}; 
+            $weight += $weights{$metric};
+        }
     }
     
     # Here J.Arnaud process a sqrt(pow(dev,2)). Seems useless.
@@ -361,7 +363,7 @@ sub computeDiff {
     for my $metric ('latency', 'abort_rate', 'throughput') {
         $dev += $deviations{$metric} * $weights{$metric}; 
     }
-    $dev /= $weight;
+    $dev /= $weight if ($weight > 0);
     
     $log->debug("* Deviation * " . (Dumper \%deviations));
     $log->debug("==> $dev");

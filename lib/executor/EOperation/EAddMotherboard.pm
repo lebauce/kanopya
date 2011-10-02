@@ -51,6 +51,7 @@ use Entity::Kernel;
 use Entity::Motherboardmodel;
 use Entity::Processormodel;
 use Entity::Powersupplycard;
+use Entity::Gp;
 use ERollback;
 
 my $log = get_logger("executor");
@@ -274,6 +275,8 @@ sub execute{
 
         # AddMotherboard finish, just save the Entity in DB
         $self->{_objs}->{motherboard}->save();
+        my @group = Entity::Gp->getGroups(hash => {gp_name=>'Motherboard'});
+        $group[0]->appendEntity(entity => $self->{_objs}->{motherboard});
         $log->info("Motherboard <".$self->{_objs}->{motherboard}->getAttr(name=>"motherboard_mac_address") ."> is now created");
 
 }

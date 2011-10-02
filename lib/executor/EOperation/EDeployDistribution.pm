@@ -46,6 +46,7 @@ use Kanopya::Exceptions;
 use Entity::Cluster;
 use Entity::Systemimage;
 use Entity::Distribution;
+use Entity::Gp;
 use EFactory;
 
 my $log = get_logger("executor");
@@ -206,8 +207,9 @@ sub execute{
     
     }
     $self->{_objs}->{distribution}->save();
-
-    #  update distribution provided components list
+        my @group = Entity::Gp->getGroups(hash => {gp_name=>'Distribution'});
+        $group[0]->appendEntity(entity => $self->{_objs}->{distribution});
+    # update distribution provided components list
 	$self->{_objs}->{distribution}->updateProvidedComponents();
 	
 }        

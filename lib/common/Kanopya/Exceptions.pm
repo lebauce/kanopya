@@ -70,7 +70,7 @@ use Exception::Class (
     },
     Kanopya::Exception::Network => {
     isa => 'Kanopya::Exception',
-    description => 'MicroCluster SSH communication exception',
+    description => 'SSH communication exception',
     },
     Kanopya::Exception::Internal => {
     isa => 'Kanopya::Exception',

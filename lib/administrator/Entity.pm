@@ -159,6 +159,7 @@ sub getEntities {
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {
+				$log->info("no right to access to object <$args{type}> with  <$id>");
                 next;
             } 
             else { $exception->rethrow(); } 

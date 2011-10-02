@@ -147,6 +147,10 @@ sub execute {
     # Save the new cluster in db
     $self->{_objs}->{cluster}->save();
 
+        my @group = Entity::Gp->getGroups(hash => {gp_name=>'Cluster'});
+        $group[0]->appendEntity(entity => $$self->{_objs}->{cluster});
+
+
     # automatically add System|Monitoragent|Logger components
     if($systemimage) {
         my $components = $systemimage->getInstalledComponents(); 
