@@ -20,7 +20,6 @@ get qr(/.*) => sub {
         return redirect '/login';
     }
     else {
-        $ENV{EID} = $eid;
         return pass;
     }
 };

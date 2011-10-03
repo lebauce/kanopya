@@ -2,6 +2,7 @@ package Frontend;
 use Dancer;
 
 use Dancer::Plugin::Preprocess::Sass;
+use Dancer::Plugin::Ajax;
 use Login;
 use Dashboard;
 use Components;
@@ -10,6 +11,10 @@ use Log::Log4perl;
 our $VERSION = '0.1';
 
 Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
+
+before sub {
+    $ENV{EID} = session('EID');
+};
 
 before_template sub {
     my $tokens = shift;
