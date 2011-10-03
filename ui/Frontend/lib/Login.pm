@@ -20,8 +20,7 @@ get qr(/.*) => sub {
         return redirect '/login';
     }
     else {
-        $ENV{EID}      = $eid;
-        var adm_object => Administrator->new();
+        $ENV{EID} = $eid;
         return pass;
     }
 };
