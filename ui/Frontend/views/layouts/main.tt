@@ -10,10 +10,36 @@
         <% END %>
 
         <script type="text/javascript" src="/js/kanopyaui-tools.js"></script>
+        <script type="text/javascript" src="/javascripts/jquery.js"></script>
+
         <% FOREACH js IN js_head %>
             <script type="text/javascript" src="/js/<% js %>"></script>
         <% END %>
 
+        <script language="javascript" type="text/javascript">
+            $(document).ready(function() {
+                $("#container_messages").click(function() {
+                $("#messages").toggle();
+            });
+                var messages_ajax = function() {
+                    $.ajax({
+                        url: "/messages",
+                        type: "POST",
+                        dataType: "json",
+                        success: function(msg){
+                            console.log(msg);
+                            $("#messages").empty();
+                            $("#messages").append(msg.content);
+                        },
+                        error: function(error, text, thor) {
+                        $("#messages").empty();
+                        $("#messages").append("Error with the server");
+                        }
+                    });
+                };
+                setInterval(messages_ajax, 10000);
+            });
+        </script>
     </head>
     <body>
         <div id="container">
@@ -21,6 +47,11 @@
             <div id="infologin">logged as <span class="bold"><% username %></span></div>
             <div id="content">
                 <% content %>
+            </div>
+            <div id="container_messages">
+                messages
+                <div id="messages" style="diplay: none;">
+                </div>
             </div>
             <div id="footer">
                 Powered by <a href="http://hederatech.org/">Hedera Technology</a>

@@ -33,6 +33,14 @@ get '/' => sub {
     }
 };
 
+ajax '/messages' => sub {
+    my $adm_object = Administrator->new();
+    my @messages   = $adm_object->getMessages();
+
+    content_type('application/json');
+    return to_json(@messages);
+};
+
 any qr{.*} => sub {
     status 'not_found';
     template 'special_404', { path => request->path };
