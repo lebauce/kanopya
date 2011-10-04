@@ -33,6 +33,10 @@ get '/' => sub {
     }
 };
 
+get '/permission_denied' => sub {
+    template 'permission_denied';
+};
+
 ajax '/messages' => sub {
     my $adm_object = Administrator->new();
     my @messages   = $adm_object->getMessages();
