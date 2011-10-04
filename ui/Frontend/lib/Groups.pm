@@ -65,7 +65,7 @@ sub _groupdetails {
             $tmp->{gp_id} = $gp_id;
             $tmp->{can_removeEntity} = $methods->{'removeEntity'}->{'granted'}; 
                         
-            push(@$content, $tmp) 
+            push(@$content, $tmp);
         }
         $content_list = $content;
         $content_count = scalar(@$content)+1;
