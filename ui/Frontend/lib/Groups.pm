@@ -85,7 +85,6 @@ sub _groupdetails {
     return ($gp_name, $gp_desc, $gp_type, $can_update, $can_delete, $can_appendEntity,
      $content_list, $content_count, $content);
 }
-        $tmpl->param('titlepage' => "Groups - Group details");
 
 get "/groups" => sub {
 
