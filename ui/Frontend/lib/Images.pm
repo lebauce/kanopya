@@ -51,13 +51,13 @@ get '/images' => sub {
 
 get '/images/:imageid' => sub {
 
-	my $activate;
-	my $can_setperm; 
+    my $activate;
+    my $can_setperm; 
     my $can_activate;
     my $can_deactivate;
     my $can_delete; 
     my $can_installcomponent;
-	my $distribution;
+    my $distribution;
     my $systemimage_usage;
 
     my $esystemimage = Entity::Systemimage->get(id => params->{imageid});
@@ -89,23 +89,23 @@ get '/images/:imageid' => sub {
     }
     if(not $methods->{'installcomponent'}->{'granted'}) { $can_installcomponent = 1 }
 
-	template 'images', {
-		title_page       => "Systems - System image's overview",
-		distributions_list => _systemimages(),
+    template 'images', {
+        title_page       => "Systems - System image's overview",
+        distributions_list => _systemimages(),
         activate         => $activate,              
-	    can_setperm      => $can_setperm,           
-	    can_activate     => $can_activate,          
+        can_setperm      => $can_setperm,           
+        can_activate     => $can_activate,          
         can_deactivate   => $can_deactivate,        
         can_delete       => $can_delete,            
         can_installcomponent  =>  $can_installcomponent,  
         distribution          => $distribution,          
         systemimage_usage     => $systemimage_usage,     
-		systemimage_id => $esystemimage->getAttr(name => 'systemimage_id'),     
-		systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'), 
-		systemimage_desc => $esystemimage->getAttr(name => 'systemimage_desc'), 
-		components_list => $components_list,                                    
-		components_count => $nb + 1,                                            
- 	}
+        systemimage_id => $esystemimage->getAttr(name => 'systemimage_id'),     
+        systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'), 
+        systemimage_desc => $esystemimage->getAttr(name => 'systemimage_desc'), 
+        components_list => $components_list,                                    
+        components_count => $nb + 1,                                            
+     }
 }    
 sub form_editsystemimage : Runmode {
     return "TODO";

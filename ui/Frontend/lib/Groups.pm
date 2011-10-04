@@ -25,16 +25,16 @@ sub _groups {
 }
 
 sub _groupdetails {
-	my $gp_id = @_; 
+    my $gp_id = @_; 
     my $gp_name;
     my $gp_desc;
     my $gp_type;
     my $can_update;
     my $can_delete;
-	my $can_appendEntity
+    my $can_appendEntity
     my $content_list; 
     my $content_count;
-	my $content = [];
+    my $content = [];
 
     my $egroups = eval { Entity::Gp->get(id => $gp_id) };
 #   Need to adapt the following to use Dancer's Permission plugins and such.
@@ -42,12 +42,12 @@ sub _groupdetails {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $self->{admin}->addMessage(from => 'Administrator', level => 'warning', content => $exception->error);
-			# Apply Dancer's redirect in the near future. 
+            # Apply Dancer's redirect in the near future. 
             $self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
         }
         else {
-			# I don't understand what this is.
-			# This needs a better description, and more comments.
+            # I don't understand what this is.
+            # This needs a better description, and more comments.
             $exception->rethrow();
         }
     }
@@ -82,38 +82,38 @@ sub _groupdetails {
 
 get "/groups" => sub {
 
-	my $can_create;
+    my $can_create;
     my $methods = Entity::Gp->getPerms();
     if($methods->{'create'}->{'granted'}) { $can_create = 1 }
 
-	template 'groups', {
-	can_create => $can_create,
+    template 'groups', {
+    can_create => $can_create,
     titlepage => 'Settings - Groups',
-	groups => _groups(), 
+    groups => _groups(), 
     username => session('username'),
-	}
+    }
 }
 
 get "/groups/:groupid" => sub {
-	# Need to find a more efficient way to run this.
+    # Need to find a more efficient way to run this.
     my ($gp_name, $gp_desc, $gp_type, 
-	$can_update, $can_delete, $can_appendEntity,
-	$content_list, $content_count, $content) = _groupdetails(params->{groupid});
+    $can_update, $can_delete, $can_appendEntity,
+    $content_list, $content_count, $content) = _groupdetails(params->{groupid});
 
-	template 'groupdetail', {
+    template 'groupdetail', {
     titlepage => 'Groups - Group details',
     username => session('username'),
-	gp_id			=>   params->{groupid},
+    gp_id            =>   params->{groupid},
     gp_name         =>   $gp_name,         
     gp_desc         =>   $gp_desc,         
     gp_type         =>   $gp_type,         
     can_update      =>   $can_update,      
     can_delete      =>   $can_delete,      
-	can_appendEntity =>  $can_appendEntity 
+    can_appendEntity =>  $can_appendEntity 
     content_list    =>   $content_list,    
     content_count   =>   $content_count,   
-	content          =>  $content,
-	}
+    content          =>  $content,
+    }
 }
 
 

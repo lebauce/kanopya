@@ -60,8 +60,8 @@ sub _clusters {
         #my @si = Entity::Systemimage->getSystemimages(hash => {});
         #if (scalar @si){
             #$can_create = 1
-		#}
-	#}
+        #}
+    #}
 
     return $clusters;
 }
@@ -267,8 +267,8 @@ get '/clusters' => sub {
         my @si = Entity::Systemimage->getSystemimages(hash => {});
         if (scalar @si){
             $can_create = 1
-		}
-	}
+        }
+    }
 
     template 'clusters', {
         title_page         => 'Clusters - Clusters',

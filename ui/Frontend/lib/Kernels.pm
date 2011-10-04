@@ -33,12 +33,12 @@ get "/kernels" => sub {
     if($methods->{'upload'}->{'granted'}) { $link_upload = 1 }
     else { $link_upload = 0 }
 
-	template 'kernel', {
+    template 'kernel', {
     kernels_list => _view_kernels(),
     titlepage => 'Systems - Kernels',
     username => session('username'),
-	link_upload => $link_upload,
-	}; 
+    link_upload => $link_upload,
+    }; 
 }
 
 
