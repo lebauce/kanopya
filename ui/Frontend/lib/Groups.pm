@@ -97,8 +97,8 @@ get "/groups" => sub {
         can_create => $can_create,
         title_page => 'Settings - Groups',
         groups     => _groups(),
-    }
-}
+    };
+};
 
 get "/groups/:groupid" => sub {
     # Need to find a more efficient way to run this.
@@ -119,8 +119,8 @@ get "/groups/:groupid" => sub {
         content_list     => $content_list,
         content_count    => $content_count,
         content          => $content,
-    }
-}
+    };
+};
 
 
 sub form_editgroup {
