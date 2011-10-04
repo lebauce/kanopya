@@ -42,7 +42,8 @@ sub _groupdetails {
     if ( $@ ) {
         my $exception = $@;
         if ( Kanopya::Exception::Permission::Denied->caught() ) {
-            $self->{admin}->addMessage(
+            my $adm_object = Administrator->new();
+            $adm_object->addMessage(
                 from    => 'Administrator',
                 level   => 'warning',
                 content => $exception->error
