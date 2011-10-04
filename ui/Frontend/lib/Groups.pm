@@ -95,7 +95,7 @@ get "/groups" => sub {
 
     template 'groups', {
         can_create => $can_create,
-        titlepage  => 'Settings - Groups',
+        title_page => 'Settings - Groups',
         groups     => _groups(),
         username   => session('username'),
     }
