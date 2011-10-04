@@ -18,42 +18,41 @@ sub _clusters {
     my $can_create;
 
     foreach my $n (@eclusters){
-        my $tmp = {};
-        $tmp->{link_activity} = 0;
+        my $tmp = {
+            link_activity => 0,
+            cluster_id    => $n->getAttr(name => 'cluster_id'),
+            cluster_name  => $n->getAttr(name => 'cluster_name')
+        };
 
-        $tmp->{cluster_id} = $n->getAttr(name => 'cluster_id');
-        $tmp->{cluster_name} = $n->getAttr(name => 'cluster_name');
         my $minnode = $n->getAttr(name => 'cluster_min_node');
         my $maxnode = $n->getAttr(name => 'cluster_max_node');
-        if($minnode == $maxnode) {
-            $tmp->{type} = 'Static cluster';
+        if ( $minnode == $maxnode ) {
+            $tmp->{type}    = 'Static cluster';
             $tmp->{nbnodes} = "$minnode node";
-            if($minnode > 1) { $tmp->{nbnodes} .= "s"; }
+            $tmp->{nbnodes} .= "s" if ( $minnode > 1 );
         } else {
             $tmp->{type} = 'Dynamic cluster';
             $tmp->{nbnodes} = "$minnode to $maxnode nodes";
         }
 
-        if($n->getAttr('name' => 'active')) {
+        if ( $n->getAttr('name' => 'active') ) {
             $tmp->{active} = 1;
             my $nbnodesup = $n->getCurrentNodesCount();
             if($nbnodesup > 0) {
-                $tmp->{nbnodesup} = $nbnodesup;
+                $tmp->{nbnodesup}     = $nbnodesup;
                 $tmp->{link_activity} = 1;
             }
 
              my $cluster_state = $n->getAttr('name' => 'cluster_state');
             for my $state ('up', 'starting', 'stopping', 'down', 'broken') {
-                if ( $cluster_state =~ $state ) {
-                    $tmp->{"state_$state"} = 1;
-                }
+                $tmp->{"state_$state"} = 1 if ( $cluster_state =~ $state );
             }
-        } else { 
-            $tmp->{active} = 0; 
+        } else {
+            $tmp->{active} = 0;
         }
         $tmp->{cluster_desc} = $n->getAttr(name => 'cluster_desc');
-        push (@$clusters, $tmp);    
-    }    
+        push (@$clusters, $tmp);
+    }
 
     #$clusters_list = $clusters;
     #if($methods->{'create'}->{'granted'}) {
