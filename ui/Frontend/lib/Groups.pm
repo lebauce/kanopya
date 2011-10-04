@@ -97,7 +97,6 @@ get "/groups" => sub {
         can_create => $can_create,
         title_page => 'Settings - Groups',
         groups     => _groups(),
-        username   => session('username'),
     }
 }
 
