@@ -45,6 +45,14 @@ ajax '/messages' => sub {
     return to_json(@messages);
 };
 
+ajax '/operation/queue' => sub {
+    my $adm_object      = Administrator->new();
+    my @operation_queue = $adm_object->getOperations();
+
+    content_type('application/json');
+    return to_json(@operation_queue);
+};
+
 any qr{.*} => sub {
     status 'not_found';
     template 'special_404', { path => request->path };
