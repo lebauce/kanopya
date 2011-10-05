@@ -19,9 +19,14 @@ before sub {
 before_template sub {
     my $tokens = shift;
 
-    $tokens->{css_head} = [];
-    $tokens->{js_head}  = [];
-    $tokens->{username} = session('username');
+    $tokens->{css_head}  = [];
+    $tokens->{js_head}   = [];
+    $tokens->{username}  = session('username');
+    $tokens->{is_active} = sub {
+        my $url = shift;
+
+        return 'class="selected"' if ( $url eq request->uri() );
+    };
 };
 
 get '/' => sub {
