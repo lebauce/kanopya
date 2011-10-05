@@ -25,7 +25,7 @@ before_template sub {
     $tokens->{is_active} = sub {
         my $url = shift;
 
-        return 'class="selected"' if ( $url eq request->uri() );
+        return 'class="selected"' if ( $url eq request->path() );
     };
 };
 
