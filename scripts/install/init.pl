@@ -412,7 +412,7 @@ sub writeFile {
 
     open (my $FILE, ">", $path_file)
         or die "an error occured while opening $path_file: $!";
-    print $FILE, $line;
+    print $FILE $line;
     close($FILE);
 }
 
