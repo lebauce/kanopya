@@ -2,6 +2,12 @@ $background_color: purple;
 $color_gray: gray;
 $color_white: white;
 
+@mixin center {
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
 body {
     min-height: 100%;
     background-color: $background_color;
