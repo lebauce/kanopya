@@ -30,19 +30,45 @@ sub new {
     return $self;
 }
 
+=head2 calculate
+
+B<Class>   : Public
+B<Desc>    : Estimate qos according to infrastructure configuration and workload
+B<args>    : configuration : hash ref { 
+                M => nb tiers
+                AC => array of nb node for each tier
+                LC => array of MPL value for each tier
+             }
+             workload_class : hash ref {
+                visit_ratio
+                service_time
+                delay
+                think_time
+             }
+             workload amount : int
+B<Return>  : hash : (
+                latency => $latency,        # ms
+                abort_rate => $abort_rate,  # %
+                throughput => $throughput,  # req/sec
+            )
+B<Comment>  : Adapted from Jean Arnaud model
+B<throws>  : None
+
+=cut
+
 sub calculate {
     my $self = shift;
     my %args = @_;
     
     print "MVAModel CALCULATE\n";
     
-    my $M     = $args{configuration}{M};
-    my @AC     = @{ $args{configuration}{AC} };
-    my @LC     = @{ $args{configuration}{LC} };
+    my $M   = $args{configuration}{M};
+    my @AC  = @{ $args{configuration}{AC} };
+    my @LC  = @{ $args{configuration}{LC} };
     
-    my @V     = @{ $args{workload_class}{visit_ratio} };     # Visit ratio
-    my @S    = @{ $args{workload_class}{service_time} };    # Service time
-    my @D    = @{ $args{workload_class}{delay} };        # Delay (communication between tiers)
+    my @V   = @{ $args{workload_class}{visit_ratio} };  # Visit ratio
+    my @S   = @{ $args{workload_class}{service_time} }; # Service time
+    my @D   = @{ $args{workload_class}{delay} };        # Delay (communication between tiers)
     my $Z   = $args{workload_class}{think_time};        # Think time
     
     my $workload_amount = $args{workload_amount};
@@ -55,14 +81,14 @@ sub calculate {
     # Calculate the entering admission control
     ####
     
-    my @Nt     = (); # Total requests entering a tier
-    my @Na     = (); # Accepted requests per tier (Ti)
+    my @Nt  = (); # Total requests entering a tier
+    my @Na  = (); # Accepted requests per tier (Ti)
     my @Nap = (); # Accepted requests at Ti..Tm
-    my @Nr     = (); # Rejected requests per tier
+    my @Nr  = (); # Rejected requests per tier
     my @MPL = (); # Total MPL per tier
     
     for my $i (0 .. $M-1) {
-        $Nt[$i] =     ($i == 0) ? $workload_amount
+        $Nt[$i] =   ($i == 0) ? $workload_amount
                     : min(     $Na[$i-1], $Na[$i-1] * $V[$i] / $V[$i - 1] );
                         
         $MPL[$i] = $LC[$i] * $AC[$i]; # Considering all nodes have the same LC for a tier
@@ -84,13 +110,13 @@ sub calculate {
     # Service latency
     #####
     
-    my @Ql     = (); # Total queue length per tier
-    my @W     = (); # Service demand per tier
-    my @R    = (); # Response time of request admitted per tier
-    my @La    = (); # Latency of request admitted at Ti ..TM
-    my @Lr    = (); # Latency of request admitted at Ti and rejected at Ti+1 ..TM
-    my @Ta    = (); # Throughput of request admitted at Ti ..TM
-    my @Tr    = (); # Throughput of request admitted at Ti and rejected at Ti+1 ..TM    
+    my @Ql  = (); # Total queue length per tier
+    my @W   = (); # Service demand per tier
+    my @R   = (); # Response time of request admitted per tier
+    my @La  = (); # Latency of request admitted at Ti ..TM
+    my @Lr  = (); # Latency of request admitted at Ti and rejected at Ti+1 ..TM
+    my @Ta  = (); # Throughput of request admitted at Ti ..TM
+    my @Tr  = (); # Throughput of request admitted at Ti and rejected at Ti+1 ..TM
     
     for my $i (0 .. $M-1) {
         $Ql[$i] = 0;
@@ -119,7 +145,7 @@ sub calculate {
         }
     }
 
-    my $latency = $La[0];        
+    my $latency = $La[0];
         
     ######
     #  Service throughput and abandon rate
@@ -137,7 +163,8 @@ sub calculate {
     
     
     #my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
-    my $throughput = ( 1 / $latency );  # Logical throughput
+    my $throughput = ( 1 / $latency );  # Alternative throughput -> works for open network but not for our case (closed network)
+                                        # TO STUDY
     
     return (
         latency => $latency,              # ms (mean time for execute client request)
