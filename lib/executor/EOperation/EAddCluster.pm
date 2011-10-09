@@ -93,11 +93,8 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    
     my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
 
