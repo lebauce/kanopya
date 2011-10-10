@@ -24,10 +24,11 @@ body {
         padding-left: 303px;
     }
     .logout {
+        position: absolute;
+        top: 0px;
+        right: 25px;
         background-color: $background_color;
         color: $color_white;
-        float: right;
-        margin-right: 82px;
         text-align: center;
         width: 84px;
         height: 25px;
