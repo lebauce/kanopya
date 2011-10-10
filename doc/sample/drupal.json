@@ -1,6 +1,8 @@
 {
-  name:'drupal',
+  name:"drupal",
   version:'7.8',
+  referennce:'UUID',
+  description:'Application Description',
   size:{
     min:'2',
     max:'4',
@@ -18,7 +20,8 @@
       [
         {
           repository:'git://git.kanopya.org/infra/drupal_7.8_frontend.git',
-          mount_point:'/opt/srv'
+          mount_point:'/opt/srv',
+          size:'100M',
         },
       ],
       component_list:[
@@ -57,8 +60,8 @@
           name:'Php',
           version:'5',
           conf:{
-            php5_session_handler='memcache',
-            php5_session_path=''
+            php5_session_handler:'memcache',
+            php5_session_path:''
           }
         },
         {
@@ -73,6 +76,14 @@
     {
       name:'backend',
       rank:'2',
+      data:
+      [
+        {
+          repository:'git://git.kanopya.org/infra/drupal_7.8_backend.git',
+          mount_point:'/opt/srv',
+          size:'1000M',
+        },
+      ],
       component_list:[
         {
           name:'Mysql',
@@ -82,6 +93,7 @@
             mysql5_datadir:'/var/lib/mysql',
           },
         },
+      ],
     },
   ],
 }
