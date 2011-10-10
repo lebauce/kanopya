@@ -46,6 +46,7 @@ use EFactory;
 
 use Entity::Cluster;
 use Entity::Systemimage;
+use Entity::Gp;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -148,7 +149,7 @@ sub execute {
     $self->{_objs}->{cluster}->save();
 
         my @group = Entity::Gp->getGroups(hash => {gp_name=>'Cluster'});
-        $group[0]->appendEntity(entity => $$self->{_objs}->{cluster});
+        $group[0]->appendEntity(entity => $self->{_objs}->{cluster});
 
 
     # automatically add System|Monitoragent|Logger components
