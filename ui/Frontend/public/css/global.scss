@@ -20,6 +20,9 @@ body {
     background-color: $color_white;
     border-top: 2px solid $background_color;
     height: 100px;
+    #smalllogo {
+        padding-left: 303px;
+    }
     .logout {
         background-color: $background_color;
         color: $color_white;
