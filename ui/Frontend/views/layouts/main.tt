@@ -4,7 +4,9 @@
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
         <title><% title_page %></title>
+        <link rel="stylesheet" href="<% request.uri_base %>/css/normalize.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/misc.css" />
         <% FOREACH css IN css_head %>
             <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
         <% END %>
@@ -42,9 +44,25 @@
         </script>
     </head>
     <body>
-        <div id="container">
+        <div id="header">
             <img id="smalllogo" src="/images/kanopya_small_logo.png" />
-            <div id="infologin">logged as <span class="bold"><% username %></span></div>
+            <div id="menu">
+                <ul>
+                    <li><a href="/dashboard" <% is_active('/dashboard') %>>Dashboard</a></li>
+                    <li><a href="#" <% is_active('/essai') %>>Essai</a></li>
+                </ul>
+            </div>
+
+            <div id="infologin">
+                logged as <span class="bold"><% username %></span>
+            </div>
+
+            <div class="logout">
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+
+        <div id="container">
             <div id="content">
                 <% content %>
             </div>
@@ -53,6 +71,7 @@
                 <div id="messages" style="diplay: none;">
                 </div>
             </div>
+
             <div id="footer">
                 Powered by <a href="http://hederatech.org/">Hedera Technology</a>
             </div>
