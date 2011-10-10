@@ -39,6 +39,7 @@ use base "EOperation";
 use strict;
 use warnings;
 
+use JSON -support_by_pp;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
@@ -103,7 +104,7 @@ sub prepare {
     $self->{_file_path} =~ /.*\/(.*)$/;
     my $file_name = $1;
     $self->{_file_name} = $file_name;
-    $log->error("Infrastructure description file name is <$file_name>");
+
     $self->{_objs} = {};
     
     $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
@@ -116,6 +117,34 @@ sub execute {
     my $self = shift;
 
     my $adm = Administrator->new();
+#    open (my $json_file, $self->{_file_path}) or die "an error occured while opening $self->{_file_path}: $!";
+#    my @decoded_json = @{decode_json($json_file)};
+    my $infrastructure_def;
+    my $json_infra= new JSON;
+    my $json;
+    {
+        local $/; #enable slurp
+        open my $fh, "<", $self->{_file_path};
+        $json = <$fh>;
+        close $fh;
+    } 
+    $json_infra->allow_nonref->utf8->relaxed->escape_slash->loose->allow_singlequote->allow_barekey();
+    $infrastructure_def = $json_infra->decode($json);
+
+     $self->{_objs} = {};
+    my $infrastructure = {
+        
+    };
+    # Infrastructure instantiation
+    eval {
+        $self->{_objs}->{infrastructure} = Entity::Infrastructure->new(%$infrastructure);
+    };
+    if($@) {
+        my $err = $@;
+        $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
 
 }
 
