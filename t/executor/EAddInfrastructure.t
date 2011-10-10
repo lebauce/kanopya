@@ -17,7 +17,7 @@ eval {
     Administrator::authenticate( login =>'admin', password => 'K4n0py4' );
 
     note("Infrastructure Import");
-    my $new_op = Operation->enqueue(priority=>"200", type=>"AddInfrastructure", params=>{file_path=>"/tmp/drupal.json"});
+    my $new_op = Operation->enqueue(priority=>"200", type=>"AddInfrastructure", params=>{file_path=>"/opt/kanopya/doc/sample/drupal.json"});
 
 };
 if($@) {
