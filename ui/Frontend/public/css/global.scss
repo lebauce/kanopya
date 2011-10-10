@@ -21,7 +21,9 @@ body {
     border-top: 2px solid $background_color;
     height: 100px;
     #smalllogo {
-        padding-left: 303px;
+        position: absolute;
+        top: 0px;
+        right: 127px;
     }
     .logout {
         position: absolute;
