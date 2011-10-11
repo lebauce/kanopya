@@ -32,13 +32,13 @@ get "/kernels" => sub {
     my $methods     = Entity::Kernel->getPerms();
     my $link_upload = $methods->{'upload'}->{'granted'} ? 1 : 0;
 
-    template 'kernel', {
+    template 'kernels', {
         kernels_list => _view_kernels(),
         titlepage    => 'Systems - Kernels',
         username     => session('username'),
         link_upload  => $link_upload,
     };
-}
+};
 
 
 1;
