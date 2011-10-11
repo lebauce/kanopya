@@ -10,3 +10,10 @@ log4perl.appender.A2=Log::Dispatch::File
 log4perl.appender.A2.filename=[% logdir %]orchestrator-administrator.log
 log4perl.appender.A2.mode=append
 log4perl.appender.A2.layout=Log::Log4perl::Layout::PatternLayout
+
+log4perl.logger.MVAModel=INFO, A3
+log4perl.appender.A3=Log::Dispatch::File
+log4perl.appender.A3.filename=[% logdir %]orchestrator-MVAModel.log
+log4perl.appender.A3.mode=append
+log4perl.appender.A3.layout=Log::Log4perl::Layout::PatternLayout
+

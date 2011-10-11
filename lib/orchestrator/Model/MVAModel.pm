@@ -17,6 +17,8 @@ use strict;
 use warnings;
 use Data::Dumper;
 use List::Util qw(min max sum);
+use Log::Log4perl "get_logger";
+my $log = get_logger("MVAModel");
 
 use base "Model";
 
@@ -129,8 +131,8 @@ sub calculate {
         #for (my $j = 1; $j < $Na[$i]; $j++) {
         for (my $j = 1; $j <= $Na[$i]; $j++) {
             my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
+   
             $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );
-            
             if ($i < $M - 1) {
                 $La[$i] = $R[$i] + $La[$i + 1];
                 $Lr[$i] = $R[$i] + $Lr[$i + 1];
@@ -138,10 +140,14 @@ sub calculate {
                 $La[$i] = $R[$i];
                 $Lr[$i] = $R[$i];
             }
+            
+            # /!\ WARNING /!\ Potential cast problem in the original java algo ?
             $Ta[$i] = ($j * $Nap[$i] / $Na[$i]) / ($La[$i] + $Z);
             $Tr[$i] = ($j * ($Na[$i] - $Nap[$i])/ $Na[$i]) / ($Lr[$i] + $Z);
-                
-            $Ql[$i] = ($Ta[$i] + $Tr[$i]) * $R[$i]; # Ti’s total queue length with Little’s law
+             
+            #$Ql[$i] = ($Ta[$i] + $Tr[$i]) * $R[$i]; # Ti’s total queue length with Little’s law
+            #Compliance with MOKA code
+            $Ql[$i] = int(($Ta[$i] + $Tr[$i]) * $R[$i]);
         }
     }
 
@@ -151,19 +157,26 @@ sub calculate {
     #  Service throughput and abandon rate
     ######
         
-    my $Ta_total = $N_admitted / ($La[0] + $Z);    # throughput of requets admitted at T1 ..TM <=> total throughput
-    
-    
-    print ">>>> throughputs total Ta: $Ta_total\n";
-    print ">>>> my throughput: " . ( 1 / $latency ) . "\n"; 
-    
+    my $Ta_total = $N_admitted / ($La[0] + $Z);    # throughput of requets admitted at T1 ..TM <=> total throughput    
     my $Tr_total = $Nr[0] / $Z;    # throughput of requets admitted at T1 and rejected at T2 ..TM
     my $Trp = ($N_rejected - $Nr[0]) / ($Lr[0] + $Z); # throughput of requests rejected at T1
     my $abort_rate = ($Tr_total+$Trp)/($Tr_total+$Trp+$Ta_total); # total abandon rate 
     
     
-    #my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
-    my $throughput = ( 1 / $latency );  # Alternative throughput -> works for open network but not for our case (closed network)
+    #Log all intermediate values in order to compare to J.Arnaud's MOKA (Java) algorithm
+    my $log_string = ">>>> Valeurs intermédiaires : \n"
+    ."Nadm = $N_admitted\n"
+    ."Nrej = $N_rejected\n"
+    ."Nr = @Nr\n"
+    ."La = @La\n"
+    ."Tr = $Tr_total \n"
+    ."Trp = $Trp \n"
+    ."Ta = $Ta_total\n";
+    
+    $log->debug($log_string);
+    
+    my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
+    #my $throughput = ( 1 / $latency );  # Alternative throughput -> works for open network but not for our case (closed network)
                                         # TO STUDY
     
     return (
