@@ -6,6 +6,7 @@ use Dancer::Plugin::Ajax;
 use Login;
 use Dashboard;
 use Components;
+use Kernels;
 use Log::Log4perl;
 
 our $VERSION = '0.1';
@@ -45,9 +46,8 @@ get '/permission_denied' => sub {
 ajax '/messages' => sub {
     my $adm_object = Administrator->new();
     my @messages   = $adm_object->getMessages();
-
     content_type('application/json');
-    return to_json(@messages);
+    return to_json(\@messages);
 };
 
 ajax '/operation/queue' => sub {
