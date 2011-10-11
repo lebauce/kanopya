@@ -1,0 +1,87 @@
+<%# <style type="text/css">@import url(/css/permissions.css);</style>
+%>
+<h2>Permissions</h2>
+<select id="entitychoice">
+	<% FOREACH e IN entitychoice %>
+		<option value="<% e.entity %>" <% e.selected %>><% e.entity %></option>
+	<% END %>
+</select>
+<hr />
+<table id="permissions">
+<tr>
+<td class="c1">for :</td>
+<td><select id="consumer">
+	<% IF usersgroupslist %>
+		<option class="bold" value="">Users'Groups:</option>
+		<% FOREACH ug IN usersgroupslist %>
+			<option value="<% ug.entity_id %> <% ug.entitytype %>"><% ug.groups %></option>
+		<% END %>
+	<% END %>
+	
+	<% IF userslist %>
+		<option class="bold" value="">Users:</option>
+		<% FOREACH u IN userslist %>
+		<option value="<% u.entity_id %> <% u.entitytype %>"><% u.user %></option>
+		<% END %>
+	<% END %>
+</select>
+</td>
+<td class="c1">on :</td>
+<td>
+<select id="consumed">
+	<% IF groupslist %>
+		<option class="bold" value=""><% entitytype %>'Groups:</option>
+		<% FOREACH g IN groupslist %>
+			<option value="<% g.entity_id %> <% g.entitytype %>"><% g.groups %></option>
+		<% END %>
+	<% END %>
+	
+	<% IF entitylist %>
+		<option class="bold" value=""><% entitytype %>:</option>
+		<% FOREACH e IN entitylist %>
+			<option value="<% e.entity_id %> <% e.entitytype %>"><% e.entity %></option>
+		<% END %>
+	<% END %>
+</select>
+</td>
+
+
+<td rowspan="2"><input id="viewset" type="button" value="view / set permissions" onclick="javascript:loadPermissions()"/></td>
+</tr>
+</table>
+
+<script type="text/javascript">
+function updateEntityType() {
+	window.location = '/permissions/view_selectactors?entitytype='+this.options[this.selectedIndex].value;
+}
+
+function updateButtonState() {
+	var consumer = document.getElementById('consumer');
+	var consumed = document.getElementById('consumed');
+	var button = document.getElementById('viewset');
+	if((! consumer.options.length) || (consumer.options[consumer.options.selectedIndex].value == '') ||
+		(! consumed.options.length) ||  (consumed.options[consumed.options.selectedIndex].value == '')) {
+		button.disabled = true;
+	} else {
+		button.disabled = false;
+	}
+}
+
+function loadPermissions() {
+	var url = '/permissions/form_permissionsettings?';
+	var consumer = document.getElementById('consumer');
+	var consumed = document.getElementById('consumed');
+	var consumertype = consumer.options[consumer.options.selectedIndex].value.split(' ')[1];
+	var consumer_id = consumer.options[consumer.options.selectedIndex].value.split(' ')[0];
+	var consumedtype = consumed.options[consumed.options.selectedIndex].value.split(' ')[1];
+	var consumed_id = consumed.options[consumed.options.selectedIndex].value.split(' ')[0];
+	url += 'consumertype=' + consumertype + '&consumer_id=' + consumer_id +'&consumedtype=' + consumedtype + '&consumed_id=' + consumed_id;
+	openform(url, 'set permissions', 700, 500,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no');
+}
+
+document.getElementById('entitychoice').onchange = updateEntityType;
+document.getElementById('consumed').onchange = updateButtonState;
+document.getElementById('consumer').onchange = updateButtonState;
+updateButtonState();
+
+</script>

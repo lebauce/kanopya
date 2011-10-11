@@ -1,0 +1,55 @@
+<%# <style type="text/css">@import url(/css/permissions.css);</style>
+%>
+<h2>Permissions on <% entitytype %> <% entity_name %></h2>
+<table id="permissions">
+<tr>
+<td class="c1">for :</td>
+<td><select id="consumer">
+	<% IF usersgroupslist %>
+		<option class="bold" value="">Users'Groups:</option>
+		<% FOREACH ug IN usersgroupslist %>
+			<option value="<% ug.entity_id %> <% ug.entitytype %>"><% ug.groups %></option>
+		<% END %>
+	<% END %>
+	
+	<% IF userslist %>
+		<option class="bold" value="">Users:</option>
+		<% FOREACH u IN userslist %>
+			<option value="<% u.entity_id %> <% U.entitytype %>"><% u.user %></option>
+		<% END %>
+	<% END %>
+</select><input type="hidden" name="entity_id" value="<% entity_id %>" />
+</td>
+<td><input id="viewset" type="button" value="view / set permissions" onclick="javascript:loadPermissions()"/></td>
+</tr>
+</table>
+
+<script type="text/javascript">
+
+function updateButtonState() {
+	var consumer = document.getElementById('consumer');
+	var button = document.getElementById('viewset');
+	if((! consumer.options.length) || (consumer.options[consumer.options.selectedIndex].value == '')) {
+		button.disabled = true;
+	} else {
+		button.disabled = false;
+	}
+}
+
+function loadPermissions() {
+	var url = '/permissions/form_permissionsettings?';
+	var consumer = document.getElementById('consumer');
+	var consumertype = consumer.options[consumer.options.selectedIndex].value.split(' ')[1];
+	var consumer_id = consumer.options[consumer.options.selectedIndex].value.split(' ')[0];
+	url += 'consumertype=' + consumertype + '&consumer_id=' + consumer_id +'&consumedtype=<% entitytype %>&consumed_id=<% entity_id %>';
+	openform(url, 'set permissions', 700, 500,'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, directories=no, status=no');
+}
+
+document.getElementById('consumer').onchange = updateButtonState;
+updateButtonState();
+
+</script>
+
+
+
+
