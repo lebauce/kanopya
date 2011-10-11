@@ -1,0 +1,34 @@
+<%#
+<style type="text/css">@import url(/css/form.css);</style>
+%>
+<div class="title">create power supply card<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
+<form method="POST" action="/cgi/kanopya.cgi/powersupplycards/process_addpowersupplycard">
+<table class="form">
+	<tr>
+		<td class="label">Name :</td>
+		<td><input type="text" name="name" maxlength="64" size="50" />
+		<span style="color: red"><% ERR_NAME %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Power supply card model :</td>
+		<td><select name="powersupplycard_model">
+		<% FOREACH pscm IN powersupplycardmodels %>
+			<option value="<% pscm.id %>"><% pscm.name %></option>
+		<% END %>	
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">MAC address :</td>
+		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
+		<span style="color: red"><% ERR_MAC_ADDRESS %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="desc" value=""></textarea></td> 
+	</tr>
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form> 

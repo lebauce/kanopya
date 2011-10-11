@@ -1,0 +1,52 @@
+<%#
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Power supply card : <% powersupplycard_name %></h2>
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
+<td class="actions">
+<% IF can_activate %>
+	<a class="imgActivate" href="/powersupplycards/process_activatepowersupplycard?powersupplycard_id=<% powersupplycard_id %>">activate</a><br />
+	<span class="desc">Activate this power supply card.</span><br /><br />
+<% END %>
+<% IF can_deactivate %>
+	<a class="imgDeactivate" href="/powersupplycards/process_deactivatepowersupplycard?powersupplycard_id=<% powersupplycard_id %>">deactivate</a><br />
+	<span class="desc">Deactivate this cluster.</span><br /><br />
+<% END %>
+</td></tr>
+</table>
+
+<hr />
+<span id="mainsettings" class="title simpleexpand">Main settings</span>
+<table id="Xmainsettings" class="detailspart">
+<tr><td class="italic" colspan="2"><% powersupplycard_desc %></td>
+<td class="actions" rowspan="6">
+<a class="imgEdit" href="/powersupplycards/form_editpowersupplycard?powersupplycard_id=<% powersupplycard_id %>">edit</a><br />
+<span class="desc">Modify these global parameters.</span><br /><br />
+<% IF can_delete %>
+	<a class="imgRemove" href="/powersupplycards/process_removepowersupplycard?powersupplycard_id=<% powersupplycard_id %>">delete</a><br />
+	<span class="desc">Delete this power supply card.</span><br /><br />
+<% END %>
+<% IF can_setperm %>
+	<a class="imgPermission" href="/permissions/view_selectconsumer?entitytype=Powersupplycard&id=<% powersupplycard_id %>">permission</a><br />
+	<span class="desc">View/set permissions on this power supply card.</span><br />
+<% END %>
+</td><tr/>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Model :</td><td><% model %></td></tr>
+<tr><td class="label">Slots count :</td><td><% slots_count %></td></tr>
+<tr><td class="label">MAC address :</td><td><% mac_address %></td></tr>
+<tr><td class="label">IP address :</td><td><% ip %></td></tr>
+</table>
+
+<hr/>
+<span id="nodes" class="title simpleexpand">Power Slots</span>
+<table id="Xnodes" class="detailspart list">
+<tr><td>...</td></tr>
+</table>
+
+
+
+
