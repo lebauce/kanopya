@@ -7,6 +7,7 @@ use Login;
 use Dashboard;
 use Components;
 use Kernels;
+use Images;
 use Log::Log4perl;
 
 our $VERSION = '0.1';
