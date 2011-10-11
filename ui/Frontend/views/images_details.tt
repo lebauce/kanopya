@@ -1,0 +1,69 @@
+<%#
+<style type="text/css">@import url(/css/details.css);</style>
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>System image : <% systemimage_name %></h2>
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr><% IF active %><td>Active, <% systemimage_usage %></td><% ELSE %><td>Deactivated</td><% END %>
+<td class="actions">
+<% IF can_activate %>
+	<a class="imgActivate" href="/images/process_activatesystemimage?systemimage_id=<% systemimage_id %>">activate</a><br />
+	<span class="desc">Activate this system image.</span><br />
+<% END %>
+<% IF can_deactivate %>
+	<a class="imgDeactivate" href="/images/process_deactivatesystemimage?systemimage_id=<% systemimage_id %>">deactivate</a><br />
+	<span class="desc">Deactivate this system image.</span><br />
+<% END %>
+</td></tr>
+</table>
+
+<hr/>
+<span id="settings" class="title simpleexpand">Main settings</span>
+<table id="Xsettings" class="detailspart">
+<tr><td class="italic" colspan="2"><% systemimage_desc %></td>
+<td class="actions" rowspan="4">
+<% IF can_update %>
+	<a class="imgEdit" href="/images/form_editsystemimage?systemimage_id=<% systemimage_id %>">edit</a><br />
+	<span class="desc">Modify these global parameters.</span><br /><br />
+<% END %>
+<% IF can_delete %>
+	<a class="imgRemove" href="/images/process_removesystemimage?systemimage_id=<% systemimage_id %>">delete</a><br />
+	<span class="desc">Delete this system image.</span><br /><br />
+<% END %>
+<% IF can_setperm %>
+	<a class="imgPermission" href="/permissions/view_selectconsumer?entitytype=Systemimage&id=<% systemimage_id %>">permissions</a><br />
+	<span class="desc">View/set permissions on this system image.</span><br />
+<% END %>
+</td><tr/>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Distribution :</td><td><% IF distribution %><% distribution %><% ELSE %>-<% END %></td></tr>
+</table>
+
+<hr/>
+<span id="components" class="title simpleexpand">Installed Components</span>
+<table id="Xcomponents" class="detailspart list">
+<% IF components_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% components_count %>">
+	<% UNLESS active %>
+		<% IF can_installcomponent %>
+			<a class="imgAdding" href="/images/form_installcomponent?systemimage_id=<% systemimage_id %>">Install a component</a><br />
+			<span class="desc">Install a component to this system image.</span><br /><br />
+		<% END %>
+	<% END %>
+	</td></tr>
+	<% FOREACH comp IN components_list %>
+		<tr><td class="label2"><span class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
+		<td class="action"></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">no defined component.</td>
+	<td class="actions">
+	<a class="imgAdding" href="/images/form_installcomponent?systemimage_id=<% systemimage_id %>">Install a component</a><br />
+	<span class="desc">Install a new component to this system image.</span><br /><br />
+	</td></tr>
+<% END %>
+</table>
+
