@@ -54,7 +54,7 @@ sub _models {
 }
 
 get '/models' => sub {
-	my ($motherboardmodels,$processorsmodels) = _models();
+	my ($motherboardmodels,$processormodels) = _models();
 	my $can_createprocessormodel;
 	my $can_createmotherboardmodel;
 
