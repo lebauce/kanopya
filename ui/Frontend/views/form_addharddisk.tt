@@ -1,0 +1,20 @@
+<%#
+<style type="text/css">@import url(/css/form.css);</style>
+%>
+<div class="title">add a hard disk
+<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
+<form method="POST" action="/motherboards/process_addharddisk">
+<table class="form">
+	<tr>
+		<td class="label">Device :</td>
+		<td><input type="text" name="device" size="32"/>
+		<span style="color: red"><% err_device %></span></td>
+		</td>
+	</tr>
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="hidden" name="motherboard_id" value="<% motherboard_id %>"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form> 
