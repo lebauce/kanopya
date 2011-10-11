@@ -50,8 +50,8 @@ sub process_login : Runmode {
     
     # here we check if login and password match
     eval { Administrator::authenticate(login => $login, password => $password); };
-    if($@) { 
-        $log->error("Authentication failed for login ", $login);
+    if($@) {
+        $log->error("Authentication failed for login (exception is : $@)", $login);
         $self->redirect('/cgi/kanopya.cgi/login'); 
     } else { 
         $self->session->param('EID', "$ENV{EID}");
