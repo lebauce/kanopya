@@ -1,0 +1,16 @@
+<% FOREACH distribution IN distributions_list %>
+	<table class="listing">
+	<tr><td colspan="2"><h1 class="distribution img<% distribution.distribution_name %>"><% distribution.distribution_name %> <% distribution.distribution_version %></h1></td></tr>
+	<tr><td></td><td class="toright">
+	<a class="imgManage" href="/distributions/<% distribution.distribution_id %>">details</a></td></tr>
+	<% IF distribution.can_setperm %>
+		<tr><td></td><td class="toright"><a class="imgPermission" href="/permissions/view_selectconsumer?entitytype=Distribution&id=<% distribution.distribution_id %>">permissions</a></td></tr>
+	<% END %>
+	<tr><td class="italic" colspan="3"><% distribution.distribution_desc %></td></tr>
+	</table>
+<% END %>
+<div class="actions">
+<p class="italic">Linux distribution used to create system images.</p>
+<a class="action imgUploadcomponent" href="/distributions/form_uploaddistribution">upload new distribution</a>
+<p class="italic">Upload a new distribution to create system images from it.</p>
+</div>
