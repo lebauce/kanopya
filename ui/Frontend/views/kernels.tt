@@ -2,7 +2,10 @@
 	<table class="listing">
 	<tr><td colspan="2"><h1 id="<% kernel.kernel_id %>"><% kernel.kernel_name %></h1></td></tr>
 	<tr><td><% kernel.kernel_version %></td>
-	<td class="toright"><% IF can_setperm %><a class="imgPermission" href="/cgi/kanopya.cgi/permissions/view_selectconsumer?entitytype=Kernel&id=<% kernel.kernel_id %>">permissions</a><% END %></td></tr>
+	<td class="toright">
+	<% IF kernel.can_setperm %>
+		<a class="imgPermission" href="/kernels/permissions/view_selectconsumer?entitytype=Kernel&id=<% kernel.kernel_id %>">permissions</a>
+	<% END %></td></tr>
 	<tr><td colspan="2" class="italic"><% kernel.kernel_desc %></td></tr>
 	</table>
 <% END %>
