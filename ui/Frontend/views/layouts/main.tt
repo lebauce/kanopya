@@ -31,11 +31,15 @@
                         success: function(msg){
                             console.log(msg);
                             $("#messages").empty();
-                            $("#messages").append(msg.content);
+							for(var i=0;i<msg.length;i++) {
+								$("#messages").append(msg[i].content+"<br/>");
+								
+							}
+                           
                         },
                         error: function(error, text, thor) {
                         $("#messages").empty();
-                        $("#messages").append("Error with the server");
+                        $("#messages").append(text+" "+error);
                         }
                     });
                 };
