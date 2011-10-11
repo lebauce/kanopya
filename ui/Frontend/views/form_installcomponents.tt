@@ -1,0 +1,23 @@
+<%#
+<style type="text/css">@import url(/css/form.css);</style>
+%>
+<div class="title"><% systemimage_name %> : install component</div>
+<form method="POST" action="/images/process_installcomponent">
+<table class="form">
+	<tr>
+		<td class="label">available components :</td>
+		<td>
+		<select name="component_id"><% FOREACH comp IN components %>
+			<option value="<% comp.id %>"><% comp.name %> <% comp.version %> - <% comp.category %></option>
+		<% END %>
+		</select>
+		</td>
+	</tr>
+</table>
+<input type="hidden" name="systemimage_id" value="<% systemimage_id %>" />
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form>
+</div>
