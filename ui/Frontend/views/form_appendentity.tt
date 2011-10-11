@@ -1,0 +1,30 @@
+<%# <style type="text/css">@import url(/css/form.css);</style>
+%>
+<div class="title">append element (<% gp_type %>) to group <% gp_name %> <% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
+<% IF entity_list %>
+	<form method="POST" action="/groups/process_appendentity">
+	<table class="form">
+			<tr>
+			<td class="label"><% gp_type %> :</td>
+			<td><select name="real_id">
+				<% FOREACH e IN entity_list %>
+					<option value="<% e.real_id %>"><% e.entity_label %></option>	
+				<% END %>
+			</select></td>
+		</tr>	
+	</table>
+	<div class="buttons">
+	<input type="hidden" name="gp_id" value="<% gp_id %>"/>
+	<input type="submit" value="ok"/>
+	<input type="button" value="cancel" onclick="javascript:window.close()"/>
+	</div>
+	</form> 
+<% ELSE %>
+	<table class="form">
+		<tr><td>Nothing to add to this group.</td></tr>
+	</table>
+	<div class="buttons">
+	<input type="button" value="cancel" onclick="javascript:window.close()"/>
+	</div>
+<% END %>
+
