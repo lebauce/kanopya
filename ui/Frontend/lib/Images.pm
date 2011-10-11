@@ -44,7 +44,7 @@ get '/images' => sub {
 
     template 'images', {
         title_page         => 'Systems - System images',
-        distributions_list => _systemimages(),
+        systemimages_list => _systemimages(),
         can_create         => $can_create,
     };
 };
@@ -52,6 +52,7 @@ get '/images' => sub {
 get '/images/:imageid' => sub {
 
     my $activate;
+    my $active;
     my $can_setperm; 
     my $can_activate;
     my $can_deactivate;
@@ -77,7 +78,7 @@ get '/images/:imageid' => sub {
         $active = 1;
     }
     if($active) {
-        $systemimage_usage = $esystemimage->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared');
+        $systemimage_usage = $esystemimage->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared';
     } else {
         $systemimage_usage = '';
     }
@@ -89,9 +90,8 @@ get '/images/:imageid' => sub {
     }
     if(not $methods->{'installcomponent'}->{'granted'}) { $can_installcomponent = 1 }
 
-    template 'images', {
+    template 'images_details', {
         title_page       => "Systems - System image's overview",
-        distributions_list => _systemimages(),
         activate         => $activate,              
         can_setperm      => $can_setperm,           
         can_activate     => $can_activate,          
@@ -105,8 +105,6 @@ get '/images/:imageid' => sub {
         systemimage_desc => $esystemimage->getAttr(name => 'systemimage_desc'), 
         components_list => $components_list,                                    
         components_count => $nb + 1,                                            
-     }
-}    
-sub form_editsystemimage : Runmode {
-    return "TODO";
-}
+     };
+};    
+
