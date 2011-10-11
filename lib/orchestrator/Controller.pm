@@ -223,7 +223,7 @@ sub manageCluster {
     my $workload = $self->getWorkload( cluster => $cluster);
     
     # Manage internal parameters tuning
-    my $best_params = $self->modelTuning( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
+    my $best_params = $self->modelTuning( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster);
     $self->updateModelInternaParameters( cluster => $cluster, delay => $best_params->{D}, service_time => $best_params->{S});
     
     $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
