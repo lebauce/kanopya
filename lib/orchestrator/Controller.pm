@@ -223,7 +223,8 @@ sub manageCluster {
     my $workload = $self->getWorkload( cluster => $cluster);
     
     # Manage internal parameters tuning
-    my $best_params = $self->modelTuning( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
+    my $curr_perf = $self->getMonitoredPerfMetrics( cluster => $args{cluster});
+    my $best_params = $self->modelTuning( workload => $workload, cluster_conf => $cluster_conf, curr_perf => $curr_perf );
     $self->updateModelInternaParameters( cluster => $cluster, delay => $best_params->{D}, service_time => $best_params->{S});
     
     $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
@@ -270,17 +271,17 @@ sub modelTuning {
     
     my $evo_step = $INIT_STEP_SIZE;
     
-    my $curr_perf = $self->getMonitoredPerfMetrics( cluster => $args{cluster});
+    my $curr_perf = $args{curr_perf};
     
     for my $step (0..($NB_STEPS-1)) {
-        
+        print "Step $step\n";
         # For each space dimension (internal parameters except D1)
         for my $dim (0..(2*$M-1-1)) { # -1 for D1 and -1 because we start at 0
-            
+            print " Dim $dim\n";
             # Evolution direction for this dimension
             EVO:
-            for (my $evo = -$evo_step; $evo < $evo_step; $evo += 2*$evo_step ) {
-                
+            for (my $evo = -$evo_step; $evo <= $evo_step; $evo += 2*$evo_step ) {
+                print "  Evo $evo\n";
                 my @S = @best_S;
                 my @D = @best_D;
                 
@@ -306,10 +307,17 @@ sub modelTuning {
                 
                 my %new_out = $self->{_model}->calculate( %model_params );
                 
+                print "## NEW out ##\n";
+                print Dumper \%new_out;
+                
                 $model_params{workload_class}{service_time} = \@best_S;
                 $model_params{workload_class}{delay} = \@best_D;
                 
+                # TODO optimize algo by keeping best output
                 my %best_out = $self->{_model}->calculate( %model_params );
+                
+                print "## BEST out ##\n";
+                print Dumper \%best_out;
                 
                 my $gain =  $self->computeDiff( model_output => \%best_out, monitored_perf => $curr_perf )
                             - $self->computeDiff( model_output => \%new_out, monitored_perf => $curr_perf );
