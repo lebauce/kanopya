@@ -1,0 +1,42 @@
+<%# <script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Group : <% gp_name %></h2>
+<hr/>
+<span id="description" class="title simpleexpand">Description</span>
+<table id="Xdescription" class="detailspart">
+<tr><td class="italic" colspan="2"><% gp_desc %></td>
+<td class="actions" rowspan="5">
+<% IF can_update %>
+	<a class="imgEdit" href="/groups/form_editgroup?gp_id=<% gp_id %>">edit</a><br />
+	<span class="desc">Modify name or description of this group.</span><br /><br />
+<% END %>
+<% IF can_delete %>
+	<a class="imgRemove" href="/groups/process_deletegroup?gp_id=<% gp_id %>">delete</a><br />
+	<span class="desc">Delete this group.</span><br />
+<% END %>
+</td><tr/>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Group name :</td><td><% gp_name %></td></tr>
+<tr><td class="label">Group type :</td><td><% gp_type %></td></tr>
+</table>
+
+<hr/>
+<span id="contents" class="title simpleexpand">Contents</span>
+<table id="Xcontents" class="detailspart">
+<tr><td colspan="2">&nbsp;</td>
+<td class="actions" rowspan="<% content_count %>">
+<% IF can_appendEntity %>
+	<a class="imgAdding" href="/groups/form_appendentity?gp_id=<% gp_id %>">append</a><br />
+	<span class="desc">append an element (<% gp_type %>) to this group.</span><br /><br />
+<% END %>
+</td></tr>
+<% FOREACH c IN content_list %>
+	<tr><td class="label2"><span class="bold"><% c.content_label %></span></td>
+	<td class="action">
+	<% IF c.can_removeEntity %><% UNLESS c.gp_system %>
+	<a class="imgRemove" href="/groups/process_removeentity?gp_id=<% c.gp_id %>&real_id=<% c.content_id %>">remove</a>
+	<% END %><% END %>
+	</td></tr>
+<% END %>
+</table>
+
