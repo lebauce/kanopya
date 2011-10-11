@@ -6,6 +6,7 @@ use Dancer::Plugin::Ajax;
 use Login;
 use Dashboard;
 use Components;
+use Distributions;
 use Kernels;
 use Images;
 use Log::Log4perl;
