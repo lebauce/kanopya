@@ -538,13 +538,19 @@ CREATE TABLE `component_installed` (
 --
 
 CREATE TABLE `infrastructure` (
-  `infrastructure_reference` char(64) NOT NULL,
   `infrastructure_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `infrastructure_reference` char(64) NOT NULL,
   `infrastructure_min_node` int(2) unsigned NOT NULL,
   `infrastructure_max_node` int(2) unsigned NOT NULL,
   `infrastructure_domainname` char(64) NOT NULL,
   `infrastructure_nameserver` char(15) NOT NULL,
+  `infrastructure_name` char(32) NOT NULL,
+  `infrastructure_desc` char(255) DEFAULT NULL,
+  `infrastructure_version` char(32) NOT NULL,
   `infrastructure_tier_number` int(1),
+  `infrastructure_state` char(32) NOT NULL DEFAULT 'down',
+  `infrastructure_prev_state` char(32),
+  `infrastructure_priority` int(1) unsigned NOT NULL,
   PRIMARY KEY (`infrastructure_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -575,7 +581,7 @@ CREATE TABLE `component_instance` (
   `component_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `cluster_id` int(8) unsigned,
   `component_id` int(8) unsigned NOT NULL,
-  `tier_id` int(8) unsigned NOT NULL,
+  `tier_id` int(8) unsigned,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`component_instance_id`),
   KEY `fk_component_instance_1` (`cluster_id`),

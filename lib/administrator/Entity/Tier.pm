@@ -37,20 +37,23 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 use constant ATTR_DEF => {
-    tier_name            =>  {pattern        => '^\w*$',
+    tier_name               =>  {pattern        => '^\w*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    tier_rank            =>  {pattern        => '^\d*$',
+    tier_rank               =>  {pattern        => '^\d*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    tier_data_src            =>  {pattern        => '^.*$',
+    tier_data_src           =>  {pattern        => '^.*$',
                                  is_mandatory    => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-                                 
-    active                    => {pattern            => '^[01]$',
+    tier_poststart_script   =>  {pattern        => '^.*$',
+                                 is_mandatory    => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0},
+    active                  => {pattern            => '^[01]$',
                                 is_mandatory    => 0,
                                 is_extended        => 0,
                                 is_editable        => 0},
@@ -123,7 +126,6 @@ sub get {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get tier with id $args{id}");
     }
     my $self = $class->SUPER::get( %args,  table => "Tier");
-
     return $self;
 }
 
