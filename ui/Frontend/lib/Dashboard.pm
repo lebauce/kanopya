@@ -33,7 +33,8 @@ get '/dashboard' => sub {
             push @res_group_count, {
                 id      => $def->{id},
                 label   => $def->{label},
-                details => ( $services_count > 0 && $up_count == $services_count
+                details => \@details,
+                status  => ( $services_count > 0 && $up_count == $services_count
                     ? 'Up'
                     : ( $up_count > 0 ? 'Broken' : 'Down') )
             };
