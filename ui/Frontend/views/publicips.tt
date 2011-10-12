@@ -1,0 +1,22 @@
+<table class="simplelisting">
+	<caption>Virtual IP</caption>
+	<tr><th>ip</th><th>mask</th><th>gateway</th><th>already used</th><th></th></tr>
+	<% FOREACH ip IN PUBLICIPS %>
+		<tr>
+			<td class="center"><% ip.IP_ADDRESS %></td>
+			<td class="center"><% ip.IP_MASK %></td>
+			<td class="center"><% ip.GATEWAY %></td>
+			<td class="center"><% IF ip.CLUSTER_ID %>yes<% ELSE %>no<% END %></td>
+			<td><% IF ip.CLUSTER_ID %>
+			<% ELSE %>
+			<a class="imgRemove" href="/networks/process_removepublicip?publicip_id=<% ip.PUBLICIP_ID %>">remove</a>
+			<% END %>
+			</td>
+		</tr>
+	<% END %>
+</table>
+<div class="actions">
+<a class="action imgAdding" href="/networks/form_addpublicip">create a virtual ip</a>
+<p class="italic">Create a new virtual ip.</p>
+</div>
+
