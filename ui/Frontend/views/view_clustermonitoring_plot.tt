@@ -1,0 +1,54 @@
+<script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/extern/jquery.jqplot.min.js"></script>
+<script type="text/javascript" src="/js/extern/jqplot.dateAxisRenderer.min.js"></script>
+<script type="text/javascript" src="/js/monitor_plot.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/css/jquery.jqplot.css" />
+
+<div id="chartdiv" style="height:400px;width:300px; "></div>
+<!--button id='fold_all'>fold</button-->
+<table id='graphchoices'>
+<tr>
+
+<td class='period_selectors'>
+<table class=''>
+<tr><th>
+<a id="period_label">Hourly</a>
+<ul>
+	<li id='hour' class='period_selector selected_period' >Hourly</li>
+	<li id='day'  class='period_selector' >Daily</li>
+	<!--li id='custom' class='period_selector' >Custom</li-->
+</ul>
+</th></tr>
+</table>
+
+</td>
+
+<td>
+<table class='set_selectors simplelisting'>
+	<tr>
+	<% FOREACH s IN SETS %>
+		<th id='<% s.ID %>' class='set_selector'><% s.LABEL %></th>
+	<% END %>
+	</tr>
+</table>
+</td>
+
+
+
+</tr>
+</table>
+
+
+<div class="actions">
+<a class="action imgSettings" href="/monitoring/view_clustermonitoring_settings?cluster_id=<% CLUSTER_ID %>">settings</a>
+<p class="italic">Cluster collect and graph settings.</p>
+
+<a class='action imgClock' >Graph period</a>
+<ul class="italic">
+	<li id='hour' class='period_selector selected_period' >Hourly</li>
+	<li id='day'  class='period_selector' >Daily</li>
+	<!--li id='custom' class='period_selector' >Custom</li-->
+</ul>
+</div>
+

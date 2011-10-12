@@ -1,0 +1,63 @@
+<script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
+<script type="text/javascript" src="/js/monitor.js"></script>
+
+<!--table class='monitor_settings general_settings graphview'-->
+<table class='monitor_settings general_settings simplelisting'>
+<caption>General</caption>
+<tr><th>Time step</th><th>period</th><th>database files dir</th><th>graph files</th></tr>
+	<tr>
+	<td class='editable'><% TIME_STEP %></td>
+	<td class='editable'><% PERIOD %></td>
+	<td class='editable'><% RRD_BASE_DIR %></td>
+	<td class='editable'><% GRAPH_DIR %></td>
+	</tr>
+</table>
+
+<!--table class='monitor_settings graphview'-->
+<table class='monitor_settings simplelisting'>
+<caption>Data sources conf</caption>
+	<tr>
+		<th>Set</th>
+		<th>Provider</th>
+		<th>Type</th>
+		<th>Component</th>
+	</tr>
+	<tr><td colspan='4'></td></tr>
+	<% FOREACH s IN SETS %>
+		<tr class='set_info'>
+		<th id='<% s.LABEL %>' class='expander'><% s.LABEL %></th>
+		<td choices='Snmp,Apache,MySql,Func' class='img<% s.PROVIDER_NAME %> editable_choice set_def'><% s.PROVIDER_NAME %></td>
+		<td choices='Gauge,Counter,Derive' class='editable_choice set_def'><% s.DS_TYPE %></td>
+		<td class='img<% s.COMPONENT %>  set_def'><% s.COMPONENT %></td>
+		</tr>
+		<tr id='X<% s.LABEL %>' class='expand_cont' >
+
+		<td colspan='4'>
+		
+		<% IF s.IS_TABLE %>
+			<table class='expandable hidden'>
+			<tr><td>Table</td><td><% s.TABLE_OID %></td></tr>
+			<tr><td colspan='2'>
+			<table>
+		<% ELSE %>
+			<table class='expandable hidden'>
+		<% END %>
+				<% FOREACH ds IN DS %>
+					<tr>
+						<td class='editable' ><% ds.DS_NAME %></td>
+						<td class='set_def editable'><% ds.OID %></td>
+					</tr>
+				<% END %>
+			</table>
+		<% IF s.IS_TABLE %>
+			</td></tr></table>	
+		<% END %>	
+		</td>
+		</tr>
+	<% END %>
+</table>	
+
+<div class="actions">
+<a class="action imgSave" id="save_monitoring_settings">save</a>
+<p class="italic">Save settings.</p>
+</div>
