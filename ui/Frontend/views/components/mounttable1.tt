@@ -1,0 +1,52 @@
+<%# <script type="text/javascript" src="/js/components.js"></script>
+%>
+<h2>Cluster <% cluster_name %> - Mount Table Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Mounttable1"/>
+
+<table class="conf_array_value" id="mounttable_mountdefs">
+<tr><th>device</th><th>mount point</th><th>fs-type</th><th>options</th><th>dump</th><th>pass</th></tr>
+<% FOREACH mount IN mountdefs %>
+	<tr class="elem_mounttable_mountdefs" name="mountdefs">
+    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_device" value="<% mount.mounttable1_device %>" /></td>
+    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_mountpoint" value="<% mount.mounttable1_mountpoint %>" /></td>
+    <td><input type="text" size="6" class="mountdefs_simple_value" name="mounttable1_filesystem" value="<% mount.mounttable1_filesystem %>" /></td>
+    <td><input type="text" class="mountdefs_simple_value" name="mounttable1_options" value="<% mount.mounttable1_options %>" /></td>
+    <td><input type="text" maxlength="2" size="2" class="mountdefs_simple_value" name="mounttable1_dumpfreq" value="<% mount.mounttable1_dumpfreq %>" /></td>
+    <td><input type="text" maxlength="2" size="2" class="mountdefs_simple_value" name="mounttable1_passnum" value="<% mount.mounttable1_passnum %>" />
+    <input type="hidden" class="mountdefs_simple_value" name="mounttable1_id" value="<% mount.mounttable1_id %>" />
+    <a class="remove_mountdefs imgRemove iconAction"></a>
+    </td>
+    </tr>
+<% END %>
+</table><br/>
+<a class="add_mounttable_mountdefs imgAdding iconAction" >Add mount definition</a>
+
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+<div class="hidden" id="models">
+    <table class="conf_array_value" id="mounttable_mountdefs">
+    <tr class="elem_mounttable_mountdefs" name="mountdefs">
+    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_device" value="" /></td>
+    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_mountpoint" value="" /></td>
+    <td><input type="text" size="6" class="mountdefs_simple_value" name="mounttable1_filesystem" value="" /></td>
+    <td><input type="text" class="mountdefs_simple_value" name="mounttable1_options" value="defaults" /></td>
+    <td><input type="text" maxlength="2" size="2" class="mountdefs_simple_value" name="mounttable1_dumpfreq" value="0" /></td>
+    <td><select class="mountdefs_simple_value" name="mounttable1_passnum" >
+        <option selected value="0">0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+    </select>
+    <a class="remove_mountdefs imgRemove iconAction"></a>
+    </td>
+    </tr>
+    </table>
+</div>
+
