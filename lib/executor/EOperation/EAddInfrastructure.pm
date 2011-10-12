@@ -47,6 +47,7 @@ use EFactory;
 
 use Entity::Infrastructure;
 use Entity::Systemimage;
+use Entity::Tier;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -131,9 +132,21 @@ sub execute {
     $json_infra->allow_nonref->utf8->relaxed->escape_slash->loose->allow_singlequote->allow_barekey();
     $infrastructure_def = $json_infra->decode($json);
 
+    my $local_nameserver = "127.0.0.1";
+    #TODO dev kanopya->getLocalNameserver
+
      $self->{_objs} = {};
     my $infrastructure = {
-        
+        infrastructure_reference    => $infrastructure_def->{reference},
+        infrastructure_min_node     => $infrastructure_def->{size}->{min},
+        infrastructure_max_node     => $infrastructure_def->{size}->{max},
+        infrastructure_version      => $infrastructure_def->{version},
+        infrastructure_desc         => $infrastructure_def->{description},
+        infrastructure_domainname   => $infrastructure_def->{domain_name},
+        infrastructure_nameserver   => $local_nameserver,
+        infrastructure_tier_number  => $infrastructure_def->{tier_number},
+        infrastructure_name         => $infrastructure_def->{name},
+        infrastructure_priority     => $infrastructure_def->{priority},
     };
     # Infrastructure instantiation
     eval {
@@ -141,10 +154,34 @@ sub execute {
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $err;
+        $errmsg = "EOperation::EAddInfrastructure->prepare : Infrastructure instanciation failed because : " . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    $self->{_objs}->{infrastructure}->save();
+    my $tiers = $infrastructure_def->{tier};
+    my $i =0;
+    $self->{_objs}->{tiers} = [];
+    foreach my $tier (@$tiers) {
+            my $tmp_tier = {infrastructure_id       => $self->{_objs}->{infrastructure}->getAttr(name=>"infrastructure_id"),
+                            tier_name               => $tier->{name},
+                            tier_rank               => $tier->{rank},
+                            tier_data_src           => $tier->{data}->[0]->{repository},
+                            tier_poststart_script   =>$tier->{data}->[0]->{init_script}
+            };
+            # Infrastructure instantiation
+            eval {
+                $self->{_objs}->{tiers}->[$i] = Entity::Tier->new(%$tmp_tier);
+                $self->{_objs}->{tiers}->[$i]->save();
+                $i++;
+            };
+            if($@) {
+                my $err = $@;
+                $errmsg = "EOperation::EAddInfrastructure->prepare : Infrastructure instanciation failed because : " . $err;
+                $log->error($errmsg);
+                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            }
+        }
 
 }
 
