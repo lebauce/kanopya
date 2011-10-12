@@ -1,3 +1,6 @@
+<% css_head.push('dashboard.css') %>
+<% css_head.push('listing.css') %>
+
 <% js_head.push('monitor.js') %>
 <% js_head.push('status.js') %>
 
@@ -10,7 +13,7 @@
             <td id="status<% group.id %>" class="img<% group.status %>"></td>
         </tr>
 
-        <tr id="<% group.id %>" class="hidden">
+        <tr id="X<% group.id %>" class="hidden">
             <td>
                 <table class="listdetails">
                     <% FOREACH detail IN group.details %>
