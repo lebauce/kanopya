@@ -39,7 +39,7 @@ get '/dashboard' => sub {
                     : ( $up_count > 0 ? 'Broken' : 'Down') )
             };
         }
-        push  @components_status, { group_count => \@res_group_count };
+        push  @components_status, { group => \@res_group_count };
     }
 
     template 'dashboard', {
