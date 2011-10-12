@@ -41,7 +41,7 @@ sub _userdetails {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             #$self->{admin}->addMessage(from => 'Administrator', level => 'warning', content => $exception->error);
-			#Need to use Dancer's redirect.
+            #Need to use Dancer's redirect.
             redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
         }
         else {
@@ -81,25 +81,25 @@ sub _userdetails {
 }
 
 get '/users' => sub {
-	my $can_create;
+    my $can_create;
 
     my $methods = Entity::User->getPerms();
     if($methods->{'create'}->{'granted'}) {
         $can_create = 1
     }
 
-	template 'users', {
+    template 'users', {
     titlepage => "Settings - Groups",
     users_list => _users();
-	};
+    };
 
 };
 
 get '/users/:id' => sub {
-	my $can_create;
-	my $can_update;
-	my $can_delete; 
-	my $can_setperm;
+    my $can_create;
+    my $can_update;
+    my $can_delete; 
+    my $can_setperm;
     my ($groups,
          $user_desc,          
          $user_firstname,     
@@ -110,18 +110,18 @@ get '/users/:id' => sub {
          $user_lastaccess) = _userdetails(params->{id});
 
     my $euser = eval { Entity::User->get(id => params->{id}) };
-	my $methods = $euser->getPerms();
-	$log->debug(Dumper $methods);
-	if($methods->{'update'}->{'granted'}) { $can_update = 1 }
-	if($methods->{'remove'}->{'granted'}) { $can_delete = 1 }
-	if($methods->{'setperm'}->{'granted'}) { $can_setperm = 1 }
+    my $methods = $euser->getPerms();
+    $log->debug(Dumper $methods);
+    if($methods->{'update'}->{'granted'}) { $can_update = 1 }
+    if($methods->{'remove'}->{'granted'}) { $can_delete = 1 }
+    if($methods->{'setperm'}->{'granted'}) { $can_setperm = 1 }
 
     }
 
-	template 'users', {
+    template 'users', {
     titlepage => "Users - User details",
     user_id =>  params->{id},
-	groups => $groups,        
+    groups => $groups,        
     user_desc => $user_desc,      
     user_firstname => $user_firstname,
     user_lastname  => $user_lastname, 
@@ -129,7 +129,7 @@ get '/users/:id' => sub {
     user_login => $user_login, 
     user_creationdate => $user_creationdate,
     user_lastaccess => $user_lastaccess 
-	};
+    };
 
 };
 
