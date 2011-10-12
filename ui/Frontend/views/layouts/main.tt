@@ -11,11 +11,11 @@
             <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
         <% END %>
 
-        <script type="text/javascript" src="/js/kanopyaui-tools.js"></script>
+        <script type="text/javascript" src="/javascripts/kanopyaui-tools.js"></script>
         <script type="text/javascript" src="/javascripts/jquery.js"></script>
 
         <% FOREACH js IN js_head %>
-            <script type="text/javascript" src="/js/<% js %>"></script>
+            <script type="text/javascript" src="/javascripts/<% js %>"></script>
         <% END %>
 
         <script language="javascript" type="text/javascript">
