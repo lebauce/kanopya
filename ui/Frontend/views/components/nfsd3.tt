@@ -1,0 +1,67 @@
+<%# <script type="text/javascript" src="/js/components.js"></script>
+%>
+<h2>Cluster <% cluster_name %> - NFSd3 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="nfsd3_id" value="<% nfsd3_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Nfsd3"/>
+<table>
+<tr><td>statd options: </td><td><input class="conf_simple_value" type="text" name="nfsd3_statdopts" value="<% nfsd3_statdopts %>" disabled /></td></tr>
+<tr><td>need GSSD: </td><td><select class="conf_simple_value" name="nfsd3_need_gssd" selected_value="<% nfsd3_need_gssd %>" disabled >
+<option value="no">no</option>
+<option value="yes">yes</option>
+</select></td></tr>
+<tr><td>Number of servers to start up: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcnfsdcount" value="<% nfsd3_rpcnfsdcount %>" disabled /></td></tr>
+<tr><td>Runtime priority of server: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcnfsdpriority" value="<% nfsd3_rpcnfsdpriority %>" disabled /></td></tr>
+<tr><td>Options for rpc.mountd: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcmountopts" value="<% nfsd3_rpcmountopts %>" disabled /></td></tr>
+<tr><td>start svcgssd: </td><td><select class="conf_simple_value" name="nfsd3_need_svcgssd" selected_value="<% nfsd3_need_svcgssd %>" disabled >
+<option value="no">no</option>
+<option value="yes">yes</option>
+</select></td></tr>
+<tr><td>Options for rpc.svcgssd: </td><td><input class="conf_simple_value" type="text" name="nfsd3_rpcsvcgssdopts" value="<% nfsd3_rpcsvcgssdopts %>" disabled /></td></tr>
+</table>
+
+<hr />
+<h3>Exports</h3>
+<ul class="conf_array_value" id="exports">
+<% FOREACH export IN exports %>
+	<li name="export">	
+	Device to export: 
+	<input type="text" name="nfsd3_export_path" value="<% export.nfsd3_export_path %>" disabled />
+	<table id="clients">
+	<% FOREACH client IN clients %>
+		<tr name="client">
+			<td>Host(s):<input type="text" size="20" name="nfsd3_exportclient_name" value="<% client.nfsd3_exportclient_name %>" disabled /></td>
+			<td>Options:<input type="text" size="50" name="nfsd3_exportclient_options" value="<% client.nfsd3_exportclient_options %>" disabled /></td></td>
+		</tr>
+	<% END %>
+	</table>
+    </li>
+<% END %>
+</ul>
+<a class="add_exports imgAdding iconAction">Add export</a>
+<hr />
+
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+<div class="hidden" id="models">
+<ul class="conf_array_value" id="exports">
+	<li class="elem_exports" name="export">	
+		Device to export: 
+		<input class="export_simple_value" type="text" name="nfsd3_export_path" value=""/>
+		<a class="remove_export imgRemove iconAction" ></a>
+		<table class="export_array_value" id="clients">
+				<tr class="elem_clients" name="client">
+					<td>Host(s):<input class="client_simple_value" type="text" size="20" name="nfsd3_exportclient_name" value=""/></td>
+					<td>Options:<input class="client_simple_value" type="text" size="50" name="nfsd3_exportclient_options" value=""/></td></td>
+				</tr>
+		</table>
+	</li>
+</ul>
+</div>

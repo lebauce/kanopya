@@ -1,0 +1,25 @@
+<%# <script type="text/javascript" src="/js/components.js"></script>
+%>
+<h2>Cluster <% cluster_name %> - Openldap1 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="openldap1_id" value="<% openldap1_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Openldap1"/>
+
+<table>
+<tr><td>Port :</td><td><input class="conf_simple_value" type="text" name="openldap1_port" size="16" value="<% openldap1_port %>" /></td></tr>
+<tr><td>Data directory :</td><td><input disabled class="conf_simple_value" type="text" name="openldap1_directory" size="50" value="<% openldap1_directory %>" /></td></tr>
+<tr><td>Suffix :</td><td><input class="conf_simple_value" type="text" name="openldap1_suffix" size="50" value="<% openldap1_suffix %>" /></td></tr>
+<tr><td>Admin Ldap :</td><td><input class="conf_simple_value" type="text" name="openldap1_rootdn" size="50" value="<% openldap1_rootdn %>" /></td></tr>
+<tr><td>Password Admin :</td><td><input class="conf_simple_value" type="password" name="openldap1_rootpw" size="16" value="<% openldap1_rootpw %>" /></td></tr>
+
+</table>
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+<div class="hidden" id="models"></div>

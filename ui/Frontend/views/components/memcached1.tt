@@ -1,0 +1,21 @@
+<%# <script type="text/javascript" src="/js/components.js"></script>
+%>
+<h2>Cluster <% cluster_name %> - Memcached 1 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="memcached1_id" value="<% memcached1_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Memcached1"/>
+
+Port: <input class="conf_simple_value" type="text" name="memcached1_port" value="<% memcached1_port %>" disabled/>
+
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+<div class="hidden" id="models"></div>
+
+

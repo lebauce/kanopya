@@ -1,0 +1,103 @@
+<html>
+<head>
+	<title>new cluster</title>
+</head>
+<body>
+<style type="text/css">@import url(/css/form.css);</style>
+<div class="title">create cluster<TMPL_IF NAME=some_errors><span class="error">Some fields below are missing or invalid</span></TMPL_IF></div>
+<form method="POST" action="/cgi/kanopya.cgi/clusters/process_addcluster">
+<table class="form">
+	<tr>
+		<td class="label">Name :</td>
+		<td><input type="text" name="name" maxlength="32" size="32"/>
+		<span style="color: red"><TMPL_VAR NAME=err_name></span></td>
+	</tr>
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="desc" value=""></textarea></td>
+	</tr>
+		<tr>
+		<td class="label">Cluster type :</td>
+		<td>
+		<input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via
+		<select name="exporttype" style="width: 50px">
+			<option value="iscsi">ISCSI</option>
+		</select>&nbsp;<!--|&nbsp;
+		<input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local -->
+		</td>
+	</tr>
+	<tr>
+		<td class="label">System image :</td><td>
+        <TMPL_IF NAME=systemimages_forshared>
+        <input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared :
+		<select name="systemimage_forshared">
+		<TMPL_LOOP NAME=systemimages_forshared>
+			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
+		</TMPL_LOOP>
+		</select>
+        </TMPL_IF>
+        <TMPL_IF NAME=systemimages_fordedicated>
+        <input type="radio" name="si_shareordedicate" value="dedicated" />dedicated :
+        <select name="systemimage_fordedicated">
+		<TMPL_LOOP NAME=systemimages_fordedicated>
+			<option value="<TMPL_VAR NAME=systemimage_id>"><TMPL_VAR NAME=systemimage_name></option>
+		</TMPL_LOOP>
+		</select>
+        </TMPL_IF>
+        </td>
+    </tr>
+    <tr><td><span style="color: red"><TMPL_VAR NAME=err_systemimage_id></span></td></td></tr>
+    <tr>
+		<td class="label">minimum node to used :</td>
+		<td><select name="min_node">
+		<TMPL_LOOP NAME=nodescount>
+			<option value="<TMPL_VAR NAME=nodes>"><TMPL_VAR NAME=nodes></option>
+		</TMPL_LOOP>
+		</select></td>
+		<span style="color: red"><TMPL_VAR NAME=ERR_MIN_NODE></span></td>
+	</tr>
+	<tr>
+		<td class="label">maximum node to used :</td>
+		<td><select name="max_node">
+		<TMPL_LOOP NAME=nodescount>
+			<option value="<TMPL_VAR NAME=nodes>"><TMPL_VAR NAME=nodes></option>
+		</TMPL_LOOP>
+		</select></td>
+		<span style="color: red"><TMPL_VAR NAME=ERR_MAX_NODE></span></td>
+	</tr>
+	<tr>
+		<td class="label">Priority :</td>
+		<td><input type="text" name="priority" maxlength="5" size="5"/>
+		<span style="color: red"><TMPL_VAR NAME=err_priority></span></td></td>
+	</tr>
+
+	<tr>
+		<td class="label">Kernel :</td>
+		<td><select name="kernel_id">
+		<option value="0">default motherboard kernel</option>
+		<TMPL_LOOP NAME=kernels_list>
+			<option value="<TMPL_VAR NAME=kernel_id>"><TMPL_VAR NAME=kernel_name></option>
+		</TMPL_LOOP>
+		</select>
+		<span style="color: red"><TMPL_VAR NAME=ERR_KERNEL></span></td>
+	</tr>
+	<tr>
+		<td class="label">Domain name :</td>
+		<td><input type="text" name="domainname" maxlength="64" size="32" value="hedera-technology.com"/>
+		<span style="color: red"><TMPL_VAR NAME=err_domainname></span></td></td>
+	</tr>
+	<tr>
+		<td class="label">Name server :</td>
+		<td><input type="text" name="nameserver" maxlength="15" size="15" value="<TMPL_VAR NAME=nameserver>"/>
+		<span style="color: red"><TMPL_VAR NAME=err_nameserver></span></td></td>
+	</tr>
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:window.close()"/>
+</div>
+</form>
+
+</body>
+</html>
+
