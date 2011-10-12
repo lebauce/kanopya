@@ -220,11 +220,32 @@ sub manageCluster {
     
     $self->{_cap_plan}->setNbTiers( tiers => 1);
     
-    my $workload = $self->getWorkload( cluster => $cluster);
+    my $workload    = $self->getWorkload( cluster => $cluster);
     
     # Manage internal parameters tuning
-    my $curr_perf = $self->getMonitoredPerfMetrics( cluster => $args{cluster});
-    my $best_params = $self->modelTuning( workload => $workload, cluster_conf => $cluster_conf, curr_perf => $curr_perf );
+    my $curr_perf   = $self->getMonitoredPerfMetrics( cluster => $args{cluster});
+
+    #/!\ hardcoding 1 tier /!\
+    my $infra_conf  = {
+        M        => 1,
+        AC       => [$cluster_conf->{nb_nodes}],
+        LC       => [$cluster_conf->{mpl}],
+    };
+    
+    my $algo_conf   = {
+        nb_steps            => 40,
+        init_step_size      => 5,
+        init_point_position => 1,
+        
+    };
+
+    my $best_params = $self->modelTuning( 
+            algo_conf  => $algo_conf, 
+            workload   => $workload, 
+            infra_conf => $infra_conf, 
+            curr_perf  => $curr_perf 
+        );
+    
     $self->updateModelInternaParameters( cluster => $cluster, delay => $best_params->{D}, service_time => $best_params->{S});
     
     $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
@@ -251,21 +272,20 @@ sub modelTuning {
     my $self = shift;
     my %args = @_;
     
-    my $M = 1; #nb tiers
-    my $infra_conf = {  M => $M,
-                        AC => [$args{cluster_conf}->{nb_nodes}],
-                        LC => [$args{cluster_conf}->{mpl}]
-                      };
-    my $workload = $args{workload};
+    my $algo_conf  = $args{algo_conf};
+    my $infra_conf = $args{infra_conf};
+    my $workload   = $args{workload};
     
-    my $NB_STEPS = 15;
-    my $INIT_STEP_SIZE = 5;
-    my $INIT_POINT_POSITION = 6;
     
+    my $NB_STEPS            = $algo_conf->{nb_steps}; #15;
+    my $INIT_STEP_SIZE      = $algo_conf->{init_step_size}; #5;
+    my $INIT_POINT_POSITION = $algo_conf->{init_point_position}; #1;
+    
+    my $M      = $infra_conf->{M};
     my @best_S = ($INIT_POINT_POSITION) x $M;
     my @best_D = ($INIT_POINT_POSITION) x $M;
-    $best_D[0] = 1;
-    my $best_gain = 0;
+    $best_D[0] = 0.;
+    my $best_gain = -10000;
     my $dim_best_gain = 0;
     my $evo_best_gain = 0;
     
@@ -274,25 +294,33 @@ sub modelTuning {
     my $curr_perf = $args{curr_perf};
     
     for my $step (0..($NB_STEPS-1)) {
-        print "Step $step\n";
+        
+        $best_gain = -10000;
+        $dim_best_gain = 0;
+        $evo_best_gain = 0;
+        
+        #print "Step $step\n";
         # For each space dimension (internal parameters except D1)
         for my $dim (0..(2*$M-1-1)) { # -1 for D1 and -1 because we start at 0
-            print " Dim $dim\n";
+            #print " Dim $dim\n";
             # Evolution direction for this dimension
             EVO:
             for (my $evo = -$evo_step; $evo <= $evo_step; $evo += 2*$evo_step ) {
-                print "  Evo $evo\n";
+                
                 my @S = @best_S;
                 my @D = @best_D;
                 
-                if ($dim < $M) {
+                
+                if ($dim < $M) { #S proceeding when dim in (0..$M-1) ($M values)
                     $S[$dim] += $evo;
                     next EVO if ($S[$dim] <= 0); # Prevent null or negative Si
-                } else {
+                } else {       #D proceeding when dim in ($M 2*$M-2) ($M - 1 values)
                     $D[$dim - $M + 1] += $evo;
-                    next EVO if ($S[$dim] < 0); # Null delay allowed
+                    next EVO if ($D[$dim - $M + 1] < 0); # Null delay allowed
                 }
                 
+                 
+                #print "evo = $evo ; [@S] ; [@best_S] \n";
                 
                 my %model_params = (
                         configuration => $infra_conf,
@@ -307,35 +335,40 @@ sub modelTuning {
                 
                 my %new_out = $self->{_model}->calculate( %model_params );
                 
-                print "## NEW out ##\n";
-                print Dumper \%new_out;
+                #print "## NEW out ##\n";
+                #print Dumper \%new_out;
                 
                 $model_params{workload_class}{service_time} = \@best_S;
                 $model_params{workload_class}{delay} = \@best_D;
                 
                 # TODO optimize algo by keeping best output
+                
                 my %best_out = $self->{_model}->calculate( %model_params );
                 
-                print "## BEST out ##\n";
-                print Dumper \%best_out;
+                #print "## BEST out ##\n";
+                #print Dumper \%best_out;
                 
-                my $gain =  $self->computeDiff( model_output => \%best_out, monitored_perf => $curr_perf )
-                            - $self->computeDiff( model_output => \%new_out, monitored_perf => $curr_perf );
+                my $pDBest = $self->computeDiff( model_output => \%best_out, monitored_perf => $curr_perf );
+                my $pDNew  = $self->computeDiff( model_output => \%new_out, monitored_perf => $curr_perf );
+                my $gain   = $pDBest - $pDNew;
                 
+                
+                #print "pDBest = $pDBest ; pDNew = $pDNew ; gain = $gain ; best_gain = $best_gain\n";
                 if ($gain > $best_gain) {
-                    $best_gain = $gain;
+                    $best_gain     = $gain;
                     $dim_best_gain = $dim;
                     $evo_best_gain = $evo;
                 }
                 
             } # end evo
         } #end dim
+        
         if ($dim_best_gain < $M) {
             $best_S[$dim_best_gain] += $evo_best_gain;
         } else {
             $best_D[$dim_best_gain - $M + 1] += $evo_best_gain;
         }
-        
+       
         # Avoid oscillations around optimal
         if ($best_gain <= 0) {
             $evo_step /= 2;
@@ -365,7 +398,7 @@ sub computeDiff {
         }
     }
     
-    # Here J.Arnaud process a sqrt(pow(dev,2)). Seems useless.
+    # Here MOKA process a sqrt(pow(dev,2)). Seems useless.
     
     my $dev = 0;
     for my $metric ('latency', 'abort_rate', 'throughput') {
