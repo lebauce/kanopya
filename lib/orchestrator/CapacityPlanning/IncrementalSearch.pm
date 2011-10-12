@@ -113,7 +113,7 @@ sub search {
     print "##### BEST ####\n";
     print Dumper \@curr_AC;
     
-    return \@curr_AC;
+    return { AC => \@curr_AC, LC => \@LC };
 }
 
 1;
