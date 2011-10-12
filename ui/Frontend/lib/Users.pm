@@ -41,7 +41,13 @@ sub _userdetails {
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
-            #$self->{admin}->addMessage(from => 'Administrator', level => 'warning', content => $exception->error);
+            my $adm_object = Administrator->new();
+            $adm_object->addMessage(
+                from    => 'Administor',
+                level   => 'warning',
+                content => $exception->error
+            );
+
             redirect('/permission_denied');
         }
         else {
