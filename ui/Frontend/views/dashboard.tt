@@ -1,1 +1,28 @@
-Salut
+<% js_head.push('monitor.js') %>
+<% js_head.push('status.js') %>
+
+<h3>System status</h3>
+<% FOREACH component IN components_status %>
+    <table class="status">
+    <% FOREACH group IN component.group %>
+        <tr id="<% group.id %>" class="simpleexpand">
+            <th colspan="2" class="img<% group.id %>"> <% group.label %></th>
+            <td id="status<% group.id %>" class="img<% group.status %>"></td>
+        </tr>
+
+        <tr id="<% group.id %>" class="hidden">
+            <td>
+                <table class="listdetails">
+                    <% FOREACH detail IN group.details %>
+                        <tr>
+                            <td><% detail.label %></td>
+                            <td id="status<% detail.name %>" class="img<% detail.status %>">&nbsp;</td>
+                        </tr>
+                    <% END %>
+                </table>
+            </td>
+        </tr>
+    <% END %>
+    </table>
+<% END %>
+
