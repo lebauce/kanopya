@@ -48,6 +48,29 @@ get '/dashboard' => sub {
     };
 };
 
+get '/xml_admin_status' => sub {
+    my $admin_components = adminComponentsDef();
+
+    my $xml = "";
+    foreach my $group (@{$admin_components}) {
+        foreach my $def (@$group) {
+            my ($tot, $up) = (0 ,0);
+            foreach my $serv (@{$def->{comps}}) {
+                my $status = getStatus({ proc_name => $serv->{name} });
+                $up++ if ($status eq 'Up');
+                $tot++;
+                $xml .= "<elem id='status$serv->{name}' class='img$status'/>";
+            }
+            my $status = ($tot>0 && $up eq $tot)
+                ? 'Up'
+                :( $up > 0 ? 'Broken' : 'Down' );
+            $xml .= "<elem id='status$def->{id}' class='img$status'/>";
+        }
+    }
+
+    return '<data>' . $xml . '</data>';
+};
+
 =head1 adminComponentsDef
 
 Only returns a structure classifying admin services by category.
