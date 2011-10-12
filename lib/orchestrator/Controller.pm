@@ -23,6 +23,7 @@ use Monitor::Retriever;
 use Entity::Cluster;
 use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
+use Actuator;
 
 use Log::Log4perl "get_logger";
 
@@ -68,15 +69,15 @@ sub init {
     $self->{_time_step} = 30; # controller update frequency
     $self->{_time_laps} = 60; # metrics retrieving laps
     
-    my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     my $model = Model::MVAModel->new();
     $self->{_model} = $model;
+    
+    my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
     #$cap_plan->setConstraints(constraints => { max_latency => 22, max_abort_rate => 0.3 } );
-    
     $self->{_cap_plan} = $cap_plan;
 
-    
+    $self->{_actuator} = Actuator->new();
 }
 
 sub getControllerRRD {
@@ -92,17 +93,17 @@ sub getControllerRRD {
     if ( not -e $rrd_file ) {    
         
         $rrd->create(
-                     step        => $self->{_time_step},  # interval
-                     data_source => { name    => "workload_amount",
-                                       type     => "GAUGE" },
-                    data_source => { name      => "latency",
-                                       type     => "GAUGE" },
-                      data_source => { name    => "abort_rate",
-                                       type      => "GAUGE" },
-                    data_source => { name      => "throughput",
-                                       type      => "GAUGE" },
-                     archive     => { rows      => 500 }
-                     );
+                    step        => $self->{_time_step},  # interval
+                    data_source => {    name    => "workload_amount",
+                                        type    => "GAUGE" },
+                    data_source => {    name    => "latency",
+                                        type    => "GAUGE" },
+                    data_source => {    name    => "abort_rate",
+                                        type    => "GAUGE" },
+                    data_source => {    name    => "throughput",
+                                        type    => "GAUGE" },
+                    archive     => {    rows    => 500 }
+                    );
     }
     
     return $rrd;
@@ -210,6 +211,7 @@ sub manageCluster {
     my $cluster_conf = $self->getClusterConf( cluster => $cluster );
     my $mpl = $cluster_conf->{mpl};
     
+    # Capacity planning settings
     $self->{_cap_plan}->setSearchSpaceForTiers( search_spaces =>     [ 
                                                                     {   min_node => $cluster->getAttr(name => 'cluster_min_node'), 
                                                                         max_node => $cluster->getAttr(name => 'cluster_max_node'),
@@ -217,7 +219,6 @@ sub manageCluster {
                                                                         max_mpl => $mpl,}
                                                                     ]
                                                 );
-    
     $self->{_cap_plan}->setNbTiers( tiers => 1);
     
     my $workload    = $self->getWorkload( cluster => $cluster);
@@ -248,14 +249,21 @@ sub manageCluster {
     
     $self->updateModelInternaParameters( cluster => $cluster, delay => $best_params->{D}, service_time => $best_params->{S});
     
+    # Store and graph results for futur consultation
     $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
-    #$self->store( workload => $workload );
     
+    # Calculate optimal configuration
+    my $optim_conf = $self->{_cap_plan}->calculate( workload_amount => $workload->{workload_amount},
+                                                    workload_class => $workload->{workload_class} );
     
-    my $conf = $self->{_cap_plan}->calculate(   workload_amount => $workload->{workload_amount},
-                                                workload_class => $workload->{workload_class} );
+    # Apply optimal configuration
+    # TODO This method signature should be changed to handle infra in a better way
+    $self->{_actuator}->changeInfraConf(
+                        infra => [ { cluster => $cluster, conf => $cluster_conf } ],
+                        target_conf => $optim_conf,
+    );
     
-    $self->applyConf( conf => $conf, cluster => $cluster);
+    #$self->{_actuator}->changeClusterConf( cluster => $cluster, current_conf => $cluster_conf, target_conf => $optim_conf,);
 }
 
 =head2 modelTuning
@@ -520,16 +528,6 @@ sub genGraph {
       %profil_throughput_draw,
     );
         
-}
-
-sub applyConf {
-    my $self = shift;
-    my %args = @_;
-
-    my $cluster = $args{cluster};
-    
-    print "############ APPLY conf #####################\n";
-    print Dumper $args{conf};
 }
 
 sub update {
