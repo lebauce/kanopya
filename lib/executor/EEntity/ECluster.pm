@@ -1,4 +1,4 @@
-# EMotherboard.pm - Abstract class of EMotherboards object
+# ECluster.pm - Abstract class of EClusters object
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EMotherboard - execution class of motherboard entities
+ECluster - execution class of cluster entities
 
 =head1 SYNOPSIS
 
@@ -27,12 +27,12 @@ EMotherboard - execution class of motherboard entities
 
 =head1 DESCRIPTION
 
-EMotherboard is the execution class of motherboard entities
+ECluster is the execution class of cluster entities
 
 =head1 METHODS
 
 =cut
-package EEntity::EMotherboard;
+package EEntity::ECluster;
 use base "EEntity";
 
 use Entity::Powersupplycard;
@@ -48,9 +48,9 @@ my $errmsg;
 
 =head2 new
 
-    my comp = EMotherboard->new();
+    my comp = ECluster->new();
 
-EMotherboard::new creates a new component object.
+ECluster::new creates a new component object.
 
 =cut
 
@@ -66,7 +66,7 @@ sub new {
 
 =head2 _init
 
-EMotherboard::_init is a private method used to define internal parameters.
+ECluster::_init is a private method used to define internal parameters.
 
 =cut
 
@@ -76,120 +76,45 @@ sub _init {
     return;
 }
 
-sub start {
+sub create {
     my $self = shift;
     my %args = @_;
+
+    General::checkParams(args => \%args, required => ["econtext"]);
+
+    my $si_location = $self->_getEntity()->getAttr(name =>"cluster_si_location");
+    my $si_access_mode = $self->_getEntity()->getAttr(name =>"cluster_si_access_mode");
+    my $si_shared = $self->_getEntity()->getAttr(name =>"cluster_si_shared");
+    my $systemimage = Entity::Systemimage->get(id => $self->_getEntity()->getAttr(name =>"systemimage_id"));;
     
-    if ((! exists $args{econtext} or ! defined $args{econtext})){
-        $errmsg = "EEntity::EMotherboard->start need a econtext named argument!";
-        $log->error($errmsg);    
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    if($si_location eq 'diskless') {
+        if(not $si_shared) {
+            $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
+            $systemimage->save();
+        } 
     }
-    my $powersupplycard_id = $self->_getEntity()->getPowerSupplyCardId();
-    if (!$powersupplycard_id) {
-        if(not -e '/usr/sbin/etherwake') {
-            $errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Execution(error => $errmsg);
+
+    # Create cluster directory
+    my $command = "mkdir -p /clusters/" . $self->_getEntity()->getAttr(name =>"cluster_name");
+    $args{econtext}->execute(command => $command);
+    $log->debug("Execution : mkdir -p /clusters/" . $self->_getEntity()->getAttr(name => "cluster_name"));
+
+    # set initial state to down
+    $self->_getEntity()->setAttr(name => 'cluster_state', value => 'down:'.time);
+    
+    # Save the new cluster in db
+    $self->_getEntity()->save();
+
+    # automatically add System|Monitoragent|Logger components
+    if($systemimage) {
+        my $components = $systemimage->getInstalledComponents(); 
+        foreach my $comp (@$components) {
+            if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
+                $self->_getEntity()->addComponent(component_id => $comp->{component_id});
+                $log->info("Component $comp->{component_name} automatically added");
+            }
         }
-        my $command = "/usr/sbin/etherwake ".$self->_getEntity()->getAttr(name => 'motherboard_mac_address');
-        my $result = $args{econtext}->execute(command => $command);
     }
-    else {
-        my $powersupplycard = Entity::Powersupplycard->get(id=> $powersupplycard_id);
-        my $powersupply_ip = $powersupplycard->getAttr(name => "powersupplycard_ip");
-        $log->debug("Start motherboard with power supply which ip is : <$powersupply_ip>");
-        my $sock = new IO::Socket::INET (
-                                  PeerAddr => $powersupply_ip,
-                                  PeerPort => '1470',
-                                  Proto => 'tcp',
-                                 );
-        $sock->autoflush(1);
-        die "Could not create socket: $!\n" unless $sock;
-        my $powersupply_port_number = $powersupplycard->getMotherboardPort(motherboard_powersupply_id=> $self->{_objs}->{motherboard}->getAttr(name => "motherboard_powersupply_id"));
-        my $pos = $powersupply_port_number;
-        my $s = "R";
-        $s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
-        $s .= pack "B16", "000000000000000";
-        printf $sock $s;
-        close($sock);
-    }
-    my $entity = $self->_getEntity();
-    my $current_state = $self->_getEntity()->getState();
-    $self->_getEntity()->setState(state => 'starting');
-    if(exists $args{erollback}) {
-        $args{erollback}->add(function   =>$entity->can('save'),
-                              parameters => [$entity]);
-        $args{erollback}->add(function   =>$entity->can('setAttr'),
-                              parameters => [$entity, "name" ,"motherboard_state",
-                                            "value", $current_state]);
-    }
-}
-
-sub halt {
-    my $self = shift;
-    my %args = @_;
-    
-    if ((! exists $args{node_econtext} or ! defined $args{node_econtext})){
-        $errmsg = "EEntity::EMotherboard->halt need a node_econtext named argument!";
-        $log->error($errmsg);    
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    my $command = 'halt';
-    my $result = $args{node_econtext}->execute(command => $command);
-    $self->_getEntity()->setState(state => 'stopping');
-}
-
-sub stop {
-    my $self = shift;
-    
-    my $powersupply_id = $self->_getEntity()->getAttr(name=>"motherboard_powersupply_id");
-    if ($powersupply_id) {
-        my $powersupplycard_id = $self->_getEntity()->getPowerSupplyCardId();
-#$adm->getEntity(type => "Powersupplycard",id => $powersupply_id);                                                                                          
-           use IO::Socket;
-        my $powersupplycard = Entity::Powersupplycard->get(id => $powersupplycard_id);
-#$adm->findPowerSupplyCard(powersupplycard_id => $powersupply->{powersupplycard_id});                                                                       
-        my $sock = new IO::Socket::INET (
-                                  PeerAddr => $powersupplycard->getAttr(name => "powersupplycard_ip"),
-                                  PeerPort => '1470',
-                                  Proto => 'tcp',
-                                 );
-        $sock->autoflush(1);
-        die "Could not create socket: $!\n" unless $sock;
-
-        my $pos = $powersupplycard->getMotherboardPort(motherboard_powersupply_id => $powersupply_id);
-        my $s = "R";
-        $s .= pack "B16", "000000000000000";
-        $s .= pack "B16", ('0'x($pos-1)).'1'.('0'x(16-$pos));
-        printf $sock $s;
-        close($sock);
-    }
-
-}
-
-=head2 _init
-
-EMotherboard::checkUp : return 1 if host is pingable, 0 otherwise
-
-=cut
-
-sub checkUp {
-    my $self = shift;
-    my $ip = $self->_getEntity()->getInternalIP()->{ipv4_internal_address};
-    my $p = Net::Ping->new();
-    my $pingable = $p->ping($ip);
-    $p->close();
-#    eval {
-#        my $ssh = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $ip);
-#    };
-#     if($@) {
-#        my $exception = $@;
-#        if ($exception->isa('Kanopya::Exception::Network')) {
-#            return 0;
-#        }
-#    }
-    return $pingable;
 }
 
 1;
