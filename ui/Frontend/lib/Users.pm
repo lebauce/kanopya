@@ -42,8 +42,7 @@ sub _userdetails {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             #$self->{admin}->addMessage(from => 'Administrator', level => 'warning', content => $exception->error);
-            #Need to use Dancer's redirect.
-            redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+            redirect('/permission_denied');
         }
         else {
             $exception->rethrow();
