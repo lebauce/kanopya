@@ -1,8 +1,10 @@
 $color_purple: #80388A;
 $color_gray: #C2C2C2;
 $color_red: #FF002E;
-$color_green: #00F442;
+$color_green: #80E254;
 $color_white: white;
+$menu_pos: 60px;
+$menu_width: 65%;
 
 @mixin center {
     margin-left: auto;
@@ -21,11 +23,11 @@ body {
     width: 100%;
     background-color: $color_white;
     border-top: 2px solid $color_purple;
-    height: 100px;
+    height: 150px;
     #logo {
         position: absolute;
-        top: 25px;
-        left: 260px;
+        top: 10px;
+        left: 110px;
     }
     #infologin {
         position: absolute;
@@ -46,11 +48,16 @@ body {
             text-decoration: none;
         }
     }
+    #menu_separator {
+        border-bottom: 1px solid $color_gray;
+        top: $menu_pos;
+    }
     #menu {
-        margin-top: 35px;
+        margin-top: $menu_pos;
         margin-left: auto;
         margin-right: auto;
-        width: 50%;
+        width: $menu_width;
+
         ul {
             list-style-type: none;
         }
@@ -80,10 +87,10 @@ body {
         }
     }
     #submenu {
-        margin-top: 75px;
+        margin-top: $menu_pos + 40px;
         margin-left: auto;
         margin-right: auto;
-        width: 50%;
+        width: $menu_width;
         ul {
             list-style-type: none;
             li {
