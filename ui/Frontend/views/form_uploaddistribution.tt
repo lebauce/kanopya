@@ -6,7 +6,7 @@
 	<span class="error">Some fields below are missing or invalid</span>
 <% END %>
 </div>
-<form method="POST" action="/distributions/process_uploaddistribution" enctype="multipart/form-data">
+<form method="POST" action="/distributions/upload" enctype="multipart/form-data">
 <table class="form">
 <tr>
 	<td><input type="file" name="distributionfile" size="32" />

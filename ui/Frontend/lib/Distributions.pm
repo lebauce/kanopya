@@ -2,6 +2,7 @@ package Distributions;
 
 use Dancer ':syntax';
 
+use Administrator;
 use Entity::Distribution;
 use Operation;
 
@@ -40,6 +41,14 @@ get '/distributions' => sub {
     };
 };
 
+get '/distributions/upload' => sub {
+    template 'form_uploaddistribution', {
+        title_page         => 'Systems - Distributions upload',
+        eid                => session('EID'),
+        object             => vars->{adm_object}
+    };
+};
+
 get '/distributions/:distributionid' => sub {
     # Call for Entity components for Distributions details.
     my $edistribution = Entity::Distribution->get(id => params->{distributionid});
@@ -58,3 +67,39 @@ get '/distributions/:distributionid' => sub {
     };
 };
 
+
+
+post '/distributions/upload' => sub {
+    my $adm = Administrator->new;
+    my $filename = params->{distributionfile};
+    open (OUTFILE, ">>/tmp/$filename");
+    my $buffer;
+    while (my $bytesread = read($filename, $buffer, 1024)) {
+          print OUTFILE $buffer;
+    }
+    close OUTFILE;
+    
+    eval {
+
+        Operation->enqueue(
+            priority => 200,
+            type     => 'DeployDistribution',
+            params   => { file_path => "/tmp/$filename" },
+        );
+        
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';    
+        }
+        else { $exception->rethrow(); }
+    }
+    else {    
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new distribution upload added to execution queue'); 
+        redirect '/distributions';
+    }     
+};
+
+1;
