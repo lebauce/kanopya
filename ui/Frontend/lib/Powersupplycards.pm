@@ -23,7 +23,7 @@ sub _powersupplycards {
 
 
 sub _powersupply_card_details {
-	my $id = @_;
+    my $id = @_;
     
     my $epowersupplycard = Entity::Powersupplycard->get(id => $id));
     
@@ -37,7 +37,7 @@ sub _powersupply_card_details {
     my $mac_address = $epowersupplycard->getAttr(name => 'powersupplycard_mac_address'));
     my $ip = $epowersupplycard->getAttr(name => 'powersupplycard_ip'));
     
-    return ($active,$model,$slots_count,$powersupplycard_name,$powersupplycard_desc,$mac_address,$ip);	
+    return ($active,$model,$slots_count,$powersupplycard_name,$powersupplycard_desc,$mac_address,$ip);    
 }
      # header / menu variables
     $tmpl->param('titlepage' => "");
@@ -46,27 +46,27 @@ sub _powersupply_card_details {
     $tmpl->param('username' => $self->session->param('username'));
 
 get '/powersupply' => sub {
-	my $can_create;
+    my $can_create;
     my $methods = Entity::Powersupplycard->getPerms();
     if($methods->{'create'}->{'granted'}) { $can_create = 1 }
-	template 'powersupply' {
+    template 'powersupply' {
           titlepage => "Hardware - Powersupplycards",
-	      can_create => $can_create,
-	};
+          can_create => $can_create,
+    };
 }     
 
 get '/powersupply/:id' => sub {
-	my ($active,$model,$slots_count,$powersupplycard_name,$powersupplycard_desc,$mac_address,$ip) = _powersupply_card_details(params->{id});
-	template 'powersupply' {
+    my ($active,$model,$slots_count,$powersupplycard_name,$powersupplycard_desc,$mac_address,$ip) = _powersupply_card_details(params->{id});
+    template 'powersupply' {
           titlepage => "Power supply card's overview",
-	      can_create => $can_create,
-		  active => $active,
-		  model => $model,    
-		  slots_count => $slots_count,
-		  powersupplycard_name => $powersupplycard_name,
-		  powersupplycard_desc => $powersupplycard_desc,
-		  mac_address => $mac_address,
-		  ip => $ip,
-	};
+          can_create => $can_create,
+          active => $active,
+          model => $model,    
+          slots_count => $slots_count,
+          powersupplycard_name => $powersupplycard_name,
+          powersupplycard_desc => $powersupplycard_desc,
+          mac_address => $mac_address,
+          ip => $ip,
+    };
 }     
-	
+    
