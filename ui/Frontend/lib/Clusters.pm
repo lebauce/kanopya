@@ -84,8 +84,7 @@ sub _clusters {
 }
 
 get '/clusters/add' => sub {
-
-my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});
+    my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});
     my @ekernels = Entity::Kernel->getKernels(hash => {});
     my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
     my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
@@ -133,7 +132,59 @@ my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'})
 };
 
 post '/clusters/add' => sub {
+    my $adm = Administrator->new;
+    
+    my ($si_location, $si_access_mode, $si_shared, $systemimage_id);
 
+    $si_location = params->{'si_location'};
+    if($si_location eq 'local') {
+        $si_access_mode = 'rw';
+        $si_shared = 0;
+    } elsif($si_location eq 'diskless') {
+        if(params->{'si_shareordedicate'} eq 'shared') {
+            $si_access_mode = 'ro';
+            $si_shared = 1;
+            $systemimage_id = params->{'systemimage_forshared'};
+        } else {
+            $si_access_mode = 'rw';
+            $si_shared = 0;
+            $systemimage_id = params->{'systemimage_fordedicated'};
+        }
+    }
+
+    eval {
+        my $params = {
+            cluster_name => params->{'name'},
+            cluster_desc => params->{'desc'},
+            cluster_si_location => $si_location,
+            cluster_si_access_mode => $si_access_mode,
+            cluster_si_shared => $si_shared,
+            cluster_min_node => params->{'min_node'},
+            cluster_max_node => params->{'max_node'},
+            cluster_priority => params->{'priority'},
+            systemimage_id => $systemimage_id,
+            cluster_domainname => params->{'domainname'},
+            cluster_nameserver => params->{'nameserver'},
+        };
+        if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
+        my $ecluster = Entity::Cluster->new(%$params);
+        $ecluster->create();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else {
+        $exception->rethrow();
+     #   return $self->error_occured("Error during operation enqueuing : $exception->error");
+        }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster creation adding to execution queue');
+        redirect '/architectures/clusters';
+    }
 };
 
 get '/clusters' => sub {
