@@ -1,7 +1,7 @@
 <%# <style type="text/css">@import url(/css/form.css);</style>
 %>
 <div class="title">Assign <% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
-<form method="POST" action="/clusters/process_setpubliciptocluster">
+<form method="POST" action="">
 <table class="form">	
 	<tr><td><select name="publicip_id">
 	<% FOREACH ip IN FREEPUBLICIPS %>
@@ -15,7 +15,7 @@
 	</tr>
 </table>
 <div class="buttons">
-	<input type="hidden" name="cluster_id" value="<% CLUSTER_ID %>" />
+	<input type="hidden" name="cluster_id" value="<% cluster_id %>" />
 	<input type="submit" value="ok"/>
 	<input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
