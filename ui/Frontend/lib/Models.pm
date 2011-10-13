@@ -5,7 +5,7 @@ use Dancer ':syntax';
 use Entity::Motherboardmodel;
 use Entity::Processormodel;
 
-prefix 'infrastructures';
+prefix '/infrastructures';
 
 sub _models {
     

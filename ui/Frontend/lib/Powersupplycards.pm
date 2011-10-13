@@ -4,7 +4,7 @@ use Dancer ':syntax';
 use Entity::Powersupplycard;
 use Entity::Powersupplycardmodel;
 
-prefix 'infrastructures';
+prefix '/infrastructures';
 
 sub _powersupplycards {
 

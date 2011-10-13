@@ -8,7 +8,7 @@ use Operation;
 
 use Log::Log4perl "get_logger";
 
-prefix '/systems'
+prefix '/systems';
 
 my $log = get_logger("webui");
 
