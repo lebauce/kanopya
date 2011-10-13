@@ -4,6 +4,8 @@ use Dancer ':syntax';
 
 use Entity::Kernel;
 
+prefix '/systems';
+
 # kernels listing page
 
 sub _view_kernels {

@@ -6,6 +6,8 @@ use Administrator;
 use Entity::Motherboardmodel;
 use Entity::Processormodel;
 
+prefix '/infrastructures';
+
 sub _models {
     
     my @eprocessormodels = Entity::Processormodel->getProcessormodels(hash => {});

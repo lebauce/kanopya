@@ -8,6 +8,8 @@ use Operation;
 
 use Log::Log4perl "get_logger";
 
+prefix '/systems';
+
 my $log = get_logger("webui");
 
 get '/components' => sub {
