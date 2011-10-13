@@ -8,6 +8,8 @@ use Entity::Component;
 
 use Log::Log4perl "get_logger";
 
+prefix '/dashboard';
+
 get '/status' => sub {
     my $admin_components  = adminComponentsDef();
     my $components = Entity::Component->getComponentsByCategory();

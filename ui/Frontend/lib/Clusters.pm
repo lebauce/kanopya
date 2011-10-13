@@ -11,6 +11,8 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("webui");
 
+prefix '/architectures';
+
 sub _timestamp_format {
     my %args = @_;
     

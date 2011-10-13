@@ -112,14 +112,14 @@ body {
     hr {
         margin-top: 30px;
     }
-    //border-bottom: 2px solid gray;
+
 }
 
 #container {
-    @include center;
+    width: 85%;
+    margin-left: auto;
+    margin-right: auto;
     background-color: $color_white;
-    padding-left: 10px;
-    padding-right: 10px;
     padding-top: 108px;
     min-height: 498px;
 }
