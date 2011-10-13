@@ -30,5 +30,5 @@ cmp_deeply(\%QoS,
           'latency' => '0.060875',
           'abort_rate' => '0.66161849084335'
     
-},'model output is MOKA java code compliant');
+},'scenario 1 for MVAModel checked');
 

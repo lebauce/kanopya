@@ -128,7 +128,7 @@ sub matchConstraints {
     my %args = @_;
  
 
-     print "Perf: " . join( " | ", (map { "$_ => $args{perf}{$_}" } keys %{$args{perf}} ) ) . "\n";
+     #print "Perf: " . join( " | ", (map { "$_ => $args{perf}{$_}" } keys %{$args{perf}} ) ) . "\n";
     
     my $match = (   ($args{perf}{latency} <= $self->{_constraints}{max_latency}) &&
                     ($args{perf}{abort_rate} <= $self->{_constraints}{max_abort_rate}) );

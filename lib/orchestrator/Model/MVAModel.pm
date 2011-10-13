@@ -62,7 +62,7 @@ sub calculate {
     my $self = shift;
     my %args = @_;
     
-    print "MVAModel CALCULATE\n";
+    
     
     my $M   = $args{configuration}{M};
     my @AC  = @{ $args{configuration}{AC} };
@@ -106,7 +106,7 @@ sub calculate {
     my $N_rejected = sum @Nr;
     my $N_admitted = $workload_amount - $N_rejected;
     
-    print ">>> Admitted : $N_admitted / $workload_amount\n";
+    #print ">>> Admitted : $N_admitted / $workload_amount\n";
     
     #####
     # Service latency
