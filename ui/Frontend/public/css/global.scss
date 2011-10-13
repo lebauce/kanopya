@@ -15,7 +15,6 @@ $menu_width: 65%;
 body {
     min-height: 100%;
     background-color: $color_purple;
-//    font: small Georgia,Serif;
     font-style: arial;
 }
 
@@ -106,7 +105,6 @@ body {
                     font-size: 13px;
                     font-weight: bold;
                 }
-                
             }
             li:hover {
                     background-color: $color_green;
@@ -128,6 +126,8 @@ body {
     margin-right: auto;
     background-color: $color_white;
     padding-top: 108px;
+    padding-right: 20px;
+    padding-left: 20px;
     min-height: 498px;
 }
 
