@@ -20,3 +20,36 @@ get '/components' => sub {
     };
 };
 
+get '/components/upload' => sub {
+    template 'form_uploadcomponent', {};
+};
+
+post '/components/upload' => sub {
+    my $adm = Administrator->new;
+    my $file = request->uploads->{componentfile};
+    my $content  = $file->content;
+    my $filename = $file->filename;
+    $file->copy_to("/tmp/$filename");
+
+    eval {
+        Operation->enqueue(
+            priority => 200,
+            type     => 'DeployComponent',
+            params   => { file_path => "/tmp/$filename" },
+        );
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');    
+        }
+        else { $exception->rethrow(); }
+    }
+    else {    
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new component upload added to execution queue'); 
+        redirect '/components'; 
+    }  
+};
+
+1;
