@@ -4,7 +4,7 @@
 	<tr><td><% kernel.kernel_version %></td>
 	<td class="toright">
 	<% IF kernel.can_setperm %>
-		<a class="imgPermission" href="/kernels/permissions/view_selectconsumer?entitytype=Kernel&id=<% kernel.kernel_id %>">permissions</a>
+		<a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=Kernel&id=<% kernel.kernel_id %>">permissions</a>
 	<% END %></td></tr>
 	<tr><td colspan="2" class="italic"><% kernel.kernel_desc %></td></tr>
 	</table>

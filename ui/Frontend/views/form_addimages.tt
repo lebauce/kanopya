@@ -2,7 +2,7 @@
 <style type="text/css">@import url(/css/form.css);</style>
 %>
 <div class="title">create system image<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
-<form method="POST" action="/images/add">
+<form method="POST" action="/systems/images/add">
 <table class="form">
 <tr>
 	<td class="label">Name :</td>

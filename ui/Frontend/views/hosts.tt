@@ -3,7 +3,7 @@
 	<tr><td colspan="3"><h1><% m.motherboard_label %></h1></td></tr>
 	<tr><td><% m.motherboard_hostname %></td><td>
 	<% IF m.active %>Active<% ELSE %>Deactivated<% END %></td><td class="toright">
-	<a class="imgManage" href="/motherboards/<% m.motherboard_id %>">details</a></td></tr>
+	<a class="imgManage" href="/infrastructures/hosts/<% m.motherboard_id %>">details</a></td></tr>
 	<tr><td><% m.motherboard_ip %></td>
 	<% IF m.active %>
 		<% IF m.state_up %><td><span class="state imgUp">Up</span></td><% END %>
@@ -18,7 +18,7 @@
 <% END %>
 <div class="actions">
 <% IF can_create %>
-	<a class="action imgAdding" href="/motherboards/form_addmotherboard">add a new host</a>
+	<a class="action imgAdding" href="/infrastructures/hosts/add">add a new host</a>
 	<p class="italic">add a new host.</p>
 <% END %>&nbsp;
 </div>

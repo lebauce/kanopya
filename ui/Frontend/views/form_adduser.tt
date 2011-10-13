@@ -2,7 +2,7 @@
 <style type="text/css">@import url(/css/form.css);</style>
 %>
 <div class="title">create user<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
-<form method="POST" action="/users/process_adduser">
+<form method="POST" action="/rights/users/add">
 <table class="form">
 	<tr>
 		<td class="label">First name :</td>
