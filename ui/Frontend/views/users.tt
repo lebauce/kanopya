@@ -2,13 +2,13 @@
 <caption>Users</caption>
 <% FOREACH user IN users_list %>
 	<td><span class="bold"><% user.user_firstname %> <% user.user_lastname %></span></td>
-	<td><a class="imgManage" href="/users/<% user.user_id %>">details</a></td>
+	<td><a class="imgManage" href="/rights/users/<% user.user_id %>">details</a></td>
 	</tr>
 <% END %>
 </table>
 <div class="actions">
 <% IF can_create %>
-	<a class="action imgAdding" href="/users/form_adduser">create a user</a>
+	<a class="action imgAdding" href="/rights/users/add">create a user</a>
 	<p class="italic">Create a new user.</p>
 <% END %>
 &nbsp;
