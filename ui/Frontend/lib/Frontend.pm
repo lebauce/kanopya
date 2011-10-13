@@ -28,16 +28,27 @@ before_template sub {
     $tokens->{css_head}  = [];
     $tokens->{js_head}   = [];
     $tokens->{username}  = session('username');
-    $tokens->{is_active} = sub {
+    $tokens->{menu_selection} = sub {
         my $url = shift;
 
-        return 'class="selected"' if ( $url eq request->path() );
+        return 'class="selected"' if ( $url eq (split '/', request->path())[-2] );
+    };
+    $tokens->{is_menu_selected} = sub {
+        my $url = shift;
+
+        return ( $url eq (split '/', request->path())[-2] );
+    };
+    $tokens->{submenu_selection} = sub {
+        my $url = shift;
+        
+        # Doing this we can't have submenu with the same name in different menu
+        return 'class="selected"' if ( $url eq (split '/', request->path())[-1] );
     };
 };
 
 get '/' => sub {
     if ( session('username') ) {
-        redirect '/dashboard';
+        redirect '/dashboard/status';
     }
     else {
         redirect '/login';

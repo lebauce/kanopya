@@ -25,14 +25,14 @@ get qr(/.*) => sub {
 };
 
 get '/login' => sub {
-    redirect '/dashboard' if ( session('EID') );
+    redirect '/dashboard/status' if ( session('EID') );
     template 'login', {},{ layout=>'login' };
 };
 
 post '/login' => sub {
     my $user     = param('login');
     my $password = param('password');
-    my $redirect = session->{login_redirect_url} || '/dashboard';
+    my $redirect = session->{login_redirect_url} || '/dashboard/status';
 
     my $input_hash = {
         login    => $user,

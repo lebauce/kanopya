@@ -52,11 +52,39 @@
             <img id="smalllogo" src="/images/kanopya_small_logo.png" />
             <div id="menu">
                 <ul>
-                    <li><a href="/dashboard" <% is_active('/dashboard') %>>Dashboard</a></li>
-                    <li><a href="#" <% is_active('/essai') %>>Essai</a></li>
+                    <li><a href="/dashboard/status" <% menu_selection('dashboard') %>>Dashboard</a></li>
+                    <li><a href="/rights/users" <% menu_selection('rights') %>>Rights</a></li>
+                    <li><a href="/infrastructures/hosts" <% menu_selection('infrastructures') %>>Infrastructures</a></li>
+                    <li><a href="/systems/kernels" <% menu_selection('systems') %>>Systems</a></li>
+                    <li><a href="/architectures/clusters" <% menu_selection('architectures') %>>Architectures</a></li>
                 </ul>
             </div>
-
+            
+            <div id="submenu">
+                <ul>
+                    <% IF is_menu_selected('dashboard') %>
+                        <li><a href="/dashboard/status" <% submenu_selection('status') %>>Status</a></li>
+                        <li><a href="/dashboard/logs" <% submenu_selection('logs') %>>Logs</a></li>
+                    <% ELSIF is_menu_selected('rights') %>
+                        <li><a href="/rights/users" <% submenu_selection('users') %>>Users</a></li>
+                        <li><a href="/rights/groups" <% submenu_selection('groups') %>>Groups</a></li>
+                        <li><a href="/rights/permissions" <% submenu_selection('permissions') %>>Permissions</a></li>
+                    <% ELSIF is_menu_selected('infrastructures') %>
+                        <li><a href="/infrastructures/hosts" <% submenu_selection('hosts') %>>Hosts</a></li>
+                        <li><a href="/infrastructures/models" <% submenu_selection('models') %>>Models</a></li>
+                        <li><a href="/infrastructures/powersupply" <% submenu_selection('powersupply') %>>Power supply cards</a></li>
+                    <% ELSIF is_menu_selected('systems') %>
+                        <li><a href="/systems/kernels" <% submenu_selection('kernels') %>>Kernels</a></li>
+                        <li><a href="/systems/distributions" <% submenu_selection('distributions') %>>Distributions</a></li>
+                        <li><a href="/systems/components" <% submenu_selection('components') %>>Components</a></li>
+                        <li><a href="/systems/images" <% submenu_selection('images') %>>System images</a></li>
+                     <% ELSIF is_menu_selected('architectures') %>
+                        <li><a href="/architectures/clusters" <% submenu_selection('clusters') %>>Clusters</a></li>
+                        <li><a href="/architectures/networks" <% submenu_selection('networks') %>>Networks</a></li>
+                    <% END %>
+                </ul>
+            </div>
+            
             <div id="infologin">
                 logged as <span class="bold"><% username %></span>
             </div>
