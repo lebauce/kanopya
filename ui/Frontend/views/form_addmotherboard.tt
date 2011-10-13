@@ -1,8 +1,7 @@
-<%#
-<style type="text/css">@import url(/css/form.css);</style>
+<%# <style type="text/css">@import url(/css/form.css);</style>
 %>
-<div class="title">create host<% some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
-<form method="POST" action="/cgi/kanopya.cgi/motherboards/process_addmotherboard">
+<div class="title">create host<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
+<form method="POST" action="/infrastructures/hosts/add">
 <table class="form">
 	<tr>
 		<td class="label">MAC address :</td>
@@ -16,24 +15,24 @@
 	<tr>
 		<td class="label">Motherboard model :</td>
 		<td><select name="motherboard_model">
-		<% FOREACH m IN motherboardmodels %>
-			<option value="<% m.id %>"><% m.name %></option>
+		<% FOREACH model IN motherboardmodels_list %>
+			<option value="<% model.id %>"><% model.name %></option>
 		<% END %>	
 		</select></td>
 	</tr>
 	<tr>
 		<td class="label">Processor model :</td>
 		<td><select name="cpu_model">
-		<% FOREACH p IN processormodels %>
-			<option value="<% p.id %>"><% p.name %></option>
+		<% FOREACH model IN processormodels_list %>
+			<option value="<% model.id %>"><% model.name %></option>
 		<% END %>	
 		</select></td>
 	</tr>
 	<tr>
 		<td class="label">Default kernel :</td>
 		<td><select name="kernel">
-		<% FOREACH k IN kernels %>
-			<option value="<% k.id %>"><% k.name %></option>
+		<% FOREACH kernel IN kernels_list %>
+			<option value="<% kernel.id %>"><% kernel.name %></option>
 		<% END %>	
 		</select></td>
 	</tr>
@@ -45,8 +44,8 @@
 		<td class="label">Power supply card :</td>
 		<td><select name="powersupplycard_id">
 			<option value="none">none</option>
-		<% FOREACH psc IN powersupplycards %>
-			<option value="<% psc.powersupplycard_id %>"><% psc.powersupplycard_name %></option>
+		<% FOREACH psc IN powersupplycards_list %>
+			<option value="<% psc.id %>"><% psc.name %></option>
 		<% END %>	
 		</select></td>
 	</tr>
@@ -54,7 +53,6 @@
 		<td class="label">Port number :</td>
 		<td><input type="text" name="powersupplyport_number" maxlength="2" size="2"/>
 	</tr>
-	
 </table>
 <div class="buttons">
 <input type="submit" value="ok"/>

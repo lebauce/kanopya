@@ -1,9 +1,8 @@
-<%#
-<style type="text/css">@import url(/css/form.css);</style>
+<%# <style type="text/css">@import url(/css/form.css);</style>
 %>
 <div class="title">add a hard disk
 <% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
-<form method="POST" action="/motherboards/process_addharddisk">
+<form method="POST" action="/infrastructures/hosts/<% host_id %>/addharddisk">
 <table class="form">
 	<tr>
 		<td class="label">Device :</td>
@@ -14,7 +13,7 @@
 </table>
 <div class="buttons">
 <input type="submit" value="ok"/>
-<input type="hidden" name="motherboard_id" value="<% motherboard_id %>"/>
+<input type="hidden" name="motherboard_id" value="<% host_id %>"/>
 <input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form> 

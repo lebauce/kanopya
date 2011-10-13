@@ -9,6 +9,7 @@ use Dashboard;
 use Components;
 use Clusters;
 use Distributions;
+use Hosts;
 use Images;
 use Kernels;
 use Images;
