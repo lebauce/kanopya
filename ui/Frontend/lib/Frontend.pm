@@ -35,18 +35,18 @@ before_template sub {
     $tokens->{menu_selection} = sub {
         my $url = shift;
 
-        return 'class="selected"' if ( $url eq (split '/', request->path())[-2] );
+        return 'class="selected"' if ( $url eq (split '/', request->path())[1] );
     };
     $tokens->{is_menu_selected} = sub {
         my $url = shift;
 
-        return ( $url eq (split '/', request->path())[-2] );
+        return ( $url eq (split '/', request->path())[1] );
     };
     $tokens->{submenu_selection} = sub {
         my $url = shift;
         
         # Doing this we can't have submenu with the same name in different menu
-        return 'class="selected"' if ( $url eq (split '/', request->path())[-1] );
+        return 'class="selected"' if ( $url eq (split '/', request->path())[2] );
     };
 };
 

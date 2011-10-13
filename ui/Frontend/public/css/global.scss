@@ -32,8 +32,14 @@ body {
     }
     #infologin {
         position: absolute;
-        top: 0px;
+        top: 5px;
         right: 127px;
+        color: $color_gray;
+        font-size: 11px;
+        font-weight: bold;
+        #username {
+            color: $color_purple;
+        }
     }
     .logout {
         position: absolute;
@@ -44,6 +50,9 @@ body {
         text-align: center;
         width: 84px;
         height: 25px;
+        padding-top: 5px;
+        font-size: 11px;
+        font-weight: bold;
         a {
             color: $color_white;
             text-decoration: none;
@@ -51,14 +60,16 @@ body {
     }
     #menu_separator {
         border-bottom: 1px solid $color_gray;
-        top: $menu_pos;
+        top: $menu_pos + 34px;
+        width: 100%;
+        position: absolute;
     }
     #menu {
         margin-top: $menu_pos;
         margin-left: auto;
         margin-right: auto;
         width: $menu_width;
-
+        
         ul {
             list-style-type: none;
         }
