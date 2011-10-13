@@ -1,8 +1,9 @@
 package Frontend;
-use Dancer;
 
+use Dancer;
 use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
+
 use Login;
 use Dashboard;
 use Components;
@@ -13,6 +14,7 @@ use Kernels;
 use Images;
 use Models;
 use Users;
+
 use Log::Log4perl;
 
 our $VERSION = '0.1';
