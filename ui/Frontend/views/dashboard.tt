@@ -1,4 +1,4 @@
-<% css_head.push('dashboard.css') %>
+<% css_head.push('icon.css') %>
 <% css_head.push('listing.css') %>
 
 <% js_head.push('monitor.js') %>
