@@ -25,7 +25,7 @@
 
 <div class="actions">
 <% IF can_create %>
-	<a class="action imgAdding" href="/clusters/form_addcluster">create a cluster</a>
+	<a class="action imgAdding" href="/architectures/clusters/form_addcluster">create a cluster</a>
 	<p class="italic">Create and configure a new cluster.</p>
 <% END %>
 </div>
