@@ -2,7 +2,7 @@
 <style type="text/css">@import url(/css/form.css);</style>
 %>
 <div class="title">create model of motherboard<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
-<form method="POST" action="/models/process_addmotherboardmodel">
+<form method="POST" action="/models/motherboards/add">
 <table class="form">
 	<tr>
 		<td class="label">Brand :</td>
@@ -40,7 +40,7 @@
 		<td class="label">solded processor :</td>
 		<td><select name="processorid">
 			<option selected="selected" value="0">no</option>
-			<% FOREACH p IN processormodels %>
+			<% FOREACH p IN processormodels_list %>
 			<option value="<% p.processormodel_id %>"><% p.processormodel_name %></option>
 			<% END %>
 		</select></td>

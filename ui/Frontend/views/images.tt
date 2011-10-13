@@ -10,7 +10,7 @@
 
 <div class="actions">
 <% IF can_create %>
-<a class="action imgAdding" href="/images/form_addsystemimage">create a system image</a>
+<a class="action imgAdding" href="/images/add">create a system image</a>
 <p class="italic">Create a new system image.</p>
 <% END %>
 </div>

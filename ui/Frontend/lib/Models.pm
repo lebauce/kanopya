@@ -2,6 +2,7 @@ package Models;
 
 use Dancer ':syntax';
 
+use Administrator;
 use Entity::Motherboardmodel;
 use Entity::Processormodel;
 
@@ -73,3 +74,109 @@ get '/models' => sub {
 		motherboardmodels => $motherboardmodels,
 	};
 };
+
+get '/models/motherboards/add' => sub {
+    my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});
+    my $pmodels = [];
+    foreach my $x (@processormodels){
+        my $tmp = {
+            processormodel_id => $x->getAttr( name => 'processormodel_id'),
+            processormodel_name => join(' ',$x->getAttr(name =>'processormodel_brand'),$x->getAttr(name => 'processormodel_name')),
+        };
+        push (@$pmodels, $tmp);
+    }
+    template 'form_addmotherboardmodel', {
+        processormodels_list => $pmodels,
+    };
+};
+
+post '/models/motherboards/add' => sub {
+    my $adm = Administrator->new;
+    my $mothmodel = Entity::Motherboardmodel->new(
+        motherboardmodel_brand         => params->{brand},
+        motherboardmodel_name          => params->{name},
+        motherboardmodel_chipset       => params->{chipset},
+        motherboardmodel_processor_num => params->{procnum},
+        motherboardmodel_consumption   => params->{consumption},
+        motherboardmodel_iface_num     => params->{ifacenum},
+        motherboardmodel_ram_slot_num  => params->{ramslotnum},
+        motherboardmodel_ram_max       => params->{rammax},
+        processormodel_id              => params->{processorid} ne '0' ? params->{processorid} : undef,
+    );
+    eval { $mothmodel->create(); };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else { $exception->rethrow(); }
+    }
+    else { redirect '/models'; }
+};
+
+get '/models/processors/add' => sub {
+    template 'form_addprocessormodel', {};
+};
+
+post '/models/processors/add' => sub {
+    my $adm = Administrator->new;
+    my $procmodel = Entity::Processormodel->new(
+        processormodel_brand       => params->{brand},
+        processormodel_name        => params->{name},
+        processormodel_core_num    => params->{coresnum},
+        processormodel_clock_speed => params->{clockspeed},
+        processormodel_l2_cache    => params->{l2cache},
+        processormodel_max_tdp     => params->{tdp},
+        processormodel_64bits      => params->{is64bits},
+        processormodel_virtsupport => params->{virtsupport},
+    );
+    eval { $procmodel->create(); };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else { $exception->rethrow(); }
+    }
+    else { redirect '/models'; }
+};
+
+get '/models/motherboards/:modelid/remove' => sub {
+    my $adm = Administrator->new;
+    my $id = params->{modelid};
+    eval {
+        my $emotherboardmodel = Entity::Motherboardmodel->get(id => $id);
+        $emotherboardmodel->delete();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else { $exception->rethrow(); }
+    }
+    else { redirect '/models'; }
+};
+
+get '/models/processors/:modelid/remove' => sub {
+    my $adm = Administrator->new;
+    my $id = params->{modelid};
+    eval {
+        my $eprocessormodel = Entity::Processormodel->get(id => $id);
+        $eprocessormodel->delete();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else { $exception->rethrow(); }
+    }
+    else { redirect '/models'; }
+};
+
+1;
