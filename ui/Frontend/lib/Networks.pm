@@ -3,10 +3,10 @@ package Networks;
 use Dancer ':syntax';
 
 get '/public/ips' => sub {
-	template 'publicips', {
-		publicips => $adm_object->{manager}->{network}->getPublicIP(),
+    template 'publicips', {
+        publicips => $adm_object->{manager}->{network}->getPublicIP(),
         titlepage => 'Public IPs View',
-		};
+     };
 };
 
 get '/public/ip/remove/:id' => sub {
@@ -31,7 +31,7 @@ get '/public/ip/remove/:id' => sub {
            content => 'public ip removed'
        );
     }
-    
+
     redirect('/public/ips');
 };
 
