@@ -138,4 +138,31 @@ get '/users/:id' => sub {
     };
 };
 
+get '/user/delete/:id' => sub {
+    my $adm_object = Administrator->new();
+
+    eval {
+        my $euser = Entity::User->get( id => params->{id} );
+        $euser->delete();
+    };
+    if ( $@ ) {
+        my $exception = $@;
+        if ( Kanopya::Exception::Permission::Denied->caught() ) {
+           $adm_object->addMessage(
+               from    => 'Administrator',
+               level   => 'error',
+               content => $exception->error
+           );
+
+           redirect '/permission_denied';
+        }
+        else {
+            $exception->rethrow();
+        }
+    }
+    else {
+        redirect '/users';
+    }
+};
+
 1;
