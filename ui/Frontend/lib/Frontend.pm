@@ -8,6 +8,7 @@ use Dashboard;
 use Components;
 use Clusters;
 use Distributions;
+use Images;
 use Kernels;
 use Images;
 use Models;
