@@ -71,22 +71,17 @@ get '/distributions/:distributionid' => sub {
 
 post '/distributions/upload' => sub {
     my $adm = Administrator->new;
-    my $filename = params->{distributionfile};
-    open (OUTFILE, ">>/tmp/$filename");
-    my $buffer;
-    while (my $bytesread = read($filename, $buffer, 1024)) {
-          print OUTFILE $buffer;
-    }
-    close OUTFILE;
-    
+    my $file = request->uploads->{distributionfile};
+    my $content  = $file->content;
+    my $filename = $file->filename;
+    $file->copy_to("/tmp/$filename");
+       
     eval {
-
         Operation->enqueue(
             priority => 200,
             type     => 'DeployDistribution',
             params   => { file_path => "/tmp/$filename" },
         );
-        
     };
     if($@) {
         my $exception = $@;
