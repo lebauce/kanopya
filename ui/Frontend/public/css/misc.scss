@@ -1,3 +1,8 @@
+$color_gray: #C2C2C2;
 
+h2 {
+    text-transform: uppercase;
+    border-top: 2px solid $color_gray;
+}
 
 .hidden { display: none;}
