@@ -55,13 +55,13 @@ sub _userdetails {
         }
     }
     else {
-        $user_desc         =  $euser->getAttr('name' => 'user_desc'));
-        $user_firstname    =  $euser->getAttr('name' => 'user_firstname'));
-        $user_lastname     =  $euser->getAttr('name' => 'user_lastname'));
-        $user_email        =  $euser->getAttr('name' => 'user_email'));
-        $user_login        =  $euser->getAttr('name' => 'user_login'));
-        $user_creationdate =  $euser->getAttr('name' => 'user_creationdate'));
-        $user_lastaccess   =  $euser->getAttr('name' => 'user_lastaccess'));
+        $user_desc         =  $euser->getAttr('name' => 'user_desc');
+        $user_firstname    =  $euser->getAttr('name' => 'user_firstname');
+        $user_lastname     =  $euser->getAttr('name' => 'user_lastname');
+        $user_email        =  $euser->getAttr('name' => 'user_email');
+        $user_login        =  $euser->getAttr('name' => 'user_login');
+        $user_creationdate =  $euser->getAttr('name' => 'user_creationdate');
+        $user_lastaccess   =  $euser->getAttr('name' => 'user_lastaccess');
         # password is not retrieved because displayed like ********
 
         my $groups  = [];
@@ -99,7 +99,7 @@ get '/users' => sub {
 
     template 'users', {
         titlepage  => "Settings - Groups",
-        users_list => _users();
+        users_list => _users()
     };
 };
 
