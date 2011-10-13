@@ -33,6 +33,7 @@ post '/login' => sub {
     my $user     = param('login');
     my $password = param('password');
     my $redirect = session->{login_redirect_url} || '/dashboard/status';
+    $redirect = '/dashboard/status' if $redirect eq '/';
 
     my $input_hash = {
         login    => $user,
