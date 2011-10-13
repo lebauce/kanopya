@@ -3,6 +3,8 @@ package Networks;
 use Dancer ':syntax';
 
 get '/public/ips' => sub {
+    my $adm_object = Administrator->new();
+
     template 'publicips', {
         publicips => $adm_object->{manager}->{network}->getPublicIP(),
         titlepage => 'Public IPs View',
