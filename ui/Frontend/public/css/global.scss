@@ -1,5 +1,7 @@
-$background_color: purple;
-$color_gray: gray;
+$color_purple: #80388A;
+$color_gray: #C2C2C2;
+$color_red: #FF002E;
+$color_green: #00F442;
 $color_white: white;
 
 @mixin center {
@@ -10,17 +12,18 @@ $color_white: white;
 
 body {
     min-height: 100%;
-    background-color: $background_color;
-    font: small Georgia,Serif;
+    background-color: $color_purple;
+//    font: small Georgia,Serif;
+    font-style: arial;
 }
 
 #header {
     position: fixed;
     width: 100%;
     background-color: $color_white;
-    border-top: 2px solid $background_color;
+    border-top: 2px solid $color_purple;
     height: 100px;
-    #smalllogo {
+    #logo {
         position: absolute;
         top: 25px;
         left: 260px;
@@ -34,7 +37,7 @@ body {
         position: absolute;
         top: 0px;
         right: 25px;
-        background-color: $background_color;
+        background-color: $color_purple;
         color: $color_white;
         text-align: center;
         width: 84px;
@@ -45,7 +48,7 @@ body {
         }
     }
     #menu {
-        margin-top: 50px;
+        margin-top: 35px;
         margin-left: auto;
         margin-right: auto;
         width: 50%;
@@ -57,41 +60,59 @@ body {
         }
         ul {
             li {
-                padding-left: 37px;
+                //padding-right: 37px;
+                padding: 8px 37px 8px 0px;
                 a {
                     display: block;
-                    float: left;
                     text-decoration:none;
+                    color: $color_gray;
+                    font-weight: bold;
                 }
+                a:hover {
+                        color: $color_green;
+                    }
+            }
+            .selected {
+                    a {
+                        color: $color_purple;
+                    }
+                    border-bottom: 3px solid $color_purple;
             }
         }
     }
     #submenu {
-        margin-top: 70px;
+        margin-top: 75px;
         margin-left: auto;
         margin-right: auto;
         width: 50%;
         ul {
             list-style-type: none;
-        }
-        li {
-            float: left;
-        }
-        ul {
             li {
-                padding-left: 37px;
+                float: left;
+                padding: 5px 15px 5px 15px;
+                background-color: $color_gray;
                 a {
                     display: block;
                     float: left;
                     text-decoration:none;
+                    color: white;
+                    font-size: 13px;
+                    font-weight: bold;
                 }
+                
+            }
+            li:hover {
+                    background-color: $color_green;
+                }
+            .selected {
+                    background-color: $color_purple;
             }
         }
     }
     hr {
         margin-top: 30px;
     }
-    border-bottom: 2px solid gray;
+    //border-bottom: 2px solid gray;
 }
 
 #container {
