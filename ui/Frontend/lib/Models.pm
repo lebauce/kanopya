@@ -5,6 +5,8 @@ use Dancer ':syntax';
 use Entity::Motherboardmodel;
 use Entity::Processormodel;
 
+prefix 'infrastructures';
+
 sub _models {
     
     my @eprocessormodels = Entity::Processormodel->getProcessormodels(hash => {});
@@ -70,4 +72,4 @@ get '/models' => sub {
 		processormodels => $processormodels,
 		motherboardmodels => $motherboardmodels,
 	};
-}
+};

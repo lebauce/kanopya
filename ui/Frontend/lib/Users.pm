@@ -6,6 +6,8 @@ use Log::Log4perl "get_logger";
 use Entity::User;
 use Entity::Gp;
 
+prefix '/rights';
+
 my $log = get_logger('webui');
 
 sub _users {

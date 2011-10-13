@@ -5,6 +5,8 @@ use Dancer ':syntax';
 use Entity::Systemimage;
 use Entity::Distribution;
 
+prefix '/systems';
+
 sub _systemimages {
 
     my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});

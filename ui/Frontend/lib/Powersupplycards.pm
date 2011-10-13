@@ -1,14 +1,16 @@
 package Powersupplycards;
 
-use Dancer ':syntax'; 
+use Dancer ':syntax';
 use Entity::Powersupplycard;
 use Entity::Powersupplycardmodel;
 
+prefix 'infrastructures';
+
 sub _powersupplycards {
-    
+
     my @powersupplycards = Entity::Powersupplycard->getPowerSupplyCards(hash => {});
     my $pscs = [];
-    
+
     foreach my $psc (@powersupplycards) {
         my $tmp = {};
         $tmp->{powersupplycard_id} = $psc->getAttr(name => 'powersupplycard_id');

@@ -2,6 +2,8 @@ package Networks;
 
 use Dancer ':syntax';
 
+prefix '/architectures';
+
 get '/public/ips' => sub {
     my $adm_object = Administrator->new();
 

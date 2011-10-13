@@ -5,6 +5,9 @@ use Dancer ':syntax';
 #use Data::FormValidator::Constraints qw( email FV_eq_with );
 use Log::Log4perl "get_logger";
 use Entity::Gp;
+
+prefix '/rights';
+
 my $log = get_logger('webui');
 
 sub _groups {
