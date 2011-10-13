@@ -6,10 +6,12 @@ use Dancer::Plugin::Ajax;
 use Login;
 use Dashboard;
 use Components;
+use Clusters;
 use Distributions;
 use Kernels;
 use Images;
 use Models;
+use Users;
 use Log::Log4perl;
 
 our $VERSION = '0.1';

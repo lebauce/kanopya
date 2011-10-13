@@ -33,7 +33,9 @@ activate</a><br />
 </td></tr><tr>
 <% IF active %>
 	<td>
-	<% IF state_up %><span class="state imgUp">Up (<% state_time %>)</span><% END %>
+	<% SWITCH cluster_state %>
+        <% CASE up %>
+        <span class="state imgUp">Up (<% state_time %>)
 	<% IF state_down %><span class="state imgDown">Down</span><% END %>
 	<% IF state_starting %><span class="state imgDown">Starting... (<% state_time %>)</span><% END %>
 	<% IF state_stopping %><span class="state imgDown">Stopping... (<% state_time %>)</span><% END %>
