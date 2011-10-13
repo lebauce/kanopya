@@ -24,11 +24,11 @@ sub _powersupplycards {
 
 sub _powersupply_card_details {
     my $id = @_;
-    
+
     my $epowersupplycard = Entity::Powersupplycard->get(id => $id));
     
     my $model = Entity::Powersupplycardmodel->get(id => $epowersupplycard->getAttr(name => 'powersupplycardmodel_id'));
-    
+
     my $active = $epowersupplycard->getAttr(name => 'active'));
     my $model = $model->toString());
     my $slots_count = $model->getAttr(name => 'powersupplycardmodel_slotscount'));
@@ -36,8 +36,8 @@ sub _powersupply_card_details {
     my $powersupplycard_desc = 'ajouter la description dans la database!!!');
     my $mac_address = $epowersupplycard->getAttr(name => 'powersupplycard_mac_address'));
     my $ip = $epowersupplycard->getAttr(name => 'powersupplycard_ip'));
-    
-    return ($active,$model,$slots_count,$powersupplycard_name,$powersupplycard_desc,$mac_address,$ip);    
+
+    return ($active,$model,$slots_count,$powersupplycard_name,$powersupplycard_desc,$mac_address,$ip);
 }
      # header / menu variables
     $tmpl->param('titlepage' => "");
@@ -53,7 +53,7 @@ get '/powersupply' => sub {
           titlepage => "Hardware - Powersupplycards",
           can_create => $can_create,
     };
-}     
+};
 
 get '/powersupply/:id' => sub {
     my ($active,$model,$slots_count,$powersupplycard_name,$powersupplycard_desc,$mac_address,$ip) = _powersupply_card_details(params->{id});
@@ -68,5 +68,4 @@ get '/powersupply/:id' => sub {
           mac_address => $mac_address,
           ip => $ip,
     };
-}     
-    
+};
