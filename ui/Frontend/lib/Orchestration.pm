@@ -6,6 +6,16 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
 
+prefix '/architectures';
+
+get '/clusters/:clusterid/orchestration' => sub {
+
+    template 'view_orchestrator_settings', {
+        title_page                 => 'Orchestrator settings',
+    }
+};
+
+
 get '/orchestrator/controller/settings/:id' => sub {
     my $cluster_id    = params->{id} || 0;
     my $adm_object    = Administrator->new();
