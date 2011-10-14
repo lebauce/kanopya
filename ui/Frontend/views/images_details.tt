@@ -25,7 +25,7 @@
 <tr><td class="italic" colspan="2"><% systemimage_desc %></td>
 <td class="actions" rowspan="4">
 <% IF can_update %>
-	<a class="imgEdit" href="/systems/images/<% systemimage_id %>/edit">edit</a><br />
+	<a class="modal" href="/systems/images/<% systemimage_id %>/edit">edit</a><br />
 	<span class="desc">Modify these global parameters.</span><br /><br />
 <% END %>
 <% IF can_delete %>
@@ -33,7 +33,7 @@
 	<span class="desc">Delete this system image.</span><br /><br />
 <% END %>
 <% IF can_setperm %>
-	<a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=Systemimage&id=<% systemimage_id %>">permissions</a><br />
+	<a class="imgPermission" href="/rights/permissions/systemimage/<% systemimage_id %>">permissions</a><br />
 	<span class="desc">View/set permissions on this system image.</span><br />
 <% END %>
 </td><tr/>
@@ -49,7 +49,7 @@
 	<td class="actions" rowspan="<% components_count %>">
 	<% UNLESS active %>
 		<% IF can_installcomponent %>
-			<a class="imgAdding" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
+			<a class="modal" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
 			<span class="desc">Install a component to this system image.</span><br /><br />
 		<% END %>
 	<% END %>
@@ -61,7 +61,7 @@
 <% ELSE %>
 	<tr><td colspan="2">no defined component.</td>
 	<td class="actions">
-	<a class="imgAdding" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
+	<a class="modal" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
 	<span class="desc">Install a new component to this system image.</span><br /><br />
 	</td></tr>
 <% END %>

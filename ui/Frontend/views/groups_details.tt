@@ -7,7 +7,7 @@
 <tr><td class="italic" colspan="2"><% gp_desc %></td>
 <td class="actions" rowspan="5">
 <% IF can_update %>
-	<a class="imgEdit" href="/rights/groups/<% gp_id %>/edit">edit</a><br />
+	<a class="modal" href="/rights/groups/<% gp_id %>/edit">edit</a><br />
 	<span class="desc">Modify name or description of this group.</span><br /><br />
 <% END %>
 <% IF can_delete %>
@@ -26,7 +26,7 @@
 <tr><td colspan="2">&nbsp;</td>
 <td class="actions" rowspan="<% content_count %>">
 <% IF can_appendEntity %>
-	<a class="imgAdding" href="/rights/groups/<% gp_id %>/appendentity">append</a><br />
+	<a class="modal" href="/rights/groups/<% gp_id %>/appendentity">append</a><br />
 	<span class="desc">append an element (<% gp_type %>) to this group.</span><br /><br />
 <% END %>
 </td></tr>
