@@ -13,6 +13,7 @@
 
         <script type="text/javascript" src="/javascripts/kanopyaui-tools.js"></script>
         <script type="text/javascript" src="/javascripts/jquery.js"></script>
+        <script type="text/javascript" src="/javascripts/jquery-ui-1.8.16.custom.min.js"></script>
 
         <% FOREACH js IN js_head %>
             <script type="text/javascript" src="/javascripts/<% js %>"></script>
@@ -44,6 +45,31 @@
                     });
                 };
                 setInterval(messages_ajax, 10000);
+
+                $('.modal').each(function() {
+                    var $link = $(this);
+
+                    var $dialog = $('<div></div>')
+                        .load($link.attr('href'))
+                        .dialog({
+                            autoOpen: false,
+                            modal: true,
+                            title: $link.attr('title' + '#content'),
+                            width: 500,
+                            height: 300,
+                            buttons: {
+                                Cancel: function() {
+                                    $(this).dialog('close');
+                                }
+                            },
+
+                        });
+
+                    $link.click(function() {
+                        $dialog.dialog('open');
+                        return false;
+                    });
+                });
             });
         </script>
     </head>
