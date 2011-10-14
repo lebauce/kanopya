@@ -5,4 +5,9 @@ h2 {
     border-top: 2px solid $color_gray;
 }
 
+.clickable:hover {
+  cursor: pointer;
+  color: #00A; 
+}
+
 .hidden { display: none;}
