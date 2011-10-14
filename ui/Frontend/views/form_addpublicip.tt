@@ -1,6 +1,4 @@
-<%# <style type="text/css">@import url(/css/form.css);</style>
-%>
-<div class="title">create a virtual ip<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
+<style type="text/css">@import url(/css/form.css);</style>
 <form method="POST" action="">
 <table class="form">
 	<tr>
@@ -21,7 +19,6 @@
 </table>
 <div class="buttons">
 <input type="submit" value="ok"/>
-<input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form> 
 
