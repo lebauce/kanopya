@@ -42,11 +42,11 @@
 </table>
 <div class="actions">
 <% IF can_createmotherboardmodel %>
-	<a class="action imgAdding" href="/models/motherboards/add">create a motherboard model</a>
+	<a class="action modal" href="/models/motherboards/add">create a motherboard model</a>
 	<p class="italic">Create a new model of motherboard.</p>
 <% END %>
 <% IF can_createprocessormodel %>
-	<a class="action imgAdding" href="/models/processors/add">create a processor model</a>
+	<a class="action modal" href="/models/processors/add">create a processor model</a>
 	<p class="italic">Create a new model of processor.</p>
 <% END %>
 </div>

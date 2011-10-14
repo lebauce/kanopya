@@ -18,7 +18,7 @@
 <% END %>
 <div class="actions">
 <% IF can_create %>
-	<a class="action imgAdding" href="/infrastructures/hosts/add">add a new host</a>
+	<a class="action modal" href="/infrastructures/hosts/add">add a new host</a>
 	<p class="italic">add a new host.</p>
 <% END %>&nbsp;
 </div>

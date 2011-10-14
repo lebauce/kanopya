@@ -11,7 +11,7 @@
 <% END %>
 <div class="actions">
 <% IF link_upload %>
-	<a class="action imgKernel" href="">upload new kernel</a>
+	<a class="action modal" href="">upload new kernel</a>
 	<p class="italic">Upload a new kernel.</p>
 <% END %>
 <br />
