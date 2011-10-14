@@ -79,7 +79,7 @@ get '/groups/:groupid/appendentity' => sub {
         gp_name     => $egroups->getAttr('name' => 'gp_name'),
         gp_type     => $egroups->getAttr('name' => 'gp_type'),
         entity_list => $entity_list
-    };
+    }, { layout => '' };
 };
 
 post '/groups/:groupid/appendentity' => sub {

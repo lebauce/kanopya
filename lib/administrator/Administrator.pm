@@ -502,11 +502,13 @@ sub addMessage {
 }
 
 sub getMessages {
-    my $self = shift;
+    my $self  = shift;
+    my %args  = @_;
+    my $limit = $args{limit} || 10;
 
     my $r = $self->{db}->resultset('Message')->search(undef, {
         order_by => { -desc => [qw/message_id/], },
-        rows => 50
+        rows => $limit
     });
     my @arr = ();
     while (my $row = $r->next) {
