@@ -215,13 +215,12 @@
    
    function fill_content_container(xml) {
 		$(xml).find('node').each(function(){
-				 
 			var id = $(this).attr('id');
-			alert('node' + id);
-			$("#" + id + "_content").html($(this).children());
+			alert('node id:' + id + ' src: ' + $(this).attr('img_src'));
+			$("#" + id + "_content").append('<img src="/images/graphs/graph_consumption_day.png" />')
+			//$("#" + id + "_content").html($(this).children());
 		});
-		alert(xml.documentElement.getElementsByTagName('tutu').elem(0));
-		$("#nodecount_graph").html($(xml).find('nodecount').html());
+		$("#nodecount_graph").append('<img src="' + $(xml).find('nodecount_graph').elem(0).attr('src') + '"/>' );
    }
    
    function loading_start() {
@@ -236,8 +235,8 @@
    		$('.unactive_clickable').addClass('clickable').removeClass('unactive_clickable');
    }
    
+
    $(".set_selectors .set_selector").click(function() {
-   
    		loading_start();
 alert(content_link);
    		var anim = 'fold';//'blind/slide';
@@ -254,7 +253,6 @@ alert(content_link);
 	   		// send request
 	    	$.get(content_link, {set: set_name, period: period}, function(xml) {
 
-alert(xml);
 				fill_content_container(xml);
 				 
 				$("#graph_table img").addClass('autorefresh');
@@ -263,7 +261,8 @@ alert(xml);
 			});
 		}, anim_duration); 
    });
-   
+
+
    $("#graph_table .node_selector").click( toggleNode ).addClass('clickable');
    
    //$(".period_selectors .period_selector").click(function() {
