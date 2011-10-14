@@ -71,7 +71,7 @@ sub search {
         if (($try_count++ > $max_try)) {
             $log->warn("Can not find configuration to meet constraints after $max_try iterations (max)");
             #print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)");
-            return undef;
+            return { AC => \@curr_AC, LC => \@LC };;
             
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
 #            for my $i (0..$nb_tiers-1){
@@ -83,7 +83,7 @@ sub search {
         if (not $new_conf) {
             $log->warn("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
             #print("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
-            return undef;
+            return { AC => \@curr_AC, LC => \@LC };;
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
 #            for my $i (0..$nb_tiers-1){
 #                $curr_AC[$i] = -1;
