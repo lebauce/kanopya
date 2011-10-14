@@ -8,7 +8,7 @@
 <td class="actions" rowspan="2">
 <% IF link_activate %>
 	<% IF systemimage_active %>
-		<a class="imgActivate" href="/clusters/process_activatecluster?cluster_id=<% cluster_id %>">
+		<a class="imgActivate" href="/architectures/clusters/process_activatecluster?cluster_id=<% cluster_id %>">
 	<% ELSE %>
 		<a class="imgActivate" href="javascript:alert('<% systemimage_name %> used by this cluster must be active.');">
 	<% END %>
@@ -16,17 +16,17 @@ activate</a><br />
 <span class="desc">Activate this cluster to be able to start it.</span><br /><br />
 <% ELSE %>
 	<% IF link_deactivate %>
-		<a class="imgDeactivate" href="/clusters/process_deactivatecluster?cluster_id=<% cluster_id %>">deactivate</a><br />
+		<a class="imgDeactivate" href="/architectures/clusters/process_deactivatecluster?cluster_id=<% cluster_id %>">deactivate</a><br />
 		<span class="desc">Deactivate this cluster.</span><br /><br />
 	<% END %>
 	<% IF link_start %>
-		<a class="imgStart" href="/clusters/process_startcluster?cluster_id=<% cluster_id %>">start</a><br />
+		<a class="imgStart" href="/architectures/clusters/process_startcluster?cluster_id=<% cluster_id %>">start</a><br />
 		<span class="desc">Start this cluster.</span>
 	<% END %>
 	<% IF link_stop %>
-		<a class="imgStop" href="/clusters/process_stopcluster?cluster_id=<% cluster_id %>">stop</a><br />
+		<a class="imgStop" href="/architectures/clusters/process_stopcluster?cluster_id=<% cluster_id %>">stop</a><br />
 		<span class="desc">Stop this cluster.</span><br /><br />
-		<a class="imgStop" href="/clusters/process_forcestopcluster?cluster_id=<% cluster_id %>">force stop</a><br />
+		<a class="imgStop" href="/architectures/clusters/process_forcestopcluster?cluster_id=<% cluster_id %>">force stop</a><br />
 		<span class="desc">Force this cluster to stop, to use when something went wrong.</span><br /><br />
 	<% END %>
 <% END %>
@@ -34,12 +34,17 @@ activate</a><br />
 <% IF active %>
 	<td>
 	<% SWITCH cluster_state %>
-        <% CASE up %>
-        <span class="state imgUp">Up (<% state_time %>)
-	<% IF state_down %><span class="state imgDown">Down</span><% END %>
-	<% IF state_starting %><span class="state imgDown">Starting... (<% state_time %>)</span><% END %>
-	<% IF state_stopping %><span class="state imgDown">Stopping... (<% state_time %>)</span><% END %>
-	<% IF state_broken %><span class="state imgWarning">Broken (<% state_time %>)</span><% END %>
+        <% CASE 'up' %>
+        <span class="state imgUp">Up (<% state_time %>)</span>
+        <% CASE 'down' %>
+        <span class="state imgDown">Down</span>
+        <% CASE 'starting' %>
+        <span class="state imgDown">Starting... (<% state_time %>)</span>
+        <% CASE 'stopping' %>
+        <span class="state imgDown">Stopping... (<% state_time %>)</span>
+        <% CASE 'broken' %>
+        <span class="state imgWarning">Broken (<% state_time %>)</span>
+	<% END %>
 	</td>
 <% ELSE %>
 	<td></td>
@@ -53,11 +58,11 @@ activate</a><br />
 <tr><td class="italic" colspan="2"><% cluster_desc %></td>
 <td class="actions" rowspan="10">
 <% IF link_edit %>
-	<a class="imgEdit" href="/clusters/form_editcluster?cluster_id=<% cluster_id %>">edit</a><br />
+	<a class="imgEdit" href="/architectures/clusters/form_editcluster?cluster_id=<% cluster_id %>">edit</a><br />
 	<span class="desc">Modify these global parameters.</span><br /><br />
 <% END %>
 <% IF link_delete %>
-	<a class="imgRemove" href="/clusters/process_removecluster?cluster_id=<% cluster_id %>">delete</a><br />
+	<a class="imgRemove" href="/architectures/clusters/process_removecluster?cluster_id=<% cluster_id %>">delete</a><br />
 	<span class="desc">Delete this cluster.</span><br /><br />
 <% END %>
 <% IF can_setperm %>
@@ -87,25 +92,22 @@ activate</a><br />
 <hr/>
 <span id="network" class="title simpleexpand">Network Configuration</span>
 <table id="Xnetwork" class="detailspart list">
-<% IF publicip_list %>
+<% IF nbpublicips %>
 	<tr><td colspan="2">&nbsp;</td>
-	<td class="actions" rowspan="<% NBPUBLICIPS %>">
-	<a class="imgAdding" href="/clusters/form_setpubliciptocluster?cluster_id=<% cluster_id %>">add a virtual ip</a><br />
+	<td class="actions" rowspan="<% nbpublicips %>">
+<% ELSE %>
+    <tr><td colspan="2">no public ip defined.</td>
+    <td class="actions">
+<% END %>
+	<a class="imgAdding" href="/architectures/clusters/<% cluster_id %>/publicips/add">add a virtual ip</a><br />
 	<span class="desc">Add a new virtual ip to this cluster.</span><br /><br />
 	</td></tr>
 	<% FOREACH ip IN publicip_list %>
 		<tr><td class="label2"><% ip.address %> / <% ip.netmask %> (gateway: <% ip.gateway %>)</td>
-		<td class="action"><a class="imgRemove" href="/clusters/process_unsetpublicipfromcluster?cluster_id=<% ip.cluster_id %>&publicip_id=<% ip.publicip_id %>">remove</a>
+		<td class="action"><a class="imgRemove" href="/architectures/clusters/process_unsetpublicipfromcluster?cluster_id=<% ip.cluster_id %>&publicip_id=<% ip.publicip_id %>">remove</a>
 		<input type="hidden" value="<% ip.name %>"/>
 		<td></tr>
 	<% END %>
-<% ELSE %>
-	<tr><td colspan="2">no public ip defined.</td>
-	<td class="actions">
-	<a class="imgAdding" href="/clusters/form_setpubliciptocluster?cluster_id=<% cluster_id %>">add a virtual ip</a><br />
-	<span class="desc">Add a new virtual ip to this cluster.</span><br /><br />
-	</td></tr>
-<% END %>
 </table>
 
 <hr/>
@@ -115,21 +117,21 @@ activate</a><br />
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions" rowspan="<% NBCOMPONENTS %>">
 	<% IF link_addcomponent %>
-		<a class="imgAdding" href="/clusters/form_addcomponenttocluster?cluster_id=<% cluster_id %>">add a component</a><br />
+		<a class="imgAdding" href="/architectures/clusters/<% cluster_id %>/addcomponenttocluster">add a component</a><br />
 		<span class="desc">Add a new component to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
 	<% FOREACH comp IN components_list %>
 		<tr><td class="label2"><span class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
 		<td class="action"><% IF comp.link_configurecomponents %><a class="imgConfigure" href="/components/form_configurecomponent?component_instance_id=<% comp.component_instance_id %>">configure</a><% END %>
-		<% IF comp.link_remove %><a class="imgRemove" href="/clusters/process_removecomponent?cluster_id=<% comp.cluster_id %>&component_instance_id=<% comp.component_instance_id %>">remove</a><% END %>
+		<% IF comp.link_remove %><a class="imgRemove" href="/architectures/clusters/process_removecomponent?cluster_id=<% comp.cluster_id %>&component_instance_id=<% comp.component_instance_id %>">remove</a><% END %>
 	</td></tr>
 	<% END %>
 <% ELSE %>
 	<tr><td colspan="2">no defined component.</td>
 	<td class="actions">
 	<% IF link_addcomponent %>
-		<a class="imgAdding" href="/clusters/form_addcomponenttocluster?cluster_id=<% cluster_id %>">add a component</a><br />
+		<a class="imgAdding" href="/architectures/clusters/form_addcomponenttocluster?cluster_id=<% cluster_id %>">add a component</a><br />
 		<span class="desc">Add a new component to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -143,7 +145,7 @@ activate</a><br />
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_addnode %>
-		<a class="imgAdding" href="/clusters/process_addnode?cluster_id=<% cluster_id %>">add a node</a><br />
+		<a class="imgAdding" href="/architectures/clusters/process_addnode?cluster_id=<% cluster_id %>">add a node</a><br />
 		<span class="desc">Add a node to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -158,7 +160,7 @@ activate</a><br />
 		</td>
 		<td class="action">
 		<% IF node.link_remove %>
-			<a class="imgRemove" href="/clusters/process_removenode?cluster_id=<% node.cluster_id %>&motherboard_id=<% node.motherboard_id %>">remove</a>
+			<a class="imgRemove" href="/architectures/clusters/process_removenode?cluster_id=<% node.cluster_id %>&motherboard_id=<% node.motherboard_id %>">remove</a>
 		<% END %></td></tr>
 	<% END %>
 <% ELSE %>

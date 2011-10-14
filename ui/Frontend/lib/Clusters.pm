@@ -83,6 +83,110 @@ sub _clusters {
     return $clusters;
 }
 
+get '/clusters/add' => sub {
+    my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});
+    my @ekernels = Entity::Kernel->getKernels(hash => {});
+    my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
+    my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
+    my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
+
+    my $count = scalar @emotherboards;
+    my $c =[];
+    for (my $i=1; $i<=$count; $i++) {
+        my $tmp->{nodes}=$i;
+        push(@$c, $tmp);
+    }
+    my $kmodels = [];
+    foreach my $k (@ekernels) {
+        my $tmp = {
+            kernel_id => $k->getAttr( name => 'kernel_id'),
+            kernel_name => $k->getAttr(name => 'kernel_version')
+        };
+        push (@$kmodels, $tmp);
+    }
+    my $si_forshared = [];
+    foreach my $s (@esystemimages_forshared){
+        my $tmp = {
+            systemimage_id => $s->getAttr(name => 'systemimage_id'),
+            systemimage_name => $s->getAttr(name => 'systemimage_name')
+        };
+        push (@$si_forshared, $tmp);
+    }
+    my $si_fordedicated = [];
+    foreach my $s (@esystemimages_fordedicated){
+        my $tmp = {
+            systemimage_id => $s->getAttr(name => 'systemimage_id'),
+            systemimage_name => $s->getAttr(name => 'systemimage_name')
+        };
+        push (@$si_fordedicated, $tmp);
+    }
+
+    template 'form_addcluster', {
+        title_page                  => "Clusters - Cluster creation",
+        'nodescount'                => $c,
+        'kernels_list'              => $kmodels,
+        'systemimages_forshared'    => $si_forshared,
+        'systemimages_fordedicated' => $si_fordedicated,
+        'nameserver'                => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
+    };
+};
+
+post '/clusters/add' => sub {
+    my $adm = Administrator->new;
+    
+    my ($si_location, $si_access_mode, $si_shared, $systemimage_id);
+
+    $si_location = params->{'si_location'};
+    if($si_location eq 'local') {
+        $si_access_mode = 'rw';
+        $si_shared = 0;
+    } elsif($si_location eq 'diskless') {
+        if(params->{'si_shareordedicate'} eq 'shared') {
+            $si_access_mode = 'ro';
+            $si_shared = 1;
+            $systemimage_id = params->{'systemimage_forshared'};
+        } else {
+            $si_access_mode = 'rw';
+            $si_shared = 0;
+            $systemimage_id = params->{'systemimage_fordedicated'};
+        }
+    }
+
+    eval {
+        my $params = {
+            cluster_name => params->{'name'},
+            cluster_desc => params->{'desc'},
+            cluster_si_location => $si_location,
+            cluster_si_access_mode => $si_access_mode,
+            cluster_si_shared => $si_shared,
+            cluster_min_node => params->{'min_node'},
+            cluster_max_node => params->{'max_node'},
+            cluster_priority => params->{'priority'},
+            systemimage_id => $systemimage_id,
+            cluster_domainname => params->{'domainname'},
+            cluster_nameserver => params->{'nameserver'},
+        };
+        if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
+        my $ecluster = Entity::Cluster->new(%$params);
+        $ecluster->create();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else {
+        $exception->rethrow();
+     #   return $self->error_occured("Error during operation enqueuing : $exception->error");
+        }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster creation adding to execution queue');
+        redirect '/architectures/clusters';
+    }
+};
+
 get '/clusters' => sub {
     my $can_create;
 
@@ -90,10 +194,13 @@ get '/clusters' => sub {
     if($methods->{'create'}->{'granted'}) {
         my @si = Entity::Systemimage->getSystemimages(hash => {});
         if (scalar @si){
-            $can_create = 1
+            $can_create = 1;
         }
     }
-
+    
+    #TEMPORARY testing
+    $can_create = 1;
+    
     template 'clusters', {
         title_page         => 'Clusters - Clusters',
         clusters_list => _clusters(),
@@ -245,11 +352,12 @@ get '/clusters/:clusterid' => sub {
         systemimage_active => $systemimage_active,
         kernel             => $kernel,
         publicip_list      => $publicips,
-        nbpublicips        => scalar(@$publicips)+1,
+        nbpublicips        => scalar(@$publicips),
+        active             => $active,
         cluster_state      => $cluster_state,
         state_time         => _timestamp_format( timestamp => $timestamp ),
         nbnodesup          => $nbnodesup,
-        nbcomponents       => scalar(@$comps)+1,
+        nbcomponents       => scalar(@$comps),
         components_list    => $comps,
         nodes_list         => $nodes,
         link_delete        => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
@@ -262,6 +370,42 @@ get '/clusters/:clusterid' => sub {
         can_setperm        => $methods->{'setperm'}->{'granted'},        
                        
      };
+};
+
+
+get '/clusters/:clusterid/components/add' => sub {
+    my $cluster_id = params->{clusterid};
+    my $ecluster = Entity::Cluster->get(id => $cluster_id);
+    my $methods = $ecluster->getPerms();
+
+    template 'form_addcomponenttocluster', {
+        title_page         => "Clusters - Cluster's add component",
+        cluster_id         => $cluster_id,
+    };
+};
+
+post '/clusters/:clusterid/addcomponentoncluster' => sub {
+
+};
+
+get '/clusters/:clusterid/publicips/add' => sub {
+    my $cluster_id = params->{clusterid};
+    my $ecluster = Entity::Cluster->get(id => $cluster_id);
+    my $methods = $ecluster->getPerms();
+
+    template 'form_setpubliciptocluster', {
+        title_page         => "Clusters - Cluster's add component",
+        cluster_id         => $cluster_id,
+    };
+};
+
+post '/clusters/:clusterid/publicips/add' => sub {
+    my $cluster_id = params->{clusterid};
+    my $ecluster = Entity::Cluster->get(id => $cluster_id);
+    my $methods = $ecluster->getPerms();
+
+    redirect '/architectures/clusters';
+    
 };
 
 1;

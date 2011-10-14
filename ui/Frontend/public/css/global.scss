@@ -1,8 +1,9 @@
-$color_purple: #80388A;
+$color_purple: #7E388A;
 $color_gray: #C2C2C2;
 $color_red: #FF002E;
 $color_green: #80E254;
 $color_white: white;
+$color_blue: #24BAF9;
 $menu_pos: 60px;
 $menu_width: 65%;
 $head_height: 140px;
@@ -85,6 +86,7 @@ body {
                     text-decoration:none;
                     color: $color_gray;
                     font-weight: bold;
+                    font-size: 1.0em;
                 }
                 a:hover {
                         color: $color_green;
@@ -114,7 +116,7 @@ body {
                     float: left;
                     text-decoration:none;
                     color: white;
-                    font-size: 13px;
+                    font-size: 0.875em;
                     font-weight: bold;
                 }
             }
