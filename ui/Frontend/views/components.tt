@@ -13,7 +13,7 @@
 <% END %>
 </table>
 <div class="actions">
-<a class="action imgUploadcomponent" href="/systems/components/upload">upload new component</a>
+<a class="action modal" href="/systems/components/upload">upload new component</a>
 <p class="italic">Upload and deploy a new component.<br/>Deployed components can be installed on system images.</p>
 </div>
 
