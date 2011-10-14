@@ -64,7 +64,7 @@ body {
     }
     #menu_separator {
         border-bottom: 1px solid $color_gray;
-        top: $menu_pos + 34px;
+        top: $menu_pos + 38px;
         width: 100%;
         position: absolute;
     }
@@ -89,7 +89,8 @@ body {
                     text-decoration:none;
                     color: $color_gray;
                     font-weight: bold;
-                    font-size: 1.0em;
+                    //font-size: 1.0em;
+                    //font-size: 15px;
                 }
                 a:hover {
                         color: $color_green;
@@ -104,7 +105,7 @@ body {
         }
     }
     #submenu {
-        margin-top: $menu_pos + 40px;
+        margin-top: $menu_pos + 43px;
         margin-left: auto;
         margin-right: auto;
         width: $menu_width;
@@ -119,7 +120,8 @@ body {
                     float: left;
                     text-decoration:none;
                     color: white;
-                    font-size: 0.875em;
+                    //font-size: 0.875em;
+                    font-size: 13px;
                     font-weight: bold;
                 }
             }
