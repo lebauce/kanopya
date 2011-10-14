@@ -38,7 +38,7 @@ get '/users' => sub {
 };
 
 get '/users/add' => sub {
-    template 'form_adduser', {};
+    template 'form_adduser', {}, { layout => '' };
 };
 
 post '/users/add' => sub {
