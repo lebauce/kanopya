@@ -4,6 +4,7 @@ $color_red: #FF002E;
 $color_green: #80E254;
 $color_white: white;
 $color_blue: #24BAF9;
+$font_color: #999999;
 $menu_pos: 60px;
 $menu_width: 65%;
 $head_height: 140px;
@@ -17,7 +18,9 @@ $head_height: 140px;
 body {
     min-height: 100%;
     background-color: $color_purple;
+    color: $font_color;
     font-style: arial;
+    font-size: 1.2em;
 }
 
 #header {
