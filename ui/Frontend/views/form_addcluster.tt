@@ -46,7 +46,7 @@
         <% END %>
         </td>
     </tr>
-    <tr><td><span style="color: red">< % err_systemimage_id %></span></td></td></tr>
+    <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
     <tr>
 		<td class="label">minimum node to used :</td>
 		<td><select name="min_node">
