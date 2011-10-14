@@ -128,7 +128,7 @@ get '/clusters/add' => sub {
         'systemimages_forshared'    => $si_forshared,
         'systemimages_fordedicated' => $si_fordedicated,
         'nameserver'                => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
-    };
+    }, { layout => '' };
 };
 
 post '/clusters/add' => sub {

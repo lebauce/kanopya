@@ -76,7 +76,7 @@ get '/images/add' => sub {
         title_page          => 'Systems - System images creation',
         systemimages_list   => $systemimage,
         distributions_list  => $distro
-    };
+    }, { layout => '' };
 };
 
 post '/images/add' => sub {
@@ -225,7 +225,7 @@ get '/images/:imageid/installcomponent' => sub {
             systemimage_id   => $systemimage_id,
             systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'),
             components_list  => $components
-        };
+        }, { layout => '' };
     }
 };
 
@@ -292,18 +292,18 @@ get '/images/:imageid' => sub {
 
     template 'images_details', {
         title_page       => "Systems - System image's overview",
-        activate         => $activate,              
-        can_setperm      => $can_setperm,           
-        can_activate     => $can_activate,          
-        can_deactivate   => $can_deactivate,        
-        can_delete       => $can_delete,            
-        can_installcomponent  =>  $can_installcomponent,  
+        activate         => $activate,
+        can_setperm      => $can_setperm,
+        can_activate     => $can_activate,
+        can_deactivate   => $can_deactivate,
+        can_delete       => $can_delete,
+        can_installcomponent  =>  $can_installcomponent,
         distribution          => $distribution,          
         systemimage_usage     => $systemimage_usage,     
         systemimage_id => $esystemimage->getAttr(name => 'systemimage_id'),     
         systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'), 
         systemimage_desc => $esystemimage->getAttr(name => 'systemimage_desc'), 
-        components_list => $components_list,                                    
-        components_count => $nb + 1,                                            
+        components_list => $components_list,
+        components_count => $nb + 1,
      };
-};    
+};

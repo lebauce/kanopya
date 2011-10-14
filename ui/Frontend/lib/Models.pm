@@ -87,7 +87,7 @@ get '/models/motherboards/add' => sub {
     }
     template 'form_addmotherboardmodel', {
         processormodels_list => $pmodels,
-    };
+    }, { layout => '' };
 };
 
 post '/models/motherboards/add' => sub {
@@ -116,7 +116,7 @@ post '/models/motherboards/add' => sub {
 };
 
 get '/models/processors/add' => sub {
-    template 'form_addprocessormodel', {};
+    template 'form_addprocessormodel', {}, { layout => ''};
 };
 
 post '/models/processors/add' => sub {

@@ -49,7 +49,7 @@ get '/ips/public/:id/remove' => sub {
 get '/ips/public/add' => sub {
     template 'form_addpublicip', {
         title_page  => "Network - Public ip creation",
-    }
+    }, { layout => '' };
 };
 
 

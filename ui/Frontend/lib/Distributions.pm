@@ -44,7 +44,7 @@ get '/distributions' => sub {
 get '/distributions/upload' => sub {
     template 'form_uploaddistribution', {
         title_page         => 'Systems - Distributions upload',
-    };
+    }, { layout => '' };
 };
 
 get '/distributions/:distributionid' => sub {
@@ -85,14 +85,14 @@ post '/distributions/upload' => sub {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
-            redirect '/permission_denied';    
+            redirect '/permission_denied';
         }
         else { $exception->rethrow(); }
     }
-    else {    
-        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new distribution upload added to execution queue'); 
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new distribution upload added to execution queue');
         redirect '/distributions';
-    }     
+    }
 };
 
 1;
