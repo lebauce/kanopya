@@ -245,7 +245,7 @@ post '/images/:imageid/installcomponent' => sub {
     }
     else {    
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'new component installation added to execution queue'); 
-        redirect '/images/'.params->{imageid};
+        redirect '/systems/images/'.params->{imageid};
     } 
 };
 
