@@ -1,0 +1,21 @@
+.ui-widget-content {
+    background-color: white;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50% !important;
+    border-radius: 5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
+.ui-dialog-titlebar {
+    text-align: right;
+    padding-right: 5px;
+}
+
+.ui-widget-overlay {
+    position: absolute;
+    top: 2px;
+    background-color: gray;
+    opacity: 0.5;
+}

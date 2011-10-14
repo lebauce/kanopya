@@ -23,7 +23,7 @@ get '/components' => sub {
 };
 
 get '/components/upload' => sub {
-    template 'form_uploadcomponent', {};
+    template 'form_uploadcomponent', {}, { layout => ''};
 };
 
 post '/components/upload' => sub {
@@ -44,14 +44,14 @@ post '/components/upload' => sub {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
-            redirect('/permission_denied');    
+            redirect('/permission_denied');
         }
         else { $exception->rethrow(); }
     }
-    else {    
-        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new component upload added to execution queue'); 
-        redirect '/components'; 
-    }  
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new component upload added to execution queue');
+        redirect '/components';
+    }
 };
 
 1;
