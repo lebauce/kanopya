@@ -18,6 +18,7 @@ use Users;
 use Networks;
 use Groups;
 use Monitoring;
+use Permissions;
 
 use Log::Log4perl;
 
