@@ -99,7 +99,7 @@ activate</a><br />
     <tr><td colspan="2">no public ip defined.</td>
     <td class="actions">
 <% END %>
-	<a class="imgAdding" href="/architectures/clusters/<% cluster_id %>/publicips/add">add a virtual ip</a><br />
+	<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/publicips/add">add a virtual ip</a><br />
 	<span class="desc">Add a new virtual ip to this cluster.</span><br /><br />
 	</td></tr>
 	<% FOREACH ip IN publicip_list %>
@@ -117,7 +117,7 @@ activate</a><br />
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions" rowspan="<% NBCOMPONENTS %>">
 	<% IF link_addcomponent %>
-		<a class="imgAdding" href="/architectures/clusters/<% cluster_id %>/addcomponenttocluster">add a component</a><br />
+		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/addcomponenttocluster">add a component</a><br />
 		<span class="desc">Add a new component to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -131,7 +131,7 @@ activate</a><br />
 	<tr><td colspan="2">no defined component.</td>
 	<td class="actions">
 	<% IF link_addcomponent %>
-		<a class="imgAdding" href="/architectures/clusters/form_addcomponenttocluster?cluster_id=<% cluster_id %>">add a component</a><br />
+		<a class="imgAdding modal" href="/architectures/clusters/form_addcomponenttocluster?cluster_id=<% cluster_id %>">add a component</a><br />
 		<span class="desc">Add a new component to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -145,7 +145,7 @@ activate</a><br />
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_addnode %>
-		<a class="imgAdding" href="/architectures/clusters/process_addnode?cluster_id=<% cluster_id %>">add a node</a><br />
+		<a class="imgAdding modal" href="/architectures/clusters/process_addnode?cluster_id=<% cluster_id %>">add a node</a><br />
 		<span class="desc">Add a node to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
