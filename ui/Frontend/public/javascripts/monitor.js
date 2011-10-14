@@ -1,7 +1,11 @@
  $(document).ready(function(){
  
   	var url_params = window.location.href.split('?')[1];
- 	var content_link = "/cgi/kanopya.cgi/monitoring/xml_graph_list?" + url_params;
+  	var url = window.location.href;
+	//var uri.attr.path.replace(/^\/+|\/+$/g,'').split('/');
+ 	//var content_link = "/cgi/kanopya.cgi/monitoring/xml_graph_list?" + url_params;
+	//var content_link = url;
+	var content_link = "/architectures/clusters/1/monitoring/toto";
  	var save_clustermonitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
  	var save_monitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_monitoring_settings";
 
@@ -210,11 +214,13 @@
 	}
    
    function fill_content_container(xml) {
-		$(xml).find('node').each(function(){ 
+		$(xml).find('node').each(function(){
+				 
 			var id = $(this).attr('id');
+			alert('node' + id);
 			$("#" + id + "_content").html($(this).children());
 		});
-		
+		alert(xml.documentElement.getElementsByTagName('tutu').elem(0));
 		$("#nodecount_graph").html($(xml).find('nodecount').html());
    }
    
@@ -233,7 +239,7 @@
    $(".set_selectors .set_selector").click(function() {
    
    		loading_start();
-   		
+alert(content_link);
    		var anim = 'fold';//'blind/slide';
    		var anim_duration = 0;
    		
@@ -248,6 +254,7 @@
 	   		// send request
 	    	$.get(content_link, {set: set_name, period: period}, function(xml) {
 
+alert(xml);
 				fill_content_container(xml);
 				 
 				$("#graph_table img").addClass('autorefresh');

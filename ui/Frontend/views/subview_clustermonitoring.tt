@@ -1,20 +1,20 @@
 <graphs>
-<nodecount><img class='autorefresh' src="<TMPL_VAR NAME=NODECOUNT_GRAPH>" alt="kanopya-grapher must be running to see graph"/></nodecount>
+<nodecount><img class='autorefresh' src="<% nodecount_graph %>" alt="kanopya-grapher must be running to see graph"/></nodecount>
 <node_list>
-<TMPL_LOOP NAME=GRAPHS>
-	<node id='<TMPL_VAR NAME=ID>'>
+<% FOREACH graph IN graphs %>
+	<node id='<% graph.id %>'>
 		<table class='simplelisting'>
-		<TMPL_LOOP NAME=SETS>
-				<tr id='<TMPL_VAR NAME=SET_NAME>' class='set_selector'>
-					<TMPL_IF NAME=NO_GRAPH>
+		<% FOREACH set_graph IN graph.sets %>
+				<tr id='<% set_graph.set_name %>' class='set_selector'>
+					<% IF set_graph.no_graph %>
 						<td>graph missing</td>
-					<TMPL_ELSE>
-						<td><img src="<TMPL_VAR NAME=IMG_SRC>" alt="missing graph"/></td>
-					</TMPL_IF>
+					<% ELSE %>
+						<td><img src="<% set_graph.img_src %>" alt="missing graph"/></td>
+					<% END %>
 				</tr>
-		</TMPL_LOOP>
+		<% END %>
 		</table>
 	</node>
-</TMPL_LOOP>
+<% END %>
 </node_list>
 </graphs>

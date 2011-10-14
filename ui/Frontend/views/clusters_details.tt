@@ -173,10 +173,10 @@ activate</a><br />
 <table id="Xmonitor" class="detailspart list">
 <tr>
 <td colspan="2">
-<a class="imgMonitor" href="/monitoring/view_clustermonitoring?cluster_id=<% cluster_id %>">activity</a>
+<a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
-<a class="action imgSettings" href="/monitoring/view_clustermonitoring_settings?cluster_id=<% cluster_id %>">settings</a><bd/>
+<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring_settings %>">settings</a><bd/>
 <p class="italic">Cluster collect and graph settings.</p>
 </td></tr>
 </table>
@@ -187,7 +187,7 @@ activate</a><br />
 <tr>
 <td colspan="2"></td>
 <td class="actions">
-<a class="action imgSettings" href="/orchestration?cluster_id=<% cluster_id %>">settings</a><bd/>
+<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/orchestration">settings</a><bd/>
 <p class="italic">Orchestration rules settings.</p>
 </td></tr>
 </table>

@@ -1,25 +1,13 @@
-<script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
-<script type="text/javascript" src="/js/monitor.js"></script>
+<% js_head.push('monitor.js') %>
+
 <!--button id='fold_all'>fold</button-->
-<table id='graphchoices'>
-<tr>
-<td class='period_selectors'>
-<table class=''>
-<tr><th>
-<a id="period_label">Hourly</a>
-<ul>
-	<li id='hour' class='period_selector selected_period' >Hourly</li>
-	<li id='day'  class='period_selector' >Daily</li>
-	<!--li id='custom' class='period_selector' >Custom</li-->
-</ul>
-</th></tr>
-</table>
+
 </td>
 <td>
 <table class='set_selectors simplelisting'>
 	<tr>
 	<% FOREACH s IN sets %>
-		<th id='<% s.id %>' class='set_selector'><% s.label %></th>
+		<th id='<% s.id %>' class='set_selector clickable'><% s.label %></th>
 	<% END %>
 	</tr>
 </table>
