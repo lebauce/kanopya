@@ -34,14 +34,17 @@ activate</a><br />
 <% IF active %>
 	<td>
 	<% SWITCH cluster_state %>
-        <% CASE Up %>
-        <span class="state imgUp">Up (<% state_time %>)
+        <% CASE 'up' %>
+        <span class="state imgUp">Up (<% state_time %>)</span>
+        <% CASE 'down' %>
+        <span class="state imgDown">Down</span>
+        <% CASE 'starting' %>
+        <span class="state imgDown">Starting... (<% state_time %>)</span>
+        <% CASE 'stopping' %>
+        <span class="state imgDown">Stopping... (<% state_time %>)</span>
+        <% CASE 'broken' %>
+        <span class="state imgWarning">Broken (<% state_time %>)</span>
 	<% END %>
-	<% IF state_up %><span class="state imgUp">Up (<% state_time %>)</span><% END %>
-	<% IF state_down %><span class="state imgDown">Down</span><% END %>
-	<% IF state_starting %><span class="state imgDown">Starting... (<% state_time %>)</span><% END %>
-	<% IF state_stopping %><span class="state imgDown">Stopping... (<% state_time %>)</span><% END %>
-	<% IF state_broken %><span class="state imgWarning">Broken (<% state_time %>)</span><% END %>
 	</td>
 <% ELSE %>
 	<td></td>

@@ -2,7 +2,7 @@
 %>
 <div class="title">append element (<% gp_type %>) to group <% gp_name %> <% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
 <% IF entity_list %>
-	<form method="POST" action="/groups/process_appendentity">
+	<form method="POST" action="/rights/groups/<% gp_id %>/appendentity">
 	<table class="form">
 			<tr>
 			<td class="label"><% gp_type %> :</td>

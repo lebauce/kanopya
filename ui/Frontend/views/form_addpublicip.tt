@@ -1,22 +1,22 @@
 <%# <style type="text/css">@import url(/css/form.css);</style>
 %>
 <div class="title">create a virtual ip<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
-<form method="POST" action="/networks/process_addpublicip">
+<form method="POST" action="">
 <table class="form">
 	<tr>
 		<td class="label">IP :</td>
 		<td><input type="text" name="ip_address" maxlength="39" size="20"/>
-		<span style="color: red"><% ERR_IP_ADDRESS %></span></td>
+		<span style="color: red"><% err_ip_address %></span></td>
 	</tr>
 	<tr>
 		<td class="label">mask :</td>
 		<td><input type="text" name="ip_mask" maxlength="39" size="20"/>
-		<span style="color: red"><% ERR_IP_MASK %></span></td>
+		<span style="color: red"><% err_ip_mask %></span></td>
 	</tr>
 	<tr>
 		<td class="label">gateway :</td>
 		<td><input type="text" name="gateway" maxlength="39" size="20"/>
-		<span style="color: red"><% ERR_GATEWAY %></span></td>
+		<span style="color: red"><% err_gateway %></span></td>
 	</tr>
 </table>
 <div class="buttons">
