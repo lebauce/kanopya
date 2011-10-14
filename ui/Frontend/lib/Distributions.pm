@@ -37,17 +37,13 @@ sub _distributions {
 get '/distributions' => sub {
     template 'distributions', {
         title_page         => 'Systems - Distributions',
-        eid                => session('EID'),
         distributions_list => _distributions(),
-        object             => vars->{adm_object}
     };
 };
 
 get '/distributions/upload' => sub {
     template 'form_uploaddistribution', {
         title_page         => 'Systems - Distributions upload',
-        eid                => session('EID'),
-        object             => vars->{adm_object}
     };
 };
 
