@@ -17,6 +17,7 @@ use Models;
 use Users;
 use Networks;
 use Groups;
+use Monitoring;
 
 use Log::Log4perl;
 
