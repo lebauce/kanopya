@@ -28,8 +28,6 @@
 </tr>
 </table>
 
-NODECOUNT GRAPH: <% nodecount_graph %>
-
 <table id='graph_table' class="graphview simplelisting">
 	<tr>
 		<td></td><td id='nodecount_graph'><img class='autorefresh' src="<% nodecount_graph %>" alt="kanopya-grapher must be running to see graph"/></td>
