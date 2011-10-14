@@ -43,7 +43,7 @@
 <tr><td class="italic" colspan="4"><% motherboard_desc %></td>
 <td class="actions" rowspan="9">
 <% IF can_update %>
-	<a class="imgEdit" href="/infrastructures/hosts/<% motherboard_id %>/edit">edit</a><br />
+	<a class="modal" href="/infrastructures/hosts/<% motherboard_id %>/edit">edit</a><br />
 	<span class="desc">Modify these global parameters.</span><br /><br />
 <% END %>
 <% IF can_delete %>
@@ -51,7 +51,7 @@
 	<span class="desc">Delete this motherboard.</span><br /><br />
 <% END %>
 <% IF can_setperm %>
-	<a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=Motherboard&id=<% motherboard_id %>">permissions</a><br />
+	<a class="imgPermission" href="/rights/permissions/motherboard/<% motherboard_id %>">permissions</a><br />
 	<span class="desc">View/set permissiosn for this host.</span><br /><br />
 <% END %>
 </td><tr/>
@@ -74,19 +74,19 @@
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions" rowspan="<% nbharddisks %>">
 	<% IF can_addHarddisk %>
-		<a class="imgAdding" href="/infrastructures/hosts/<% motherboard_id %>/addharddisk">add hard disk</a><br />
+		<a class="modal" href="/infrastructures/hosts/<% motherboard_id %>/addharddisk">add hard disk</a><br />
 		<span class="desc">Add a hard disk to this motherboard.</span><br /><br />
 	<% END %>
 	</td></tr>
 	<% FOREACH hd IN harddisks_list %>
 		<td class="label2">device: <% hd.harddisk_device %></td>
-		<td class="action"><% IF hd.link_removeharddisk %><a class="imgRemove" href="/infrastructures/hosts/<% motherboard_id %>/removeharddisk/<% hd.harddisk_id %>">remove</a><% END %></td></tr>
+		<td class="action"><% IF hd.link_removeharddisk %><a class="imgRemove" href="/infrastructures/hosts/<% motherboard_id %>/harddisks/<% hd.harddisk_id %>/remove">remove</a><% END %></td></tr>
 	<% END %>
 <% ELSE %>
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions">
 	<% IF can_addHarddisk %>
-		<a class="imgAdding" href="/motherboards/form_addharddisk?motherboard_id=<% motherboard_id %>">add hard disk</a><br />
+		<a class="modal" href="/infrastructures/hosts/<% motherboard_id %>/harddisks/add">add hard disk</a><br />
 		<span class="desc">Add a hard disk to this motherboard.</span>
 	<% END %>
 	</td></tr>

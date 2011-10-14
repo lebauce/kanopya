@@ -146,7 +146,7 @@ get '/permissions/set/:consumertype/:consumerid/:consumedtype/:consumedid' => su
     my $adm = Administrator->new;
     my $consumertype = param('consumertype');
     my $consumedtype = param('consumedtype');
-    
+
     my $entitymodule = 'Entity/'.$consumedtype.'.pm';
     my $entityclass = 'Entity::'.$consumedtype;
     eval { require $entitymodule };
@@ -154,7 +154,7 @@ get '/permissions/set/:consumertype/:consumerid/:consumedtype/:consumedid' => su
         my $exception = $@;
         return $exception;
     }
-    
+
     # get all methods provided by this class and build a sorted list
     my $methods = $entityclass->methods();
     my @sortmethodslist = ();
@@ -162,13 +162,13 @@ get '/permissions/set/:consumertype/:consumerid/:consumedtype/:consumedid' => su
         push @sortmethodslist, $m;
     }
     @sortmethodslist = sort @sortmethodslist;
-    
+
     # get all granted method for consumer/consumed arguments
     my @grantedmethods = $adm->{_rightchecker}->getGrantedMethods(
         consumer_id => param('consumerid'),
         consumed_id => param('consumedid'),
     );
-                
+
     my $methodlist = [];
     foreach my $m (@sortmethodslist) {
         my $tmp = {};
@@ -178,10 +178,10 @@ get '/permissions/set/:consumertype/:consumerid/:consumedtype/:consumedid' => su
         foreach my $md (@grantedmethods) {
             if($md eq $m) { $tmp->{checked} = 'checked'; }
         }
-        
+
         push @$methodlist, $tmp;
     }
-    
+
     template 'form_permissionsettings', {
         methods       => $methodlist,
         consumer_id   => param('consumerid'),

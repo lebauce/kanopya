@@ -129,7 +129,7 @@ get '/hosts/add' => sub {
         processormodels_list   => $pmodels,
         kernels_list           => $kernels,
         powersupplycards_list  => $pscards,
-    };
+    }, { layout => '' };
 };
 
 post '/hosts/add' => sub {
@@ -219,16 +219,16 @@ get '/hosts/:hostid/deactivate' => sub {
 get '/hosts/:hostid/addharddisk' => sub {
     template 'form_addharddisk', {
         host_id => param('hostid')
-    };
+    }, { layout => '' };
 };
 
 post '/hosts/:hostid/addharddisk' => sub {
     my $adm = Administrator->new;
     eval { 
         my $motherboard = Entity::Motherboard->get(id => param('hostid'));
-        $motherboard->addHarddisk(device => param('device')); 
+        $motherboard->addHarddisk(device => param('device'));
     };
-    if($@) { 
+    if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
@@ -242,16 +242,16 @@ get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
     my $adm = Administrator->new;
     eval { 
         my $motherboard = Entity::Motherboard->get(id => param('hostid'));
-        $motherboard->removeHarddisk(harddisk_id => param('harddiskid')); 
+        $motherboard->removeHarddisk(harddisk_id => param('harddiskid'));
     };
-    if($@) { 
+    if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
             redirect '/permission_denied';
         }
         else { $exception->rethrow(); }
-    } 
+    }
     else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
 
@@ -279,12 +279,12 @@ get '/hosts/:hostid' => sub {
 
     # processor model
     my $pmodel_id = $emotherboard->getAttr(name => 'processormodel_id');
-    if($pmodel_id) {    
+    if($pmodel_id) {
         eval {
             my $epmodel = Entity::Processormodel->get(id => $pmodel_id);
             $processor_model = $epmodel->getAttr(name =>'processormodel_brand')." ".$epmodel->getAttr(name => 'processormodel_name');
         };
-    } 
+    }
     else { $processor_model = 'not defined'; }
 
     # kernel
@@ -302,27 +302,27 @@ get '/hosts/:hostid' => sub {
                 my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
                 $cluster_name = $ecluster->getAttr('name' => 'cluster_name');
             };
-        } 
+        }
     } else {
         $active = 0;
         $motherboard_state = 'down';
     }
-    
+
     # harddisks list
     my $harddisks = $emotherboard->getHarddisks();
     my $hds= [];
     foreach my $hd (@$harddisks) {
         my $tmp = {};
         $tmp->{harddisk_id}     = $hd->{harddisk_id};
-        $tmp->{harddisk_device} = $hd->{harddisk_device}; 
+        $tmp->{harddisk_device} = $hd->{harddisk_device};
         $tmp->{motherboard_id}  = $emotherboard->getAttr(name => 'motherboard_id');
-                    
+
         if((not $methods->{'removeHarddisk'}->{'granted'}) || $active) {
             $tmp->{link_removeharddisk} = 0;
         } else { $tmp->{link_removeharddisk} = 1;}
         push @$hds, $tmp;
     }
-   
+
     template 'hosts_details', {
         motherboard_id          => $emotherboard->getAttr('name' => 'motherboard_id'),
         motherboard_hostname    => $emotherboard->getAttr('name' => 'motherboard_hostname'),
@@ -346,7 +346,5 @@ get '/hosts/:hostid' => sub {
         can_addHarddisk         => $methods->{'addHarddisk'}->{'granted'} && !$active,
     };
 };
-
-
 
 1;

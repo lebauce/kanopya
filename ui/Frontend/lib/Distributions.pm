@@ -37,18 +37,14 @@ sub _distributions {
 get '/distributions' => sub {
     template 'distributions', {
         title_page         => 'Systems - Distributions',
-        eid                => session('EID'),
         distributions_list => _distributions(),
-        object             => vars->{adm_object}
     };
 };
 
 get '/distributions/upload' => sub {
     template 'form_uploaddistribution', {
         title_page         => 'Systems - Distributions upload',
-        eid                => session('EID'),
-        object             => vars->{adm_object}
-    };
+    }, { layout => '' };
 };
 
 get '/distributions/:distributionid' => sub {
@@ -89,14 +85,14 @@ post '/distributions/upload' => sub {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
-            redirect '/permission_denied';    
+            redirect '/permission_denied';
         }
         else { $exception->rethrow(); }
     }
-    else {    
-        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new distribution upload added to execution queue'); 
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new distribution upload added to execution queue');
         redirect '/distributions';
-    }     
+    }
 };
 
 1;

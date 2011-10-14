@@ -38,12 +38,12 @@ get '/groups' => sub {
 };
 
 get '/groups/add' => sub {
-    template 'form_addgroup', {};
+    template 'form_addgroup', {}, { layout => '' };
 };
 
 post '/groups/add' => sub {
-    my $egroup = Entity::Gp->new( 
-        gp_name => param('gp_name'), 
+    my $egroup = Entity::Gp->new(
+        gp_name => param('gp_name'),
         gp_desc => param('gp_desc'),
         gp_type => param('gp_type'),
         gp_system => 0,
@@ -129,8 +129,8 @@ get '/groups/:groupid' => sub {
         $tmp->{content_id} = $e->getAttr('name' => lc($egroups->getAttr('name' => 'gp_type')).'_id');
         $tmp->{content_label} = $e->toString();
         $tmp->{gp_id} = params->{groupid};
-                    
-        push(@$content_list, $tmp) 
+
+        push(@$content_list, $tmp);
     }
 
     my $methods = $egroups->getPerms();

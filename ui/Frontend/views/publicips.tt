@@ -16,7 +16,7 @@
 	<% END %>
 </table>
 <div class="actions">
-<a class="action imgAdding" href="/architectures/networks/ips/public/add">create a virtual ip</a>
+<a class="action modal" href="/architectures/networks/ips/public/add">create a virtual ip</a>
 <p class="italic">Create a new virtual ip.</p>
 </div>
 
