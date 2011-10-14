@@ -1,5 +1,5 @@
 <style type="text/css">@import url(/css/form.css);</style>
-<form method="POST" action="">
+<form id="target" method="POST" action="/architectures/networks/ips/public/add">
 <table class="form">
 	<tr>
 		<td class="label">IP :</td>
