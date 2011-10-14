@@ -16,6 +16,7 @@ use Images;
 use Models;
 use Users;
 use Groups;
+use Permissions;
 
 use Log::Log4perl;
 
