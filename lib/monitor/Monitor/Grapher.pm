@@ -38,11 +38,13 @@ sub new {
     my $self = $class->SUPER::new( %args );
     
     #$self->{_graph_color} = { back => "#69B033" };
-    $self->{_graph_color} = {     back => "#111111",
-                                font => "#DDDDDD",
-                                canvas => "#222222",    # graph background
-                                frame => "#666666",        # line around color spot
-                                #mgrid => "#AAAAAA",
+    $self->{_graph_color} = {   back    => "#FFFFFF",
+                                font    => "#444444",
+                                canvas  => "#FFFFFF",   # graph background
+                                frame   => "#000000",   # line around color spot
+                                #mgrid  => "#AAAAAA",
+                                shadea  => "#FFFFFF",   # left and top border
+                                shadeb  => "#FFFFFF",   # right and bottom border
                             };
     
     $self->{_graph_title_font} = { name => "Times", element => "title", size => 15 };
