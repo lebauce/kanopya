@@ -47,6 +47,7 @@ use Kanopya::Exceptions;
 use Entity::Distribution;
 use Entity::Cluster;
 use Entity::Systemimage;
+use EEntity::ESystemimage;
 
 our $VERSION = '1.00';
 my $log = get_logger("executor");
@@ -156,42 +157,50 @@ sub execute {
     my $self = shift;
     my $adm = Administrator->new();
 
-        my $devs = $self->{_objs}->{distribution}->getDevices();
-        my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-        my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+    my $devs = $self->{_objs}->{distribution}->getDevices();
+        
+    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    $esystemimage->create(econtext          => $self->{nas}->{econtext},
+                          erollback         => $self->{erollback},
+                          devs              => $devs,
+                          component_storage => $self->{_objs}->{component_storage});
 
-        # creation of etc and root devices based on distribution devices
-        $log->info('etc device creation for new systemimage');
-        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name           => $etc_name,
-                                                                     size           => $devs->{etc}->{lvsize}."B",
-                                                                     filesystem     => $devs->{etc}->{filesystem},
-                                                                     econtext       => $self->{nas}->{econtext},
-                                                                     erollback     => $self->{erollback});
-
-        $log->info('etc device creation for new systemimage');
-        my $root_id = $self->{_objs}->{component_storage}->createDisk(name          => $root_name,
-                                                                      size          => $devs->{root}->{lvsize}."B",
-                                                                      filesystem    => $devs->{root}->{filesystem},
-                                                                      econtext      => $self->{nas}->{econtext},
-                                                                      erollback     => $self->{erollback});
-
-        # copy of distribution data to systemimage devices
-        $log->info('etc device fill with distribution data for new systemimage');
-        my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";
-        my $result = $self->{nas}->{econtext}->execute(command => $command);
-        # TODO dd command execution result checking
-
-        $log->info('root device fill with distribution data for new systemimage');
-        $command = "dd if=/dev/$devs->{root}->{vgname}/$devs->{root}->{lvname} of=/dev/$devs->{root}->{vgname}/$root_name bs=1M";
-        $result = $self->{nas}->{econtext}->execute(command => $command);
-        # TODO dd command execution result checking
-
-        $self->{_objs}->{systemimage}->setAttr(name => "etc_device_id", value => $etc_id);
-        $self->{_objs}->{systemimage}->setAttr(name => "root_device_id", value => $root_id);
-        $self->{_objs}->{systemimage}->setAttr(name => "active", value => 0);
-
-        $self->{_objs}->{systemimage}->save();
-        $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is added');
+        
+#        my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+#        my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
+#
+#        # creation of etc and root devices based on distribution devices
+#        $log->info('etc device creation for new systemimage');
+#        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name           => $etc_name,
+#                                                                     size           => $devs->{etc}->{lvsize}."B",
+#                                                                     filesystem     => $devs->{etc}->{filesystem},
+#                                                                     econtext       => $self->{nas}->{econtext},
+#                                                                     erollback     => $self->{erollback});
+#
+#        $log->info('etc device creation for new systemimage');
+#        my $root_id = $self->{_objs}->{component_storage}->createDisk(name          => $root_name,
+#                                                                      size          => $devs->{root}->{lvsize}."B",
+#                                                                      filesystem    => $devs->{root}->{filesystem},
+#                                                                      econtext      => $self->{nas}->{econtext},
+#                                                                      erollback     => $self->{erollback});
+#
+#        # copy of distribution data to systemimage devices
+#        $log->info('etc device fill with distribution data for new systemimage');
+#        my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";
+#        my $result = $self->{nas}->{econtext}->execute(command => $command);
+#        # TODO dd command execution result checking
+#
+#        $log->info('root device fill with distribution data for new systemimage');
+#        $command = "dd if=/dev/$devs->{root}->{vgname}/$devs->{root}->{lvname} of=/dev/$devs->{root}->{vgname}/$root_name bs=1M";
+#        $result = $self->{nas}->{econtext}->execute(command => $command);
+#        # TODO dd command execution result checking
+#
+#        $self->{_objs}->{systemimage}->setAttr(name => "etc_device_id", value => $etc_id);
+#        $self->{_objs}->{systemimage}->setAttr(name => "root_device_id", value => $root_id);
+#        $self->{_objs}->{systemimage}->setAttr(name => "active", value => 0);
+#
+#        $self->{_objs}->{systemimage}->save();
+#        $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is added');
 
         my $components = $self->{_objs}->{distribution}->getProvidedComponents();
         foreach my $comp (@$components) {
