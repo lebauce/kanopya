@@ -66,7 +66,7 @@ activate</a><br />
 	<span class="desc">Delete this cluster.</span><br /><br />
 <% END %>
 <% IF can_setperm %>
-	<a class="imgPermission" href="/permissions/cluster/<% cluster_id %>">permission</a><br />
+	<a class="imgPermission" href="/rights/permissions/cluster/<% cluster_id %>">permission</a><br />
 	<span class="desc">View/set permissions on this cluster.</span><br />
 <% END %>
 </td><tr/>

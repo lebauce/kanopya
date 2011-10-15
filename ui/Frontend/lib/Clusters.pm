@@ -362,6 +362,7 @@ get '/clusters/:clusterid' => sub {
         nodes_list         => $nodes,
         link_delete        => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
         link_activate      => $methods->{'activate'}->{'granted'} ? $link_activate : 0,
+        link_deactivate    => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
         link_start         => $methods->{'start'}->{'granted'} ? $link_start : 0,
         link_stop          => (not $methods->{'stop'}->{'granted'}) || ($cluster_id == 1) ? 0 : 1,
         link_edit          => $methods->{'update'}->{'granted'}, 
@@ -372,23 +373,78 @@ get '/clusters/:clusterid' => sub {
      };
 };
 
+get '/clusters/:clusterid/activate' => sub {
+    my $adm = Administrator->new;
+    my $ecluster;
+    eval {
+        $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->activate();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            forward('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster activation adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/deactivate' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->deactivate();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster deactivation adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->remove();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster removing adding to execution queue');
+        redirect('/architectures/clusters');
+    }
+};
 
 get '/clusters/:clusterid/components/add' => sub {
-    my $cluster_id = params->{clusterid};
+    my $cluster_id = param('clusterid');
     my $ecluster = Entity::Cluster->get(id => $cluster_id);
     my $methods = $ecluster->getPerms();
 
     template 'form_addcomponenttocluster', {
-        title_page         => "Clusters - Cluster's add component",
         cluster_id         => $cluster_id,
-    };
+    }, { layout => '' };
 };
 
-post '/clusters/:clusterid/addcomponentoncluster' => sub {
-
-};
-
-get '/clusters/:clusterid/publicips/add' => sub {
+get '/clusters/:clusterid/ips/public/add' => sub {
     my $cluster_id = params->{clusterid};
     my $ecluster = Entity::Cluster->get(id => $cluster_id);
     my $methods = $ecluster->getPerms();
@@ -396,10 +452,10 @@ get '/clusters/:clusterid/publicips/add' => sub {
     template 'form_setpubliciptocluster', {
         title_page         => "Clusters - Cluster's add component",
         cluster_id         => $cluster_id,
-    };
+    }, { layout => '' };
 };
 
-post '/clusters/:clusterid/publicips/add' => sub {
+post '/clusters/:clusterid/ips/public/add' => sub {
     my $cluster_id = params->{clusterid};
     my $ecluster = Entity::Cluster->get(id => $cluster_id);
     my $methods = $ecluster->getPerms();
