@@ -165,7 +165,7 @@ get '/images/:imageid/activate' => sub {
         }
     else {    
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'system image activation adding to execution queue'); 
-        redirect '/images/'.params->{imageid};
+        redirect '/systems/images/'.params->{imageid};
     } 
 
 };
