@@ -99,7 +99,7 @@ activate</a><br />
     <tr><td colspan="2">no public ip defined.</td>
     <td class="actions">
 <% END %>
-	<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/publicips/add">add a virtual ip</a><br />
+	<a class="modal" href="/architectures/clusters/<% cluster_id %>/ips/public/add">add a virtual ip</a><br />
 	<span class="desc">Add a new virtual ip to this cluster.</span><br /><br />
 	</td></tr>
 	<% FOREACH ip IN publicip_list %>
