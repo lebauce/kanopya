@@ -9,7 +9,10 @@
   },
   response_time:'200',
   domain_name:'mondrupal.fr',
-  public_ip:'192.168.55.1',
+  public_ip:{
+        addr:'192.168.55.1',
+        netmask:'255.255.255.0'
+      },
   public_port:{tcp:['80']},
   tier_number:'2',
   priority:100,
@@ -17,10 +20,17 @@
     {
       name:'frontend',
       rank:'1',
+      distribution_id:'1',
+      dmz_ip:{
+        addr:'192.168.1.1',
+        netmask:'255.255.255.0'
+      },
       data:
       [
         {
-          repository:'git://git.kanopya.org/infra/drupal_7.8_frontend.git',
+          exporter:'nfs',
+          repository:'/infrastructure/drupal_7.8/frontend/',
+          transfert_mode:'cp -a ',
           init_script:'init_website.sh',
           mount_point:'/opt/srv',
           size:'100M',
@@ -78,12 +88,19 @@
     {
       name:'backend',
       rank:'2',
+      distribution_id:'1',
+      dmz_ip:{
+        addr:'192.168.1.2',
+        netmask:'255.255.255.0'
+      },
       data:
       [
         {
-          repository:'git://git.kanopya.org/infra/drupal_7.8_backend.git',
+          repository:'/infrastructure/drupal_7.8/backend/',
+          transfert_mode:'cp -a ',
           mount_point:'/opt/srv',
           size:'1000M',
+          exporter:'iscsi',
         },
       ],
       component_list:[
