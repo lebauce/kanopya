@@ -332,6 +332,24 @@ sub getAttrDef{
     return ATTR_DEF;
 }
 
+sub getTiers {
+    my $self = shift;
+    
+    my %tiers;
+    my $rs_tiers = $self->{_dbix}->tiers;
+    if (! defined $rs_tiers) {
+        return;
+    }
+    else {
+        my %tiers;
+        while ( my $tier_row = $rs_tiers->next ) {
+            my $tier_id = $tier_row->get_column("tier_id");
+            $tiers{$tier_id} = Entity::Tier->get(id => $tier_id);
+        }
+    }
+    return \%tiers;
+}
+
 
 =head2 toString
 
@@ -521,19 +539,25 @@ this is the first step of cluster setting
 sub addComponent {
     my $self = shift;
     my %args = @_;
+    my $noconf;
 
     General::checkParams(args => \%args, required => ['component_id']);
 
+    if(defined $args{noconf}){
+        $noconf = $args{noconf};
+        delete $args{noconf};
+    }
     my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
     my $component_instance_id = $componentinstance->save();
 
     my $internal_cluster = Entity::Cluster->getCluster(hash => {cluster_name => 'adm'});
-    $log->info('linternal cluster;'.Dumper($internal_cluster));
+    $log->info('internal cluster;'.Dumper($internal_cluster));
     # Insert default configuration in db
     # Remark: we must get concrete instance here because the component->new (above) return an Entity::Component and not a concrete child component
     #          There must be a way to do this more properly (component management).
     my $concrete_component = Entity::Component->getInstance(id => $component_instance_id);
-    $concrete_component->insertDefaultConfiguration(internal_cluster => $internal_cluster);
+    if (! $noconf) {
+        $concrete_component->insertDefaultConfiguration(internal_cluster => $internal_cluster);}
     return $component_instance_id;
 }
 
