@@ -47,12 +47,10 @@
 <% IF components_list %>
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions" rowspan="<% components_count %>">
-	<% UNLESS active %>
-		<% IF can_installcomponent %>
-			<a class="modal" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
-			<span class="desc">Install a component to this system image.</span><br /><br />
-		<% END %>
-	<% END %>
+    <% IF can_installcomponent %>
+        <a class="modal" href="/systems/images/<% systemimage_id %>/installcomponent">Install a component</a><br />
+        <span class="desc">Install a component to this system image.</span><br /><br />
+    <% END %>
 	</td></tr>
 	<% FOREACH comp IN components_list %>
 		<tr><td class="label2"><span class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
