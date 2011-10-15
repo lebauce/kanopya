@@ -145,7 +145,7 @@ activate</a><br />
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_addnode %>
-		<a class="imgAdding modal" href="/architectures/clusters/process_addnode/<% cluster_id %>">add a node</a><br />
+		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/nodes/add">add a node</a><br />
 		<span class="desc">Add a node to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -160,7 +160,7 @@ activate</a><br />
 		</td>
 		<td class="action">
 		<% IF node.link_remove %>
-			<a class="imgRemove" href="/architectures/clusters/process_removenode?cluster_id=<% node.cluster_id %>&motherboard_id=<% node.motherboard_id %>">remove</a>
+			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.motherboard_id %>/remove">remove</a>
 		<% END %></td></tr>
 	<% END %>
 <% ELSE %>
