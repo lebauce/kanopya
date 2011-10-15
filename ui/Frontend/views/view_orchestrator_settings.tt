@@ -1,9 +1,5 @@
 
-<script type="text/javascript" src="/js/extern/jquery.js"></script>
-<script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
-<script type="text/javascript" src="/js/atooltype.jquery.js"></script>
-<script type="text/javascript" src="/js/orchestrator.js"></script>
-<script type="text/javascript" src="/js/details.js"></script>
+<% js_head.push('orchestrator.js', 'details.js') %>
 
 
 <table id="rules_table" class='simplelisting rulesview'>
@@ -12,7 +8,7 @@
 	<tr id='rules_head'><th colspan='6'>Condition</th><th colspan='2' class='then_head'></th><th>Action</th><th>Node selection</th></tr>
 	
 	<tr id='rule_model' class="hidden">
-		<td class='indicator_name editable_choice new_edit' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
+		<td class='indicator_name editable_choice new_edit' choices='<% var_choices %>'>indicator</td>
 		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
 		<td><span class='time_laps editable'>60</span> sec</td>
 		<td class='comp_op editable_choice new_edit' choices='&lt;,&gt;'>comp op</td>
@@ -24,28 +20,28 @@
 		<td class='node_selection'>rand</td>
 	</tr>
 	
-	<TMPL_LOOP NAME=RULES>
-		<TMPL_LOOP NAME=CONDITIONS>
+	<% FOREACH rule IN rules %>
+		<% FOREACH condition IN rule.conditions %>
 			<tr class="rule">
-			<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'><TMPL_VAR NAME=VAR></td>
+			<td class='indicator_name editable_choice' choices='<% condition.var_choices %>'><% condition.var %></td>
 			<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
-			<td><span class='time_laps editable'><TMPL_VAR NAME=TIME_LAPS></span> sec</td>
-			<td class='comp_op editable_choice' choices='&lt;,&gt;'><TMPL_IF NAME=INF>&lt;<TMPL_ELSE>&gt;</TMPL_IF></td>
-			<td class='thresh_value editable' cond_id='<TMPL_VAR NAME=OP_ID>'><TMPL_VAR NAME=VALUE></td>
+			<td><span class='time_laps editable'><% condition.time_laps %></span> sec</td>
+			<td class='comp_op editable_choice' choices='&lt;,&gt;'><% IF condition.inf %>&lt;<% ELSE %>&gt;<% END %></td>
+			<td class='thresh_value editable' cond_id='<% condition.op_id %>'><% condition.value %></td>
 			<td class='remove_cond'></td>
-			<TMPL_IF NAME=MASTER_ROW>
-				<TMPL_IF NAME=BIN_OP>
-					<td class='operator' op_id='<TMPL_VAR NAME=OP_ID>' rowspan='<TMPL_VAR NAME=SPAN>'><TMPL_VAR NAME=BIN_OP></td>
-				<TMPL_ELSE>
-					<td class='op_col' op_id='<TMPL_VAR NAME=OP_ID>'></td>
-				</TMPL_IF>
-				<td class='then_col' rowspan='<TMPL_VAR NAME=SPAN>'></td>
-				<td class='action_col editable_choice' choices='Add node,Remove node' rowspan='<TMPL_VAR NAME=SPAN>'><TMPL_VAR NAME=ACTION></td>
-				<td class='node_selection' rowspan='<TMPL_VAR NAME=SPAN>'>rand</td>
-			</TMPL_IF>
+			<% IF condition.master_row %>
+				<% IF condition.bin_op %>
+					<td class='operator' op_id='<% condition.op_id %>' rowspan='<% condition.span %>'><% condition.bin_op %></td>
+				<% ELSE %>
+					<td class='op_col' op_id='<% condition.op_id %>'></td>
+				<% END %>
+				<td class='then_col' rowspan='<% condition.span %>'></td>
+				<td class='action_col editable_choice' choices='Add node,Remove node' rowspan='<% condition.span %>'><% condition.action %></td>
+				<td class='node_selection' rowspan='<% condition.span %>'>rand</td>
+			<% END %>
 			</tr>
-		</TMPL_LOOP>
-	</TMPL_LOOP>
+		<% END %>
+	<% END %>
 		
 </table>	
 
@@ -63,16 +59,16 @@
 		<td class='op_col' op_id=''></td>
 	</tr>
 	
-	<TMPL_LOOP NAME=OPTIM_CONDITIONS>
+	<% FOREACH optim_cond IN optim_conditions %>
 		<tr class="condition">
-		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'><TMPL_VAR NAME=VAR></td>
+		<td class='indicator_name editable_choice' choices='<% optim_cond.var_choices %>'><% optim_cond.var %></td>
 		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>mean</td>
-		<td><span class='time_laps editable'><TMPL_VAR NAME=TIME_LAPS></span> sec</td>
-		<td class='comp_op editable_choice' choices='&lt;,&gt;'><TMPL_IF NAME=INF>&lt;<TMPL_ELSE>&gt;</TMPL_IF></td>
-		<td class='thresh_value editable' cond_id='<TMPL_VAR NAME=OP_ID>'><TMPL_VAR NAME=VALUE></td>
+		<td><span class='time_laps editable'><% optim_cond.time_laps %></span> sec</td>
+		<td class='comp_op editable_choice' choices='&lt;,&gt;'><% IF optim_cond.inf %>&lt;<% ELSE %>&gt;<% END %></td>
+		<td class='thresh_value editable' cond_id='<% optim_cond.op_id %>'><% optim_cond.value %></td>
 		<td class='remove_cond'></td>
 		</tr>
-	</TMPL_LOOP>
+	<% END %>
 	
 </table>
 
