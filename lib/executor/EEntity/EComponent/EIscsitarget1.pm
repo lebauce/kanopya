@@ -74,6 +74,7 @@ sub generateTargetname {
     return $res;
 }
 
+# This method allow to create a new export in 1 call
 sub createExport {
     my $self = shift;
     my %args  = @_;
@@ -82,7 +83,7 @@ sub createExport {
                          required => ['export_name','econtext',
                                       'device_name', 'typeio',
                                       'iomode', 'erollback']);
-                                      
+
     my $disk_targetname = $self->generateTargetname(name => $args{export_name});
 
     $self->addExport(iscsitarget1_lun_number    => 0,
