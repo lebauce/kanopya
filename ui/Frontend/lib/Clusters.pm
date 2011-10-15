@@ -616,4 +616,44 @@ get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
     redirect('/architectures/clusters/'.param('clusterid'));
 };
 
+get '/clusters/:clusterid/nodes/add' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->addNode();
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue');
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->removeNode(motherboard_id => param('nodeid'));
+    };
+       if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster remove node adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
 1;

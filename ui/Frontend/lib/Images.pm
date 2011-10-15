@@ -101,7 +101,7 @@ post '/images/add' => sub {
         }
         else {    
             $adm->addMessage(from => 'Administrator', level => 'info', content => 'new system image clone adding to execution queue'); 
-            redirect '/images';
+            redirect '/systems/images';
         }         
          
     } # system image creation from a distribution
@@ -124,7 +124,7 @@ post '/images/add' => sub {
         }
         else {    
             $adm->addMessage(from => 'Administrator', level => 'info', content => 'new system image operation adding to execution queue'); 
-            redirect '/images';
+            redirect '/systems/images';
         }
     }
 };
@@ -145,7 +145,7 @@ get '/images/:imageid/remove' => sub {
     }
     else {    
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'system image removing adding to execution queue'); 
-        redirect '/images';
+        redirect '/systems/images';
     } 
 };
 
@@ -188,7 +188,7 @@ get '/images/:imageid/deactivate' => sub {
     else {    
         my $msg = "System Image '".$esystemimage->getAttr(name => 'systemimage_name')."' deactivation enqueued";
         $adm->addMessage(from => 'Administrator', level => 'info', content => $msg); 
-        redirect '/images/'.params->{imageid};
+        redirect '/systems/images/'.params->{imageid};
     }
 };
 
@@ -253,30 +253,19 @@ get '/images/:imageid' => sub {
 
     my $activate;
     my $active;
-    my $can_setperm; 
-    my $can_activate;
-    my $can_deactivate;
-    my $can_delete; 
-    my $can_installcomponent;
     my $distribution;
     my $systemimage_usage;
 
-    my $esystemimage = Entity::Systemimage->get(id => params->{imageid});
+    my $esystemimage = Entity::Systemimage->get(id => param('imageid'));
     my $methods = $esystemimage->getPerms();
-    if($methods->{'setperm'}->{'granted'}) { $can_setperm = 1 }
-
-    
+   
     eval {    
         my $edistro = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
         $distribution = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
     };
-    if(not $esystemimage->getAttr(name => 'active')) {
-        if($methods->{'activate'}->{'granted'}) { $can_activate = 1 }
-        if($methods->{'remove'}->{'granted'}) { $can_delete = 1 }
-    } else {
-        if($methods->{'deactivate'}->{'granted'}) { $can_deactivate = 1 }
-        $active = 1;
-    }
+
+    $active = $esystemimage->getAttr(name => 'active');
+       
     if($active) {
         $systemimage_usage = $esystemimage->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared';
     } else {
@@ -288,22 +277,22 @@ get '/images/:imageid' => sub {
     foreach my $c (@$components_list) {
         delete $c->{component_id};
     }
-    if(not $methods->{'installcomponent'}->{'granted'}) { $can_installcomponent = 1 }
 
     template 'images_details', {
-        title_page       => "Systems - System image's overview",
-        activate         => $activate,
-        can_setperm      => $can_setperm,
-        can_activate     => $can_activate,
-        can_deactivate   => $can_deactivate,
-        can_delete       => $can_delete,
-        can_installcomponent  =>  $can_installcomponent,
+        title_page            => "Systems - System image's overview",
+        activate              => $activate,
+        active                => $active,
+        can_setperm           => $methods->{'setperm'}->{'granted'},
+        can_activate          => $methods->{'activate'}->{'granted'} && !$active,
+        can_deactivate        => $methods->{'deactivate'}->{'granted'} && $active,
+        can_delete            => $methods->{'remove'}->{'granted'} && ! $active,
+        can_installcomponent  => $methods->{'installcomponent'}->{'granted'} && ! $active,
         distribution          => $distribution,          
         systemimage_usage     => $systemimage_usage,     
-        systemimage_id => $esystemimage->getAttr(name => 'systemimage_id'),     
-        systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'), 
-        systemimage_desc => $esystemimage->getAttr(name => 'systemimage_desc'), 
-        components_list => $components_list,
-        components_count => $nb + 1,
+        systemimage_id        => param('imageid'),     
+        systemimage_name      => $esystemimage->getAttr(name => 'systemimage_name'), 
+        systemimage_desc      => $esystemimage->getAttr(name => 'systemimage_desc'), 
+        components_list       => $components_list,
+        components_count      => $nb + 1,
      };
 };

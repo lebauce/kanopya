@@ -63,7 +63,7 @@ post '/components/upload' => sub {
     }
     else {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'new component upload added to execution queue');
-        redirect '/components';
+        redirect('/systems/components');
     }
 };
 

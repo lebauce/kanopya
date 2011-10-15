@@ -91,7 +91,7 @@ post '/distributions/upload' => sub {
     }
     else {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'new distribution upload added to execution queue');
-        redirect '/distributions';
+        redirect('/systems/distributions');
     }
 };
 

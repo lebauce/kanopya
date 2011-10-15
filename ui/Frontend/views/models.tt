@@ -16,7 +16,7 @@
 			<br /><a class="imgRemove" href="/infrastructures/models/motherboards/<% m.mmodel_id %>/remove">remove</a>
 		<% END %>
 		<% IF m.can_setperm %>
-			<br /><a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=Motherboardmodel&id=<% m.mmodel_id %>">permissions</a>
+			<br /><a class="imgPermission" href="/rights/permissions/motherboardmodel/<% m.mmodel_id %>">permissions</a>
 		<% END %>
 		</td>
 		</tr>
@@ -35,7 +35,7 @@
 		<td class="center"><% IF p.pmodel_virt %>yes<% ELSE %>no<% END %></td>
 		<td><% IF p.can_update %><a class="imgEdit">edit</a><% END %>
 		<% IF p.can_delete %><br /><a class="imgRemove" href="/infrastructures/models/processors/<% p.pmodel_id %>/remove">remove</a><% END %>
-		<% IF p.can_setperm %><br /><a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=Processormodel&id=<% p.pmodel_id %>">permissions</a><% END %>
+		<% IF p.can_setperm %><br /><a class="imgPermission" href="/rights/permissions/processormodel/<% p.pmodel_id %>">permissions</a><% END %>
 		</td>
 		</tr>
 	<% END %>
