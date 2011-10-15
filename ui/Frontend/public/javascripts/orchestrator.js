@@ -1,7 +1,9 @@
 $(document).ready(function(){
   
   	var url_params = window.location.href.split('?')[1];
-  	var save_orchestrator_settings_link = "/cgi/kanopya.cgi/orchestration/save_orchestrator_settings?" + url_params;
+  	var url = window.location.href;
+	var path = url.replace(/^[^\/]+\/\/[^\/]+/g,''); // remove the beginning of the url to keep only path
+  	var save_orchestrator_settings_link = path + '/save';
 	var save_controller_settings_link = "/cgi/kanopya.cgi/orchestration/save_controller_settings?" + url_params;
   
   	commonInit();
@@ -187,7 +189,7 @@ alert('remove');
  		var params = { rules : JSON.stringify(rules), optim_conditions : JSON.stringify(optim_cond)  };
 		$.get(save_orchestrator_settings_link, params, function(resp) {
 			loading_stop();
-			alert(resp);
+			//alert($(resp).text);
 		});
 		
  	}).addClass('clickable');

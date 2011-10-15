@@ -50,7 +50,7 @@
 	<tr id='rules_head'><th colspan='6'>Condition</th></tr>
 	
 	<tr id='condition_model' class="hidden">
-		<td class='indicator_name editable_choice' choices='<TMPL_VAR NAME=VAR_CHOICES>'>indicator</td>
+		<td class='indicator_name editable_choice' choices='<% var_choices %>'>indicator</td>
 		<td class='trans_func editable_choice' choices='mean,max,min,deriv'>trans func</td>
 		<td><span class='time_laps editable'>laps</span> sec</td>
 		<td class='comp_op editable_choice' choices='&lt;,&gt;'>comp op</td>
