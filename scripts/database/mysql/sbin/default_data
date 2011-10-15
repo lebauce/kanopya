@@ -1,3 +1,3 @@
 our @pvs= ('/dev/sda4');
 
-our %datas = (kanopya_vg_name => 'vg1', kanopya_vg_total_size => '134190', kanopya_vg_free_space => '65610', kanopya_pvs => \@pvs, ipv4_internal_ip => '10.3.0.1', ipv4_internal_netmask => '255.255.255.0', ipv4_internal_network_ip => '10.3.0.0', admin_domainname => 'hedera-technology.com', mb_hw_address => '00:26:18:db:b1:3e', admin_password=>"K4n0py4",admin_kernel=>"2.6.39.3",tmstp=>time());
+our %datas = (kanopya_vg_name => 'ACA-vg', kanopya_vg_total_size => '134190', kanopya_vg_free_space => '65610', kanopya_pvs => \@pvs, ipv4_internal_ip => '10.3.0.1', ipv4_internal_netmask => '255.255.255.0', ipv4_internal_network_ip => '10.3.0.0', admin_domainname => 'hedera-technology.com', mb_hw_address => '00:26:18:db:b1:3e', admin_password=>"K4n0py4",admin_kernel=>"2.6.39.3",tmstp=>time());
