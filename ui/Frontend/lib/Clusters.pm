@@ -286,8 +286,8 @@ get '/clusters/:clusterid' => sub {
         $comphash->{component_category} = $compAtt->{component_category};
         $comphash->{cluster_id} = $cluster_id;
         if(not $methods->{'configureComponents'}->{'granted'} ) {
-                $comphash->{'link_configureComponents'} = 0;
-        } else { $comphash->{'link_configureComponents'} = 1;}
+                $comphash->{'link_configurecomponents'} = 0;
+        } else { $comphash->{'link_configurecomponents'} = 1;}
         if(not $methods->{'removeComponent'}->{'granted'} ) {
                 $comphash->{link_remove} = 0;
         } else { $comphash->{link_remove} = not $active;}

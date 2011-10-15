@@ -1,5 +1,4 @@
-<%# <script type="text/javascript" src="/js/components.js"></script>
-%>
+<% js_head.push('components.js') %>
 <h2>Cluster <% cluster_name %> - Dhcpd3 Configuration</h2>
 <hr />
 <input type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
@@ -29,5 +28,6 @@
 	<% END %>
 <% END %>     
 </table>
-<input type="button" value="ok" onclick="javascript:document.location='/clusters/<% cluster_id %>'"/>
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
 

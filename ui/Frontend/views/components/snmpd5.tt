@@ -1,3 +1,4 @@
+<% js_head.push('components.js') %>
 <h2>Cluster <% cluster_name %> - Snmpd5 Configuration</h2>
 <hr />
 <form method="POST" action="/components/process_configurecomponent">
@@ -11,7 +12,7 @@
 </table>
 <hr />
 <div class="right">
-<input type="submit" value="ok"/>
-<input type="button" value="cancel" onclick="javascript:document.location='/clusters/<% cluster_id %>'"/>
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
 </div>
 </form>

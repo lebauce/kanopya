@@ -1,5 +1,4 @@
-<%# <script type="text/javascript" src="/js/components.js"></script>
-%>
+<% js_head.push('components.js') %>
 <h2>Cluster <% cluster_name %> - Php5 Configuration</h2>
 <hr />
 <form class="elem_root" name="conf">
@@ -17,7 +16,7 @@ Session save path: <input id="session_path" class="conf_simple_value" type="text
 
 <div class="right">
 <input id="save_button" type="button" value="ok"/>
-<input type="button" value="cancel" onclick="javascript:document.location='/clusters/<% cluster_id %>'"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
 </div>
 </form>
 
