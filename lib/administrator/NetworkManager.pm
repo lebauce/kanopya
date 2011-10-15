@@ -59,6 +59,20 @@ sub new {
     return $self;
 }
 
+sub getInternalNetwork {
+    my $self = shift;
+    
+#    if (wantarray){
+#        return ($self->{internalnetwork}->{ip}, $self->{internalnetwork}->{mask});
+#    }else {
+#        # TOO BAD
+    $log->error("####################################\n");
+    $log->error("####################################\n");
+    $log->error("Internal Network ". $self->{internalnetwork}->{ip} . "/24");
+     return $self->{internalnetwork}->{ip} . "/24";
+#    }
+}
+
 =head2 addRoute
 
 add new route to a public ip given its id
@@ -553,6 +567,40 @@ sub setClusterPublicIP {
         throw Kanopya::Exception::DB(error => $errmsg);
     }
     $log->info("Public ip $args{publicip_id} set to cluster $args{cluster_id}");
+}
+
+=head2 setTierDmzIP
+
+associate dmz ip and tier
+    args:    dmzip_id, tier_id 
+    
+
+=cut
+
+sub setTierDmzIP {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['dmzip_id', 'tier_id']);
+    
+    my $row = $self->{db}->resultset('Ipv4Dmz')->find($args{dmzip_id});
+    # getting public ip row
+    if(! defined $row) {
+        $errmsg = "NetworkManager->setTierDmzIP : dmzip_id $args{dmzip_id} not found!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
+    # try to set cluster_id to this ip
+    eval {
+        $row->set_column('tier_id', $args{tier_id});
+        $row->update;
+    };
+    if($@) { 
+        $errmsg = "NetworkManager->setTierDmzIP : $@";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
+    $log->info("Public ip $args{dmzip_id} set to cluster $args{tier_id}");
 }
 
 =head2 unsetClusterPublicIP
