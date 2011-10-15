@@ -531,6 +531,18 @@ sub _generateNetConf {
     }
 
     push(@interfaces, $iface);
+    my $i =0;
+    my $tiers = $self->{_objs}->{cluster}->getTiers();
+    if ($tiers) {
+        foreach my $tier_key (keys %$tiers){
+            my $dmz_ips = $tiers->{$tier_key}->getDmzIps();
+            foreach my $dmz_ip (@$dmz_ips){
+                my $tmp_iface = {name => "eth0:$i", address => $dmz_ip->{address}, netmask => $dmz_ip->{netmask}};
+                push (@interfaces, $tmp_iface);
+                $i++;
+            }
+        }
+    }
 
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
         @interfaces = (@interfaces, @{$self->{_objs}->{cluster}->getPublicIps()});
