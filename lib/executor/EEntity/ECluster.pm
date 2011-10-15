@@ -35,7 +35,7 @@ ECluster is the execution class of cluster entities
 package EEntity::ECluster;
 use base "EEntity";
 
-use Entity::Powersupplycard;
+
 
 use strict;
 use warnings;
