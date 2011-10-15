@@ -1,4 +1,4 @@
-<form method="POST" action="/clusters/process_addcomponent">
+<form method="POST" action="/architectures/clusters/<% cluster_id %>/components/add">
 <table class="form">
 	<tr>
 		<td class="label">available components :</td>
