@@ -445,23 +445,47 @@ get '/clusters/:clusterid/components/add' => sub {
 };
 
 get '/clusters/:clusterid/ips/public/add' => sub {
-    my $cluster_id = params->{clusterid};
-    my $ecluster = Entity::Cluster->get(id => $cluster_id);
-    my $methods = $ecluster->getPerms();
+    my $adm = Administrator->new;
+    my $freepublicips = $adm->{manager}->{network}->getFreePublicIPs();
 
     template 'form_setpubliciptocluster', {
-        title_page         => "Clusters - Cluster's add component",
-        cluster_id         => $cluster_id,
+        cluster_id         => param('clusterid'),
+        freepublicips_list => $freepublicips
     }, { layout => '' };
 };
 
 post '/clusters/:clusterid/ips/public/add' => sub {
-    my $cluster_id = params->{clusterid};
-    my $ecluster = Entity::Cluster->get(id => $cluster_id);
-    my $methods = $ecluster->getPerms();
+    my $adm = Administrator->new;
+    eval {
+        $adm->{manager}->{network}->setClusterPublicIP(
+            publicip_id => param('publicip_id'),
+            cluster_id => param('clusterid'),
+        );
+    };
+    if($@) {
+        my $error = $@;
+        $adm->addMessage(from => 'Administrator',level => 'error', content => $error);
+    } else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added to cluster.');
+    }
+    redirect('/architectures/clusters/'.param('clusterid'));
+};
 
-    redirect '/architectures/clusters';
-    
+get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        $adm->{manager}->{network}->unsetClusterPublicIP(
+            publicip_id => param('ipid'),
+            cluster_id => param('clusterid'),
+        );
+    };
+    if($@) {
+        my $error = $@;
+        $adm->addMessage(from => 'Administrator',level => 'error', content => $error);
+    } else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed from cluster.');
+    }
+    redirect('/architectures/clusters/'.param('clusterid'));
 };
 
 1;

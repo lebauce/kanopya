@@ -104,7 +104,7 @@ activate</a><br />
 	</td></tr>
 	<% FOREACH ip IN publicip_list %>
 		<tr><td class="label2"><% ip.address %> / <% ip.netmask %> (gateway: <% ip.gateway %>)</td>
-		<td class="action"><a class="imgRemove" href="/architectures/clusters/<% ip.cluster_id %>/publicip/<% ip.publicip_id %>/unset">remove</a>
+		<td class="action"><a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/ips/public/<% ip.publicip_id %>/remove">remove</a>
 		<input type="hidden" value="<% ip.name %>"/>
 		<td></tr>
 	<% END %>

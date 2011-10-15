@@ -1,18 +1,15 @@
-<form method="POST" action="">
+<form method="POST" action="/architectures/clusters/<% cluster_id %>/ips/public/add">
 <table class="form">	
 	<tr><td><select name="publicip_id">
-	<% FOREACH ip IN FREEPUBLICIPS %>
-		<option value="<% ip.PUBLICIP_ID %>">
-			<% ip.IP_ADDRESS %>
-			 | <% ip.IP_MASK %>
-			 | <% ip.GATEWAY %>
+	<% FOREACH ip IN freepublicips_list %>
+		<option value="<% ip.publicip_id %>">
+			<% ip.ip_address %> | <% ip.ip_mask %> | <% ip.gateway %>
 		</option>
 	<% END %>	
 	</select></td>
 	</tr>
 </table>
 <div class="buttons">
-	<input type="hidden" name="cluster_id" value="<% cluster_id %>" />
 	<input type="submit" value="ok"/>
 </div>
 </form> 
