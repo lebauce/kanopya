@@ -363,8 +363,8 @@ get '/clusters/:clusterid' => sub {
         link_delete        => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
         link_activate      => $methods->{'activate'}->{'granted'} ? $link_activate : 0,
         link_deactivate    => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
-        link_start         => $methods->{'start'}->{'granted'} ? $link_start : 0,
-        link_stop          => (not $methods->{'stop'}->{'granted'}) || ($cluster_id == 1) ? 0 : 1,
+        link_start         => $methods->{'start'}->{'granted'} && $link_start,
+        link_stop          => $methods->{'stop'}->{'granted'} && $link_stop,
         link_edit          => $methods->{'update'}->{'granted'}, 
         link_addnode       => $methods->{'addnode'}->{'granted'} ? $link_addnode : 0,
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} || $active ? 0 : 1,
@@ -433,6 +433,67 @@ get '/clusters/:clusterid/remove' => sub {
         redirect('/architectures/clusters');
     }
 };
+
+get '/clusters/:clusterid/start' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->start();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster start adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/stop' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->stop();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster stop adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/forcestop' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->forceStop();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster force stop adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
 
 get '/clusters/:clusterid/components/add' => sub {
     my $cluster_id = param('clusterid');
