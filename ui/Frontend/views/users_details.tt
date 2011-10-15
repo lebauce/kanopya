@@ -16,7 +16,7 @@
 	<span class="desc">Delete this user.</span><br /><br />
 <% END %>
 <% IF can_setperm %>
-	<a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=User&id=<% user_id %>">permission</a><br />
+	<a class="imgPermission" href="/rights/permissions/user/<% user_id %>">permission</a><br />
 	<span class="desc">View/set permissions on this user.</span><br />
 <% END %>
 
