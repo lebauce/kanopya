@@ -155,6 +155,18 @@ sub get {
    return $self;
 }
 
+sub getComponentId{
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['component_name','component_version']);
+    
+    my $adm = Administrator->new();
+    $log->error(Dumper %args);
+    my $component = $adm->{db}->resultset('Component')->search(\%args)->single();
+    return $component->get_column("component_id");
+}
+
 =head2 getInstance
 
 =cut
