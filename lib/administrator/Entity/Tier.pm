@@ -64,6 +64,10 @@ use constant ATTR_DEF => {
     infrastructure_id     => {pattern        => '^\d*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
+                                 is_editable    => 0},
+    cluster_id     => {pattern        => '^\d*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
                                  is_editable    => 0}
     };
 
