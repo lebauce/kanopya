@@ -1,4 +1,3 @@
-<style type="text/css">@import url(/css/form.css);</style>
 <form method="POST" action="/systems/distributions/upload" enctype="multipart/form-data">
 <table class="form">
 <tr>

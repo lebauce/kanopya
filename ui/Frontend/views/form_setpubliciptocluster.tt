@@ -1,4 +1,3 @@
-<style type="text/css">@import url(/css/form.css);</style>
 <form method="POST" action="">
 <table class="form">	
 	<tr><td><select name="publicip_id">

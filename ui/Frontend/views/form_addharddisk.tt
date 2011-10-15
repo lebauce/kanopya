@@ -1,4 +1,3 @@
-<style type="text/css">@import url(/css/form.css);</style>
 <form method="POST" action="/infrastructures/hosts/<% host_id %>/addharddisk">
 <table class="form">
 	<tr>

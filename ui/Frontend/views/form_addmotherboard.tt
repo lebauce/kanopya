@@ -1,4 +1,3 @@
-<style type="text/css">@import url(/css/form.css);</style>
 <form method="POST" action="/infrastructures/hosts/add">
 <table class="form">
 	<tr>
