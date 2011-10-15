@@ -17,7 +17,8 @@ sub _getMonitoredSets {
     return $adm->{'manager'}{'monitor'}->getCollectedSets( cluster_id => $args{cluster_id} );
 }
 
-get '/clusters/:clusterid/monitoring/toto' => sub {
+#TODO change for ajax
+get '/clusters/:clusterid/monitoring/graphs' => sub {
     my $set_name    = params->{'set'};
     my $node_id     = params->{'node'};
     my $period      = params->{'period'} || "hour";
@@ -38,8 +39,8 @@ get '/clusters/:clusterid/monitoring/toto' => sub {
     my $nodecount_graph = "graph_" . $cluster_name . "_nodecount_" . $period . ".png";
     my $nodecount_graph_path = "$graph_dir_alias/$nodecount_graph";
     
-    my @graphs = ();    
-    my @node_info = ();   
+    my @graphs = ();
+    my @node_info = ();
     foreach my $node_id ( defined $node_id ? ($node_id) : @all_ids) {
         my @sets = ();
         my $node_ip = '';
@@ -73,7 +74,7 @@ get '/clusters/:clusterid/monitoring/toto' => sub {
 #    $tmpl->param('NODECOUNT_GRAPH' => "$graph_dir_alias/$graph_subdir/$nodecount_graph");
 
     content_type('text/xml');
-    return to_xml { node => \@node_info, nodecount_graph => { src => $nodecount_graph  } };
+    return to_xml { node => \@node_info, nodecount_graph => { src => $nodecount_graph_path } };
      
 };
 
