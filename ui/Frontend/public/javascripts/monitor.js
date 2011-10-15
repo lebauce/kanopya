@@ -2,10 +2,7 @@
  
   	var url_params = window.location.href.split('?')[1];
   	var url = window.location.href;
-	//var uri.attr.path.replace(/^\/+|\/+$/g,'').split('/');
- 	//var content_link = "/cgi/kanopya.cgi/monitoring/xml_graph_list?" + url_params;
-	//var content_link = url;
-	var content_link = "/architectures/clusters/1/monitoring/toto";
+	var content_link = url.replace(/^[^\/]+\/\/[^\/]+/g,'') + '/graphs'; // remove the beginning of the url to keep only path
  	var save_clustermonitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
  	var save_monitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_monitoring_settings";
 
@@ -216,11 +213,10 @@
    function fill_content_container(xml) {
 		$(xml).find('node').each(function(){
 			var id = $(this).attr('id');
-			alert('node id:' + id + ' src: ' + $(this).attr('img_src'));
-			$("#" + id + "_content").append('<img src="/images/graphs/graph_consumption_day.png" />')
+			$("#" + id + "_content").html('<img src="' + $(this).attr('img_src') + '" />')
 			//$("#" + id + "_content").html($(this).children());
 		});
-		$("#nodecount_graph").append('<img src="' + $(xml).find('nodecount_graph').elem(0).attr('src') + '"/>' );
+		$("#nodecount_graph img").attr('src', $(xml).find('nodecount_graph').attr('src'));
    }
    
    function loading_start() {
@@ -238,7 +234,6 @@
 
    $(".set_selectors .set_selector").click(function() {
    		loading_start();
-alert(content_link);
    		var anim = 'fold';//'blind/slide';
    		var anim_duration = 0;
    		
