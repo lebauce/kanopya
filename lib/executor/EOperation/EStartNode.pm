@@ -1,4 +1,4 @@
-# EStartNode.pm - Operation class implementing Cluster creation operation
+# EStartNode.pm - Operation class implementing Node starting operation
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,20 +19,19 @@
 
 =head1 NAME
 
-EEntity::Operation::EStartNode - Operation class implementing Motherboard creation operation
+EEntity::Operation::EStartNode - Operation class implementing Node starting operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Node starting operation
 
 =head1 DESCRIPTION
-
-Component is an abstract class of operation objects
 
 =head1 METHODS
 
 =cut
+
 package EOperation::EStartNode;
 use base "EOperation";
 

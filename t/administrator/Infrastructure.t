@@ -20,11 +20,16 @@ eval {
     note ("Execution begin");
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
 
-    my $infrastructure = Entity::Infrastructure->new( infrastructure_reference => "DrupalTest",
-				  infrastructure_min_node => 1,
-				  infrastructure_max_node => 3,
-	infrastructure_domainname => "drupal.hederatech.com",
-	infrastructure_nameserver => "127.0.0.1");
+    my $infrastructure = Entity::Infrastructure->new(
+        infrastructure_reference    => "DrupalTest",
+        infrastructure_min_node     => 1,
+        infrastructure_max_node     => 3,
+        infrastructure_domainname   => "drupal.hederatech.com",
+        infrastructure_nameserver   => "127.0.0.1",
+        infrastructure_name         => "DrupalInfra",
+        infrastructure_priority     => 100,
+        infrastructure_tier_number  => 3,
+    );
 
     isa_ok($infrastructure, "Entity::Infrastructure");
 

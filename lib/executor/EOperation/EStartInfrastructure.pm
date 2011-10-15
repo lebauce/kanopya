@@ -1,5 +1,3 @@
-# EStartCluster.pm - Operation class implementing cluster starting operation
-
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,16 +13,16 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
+# Created 12 october 2011
 
 =head1 NAME
 
-EEntity::EOperation::EStartCluster - Operation class implementing cluster starting operation
+EEntity::EOperation::EStartInfrastructure - Operation class implementing Infrastructure starting operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement cluster starting operation
+It allows to start an infrastructure by starting all related clusters
 
 =head1 DESCRIPTION
 
@@ -33,7 +31,8 @@ It allows to implement cluster starting operation
 =head1 METHODS
 
 =cut
-package EOperation::EStartCluster;
+
+package EOperation::EStartInfrastructure;
 
 use strict;
 use warnings;
@@ -41,7 +40,7 @@ use Log::Log4perl "get_logger";
 use base "EOperation";
 
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::Infrastructure;
 use Entity::Motherboard;
 
 my $log = get_logger("executor");
@@ -51,9 +50,9 @@ our $VERSION = "1.00";
 
 =head2 new
 
-    my $op = EOperation::EStartCluster->new();
+    my $op = EOperation::EStartInfrastructure->new();
 
-EOperation::EStartCluster->new creates a new EStartCluster operation.
+EOperation::EStartInfrastructure->new creates a new EStartInfrastructure operation.
 
 =cut
 
@@ -90,19 +89,16 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EStartCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
     my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
     
-    # Get cluster to start from param
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    # Get infrastructure to start from param
+    my $infra = Entity::Infrastructure->get(id => $params->{infrastructure_id});
+    
+    # Get clusters to start from infra
+    #$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
 }
 
 sub execute {
@@ -110,19 +106,6 @@ sub execute {
     $self->SUPER::execute();
     my $adm = Administrator->new();
         
-    $log->info('getting minimum number of nodes to start');
-    my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');    
-    $log->info('getting free motherboards');
-#    my @free_motherboards = Entity::Motherboard->getMotherboards(hash => { active => 1, motherboard_state => 'down'});
-#    
-#    my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
-#    
-#
-#    for(my $i=0 ; $i < $nodes_to_start ; $i++) {
-#        my $motherboard = pop @free_motherboards;
-#        $self->{_objs}->{cluster}->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id'));
-#    }     
-
     # Just call Master node addition, other node will be add by the state manager
     $self->{_objs}->{cluster}->addNode();
     $self->{_objs}->{cluster}->setState(state => 'starting');
