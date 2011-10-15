@@ -179,21 +179,27 @@ sub execute{
     
     # other big if...
     if($self->{component_name} eq 'Iscsitarget') {
-        my $disk_targetname = $self->{_objs}->{ecomp_iscsitarget}->generateTargetname(name => $self->{params}->{export_name});
-
-        $self->{_objs}->{ecomp_iscsitarget}->addExport(iscsitarget1_lun_number    => 0,
-                                                      iscsitarget1_lun_device    => $self->{params}->{device},
-                                                      iscsitarget1_lun_typeio    => $self->{params}->{typeio},
-                                                      iscsitarget1_lun_iomode    => $self->{params}->{iomode},
-                                                      iscsitarget1_target_name  => $disk_targetname,
-                                                      econtext                 => $self->{cluster_econtext},
-                                                      erollback               => $self->{erollback});
-        my $eroll_add_export = $self->{erollback}->getLastInserted();
-
-        $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-        $self->{_objs}->{ecomp_iscsitarget}->generate(econtext  => $self->{cluster_econtext},
-                                                      erollback => $self->{erollback});
-        $log->info("Add IScsi Export of device <$self->{params}->{device}>");
+        $self->{_objs}->{ecomp_iscsitarget}->createExport('export_name' => $self->{params}->{export_name},
+                                                          'econtext'    => $self->{cluster_econtext},
+                                                          'device_name' => $self->{params}->{device},
+                                                          'typeio'      => $self->{params}->{typeio},
+                                                          'iomode'      => $self->{params}->{iomode},
+                                                          'erollback'   => $self->{erollback});
+#        my $disk_targetname = $self->{_objs}->{ecomp_iscsitarget}->generateTargetname(name => $self->{params}->{export_name});
+#
+#        $self->{_objs}->{ecomp_iscsitarget}->addExport(iscsitarget1_lun_number    => 0,
+#                                                      iscsitarget1_lun_device    => $self->{params}->{device},
+#                                                      iscsitarget1_lun_typeio    => $self->{params}->{typeio},
+#                                                      iscsitarget1_lun_iomode    => $self->{params}->{iomode},
+#                                                      iscsitarget1_target_name  => $disk_targetname,
+#                                                      econtext                 => $self->{cluster_econtext},
+#                                                      erollback               => $self->{erollback});
+#        my $eroll_add_export = $self->{erollback}->getLastInserted();
+#
+#        $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
+#        $self->{_objs}->{ecomp_iscsitarget}->generate(econtext  => $self->{cluster_econtext},
+#                                                      erollback => $self->{erollback});
+#        $log->info("Add IScsi Export of device <$self->{params}->{device}>");
     }
     
     elsif($self->{component_name} eq 'Nfsd') {
