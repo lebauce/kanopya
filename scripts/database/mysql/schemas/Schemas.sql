@@ -389,7 +389,7 @@ CREATE TABLE `ipv4_dmz` (
   PRIMARY KEY (`ipv4_dmz_id`),
   UNIQUE KEY `ipv4_dmz_address_UNIQUE` (`ipv4_dmz_address`),
   KEY `fk_ipv4_dmz_1` (`tier_id`),
-  CONSTRAINT `fk_ipv4_dmz_1` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  CONSTRAINT `fk_ipv4_dmz_1` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -557,7 +557,7 @@ CREATE TABLE `infrastructure` (
 --
 -- Table structure for `tier`
 --
-
+-- #TODO Warning Here delete tier when cluster removed by when cluster will be used by tier then they will not be destroyed when cluster are. 
 CREATE TABLE `tier` (
   `tier_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `infrastructure_id` int(8) unsigned NOT NULL,
@@ -570,7 +570,7 @@ CREATE TABLE `tier` (
   KEY `fk_tier_1` (`infrastructure_id`),
   KEY `fk_tier_2` (`cluster_id`),
   CONSTRAINT `fk_tier_1` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_tier_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_tier_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
