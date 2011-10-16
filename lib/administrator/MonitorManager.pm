@@ -176,10 +176,20 @@ sub collectSets {
     my $self = shift;
     my %args = @_;    
     
+#    $log->error("collected Sets : " . Dumper $args{sets_name});
+    
     $self->deleteCollect( cluster_id => $args{cluster_id} );
     for my $set_name (@{ $args{sets_name} }) {
         $self->collectSet( cluster_id => $args{cluster_id}, set_name => $set_name );
     }
+}
+
+sub setAllCollectSets {
+    my $self = shift;
+    my %args = @_;
+    
+    $self->collectSets(cluster_id => $args{cluster_id},
+                       sets_name => ["mem","cpu","apache_stats"]);
 }
 
 =head2 deleteCollect
@@ -220,6 +230,7 @@ sub graphSettings {
     # delete old settings
     my $graph_rs = $self->{db}->resultset('Graph')->search( { cluster_id => $args{cluster_id} } );
     $graph_rs->delete;
+    
     
     # store new settings
     for my $graph (@{ $args{graphs} }) {

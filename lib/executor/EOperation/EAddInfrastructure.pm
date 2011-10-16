@@ -201,7 +201,6 @@ sub execute {
         my $tier_fullname = $infrastructure_def->{reference} . "_" .$infrastructure_def->{name} . "_" . $tier->{name};
         
         # Prepare disk to add data
-        $log->error("Bizarre sur lvm2 <" . ref ($self->{_objs}->{component_storage}) . "> !!!");
         my $disk_name = $infrastructure_def->{reference} . "_" .$infrastructure_def->{name} . "_" .$tier->{name} ."_data";
         my $tier_data_disk_id = $self->{_objs}->{component_storage}->createDisk(name       => $disk_name,
                                                                                 size       => $tier->{data}->[0]->{size},
@@ -325,6 +324,7 @@ sub execute {
         $ecluster->create(econtext => $self->{nas}->{econtext},erollback => $self->{erollback});
         
         $tmp_tier->{cluster_id} = $self->{_objs}->{clusters}->[$i]->getAttr(name=>"cluster_id");
+        
         # Tier instanciation
         $self->{_objs}->{tiers}->[$i] = Entity::Tier->new(%$tmp_tier);
         $self->{_objs}->{tiers}->[$i]->save();
@@ -339,6 +339,7 @@ sub execute {
         }
         $adm->{manager}->{network}->setTierDmzIP('dmzip_id'   => $dmz_ip_id,
                                                  'tier_id'    => $self->{_objs}->{tiers}->[$i]->getAttr(name=>"tier_id"));
+        
         my $comps = $tier->{component_list};
         # Now foreach tier we will add components to cluster and tier. In the future, component will be only attached to tier
         foreach my $comp (@$comps) {
@@ -355,7 +356,6 @@ sub execute {
         #insert mountable configuration
         my $comp_mounttable = $self->{_objs}->{clusters}->[$i]->getComponent(name      => "Mounttable",
                                                                              version   => "1");
-        
         my @default_mounttable_conf = (
             {   mounttable1_device  => 'proc', mounttable1_mountpoint => '/proc', mounttable1_filesystem => 'proc',
                 mounttable1_options => 'nodev,noexec,nosuid', mounttable1_dumpfreq => '0', mounttable1_passnum => '0' },
@@ -373,6 +373,33 @@ sub execute {
                 mounttable1_options => 'rw,no_subtree_check,no_root_squash,sync', mounttable1_dumpfreq => '0', mounttable1_passnum => '0'},
         );
         $comp_mounttable->setConf({mounttable_mountdefs => \@default_mounttable_conf});
+        
+        # Set Monitoring conf
+        $log->error("tier collect sets are : $tier->{collector_sets}");
+        my @sets = split(/:/, $tier->{collector_sets});
+        $adm->{manager}->{monitor}->collectSets(cluster_id => $tmp_tier->{cluster_id},
+                                                sets_name => \@sets);
+        
+        # Set Orchestration conf
+        $adm->{manager}->{rules}->addClusterRule(cluster_id     => $tmp_tier->{cluster_id},
+                                                 action         => 'add_node',
+                                                 condition_tree => [{'operator' => 'inf',
+                                                                      'time_laps' => '60',
+                                                                       'value' => '70',
+                                                                       'var' => 'mem:Total'
+                                                                    },
+                                                                    '|',
+                                                                    {'operator' => 'inf',
+                                                                     'time_laps' => '60',
+                                                                     'value' => '80',
+                                                                     'var' => 'cpu:Idle'
+                                                                    }]);
+        $adm->{manager}->{rules}->addClusterOptimConditions(cluster_id     => $tmp_tier->{cluster_id},
+                                                 action         => 'remove_node',
+                                                 condition_tree => [{'operator' => 'sup',
+                                                                     'time_laps' => '3600',
+                                                                     'value' => '70',
+                                                                     'var' => 'mem:Avail'}]);
         $i++;
     }
 }
