@@ -49,7 +49,8 @@ sub save_orchestrator_settings : Runmode {
     
     my $optim_str = $query->param('optim_conditions'); # stringified array of hash
     my $optim_cond = decode_json $optim_str;
-        
+#    $log->error("param from rules json " . Dumper $rules);
+#    $log->error("param from optim cond json " . Dumper $optim_cond);
     #return Dumper $rules;
     
     my $rules_manager = $self->{'adm'}->{manager}->{rules};
