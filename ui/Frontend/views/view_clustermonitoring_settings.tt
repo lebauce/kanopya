@@ -1,6 +1,4 @@
-<%# <script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
-%>
-<script type="text/javascript" src="/js/monitor.js"></script>
+<% js_head.push('monitor.js') %>
 
 <table class='simplelisting monitor_settings'>
 	<caption>Cluster monitoring configuration</caption>
@@ -10,17 +8,17 @@
 		<th>Graph</th>
 	</tr>
 	<tr><td colspan='3'></td></tr>
-	<% FOREACH s IN SETS %>
+	<% FOREACH s IN sets %>
 			<tr>
-				<th id='<% s.LABEL %>' class='expander'><% s.LABEL %></th>
-				<td class='select_collect <% IF s.COLLECTED %>collected<% END %>'></td>
-				<td class='select_graph <% IF s.GRAPHED %>graphed<% END %>'></td>
+				<th id='<% s.label %>' class='expander'><% s.label %></th>
+				<td class='select_collect <% IF s.collected %>collected<% END %>'></td>
+				<td class='select_graph <% IF s.graphed %>graphed<% END %>'></td>
 			</tr>
-			<tr id='X<% s.LABEL %>' class='graph_settings_<% s.LABEL %>'>
+			<tr id='X<% s.label %>' class='graph_settings_<% s.label %>'>
 	
 			<td colspan='2'>
 			
-			<% IF s.IS_TABLE %>
+			<% IF s.is_table %>
 				<table class='expandable hidden'>
 				<tr><td>Table</td></tr>
 				<tr><td colspan='2'>
@@ -28,25 +26,25 @@
 			<% ELSE %>
 				<table class='expandable hidden'>
 			<% END %>
-					<% FOREACH d IN DS %>
+					<% FOREACH d IN s.ds %>
 						<tr>
-							<td><% d.DS_NAME %></td>
-							<td id='<% d.DS_NAME %>' class='select_ds <% IF d.ON_GRAPH %>on_graph<% END %>'></td></tr>
+							<td><% d.ds_name %></td>
+							<td id='<% d.ds_name %>' class='select_ds <% IF d.on_graph %>on_graph<% END %>'></td>
 						</tr>
 					<% END %>
 				</table>
-			<% IF s.IS_TABLE %>
+			<% IF s.is_table %>
 				</td></tr></table>	
 			<% END %>	
 			</td>
 			
 			<td>
-				<table id='graph_options_<% s.LABEL %>' class='expandable graph_options hidden'>
-					<tr><th>graph type</th><td opt_name='graph_type' choices='line,stack' class='graph_option editable_choice'><% s.GRAPH_TYPE %></td></tr>
-					<tr><th>percentage</th><td opt_name='percent' class='graph_option yes_no_choice'><% s.PERCENT %></td></tr>
-					<tr><th>include total</th><td opt_name='with_total' class='graph_option yes_no_choice'><% s.WITH_TOTAL %></td></tr>
-					<% IF s.IS_TABLE %>
-						<tr><th>all in one</th><td opt_name='all_in_one' class='graph_option yes_no_choice'><% s.ALL_IN_ONE %></td></tr>
+				<table id='graph_options_<% s.label %>' class='expandable graph_options hidden'>
+					<tr><th>graph type</th><td opt_name='graph_type' choices='line,stack' class='graph_option editable_choice'><% s.graph_type %></td></tr>
+					<tr><th>percentage</th><td opt_name='percent' class='graph_option yes_no_choice'><% s.percent %></td></tr>
+					<tr><th>include total</th><td opt_name='with_total' class='graph_option yes_no_choice'><% s.with_total %></td></tr>
+					<% IF s.is_table %>
+						<tr><th>all in one</th><td opt_name='all_in_one' class='graph_option yes_no_choice'><% s.all_in_one %></td></tr>
 					<% END %>	
 				</table>
 			</td>
@@ -59,7 +57,7 @@
 <div class="actions">
 <a class="action imgSave" id="save_clustermonitoring_settings">save</a>
 <p class="italic">Save settings.</p>
-<a class="action imgMonitor" href='/monitoring/view_clustermonitoring?cluster_id=<% cluster_id %>'>activity</a>
+<a class="action imgMonitor" href='/architectures/clusters/<% cluster_id %>/monitoring'>activity</a>
 <p class="italic">Cluster's activity.</p>
 </div>
 

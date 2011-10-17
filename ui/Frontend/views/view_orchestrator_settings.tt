@@ -46,7 +46,7 @@
 </table>	
 
 <table id="optim_table" class='simplelisting rulesview'>
-	<caption>Scale down conditions</caption>
+	<caption>Scale down constraints</caption>
 	<tr id='rules_head'><th colspan='6'>Condition</th></tr>
 	
 	<tr id='condition_model' class="hidden">
@@ -114,19 +114,15 @@
 <div class="actions">
 <a class="action imgSave" id="save_orchestrator_settings">save</a>
 <p class="italic">Save rules.</p>
-</div>
-
-<div class="actions">
+<hr/>
 <a class="action imgAdding" id='add_cond_button'>add scale condition</a>
 <p class="italic">Add a new condition based on cluster's activity.</p>
 <a class="action operator_button" op='or'>OR operator</a>
 <p class="italic">OR selected conditions.</p>
 <a class="action operator_button" op='and'>AND operator</a>
 <p class="italic">AND selected conditions.</p>
-</div>
-
-<div class="actions">
-<a class="action imgAdding" id='add_optim_cond_button'>add optimization condition</a>
+<hr/>
+<a class="action imgAdding" id='add_optim_cond_button'>add optimization constraint</a>
 <p class="italic">Add a new condition used for optimization.</p>
 </div>
 

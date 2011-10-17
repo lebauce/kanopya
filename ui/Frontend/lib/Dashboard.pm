@@ -87,7 +87,7 @@ sub adminComponentsDef {
             label => 'Database server',
             comps => [{
                 label => 'mysql',
-                name  => 'mysql'}
+                name  => 'mysqld'}
             ]},
         {
             id    => 'Boot',

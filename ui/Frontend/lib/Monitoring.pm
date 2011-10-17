@@ -4,6 +4,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 
 use Entity::Cluster;
+use General;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("webui");
@@ -17,7 +18,14 @@ sub _getMonitoredSets {
     return $adm->{'manager'}{'monitor'}->getCollectedSets( cluster_id => $args{cluster_id} );
 }
 
+sub _getAllSets {
+    my $adm    = Administrator->new();
+        
+    return $adm->{'manager'}{'monitor'}->getIndicatorSets();
+}
+
 #TODO change for ajax
+#TODO something better than sending xml and building html in javascript (monitor.js) using this xml :/
 get '/clusters/:clusterid/monitoring/graphs' => sub {
     my $set_name    = params->{'set'};
     my $node_id     = params->{'node'};
@@ -114,5 +122,82 @@ get '/clusters/:clusterid/monitoring' => sub {
     };
 };
 
+get '/clusters/:clusterid/monitoring/settings' => sub  {
+    my $adm    = Administrator->new();
+    
+    my $cluster_id = params->{clusterid};
+    my $collect_sets = _getMonitoredSets( cluster_id => $cluster_id );
+    my $all_sets = _getAllSets();
+    my @sets = ();
+
+    foreach my $set (@$all_sets) {
+        my @all_ds = ();
+        my $graph_settings = $adm->{'manager'}{'monitor'}->getGraphSettings(    cluster_id => $cluster_id,
+                                                                                set_name => $set->{label} );
+        my @ds_on_graph = defined $graph_settings ? split(",", $graph_settings->{ds_label}) : ();
+        my $is_graphed = scalar @ds_on_graph;
+        foreach my $ds ( @{ General::getAsArrayRef( data => $set, tag => 'ds' ) } ) {
+            push @all_ds, {
+                            ds_name => $ds->{label},
+                            on_graph => scalar ( grep { $_ eq $ds->{label} || $_ eq 'ALL'} @ds_on_graph ),
+                            };
+        }
+         
+        push @sets, {   label => $set->{label},
+                        collected => scalar ( grep { $_->{label} eq $set->{label} } @$collect_sets ),
+                        graphed => $is_graphed,
+                        is_table => defined $set->{table_oid},
+                        
+                        graph_type => defined $graph_settings ? $graph_settings->{graph_type} || 'line' : 'line',
+                        percent => defined $graph_settings ? $graph_settings->{percent} || 'no' : 'no',
+                        with_total => defined $graph_settings ? $graph_settings->{with_total} || 'no' : 'no',
+                        all_in_one => defined $graph_settings ? $graph_settings->{all_in_one} || 'no' : 'no',
+                                                    
+                        ds => \@all_ds,
+                    };
+    }
+    
+    template 'view_clustermonitoring_settings', {
+        title_page      => "Cluster monitoring settings",
+        cluster_id      => $cluster_id,
+        sets  => \@sets,
+    };
+};
+
+=head2 save_clustermonitoring_settings
+    
+    Class : Public
+    
+    Desc : Called by client to save monitoring settings for a cluster (collected sets and graphs options). 
+    
+=cut
+
+get '/clusters/:clusterid/monitoring/settings/save' => sub  {
+    my $adm    = Administrator->new();
+    
+    my $cluster_id = params->{clusterid};
+    
+    $log->info("Save monitoring settings for cluster $cluster_id");
+    
+    my $collect_sets = params->{'collect_sets'};
+    my $monit_sets = from_json $collect_sets;
+    #my @monit_sets = params->{'collect_sets[]'}; # array of set name
+
+    my $graphs_settings_str = params->{'graphs_settings'}; # stringified array of hash
+    my $graphs_settings = from_json $graphs_settings_str;
+        
+    my $res = "conf saved";
+    
+    eval {
+        $adm->{'manager'}{'monitor'}->collectSets( cluster_id => $cluster_id, sets_name => $monit_sets );
+        $adm->{'manager'}{'monitor'}->graphSettings( cluster_id => $cluster_id, graphs => $graphs_settings );
+    };
+    if ($@) {
+        $res = "Error while saving: $@";
+    }
+    
+    content_type('text/text');
+    return "$res";
+};
 
 1;
