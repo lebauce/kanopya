@@ -142,6 +142,7 @@ body {
 
 #container {
     width: 85%;
+    position: relative;
     margin-left: auto;
     margin-right: auto;
     background-color: $color_white;
@@ -179,4 +180,7 @@ body {
 #footer {
     border-top: 10px solid $color_gray;
     color: $color_gray;
+    position: absolute;
+    bottom: 0px;
+    width: 95%;
 }
