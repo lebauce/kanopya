@@ -7,9 +7,9 @@
         <link rel="stylesheet" href="<% request.uri_base %>/css/normalize.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/details.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/listing.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/misc.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/modal.css" />
-        <link rel="stylesheet" href="<% request.uri_base %>/css/listing.css" />
         <% FOREACH css IN css_head %>
             <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
         <% END %>
