@@ -23,7 +23,7 @@
       distribution_id:'1',
       collector_sets:'cpu,mem,apache_stats',
       dmz_ip:{
-        addr:'192.168.1.1',
+        addr:'10.0.5.1',
         netmask:'255.255.255.0'
       },
       data:
@@ -92,7 +92,7 @@
       distribution_id:'1',
       collector_sets:'cpu,mem',
       dmz_ip:{
-        addr:'192.168.1.2',
+        addr:'10.0.5.2',
         netmask:'255.255.255.0'
       },
       data:
