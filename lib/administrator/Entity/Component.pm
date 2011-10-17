@@ -63,6 +63,7 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 =head2 new
+
 B<Class>   : Public
 B<Desc>    : This method allows to create a new instance of component entity.
           This is an abstract class, DO NOT instantiate it.
@@ -128,6 +129,7 @@ sub new {
 }
 
 =head2 get
+
 B<Class>   : Public
 B<Desc>    : This method allows to get an existing of component.
           This is an abstract class, DO NOT instantiate it.
@@ -198,6 +200,7 @@ sub getInstance {
 }
 
 =head2 delete
+
 B<Class>   : Public
 B<Desc>    : This method allows to delete a component
 B<args>    : None
@@ -222,19 +225,19 @@ sub delete {
 }
 
 sub getComponents {
-	my $class = shift;
-	my $adm = Administrator->new();
-	my $components = $adm->{db}->resultset('Component')->search();
-	my $list = [];
-	while(my $c = $components->next) { 
-		my $tmp = {};
-		$tmp->{component_id} = $c->get_column('component_id');
-		$tmp->{component_name} = $c->get_column('component_name');
-		$tmp->{component_version} = $c->get_column('component_version');
-		$tmp->{component_category} = $c->get_column('component_category');
-		push(@$list, $tmp);
-	} 
-	return $list;
+    my $class = shift;
+    my $adm = Administrator->new();
+    my $components = $adm->{db}->resultset('Component')->search();
+    my $list = [];
+    while(my $c = $components->next) {
+        my $tmp = {};
+        $tmp->{component_id}       = $c->get_column('component_id');
+        $tmp->{component_name}     = $c->get_column('component_name');
+        $tmp->{component_version}  = $c->get_column('component_version');
+        $tmp->{component_category} = $c->get_column('component_category');
+        push(@$list, $tmp);
+    }
+    return $list;
 }
 
 sub getComponentsByCategory {
@@ -260,13 +263,14 @@ sub getComponentsByCategory {
 }
 
 =head2 getTemplateDirectory
+
 B<Class>   : Public
 B<Desc>    : This method return this component instance Template dir from database.
 B<args>    : None
 B<Return>  : String : component instance template directory
 B<Comment>  : None
 B<throws>  : None
-    
+
 =cut
 
 sub getTemplateDirectory {
@@ -279,30 +283,31 @@ sub getTemplateDirectory {
 }
 
 =head2 getComponenAttr
+
 B<Class>   : Public
 B<Desc>    : This method return component information like name, version, ...
 B<args>    : None
-B<Return>  : Hash ref : 
+B<Return>  : Hash ref :
     B<component_name> : Component name
     B<component_version> : Component version
-    B<component_id> : Component id. Could be use to instanciate a new cluster. 
+    B<component_id> : Component id. Could be use to instanciate a new cluster.
             Ref Component table id
     B<component_category> : Component category. Its a specific category classification be
 B<Comment>  : Return information about component, not about $self (which is a component instance)
 B<throws>  : None
-    
+
 =cut
 
 sub getComponentAttr {
     my $self = shift;
     my $componentAttr = {};
-    
+
     $componentAttr->{component_name} = $self->{_dbix}->component->get_column('component_name');
-    $componentAttr->{component_id} = $self->{_dbix}->component->get_column('component_id');    
+    $componentAttr->{component_id} = $self->{_dbix}->component->get_column('component_id');
     $componentAttr->{component_version} = $self->{_dbix}->component->get_column('component_version');
     $componentAttr->{component_category} = $self->{_dbix}->component->get_column('component_category');
-    
-    return $componentAttr;    
+
+    return $componentAttr;
 }
 
 
@@ -350,7 +355,7 @@ sub save {
         # CREATE
         my $relation = lc(ref $self);
         $relation =~ s/.*\:\://g;
-        $log->debug("la relation: $relation");
+        $log->debug("The relation is: $relation");
         my $newentity = $self->{_dbix}->insert;
         $component_instance_id = $newentity->get_column("component_instance_id");
         $log->debug("new entity inserted.");
@@ -361,11 +366,11 @@ sub save {
             "component_instance_id" => $component_instance_id});
         $log->debug("new $self inserted with his entity relation.");
         $self->{_entity_id} = $row->get_column('entity_id');
-        
+
         $self->_saveExtendedAttrs();
         $log->info(ref($self)." saved to database");
     }
-    
+
     return $component_instance_id;
 }
 sub readyNodeAddition{return 1;}

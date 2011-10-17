@@ -1,0 +1,41 @@
+<form method="POST" action="/rights/users/add">
+<table class="form">
+	<tr>
+		<td class="label">First name :</td>
+		<td><input type="text" name="firstname" maxlength="16" size="16"/>
+		<span style="color: red"><% err_firstname %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Last name :</td>
+		<td><input type="text" name="lastname" maxlength="16" size="16"/>
+		<span style="color: red"><% err_lastname %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Email :</td>
+		<td><input type="text" name="email" maxlength="255" size="32"/>
+		<span style="color: red"><% err_email %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="desc" value=""></textarea></td> 
+	</tr>	
+	<tr>
+		<td class="label">Login :</td>
+		<td><input type="text" name="login" maxlength="16" size="16"/>
+		<span style="color: red"><% err_login %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Password :</td>
+		<td><input type="password" name="password" maxlength="16" size="16"/>
+		<span style="color: red"><% err_password %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Confirm password :</td>
+		<td><input type="password" name="confirmpassword" maxlength="16" size="16"/>
+		<span style="color: red"><% err_confirmpassword %></span></td>
+	</tr>	
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+</div>
+</form> 

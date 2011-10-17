@@ -66,7 +66,7 @@ my $errmsg;
 
 my ($schema, $config, $oneinstance);
 
-=head Administrator::loadConfig
+=head2 Administrator::loadConfig
     Class : Private
 
     Desc : This method allow to load configuration from xml file
@@ -74,6 +74,7 @@ my ($schema, $config, $oneinstance);
             File Administrator with config hash containing
 
     return: scalar string : a dbi data_source used for database connection
+
 =cut
 
 sub loadConfig {
@@ -113,7 +114,7 @@ sub loadConfig {
             ":" . $config->{dbconf}->{port};
 }
 
-=head Administrator::authenticate (%args)
+=head2 Administrator::authenticate (%args)
 
     Class : Public
 
@@ -438,6 +439,7 @@ sub _newDbix {
     args:
         type : concrete entity type
     return: Entity class
+
 =cut
 
 sub _getEntityClass{
@@ -501,11 +503,13 @@ sub addMessage {
 }
 
 sub getMessages {
-    my $self = shift;
+    my $self  = shift;
+    my %args  = @_;
+    my $limit = $args{limit} || 10;
 
     my $r = $self->{db}->resultset('Message')->search(undef, {
         order_by => { -desc => [qw/message_id/], },
-        rows => 50
+        rows => $limit
     });
     my @arr = ();
     while (my $row = $r->next) {

@@ -1,0 +1,20 @@
+<graphs>
+<nodecount><img class='autorefresh' src="<% nodecount_graph %>" alt="kanopya-grapher must be running to see graph"/></nodecount>
+<node_list>
+<% FOREACH graph IN graphs %>
+	<node id='<% graph.id %>'>
+		<table class='simplelisting'>
+		<% FOREACH set_graph IN graph.sets %>
+				<tr id='<% set_graph.set_name %>' class='set_selector'>
+					<% IF set_graph.no_graph %>
+						<td>graph missing</td>
+					<% ELSE %>
+						<td><img src="<% set_graph.img_src %>" alt="missing graph"/></td>
+					<% END %>
+				</tr>
+		<% END %>
+		</table>
+	</node>
+<% END %>
+</node_list>
+</graphs>

@@ -1,0 +1,12 @@
+<form method="POST" action="/components/upload" enctype="multipart/form-data">
+<table class="form">
+<tr>
+	<td><input type="file" name="componentfile" size="32" />
+	<span style="color: red"><% err_componentfile %></span></td>
+</tr>
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+</div>
+</form> 
+

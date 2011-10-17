@@ -1,0 +1,21 @@
+<%#
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2 id="<% distribution_id %>" class="distribution img<% distribution_name %>"><% distribution_name %> <% distribution_version %> Distribution</h2>
+<table class="detailspart"><tr><td class="italic"><% distribution_desc %></td></tr></table>
+
+<hr/>
+<span id="components" class="title simpleexpand">Provided Components</span>
+<table id="Xcomponents" class="detailspart list">
+<% IF components_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% components_count %>">
+	<span class="desc">This list show components which can be installed on a system image based on this distribution.</span><br /><br />
+	</td></tr>
+	<% FOREACH comp IN components_list %>
+	<tr><td class="label2"><span id="<% comp.component_id %>" class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
+	<td class="action"><td></tr>
+	<% END %>
+<% END %>
+</table>
+

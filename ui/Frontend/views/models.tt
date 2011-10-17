@@ -1,0 +1,52 @@
+<table class="simplelisting">
+	<caption>Motherboard Models</caption>
+	<tr><th>model</th><th>chipset</th><th>processors<br/>number</th><th>consumption</th><th>iface<br/>number</th><th>RAM<br/>slots</th><th>RAM<br/>max</th><th></th></tr>
+	<% FOREACH m IN motherboardmodels %>
+		<td><% m.mmodel_brand %> <span class="bold"><% m.mmodel_name %></span></td>
+		<td><% m.mmodel_chipset %></td>
+		<td class="right"><% m.mmodel_processornum %></td>
+		<td class="right"><% m.mmodel_consumption %> W</td>
+		<td class="right"><% m.mmodel_ifacenum %></td>
+		<td class="right"><% m.mmodel_ramslotnum %></td>
+		<td class="right"><% m.mmodel_rammax %> Go</td>
+		<td><% IF m.can_update %>
+			<a class="imgEdit">edit</a>
+		<% END %>
+		<% IF m.can_delete %>
+			<br /><a class="imgRemove" href="/infrastructures/models/motherboards/<% m.mmodel_id %>/remove">remove</a>
+		<% END %>
+		<% IF m.can_setperm %>
+			<br /><a class="imgPermission" href="/rights/permissions/motherboardmodel/<% m.mmodel_id %>">permissions</a>
+		<% END %>
+		</td>
+		</tr>
+	<% END %>
+</table>
+<table class="simplelisting">
+	<caption>Processor Models</caption>
+	<tr><th>model</th><th>cores</th><th>clock<br/>speed</th><th>L2 cache</th><th>TDP</th><th>64 bits</th><th>virtualization<br />extensions</th><th></th></tr>
+	<% FOREACH p IN processormodels %>
+		<td><% p.pmodel_brand %> <span class="bold"><% p.pmodel_name %></span></td>
+		<td class="right"><% p.pmodel_corenum %></td>
+		<td class="right"><% p.pmodel_clockspeed %> GHz</td>
+		<td class="right"><% p.pmodel_l2cache %> Mo</td>
+		<td class="right"><% p.pmodel_tdp %> W</td>
+		<td class="center"><% IF p.pmodel_is64 %>yes<% ELSE %>no<% END %></td>
+		<td class="center"><% IF p.pmodel_virt %>yes<% ELSE %>no<% END %></td>
+		<td><% IF p.can_update %><a class="imgEdit">edit</a><% END %>
+		<% IF p.can_delete %><br /><a class="imgRemove" href="/infrastructures/models/processors/<% p.pmodel_id %>/remove">remove</a><% END %>
+		<% IF p.can_setperm %><br /><a class="imgPermission" href="/rights/permissions/processormodel/<% p.pmodel_id %>">permissions</a><% END %>
+		</td>
+		</tr>
+	<% END %>
+</table>
+<div class="actions">
+<% IF can_createmotherboardmodel %>
+	<a class="action modal" href="/infrastructures/models/motherboards/add">create a motherboard model</a>
+	<p class="italic">Create a new model of motherboard.</p>
+<% END %>
+<% IF can_createprocessormodel %>
+	<a class="action modal" href="/infrastructures/models/processors/add">create a processor model</a>
+	<p class="italic">Create a new model of processor.</p>
+<% END %>
+</div>

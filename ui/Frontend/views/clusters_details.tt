@@ -1,0 +1,193 @@
+<%# <script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Cluster : <% cluster_name %></h2>
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
+<td class="actions" rowspan="2">
+<% IF link_activate %>
+	<% IF systemimage_active %>
+		<a class="imgActivate" href="/architectures/clusters/<% cluster_id %>/activate">
+	<% ELSE %>
+		<a class="imgActivate" href="javascript:alert('<% systemimage_name %> used by this cluster must be active.');">
+	<% END %>
+activate</a><br />
+<span class="desc">Activate this cluster to be able to start it.</span><br /><br />
+<% ELSE %>
+	<% IF link_deactivate %>
+		<a class="imgDeactivate" href="/architectures/clusters/<% cluster_id %>/deactivate">deactivate</a><br />
+		<span class="desc">Deactivate this cluster.</span><br /><br />
+	<% END %>
+	<% IF link_start %>
+		<a class="imgStart" href="/architectures/clusters/<% cluster_id %>/start">start</a><br />
+		<span class="desc">Start this cluster.</span>
+	<% END %>
+	<% IF link_stop %>
+		<a class="imgStop" href="/architectures/clusters/<% cluster_id %>/stop">stop</a><br />
+		<span class="desc">Stop this cluster.</span><br /><br />
+		<a class="imgStop" href="/architectures/clusters/<% cluster_id %>/forcestop">force stop</a><br />
+		<span class="desc">Force this cluster to stop, to use when something went wrong.</span><br /><br />
+	<% END %>
+<% END %>
+</td></tr><tr>
+<% IF active %>
+	<td>
+	<% SWITCH cluster_state %>
+        <% CASE 'up' %>
+        <span class="state imgUp">Up (<% state_time %>)</span>
+        <% CASE 'down' %>
+        <span class="state imgDown">Down</span>
+        <% CASE 'starting' %>
+        <span class="state imgDown">Starting... (<% state_time %>)</span>
+        <% CASE 'stopping' %>
+        <span class="state imgDown">Stopping... (<% state_time %>)</span>
+        <% CASE 'broken' %>
+        <span class="state imgWarning">Broken (<% state_time %>)</span>
+	<% END %>
+	</td>
+<% ELSE %>
+	<td></td>
+<% END %>
+</tr>
+</table>
+
+<hr />
+<span id="mainsettings" class="title simpleexpand">Main settings</span>
+<table id="Xmainsettings" class="detailspart">
+<tr><td class="italic" colspan="2"><% cluster_desc %></td>
+<td class="actions" rowspan="10">
+<% IF link_edit %>
+	<a class="imgEdit" href="/architectures/clusters/<% cluster_id %>/edit">edit</a><br />
+	<span class="desc">Modify these global parameters.</span><br /><br />
+<% END %>
+<% IF link_delete %>
+	<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/remove">delete</a><br />
+	<span class="desc">Delete this cluster.</span><br /><br />
+<% END %>
+<% IF can_setperm %>
+	<a class="imgPermission" href="/rights/permissions/cluster/<% cluster_id %>">permission</a><br />
+	<span class="desc">View/set permissions on this cluster.</span><br />
+<% END %>
+</td><tr/>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Type :</td><td><% type %></td></tr>
+<tr><td class="label">Priority :</td><td><% cluster_priority %></td></tr>
+<tr><td class="label">Minimum nodes :</td><td><% cluster_min_node %></td></tr>
+<tr><td class="label">Maximum nodes :</td><td><% cluster_max_node %></td></tr>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><% IF systemimage_name %>
+	<td class="label">System Image :</td>
+	<td><% systemimage_name %> (<% IF systemimage_active %>Active<% ELSE %>Deactivated<% END %>)</td>
+<% ELSE %>
+	<td></td>
+<% END %>
+</tr>
+<tr><td class="label">Kernel :</td><td><% kernel %></td></tr>
+<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td class="label">Domain name :</td><td><% cluster_domainname %></td></tr>
+<tr><td class="label">Name server :</td><td><% cluster_nameserver %></td></tr>
+</table>
+
+<hr/>
+<span id="network" class="title simpleexpand">Network Configuration</span>
+<table id="Xnetwork" class="detailspart list">
+<% IF nbpublicips %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% nbpublicips %>">
+<% ELSE %>
+    <tr><td colspan="2">no public ip defined.</td>
+    <td class="actions">
+<% END %>
+	<a class="modal" href="/architectures/clusters/<% cluster_id %>/ips/public/add">add a virtual ip</a><br />
+	<span class="desc">Add a new virtual ip to this cluster.</span><br /><br />
+	</td></tr>
+	<% FOREACH ip IN publicip_list %>
+		<tr><td class="label2"><% ip.address %> / <% ip.netmask %> (gateway: <% ip.gateway %>)</td>
+		<td class="action"><a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/ips/public/<% ip.publicip_id %>/remove">remove</a>
+		<input type="hidden" value="<% ip.name %>"/>
+		<td></tr>
+	<% END %>
+</table>
+
+<hr/>
+<span id="components" class="title simpleexpand">Components</span>
+<table id="Xcomponents" class="detailspart list">
+<% IF components_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% nbcomponents %>">
+	<% IF link_addcomponent %>
+		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/components/add">add a component</a><br />
+		<span class="desc">Add a new component to this cluster.</span><br /><br />
+	<% END %>
+	</td></tr>
+	<% FOREACH comp IN components_list %>
+		<tr><td class="label2"><span class="bold"><% comp.component_name %><% comp.component_version %></span> - <% comp.component_category %></td>
+		<td class="action"><% IF comp.link_configurecomponents %><a href="/systems/components/<% comp.component_instance_id %>/configure">configure</a><% END %>
+		<% IF comp.link_remove %><a class="imgRemove" href="/architectures/clusters/<% comp.cluster_id %>/components/<% comp.component_instance_id %>/remove">remove</a><% END %>
+	</td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">no defined component.</td>
+	<td class="actions">
+	<% IF link_addcomponent %>
+		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/components/add">add a component</a><br />
+		<span class="desc">Add a new component to this cluster.</span><br /><br />
+	<% END %>
+	</td></tr>
+<% END %>
+</table>
+
+<hr/>
+<span id="nodes" class="title simpleexpand">Nodes</span>
+<table id="Xnodes" class="detailspart list">
+<% IF nodes_list %>
+	<tr><td colspan="4">&nbsp;</td>
+	<td class="actions" rowspan="<% nbnodesup %>">
+	<% IF link_addnode %>
+		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/nodes/add">add a node</a><br />
+		<span class="desc">Add a node to this cluster.</span><br /><br />
+	<% END %>
+	</td></tr>
+	<% FOREACH node IN nodes_list %>
+		<tr><td class="label2"><span class="bold"><% node.motherboard_hostname %></span><% IF node.master_node %> (master)<% END %></td>
+		<td class="label2">ip: <% node.motherboard_internal_ip %></td>
+		<td class="label2">
+		<% IF node.state_up %><span class="state imgUp">Up (<% node.state_time %>)</span><% END %>
+		<% IF node.state_starting %><span class="state imgDown">Starting... (<% node.real_state %> <% node.state_time %>)</span><% END %>
+		<% IF node.state_stopping %><span class="state imgDown">Stopping... (<% node.real_state %> <% node.state_time %>)</span><% END %>
+		<% IF node.state_broken %><span class="state imgWarning">Broken (<% node.state_time %>)</span><% END %>
+		</td>
+		<td class="action">
+		<% IF node.link_remove %>
+			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.motherboard_id %>/remove">remove</a>
+		<% END %></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td>This cluster has no nodes</td></tr>
+<% END %>
+</table>
+
+<hr/>
+<span id="monitor" class="title simpleexpand">Monitoring</span>
+<table id="Xmonitor" class="detailspart list">
+<tr>
+<td colspan="2">
+<a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>/monitoring">activity</a>
+</td>
+<td class="actions">
+<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring_settings %>">settings</a><bd/>
+<p class="italic">Cluster collect and graph settings.</p>
+</td></tr>
+</table>
+
+<hr/>
+<span id="orchestrator" class="title simpleexpand">Orchestration</span>
+<table id="Xmonitor" class="detailspart list">
+<tr>
+<td colspan="2"></td>
+<td class="actions">
+<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/orchestration">settings</a><bd/>
+<p class="italic">Orchestration rules settings.</p>
+</td></tr>
+</table>

@@ -1,0 +1,30 @@
+<form method="POST" action="/rights/groups/add">
+<table class="form">
+	<tr>
+		<td class="label">Group name :</td>
+		<td><input type="text" name="gp_name" maxlength="16" size="16"/>
+		<span style="color: red"><% err_groupsname %></span></td>
+	</tr>
+		<tr>
+		<td class="label">Group type :</td>
+		<td><select name="gp_type">
+			<option value="User">User</option>	
+			<option value="Cluster">Cluster</option>
+			<option value="Systemimage">System image</option>
+			<option value="Motherboard">Motherboard</option>
+			<option value="Processormodel">Processor model</option>
+			<option value="Motherboardmodel">Motherboard model</option>
+			<option value="Powersupplymodel">Powersupply card model</option>
+			<option value="Distribution">Distribution</option>
+			<option value="Kernel">Kernel</option>
+		</select></td>
+	</tr>
+	<tr>
+		<td class="label">Description :</td>
+		<td><textarea cols="50" name="gp_desc" value=""></textarea></td> 
+	</tr>	
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+</div>
+</form>

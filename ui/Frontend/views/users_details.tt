@@ -1,0 +1,50 @@
+<%#
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>User : <% user_firstname %> <% user_lastname %></h2>
+<hr/>
+<span id="identity" class="title simpleexpand">Identity</span>
+<table id="Xidentity" class="detailspart">
+<tr><td class="italic" colspan="4"><% user_desc %></td>
+<td class="actions" rowspan="7">
+<% IF can_update %>
+	<a class="imgEdit" href="/rights/users/<% user_id %>/edit">edit</a><br />
+	<span class="desc">Modify these parameters.</span><br /><br />
+<% END %>
+<% IF can_delete %>
+	<a class="imgRemove" href="/rights/users/<% user_id %>/delete">delete</a><br />
+	<span class="desc">Delete this user.</span><br /><br />
+<% END %>
+<% IF can_setperm %>
+	<a class="imgPermission" href="/rights/permissions/user/<% user_id %>">permission</a><br />
+	<span class="desc">View/set permissions on this user.</span><br />
+<% END %>
+
+</td><tr/>
+<tr><td colspan="4">&nbsp;</td></tr>
+<tr><td class="label">First name :</td><td><% user_firstname %></td>
+<td class="label">Login :</td><td><% user_login %></td></tr>
+
+<tr><td class="label">Last name :</td><td><% user_lastname %></td>
+<td class="label">Password :</td><td>**********</td></tr>
+
+<tr><td class="label">Email :</td><td><% user_email %></td>
+<% IF user_lastaccess %>
+	<td class="label">Last login :</td><td><% user_lastaccess %></td>
+<% ELSE %>
+	<td></td></tr>
+<% END %>
+<tr><td class="label">Creation date :</td><td><% user_creationdate %></td><td></td><td></td></tr>
+</table>
+
+<hr/>
+<span id="groups" class="title simpleexpand">Groups</span>
+<table id="Xgroups" class="detailspart">
+<% FOREACH gp IN gp_list %>
+	<tr><td class="label2"><span class="bold"><% gp.gp_name %></span> - <span class="italic"><% gp.gp_desc %></span></td>
+	<% UNLESS gp.gp_system %><td class="action"><a class="imgManage" href="/rights/groups/<% gp.gp_id %>">details</a></td>
+	<% ELSE %><td class="action"></td>
+	<% END %>
+	</tr>
+<% END %>
+</table>

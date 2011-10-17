@@ -1,0 +1,23 @@
+<form id="target" method="POST" action="/architectures/networks/ips/public/add">
+<table class="form">
+	<tr>
+		<td class="label">IP :</td>
+		<td><input type="text" name="ip_address" maxlength="39" size="20"/>
+		<span style="color: red"><% err_ip_address %></span></td>
+	</tr>
+	<tr>
+		<td class="label">mask :</td>
+		<td><input type="text" name="ip_mask" maxlength="39" size="20"/>
+		<span style="color: red"><% err_ip_mask %></span></td>
+	</tr>
+	<tr>
+		<td class="label">gateway :</td>
+		<td><input type="text" name="gateway" maxlength="39" size="20"/>
+		<span style="color: red"><% err_gateway %></span></td>
+	</tr>
+</table>
+<div class="buttons">
+<input type="submit" value="ok"/>
+</div>
+</form> 
+

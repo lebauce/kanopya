@@ -1,0 +1,18 @@
+<% FOREACH sysimg IN systemimages_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% sysimg.systemimage_name %></h1></td></tr>
+	<tr><td><% sysimg.distribution %></td><td>
+	<% IF sysimg.active %>Active, <% sysimg.systemimage_usage %><% ELSE %>Deactivated<% END %></td><td class="toright">
+	<a class="imgManage" href="/systems/images/<% sysimg.systemimage_id %>">details</a></td></tr>
+	<tr><td class="italic" colspan="3"><% sysimg.systemimage_desc %></td></tr>
+	</table>
+<% END %>
+
+<div class="actions">
+<% IF can_create %>
+<a class="action modal" href="/systems/images/add">create a system image</a>
+<p class="italic">Create a new system image.</p>
+<% END %>
+</div>
+
+

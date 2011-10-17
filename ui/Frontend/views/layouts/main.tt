@@ -1,0 +1,240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
+        <title><% title_page %></title>
+        <link rel="stylesheet" href="<% request.uri_base %>/css/normalize.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/details.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/listing.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/misc.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/modal.css" />
+        <% FOREACH css IN css_head %>
+            <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
+        <% END %>
+
+        <script type="text/javascript" src="/javascripts/kanopyaui-tools.js"></script>
+        <script type="text/javascript" src="/javascripts/jquery.js"></script>
+        <script type="text/javascript" src="/javascripts/jquery-ui-1.8.16.custom.min.js"></script>
+
+        <% FOREACH js IN js_head %>
+            <script type="text/javascript" src="/javascripts/<% js %>"></script>
+        <% END %>
+
+        <script language="javascript" type="text/javascript">
+
+            // functions to active and deactive blocks visibility and javascript
+            // functions call. 
+            
+            function active(btn) {
+                $(btn).addClass('active');
+                $(btn.replace(/_btn/, '_content')).show();
+                var interval_id;
+                if(btn == '#operations_btn') {
+                    interval_id = setInterval("operations_update()", 5000);
+                    operations_update();
+                } else {
+                    interval_id = setInterval("messages_update()", 5000);  
+                    messages_update();
+                }
+                $(btn).prop('interval_id', interval_id);
+            }
+
+            function deactive(btn) {
+                $(btn).removeClass('active');
+                $(btn.replace(/_btn/, '_content')).hide();
+                clearInterval( $(btn).prop('interval_id') );
+                $(btn).prop('interval_id', '');
+            }
+
+
+            // function to get and update messages content
+            var messages_update = function() {
+                $.ajax({
+                    url: "/messages",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#messages_content").empty();
+                        for(var i=0;i<msg.length;i++) {
+                            $("#messages_content").append(
+                                msg[i]['date']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['time']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['content']+"<br/>" );             
+                        }
+                    },
+                    error: function(error, text, thor) {
+                    $("#messages_content").empty();
+                    $("#messages_content").append(text+" "+error);
+                    }
+                });
+            };
+
+            // function to get and update operations queue content
+            var operations_update = function() {
+                $.ajax({
+                    url: "/operation/queue",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#operations_content").empty();
+                        if(! msg.length) {
+                            $("#operations_content").append(
+                                "no operations in the queue");
+                        } else {
+                            for(var i=0;i<msg.length;i++) {
+                                $("#operations_content").append(
+                                    msg[i]['CREATION']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['FROM']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['TYPE']+"<br/>" );
+                            }
+                        }
+                    },
+                    error: function(error, text, thor) {
+                    $("#operations_content").empty();
+                    $("#operations_content").append(text+" "+error);
+                    }
+                });
+            };
+
+            $(document).ready(function() {  
+
+                // operations / messages
+
+                // add an attribute to track interval_id value returned by
+                // setInterval function and used by clearInterval
+                $('#operations_btn, #messages_btn').prop('interval_id', '');
+
+                $('#operations_btn, #messages_btn').click(function () {
+                    var this_id = '#' + $(this).attr('id');
+
+                    // nothing is active
+                    if(! $('#operations_btn, #messages_btn').hasClass('active')) {
+                        active( this_id );
+                    // one is active, which ?
+                    } else {
+                        var active_element; 
+                            $('#operations_btn, #messages_btn').each(function (index, domEle) {
+                                if($(domEle).hasClass('active')) {
+                                    active_element = '#'+$(domEle).attr('id');
+                                }
+                            });
+                        // not this, so we deactive the other and active this
+                        if(active_element != this_id) {
+                            deactive( active_element);
+                            active( this_id );
+                        // this is active, we deactive it
+                        } else {
+                            deactive(this_id);
+                        }
+                    } 
+                });
+
+                // modals
+                $('.modal').each(function() {
+                    var $link = $(this);
+
+                    var $dialog = $('<div></div>')
+                        .load($link.attr('href'))
+                        .dialog({
+                            autoOpen: false,
+                            modal: true,
+                            title: $link.attr('title' + '#content'),
+                            width: 500,
+                            height: 300,
+                            buttons: {
+                                Send: function() {
+                                    $('#target').submit();
+                                    $(this).dialog('close');
+                                },
+                                Cancel: function() {
+                                    $(this).dialog('close');
+                                }
+                            },
+
+                        });
+
+                    $link.click(function() {
+                        $dialog.dialog('open');
+                        return false;
+                    });
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="header">
+            <img id="logo" src="/images/kanopya_medium_logo.png" />
+            <div id="menu">
+                <ul>
+                    <li <% menu_selection('dashboard') %>><a href="/dashboard/status">Dashboard</a></li>
+                    <li <% menu_selection('rights') %>><a href="/rights/users">Rights</a></li>
+                    <li <% menu_selection('infrastructures') %>><a href="/infrastructures/hosts">Infrastructures</a></li>
+                    <li <% menu_selection('systems') %>><a href="/systems/kernels">Systems</a></li>
+                    <li <% menu_selection('architectures') %>><a href="/architectures/clusters">Architectures</a></li>
+                </ul>
+            
+            </div>
+            <div id="menu_separator">
+            </div>
+            
+            <div id="submenu">
+                <ul>
+                    <% IF is_menu_selected('dashboard') %>
+                        <li <% submenu_selection('status') %>><a href="/dashboard/status" >Status</a></li>
+                        <li <% submenu_selection('logs') %>><a href="/dashboard/logs">Logs</a></li>
+                    <% ELSIF is_menu_selected('rights') %>
+                        <li <% submenu_selection('users') %>><a href="/rights/users">Users</a></li>
+                        <li <% submenu_selection('groups') %>><a href="/rights/groups">Groups</a></li>
+                        <li <% submenu_selection('permissions') %>><a href="/rights/permissions">Permissions</a></li>
+                    <% ELSIF is_menu_selected('infrastructures') %>
+                        <li <% submenu_selection('hosts') %>><a href="/infrastructures/hosts">Hosts</a></li>
+                        <li <% submenu_selection('models') %>><a href="/infrastructures/models">Models</a></li>
+                        <li <% submenu_selection('powersupply') %>><a href="/infrastructures/powersupply">Power supply cards</a></li>
+                    <% ELSIF is_menu_selected('systems') %>
+                        <li <% submenu_selection('kernels') %>><a href="/systems/kernels">Kernels</a></li>
+                        <li <% submenu_selection('distributions') %>><a href="/systems/distributions">Distributions</a></li>
+                        <li <% submenu_selection('components') %>><a href="/systems/components">Components</a></li>
+                        <li <% submenu_selection('images') %>><a href="/systems/images">System images</a></li>
+                     <% ELSIF is_menu_selected('architectures') %>
+                        <li <% submenu_selection('clusters') %>><a href="/architectures/clusters">Clusters</a></li>
+                        <li <% submenu_selection('networks') %>><a href="/architectures/networks">Networks</a></li>
+                    <% END %>
+                </ul>
+            </div>
+            
+            <div id="infologin">
+                logged as <span id="username"><% username %></span>
+            </div>
+
+            <div class="logout">
+                <a href="/logout">Logout</a>
+            </div>
+            
+        </div>
+
+        <div id="container">
+            <div id="content">
+                <% content %>
+            </div>
+           
+            <div id="opsmsg">
+                <table>
+                    <tr>
+                        <td id="operations_btn">operations queue</td>
+                        <td id="messages_btn">messages</td>
+                    </tr>
+                </table>
+                <div id="operations_content">operations queue loading...</div>
+                <div id="messages_content">messages loading...</div>
+            </div>
+
+            <div id="footer">
+                Powered by <a href="http://hederatech.org/">Hedera Technology</a>
+            </div>
+        </div>
+    </body>
+</html>

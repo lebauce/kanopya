@@ -1,0 +1,50 @@
+<% js_head.push('components.js') %>
+<h2>Cluster <% cluster_name %> - Lvm2 Configuration</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="lvm2_vg_id" value="<% lvm2_vg_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_name" value="Lvm2"/>
+<table>
+<tr><td>vg name: </td><td><% lvm2_vg_name %></td></tr>
+<tr><td>vg size: </td><td><% lvm2_vg_size %></td></tr>
+<tr><td>vg free space: </td><td><% lvm2_vg_freespace %></td></tr>
+</table>
+
+<hr />
+<h3>Logical volumes</h3>
+	<table class="conf_array_value" id="lvm2_lvs">
+		<tr><th>Name</th><th>Size</th><th>Free space</th><th>File system</th></tr>
+		<% FOREACH lv IN lvm2_lvs %>
+			<tr>
+			<td><input type="text" value="<% lv.lvm2_lv_name %>" disabled/></td>
+			<td><input type="text" value="<% lv.lvm2_lv_size %>" disabled/></td>
+			<td><input type="text" value="<% lv.lvm2_lv_freespace %>" disabled/></td>
+			<td><input type="text" value="<% lv.lvm2_lv_filesystem %>" disabled/></td>
+			<td class="hidden"><% lv.lvm2_lv_id %></td>
+			</tr>
+		<% END %>
+	</table>
+<a class="add_lvm2_lvs imgAdding iconAction" >Add logical volume</a>
+<hr />
+
+<div class="right">
+<input id="save_button" type="button" value="create"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
+</div>
+</form>
+
+<div class="hidden" id="models">
+	<table>
+		<tr class="elem_lvm2_lvs" name="lv">
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_name" value=""/></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_size" value="" /></td>
+			<!--td><input class="lv_simple_value" type="text" name="lvm2_lv_freespace" value="" /></td-->
+			<td></td>
+			<td><input class="lv_simple_value" type="text" name="lvm2_lv_filesystem" value="" /></td>
+			<td><a class="remove_lv imgRemove iconAction" ></a></td>
+		</tr>
+	</table>
+</div>
+

@@ -1,0 +1,659 @@
+package Clusters;
+
+use Dancer ':syntax';
+
+use Administrator;
+use Entity::Cluster;
+use Entity::Motherboard;
+use Entity::Systemimage;
+use Entity::Kernel;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("webui");
+
+prefix '/architectures';
+
+sub _timestamp_format {
+    my %args = @_;
+    
+    return 'unk' if (not defined $args{timestamp});
+    
+    my $period = time() - $args{timestamp};
+   	my @time = (int($period/3600), int(($period % 3600) / 60), $period % 60);
+    my $time_str = "";
+    $time_str .= $time[0] . "h" if ($time[0] > 0);
+    $time_str .= $time[1] . "m" if ($time[0] > 0 || $time[1] > 0);
+    $time_str .= $time[2] . "s"; 
+    
+    return $time_str;
+}
+
+sub _clusters {
+
+    my @eclusters = Entity::Cluster->getClusters(hash => {});
+    my $clusters = [];
+    my $clusters_list;
+    my $can_create;
+
+    foreach my $n (@eclusters){
+        my $tmp = {
+            link_activity => 0,
+            cluster_id    => $n->getAttr(name => 'cluster_id'),
+            cluster_name  => $n->getAttr(name => 'cluster_name')
+        };
+
+        my $minnode = $n->getAttr(name => 'cluster_min_node');
+        my $maxnode = $n->getAttr(name => 'cluster_max_node');
+        if ( $minnode == $maxnode ) {
+            $tmp->{type}    = 'Static cluster';
+            $tmp->{nbnodes} = "$minnode node";
+            $tmp->{nbnodes} .= "s" if ( $minnode > 1 );
+        } else {
+            $tmp->{type} = 'Dynamic cluster';
+            $tmp->{nbnodes} = "$minnode to $maxnode nodes";
+        }
+
+        if ( $n->getAttr('name' => 'active') ) {
+            $tmp->{active} = 1;
+            my $nbnodesup = $n->getCurrentNodesCount();
+            if($nbnodesup > 0) {
+                $tmp->{nbnodesup}     = $nbnodesup;
+                $tmp->{link_activity} = 1;
+            }
+
+             my $cluster_state = $n->getAttr('name' => 'cluster_state');
+            for my $state ('up', 'starting', 'stopping', 'down', 'broken') {
+                $tmp->{"state_$state"} = 1 if ( $cluster_state =~ $state );
+            }
+        } else {
+            $tmp->{active} = 0;
+        }
+        $tmp->{cluster_desc} = $n->getAttr(name => 'cluster_desc');
+        push (@$clusters, $tmp);
+    }
+
+    #$clusters_list = $clusters;
+    #if($methods->{'create'}->{'granted'}) {
+        #my @si = Entity::Systemimage->getSystemimages(hash => {});
+        #if (scalar @si){
+            #$can_create = 1
+        #}
+    #}
+
+    return $clusters;
+}
+
+get '/clusters/add' => sub {
+    my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});
+    my @ekernels = Entity::Kernel->getKernels(hash => {});
+    my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
+    my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
+    my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
+
+    my $count = scalar @emotherboards;
+    my $c =[];
+    for (my $i=1; $i<=$count; $i++) {
+        my $tmp->{nodes}=$i;
+        push(@$c, $tmp);
+    }
+    my $kmodels = [];
+    foreach my $k (@ekernels) {
+        my $tmp = {
+            kernel_id => $k->getAttr( name => 'kernel_id'),
+            kernel_name => $k->getAttr(name => 'kernel_version')
+        };
+        push (@$kmodels, $tmp);
+    }
+    my $si_forshared = [];
+    foreach my $s (@esystemimages_forshared){
+        my $tmp = {
+            systemimage_id => $s->getAttr(name => 'systemimage_id'),
+            systemimage_name => $s->getAttr(name => 'systemimage_name')
+        };
+        push (@$si_forshared, $tmp);
+    }
+    my $si_fordedicated = [];
+    foreach my $s (@esystemimages_fordedicated){
+        my $tmp = {
+            systemimage_id => $s->getAttr(name => 'systemimage_id'),
+            systemimage_name => $s->getAttr(name => 'systemimage_name')
+        };
+        push (@$si_fordedicated, $tmp);
+    }
+
+    template 'form_addcluster', {
+        title_page                  => "Clusters - Cluster creation",
+        'nodescount'                => $c,
+        'kernels_list'              => $kmodels,
+        'systemimages_forshared'    => $si_forshared,
+        'systemimages_fordedicated' => $si_fordedicated,
+        'nameserver'                => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
+    }, { layout => '' };
+};
+
+post '/clusters/add' => sub {
+    my $adm = Administrator->new;
+    
+    my ($si_location, $si_access_mode, $si_shared, $systemimage_id);
+
+    $si_location = params->{'si_location'};
+    if($si_location eq 'local') {
+        $si_access_mode = 'rw';
+        $si_shared = 0;
+    } elsif($si_location eq 'diskless') {
+        if(params->{'si_shareordedicate'} eq 'shared') {
+            $si_access_mode = 'ro';
+            $si_shared = 1;
+            $systemimage_id = params->{'systemimage_forshared'};
+        } else {
+            $si_access_mode = 'rw';
+            $si_shared = 0;
+            $systemimage_id = params->{'systemimage_fordedicated'};
+        }
+    }
+
+    eval {
+        my $params = {
+            cluster_name => params->{'name'},
+            cluster_desc => params->{'desc'},
+            cluster_si_location => $si_location,
+            cluster_si_access_mode => $si_access_mode,
+            cluster_si_shared => $si_shared,
+            cluster_min_node => params->{'min_node'},
+            cluster_max_node => params->{'max_node'},
+            cluster_priority => params->{'priority'},
+            systemimage_id => $systemimage_id,
+            cluster_domainname => params->{'domainname'},
+            cluster_nameserver => params->{'nameserver'},
+        };
+        if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
+        my $ecluster = Entity::Cluster->new(%$params);
+        $ecluster->create();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else {
+        $exception->rethrow();
+     #   return $self->error_occured("Error during operation enqueuing : $exception->error");
+        }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster creation adding to execution queue');
+        redirect '/architectures/clusters';
+    }
+};
+
+get '/clusters' => sub {
+    my $can_create;
+
+    my $methods = Entity::Cluster->getPerms();
+    if($methods->{'create'}->{'granted'}) {
+        my @si = Entity::Systemimage->getSystemimages(hash => {});
+        if (scalar @si){
+            $can_create = 1;
+        }
+    }
+    
+    #TEMPORARY testing
+    #$can_create = 1;
+    
+    template 'clusters', {
+        title_page         => 'Clusters - Clusters',
+        clusters_list => _clusters(),
+        can_create => $can_create,
+    };
+};
+
+get '/clusters/:clusterid' => sub {
+    my $cluster_id = params->{clusterid};
+    my $ecluster = Entity::Cluster->get(id => $cluster_id);
+    my $methods = $ecluster->getPerms();
+
+    my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
+    my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
+
+    my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
+    my ($systemimage_name, $systemimage_active);
+    if($systemimage_id) {
+        my $esystemimage = eval { Entity::Systemimage->get(id => $systemimage_id) };
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $systemimage_name = '-';
+            $systemimage_active = '-';
+        } else {
+            $systemimage_name =  $esystemimage->getAttr(name => 'systemimage_name');
+            $systemimage_active = $esystemimage->getAttr('name' => 'active');
+        }
+    }
+
+    my $kernel_id = $ecluster->getAttr(name =>'kernel_id');
+    my $kernel;
+    if($kernel_id) {
+        my $ekernel = eval { Entity::Kernel->get(id => $kernel_id) };
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $kernel = '-';
+        } else {
+            $kernel = $ekernel->getAttr(name => 'kernel_version');
+        }
+    } else {
+        $kernel = 'no specific kernel';
+    }
+
+    my $publicips = $ecluster->getPublicIps();
+    
+    # state info
+    my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
+    
+    my $motherboards = $ecluster->getMotherboards(administrator => Administrator->new);
+    my $nbnodesup = scalar(keys(%$motherboards));
+    my $nodes = [];
+
+    my $active = $ecluster->getAttr('name' => 'active');
+    my $link_activate = 0;
+    my $link_addnode = 0;
+    my $link_start = 0;
+    my $link_deactivate = 0;
+    my $link_delete = 0;
+
+    if($active) {
+        $link_activate = 0;
+        if($nbnodesup > 0) {
+            if($minnode != $maxnode and $nbnodesup < $maxnode) {
+                $link_addnode = 1;
+            }
+        } else {
+            $link_start = 1;
+            $link_deactivate = 1;
+        }
+    } else {
+        $link_activate = 1;
+        $link_delete = 1;
+    }
+
+    # components list
+    my $components = $ecluster->getComponents(category => 'all');
+    my $comps = [];
+
+    while( my ($instance_id, $comp) = each %$components) {
+        my $comphash = {};
+        my $compAtt = $comp->getComponentAttr();
+        $comphash->{component_instance_id} = $instance_id;
+        $comphash->{component_name} = $compAtt->{component_name};
+        $comphash->{component_version} = $compAtt->{component_version};
+        $comphash->{component_category} = $compAtt->{component_category};
+        $comphash->{cluster_id} = $cluster_id;
+        if(not $methods->{'configureComponents'}->{'granted'} ) {
+                $comphash->{'link_configurecomponents'} = 0;
+        } else { $comphash->{'link_configurecomponents'} = 1;}
+        if(not $methods->{'removeComponent'}->{'granted'} ) {
+                $comphash->{link_remove} = 0;
+        } else { $comphash->{link_remove} = not $active;}
+
+
+        push (@$comps, $comphash);
+    }
+
+    # nodes list
+    if($nbnodesup) {
+        my $master_id = $ecluster->getMasterNodeId();
+        while( my ($id, $n) = each %$motherboards) {
+            my $tmp = {
+                motherboard_id => $id,
+                motherboard_hostname => $n->getAttr(name => 'motherboard_hostname'),
+                motherboard_internal_ip => $n->getInternalIP()->{ipv4_internal_address},
+                cluster_id => $cluster_id,
+            };
+            
+            # Manage remove link
+            if ($id == $master_id) {
+                $tmp->{link_remove} = 0;
+                $tmp->{master_node} = 1;
+            } else {
+                if(not $methods->{'removeNode'}->{'granted'} ) {
+                    $tmp->{link_remove} = 0;
+                } else { $tmp->{link_remove} = 1;}
+            }
+
+            # Manage node state
+            my ($node_state, $time_stamp) = $n->getNodeState();
+            # The first elem is the regexp to match with the state and the second elem is the associated state for ui 
+            for my $state ( ['^in', 'up'],                # node 'in' is displayed as 'Up'
+                            ['goingin', 'starting'],    # match pregoingin, goingin and diplayed as starting
+                            ['goingout', 'stopping'],    # match pregoingout, goingout and diplayed as stopping
+                            ['broken','broken']) {        # broken
+                if ( $node_state =~ $state->[0] ) {
+                    $tmp->{"state_$state->[1]"} = 1;
+                }
+            }
+            $tmp->{"real_state"} = $node_state;
+            $tmp->{"state_time"} = _timestamp_format( timestamp => $time_stamp );
+
+            push @$nodes, $tmp;
+        }
+    }
+
+    my $link_stop = ! $link_start;
+
+    template 'clusters_details', {
+        title_page         => "Clusters - Cluster's overview",
+        cluster_id         => $cluster_id,
+        cluster_name       => $ecluster->getAttr(name => 'cluster_name'),
+        cluster_desc       => $ecluster->getAttr(name => 'cluster_desc'),
+        cluster_priority   => $ecluster->getAttr(name => 'cluster_priority'),
+        cluster_domainname => $ecluster->getAttr(name => 'cluster_domainname'),
+        cluster_nameserver => $ecluster->getAttr(name => 'cluster_nameserver'),
+        cluster_min_node   => $minnode,
+        cluster_max_node   => $maxnode,
+        type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
+        systemimage_name   => $systemimage_name,
+        systemimage_active => $systemimage_active,
+        kernel             => $kernel,
+        publicip_list      => $publicips,
+        nbpublicips        => scalar(@$publicips),
+        active             => $active,
+        cluster_state      => $cluster_state,
+        state_time         => _timestamp_format( timestamp => $timestamp ),
+        nbnodesup          => $nbnodesup,
+        nbcomponents       => scalar(@$comps),
+        components_list    => $comps,
+        nodes_list         => $nodes,
+        link_delete        => $methods->{'remove'}->{'granted'} ? $link_delete : 0,
+        link_activate      => $methods->{'activate'}->{'granted'} ? $link_activate : 0,
+        link_deactivate    => $methods->{'deactivate'}->{'granted'} ? $link_deactivate : 0,
+        link_start         => $methods->{'start'}->{'granted'} && $link_start,
+        link_stop          => $methods->{'stop'}->{'granted'} && $link_stop,
+        link_edit          => $methods->{'update'}->{'granted'}, 
+        link_addnode       => $methods->{'addnode'}->{'granted'} ? $link_addnode : 0,
+        link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
+        can_setperm        => $methods->{'setperm'}->{'granted'},        
+                       
+     };
+};
+
+get '/clusters/:clusterid/activate' => sub {
+    my $adm = Administrator->new;
+    my $ecluster;
+    eval {
+        $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->activate();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            forward('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster activation adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/deactivate' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->deactivate();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster deactivation adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->remove();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster removing adding to execution queue');
+        redirect('/architectures/clusters');
+    }
+};
+
+get '/clusters/:clusterid/start' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->start();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster start adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/stop' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->stop();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster stop adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/forcestop' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->forceStop();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+        }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster force stop adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/components/add' => sub {
+    my $adm = Administrator->new;
+    my $cluster_id = param('clusterid');
+    my ($ecluster, $esystemimage, $systemimage_components, $cluster_components);
+    my $components = [];
+    eval {
+        $ecluster = Entity::Cluster->get(id => $cluster_id);
+        $esystemimage = Entity::Systemimage->get(id => $ecluster->getAttr(name => 'systemimage_id'));
+        $systemimage_components = $esystemimage->getInstalledComponents();
+        $cluster_components = $ecluster->getComponents(administrator => $adm, category => 'all');
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        foreach my $c  (@$systemimage_components) {
+            my $found = 0;
+            while(my ($instance_id, $component) = each %$cluster_components) {
+                my $attrs = $component->getComponentAttr();
+                if($attrs->{component_id} eq $c->{component_id}) { $found = 1; }
+            }
+            if(not $found) { push @$components, $c; };
+        }
+    }
+
+    template 'form_addcomponenttocluster', {
+        cluster_id         => $cluster_id,
+        cluster_name       => $ecluster->getAttr(name => 'cluster_name'),
+        components_list    => $components
+    }, { layout => '' };
+};
+
+post '/clusters/:clusterid/components/add' => sub {
+    my $adm = Administrator->new;
+    my $instanceid;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $instanceid = $ecluster->addComponent(component_id => param('component_id'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'Component added sucessfully');
+        redirect("/systems/components/$instanceid/configure");
+    }
+};
+
+get '/clusters/:clusterid/components/:instanceid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->removeComponent(component_instance_id => param('instanceid'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'Component removed sucessfully');
+        redirect("/architectures/clusters/".param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/ips/public/add' => sub {
+    my $adm = Administrator->new;
+    my $freepublicips = $adm->{manager}->{network}->getFreePublicIPs();
+
+    template 'form_setpubliciptocluster', {
+        cluster_id         => param('clusterid'),
+        freepublicips_list => $freepublicips
+    }, { layout => '' };
+};
+
+post '/clusters/:clusterid/ips/public/add' => sub {
+    my $adm = Administrator->new;
+    eval {
+        $adm->{manager}->{network}->setClusterPublicIP(
+            publicip_id => param('publicip_id'),
+            cluster_id => param('clusterid'),
+        );
+    };
+    if($@) {
+        my $error = $@;
+        $adm->addMessage(from => 'Administrator',level => 'error', content => $error);
+    } else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added to cluster.');
+    }
+    redirect('/architectures/clusters/'.param('clusterid'));
+};
+
+get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        $adm->{manager}->{network}->unsetClusterPublicIP(
+            publicip_id => param('ipid'),
+            cluster_id => param('clusterid'),
+        );
+    };
+    if($@) {
+        my $error = $@;
+        $adm->addMessage(from => 'Administrator',level => 'error', content => $error);
+    } else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed from cluster.');
+    }
+    redirect('/architectures/clusters/'.param('clusterid'));
+};
+
+get '/clusters/:clusterid/nodes/add' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->addNode();
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue');
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster->removeNode(motherboard_id => param('nodeid'));
+    };
+       if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster remove node adding to execution queue');
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
+};
+
+1;

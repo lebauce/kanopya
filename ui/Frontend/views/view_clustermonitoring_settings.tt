@@ -1,0 +1,65 @@
+<%# <script type="text/javascript" src="/js/extern/jquery-ui.js"></script>
+%>
+<script type="text/javascript" src="/js/monitor.js"></script>
+
+<table class='simplelisting monitor_settings'>
+	<caption>Cluster monitoring configuration</caption>
+	<tr>
+		<th>Set</th>
+		<th>Collect</th>
+		<th>Graph</th>
+	</tr>
+	<tr><td colspan='3'></td></tr>
+	<% FOREACH s IN SETS %>
+			<tr>
+				<th id='<% s.LABEL %>' class='expander'><% s.LABEL %></th>
+				<td class='select_collect <% IF s.COLLECTED %>collected<% END %>'></td>
+				<td class='select_graph <% IF s.GRAPHED %>graphed<% END %>'></td>
+			</tr>
+			<tr id='X<% s.LABEL %>' class='graph_settings_<% s.LABEL %>'>
+	
+			<td colspan='2'>
+			
+			<% IF s.IS_TABLE %>
+				<table class='expandable hidden'>
+				<tr><td>Table</td></tr>
+				<tr><td colspan='2'>
+				<table>
+			<% ELSE %>
+				<table class='expandable hidden'>
+			<% END %>
+					<% FOREACH d IN DS %>
+						<tr>
+							<td><% d.DS_NAME %></td>
+							<td id='<% d.DS_NAME %>' class='select_ds <% IF d.ON_GRAPH %>on_graph<% END %>'></td></tr>
+						</tr>
+					<% END %>
+				</table>
+			<% IF s.IS_TABLE %>
+				</td></tr></table>	
+			<% END %>	
+			</td>
+			
+			<td>
+				<table id='graph_options_<% s.LABEL %>' class='expandable graph_options hidden'>
+					<tr><th>graph type</th><td opt_name='graph_type' choices='line,stack' class='graph_option editable_choice'><% s.GRAPH_TYPE %></td></tr>
+					<tr><th>percentage</th><td opt_name='percent' class='graph_option yes_no_choice'><% s.PERCENT %></td></tr>
+					<tr><th>include total</th><td opt_name='with_total' class='graph_option yes_no_choice'><% s.WITH_TOTAL %></td></tr>
+					<% IF s.IS_TABLE %>
+						<tr><th>all in one</th><td opt_name='all_in_one' class='graph_option yes_no_choice'><% s.ALL_IN_ONE %></td></tr>
+					<% END %>	
+				</table>
+			</td>
+			
+			</tr>
+
+	<% END %>
+</table>	
+
+<div class="actions">
+<a class="action imgSave" id="save_clustermonitoring_settings">save</a>
+<p class="italic">Save settings.</p>
+<a class="action imgMonitor" href='/monitoring/view_clustermonitoring?cluster_id=<% cluster_id %>'>activity</a>
+<p class="italic">Cluster's activity.</p>
+</div>
+
