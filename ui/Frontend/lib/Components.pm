@@ -107,7 +107,8 @@ get '/components/:instanceid/saveconfig' => sub {
         $msg = "Error while saving:\n $@";
     }
 
-    return to_dumper($msg);
+    content_type('text/text');
+    return $msg;
 };
 
 1;
