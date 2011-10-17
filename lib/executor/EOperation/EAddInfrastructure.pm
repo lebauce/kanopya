@@ -376,7 +376,7 @@ sub execute {
         
         # Set Monitoring conf
         $log->error("tier collect sets are : $tier->{collector_sets}");
-        my @sets = split(/:/, $tier->{collector_sets});
+        my @sets = split(/,/, $tier->{collector_sets});
         $adm->{manager}->{monitor}->collectSets(cluster_id => $tmp_tier->{cluster_id},
                                                 sets_name => \@sets);
         
