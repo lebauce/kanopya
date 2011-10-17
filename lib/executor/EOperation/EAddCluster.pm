@@ -94,11 +94,8 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EAddCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    
     my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
 
@@ -124,44 +121,9 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    my $adm = Administrator->new();
-    my $si_location = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_location");
-    my $si_access_mode = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_access_mode");
-    my $si_shared = $self->{_objs}->{cluster}->getAttr(name =>"cluster_si_shared");
-    my $systemimage = Entity::Systemimage->get(id => $self->{_objs}->{cluster}->getAttr(name =>"systemimage_id"));;
+    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
+    $ecluster->create(econtext => $self->{econtext},erollback => $self->{erollback});
     
-    if($si_location eq 'diskless') {
-        if(not $si_shared) {
-            $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
-            $systemimage->save();
-        } 
-    }
-
-    # Create cluster directory
-    my $command = "mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
-    $self->{econtext}->execute(command => $command);
-    $log->debug("Execution : mkdir -p /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
-
-    # set initial state to down
-    $self->{_objs}->{cluster}->setAttr(name => 'cluster_state', value => 'down:'.time);
-    
-    # Save the new cluster in db
-    $self->{_objs}->{cluster}->save();
-
-        my @group = Entity::Gp->getGroups(hash => {gp_name=>'Cluster'});
-        $group[0]->appendEntity(entity => $self->{_objs}->{cluster});
-
-
-    # automatically add System|Monitoragent|Logger components
-    if($systemimage) {
-        my $components = $systemimage->getInstalledComponents(); 
-        foreach my $comp (@$components) {
-            if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
-                $self->{_objs}->{cluster}->addComponent(component_id => $comp->{component_id});
-                $log->info("Component $comp->{component_name} automatically added");
-            }
-        }
-    }
     $log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
 }
 

@@ -258,8 +258,8 @@ sub loadContext {
     }
     
     my $cluster = Entity::Cluster->get(id => $args{internal_cluster}->{$args{service}});
-    my $serv_ip = $cluster->getMasterNodeIp();
-    $self->{$args{service}}->{econtext} = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $serv_ip);
+    $self->{$args{service}}->{ip} = $cluster->getMasterNodeIp();
+    $self->{$args{service}}->{econtext} = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $self->{$args{service}}->{ip});
     
 }
 

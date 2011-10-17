@@ -40,17 +40,17 @@ motherboard_mac_address : String : This is the main network interface mac addres
 
 motherboard_powersupply_id : Int : Facultative identifier to know which powersupplycard and port is used.
 Powersupplyid is created during motherboard creation.
-motherboard_desc :  String : This is a free field to enter a description of motherboard. It is generally used to 
+motherboard_desc :  String : This is a free field to enter a description of motherboard. It is generally used to
 specify owner, team, ...
 
 active : Int : This is an internal parameter used to activate or deactivate resources on Kanopya System
-motherboard_internal_ip : String : This another internally manage attribute, it allow to save internal ip of 
+motherboard_internal_ip : String : This another internally manage attribute, it allow to save internal ip of
 a motherboard when it is in a cluster
 motherboard_hostname : Hostname is also internally managed. Motherboard hostname will be generated from the mac address
 It is generated when a motherboard is added into a cluster
 motherboard_initiatorname : This attributes is generated when a motherboard is added in a cluster and allow to connect
 to internal storage to get the systemimage
-etc_device_id : Int : This parameter corresponding to lv storage and iscsitarget generated 
+etc_device_id : Int : This parameter corresponding to lv storage and iscsitarget generated
 when a motherboard is configured to be migrated into a cluster
 motherboard_state : String : This parameter is internally managed, it allows to follow migration step.
 It could be :
@@ -118,32 +118,32 @@ sub getAttrDef{
 }
 sub methods {
     return {
-        'create'    => {'description' => 'create a new motherboard', 
+        'create'    => {'description' => 'create a new motherboard',
                         'perm_holder' => 'mastergroup',
         },
-        'get'        => {'description' => 'view this motherboard', 
+        'get'        => {'description' => 'view this motherboard',
                         'perm_holder' => 'entity',
         },
-        'update'    => {'description' => 'save changes applied on this motherboard', 
+        'update'    => {'description' => 'save changes applied on this motherboard',
                         'perm_holder' => 'entity',
         },
-        'remove'    => {'description' => 'delete this motherboard', 
+        'remove'    => {'description' => 'delete this motherboard',
                         'perm_holder' => 'entity',
         },
-        'activate'=> {'description' => 'activate this motherboard', 
+        'activate'=> {'description' => 'activate this motherboard',
                         'perm_holder' => 'entity',
         },
-        'deactivate'=> {'description' => 'deactivate this motherboard', 
+        'deactivate'=> {'description' => 'deactivate this motherboard',
                         'perm_holder' => 'entity',
         },
-        'addHarddisk'=> {'description' => 'add a hard disk to this motherboard', 
+        'addHarddisk'=> {'description' => 'add a hard disk to this motherboard',
                         'perm_holder' => 'entity',
         },
-        'removeHarddisk'=> {'description' => 'remove a hard disk from this motherboard', 
+        'removeHarddisk'=> {'description' => 'remove a hard disk from this motherboard',
                         'perm_holder' => 'entity',
         },
-        
-        'setperm'    => {'description' => 'set permissions on this motherboard', 
+
+        'setperm'    => {'description' => 'set permissions on this motherboard',
                         'perm_holder' => 'entity',
         },
     };
@@ -162,10 +162,10 @@ sub get {
     my $admin = Administrator->new();
     my $motherboard = $admin->{db}->resultset('Motherboard')->find($args{id});
     if(not defined $motherboard) {
-        $errmsg = "Entity::Motherboard->get : id <$args{id}> not found !";    
+        $errmsg = "Entity::Motherboard->get : id <$args{id}> not found !";
      $log->error($errmsg);
      throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    } 
+    }
     my $entity_id = $motherboard->entitylink->get_column('entity_id');
     my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
     if(not $granted) {
@@ -183,14 +183,14 @@ sub get {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('motherboard_state'); 
-    return wantarray ? split(/:/, $state) : $state; 
+    my $state = $self->{_dbix}->get_column('motherboard_state');
+    return wantarray ? split(/:/, $state) : $state;
 }
 
 sub getPrevState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('motherboard_prev_state'); 
-    return wantarray ? split(/:/, $state) : $state; 
+    my $state = $self->{_dbix}->get_column('motherboard_prev_state');
+    return wantarray ? split(/:/, $state) : $state;
 }
 
 =head2 setState
@@ -200,7 +200,7 @@ sub getPrevState {
 sub setState {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
@@ -214,13 +214,13 @@ sub setState {
 
 sub getNodeState {
     my $self = shift;
-    my $state = $self->{_dbix}->node->get_column('node_state'); 
+    my $state = $self->{_dbix}->node->get_column('node_state');
     return wantarray ? split(/:/, $state) : $state;
 }
 
 sub getPrevNodeState {
     my $self = shift;
-    my $state = $self->{_dbix}->node->get_column('node_prev_state'); 
+    my $state = $self->{_dbix}->node->get_column('node_prev_state');
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -231,7 +231,7 @@ sub getPrevNodeState {
 sub setNodeState {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getNodeState();
@@ -240,22 +240,22 @@ sub setNodeState {
 }
 
 =head2 Entity::Motherboard->becomeNode (%args)
-    
+
     Class : Public
-    
+
     Desc : Create a new node instance in db from motherboard linked to cluster (in params).
-    
-    args: 
+
+    args:
         cluster_id : Int : Cluster identifier
         master_node : Int : 0 or 1 to say if the motherboard is the master node
     return: Node identifier
-    
+
 =cut
 
 sub becomeNode{
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['cluster_id','master_node']);
 
     my $adm = Administrator->new();
@@ -278,19 +278,19 @@ sub becomeMasterNode{
 }
 
 =head2 Entity::Motherboard->stopToBeNode (%args)
-    
+
     Class : Public
-    
+
     Desc : Remove a node instance for a dedicated motherboard.
-    
-    args: 
+
+    args:
         cluster_id : Int : Cluster identifier
-    
+
 =cut
 
 sub stopToBeNode{
     my $self = shift;
-    
+
     my $row = $self->{_dbix}->node;
     $log->debug("node <".$self->getAttr(name=>"motherboard_mac_address")."> stop to be node");
     if(not defined $row) {
@@ -303,7 +303,7 @@ sub stopToBeNode{
 
 =head2 getMotherboards
 
-=cut 
+=cut
 
 sub getMotherboards {
     my $class = shift;
@@ -357,10 +357,10 @@ sub new {
 
     # Check attrs ad throw exception if attrs missed or incorrect
     my $attrs = $class->checkAttrs(attrs => \%args);
-    
+
     # We create a new DBIx containing new entity (only global attrs)
     my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Motherboard");
-    
+
     # Set the extended parameters
     $self->{_ext_attrs} = $attrs->{extended};
     return $self;
@@ -372,7 +372,7 @@ sub new {
 
 sub create {
     my $self = shift;
-    
+
     my %params = $self->getAttrs();
     $log->debug("New Operation AddMotherboard with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
@@ -392,7 +392,7 @@ sub update {}
 
 sub remove {
     my $self = shift;
-    
+
     $log->debug("New Operation RemoveMotherboard with motherboard_id : <".$self->getAttr(name=>"motherboard_id").">");
     Operation->enqueue(
         priority => 200,
@@ -417,34 +417,34 @@ sub getHarddisks {
         $tmp->{harddisk_id} = $hd->get_column('harddisk_id');
         $tmp->{harddisk_device} = $hd->get_column('harddisk_device');
         push @$hds, $tmp;
-    } 
+    }
     return $hds;
-     
+
 }
 
 sub addHarddisk {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['device']);
-    
+
     my $adm = Administrator->new();
     # addHarddisk method concerns an existing entity so we use his entity_id
     my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addHarddisk');
     if(not $granted) {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a hard disk to this motherboard");
     }
-    
+
     $self->{_dbix}->harddisks->create({
         harddisk_device => $args{device},
-        motherboard_id => $self->getAttr(name => 'motherboard_id'), 
-    });   
+        motherboard_id => $self->getAttr(name => 'motherboard_id'),
+    });
 }
 
 sub removeHarddisk {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['harddisk_id']);
 
     my $adm = Administrator->new();
@@ -460,7 +460,7 @@ sub removeHarddisk {
 
 sub activate{
     my $self = shift;
-    
+
     $log->debug("New Operation ActivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
     Operation->enqueue(priority => 200,
                    type     => 'ActivateMotherboard',
@@ -469,7 +469,7 @@ sub activate{
 
 sub deactivate{
     my $self = shift;
-    
+
     $log->debug("New Operation EDeactivateMotherboard with motherboard_id : " . $self->getAttr(name=>'motherboard_id'));
     Operation->enqueue(priority => 200,
                    type     => 'DeactivateMotherboard',
@@ -525,12 +525,12 @@ sub getEtcDev {
     $log->info("retrieve etc attributes");
     my $etcrow = $self->{_dbix}->etc_device;
     my $devices = {
-        etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
+        etc => { lv_id => $etcrow->get_column('lvm2_lv_id'),
                  vg_id => $etcrow->get_column('lvm2_vg_id'),
                  lvname => $etcrow->get_column('lvm2_lv_name'),
                  vgname => $etcrow->lvm2_vg->get_column('lvm2_vg_name'),
                  size => $etcrow->get_column('lvm2_lv_size'),
-                 freespace => $etcrow->get_column('lvm2_lv_freespace'),    
+                 freespace => $etcrow->get_column('lvm2_lv_freespace'),
                  filesystem => $etcrow->get_column('lvm2_lv_filesystem')
                 }    };
     $log->info("Motherboard etc and root devices retrieved from database");
@@ -550,7 +550,7 @@ sub getInternalIP {
 sub setInternalIP{
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['ipv4_internal_address','ipv4_internal_mask']);
 
     my $adm = Administrator->new();
@@ -561,18 +561,18 @@ sub setInternalIP{
 
 sub removeInternalIP{
     my $self = shift;
-    
+
     my $internal_net_id = $self->getAttr(name =>"motherboard_ipv4_internal_id");
-    
+
     $self->{_dbix}->update({'motherboard_ipv4_internal_id' => undef});
     my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_internal_id => $internal_net_id);
+    my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_id => $internal_net_id);
 
 }
 
 sub generateHostname {
 #    my $self = shift;
-#    my $mac = $self->getAttr(name => 'motherboard_mac_address');    
+#    my $mac = $self->getAttr(name => 'motherboard_mac_address');
 #    $mac =~ s/://g;
 #    return "node".$mac;
     my $self = shift;

@@ -74,6 +74,33 @@ sub generateTargetname {
     return $res;
 }
 
+# This method allow to create a new export in 1 call
+sub createExport {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args,
+                         required => ['export_name','econtext',
+                                      'device_name', 'typeio',
+                                      'iomode', 'erollback']);
+
+    my $disk_targetname = $self->generateTargetname(name => $args{export_name});
+
+    $self->addExport(iscsitarget1_lun_number    => 0,
+                     iscsitarget1_lun_device    => $args{device_name},
+                     iscsitarget1_lun_typeio    => $args{typeio},
+                     iscsitarget1_lun_iomode    => $args{iomode},
+                     iscsitarget1_target_name   => $disk_targetname,
+                     econtext                   => $args{econtext},
+                     erollback                  => $args{erollback});
+    my $eroll_add_export = $args{erollback}->getLastInserted();
+
+    $args{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
+    $self->generate(econtext  => $args{econtext},
+                    erollback => $args{erollback});
+    $log->info("Add IScsi Export of device <$self->{params}->{device}>");
+}
+
 sub addExport {
     my $self = shift;
     my %args  = @_;

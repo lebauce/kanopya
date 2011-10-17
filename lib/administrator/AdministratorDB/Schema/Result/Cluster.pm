@@ -117,8 +117,6 @@ __PACKAGE__->table("cluster");
   is_nullable: 0
   size: 32
 
-=cut
-
 =head2 cluster_prev_state
 
   data_type: 'char'
@@ -301,21 +299,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 publicips
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Publicip>
-
-=cut
-
-__PACKAGE__->has_many(
-  "publicips",
-  "AdministratorDB::Schema::Result::Publicip",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 qos_constraints
 
 Type: has_many
@@ -346,6 +329,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 tiers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Tier>
+
+=cut
+
+__PACKAGE__->has_many(
+  "tiers",
+  "AdministratorDB::Schema::Result::Tier",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workload_characteristics
 
 Type: has_many
@@ -362,8 +360,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-26 14:21:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oAyb8QR7eMhzKwS0bjgREA
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-10-01 12:16:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YQHjwHosYkYAKMqNmT4uaQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

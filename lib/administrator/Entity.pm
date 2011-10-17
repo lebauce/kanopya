@@ -91,7 +91,7 @@ sub checkAttrs {
     foreach my $attr (keys(%$attr_def)) {
         if (($attr_def->{$attr}->{is_mandatory}) &&
             (! exists $attrs->{$attr})) {
-                $errmsg = "Entity::Motherboard->checkAttrs detect a missing attribute $attr !";
+                $errmsg = "$class" . "->checkAttrs detect a missing attribute $attr !";
                 $log->error($errmsg);
                 throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
             }

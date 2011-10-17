@@ -47,6 +47,7 @@ use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
 use Entity::Systemimage;
+use EEntity::ESystemimage;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -163,35 +164,37 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
-
-    ## provide root rsa pub key to provide ssh key authentication
-    $self->_generateAuthorizedKeys();
-
-    ## Update export to allow to motherboard to boot with this systemimage
-    my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name'));
-
-    # Get etc iscsi target information
-    my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
-
-    $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number    => 0,
-                                                iscsitarget1_lun_device    => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
-                                                iscsitarget1_lun_typeio    => "fileio",
-                                                iscsitarget1_lun_iomode    => $si_access_mode,
-                                                iscsitarget1_target_name=>$target_name,
-                                                econtext                 => $self->{nas}->{econtext},
-                                                erollback               => $self->{erollback});
-    my $eroll_add_export = $self->{erollback}->getLastInserted();
-    # generate new configuration file
-    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-    $self->{_objs}->{component_export}->generate(econtext   => $self->{nas}->{econtext},
-                                                 erollback  => $self->{erollback});
-
-    $log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now exported with target <$target_name>");
-    # set system image active in db
-    $self->{_objs}->{systemimage}->setAttr(name => 'active', value => 1);
-    $self->{_objs}->{systemimage}->save();
-    $log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now active");
+    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    $esystemimage->activate(econtext => $self->{nas}->{econtext},erollback => $self->{erollback},component_export=>$self->{_objs}->{component_export});
+#    my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
+#
+#    ## provide root rsa pub key to provide ssh key authentication
+#    $self->_generateAuthorizedKeys();
+#
+#    ## Update export to allow to motherboard to boot with this systemimage
+#    my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name'));
+#
+#    # Get etc iscsi target information
+#    my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
+#
+#    $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number    => 0,
+#                                                iscsitarget1_lun_device    => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
+#                                                iscsitarget1_lun_typeio    => "fileio",
+#                                                iscsitarget1_lun_iomode    => $si_access_mode,
+#                                                iscsitarget1_target_name=>$target_name,
+#                                                econtext                 => $self->{nas}->{econtext},
+#                                                erollback               => $self->{erollback});
+#    my $eroll_add_export = $self->{erollback}->getLastInserted();
+#    # generate new configuration file
+#    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
+#    $self->{_objs}->{component_export}->generate(econtext   => $self->{nas}->{econtext},
+#                                                 erollback  => $self->{erollback});
+#
+#    $log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now exported with target <$target_name>");
+#    # set system image active in db
+#    $self->{_objs}->{systemimage}->setAttr(name => 'active', value => 1);
+#    $self->{_objs}->{systemimage}->save();
+#    $log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now active");
 
 }
 

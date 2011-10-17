@@ -31,7 +31,7 @@ __PACKAGE__->table("component_instance");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 component_id
 
@@ -39,6 +39,13 @@ __PACKAGE__->table("component_instance");
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
+
+=head2 tier_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
 
 =head2 component_template_id
 
@@ -62,7 +69,7 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "component_id",
   {
@@ -70,6 +77,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "tier_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
   "component_template_id",
   {
@@ -171,6 +185,21 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::ComponentInstanceEntity",
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 tier
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Tier>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "tier",
+  "AdministratorDB::Schema::Result::Tier",
+  { tier_id => "tier_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 dhcpd3s

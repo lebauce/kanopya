@@ -221,6 +221,7 @@ CREATE TABLE `cluster` (
   `cluster_state` char(32) NOT NULL DEFAULT 'down',
   `cluster_prev_state` char(32),
   PRIMARY KEY (`cluster_id`),
+--  KEY `fk_cluster_1` (`infrastructure_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -376,6 +377,20 @@ CREATE TABLE `ipv4_internal` (
   UNIQUE KEY `ipv4_internal_address_UNIQUE` (`ipv4_internal_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `ipv4_dmz`
+--
+
+CREATE TABLE `ipv4_dmz` (
+  `ipv4_dmz_id` int(8) UNSIGNED NOT NULL AUTO_INCREMENT ,
+  `ipv4_dmz_address` char(15) NOT NULL ,
+  `ipv4_dmz_mask` char(15) NOT NULL ,
+  `tier_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`ipv4_dmz_id`),
+  UNIQUE KEY `ipv4_dmz_address_UNIQUE` (`ipv4_dmz_address`),
+  KEY `fk_ipv4_dmz_1` (`tier_id`),
+  CONSTRAINT `fk_ipv4_dmz_1` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `ipv4_public`
@@ -387,21 +402,14 @@ CREATE TABLE `ipv4_public` (
   `ipv4_public_mask` char(15) NOT NULL,
   `ipv4_public_default_gw` char(15) DEFAULT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
+  `infrastructure_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`ipv4_public_id`),
   KEY `fk_ipv4_public_1` (`cluster_id`),
-  CONSTRAINT `fk_ipv4_public_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  KEY `fk_ipv4_public_2` (`infrastructure_id`),
+  CONSTRAINT `fk_ipv4_public_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
+  CONSTRAINT `fk_ipv4_public_2` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `publicip` (
-  `publicip_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `ip_address` char(39) NOT NULL,
-  `ip_mask` char(39) NOT NULL,
-  `gateway` char(39) DEFAULT NULL,
-  `cluster_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`publicip_id`),
-  KEY `fk_publicip_1` (`cluster_id`),
-  CONSTRAINT `fk_publicip_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE SET NULL ON UPDATE NO ACTION
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 --
 -- Table structure for table `ipv4_route`
 --
@@ -413,16 +421,6 @@ CREATE TABLE `ipv4_route` (
   `ipv4_route_context` char(10) NOT NULL, -- Context could be internal or public
   PRIMARY KEY (`ipv4_route_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `route` (
-  `route_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `publicip_id` int(8) unsigned NOT NULL,
-  `ip_destination` char(39) NOT NULL,
-  `gateway` char(39) DEFAULT NULL,
-  PRIMARY KEY (`route_id`),
-  KEY `fk_route_1` (`publicip_id`),
-  CONSTRAINT `fk_route_1` FOREIGN KEY (`publicip_id`) REFERENCES `publicip` (`publicip_id`) ON DELETE CASCADE ON UPDATE NO ACTION
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `cluster_ipv4_route`
@@ -536,21 +534,64 @@ CREATE TABLE `component_installed` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for `infrastructure`
+--
+
+CREATE TABLE `infrastructure` (
+  `infrastructure_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `infrastructure_reference` char(64) NOT NULL,
+  `infrastructure_min_node` int(2) unsigned NOT NULL,
+  `infrastructure_max_node` int(2) unsigned NOT NULL,
+  `infrastructure_domainname` char(64) NOT NULL,
+  `infrastructure_nameserver` char(15) NOT NULL,
+  `infrastructure_name` char(32) NOT NULL,
+  `infrastructure_desc` char(255) DEFAULT NULL,
+  `infrastructure_version` char(32) NOT NULL,
+  `infrastructure_tier_number` int(1),
+  `infrastructure_state` char(32) NOT NULL DEFAULT 'down',
+  `infrastructure_prev_state` char(32),
+  `infrastructure_priority` int(1) unsigned NOT NULL,
+  PRIMARY KEY (`infrastructure_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for `tier`
+--
+-- #TODO Warning Here delete tier when cluster removed by when cluster will be used by tier then they will not be destroyed when cluster are. 
+CREATE TABLE `tier` (
+  `tier_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `infrastructure_id` int(8) unsigned NOT NULL,
+  `cluster_id` int(8) unsigned,
+  `tier_name` char(32) NOT NULL,
+  `tier_rank` int(1) NOT NULL,
+  `tier_data_src` char(128) NOT NULL,
+  `tier_poststart_script` char(64),
+  PRIMARY KEY (`tier_id`),
+  KEY `fk_tier_1` (`infrastructure_id`),
+  KEY `fk_tier_2` (`cluster_id`),
+  CONSTRAINT `fk_tier_1` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_tier_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `component_instance`
 --
 
 CREATE TABLE `component_instance` (
   `component_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `cluster_id` int(8) unsigned NOT NULL,
+  `cluster_id` int(8) unsigned,
   `component_id` int(8) unsigned NOT NULL,
+  `tier_id` int(8) unsigned,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`component_instance_id`),
   KEY `fk_component_instance_1` (`cluster_id`),
   KEY `fk_component_instance_2` (`component_template_id`),
   KEY `fk_component_instance_3` (`component_id`),
+  KEY `fk_component_instance_4` (`tier_id`),
   CONSTRAINT `fk_component_instance_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_2` FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_component_instance_4` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -973,6 +1014,26 @@ CREATE TABLE `cluster_entity` (
   UNIQUE KEY `fk_cluster_entity_2` (`cluster_id`),
   CONSTRAINT `fk_cluster_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_cluster_entity_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `tier_entity` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `tier_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`tier_id`),
+  UNIQUE KEY `fk_tier_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_tier_entity_2` (`tier_id`),
+  CONSTRAINT `fk_tier_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_tier_entity_2` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `infrastructure_entity` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `infrastructure_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`infrastructure_id`),
+  UNIQUE KEY `fk_infrastructure_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_infrastructure_entity_2` (`infrastructure_id`),
+  CONSTRAINT `fk_infrastructure_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_infrastructure_entity_2` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
