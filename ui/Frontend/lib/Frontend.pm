@@ -20,6 +20,7 @@ use Groups;
 use Monitoring;
 use Orchestration;
 use Permissions;
+use Messager;
 
 use Log::Log4perl;
 
@@ -68,20 +69,7 @@ get '/permission_denied' => sub {
     template 'permission_denied';
 };
 
-ajax '/messages' => sub {
-    my $adm_object = Administrator->new();
-    my @messages   = $adm_object->getMessages();
-    content_type('application/json');
-    return to_json(\@messages);
-};
 
-ajax '/operation/queue' => sub {
-    my $adm_object      = Administrator->new();
-    my @operation_queue = $adm_object->getOperations();
-
-    content_type('application/json');
-    return to_json(@operation_queue);
-};
 
 any qr{.*} => sub {
     status 'not_found';

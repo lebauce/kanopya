@@ -150,6 +150,30 @@ body {
     min-height: 498px;
 }
 
+#opsmsg {
+    table {
+        collapse: collapse;
+        td {
+            border: thin solid $color_purple;
+            width: 15em;
+            text-align: center;
+            cursor: pointer;
+        }
+        td.active {
+            color: $color_purple;
+            font-weight: bold;
+        }
+    }
+
+    #operations_content, #messages_content {
+        border: thin solid $color_purple;
+        display: none;
+        font-size: 0.7em;
+        line-height: 1.4em;
+    }
+}
+
+
 #footer {
     border-top: 10px solid $color_gray;
     color: $color_gray;

@@ -21,32 +21,87 @@
         <% END %>
 
         <script language="javascript" type="text/javascript">
-            $(document).ready(function() {
-                $("#container_messages").click(function() {
-                $("#messages").toggle();
-            });
-                var messages_ajax = function() {
-                    $.ajax({
-                        url: "/messages",
-                        type: "POST",
-                        dataType: "json",
-                        success: function(msg){
-                            console.log(msg);
-                            $("#messages").empty();
-							for(var i=0;i<msg.length;i++) {
-								$("#messages").append(msg[i].content+"<br/>");
-								
-							}
-                           
-                        },
-                        error: function(error, text, thor) {
-                        $("#messages").empty();
-                        $("#messages").append(text+" "+error);
+            // function to get and update messages content
+            var messages_update = function() {
+                $.ajax({
+                    url: "/messages",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#messages_content").empty();
+                        for(var i=0;i<msg.length;i++) {
+                            $("#messages_content").append(
+                                msg[i]['date']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['time']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['content']+"<br/>" );             
                         }
-                    });
-                };
-                setInterval(messages_ajax, 10000);
+                    },
+                    error: function(error, text, thor) {
+                    $("#messages_content").empty();
+                    $("#messages_content").append(text+" "+error);
+                    }
+                });
+            };
 
+            // function to get and update operations queue content
+            var operations_update = function() {
+                $.ajax({
+                    url: "/operation/queue",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#operations_content").empty();
+                        for(var i=0;i<msg.length;i++) {
+                            $("#operations_content").append(
+                                msg[i]['CREATION']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['FROM']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['TYPE']+"<br/>" );
+                        }
+                    },
+                    error: function(error, text, thor) {
+                    $("#operations_content").empty();
+                    $("#operations_content").append(text+" "+error);
+                    }
+                });
+            };
+
+            $(document).ready(function() {  
+                // operations / messages
+                $('#operations_btn, #messages_btn').prop('interval_id', '');
+                $('#operations_btn, #messages_btn').click(function () {
+                    
+                    var id = $(this).attr('id'); 
+                    var divid = '#'+id.replace(/_btn/, '_content');
+                    switch(id) {
+                        case 'operations_btn':
+                            $('#messages_btn').removeClass('active');
+                            $('#messages_content').hide();
+                            break;
+                        case 'messages_btn'  :
+                            $('#operations_btn').removeClass('active');
+                            $('#operations_content').hide();
+                            break;
+                    }
+
+                    $(this).toggleClass('active');
+                    $(divid).toggle();
+                    if($(this).hasClass('active')) {
+                        var interval_id;
+                        if(id == 'operations_btn') {
+                            interval_id = setInterval("operations_update()", 5000);
+                        } else {
+                            interval_id = setInterval("messages_update()", 5000);  
+                        }
+                        $(this).prop('interval_id', interval_id);
+                    } else {
+                        clearInterval( $(this).prop('interval_id') );
+                        $(this).prop('interval_id', '');
+                    }
+                });
+
+                // modals
                 $('.modal').each(function() {
                     var $link = $(this);
 
@@ -133,10 +188,16 @@
             <div id="content">
                 <% content %>
             </div>
-            <div id="container_messages">
-                messages
-                <div id="messages" style="diplay: none;">
-                </div>
+           
+            <div id="opsmsg">
+                <table>
+                    <tr>
+                        <td id="operations_btn">operations queue</td>
+                        <td id="messages_btn">messages</td>
+                    </tr>
+                </table>
+                <div id="operations_content">operations queue loading...</div>
+                <div id="messages_content">messages loading...</div>
             </div>
 
             <div id="footer">
