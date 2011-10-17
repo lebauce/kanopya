@@ -213,7 +213,7 @@
    function fill_content_container(xml) {
 		$(xml).find('node').each(function(){
 			var id = $(this).attr('id');
-			$("#" + id + "_content").html('<img src="' + $(this).attr('img_src') + '" />')
+			$("#" + id + "_content").html('<table class="simplelisting"><tr><td><img src="' + $(this).attr('img_src') + '" /></td></tr></table>')
 			//$("#" + id + "_content").html($(this).children());
 		});
 		$("#nodecount_graph img").attr('src', $(xml).find('nodecount_graph').attr('src'));
