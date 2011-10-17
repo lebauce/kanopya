@@ -1,4 +1,4 @@
-<form method="POST" action="/infrastructures/hosts/add">
+<form id="target" method="POST" action="/infrastructures/hosts/add">
 <table class="form">
 	<tr>
 		<td class="label">MAC address :</td>
@@ -51,7 +51,4 @@
 		<td><input type="text" name="powersupplyport_number" maxlength="2" size="2"/>
 	</tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 

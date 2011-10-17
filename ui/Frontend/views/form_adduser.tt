@@ -1,4 +1,4 @@
-<form method="POST" action="/rights/users/add">
+<form id="target" method="POST" action="/rights/users/add">
 <table class="form">
 	<tr>
 		<td class="label">First name :</td>
@@ -35,7 +35,4 @@
 		<span style="color: red"><% err_confirmpassword %></span></td>
 	</tr>	
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 

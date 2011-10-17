@@ -1,12 +1,10 @@
-<form method="POST" action="/systems/components/upload" enctype="multipart/form-data">
+<form id="target" method="POST" action="/infrastructures/components/upload" enctype="multipart/form-data">
+>>>>>>> 8fda5a2... [Front] Form_addgroup: Add id for in form to function with modal.
 <table class="form">
 <tr>
 	<td><input type="file" name="componentfile" size="32" />
 	<span style="color: red"><% err_componentfile %></span></td>
 </tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 
 

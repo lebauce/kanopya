@@ -25,6 +25,7 @@ use Kanopya::Exceptions;
 use Entity::Component;
 use Entity::Motherboard;
 use Entity::Systemimage;
+use Entity::Tier;
 use Operation;
 use Administrator;
 use General;

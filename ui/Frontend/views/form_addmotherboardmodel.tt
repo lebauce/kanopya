@@ -1,4 +1,4 @@
-<form method="POST" action="/models/motherboards/add">
+<form id="target" method="POST" action="/models/motherboards/add">
 <table class="form">
 	<tr>
 		<td class="label">Brand :</td>
@@ -42,9 +42,6 @@
 		</select></td>
 	</tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 
 
 

@@ -1,4 +1,4 @@
-<form method="POST" action="/architectures/clusters/<% cluster_id %>/components/add">
+<form id="target" method="POST" action="/architectures/clusters/<% cluster_id %>/components/add">
 <table class="form">
 	<tr>
 		<td class="label">available components :</td>
@@ -11,7 +11,4 @@
 	</tr>
 </table>
 <input type="hidden" name="cluster_id" value="<% cluster_id %>" />
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form>

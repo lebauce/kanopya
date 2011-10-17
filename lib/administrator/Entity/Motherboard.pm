@@ -551,7 +551,7 @@ sub setInternalIP{
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['ipv4_internal_address','ipv4_internal_mask']);
+    General::checkParams(args => \%args, required => ['ipv4_address','ipv4_mask']);
 
     my $adm = Administrator->new();
     my $net_id = $adm->{manager}->{network}->newInternalIP(%args);

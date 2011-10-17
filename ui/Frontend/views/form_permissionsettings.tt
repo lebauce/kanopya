@@ -1,4 +1,4 @@
-<form method="POST" action="/rights/permissions/set">
+<form id="target" method="POST" action="/rights/permissions/set">
 <table>
 <% FOREACH m IN methods %>
 	<tr><td><input type="checkbox" name="methods" value="<% m.method %>" <% m.checked %>/></td>
@@ -6,7 +6,6 @@
 <% END %>
 </table>
 <div class="buttons">
-<input type="submit" value="apply"/>
 <input type="hidden" name="consumer_id" value="<% consumer_id %>"/>
 <input type="hidden" name="consumed_id" value="<% consumed_id %>"/>
 <input type="hidden" name="consumed_type" value="<% consumed_type %>"/>

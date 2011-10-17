@@ -1,12 +1,9 @@
-<form method="POST" action="/systems/distributions/upload" enctype="multipart/form-data">
+<form id="target" method="POST" action="/systems/distributions/upload" enctype="multipart/form-data">
 <table class="form">
 <tr>
 	<td><input type="file" name="distributionfile" size="32" />
 	<span style="color: red"><% err_distributionfile %></span></td>
 </tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 
 

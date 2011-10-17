@@ -1,4 +1,4 @@
-<form method="POST" action="/infrastructures/hosts/<% host_id %>/addharddisk">
+<form id="target" method="POST" action="/infrastructures/hosts/<% host_id %>/addharddisk">
 <table class="form">
 	<tr>
 		<td class="label">Device :</td>
@@ -8,7 +8,6 @@
 	</tr>
 </table>
 <div class="buttons">
-<input type="submit" value="ok"/>
 <input type="hidden" name="motherboard_id" value="<% host_id %>"/>
 </div>
 </form> 

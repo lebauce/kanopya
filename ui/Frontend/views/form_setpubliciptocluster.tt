@@ -1,4 +1,4 @@
-<form method="POST" action="/architectures/clusters/<% cluster_id %>/ips/public/add">
+<form id="target" method="POST" action="/architectures/clusters/<% cluster_id %>/ips/public/add">
 <table class="form">	
 	<tr><td><select name="publicip_id">
 	<% FOREACH ip IN freepublicips_list %>
@@ -9,9 +9,6 @@
 	</select></td>
 	</tr>
 </table>
-<div class="buttons">
-	<input type="submit" value="ok"/>
-</div>
 </form> 
 
 

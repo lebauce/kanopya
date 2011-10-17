@@ -1,4 +1,4 @@
-<form method="POST" action="/models/processors/add">
+<form id="target" method="POST" action="/models/processors/add">
 <table class="form">
 	<tr>
 		<td class="label">Brand :</td>
@@ -39,8 +39,5 @@
         </select><% ERR_VIRTSUPPORT %></td>
     </tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 
 
