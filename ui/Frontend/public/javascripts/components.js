@@ -3,7 +3,7 @@ $(document).ready(function(){
     var regexp2 = /\d+/;
     var instanceid = regexp2.exec(regexp1.exec(window.location.href));
   	var save_component_conf_link = '/systems/components/' + instanceid + '/saveconfig';
-  	var redirect_link = "/architectures/clusters/" + instanceid;
+  	var redirect_link = "/architectures/clusters";// + instanceid;
   
   	// Given a jQuery object as root, build the conf struct
   	function buildConf ( root ) {
