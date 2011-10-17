@@ -1,4 +1,4 @@
-<form method="POST" action="/systems/images/add">
+<form id="target" method="POST" action="/systems/images/add">
 <table class="form">
 <tr>
 	<td class="label">Name :</td>

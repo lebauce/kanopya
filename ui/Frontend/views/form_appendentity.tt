@@ -1,5 +1,5 @@
 <% IF entity_list %>
-	<form method="POST" action="/rights/groups/<% gp_id %>/appendentity">
+	<form id="target" method="POST" action="/rights/groups/<% gp_id %>/appendentity">
 	<table class="form">
 			<tr>
 			<td class="label"><% gp_type %> :</td>

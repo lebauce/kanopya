@@ -1,4 +1,4 @@
-<form method="POST" action="/systems/images/<% systemimage_id %>/installcomponent">
+<form id="target" method="POST" action="/systems/images/<% systemimage_id %>/installcomponent">
 <table class="form">
 	<tr>
 		<td class="label">available components :</td>
