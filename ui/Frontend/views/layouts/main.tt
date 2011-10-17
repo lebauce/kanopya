@@ -144,7 +144,7 @@
                             modal: true,
                             title: $link.attr('title' + '#content'),
                             width: 500,
-                            height: 300,
+                            height: 500,
                             buttons: {
                                 Send: function() {
                                     $('#target').submit();

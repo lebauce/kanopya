@@ -1,4 +1,4 @@
-<form method="POST" action="/components/upload" enctype="multipart/form-data">
+<form method="POST" action="/infrastructures/components/upload" enctype="multipart/form-data">
 <table class="form">
 <tr>
 	<td><input type="file" name="componentfile" size="32" />
