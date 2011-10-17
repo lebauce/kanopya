@@ -140,9 +140,7 @@ table.listview {
 
 table.listing {
     border-bottom: 1px solid black;
-    float: left;    
     width: 78%;
-    
     border-collapse: collapse;
 }
 
@@ -173,12 +171,12 @@ table.listing td.toright a {
 
 
 div.actions {
-    margin-left: 80%;
-    margin-top: 30px;
+    position: absolute;
+    right: 88px;
+    top: 187px;
     background-color: #F9F9FF;
-    width: 20%;
+    width: 17%;
     border: thin dashed black;
-    clear: both;
 }
 
 div.actions a.action {
@@ -198,7 +196,6 @@ div.actions p {
 
 
 table.simplelisting {
-    float: left;    
     width: 78%;
     margin-bottom: 15px;
     border-collapse: collapse;
