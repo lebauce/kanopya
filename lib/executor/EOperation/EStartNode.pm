@@ -265,7 +265,7 @@ sub execute {
     $log->info('Update Admin Dhcp server');
 
     #Update Motherboard internal ip
-    $log->info("get subnet <$subnet>");
+    $log->info("get subnet <$subnet> and have motherboard ip <$motherboard_ip>");
     my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
 
     my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_address => $motherboard_ip,
