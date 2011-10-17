@@ -128,6 +128,7 @@ get '/clusters/:clusterid/orchestration/save' => sub {
         return "Error while recording rule for cluster $cluster_id\n$error";
     }
     
+    content_type('text/text');
     return "Rules saved for cluster $cluster_id ";
 };
 

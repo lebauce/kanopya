@@ -189,7 +189,7 @@ alert('remove');
  		var params = { rules : JSON.stringify(rules), optim_conditions : JSON.stringify(optim_cond)  };
 		$.get(save_orchestrator_settings_link, params, function(resp) {
 			loading_stop();
-			//alert($(resp).text);
+			alert(resp);
 		});
 		
  	}).addClass('clickable');
