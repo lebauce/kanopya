@@ -2,8 +2,9 @@
  
   	var url_params = window.location.href.split('?')[1];
   	var url = window.location.href;
-	var content_link = url.replace(/^[^\/]+\/\/[^\/]+/g,'') + '/graphs'; // remove the beginning of the url to keep only path
- 	var save_clustermonitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
+	var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');	
+	var content_link = path + '/graphs'; // remove the beginning of the url to keep only path
+ 	var save_clustermonitoring_settings_link = path + '/save';
  	var save_monitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_monitoring_settings";
 
  	commonInit();
@@ -65,7 +66,8 @@
  			}).get();
  			
 
- 			var params = { 'collect_sets[]': set_array, 'graphs_settings': JSON.stringify(settings) };
+ 			//var params = { 'collect_sets[]': set_array, 'graphs_settings': JSON.stringify(settings) };
+			var params = { 'collect_sets': JSON.stringify(set_array), 'graphs_settings': JSON.stringify(settings) };
  			
  			$.get(save_clustermonitoring_settings_link, params, function(resp) {
 				loading_stop();

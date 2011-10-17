@@ -176,7 +176,7 @@ activate</a><br />
 <a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
-<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring_settings %>">settings</a><bd/>
+<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a><bd/>
 <p class="italic">Cluster collect and graph settings.</p>
 </td></tr>
 </table>

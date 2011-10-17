@@ -33,7 +33,7 @@
 </table>
 
 <div class="actions">
-<a class="action imgSettings" href="/monitoring/view_clustermonitoring_settings?cluster_id=<% cluster_id %>">settings</a>
+<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a>
 <p class="italic">Cluster collect and graph settings.</p>
 
 <a class='action imgClock' >Graph period</a>
