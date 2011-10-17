@@ -204,7 +204,7 @@ table.status th { background-color: #DDD; padding: 5px 15px 5px 24px; background
 table.status td { background-color: #DDD; padding: 5px; background-position: 5px; min-width: 20px; min-height: 20px;
 	background-repeat: no-repeat; text-align: center;	 }
 
-#admin_status table {display: inline;}
+table.status {display: inline;}
 
 table.simplelisting caption { 
 	color: #228b22;
