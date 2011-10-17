@@ -199,7 +199,7 @@ get '/clusters' => sub {
     }
     
     #TEMPORARY testing
-    $can_create = 1;
+    #$can_create = 1;
     
     template 'clusters', {
         title_page         => 'Clusters - Clusters',
