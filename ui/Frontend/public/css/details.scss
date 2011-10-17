@@ -1,9 +1,11 @@
+$color_darkgray: #666666; // /!\ Alredy defined in global.scss
+
 h2 {
-  color: #228b22;
+  color: $color_darkgray;
   margin-bottom: 30px; }
 
 span.title {
-  color: #228b22;
+  color: $color_darkgray;
   font-weight: bold;
   font-size: 1.2em;
   background-color: white;
@@ -51,7 +53,7 @@ table.detailspart {
       vertical-align: top;
       padding: 10px; } }
   a {
-    color: #228b22;
+    color: $color_darkgray;
     background-repeat: no-repeat;
     padding-left: 20px;
     text-decoration: none; }

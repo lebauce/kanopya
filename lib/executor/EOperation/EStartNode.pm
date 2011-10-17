@@ -533,7 +533,7 @@ sub _generateNetConf {
 
 
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
-        my $i =0;
+        my $i =1;
         my $tiers = $self->{_objs}->{cluster}->getTiers();
         if ($tiers) {
             foreach my $tier_key (keys %$tiers){

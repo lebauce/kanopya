@@ -11,4 +11,5 @@
 	</tr>
 </table>
 <input type="hidden" name="cluster_id" value="<% cluster_id %>" />
+<input type="button" value="toto" />
 </form>
