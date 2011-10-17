@@ -61,7 +61,7 @@ sub search {
     my @next_AC = @AC;
     my @curr_AC;
     my $try_count = 0;
-    my $max_try = 1000;
+    my $max_try = 1000; #Wonder wether this is usefull ? 
 
     my $error = 0; 
     my $new_conf = 1;
@@ -70,7 +70,7 @@ sub search {
         
         if (($try_count++ > $max_try)) {
             $log->warn("Can not find configuration to meet constraints after $max_try iterations (max)");
-            #print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)");
+            print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)");
             return { AC => \@curr_AC, LC => \@LC };;
             
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
@@ -82,7 +82,7 @@ sub search {
         }
         if (not $new_conf) {
             $log->warn("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
-            #print("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
+            print("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
             return { AC => \@curr_AC, LC => \@LC };;
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
 #            for my $i (0..$nb_tiers-1){
@@ -107,7 +107,8 @@ sub search {
             }
         }
         #@next_AC = map { $_ + 1 } @curr_AC;
-
+        #print "@curr_AC : latency = $perf{latency} abort_rate = $perf{abort_rate} \n";
+        
     };
     
     #print "##### CURR ####\n";

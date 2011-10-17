@@ -161,12 +161,28 @@ sub getWorkload {
 }
 
 
+
+
+=head2 getMonitoredPerfMetrics
+    
+    Class : Public
+    
+    Desc : Get the metrics from the monitor. (At the present time, only latency)
+    
+    Args :
+        Cluster : The monitored cluster
+    
+    Return :
+        HASHREF {latency=>float, abort_rate=>float (not implemented yet)); throughput=>(not implemented yet)}
+=cut
+
 sub getMonitoredPerfMetrics {
     my $self = shift;
     my %args = @_;
     
     my $cluster_name = $args{cluster}->getAttr('name' => 'cluster_name');
-    
+
+   # Get the monitored values    
     my $cluster_data_aggreg = $self->{_monitor}->getClusterData( cluster => $cluster_name,
                                                                  set => "haproxy_timers",
                                                                  time_laps => $self->{_time_laps});
@@ -213,11 +229,11 @@ sub manageCluster {
     
     # Capacity planning settings
     $self->{_cap_plan}->setSearchSpaceForTiers( search_spaces =>     [ 
-                                                                    {   min_node => $cluster->getAttr(name => 'cluster_min_node'), 
-                                                                        max_node => $cluster->getAttr(name => 'cluster_max_node'),
-                                                                        min_mpl => $mpl,
-                                                                        max_mpl => $mpl,}
-                                                                    ]
+                {   min_node => $cluster->getAttr(name => 'cluster_min_node'), 
+                    max_node => $cluster->getAttr(name => 'cluster_max_node'),
+                    min_mpl => $mpl,
+                    max_mpl => $mpl,}
+                ]
                                                 );
     $self->{_cap_plan}->setNbTiers( tiers => 1);
     
@@ -247,7 +263,9 @@ sub manageCluster {
             curr_perf  => $curr_perf 
         );
     
-    $self->updateModelInternaParameters( cluster => $cluster, delay => $best_params->{D}, service_time => $best_params->{S});
+    $self->updateModelInternaParameters( cluster      => $cluster, 
+                                         delay        => $best_params->{D}, 
+                                         service_time => $best_params->{S});
     
     # Store and graph results for futur consultation
     $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
@@ -301,6 +319,8 @@ sub modelTuning {
     
     my $curr_perf = $args{curr_perf};
     
+    #print Dumper $curr_perf;
+    
     for my $step (0..($NB_STEPS-1)) {
         
         $best_gain = -10000;
@@ -328,7 +348,7 @@ sub modelTuning {
                 }
                 
                  
-                #print "evo = $evo ; [@S] ; [@best_S] \n";
+                #print "evo = $evo ; [@S] ; [@best_S] ; [@D] ; [@best_D]\n";
                 
                 my %model_params = (
                         configuration => $infra_conf,
@@ -351,6 +371,7 @@ sub modelTuning {
                 
                 # TODO optimize algo by keeping best output
                 
+                #print Dumper \%model_params;
                 my %best_out = $self->{_model}->calculate( %model_params );
                 
                 #print "## BEST out ##\n";
