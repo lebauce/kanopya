@@ -21,6 +21,32 @@
         <% END %>
 
         <script language="javascript" type="text/javascript">
+
+            // functions to active and deactive blocks visibility and javascript
+            // functions call. 
+            
+            function active(btn) {
+                $(btn).addClass('active');
+                $(btn.replace(/_btn/, '_content')).show();
+                var interval_id;
+                if(btn == '#operations_btn') {
+                    interval_id = setInterval("operations_update()", 5000);
+                    operations_update();
+                } else {
+                    interval_id = setInterval("messages_update()", 5000);  
+                    messages_update();
+                }
+                $(btn).prop('interval_id', interval_id);
+            }
+
+            function deactive(btn) {
+                $(btn).removeClass('active');
+                $(btn.replace(/_btn/, '_content')).hide();
+                clearInterval( $(btn).prop('interval_id') );
+                $(btn).prop('interval_id', '');
+            }
+
+
             // function to get and update messages content
             var messages_update = function() {
                 $.ajax({
@@ -53,11 +79,16 @@
                     success: function(msg){
                         console.log(msg);
                         $("#operations_content").empty();
-                        for(var i=0;i<msg.length;i++) {
+                        if(! msg.length) {
                             $("#operations_content").append(
-                                msg[i]['CREATION']+"&nbsp&nbsp&nbsp"+
-                                msg[i]['FROM']+"&nbsp&nbsp&nbsp"+
-                                msg[i]['TYPE']+"<br/>" );
+                                "no operations in the queue");
+                        } else {
+                            for(var i=0;i<msg.length;i++) {
+                                $("#operations_content").append(
+                                    msg[i]['CREATION']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['FROM']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['TYPE']+"<br/>" );
+                            }
                         }
                     },
                     error: function(error, text, thor) {
@@ -68,37 +99,36 @@
             };
 
             $(document).ready(function() {  
-                // operations / messages
-                $('#operations_btn, #messages_btn').prop('interval_id', '');
-                $('#operations_btn, #messages_btn').click(function () {
-                    
-                    var id = $(this).attr('id'); 
-                    var divid = '#'+id.replace(/_btn/, '_content');
-                    switch(id) {
-                        case 'operations_btn':
-                            $('#messages_btn').removeClass('active');
-                            $('#messages_content').hide();
-                            break;
-                        case 'messages_btn'  :
-                            $('#operations_btn').removeClass('active');
-                            $('#operations_content').hide();
-                            break;
-                    }
 
-                    $(this).toggleClass('active');
-                    $(divid).toggle();
-                    if($(this).hasClass('active')) {
-                        var interval_id;
-                        if(id == 'operations_btn') {
-                            interval_id = setInterval("operations_update()", 5000);
-                        } else {
-                            interval_id = setInterval("messages_update()", 5000);  
-                        }
-                        $(this).prop('interval_id', interval_id);
+                // operations / messages
+
+                // add an attribute to track interval_id value returned by
+                // setInterval function and used by clearInterval
+                $('#operations_btn, #messages_btn').prop('interval_id', '');
+
+                $('#operations_btn, #messages_btn').click(function () {
+                    var this_id = '#' + $(this).attr('id');
+
+                    // nothing is active
+                    if(! $('#operations_btn, #messages_btn').hasClass('active')) {
+                        active( this_id );
+                    // one is active, which ?
                     } else {
-                        clearInterval( $(this).prop('interval_id') );
-                        $(this).prop('interval_id', '');
-                    }
+                        var active_element; 
+                            $('#operations_btn, #messages_btn').each(function (index, domEle) {
+                                if($(domEle).hasClass('active')) {
+                                    active_element = '#'+$(domEle).attr('id');
+                                }
+                            });
+                        // not this, so we deactive the other and active this
+                        if(active_element != this_id) {
+                            deactive( active_element);
+                            active( this_id );
+                        // this is active, we deactive it
+                        } else {
+                            deactive(this_id);
+                        }
+                    } 
                 });
 
                 // modals
