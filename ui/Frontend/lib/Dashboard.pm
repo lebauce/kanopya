@@ -169,7 +169,7 @@ Use inverse quote to execute a pidof, and know the status
 sub getStatus {
     my ( $args ) = @_;
 
-    my $status  = `pidof $args->{proc_name}` ? 'Up' : 'Down';
+    my $status  = `pidof -x $args->{proc_name}` ? 'Up' : 'Down';
 
     return $status;
 }
