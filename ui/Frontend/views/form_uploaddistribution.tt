@@ -5,8 +5,5 @@
 	<span style="color: red"><% err_distributionfile %></span></td>
 </tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 
 

@@ -6,8 +6,5 @@
 	<span style="color: red"><% err_componentfile %></span></td>
 </tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 
 

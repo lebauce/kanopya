@@ -8,7 +8,6 @@
 	</tr>
 </table>
 <div class="buttons">
-<input type="submit" value="ok"/>
 <input type="hidden" name="motherboard_id" value="<% host_id %>"/>
 </div>
 </form> 

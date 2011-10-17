@@ -11,7 +11,4 @@
 	</tr>
 </table>
 <input type="hidden" name="systemimage_id" value="<% systemimage_id %>" />
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form>

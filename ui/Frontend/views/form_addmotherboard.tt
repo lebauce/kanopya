@@ -51,7 +51,4 @@
 		<td><input type="text" name="powersupplyport_number" maxlength="2" size="2"/>
 	</tr>
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form> 

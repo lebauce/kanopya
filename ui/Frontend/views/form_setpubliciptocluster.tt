@@ -9,9 +9,6 @@
 	</select></td>
 	</tr>
 </table>
-<div class="buttons">
-	<input type="submit" value="ok"/>
-</div>
 </form> 
 
 

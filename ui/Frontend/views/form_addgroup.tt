@@ -24,7 +24,4 @@
 		<td><textarea cols="50" name="gp_desc" value=""></textarea></td> 
 	</tr>	
 </table>
-<div class="buttons">
-<input type="submit" value="ok"/>
-</div>
 </form>
