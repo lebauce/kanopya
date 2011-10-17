@@ -153,9 +153,15 @@ body {
 }
 
 #opsmsg {
+    position: fixed;
+    bottom: 10px;
+    left: 79px;
+    width: 88%;
     table {
+        width: 100%;
         collapse: collapse;
         td {
+            background-color: white;
             border: thin solid $color_purple;
             width: 15em;
             text-align: center;
@@ -169,6 +175,7 @@ body {
     }
 
     #operations_content, #messages_content {
+        background-color: white;
         border: thin solid $color_purple;
         display: none;
         font-size: 0.7em;
