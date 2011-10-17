@@ -36,10 +36,9 @@ sub new {
 sub configureNode {
     my $self = shift;
     my %args = @_;
+    my $template_path = $args{template_path} || "/templates/components/php5";
 
     my $conf = $self->_getEntity()->getConf();
-
-    my $template_path = $args{template_path} || "/templates/components/php5";
 
     # Generation of php.ini
     my $data = { 
