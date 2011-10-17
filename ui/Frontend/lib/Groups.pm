@@ -1,10 +1,11 @@
 package Groups;
 
 use Dancer ':syntax';
-# Need a Form Validator probably Dancer::Plugin::*
-#use Data::FormValidator::Constraints qw( email FV_eq_with );
-use Log::Log4perl "get_logger";
+
+use Administrator;
 use Entity::Gp;
+
+use Log::Log4perl "get_logger";
 
 prefix '/rights';
 
@@ -28,104 +29,127 @@ sub _groups {
     return $groups;
 }
 
-sub _groupdetails {
-    my $gp_id = shift;
-    my $gp_name;
-    my $gp_desc;
-    my $gp_type;
-    my $can_update;
-    my $can_delete;
-    my $can_appendEntity
-    my $content_list;
-    my $content_count;
-    my $content = [];
+get '/groups' => sub {
+    my $methods = Entity::Gp->getPerms();
+    template 'groups', {
+        gp_list    => _groups(),
+        can_create => $methods->{'create'}->{'granted'}
+    };
+};
 
-    my $egroups = eval { Entity::Gp->get(id => $gp_id) };
-#   Need to adapt the following to use Dancer's Permission plugins and such.
-    if ( $@ ) {
+get '/groups/add' => sub {
+    template 'form_addgroup', {}, { layout => '' };
+};
+
+post '/groups/add' => sub {
+    my $egroup = Entity::Gp->new(
+        gp_name => param('gp_name'),
+        gp_desc => param('gp_desc'),
+        gp_type => param('gp_type'),
+        gp_system => 0,
+    );
+    eval { $egroup->create(); };
+    if($@) {
         my $exception = $@;
-        if ( Kanopya::Exception::Permission::Denied->caught() ) {
-            my $adm_object = Administrator->new();
-            $adm_object->addMessage(
-                from    => 'Administrator',
-                level   => 'warning',
-                content => $exception->error
-            );
-            # Apply Dancer's redirect in the near future.
-            $self->redirect('/cgi/kanopya.cgi/systemstatus/permission_denied');
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            my $adm = Administrator->new;
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else { redirect('/rights/groups'); }
+};
+
+get '/groups/:groupid/appendentity' => sub {
+    my $egroups = Entity::Gp->get(id => param('groupid'));
+    my $type = $egroups->getAttr('name' => 'gp_type');
+    my $entity_list = [];
+    my @entities = $egroups->getExcludedEntities();
+    
+    foreach my $e (@entities) {
+        my $tmp = {};
+        $tmp->{real_id} = $e->getAttr(name => lc($type)."_id");
+        $tmp->{entity_label} = $e->toString();
+        push(@$entity_list, $tmp);
+    }
+
+    template 'form_appendentity', {
+        gp_id       => param('groupid'),
+        gp_name     => $egroups->getAttr('name' => 'gp_name'),
+        gp_type     => $egroups->getAttr('name' => 'gp_type'),
+        entity_list => $entity_list
+    }, { layout => '' };
+};
+
+post '/groups/:groupid/appendentity' => sub {
+    my $gp_id = param('groupid');
+    my $real_id = param('real_id');
+    my $egroups = Entity::Gp->get(id => $gp_id);
+    my $gp_type = $egroups->getAttr('name' => 'gp_type');
+    my $module = "Entity/".$gp_type.".pm";
+    my $class = "Entity::".$gp_type;
+    eval { require $module; };
+    my $entity = $class->get(id => $real_id);
+    $egroups->appendEntity(entity => $entity);
+    redirect('/rights/groups/'.param('groupid'));
+};
+
+get '/groups/:groupid/remove/:entityid' => sub {
+    my $gp_id = param('groupid');
+    my $real_id = param('entityid');
+    my $egroups = Entity::Gp->get(id => $gp_id);
+    my $gp_type = $egroups->getAttr('name' => 'gp_type');
+    my $module = "Entity/".$gp_type.".pm";
+    my $class = "Entity::".$gp_type;
+    eval { require $module; };
+    my $entity = $class->get(id => $real_id);
+    $egroups->removeEntity(entity => $entity);
+    redirect('/rights/groups/'.$gp_id);
+};
+
+get '/groups/:groupid' => sub {
+    my $egroups = eval { Entity::Gp->get(id => param('groupid')) };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            my $adm = Administrator->new;
+            $adm->addMessage(from => 'Administrator', level => 'warning', content => $exception->error);
+            redirect('/permission_denied');
         }
         else {
-            # I don't understand what this is.
-            # This needs a better description, and more comments.
             $exception->rethrow();
         }
     }
-    else {
-        $gp_name =  $egroups->getAttr('name' => 'gp_name');
-        $gp_desc =  $egroups->getAttr('name' => 'gp_desc');
-        $gp_type =  $egroups->getAttr('name' => 'gp_type');
 
-        my $methods  = $egroups->getPerms();
-        my @entities = $egroups->getEntities();
-        foreach my $e (@entities) {
-            my $tmp = {};
+    my @entities = $egroups->getEntities();
+    my $content_list = [];
+    foreach my $e (@entities) {
+        my $tmp = {};
+        $tmp->{content_id} = $e->getAttr('name' => lc($egroups->getAttr('name' => 'gp_type')).'_id');
+        $tmp->{content_label} = $e->toString();
+        $tmp->{gp_id} = params->{groupid};
 
-            $tmp->{content_id}       = $e->getAttr('name' => lc($gp_type.'_id'));
-            $tmp->{content_label}    = $e->toString();
-            $tmp->{gp_id}            = $gp_id;
-            $tmp->{can_removeEntity} = $methods->{'removeEntity'}->{'granted'};
-
-            push(@$content, $tmp);
-        }
-
-        $content_list  = $content;
-        $content_count = scalar(@$content)+1;
-
-        $can_update       = 1 if ( $methods->{'update'}->{'granted'} );
-        $can_delete       = 1 if ( $methods->{'remove'}->{'granted'} );
-        $can_appendEntity = 1 if ( $methods->{'appendEntity'}->{'granted'} );
+        push(@$content_list, $tmp);
     }
 
-    return ($gp_name, $gp_desc, $gp_type, $can_update, $can_delete, $can_appendEntity,
-     $content_list, $content_count, $content);
-}
+    my $methods = $egroups->getPerms();
 
-get "/groups" => sub {
-
-    my $can_create;
-    my $methods = Entity::Gp->getPerms();
-    $can_create = 1 if ( $methods->{'create'}->{'granted'} );
-
-    template 'groups', {
-        can_create => $can_create,
-        title_page => 'Settings - Groups',
-        groups     => _groups(),
-    };
-};
-
-get "/groups/:groupid" => sub {
-    # Need to find a more efficient way to run this.
-    my ($gp_name, $gp_desc, $gp_type,
-    $can_update, $can_delete, $can_appendEntity,
-    $content_list, $content_count, $content) = _groupdetails(params->{groupid});
-
-    template 'groupdetail', {
+    template 'groups_details', {
         titlepage        => 'Groups - Group details',
         username         => session('username'),
         gp_id            => params->{groupid},
-        gp_name          => $gp_name,
-        gp_desc          => $gp_desc,
-        gp_type          => $gp_type,
-        can_update       => $can_update,
-        can_delete       => $can_delete,
-        can_appendEntity => $can_appendEntity
+        gp_name          => $egroups->getAttr('name' => 'gp_name'),
+        gp_desc          => $egroups->getAttr('name' => 'gp_name'),
+        gp_type          => $egroups->getAttr('name' => 'gp_type'),
         content_list     => $content_list,
-        content_count    => $content_count,
-        content          => $content,
+        content_count    => scalar(@$content_list)+1,
+        can_update       => $methods->{'update'}->{'granted'},
+        can_delete       => $methods->{'remove'}->{'granted'},
+        can_appendEntity => $methods->{'appendEntity'}->{'granted'},
+        can_removeEntity => $methods->{'removeEntity'}->{'granted'}
     };
 };
 
 
-sub form_editgroup {
-    return "TODO";
-}
+1;

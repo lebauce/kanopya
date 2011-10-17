@@ -1,7 +1,4 @@
-<%# <style type="text/css">@import url(/css/form.css);</style>
-%>
-<div class="title"><% cluster_name %> : add component</div>
-<form method="POST" action="/clusters/process_addcomponent">
+<form method="POST" action="/architectures/clusters/<% cluster_id %>/components/add">
 <table class="form">
 	<tr>
 		<td class="label">available components :</td>
@@ -16,7 +13,5 @@
 <input type="hidden" name="cluster_id" value="<% cluster_id %>" />
 <div class="buttons">
 <input type="submit" value="ok"/>
-<input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form>
-</div>

@@ -8,11 +8,11 @@
 <tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
 <td class="actions">
 <% IF can_activate %>
-	<a class="imgActivate" href="/powersupplycards/process_activatepowersupplycard?powersupplycard_id=<% powersupplycard_id %>">activate</a><br />
+	<a class="imgActivate" href="/infrastructures/powersupplycards/<% powersupplycard_id %>/activate">activate</a><br />
 	<span class="desc">Activate this power supply card.</span><br /><br />
 <% END %>
 <% IF can_deactivate %>
-	<a class="imgDeactivate" href="/powersupplycards/process_deactivatepowersupplycard?powersupplycard_id=<% powersupplycard_id %>">deactivate</a><br />
+	<a class="imgDeactivate" href="/infrastructures/powersupplycards/<% powersupplycard_id %>/deactivate">deactivate</a><br />
 	<span class="desc">Deactivate this cluster.</span><br /><br />
 <% END %>
 </td></tr>
@@ -23,14 +23,14 @@
 <table id="Xmainsettings" class="detailspart">
 <tr><td class="italic" colspan="2"><% powersupplycard_desc %></td>
 <td class="actions" rowspan="6">
-<a class="imgEdit" href="/powersupplycards/form_editpowersupplycard?powersupplycard_id=<% powersupplycard_id %>">edit</a><br />
+<a class="modal" href="/infrastructures/powersupplycards/<% powersupplycard_id %>/edit">edit</a><br />
 <span class="desc">Modify these global parameters.</span><br /><br />
 <% IF can_delete %>
-	<a class="imgRemove" href="/powersupplycards/process_removepowersupplycard?powersupplycard_id=<% powersupplycard_id %>">delete</a><br />
+	<a class="imgRemove" href="/infrastructures/powersupplycards/<% powersupplycard_id %>/remove">delete</a><br />
 	<span class="desc">Delete this power supply card.</span><br /><br />
 <% END %>
 <% IF can_setperm %>
-	<a class="imgPermission" href="/permissions/view_selectconsumer?entitytype=Powersupplycard&id=<% powersupplycard_id %>">permission</a><br />
+	<a class="imgPermission" href="/rights/permissions/powersupplycard/<% powersupplycard_id %>">permission</a><br />
 	<span class="desc">View/set permissions on this power supply card.</span><br />
 <% END %>
 </td><tr/>

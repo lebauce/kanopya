@@ -4,14 +4,14 @@
 	<tr><td><% kernel.kernel_version %></td>
 	<td class="toright">
 	<% IF kernel.can_setperm %>
-		<a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=Kernel&id=<% kernel.kernel_id %>">permissions</a>
+		<a class="imgPermission" href="/rights/permissions/kernel/<% kernel.kernel_id %>">permissions</a>
 	<% END %></td></tr>
 	<tr><td colspan="2" class="italic"><% kernel.kernel_desc %></td></tr>
 	</table>
 <% END %>
 <div class="actions">
 <% IF link_upload %>
-	<a class="action imgKernel" href="">upload new kernel</a>
+	<a class="action modal" href="">upload new kernel</a>
 	<p class="italic">Upload a new kernel.</p>
 <% END %>
 <br />

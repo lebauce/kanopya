@@ -1,7 +1,8 @@
  $(document).ready(function(){
  
   	var url_params = window.location.href.split('?')[1];
- 	var content_link = "/cgi/kanopya.cgi/monitoring/xml_graph_list?" + url_params;
+  	var url = window.location.href;
+	var content_link = url.replace(/^[^\/]+\/\/[^\/]+/g,'') + '/graphs'; // remove the beginning of the url to keep only path
  	var save_clustermonitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_clustermonitoring_settings?" + url_params;
  	var save_monitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_monitoring_settings";
 
@@ -210,12 +211,12 @@
 	}
    
    function fill_content_container(xml) {
-		$(xml).find('node').each(function(){ 
+		$(xml).find('node').each(function(){
 			var id = $(this).attr('id');
-			$("#" + id + "_content").html($(this).children());
+			$("#" + id + "_content").html('<table class="simplelisting"><tr><td><img src="' + $(this).attr('img_src') + '" /></td></tr></table>')
+			//$("#" + id + "_content").html($(this).children());
 		});
-		
-		$("#nodecount_graph").html($(xml).find('nodecount').html());
+		$("#nodecount_graph img").attr('src', $(xml).find('nodecount_graph').attr('src'));
    }
    
    function loading_start() {
@@ -230,10 +231,9 @@
    		$('.unactive_clickable').addClass('clickable').removeClass('unactive_clickable');
    }
    
+
    $(".set_selectors .set_selector").click(function() {
-   
    		loading_start();
-   		
    		var anim = 'fold';//'blind/slide';
    		var anim_duration = 0;
    		
@@ -256,7 +256,8 @@
 			});
 		}, anim_duration); 
    });
-   
+
+
    $("#graph_table .node_selector").click( toggleNode ).addClass('clickable');
    
    //$(".period_selectors .period_selector").click(function() {

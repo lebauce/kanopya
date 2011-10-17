@@ -2,18 +2,24 @@ package Networks;
 
 use Dancer ':syntax';
 
-prefix '/architectures';
+use Administrator;
 
-get '/public/ips' => sub {
+prefix '/architectures/networks';
+
+get '/' => sub {
+    redirect('/architectures/networks/ips/public');
+};
+
+get '/ips/public' => sub {
     my $adm_object = Administrator->new();
 
     template 'publicips', {
-        publicips => $adm_object->{manager}->{network}->getPublicIP(),
-        titlepage => 'Public IPs View',
+        publicips => $adm_object->{manager}->{network}->getPublicIPs(),
+        title_page => 'Public IPs View',
      };
 };
 
-get '/public/ip/remove/:id' => sub {
+get '/ips/public/:id/remove' => sub {
     my $adm_object = Administrator->new();
 
     eval {
@@ -36,20 +42,26 @@ get '/public/ip/remove/:id' => sub {
        );
     }
 
-    redirect('/public/ips');
+    redirect('/architectures/networks/ips/public');
 };
 
 
-post '/public/ip/add' sub {
+get '/ips/public/add' => sub {
+    template 'form_addpublicip', {
+        title_page  => "Network - Public ip creation",
+    }, { layout => '' };
+};
+
+
+post '/ips/public/add' => sub {
     my $adm_object = Administrator->new();
     my $input_hash = {
         ip_address => params->{ip_address},
         ip_mask    => params->{ip_mask}
     };
 
-    my $error = form_validator_error('public_ip_add', $input_hash);
-
-    return if ( $error );
+    #my $error = form_validator_error('public_ip_add', $input_hash);
+    #return if ( $error );
 
     eval {
         $adm_object->{manager}->{network}->newPublicIP(
@@ -58,7 +70,6 @@ post '/public/ip/add' sub {
             gateway    => params->{gateway} ne '' ? params->{gateway} : undef,
         );
     };
-
     if ( $@ ) {
         my $error = $@;
         $adm_object->addMessage(
@@ -74,5 +85,8 @@ post '/public/ip/add' sub {
             content => 'New public ip added'
         );
     }
+    
+    redirect '/architectures/networks';
 };
 
+1;

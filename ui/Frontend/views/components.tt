@@ -1,20 +1,17 @@
-<% css_head.push('list.css') %>
 <table class="listing">
 <% FOREACH comp IN components_list %>
-    <h1><% comp.category %></h1>
+    <tr><td><h1><% comp.category %></h1></td></tr>
     <% FOREACH details IN comp.components %>
-            <div class="multicolumn">
-                <ul>
-                    <li><span class="bold"><% details.name %></span></li>
-                </ul>
-                <br />
-            </div>
+            
+                <tr>
+                    <td><span class="bold"><% details.name %></span></td>
+                </tr>
     <% END %>
+    <tr><td><hr/></td></tr>
 <% END %>
 </table>
 <div class="actions">
-<a class="action imgUploadcomponent" href="/systems/components/upload">upload new component</a>
+<a class="action modal" href="/systems/components/upload">upload new component</a>
 <p class="italic">Upload and deploy a new component.<br/>Deployed components can be installed on system images.</p>
 </div>
-
 

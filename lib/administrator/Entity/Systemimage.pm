@@ -82,6 +82,9 @@ sub methods {
         'setperm'    => {'description' => 'set permissions on this system image', 
                         'perm_holder' => 'entity',
         },
+        'installcomponent' => {'description' => 'install components on this system image', 
+                        'perm_holder' => 'entity',
+        },
     };
 }
 

@@ -20,15 +20,15 @@ sub _powersupplycards {
         $tmp->{active} = $psc->getAttr(name => 'active');
         push @$pscs, $tmp;
     }
-    return $pscs;
-} 
 
+    return $pscs;
+}
 
 sub _powersupply_card_details {
     my $id = @_;
 
     my $epowersupplycard = Entity::Powersupplycard->get(id => $id));
-    
+
     my $model = Entity::Powersupplycardmodel->get(id => $epowersupplycard->getAttr(name => 'powersupplycardmodel_id'));
 
     my $active = $epowersupplycard->getAttr(name => 'active'));

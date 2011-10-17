@@ -4,6 +4,7 @@ $color_red: #FF002E;
 $color_green: #80E254;
 $color_white: white;
 $color_blue: #24BAF9;
+$font_color: #999999;
 $menu_pos: 60px;
 $menu_width: 65%;
 $head_height: 140px;
@@ -17,11 +18,14 @@ $head_height: 140px;
 body {
     min-height: 100%;
     background-color: $color_purple;
+    color: $font_color;
     font-style: arial;
+    font-size: 0.9em;
 }
 
 #header {
     position: fixed;
+    z-index: 10;
     width: 100%;
     background-color: $color_white;
     border-top: 2px solid $color_purple;
@@ -61,7 +65,7 @@ body {
     }
     #menu_separator {
         border-bottom: 1px solid $color_gray;
-        top: $menu_pos + 34px;
+        top: $menu_pos + 38px;
         width: 100%;
         position: absolute;
     }
@@ -86,7 +90,8 @@ body {
                     text-decoration:none;
                     color: $color_gray;
                     font-weight: bold;
-                    font-size: 1.0em;
+                    //font-size: 1.0em;
+                    font-size: 18px;
                 }
                 a:hover {
                         color: $color_green;
@@ -101,7 +106,7 @@ body {
         }
     }
     #submenu {
-        margin-top: $menu_pos + 40px;
+        margin-top: $menu_pos + 43px;
         margin-left: auto;
         margin-right: auto;
         width: $menu_width;
@@ -116,7 +121,8 @@ body {
                     float: left;
                     text-decoration:none;
                     color: white;
-                    font-size: 0.875em;
+                    //font-size: 0.875em;
+                    font-size: 13px;
                     font-weight: bold;
                 }
             }
@@ -144,6 +150,31 @@ body {
     padding-left: 20px;
     min-height: 498px;
 }
+
+#opsmsg {
+    table {
+        collapse: collapse;
+        td {
+            border: thin solid $color_purple;
+            width: 15em;
+            text-align: center;
+            cursor: pointer;
+        }
+        td.active {
+            background-color: $color_purple;
+            color: white;
+            font-weight: bold;
+        }
+    }
+
+    #operations_content, #messages_content {
+        border: thin solid $color_purple;
+        display: none;
+        font-size: 0.7em;
+        line-height: 1.4em;
+    }
+}
+
 
 #footer {
     border-top: 10px solid $color_gray;

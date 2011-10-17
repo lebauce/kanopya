@@ -6,7 +6,10 @@
         <title><% title_page %></title>
         <link rel="stylesheet" href="<% request.uri_base %>/css/normalize.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/details.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/listing.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/misc.css" />
+        <link rel="stylesheet" href="<% request.uri_base %>/css/modal.css" />
         <% FOREACH css IN css_head %>
             <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
         <% END %>
@@ -20,32 +23,117 @@
         <% END %>
 
         <script language="javascript" type="text/javascript">
-            $(document).ready(function() {
-                $("#container_messages").click(function() {
-                $("#messages").toggle();
-            });
-                var messages_ajax = function() {
-                    $.ajax({
-                        url: "/messages",
-                        type: "POST",
-                        dataType: "json",
-                        success: function(msg){
-                            console.log(msg);
-                            $("#messages").empty();
-							for(var i=0;i<msg.length;i++) {
-								$("#messages").append(msg[i].content+"<br/>");
-								
-							}
-                           
-                        },
-                        error: function(error, text, thor) {
-                        $("#messages").empty();
-                        $("#messages").append(text+" "+error);
-                        }
-                    });
-                };
-                setInterval(messages_ajax, 10000);
 
+            // functions to active and deactive blocks visibility and javascript
+            // functions call. 
+            
+            function active(btn) {
+                $(btn).addClass('active');
+                $(btn.replace(/_btn/, '_content')).show();
+                var interval_id;
+                if(btn == '#operations_btn') {
+                    interval_id = setInterval("operations_update()", 5000);
+                    operations_update();
+                } else {
+                    interval_id = setInterval("messages_update()", 5000);  
+                    messages_update();
+                }
+                $(btn).prop('interval_id', interval_id);
+            }
+
+            function deactive(btn) {
+                $(btn).removeClass('active');
+                $(btn.replace(/_btn/, '_content')).hide();
+                clearInterval( $(btn).prop('interval_id') );
+                $(btn).prop('interval_id', '');
+            }
+
+
+            // function to get and update messages content
+            var messages_update = function() {
+                $.ajax({
+                    url: "/messages",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#messages_content").empty();
+                        for(var i=0;i<msg.length;i++) {
+                            $("#messages_content").append(
+                                msg[i]['date']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['time']+"&nbsp&nbsp&nbsp"+
+                                msg[i]['content']+"<br/>" );             
+                        }
+                    },
+                    error: function(error, text, thor) {
+                    $("#messages_content").empty();
+                    $("#messages_content").append(text+" "+error);
+                    }
+                });
+            };
+
+            // function to get and update operations queue content
+            var operations_update = function() {
+                $.ajax({
+                    url: "/operation/queue",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(msg){
+                        console.log(msg);
+                        $("#operations_content").empty();
+                        if(! msg.length) {
+                            $("#operations_content").append(
+                                "no operations in the queue");
+                        } else {
+                            for(var i=0;i<msg.length;i++) {
+                                $("#operations_content").append(
+                                    msg[i]['CREATION']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['FROM']+"&nbsp&nbsp&nbsp"+
+                                    msg[i]['TYPE']+"<br/>" );
+                            }
+                        }
+                    },
+                    error: function(error, text, thor) {
+                    $("#operations_content").empty();
+                    $("#operations_content").append(text+" "+error);
+                    }
+                });
+            };
+
+            $(document).ready(function() {  
+
+                // operations / messages
+
+                // add an attribute to track interval_id value returned by
+                // setInterval function and used by clearInterval
+                $('#operations_btn, #messages_btn').prop('interval_id', '');
+
+                $('#operations_btn, #messages_btn').click(function () {
+                    var this_id = '#' + $(this).attr('id');
+
+                    // nothing is active
+                    if(! $('#operations_btn, #messages_btn').hasClass('active')) {
+                        active( this_id );
+                    // one is active, which ?
+                    } else {
+                        var active_element; 
+                            $('#operations_btn, #messages_btn').each(function (index, domEle) {
+                                if($(domEle).hasClass('active')) {
+                                    active_element = '#'+$(domEle).attr('id');
+                                }
+                            });
+                        // not this, so we deactive the other and active this
+                        if(active_element != this_id) {
+                            deactive( active_element);
+                            active( this_id );
+                        // this is active, we deactive it
+                        } else {
+                            deactive(this_id);
+                        }
+                    } 
+                });
+
+                // modals
                 $('.modal').each(function() {
                     var $link = $(this);
 
@@ -58,6 +146,10 @@
                             width: 500,
                             height: 300,
                             buttons: {
+                                Send: function() {
+                                    $('#target').submit();
+                                    $(this).dialog('close');
+                                },
                                 Cancel: function() {
                                     $(this).dialog('close');
                                 }
@@ -128,10 +220,16 @@
             <div id="content">
                 <% content %>
             </div>
-            <div id="container_messages">
-                messages
-                <div id="messages" style="diplay: none;">
-                </div>
+           
+            <div id="opsmsg">
+                <table>
+                    <tr>
+                        <td id="operations_btn">operations queue</td>
+                        <td id="messages_btn">messages</td>
+                    </tr>
+                </table>
+                <div id="operations_content">operations queue loading...</div>
+                <div id="messages_content">messages loading...</div>
             </div>
 
             <div id="footer">

@@ -4,13 +4,13 @@
 	<tr><td></td><td class="toright">
 	<a class="imgManage" href="/systems/distributions/<% distribution.distribution_id %>">details</a></td></tr>
 	<% IF distribution.can_setperm %>
-		<tr><td></td><td class="toright"><a class="imgPermission" href="/rights/permissions/view_selectconsumer?entitytype=Distribution&id=<% distribution.distribution_id %>">permissions</a></td></tr>
+		<tr><td></td><td class="toright"><a class="imgPermission" href="/rights/permissions/distribution/<% distribution.distribution_id %>">permissions</a></td></tr>
 	<% END %>
 	<tr><td class="italic" colspan="3"><% distribution.distribution_desc %></td></tr>
 	</table>
 <% END %>
 <div class="actions">
 <p class="italic">Linux distribution used to create system images.</p>
-<a class="action imgUploadcomponent" href="/systems/distributions/upload">upload new distribution</a>
+<a class="action modal" href="/systems/distributions/upload">upload new distribution</a>
 <p class="italic">Upload a new distribution to create system images from it.</p>
 </div>

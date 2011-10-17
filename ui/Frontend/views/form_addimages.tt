@@ -1,7 +1,3 @@
-<%#
-<style type="text/css">@import url(/css/form.css);</style>
-%>
-<div class="title">create system image<% IF some_errors %><span class="error">Some fields below are missing or invalid</span><% END %></div>
 <form method="POST" action="/systems/images/add">
 <table class="form">
 <tr>
@@ -34,8 +30,6 @@
 </table>
 <div class="buttons">
 <input type="submit" value="ok"/>
-<input type="button" value="cancel" onclick="javascript:window.close()"/>
 </div>
 </form> 
-</body>	
-</html>
+

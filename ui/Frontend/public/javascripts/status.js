@@ -18,7 +18,7 @@ function refresh_status() {
 
 function change_timeline( period ) {
 	var graph_name = "graph_consumption_" + period + ".png";
-	document.getElementById( "conso_graph" ).src = "/graph/monitor/graph/" + graph_name;
+	document.getElementById( "conso_graph" ).src = "/images/graphs/" + graph_name;
 }
 
 

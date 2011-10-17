@@ -13,10 +13,10 @@
 			<a class="imgEdit">edit</a>
 		<% END %>
 		<% IF m.can_delete %>
-			<br /><a class="imgRemove" href="/models/motherboards/<% m.mmodel_id %>/remove">remove</a>
+			<br /><a class="imgRemove" href="/infrastructures/models/motherboards/<% m.mmodel_id %>/remove">remove</a>
 		<% END %>
 		<% IF m.can_setperm %>
-			<br /><a class="imgPermission" href="/permissions/view_selectconsumer?entitytype=Motherboardmodel&id=<% m.mmodel_id %>">permissions</a>
+			<br /><a class="imgPermission" href="/rights/permissions/motherboardmodel/<% m.mmodel_id %>">permissions</a>
 		<% END %>
 		</td>
 		</tr>
@@ -34,19 +34,19 @@
 		<td class="center"><% IF p.pmodel_is64 %>yes<% ELSE %>no<% END %></td>
 		<td class="center"><% IF p.pmodel_virt %>yes<% ELSE %>no<% END %></td>
 		<td><% IF p.can_update %><a class="imgEdit">edit</a><% END %>
-		<% IF p.can_delete %><br /><a class="imgRemove" href="/models/processors/<% p.pmodel_id %>/remove">remove</a><% END %>
-		<% IF p.can_setperm %><br /><a class="imgPermission" href="/permissions/view_selectconsumer?entitytype=Processormodel&id=<% p.pmodel_id %>">permissions</a><% END %>
+		<% IF p.can_delete %><br /><a class="imgRemove" href="/infrastructures/models/processors/<% p.pmodel_id %>/remove">remove</a><% END %>
+		<% IF p.can_setperm %><br /><a class="imgPermission" href="/rights/permissions/processormodel/<% p.pmodel_id %>">permissions</a><% END %>
 		</td>
 		</tr>
 	<% END %>
 </table>
 <div class="actions">
 <% IF can_createmotherboardmodel %>
-	<a class="action imgAdding" href="/models/motherboards/add">create a motherboard model</a>
+	<a class="action modal" href="/infrastructures/models/motherboards/add">create a motherboard model</a>
 	<p class="italic">Create a new model of motherboard.</p>
 <% END %>
 <% IF can_createprocessormodel %>
-	<a class="action imgAdding" href="/models/processors/add">create a processor model</a>
+	<a class="action modal" href="/infrastructures/models/processors/add">create a processor model</a>
 	<p class="italic">Create a new model of processor.</p>
 <% END %>
 </div>

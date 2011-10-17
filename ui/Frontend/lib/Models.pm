@@ -87,7 +87,7 @@ get '/models/motherboards/add' => sub {
     }
     template 'form_addmotherboardmodel', {
         processormodels_list => $pmodels,
-    };
+    }, { layout => '' };
 };
 
 post '/models/motherboards/add' => sub {
@@ -112,11 +112,11 @@ post '/models/motherboards/add' => sub {
         }
         else { $exception->rethrow(); }
     }
-    else { redirect '/models'; }
+    else { redirect('/infrastructures/models'); }
 };
 
 get '/models/processors/add' => sub {
-    template 'form_addprocessormodel', {};
+    template 'form_addprocessormodel', {}, { layout => ''};
 };
 
 post '/models/processors/add' => sub {
@@ -140,7 +140,7 @@ post '/models/processors/add' => sub {
         }
         else { $exception->rethrow(); }
     }
-    else { redirect '/models'; }
+    else { redirect('/infrastructures/models'); }
 };
 
 get '/models/motherboards/:modelid/remove' => sub {
@@ -158,7 +158,7 @@ get '/models/motherboards/:modelid/remove' => sub {
         }
         else { $exception->rethrow(); }
     }
-    else { redirect '/models'; }
+    else { redirect('/infrastructures/models'); }
 };
 
 get '/models/processors/:modelid/remove' => sub {
@@ -176,7 +176,7 @@ get '/models/processors/:modelid/remove' => sub {
         }
         else { $exception->rethrow(); }
     }
-    else { redirect '/models'; }
+    else { redirect('/infrastructures/models'); }
 };
 
 1;

@@ -16,7 +16,7 @@
 	<% END %>
 	<td class="toright">
 	<% IF cluster.link_activity %>
-		<a class="imgMonitor" href="/monitoring/view_clustermonitoring?cluster_id=<% cluster.cluster_id %>">activity</a>
+		<a class="imgMonitor" href="/architectures/clusters/<% cluster.cluster_id %>/monitoring">activity</a>
 	<% END %>
 	</td></tr>
 	<tr><td class="italic" colspan="3"><span class="darkgreen">Description</span> : <% cluster.cluster_desc %></td></tr>
@@ -25,7 +25,7 @@
 
 <div class="actions">
 <% IF can_create %>
-	<a class="action imgAdding" href="/architectures/clusters/add">create a cluster</a>
+	<a class="action modal" href="/architectures/clusters/add">create a cluster</a>
 	<p class="italic">Create and configure a new cluster.</p>
 <% END %>
 </div>
