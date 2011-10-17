@@ -25,6 +25,7 @@ body {
 
 #header {
     position: fixed;
+    z-index: 10;
     width: 100%;
     background-color: $color_white;
     border-top: 2px solid $color_purple;
