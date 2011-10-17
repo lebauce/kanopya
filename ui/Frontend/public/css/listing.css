@@ -147,7 +147,7 @@ table.listing td { padding: 5px; width: 25%; }
 
 
 table.listing h1 {
-    color: #228b22;
+    color: #666666;
     font-weight: bold;
     font-size: 1.6em;
     margin: 20px 0 0 0;
@@ -157,7 +157,7 @@ table.listing td.toright a {
     background-repeat: no-repeat;
     padding-left: 20px;
     text-decoration: none;
-    color: #228b22;
+    color: #666666;
 }
 
 .state {
@@ -179,7 +179,7 @@ div.actions {
 div.actions a.action {
     margin: 10px 0 0 10px;    
     display: block;    
-    color: #0A0;
+    color: #666666;
     background-repeat: no-repeat;
     padding-left: 20px;
     text-decoration: none;   
@@ -207,7 +207,7 @@ table.status td { background-color: #DDD; padding: 5px; background-position: 5px
 table.status {display: inline;}
 
 table.simplelisting caption { 
-	color: #228b22;
+	color: #666666;
 	font-size: 1.5em;
 	font-weight: bold;
 	margin: 10px;
@@ -218,7 +218,7 @@ table.simplelisting caption {
 
 table.simplelisting th { 
 	background-color: #CDC;
-	color: #228b22;
+	color: #666666;
 	border: thin solid white;
 }
 
@@ -230,7 +230,7 @@ table.simplelisting td {
 }
 
 table.simplelisting td a {
-    color: #228b22;
+    color: #666666;
     background-repeat: no-repeat;
     padding-left: 20px;
     text-decoration: none;   
