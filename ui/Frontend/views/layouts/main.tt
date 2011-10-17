@@ -231,10 +231,6 @@
                 <div id="operations_content">operations queue loading...</div>
                 <div id="messages_content">messages loading...</div>
             </div>
-
-            <div id="footer">
-                Powered by <a href="http://hederatech.org/">Hedera Technology</a>
-            </div>
         </div>
     </body>
 </html>
