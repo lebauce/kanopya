@@ -145,6 +145,7 @@
                             title: $link.attr('title' + '#content'),
                             width: 500,
                             height: 500,
+                            resizable: true,
                             buttons: {
                                 Send: function() {
                                     $('#target').submit();
