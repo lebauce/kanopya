@@ -36,10 +36,11 @@ my $workload_amount = 1000;
 
 $cap_plan->setSearchSpaceForTiers(search_spaces => \@search_spaces);
 
-my %workload_class = ( visit_ratio => [1,1,1],
-		       service_time => [1,1,1],
-		       delay => [0,0.5,0.5],
-		       think_time => 1 );
+my %workload_class = ( 
+                visit_ratio => [1,1,1],
+                service_time => [1,1,1],
+                delay => [0,0.5,0.5],
+                think_time => 1 );
 
 my $res = $cap_plan->calculate( workload_amount => $workload_amount, workload_class => \%workload_class );
 
