@@ -48,6 +48,7 @@ use Entity::Distribution;
 use Entity::Cluster;
 use Entity::Systemimage;
 use EEntity::ESystemimage;
+use Entity::Gp;
 
 our $VERSION = '1.00';
 my $log = get_logger("executor");
@@ -158,14 +159,14 @@ sub execute {
     my $adm = Administrator->new();
 
     my $devs = $self->{_objs}->{distribution}->getDevices();
-        
+
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
     $esystemimage->create(econtext          => $self->{nas}->{econtext},
                           erollback         => $self->{erollback},
                           devs              => $devs,
                           component_storage => $self->{_objs}->{component_storage});
 
-        
+
 #        my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
 #        my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
 #
