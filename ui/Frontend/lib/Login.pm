@@ -53,7 +53,11 @@ post '/login' => sub {
     };
 
     if ( $@ ) {
+        my $fail = {
+            user => "Authentication failed for login $user"
+        };
         $log->error('Authentication failed for login ', $user);
+        return template 'login', { fail => $fail }, { layout => 'login' }
     }
     else {
         session EID      => $ENV{EID};
