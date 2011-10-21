@@ -55,7 +55,7 @@ sub new {
     return $self;
 }
 
-=head2
+=head2 getIndicatorSets
     
     Class : Public
     
@@ -136,7 +136,7 @@ sub getSetDesc {
 }
 
 
-=head2
+=head2 collectSet
     
     Class : Public
     
