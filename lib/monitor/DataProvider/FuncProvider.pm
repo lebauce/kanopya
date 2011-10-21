@@ -18,9 +18,9 @@ FuncProvider - FuncProvider object
 
     This provider generate values for a set of metrics according to a node dependent conf.
     Value is generated using a specified function and parameters.
-    These settings specified for each node independently, using a configuration file named nodes.conf.
+    These settings specified for each node independently, using a configuration file named funcprovider.conf.
     
-    Here a sample of a nodes.conf file:
+    Here a sample of a funcprovider.conf file:
         <nodes>
             <node ip='10.0.0.1'>
                 <var label='metric1' func='const' value='42'/>
@@ -111,7 +111,7 @@ sub new {
     $self->{_timeref} = $timeref;
     
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/nodes.conf");
+    my $conf = XMLin("/opt/kanopya/conf/funcprovider.conf");
     my $nodes = General::getAsArrayRef( data => $conf, tag => 'node' );
     my @node_conf = grep { $_->{ip} eq $host } @{ $nodes };
     my $node_conf = shift @node_conf;
