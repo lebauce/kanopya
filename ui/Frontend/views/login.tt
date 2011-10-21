@@ -10,6 +10,15 @@
     </div>
 <% END %>
 
+<% IF fail %>
+    <div class="dfv_errors">
+     <% fail.user %>
+     <ul>
+         <li>wrong user or password</li>
+     </ul>
+    </div>
+<% END %>
+
 <h2>Administration Access</h2>
 <form method="post" action="/login">
     <label for="login">Login: </label>

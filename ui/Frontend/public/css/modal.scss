@@ -1,3 +1,7 @@
+.ui-dialog {
+    border: 2px solid black;
+}
+
 .ui-widget-content {
     background-color: white;
     margin-left: auto;
@@ -19,4 +23,17 @@
     top: 2px;
     background-color: gray;
     opacity: 0.5;
+}
+
+.ui-dialog-buttonset {
+    margin-right: auto;
+    margin-left: auto;
+    width: 48%;
+    button {
+        margin-right: auto;
+        margin-left: auto;
+        border: none;
+        width: 50%;
+        background-color: white;
+    }
 }

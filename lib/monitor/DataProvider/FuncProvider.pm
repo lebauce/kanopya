@@ -11,11 +11,41 @@ FuncProvider - FuncProvider object
     my $provider = FuncProvider->new( $host );
     
     # Retrieve data
-    my $var_map = { 'var_name' => '<Func >', ... };
+    my $var_map = { 'var_name' => 'var_name', ... };
     $provider->retrieveData( var_map => $var_map );
 
 =head1 DESCRIPTION
 
+    This provider generate values for a set of metrics according to a node dependent conf.
+    Value is generated using a specified function and parameters.
+    These settings specified for each node independently, using a configuration file named funcprovider.conf.
+    
+    Here a sample of a funcprovider.conf file:
+        <nodes>
+            <node ip='10.0.0.1'>
+                <var label='metric1' func='const' value='42'/>
+                <var label='metric2' func='random' min='10' max='100'/>
+            </node>
+            <node ip='10.0.0.2'>
+                <var label='metric1' func='const' value='100'/>
+                <var label='metric2' func='random' min='20' max='50'/>
+            </node>
+        </nodes>
+
+    Here the list of allowed function and there parameters
+    
+    * const (value)
+        => return value
+    
+    * linear (a,b)
+        => return a*x + b
+        with x the time elapsed since <time ref>
+    
+    * random (min,max)
+        => return rand(min,max)
+        
+    * sinus ()
+    
 =head1 METHODS
 
 =cut
@@ -26,13 +56,18 @@ package FuncProvider;
 use warnings;
 use XML::Simple;
 use General;
+#use Data::Dumper;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+my $log = get_logger("collector");
 
 my %funcs = (     
-                "const" => \&const,
-                "linear" => \&linear,
-                "sinus" => \&sinus,
-                "custom_sinus" => \&custom_sinus,
-                "random" => \&random,
+                "const"         => \&const,
+                "linear"        => \&linear,
+                "sinus"         => \&sinus,
+                "custom_sinus"  => \&custom_sinus,
+                "random"        => \&random,
             );
 
 =head2 new
@@ -76,7 +111,7 @@ sub new {
     $self->{_timeref} = $timeref;
     
     # Load conf
-    my $conf = XMLin("/opt/kanopya/conf/nodes.conf");
+    my $conf = XMLin("/opt/kanopya/conf/funcprovider.conf");
     my $nodes = General::getAsArrayRef( data => $conf, tag => 'node' );
     my @node_conf = grep { $_->{ip} eq $host } @{ $nodes };
     my $node_conf = shift @node_conf;
@@ -163,6 +198,7 @@ sub linear {
     
     Args :
         var_map : hash ref : required  var { var_name => oid }
+        
     
     Return :
         [0] : time when data was retrived
@@ -187,13 +223,9 @@ sub retrieveData {
         die "var not found for '$self->{_host} : '$var_name'" if (not defined $var);
 
         my $func_name = $var->{func};
-        #my $func = \&gen1;
-        #&{$func}();
-        #my $res = &$func->( dt => $dt, var =>$var );
-        my $res = 0;
-                
-        $res = $funcs{$func_name}->( $self, dt => $dt, var => $var );
-
+        my $func = $funcs{$func_name};
+        die "Undefined generator func: '$func_name'. Allowed func are: " . join(", ", keys %funcs) if (not defined $func);
+        my $res = $func->( $self, dt => $dt, var => $var );
 
         $values{ $var_name } = $res; 
     }
