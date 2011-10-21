@@ -16,7 +16,7 @@
   public_port:{tcp:['80']},
   tier_number:'2',
   priority:100,
-  tier:[ 
+  tier:[
     {
       name:'frontend',
       rank:'1',
@@ -34,7 +34,7 @@
           transfert_mode:'cp -a ',
           init_script:'init_website.sh',
           mount_point:'/opt/srv',
-          size:'100M',
+          size:'400M',
         },
       ],
       component_list:[

@@ -1,7 +1,7 @@
 kanopya-webui (0.8.1) stable; urgency=low
 
-  * New components : Iptables, Mysql, HAProxy 
-  * Bug fixes 
+  * New components : Iptables, Mysql, HAProxy
+  * Bug fixes
   * Backup operations system
   * Backup messages system
   * Components Mounttable, Snmpd and Syslog-ng automatically installed on system images and added to new clusters
@@ -11,6 +11,12 @@ kanopya-webui (0.8.1) stable; urgency=low
   * Force stop cluster operation
 
  -- Hedera Dev Team <dev@hederatech.com>  Mon, 01 Aug 2011 12:44:13 +0200
+
+kanopya-webui (0.7.2) stable; urgency=low
+
+  * unused fields removed in processormodels
+
+ -- Hedera Dev Team <dev@hederatech.com>  Mon, 11 Jul 2011 11:31:15 +0200
 
 kanopya-webui (0.7.1) stable; urgency=low
 

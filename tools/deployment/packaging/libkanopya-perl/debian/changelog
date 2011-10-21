@@ -8,9 +8,15 @@ libkanopya-perl (0.8.1) stable; urgency=low
   * Better state visualization for motherboard and node in web interface
   * Orchestration analyse and conception
   * Logrotate kanopya log files
-  * Force stop cluster operation  
+  * Force stop cluster operation
 
  -- Hedera Dev Team <dev@hederatech.com>  Mon, 01 Aug 2011 12:33:00 +0200
+
+libkanopya-perl (0.7.2) stable; urgency=low
+
+  * fields checking regexp bug fix for processormodels and motherboardmodels
+
+ -- Hedera Dev Team <dev@hederatech.com>  Mon, 11 Jul 2011 11:24:53 +0200
 
 libkanopya-perl (0.7.1) stable; urgency=low
 
