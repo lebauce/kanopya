@@ -66,7 +66,7 @@ sub init {
     
     $self->{_monitor} = Monitor::Retriever->new( );
     
-    $self->{_time_step} = 30; # controller update frequency
+    $self->{_time_step} = 1; # controller update frequency
     $self->{_time_laps} = 60; # metrics retrieving laps
     
     my $model = Model::MVAModel->new();
@@ -74,7 +74,14 @@ sub init {
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
-    #$cap_plan->setConstraints(constraints => { max_latency => 22, max_abort_rate => 0.3 } );
+    print "[DEBUG] Init constraints in controlleur init\n";
+    
+    my $max_latency    = 0.02;
+    my $max_abort_rate = 0.3;
+    
+    $cap_plan->setConstraints(constraints => { max_latency => 0.02, max_abort_rate => 0.3 } );
+    print "[DEBUG] Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n";
+    
     $self->{_cap_plan} = $cap_plan;
 
     $self->{_actuator} = Actuator->new();
@@ -209,45 +216,120 @@ sub updateModelInternaParameters {
                                                         cluster_id =>  $cluster_id,
                                                         delay => $args{delay}[0],
                                                         service_time => $args{service_time}[0]  );
-}
+    }
 
-sub manageCluster {
+sub preManageCluster{
     my $self = shift;
     my %args = @_;
 
     General::checkParams args => \%args, required => ['cluster'];
 
-    my $cluster = $args{cluster};
+    my $cluster    = $args{cluster};
     my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
+    
+     # Refresh qos constraints
+     my $constraints = $self->{data_manager}
+                            ->getClusterQoSConstraints( 
+                                cluster_id => $cluster_id 
+                                );
+                                
+     $self->{_cap_plan}->setConstraints(constraints => $constraints );
+    
+     # Note: workload format : {workload_amount, workload_class}
+     # Note: workload_class format : {visit_ratio, service_time, delay, think_time}
+     my $workload     = $self->getWorkload( cluster => $cluster);
+     
+     # Note: curr_perf format : {throughput, latency, abort_rate} 
+     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $args{cluster});     
+     my $cluster_conf = $self->getClusterConf( cluster => $cluster );     
+     my $infra_conf   = {
+                 M        => 1,
+                 AC       => [$cluster_conf->{nb_nodes}],
+                 LC       => [$cluster_conf->{mpl}],
+            };
 
+     
+    my $optim_params = $self->ManageCluster( cluster    => $cluster, 
+                          workload   => $workload, 
+                          curr_perf  => $curr_perf, 
+                          infra_conf => $infra_conf );
+    
+    # Apply optimal configuration
+    # TODO This method signature should be changed to handle infra in a better way
+    
+    $self->{_actuator}->changeInfraConf(
+                        infra => [ { cluster => $cluster, conf => $cluster_conf } ],
+                        target_conf => $optim_params,
+    );
+    
+}
+
+sub manageCluster {
+
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams args => \%args, required => ['cluster','workload','curr_perf', 'infra_conf'];
+
+    my $cluster    = $args{cluster};
+    my $workload   = $args{workload};
+    my $curr_perf  = $args{curr_perf};
+    my $infra_conf = $args{infra_conf};
+    # Note: workload format :       {workload_amount, workload_class}
+    # Note: workload_class format : {visit_ratio, service_time, delay, think_time}
+    # Note: curr_perf format :      {throughput, latency, abort_rate} 
+    # Note: infra_conf format :     {M, AC, LC} 
+    
+    
+    my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
+    
+    #print "[DEBUG] Constraints not updated here (preManagaCluster) \n";
     # Refresh qos constraints
-    my $constraints = $self->{data_manager}->getClusterQoSConstraints( cluster_id => $cluster_id );
-    $self->{_cap_plan}->setConstraints(constraints => $constraints );    
+    # my $constraints = $self->{data_manager}->getClusterQoSConstraints( cluster_id => $cluster_id );
+    # $self->{_cap_plan}->setConstraints(constraints => $constraints );    
+    
 
-    my $cluster_conf = $self->getClusterConf( cluster => $cluster );
-    my $mpl = $cluster_conf->{mpl};
     
     # Capacity planning settings
+    my $mpl = $infra_conf->{LC}->[0];
+    
     $self->{_cap_plan}->setSearchSpaceForTiers( search_spaces =>     [ 
-                {   min_node => $cluster->getAttr(name => 'cluster_min_node'), 
+                {   
+                    min_node => $cluster->getAttr(name => 'cluster_min_node'), 
                     max_node => $cluster->getAttr(name => 'cluster_max_node'),
-                    min_mpl => $mpl,
-                    max_mpl => $mpl,}
+                    min_mpl  => $mpl,
+                    max_mpl  => $mpl,}
                 ]
-                                                );
+    );   
+    
     $self->{_cap_plan}->setNbTiers( tiers => 1);
     
-    my $workload    = $self->getWorkload( cluster => $cluster);
-    
-    # Manage internal parameters tuning
-    my $curr_perf   = $self->getMonitoredPerfMetrics( cluster => $args{cluster});
+    #print "[DEBUG] Hardcoding metrics\n";
+    #my $workload    = $self->getWorkload( cluster => $cluster);
+    #my $workload    = $self->getWorkloadHC();
 
+    # Manage internal parameters tuning
+    #my $curr_perf   = $self->getMonitoredPerfMetrics( cluster => $args{cluster});
+    #my $curr_perf   = $self->getMonitoredPerfMetricsHC();
+    
+    #print Dumper $workload;
+    #print Dumper $curr_perf;
+    
     #/!\ hardcoding 1 tier /!\
-    my $infra_conf  = {
-        M        => 1,
-        AC       => [$cluster_conf->{nb_nodes}],
-        LC       => [$cluster_conf->{mpl}],
-    };
+    # my $infra_conf  = {
+    #     M        => 1,
+    #    AC       => [$cluster_conf->{nb_nodes}],
+    #    LC       => [$cluster_conf->{mpl}],
+    #};
+    
+    
+    #print "[DEBUG] these lines must be deleted /!\\\n "; 
+    #$infra_conf->{AC}=[2];
+    #print Dumper $infra_conf;
+    
+    
+        
+
     
     my $algo_conf   = {
         nb_steps            => 40,
@@ -255,7 +337,7 @@ sub manageCluster {
         init_point_position => 1,
         
     };
-
+    
     my $best_params = $self->modelTuning( 
             algo_conf  => $algo_conf, 
             workload   => $workload, 
@@ -263,23 +345,52 @@ sub manageCluster {
             curr_perf  => $curr_perf 
         );
     
+    
+    #print Dumper $best_params;
+    
     $self->updateModelInternaParameters( cluster      => $cluster, 
                                          delay        => $best_params->{D}, 
                                          service_time => $best_params->{S});
     
+    
+    $workload->{workload_class}->{service_time} = $best_params->{S};
+    $workload->{workload_class}->{delay}        = $best_params->{D};
+    
+    #print Dumper $workload;
     # Store and graph results for futur consultation
-    $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
+    # $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
+    
     
     # Calculate optimal configuration
-    my $optim_conf = $self->{_cap_plan}->calculate( workload_amount => $workload->{workload_amount},
+    my $optim_params = $self->{_cap_plan}->calculate( workload_amount => $workload->{workload_amount},
                                                     workload_class => $workload->{workload_class} );
     
-    # Apply optimal configuration
-    # TODO This method signature should be changed to handle infra in a better way
-    $self->{_actuator}->changeInfraConf(
-                        infra => [ { cluster => $cluster, conf => $cluster_conf } ],
-                        target_conf => $optim_conf,
+    print "[DEBUG] Configuration optimale : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n";
+        
+    
+    my $optim_conf = {
+        M        => $infra_conf->{M},
+        AC       => $optim_params->{AC},
+        LC       => $optim_params->{LC},
+    };
+    
+    my %model_optim_params = (
+            configuration => $optim_conf,
+            workload_amount => $workload->{workload_amount},
+            workload_class => $workload->{workload_class}
     );
+    
+    #print Dumper \%model_optim_params;
+    
+    my %new_perf = $self->{_model}->calculate(%model_optim_params);
+    
+    
+    #print Dumper \%new_perf;
+    
+    print "[DEBUG] Nouvelles performances : throughput = $new_perf{throughput}, latency = $new_perf{latency}, abort_rate = $new_perf{abort_rate}\n";
+    
+     
+    return $optim_params;
     
     #$self->{_actuator}->changeClusterConf( cluster => $cluster, current_conf => $cluster_conf, target_conf => $optim_conf,);
 }
@@ -295,6 +406,7 @@ sub manageCluster {
 =cut
 
 sub modelTuning {
+    
     my $self = shift;
     my %args = @_;
     
@@ -322,7 +434,7 @@ sub modelTuning {
     #print Dumper $curr_perf;
     
     for my $step (0..($NB_STEPS-1)) {
-        
+        #print "Step $step / $NB_STEPS\n";
         $best_gain = -10000;
         $dim_best_gain = 0;
         $evo_best_gain = 0;
@@ -330,7 +442,7 @@ sub modelTuning {
         #print "Step $step\n";
         # For each space dimension (internal parameters except D1)
         for my $dim (0..(2*$M-1-1)) { # -1 for D1 and -1 because we start at 0
-            #print " Dim $dim\n";
+            # print " Dim $dim\n";
             # Evolution direction for this dimension
             EVO:
             for (my $evo = -$evo_step; $evo <= $evo_step; $evo += 2*$evo_step ) {
@@ -350,6 +462,7 @@ sub modelTuning {
                  
                 #print "evo = $evo ; [@S] ; [@best_S] ; [@D] ; [@best_D]\n";
                 
+    
                 my %model_params = (
                         configuration => $infra_conf,
                         workload_amount => $workload->{workload_amount},
@@ -360,6 +473,9 @@ sub modelTuning {
                                             delay => \@D,
                                            }
                 );
+              
+                
+                #print Dumper \%model_params;
                 
                 my %new_out = $self->{_model}->calculate( %model_params );
                 
@@ -442,11 +558,13 @@ sub computeDiff {
 }
 
 sub validateModel {
+    
     my $self = shift;
     my %args = @_;
     
     my $workload = $args{workload};
     my $cluster_conf = $args{cluster_conf};
+    
     
     my %perf = $self->{_model}->calculate(  configuration => {  M => 1,
                                                                 AC => [$cluster_conf->{nb_nodes}],
@@ -456,6 +574,7 @@ sub validateModel {
                                             workload_amount => $workload->{workload_amount}
                                             );
     
+    
     # Store model output
     my $rrd = $self->getControllerRRD( cluster => $args{cluster} );
     $rrd->update( time => time(), values => [   $workload->{workload_amount},
@@ -463,6 +582,7 @@ sub validateModel {
                                                 $perf{abort_rate},
                                                 $perf{throughput},
                                             ] );
+    
     # Update graph
     $self->genGraph( cluster => $args{cluster} );
 }
@@ -556,7 +676,9 @@ sub update {
     my %args = @_;
 
     my @clusters = Entity::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
-    for my $cluster (@clusters) {
+    
+    
+    for my $cluster (@clusters) {        
         my $cluster_name = $cluster->getAttr('name' => 'cluster_name');
         print "CLUSTER: " . $cluster_name . "\n ";
         #if($cluster->getAttr('name' => 'active')) 
@@ -564,7 +686,7 @@ sub update {
             # TODO get controller/orchestration conf for this cluster and init this controller
             # $cluster->getCapPlan(); $cluster->getModel()
             eval {
-                $self->manageCluster( cluster => $cluster );
+                $self->preManageCluster( cluster => $cluster );
             };
             if ($@) {
                 my $error = $@;
@@ -599,5 +721,6 @@ sub run {
     
     #$self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
 }
+
 
 1;

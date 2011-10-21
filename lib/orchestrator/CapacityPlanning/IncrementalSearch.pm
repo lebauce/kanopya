@@ -30,6 +30,7 @@ sub new {
 }
 
 sub search {
+    
     my $self = shift;
     my %args = @_;
 
@@ -38,9 +39,11 @@ sub search {
     my $nb_tiers = $self->{_nb_tiers};    
     my $workload_amount = $args{workload_amount};
     my %workload_class = %{ $args{workload_class} };
+    #print Dumper \%workload_class;
     
     my @min_node = map { $_->{min_node} || 1 } @{ $self->{_search_spaces} };
     my @max_node = map { $_->{max_node} || 1 } @{ $self->{_search_spaces} };
+            
             
     # new conf
     my @AC     = ();
@@ -65,12 +68,14 @@ sub search {
 
     my $error = 0; 
     my $new_conf = 1;
+    
+    
     TRY:
     while ($try_count == 0 || not $self->matchConstraints( perf => \%perf )) {
         
         if (($try_count++ > $max_try)) {
             $log->warn("Can not find configuration to meet constraints after $max_try iterations (max)");
-            print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)");
+            print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)\n");
             return { AC => \@curr_AC, LC => \@LC };;
             
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
@@ -82,7 +87,7 @@ sub search {
         }
         if (not $new_conf) {
             $log->warn("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
-            print("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
+            print("[DEBUG] Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]\n");
             return { AC => \@curr_AC, LC => \@LC };;
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
 #            for my $i (0..$nb_tiers-1){
@@ -91,9 +96,11 @@ sub search {
 #            return { AC => \@curr_AC, LC => \@LC };
 #            last TRY;
         }
-
+       
         @curr_AC = @next_AC;
         #print "AC: @curr_AC  #  LC: @LC\n";
+        #print Dumper \%workload_class;
+        
         %perf = $self->{_model}->calculate( configuration => { M => $nb_tiers, AC => \@curr_AC, LC => \@LC},
                                              workload_class => \%workload_class,
                                              workload_amount => $workload_amount);
@@ -109,7 +116,7 @@ sub search {
         #@next_AC = map { $_ + 1 } @curr_AC;
         #print "@curr_AC : latency = $perf{latency} abort_rate = $perf{abort_rate} \n";
         
-    };
+    };  #END WHILE
     
     #print "##### CURR ####\n";
     #print Dumper \@curr_AC;

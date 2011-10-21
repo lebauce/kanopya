@@ -6,6 +6,7 @@ use Data::Dumper;
 use warnings;
 use strict;
 
+
 my $workload_amount    = 1000;
 
 
@@ -102,7 +103,7 @@ my $infra_conf  = {
         init_point_position => 1,
         
     };
-    
+print "b\n";
 my $cap_plan   = CapacityPlanning::IncrementalSearch->new();
 my $model      = Model::MVAModel->new();
 my $controller = Controller->new();
@@ -112,10 +113,11 @@ $cap_plan->setNbTiers(tiers => $nb_tiers);
 $cap_plan->setModel(model =>$model);
 $cap_plan->setSearchSpaceForTiers(search_spaces => \@search_spaces);
 
+print "b\n";
 #print Dumper $algo_conf;
-#print Dumper $infra_conf;
+print Dumper $infra_conf;
 #print Dumper $monitored_metrics;
-#print Dumper $workload;
+print Dumper $workload;
 
 # Configure the model (Di/Si) using monitored metrics 
 # return { D => \@best_D, S => \@best_S };
@@ -168,6 +170,9 @@ print "current infrastructure = @{$res->{AC}}\n";
 print "SLA          : max_latency = $constraints->{max_latency}, max_abort_rate = $constraints->{max_abort_rate}\n";
 print "theoretical perf : latency = $theoretical_perf{latency}, abort_rate = $theoretical_perf{abort_rate}\n";
 
+
+
+
 my $increase = 1000;
 print "******************************************************************************\n";
 print "INCREASING THE WORKLOADAMOUNT FROM $workload_amount to $workload_amount + $increase\n";
@@ -201,9 +206,9 @@ print "current infrastructure = @{$res->{AC}}\n";
 print "SLA          : max_latency = $constraints->{max_latency}, max_abort_rate = $constraints->{max_abort_rate}\n";
 print "theoretical perf : latency = $theoretical_perf{latency}, abort_rate = $theoretical_perf{abort_rate}\n";
 
-print "******************************************************************************\n";
-print "INCREASING THE MONITORED LATENCY AND ABORT RATE\n";
-print "******************************************************************************\n";
+#print "******************************************************************************\n";
+#print "INCREASING THE MONITORED LATENCY AND ABORT RATE\n";
+#print "******************************************************************************\n";
 
 
 #print Dumper $model->calculate(  
@@ -220,18 +225,21 @@ print "*************************************************************************
 # We fake monitored metrics on a "virtual" system 
 
 
-#sub update_model
-#{
-#    
-#    #my $self = shift;
-#    my %args = @_;
-#    
-#    General::checkParams(args => \%args, required => [m''onitored_latency, ]);
-#    my $monitored_latency    = $args{monitored_latency};
-#    my $monitored_abort_rate = $args{monitored_abort_rate}; 
-#    
-#    print "$monitored_latency $monitored_abort_rate ";
-#}
+sub update_model
+{
+    
+    #my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['monitored_latency', 'monitored_abort_rate', 'workload_amount']);
+    my $monitored_latency    = $args{monitored_latency};
+    my $monitored_abort_rate = $args{monitored_abort_rate};
+    my $workload_amount      = $args{workload_amount};
+    
+    print "$monitored_latency $monitored_abort_rate $workload_amount";
+}
+
+update_model({monitored_latency=>0.1, monitored_abort_rate=>0.2, workload_amount=>1000});
 
 
 
