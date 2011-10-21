@@ -24,3 +24,16 @@
     background-color: gray;
     opacity: 0.5;
 }
+
+.ui-dialog-buttonset {
+    margin-right: auto;
+    margin-left: auto;
+    width: 48%;
+    button {
+        margin-right: auto;
+        margin-left: auto;
+        border: none;
+        width: 50%;
+        background-color: white;
+    }
+}
