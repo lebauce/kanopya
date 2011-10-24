@@ -2,6 +2,7 @@ package Dashboard;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
+use Dancer::Plugin::EscapeHTML;
 
 use Entity::Cluster;
 use Entity::Component;
@@ -129,6 +130,17 @@ get '/logs' => sub {
         dirs       => \@dirs_info,
         error_msg  => $error_msg
     };
+};
+
+ajax '/logs' => sub {
+    my $log_path = params->{log_id};
+
+    my $log_str = `tail -50 $log_path`;
+    $log_str    = escape_html($log_str);
+
+    content_type('text/plain');
+
+    return $log_str;
 };
 
 =head1 adminComponentsDef

@@ -1,3 +1,5 @@
+<% js_head.push('status.js') %>
+
 <% IF error_msg %>
     <p><% error_msg %></p>
 <% END %>
