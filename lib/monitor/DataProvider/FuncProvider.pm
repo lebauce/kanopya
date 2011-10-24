@@ -44,7 +44,7 @@ FuncProvider - FuncProvider object
     * random (min,max)
         => return rand(min,max)
         
-    * sinus ()
+    * sinus (max, period)
     
 =head1 METHODS
 
@@ -69,6 +69,8 @@ my %funcs = (
                 "custom_sinus"  => \&custom_sinus,
                 "random"        => \&random,
             );
+
+my $timeref;
 
 =head2 new
     
@@ -96,19 +98,23 @@ sub new {
     $self->{_host} = $host;
     #$self->{_start_time} = time();
     
-    my $file = "/tmp/funcprovider.timeref";
-    my $timeref;
-    if ( -e $file ) {
-        open FILE, "<$file";
-        $timeref = <FILE>;
-        close FILE;
-    } else {
-        $timeref = time();
-        open FILE, ">$file";
-        print FILE $timeref;
-        close FILE;
-    }
+#    my $file = "/tmp/funcprovider.timeref";
+#    my $timeref;
+#    if ( -e $file ) {
+#        open FILE, "<$file";
+#        $timeref = <FILE>;
+#        close FILE;
+#    } else {
+#        $timeref = time();
+#        open FILE, ">$file";
+#        print FILE $timeref;
+#        close FILE;
+#    }
+#    $self->{_timeref} = $timeref;
+#    
+    $timeref = time() if (not defined $timeref);
     $self->{_timeref} = $timeref;
+    
     
     # Load conf
     my $conf = XMLin("/opt/kanopya/conf/funcprovider.conf");
@@ -125,7 +131,9 @@ sub new {
 }
 
 sub sinus {
-    return 0;
+    my $self = shift;
+    
+    return $self->custom_sinus(@_);
 }
 
 sub const {
@@ -156,7 +164,7 @@ sub custom_sinus {
     my $max = $var->{max};
     my $dephasage = $var->{dephasage} || 0;
     my $period = $var->{period};
-    my $plate_time = $var->{plate_time};
+    my $plate_time = $var->{plate_time} || 0;
     my $min_plate_time = 60;
     
     my $sin_period = $period - $plate_time;
@@ -174,8 +182,8 @@ sub custom_sinus {
         $res =  $sin > 0 ? $sin : 0;
         $res *= $max;
     }
-    
-    return $res;    
+
+    return $res;
 }
 
 sub linear {
