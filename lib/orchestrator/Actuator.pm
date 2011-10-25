@@ -58,6 +58,9 @@ sub changeClusterConf {
     
     # Manage scale out
     my $node_count_diff = $args{target_conf}{nb_nodes} - $args{current_conf}{nb_nodes};
+
+    
+    $log->debug("===> " . ($node_count_diff < 0 ? "" : "+") . "$node_count_diff node in cluster");
     
     # we return the diff for unit test purpose
     return $node_count_diff;
