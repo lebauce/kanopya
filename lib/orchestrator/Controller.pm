@@ -135,7 +135,7 @@ sub getWorkload {
 
     #my $cluster = $args{cluster};
 
-    my $service_info_set = "haproxy_conn"; #"apache_workers";
+    my $service_info_set = "haproxy_conns"; #"apache_workers";
     my $load_metric = "Active"; #"BusyWorkers";
 
 

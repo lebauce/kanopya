@@ -278,7 +278,20 @@ sub getClusterQoSConstraints {
     my $self = shift;
     my %args = @_;
     
-    return { max_latency => 22, max_abort_rate => 0.3 } ;
+    my $qos_constraints = $self->{db}->resultset('QosConstraint')->search( cluster_id => $args{cluster_id} )->first;
+    
+    if (defined $qos_constraints) {
+        my %data = (
+                max_latency    => $qos_constraints->get_column('constraint_max_latency'),
+                max_abort_rate => $qos_constraints->get_column('constraint_max_abort_rate'),
+                
+            );
+        return \%data;
+    }
+    
+    
+    return { max_latency => 1, max_abort_rate => 0.5 } ;
+    
 }
 
 sub setClusterQoSConstraints {
