@@ -79,6 +79,13 @@ sub calculate {
     
     my $workload_amount = $args{workload_amount};
     
+#    print "Visit ratio = @V\n";
+#    print "S = @S\n";
+#    print "S = @D\n";    
+#    print "AC = @AC\n";
+#    print "LC = @LC\n";
+    
+  
     
     # assert
     die "## ASSERT: MVAModel: no workload amount\n" if ( not defined $workload_amount );
@@ -132,6 +139,9 @@ sub calculate {
         $W[$i] = ($S[$i] - $D[$i]) * $V[$i];
     }
     
+#    print "M = $M, $Na[0], $Na[1]\n";
+#    my $a = <>;
+    
     # TODO study this part (difference between pseudo-code in thesis and moka implementation)
     for (my $i = $M - 1; $i >= 0; $i--) {
         
@@ -140,10 +150,13 @@ sub calculate {
         for (my $j = 1; $j <= $Na[$i]; $j++) {
             my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
    
-            $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );            
+            $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );  
+            
+            
             if ($i < $M - 1) {
-                $La[$i] = $R[$i] + $La[$i + 1];
-                $Lr[$i] = $R[$i] + $Lr[$i + 1];
+                    #print "$i $j $R[$i]+ $La[$i + 1] La[$i + 1]\n";
+                    $La[$i] = $R[$i] + $La[$i + 1];
+                    $Lr[$i] = $R[$i] + $Lr[$i + 1];
             } else {
                 $La[$i] = $R[$i];
                 $Lr[$i] = $R[$i];

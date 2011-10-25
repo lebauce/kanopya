@@ -74,12 +74,12 @@ sub init {
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
-    print "[DEBUG] Init constraints in controlleur init\n";
+    print "[DEBUG][Controller.pm] Init constraints in controlleur init\n";
     
-    my $max_latency    = 0.02;
-    my $max_abort_rate = 0.3;
+    my $max_latency    = 1;
+    my $max_abort_rate = 0.5;
     
-    $cap_plan->setConstraints(constraints => { max_latency => 0.02, max_abort_rate => 0.3 } );
+    $cap_plan->setConstraints(constraints => { max_latency => $max_latency, max_abort_rate => $max_abort_rate } );
     print "[DEBUG] Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n";
     
     $self->{_cap_plan} = $cap_plan;
@@ -203,20 +203,136 @@ sub getMonitoredPerfMetrics {
     };
 }
 
-sub updateModelInternaParameters {
+=head2 _updateModelInternalParameters
+    
+    Class : Private
+    
+    Desc : Launch model autotunning and update parameters and 
+           set the parameters.
+           NEED TO RE-IMPLEMENT method when params DB saving is managed 
+    
+    Args :
+        algo_conf : Configuration of the autotune algorithm configuration 
+        workload :
+        infra_conf : Current infastructure configuration 
+        curr_perf : Monitored performance
+        cluster_id :
+        
+    Return :
+        best_params: Until DB saving is not managed, otherwise return void.
+=cut
+
+sub _updateModelInternalParameters {
+    
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams args => \%args, required => [
+        'algo_conf',
+        'workload',
+        'infra_conf',
+        'curr_perf',
+        'cluster_id'
+    ];
+
+    my $algo_conf         = $args{algo_conf};
+    my $workload          = $args{workload};
+    my $curr_perf         = $args{curr_perf};
+    my $infra_conf        = $args{infra_conf};
+    my $cluster_id        = $args{cluster_id};
+    
+#    print "algo_conf\n";
+#    print Dumper $algo_conf;
+#    print "workload\n";
+#    print Dumper $workload;
+#    print "infra_conf\n";
+#    print Dumper $infra_conf;
+#    print "curr_perf\n";
+#    print Dumper $curr_perf;
+    
+    # Launch autoTune algorithm in order to get Si/Di that match with real
+    # monitored model 
+    my $best_params = $self->modelTuning( 
+        algo_conf  => $algo_conf, 
+        workload   => $workload, 
+        infra_conf => $infra_conf, 
+        curr_perf  => $curr_perf 
+    );
+
+# print Dumper $best_params;
+    
+    
+    
+#    $self->updateModelInternaParameters( cluster_id   => $cluster_id, 
+#                                         delay        => $best_params->{D}, 
+#                                         service_time => $best_params->{S});
+#    $log->debug("update parameters: D = " . (Dumper $args{delay}) . " ## S = " . (Dumper $args{service_time}) );
+    
+    # We update parameters for one cluster (considering only one tier for the moment, no infra entity yet)
+    
+    #print Dumper $best_params;
+    #my $D_in_ms = $best_params->{S};
+    
+    print "Set cluster $cluster_id: \n";
+    
+    # /!\ Set only the first value => 1 tier hardcoding
+    # TODO manage DB in order to save n tiers configuration
+    
+    $self->{data_manager}->setClusterModelParameters( 
+         cluster_id   => $cluster_id,
+         service_time => $best_params->{S}[0], #service_time => $args{service_time}[0]
+         delay        => $best_params->{D}[0], #service_time => $args{service_time}[0]
+    );
+    
+    # /!\ Return the params until we manage the infra in DB !
+    # TODO : DB infra vector
+    return $best_params;
+    #print Dumper $self->{data_manager}->getClusterModelParameters(cluster_id   => $cluster_id);
+}
+    
+    
+=head2 updateModelInternaParameters_old
+    
+    Class : Public
+    
+    Desc : Deprecated, use _updateModelInternaParameters instead
+    
+    
+    Args :
+        Cluster : The monitored cluster
+    
+    Return :
+        HASHREF {latency=>float, abort_rate=>float (not implemented yet)); throughput=>(not implemented yet)}
+=cut
+
+sub updateModelInternaParameters_old {
     my $self = shift;
     my %args = @_;
     
-    my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
+    my $cluster_id = $args{cluster_id}; #$args{cluster}->getAttr('name' => 'cluster_id');
     
     $log->debug("update parameters: D = " . (Dumper $args{delay}) . " ## S = " . (Dumper $args{service_time}) );
     
     # We update parameters for one cluster (considering only one tier for the moment, no infra entity yet)
     $self->{data_manager}->setClusterModelParameters( 
-                                                        cluster_id =>  $cluster_id,
-                                                        delay => $args{delay}[0],
-                                                        service_time => $args{service_time}[0]  );
+        cluster_id   => $cluster_id,
+        delay        => $args{delay}[0],
+        service_time => $args{service_time}[0]
+    );
     }
+
+=head2 preManageCluster
+    
+    Class : Public
+    
+    Desc : Get the needed datas and launch the Kica main algorithm 
+    
+    Args :
+        Cluster : The monitored cluster
+    
+    Return : void
+
+=cut
 
 sub preManageCluster{
     my $self = shift;
@@ -227,36 +343,69 @@ sub preManageCluster{
     my $cluster    = $args{cluster};
     my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
     
-     # Refresh qos constraints
-     my $constraints = $self->{data_manager}
+        
+    # Refresh qos constraints
+    # TODO make one sub with these two instruction ($contraints not used elsewhere)
+     
+    my $constraints = $self->{data_manager}
                             ->getClusterQoSConstraints( 
                                 cluster_id => $cluster_id 
-                                );
-                                
-     $self->{_cap_plan}->setConstraints(constraints => $constraints );
+    );
+    $self->{_cap_plan}->setConstraints(constraints => $constraints );
     
-     # Note: workload format : {workload_amount, workload_class}
-     # Note: workload_class format : {visit_ratio, service_time, delay, think_time}
-     my $workload     = $self->getWorkload( cluster => $cluster);
+    print Dumper $constraints;
      
-     # Note: curr_perf format : {throughput, latency, abort_rate} 
-     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $args{cluster});     
-     my $cluster_conf = $self->getClusterConf( cluster => $cluster );     
-     my $infra_conf   = {
-                 M        => 1,
-                 AC       => [$cluster_conf->{nb_nodes}],
-                 LC       => [$cluster_conf->{mpl}],
-            };
+    # TODO Study where to get this information (need real study)
+    my $nb_tiers = 1; 
+    
+    #Get all data before launching ManageCluster
+    
+    # [Format] workload: {workload_amount, workload_class}
+    # [Format] workload_class: {visit_ratio, service_time, delay, think_time}
+    my $workload     = $self->getWorkload( cluster => $cluster);
+    
+    # [Format] curr_perf: {throughput, latency, abort_rate} 
+    my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);     
+    my $cluster_conf = $self->getClusterConf( cluster => $cluster );     
 
-     
-    my $optim_params = $self->ManageCluster( cluster    => $cluster, 
-                          workload   => $workload, 
-                          curr_perf  => $curr_perf, 
-                          infra_conf => $infra_conf );
+    # TODO Study where to get this information (need real study)
+    my $infra_conf   = {
+        M        => $nb_tiers,
+        AC       => [$cluster_conf->{nb_nodes}],
+        LC       => [$cluster_conf->{mpl}],
+    };
     
+    # TODO just use cluster_id this param is only used 
+    my $cluster_params = {
+                    cluster_id => $cluster->getAttr('name' => 'cluster_id'),
+    };
+
+    # TODO Study where to get this information (need real study)
+    my @search_space = (); 
+    for (0..$nb_tiers)
+    {
+       push @search_space, 
+        {
+            min_node => $cluster->getAttr(name => 'cluster_min_node'), 
+            max_node => $cluster->getAttr(name => 'cluster_max_node'),
+            min_mpl  => $cluster_conf->{mpl},
+            max_mpl  => $cluster_conf->{mpl},
+        };
+    }
+    
+    # Launch the algorithm with all the data
+    my $optim_params = $self->manageCluster( 
+        cluster_params => $cluster_params, 
+        workload       => $workload, 
+        curr_perf      => $curr_perf, 
+        infra_conf     => $infra_conf,
+        search_space   => \@search_space,
+    );
+    
+
     # Apply optimal configuration
     # TODO This method signature should be changed to handle infra in a better way
-    
+
     $self->{_actuator}->changeInfraConf(
                         infra => [ { cluster => $cluster, conf => $cluster_conf } ],
                         target_conf => $optim_params,
@@ -264,45 +413,68 @@ sub preManageCluster{
     
 }
 
+=head2 manageCluster
+    
+    Class : Public
+    
+    Desc : Main Kica algorithm
+    
+    Args :
+        cluster_params: Currently only {cluster_id} in order to save best params 
+        Di/Si
+        workload: {workload_amount, workload_class} 
+        curr_perf: {throughput, latency, abort_rate} Monitored performance
+        infra_conf: {M, AC, LC} current infrastructure configuration
+        search_space: @search_space. For each tier : {min_node, max_node, 
+            min_mpl, max_mpl}. Use to set the capacity planning algorithm
+        
+    Return : $optim_params optimal infrastructure to feed actuators
+
+=cut
+
 sub manageCluster {
 
     my $self = shift;
     my %args = @_;
 
-    General::checkParams args => \%args, required => ['cluster','workload','curr_perf', 'infra_conf'];
+    General::checkParams args => \%args, required => ['cluster_params','workload','curr_perf', 'infra_conf', 'search_space'];
 
-    my $cluster    = $args{cluster};
-    my $workload   = $args{workload};
-    my $curr_perf  = $args{curr_perf};
-    my $infra_conf = $args{infra_conf};
-    # Note: workload format :       {workload_amount, workload_class}
-    # Note: workload_class format : {visit_ratio, service_time, delay, think_time}
-    # Note: curr_perf format :      {throughput, latency, abort_rate} 
-    # Note: infra_conf format :     {M, AC, LC} 
+    my $cluster_params = $args{cluster_params};
+    my $workload       = $args{workload};
+    my $curr_perf      = $args{curr_perf};
+    my $infra_conf     = $args{infra_conf};
+    my $search_space   = $args{search_space};
     
+    # [Format] workload:       {workload_amount, workload_class}
+    # [Format] workload_class: {visit_ratio, service_time, delay, think_time}
+    # [Format] curr_perf:      {throughput, latency, abort_rate} 
+    # [Format] infra_conf:     {M, AC, LC} 
+    # [Format] search_space
     
-    my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
+    #my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');    
     
     #print "[DEBUG] Constraints not updated here (preManagaCluster) \n";
     # Refresh qos constraints
     # my $constraints = $self->{data_manager}->getClusterQoSConstraints( cluster_id => $cluster_id );
     # $self->{_cap_plan}->setConstraints(constraints => $constraints );    
     
+    
+    # Capacity planning settings 
+    # TODO one setting sub 
+    $self->{_cap_plan}->setSearchSpaceForTiers(search_spaces => $search_space);
+    $self->{_cap_plan}->setNbTiers( tiers => $infra_conf->{M});
 
-    
-    # Capacity planning settings
-    my $mpl = $infra_conf->{LC}->[0];
-    
-    $self->{_cap_plan}->setSearchSpaceForTiers( search_spaces =>     [ 
-                {   
-                    min_node => $cluster->getAttr(name => 'cluster_min_node'), 
-                    max_node => $cluster->getAttr(name => 'cluster_max_node'),
-                    min_mpl  => $mpl,
-                    max_mpl  => $mpl,}
-                ]
-    );   
-    
-    $self->{_cap_plan}->setNbTiers( tiers => 1);
+    #my $mpl = $infra_conf->{LC}->[0];
+    #    $self->{_cap_plan}->setSearchSpaceForTiers( search_spaces =>     [ 
+    #                {   
+    #                    #min_node => $cluster->getAttr(name => 'cluster_min_node'), 
+    #                    #max_node => $cluster->getAttr(name => 'cluster_max_node'),
+    #                    min_node => $cluster_params->{cluster_min_node}, 
+    #                    max_node => $cluster_params->{cluster_max_node},
+    #                    min_mpl  => $mpl,
+    #                    max_mpl  => $mpl,}
+    #                ]
+    #    );
     
     #print "[DEBUG] Hardcoding metrics\n";
     #my $workload    = $self->getWorkload( cluster => $cluster);
@@ -328,67 +500,89 @@ sub manageCluster {
     #print Dumper $infra_conf;
     
     
-        
-
-    
     my $algo_conf   = {
         nb_steps            => 40,
         init_step_size      => 5,
         init_point_position => 1,
-        
     };
     
-    my $best_params = $self->modelTuning( 
-            algo_conf  => $algo_conf, 
-            workload   => $workload, 
-            infra_conf => $infra_conf, 
-            curr_perf  => $curr_perf 
-        );
+#    my $best_params = $self->modelTuning( 
+#            algo_conf  => $algo_conf, 
+#            workload   => $workload, 
+#            infra_conf => $infra_conf, 
+#            curr_perf  => $curr_perf 
+#        );
+#
+#    $self->updateModelInternaParameters( cluster_id   => $cluster_params->{cluster_id}, 
+#                                         delay        => $best_params->{D}, 
+#                                         service_time => $best_params->{S});
+
+
+    # Autotune Model and set model parameters (Si and Di)
+    # /!\ Output $best_params only used until infra not managed in DB
+    # TODO Modify DB in order to store params (need real study)
+    my $best_params = 
+        $self->_updateModelInternalParameters(
+        algo_conf    => $algo_conf,
+        workload     => $workload,
+        infra_conf   => $infra_conf,
+        cluster_id   => $cluster_params->{cluster_id},
+        curr_perf    => $curr_perf,
+    );
+
+    # Get actual internal model parameters (Si and Di)
+    # Get from DB (theoreticaly updated by _updateModelInternalParameters() sub)
+    my $cluster_workload_class = $self->{data_manager}
+                                      ->getClusterModelParameters(
+                                            cluster_id =>$cluster_params->{cluster_id} 
+                                       );
+                                       
+    #  /!\ Useful while DB INFRA NOT MANAGED ! /!\ 
+    # Need to update here for the moment
+    $cluster_workload_class -> {service_time} = $best_params -> {S};
+    $cluster_workload_class -> {delay} = $best_params -> {D};
     
+    # Feed capacity planning with computed Si/Di
+    $workload->{workload_class}->{service_time} = $cluster_workload_class->{service_time}; 
+    $workload->{workload_class}->{delay}        = $cluster_workload_class->{delay};
     
-    #print Dumper $best_params;
+    # $workload->{workload_class}->{service_time} = $best_params->{S};
+    # $workload->{workload_class}->{delay}        = $best_params->{D};
+    print "Si = @{$workload->{workload_class}->{service_time}} ; Di = @{$workload->{workload_class}->{delay}}\n";
     
-    $self->updateModelInternaParameters( cluster      => $cluster, 
-                                         delay        => $best_params->{D}, 
-                                         service_time => $best_params->{S});
-    
-    
-    $workload->{workload_class}->{service_time} = $best_params->{S};
-    $workload->{workload_class}->{delay}        = $best_params->{D};
-    
-    #print Dumper $workload;
     # Store and graph results for futur consultation
     # $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
     
     
     # Calculate optimal configuration
-    my $optim_params = $self->{_cap_plan}->calculate( workload_amount => $workload->{workload_amount},
-                                                    workload_class => $workload->{workload_class} );
+    my $optim_params = $self->{_cap_plan}->calculate(
+        workload_amount => $workload->{workload_amount},
+        workload_class  => $workload->{workload_class}
+    );
     
     print "[DEBUG] Configuration optimale : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n";
-        
+    
+    # All the end of the algo is the new perf computation only useful for [DEBUG]
     
     my $optim_conf = {
-        M        => $infra_conf->{M},
-        AC       => $optim_params->{AC},
-        LC       => $optim_params->{LC},
+        M  => $infra_conf->{M},
+        AC => $optim_params->{AC},
+        LC => $optim_params->{LC},
     };
     
+    
+        
     my %model_optim_params = (
-            configuration => $optim_conf,
-            workload_amount => $workload->{workload_amount},
-            workload_class => $workload->{workload_class}
+        configuration   => $optim_conf,
+        workload_amount => $workload->{workload_amount},
+        workload_class  => $workload->{workload_class}
     );
     
     #print Dumper \%model_optim_params;
     
+
     my %new_perf = $self->{_model}->calculate(%model_optim_params);
-    
-    
-    #print Dumper \%new_perf;
-    
     print "[DEBUG] Nouvelles performances : throughput = $new_perf{throughput}, latency = $new_perf{latency}, abort_rate = $new_perf{abort_rate}\n";
-    
      
     return $optim_params;
     
@@ -474,6 +668,8 @@ sub modelTuning {
                                            }
                 );
               
+                
+                
                 
                 #print Dumper \%model_params;
                 

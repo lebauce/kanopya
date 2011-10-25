@@ -26,32 +26,29 @@ my %QoS = $model->calculate(
 
 cmp_deeply(\%QoS,
 {
-            'throughput' => '48152.6722962806',
+          'throughput' => '48152.6722962806',
           'latency' => '0.060875',
           'abort_rate' => '0.66161849084335'
     
 },'scenario 1 for MVAModel checked');
 
-$workload_amount = 1000;
-$nb_tiers = 1;
-%workload_class = ( visit_ratio => [1],
-               service_time => [0.001],
-               delay => [0],
+$workload_amount = 2000;
+$nb_tiers = 2;
+%workload_class = ( 
+               visit_ratio => [1,0.5],
+               service_time => [0.05,0.05],
+               delay => [0,0.01],
                think_time => 5 );
-@AC = (3);
-@LC = (150);
-%QoS = $model->calculate(  
+@AC = (2,2);
+@LC = (500,500);
+
+%QoS = $model->calculate(
     configuration => { M => $nb_tiers, AC => \@AC, LC => \@LC},
     workload_class => \%workload_class,
     workload_amount => $workload_amount );
     
+print "latency=$QoS{latency}, abort_rate=$QoS{abort_rate}, throughput=$QoS{throughput}\n";    
 print Dumper \%Qos;
 
-cmp_deeply(\%QoS,
-{
-            'throughput' => '48152.6722962806',
-          'latency' => '0.060875',
-          'abort_rate' => '0.66161849084335'
-    
-},'scenario 2 for MVAModel checked');
+
 

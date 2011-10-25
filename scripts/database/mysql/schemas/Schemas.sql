@@ -665,10 +665,10 @@ CREATE TABLE `rule` (
 
 CREATE TABLE `workload_characteristic` (
   `wc_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `wc_visit_ratio` int(8) NOT NULL,
-  `wc_service_time` int(8) NOT NULL,
-  `wc_delay` int(8) NOT NULL,
-  `wc_think_time` int(8) NOT NULL,
+  `wc_visit_ratio` double NOT NULL,
+  `wc_service_time` double NOT NULL,
+  `wc_delay` double NOT NULL,
+  `wc_think_time` double NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`wc_id`),
   KEY `fk_wc_1` (`cluster_id`),
