@@ -196,7 +196,8 @@ sub setConf {
 }
 
 sub getNetConf {
-    return { 514 => ['udp'] };
+    # TODO return depending on conf
+    #return { 514 => ['udp'] };
 }
 
 =head2 insertDefaultConfiguration
