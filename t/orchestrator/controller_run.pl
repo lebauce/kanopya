@@ -10,4 +10,4 @@ use Controller;
 my $controller = Controller->new();
 
 my $running = 1;
-$controller >run( \$running );
+$controller->run( \$running );
