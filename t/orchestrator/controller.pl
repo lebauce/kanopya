@@ -27,34 +27,67 @@ eval{
                  cluster_domainname => 'my.domain',
                  cluster_si_shared => '1',
                  );
-    my $running = 1;
+                 
+    $cluster -> save();
     
+    my $running = 1;
     
     my $controller = Controller->new();
     
+{    
+    my $infra_conf   = {
+        M  => 1,
+        AC => [2],
+        LC => [1000],
+    };
+}
     
-     my $infra_conf   = {
-             M        => 1,
-             AC       => [2],
-             LC       => [1000],
-        };
-            
-    for $i (1..10)
+    my $infra_conf   = {
+        M  => 2,
+        AC => [2,2],
+        LC => [400,400],
+    };
+
+    my $nb_loop = 5;
+    for $i (1..$nb_loop)
     {
-        my $workload   = getWorkloadHC($i); 
-        print Dumper $workload;
+        my $workload   = getWorkloadHC($i,$infra_conf->{M}); 
+        #print Dumper $workload;
         my $curr_perf  = getMonitoredPerfMetricsHC();
-        print Dumper $curr_perf;
+        print "Monitoring: latency = $curr_perf->{latency}, abort_rate =  $curr_perf->{abort_rate}, throughput = $curr_perf->{throughput}\n";
+        
+
+        my $cluster_params = {
+                    cluster_id       => $cluster->getAttr(name => 'cluster_id'),
+        };
+        
+        #print Dumper $cluster_params;
+        
+        my @search_space = (); 
+        for $i (0..$infra_conf->{M}-1)
+        {
+           push @search_space, 
+            {
+                min_node => $cluster->getAttr(name => 'cluster_min_node'), 
+                max_node => $cluster->getAttr(name => 'cluster_max_node'),
+                min_mpl  => $infra_conf->{LC}[$i],
+                max_mpl  => $infra_conf->{LC}[$i],
+            };
+        }
+        
+        #print Dumper \@search_space;
+        
+        #$controller->preManageCluster(cluster => $cluster);
         
         my $optim_param = $controller->manageCluster( 
-            cluster => $cluster, 
-            workload => $workload, 
-            curr_perf => $curr_perf, 
-            infra_conf => $infra_conf 
+            cluster_params => $cluster_params, 
+            workload       => $workload, 
+            curr_perf      => $curr_perf, 
+            infra_conf     => $infra_conf,
+            search_space  => \@search_space, 
             );
-        print "a\n";    
-        print Dumper $optim_param;
-        print "b\n";
+           
+        #print Dumper $optim_param;
     }
     
     #$controller->run( \$running );
@@ -73,9 +106,9 @@ if($@) {
 
 
 sub getWorkloadHC
-{   my $counter = shift;
+{   my $counter      = shift;
+    my $nb_tiers     = shift;
     
-    my $nb_tiers     = 1;
     my $visit_ratio  = [];
     my $delay        = [];
     my $service_time = [];
@@ -90,13 +123,17 @@ sub getWorkloadHC
     for (0..$nb_tiers-1)
     {
         push(@$delay, 0.01);
-        push(@$visit_ratio,1);
+        push(@$visit_ratio,0.5);
         push(@$service_time,0.02);
     }
+    
+    $delay->[0]       = 0;
+    $visit_ratio->[0] = 1;
+    
     my $workload_class = { 
                visit_ratio  => $visit_ratio,
-               service_time => undef, #Will be given by autotune algorithm
-               delay        => undef, #Will be given by autotune algorithm
+               service_time => $service_time,
+               delay        => $delay,
                think_time   => $think_time,
     };
 

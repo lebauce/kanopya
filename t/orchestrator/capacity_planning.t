@@ -35,6 +35,7 @@ for (0..2)
     };
 }
 
+print Dumper $search_spaces;
 my $workload_amount = 1000;
 
 $cap_plan->setSearchSpaceForTiers(search_spaces => \@search_spaces);

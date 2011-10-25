@@ -39,12 +39,18 @@ sub search {
     my $nb_tiers = $self->{_nb_tiers};    
     my $workload_amount = $args{workload_amount};
     my %workload_class = %{ $args{workload_class} };
-    #print Dumper \%workload_class;
     
+    
+#    print Dumper \%workload_class;
+#    print "kikou $nb_tiers, $workload_amount\n";
+        
+    
+#    print Dumper $self->{_search_spaces};
     my @min_node = map { $_->{min_node} || 1 } @{ $self->{_search_spaces} };
     my @max_node = map { $_->{max_node} || 1 } @{ $self->{_search_spaces} };
             
-            
+#    print "MinN = @min_node; MaxN = @max_node\n";
+    
     # new conf
     my @AC     = ();
     my @LC     = ();
@@ -58,7 +64,7 @@ sub search {
         }
         push @LC, $max_mpl;
     }
-    #
+    print "AC = @AC, LC = @LC\n";
     
     my %perf;
     my @next_AC = @AC;
@@ -98,8 +104,11 @@ sub search {
         }
        
         @curr_AC = @next_AC;
-        #print "AC: @curr_AC  #  LC: @LC\n";
+        #print "AC: @curr_AC  #  LC: @LC, $workload_amount\n";
+        
+
         #print Dumper \%workload_class;
+        
         
         %perf = $self->{_model}->calculate( configuration => { M => $nb_tiers, AC => \@curr_AC, LC => \@LC},
                                              workload_class => \%workload_class,

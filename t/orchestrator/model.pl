@@ -43,6 +43,8 @@ my @AC = (1);
 my @LC = (150);
 }
 
+
+{
 %var = (
           'workload_amount' => 1000,
           'workload_class' => {
@@ -65,6 +67,33 @@ my @LC = (150);
                                          1000
                                        ],
                                'M' => 1
+                             }
+        );
+}
+
+
+%var = (
+          'workload_amount' => 2000,
+          'workload_class' => {
+                                'visit_ratio' => [
+                                                   1,1
+                                                 ],
+                                'service_time' => [
+                                                    0.02,0.02
+                                                  ],
+                                'delay' => [
+                                             0.01,0.01
+                                           ],
+                                'think_time' => 5
+                              },
+          'configuration' => {
+                               'AC' => [
+                                         2,2
+                                       ],
+                               'LC' => [
+                                         250,250
+                                       ],
+                               'M' => 2
                              }
         );
 
