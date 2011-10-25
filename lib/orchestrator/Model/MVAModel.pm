@@ -59,25 +59,38 @@ B<throws>  : None
 =cut
 
 sub calculate {
+    
     my $self = shift;
     my %args = @_;
     
     
-    
+    #print Dumper $args{workload_class};
     my $M   = $args{configuration}{M};
+    
+    
     my @AC  = @{ $args{configuration}{AC} };
     my @LC  = @{ $args{configuration}{LC} };
+    
     
     my @V   = @{ $args{workload_class}{visit_ratio} };  # Visit ratio
     my @S   = @{ $args{workload_class}{service_time} }; # Service time
     my @D   = @{ $args{workload_class}{delay} };        # Delay (communication between tiers)
-    my $Z   = $args{workload_class}{think_time};        # Think time
+    my $Z   = $args{workload_class}{think_time};        # Think time       
     
     my $workload_amount = $args{workload_amount};
+    
+#    print "Visit ratio = @V\n";
+#    print "S = @S\n";
+#    print "S = @D\n";    
+#    print "AC = @AC\n";
+#    print "LC = @LC\n";
+    
+  
     
     # assert
     die "## ASSERT: MVAModel: no workload amount\n" if ( not defined $workload_amount );
     die "## ASSERT: MVAModel: workload_class->think_time must be > 0\n" if ( $Z <= 0 );
+    
     
     ####
     # Calculate the entering admission control
@@ -120,26 +133,36 @@ sub calculate {
     my @Ta  = (); # Throughput of request admitted at Ti ..TM
     my @Tr  = (); # Throughput of request admitted at Ti and rejected at Ti+1 ..TM
     
+    
     for my $i (0 .. $M-1) {
         $Ql[$i] = 0;
         $W[$i] = ($S[$i] - $D[$i]) * $V[$i];
     }
     
+#    print "M = $M, $Na[0], $Na[1]\n";
+#    my $a = <>;
+    
     # TODO study this part (difference between pseudo-code in thesis and moka implementation)
     for (my $i = $M - 1; $i >= 0; $i--) {
+        
         # Client insertion
         #for (my $j = 1; $j < $Na[$i]; $j++) {
         for (my $j = 1; $j <= $Na[$i]; $j++) {
             my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
    
-            $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );
+            $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );  
+            
+            
             if ($i < $M - 1) {
-                $La[$i] = $R[$i] + $La[$i + 1];
-                $Lr[$i] = $R[$i] + $Lr[$i + 1];
+                    #print "$i $j $R[$i]+ $La[$i + 1] La[$i + 1]\n";
+                    $La[$i] = $R[$i] + $La[$i + 1];
+                    $Lr[$i] = $R[$i] + $Lr[$i + 1];
             } else {
                 $La[$i] = $R[$i];
                 $Lr[$i] = $R[$i];
             }
+            
+            
             
             # /!\ WARNING /!\ Potential cast problem in the original java algo ?
             $Ta[$i] = ($j * $Nap[$i] / $Na[$i]) / ($La[$i] + $Z);
@@ -149,14 +172,15 @@ sub calculate {
             #Compliance with MOKA code
             $Ql[$i] = int(($Ta[$i] + $Tr[$i]) * $R[$i]);
         }
+        #print "La[$i] = $La[$i]\n";
     }
-
+   
     my $latency = $La[0];
         
     ######
     #  Service throughput and abandon rate
     ######
-        
+    
     my $Ta_total = $N_admitted / ($La[0] + $Z);    # throughput of requets admitted at T1 ..TM <=> total throughput    
     my $Tr_total = $Nr[0] / $Z;    # throughput of requets admitted at T1 and rejected at T2 ..TM
     my $Trp = ($N_rejected - $Nr[0]) / ($Lr[0] + $Z); # throughput of requests rejected at T1
