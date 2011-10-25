@@ -121,8 +121,10 @@ sub getNetConf {
     
     my $conf = $self->getConf();
     
-    return { $conf->{haproxy1_http_frontend_port} => ['tcp'],
-             $conf->{haproxy1_https_frontend_port} => ['tcp', 'ssl'] };
+    # TODO manage check depending on master node or not
+    return;
+    #return { $conf->{haproxy1_http_frontend_port} => ['tcp'],
+    #         $conf->{haproxy1_https_frontend_port} => ['tcp', 'ssl'] };
 
 }
 
