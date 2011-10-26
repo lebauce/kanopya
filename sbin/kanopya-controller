@@ -30,6 +30,7 @@ kanopya-controller - Controller
 
 controller is the main script to run kanopya infrastructure control automation.
 controller loop do dynamic capacity planning and change infrastructure configuration.
+controller is part of kanopya orchestration.
 
 =head1 METHODS
 
