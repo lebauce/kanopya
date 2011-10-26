@@ -54,7 +54,7 @@ eval{
         my $workload   = getWorkloadHC($i,$infra_conf->{M}); 
         #print Dumper $workload;
         my $curr_perf  = getMonitoredPerfMetricsHC();
-        print "Monitoring: latency = $curr_perf->{latency}, abort_rate =  $curr_perf->{abort_rate}, throughput = $curr_perf->{throughput}\n";
+        print "[Test] latency = $curr_perf->{latency}, abort_rate =  $curr_perf->{abort_rate}, throughput = $curr_perf->{throughput}\n";
         
 
         my $cluster_params = {

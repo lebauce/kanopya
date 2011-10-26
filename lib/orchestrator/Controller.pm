@@ -66,7 +66,7 @@ sub init {
     
     $self->{_monitor} = Monitor::Retriever->new( );
     
-    $self->{_time_step} = 10; # controller update frequency
+    $self->{_time_step} = 60; # controller update frequency
     $self->{_time_laps} = 60; # metrics retrieving laps
     
     my $model = Model::MVAModel->new();
@@ -74,13 +74,13 @@ sub init {
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
-    print "[DEBUG][Controller.pm] Init constraints in controlleur init\n";
+    $log->info( "[Controller] Init constraints in controlleur init\n");
     
     my $max_latency    = 1;
     my $max_abort_rate = 0.5;
     
     $cap_plan->setConstraints(constraints => { max_latency => $max_latency, max_abort_rate => $max_abort_rate } );
-    print "[DEBUG] Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n";
+    $log->info("[Controller] Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n");
     
     $self->{_cap_plan} = $cap_plan;
 
@@ -146,7 +146,7 @@ sub getWorkload {
                                                                  set => $service_info_set,
                                                                  time_laps => $self->{_time_laps});
 
-    print Dumper $cluster_data_aggreg;
+    #print Dumper $cluster_data_aggreg;
         
         
     if (not defined $cluster_data_aggreg->{$load_metric} ) {
@@ -194,10 +194,10 @@ sub getMonitoredPerfMetrics {
                                                                  set => "haproxy_timers",
                                                                  time_laps => $self->{_time_laps});
 
-    print Dumper $cluster_data_aggreg;
+    #print Dumper $cluster_data_aggreg;
     
     return {
-      latency => $cluster_data_aggreg->{Tt},
+      latency => $cluster_data_aggreg->{Tt}/1000, #get ms and return seconds
       abort_rate => 0,
       throughput => 0,
     };
@@ -273,7 +273,6 @@ sub _updateModelInternalParameters {
     #print Dumper $best_params;
     #my $D_in_ms = $best_params->{S};
     
-    print "Set cluster $cluster_id: \n";
     
     # /!\ Set only the first value => 1 tier hardcoding
     # TODO manage DB in order to save n tiers configuration
@@ -353,7 +352,8 @@ sub preManageCluster{
     );
     $self->{_cap_plan}->setConstraints(constraints => $constraints );
     
-    print Dumper $constraints;
+    $log->info("Qos constraints: Max abort rate = $constraints->{max_abort_rate}, Max latency = $constraints->{max_latency}");
+    #print Dumper $constraints;
      
     # TODO Study where to get this information (need real study)
     my $nb_tiers = 1; 
@@ -364,9 +364,25 @@ sub preManageCluster{
     # [Format] workload_class: {visit_ratio, service_time, delay, think_time}
     my $workload     = $self->getWorkload( cluster => $cluster);
     
+    $log->info("Monitored workload amount $workload->{workload_amount}");
+    $log->info("Monitored workload_class 
+        visit_ratio = $workload->{workload_class}->{visit_ratio};
+        service_time = $workload->{workload_class}->{service_time};
+        delay = $workload->{workload_class}->{delay}; 
+        think_time = $workload->{workload_class}->{think_time}"
+     );
+    
     # [Format] curr_perf: {throughput, latency, abort_rate} 
     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);     
     my $cluster_conf = $self->getClusterConf( cluster => $cluster );     
+
+    $log->info("Monitored perf latency = $curr_perf->{latency}, 
+    abort_rate = $curr_perf->{abort_rate} (not implemented yet), 
+    throughput = $curr_perf->{throughput} (not implemented)");
+
+#      latency => $cluster_data_aggreg->{Tt},
+#      abort_rate => 0,
+#      throughput => 0,
 
     # TODO Study where to get this information (need real study)
     my $infra_conf   = {
@@ -548,7 +564,7 @@ sub manageCluster {
     
     # $workload->{workload_class}->{service_time} = $best_params->{S};
     # $workload->{workload_class}->{delay}        = $best_params->{D};
-    print "Si = @{$workload->{workload_class}->{service_time}} ; Di = @{$workload->{workload_class}->{delay}}\n";
+    $log->info("Computed params Si = @{$workload->{workload_class}->{service_time}} ; Di = @{$workload->{workload_class}->{delay}}\n");
     
     # Store and graph results for futur consultation
     # $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
@@ -560,7 +576,7 @@ sub manageCluster {
         workload_class  => $workload->{workload_class}
     );
     
-    print "[DEBUG] Configuration optimale : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n";
+    $log->info("[Controller] Configuration optimale : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n");
     
     # All the end of the algo is the new perf computation only useful for [DEBUG]
     
@@ -582,7 +598,7 @@ sub manageCluster {
     
 
     my %new_perf = $self->{_model}->calculate(%model_optim_params);
-    print "[DEBUG] Nouvelles performances : throughput = $new_perf{throughput}, latency = $new_perf{latency}, abort_rate = $new_perf{abort_rate}\n";
+    $log->info(sprintf("[Controller] New theoretical perf : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate}));
      
     return $optim_params;
     
@@ -876,7 +892,7 @@ sub update {
     
     for my $cluster (@clusters) {        
         my $cluster_name = $cluster->getAttr('name' => 'cluster_name');
-        print "CLUSTER: " . $cluster_name . "\n ";
+        $log->info( "CLUSTER: " . $cluster_name . "\n ");
         #if($cluster->getAttr('name' => 'active')) 
         {
             # TODO get controller/orchestration conf for this cluster and init this controller

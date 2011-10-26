@@ -64,7 +64,7 @@ sub search {
         }
         push @LC, $max_mpl;
     }
-    print "AC = @AC, LC = @LC\n";
+    #print "AC = @AC, LC = @LC\n";
     
     my %perf;
     my @next_AC = @AC;
@@ -81,7 +81,7 @@ sub search {
         
         if (($try_count++ > $max_try)) {
             $log->warn("Can not find configuration to meet constraints after $max_try iterations (max)");
-            print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)\n");
+            #print("[DEBUG] Can not find configuration to meet constraints after $max_try iterations (max)\n");
             return { AC => \@curr_AC, LC => \@LC };;
             
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
@@ -93,7 +93,7 @@ sub search {
         }
         if (not $new_conf) {
             $log->warn("Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]");
-            print("[DEBUG] Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]\n");
+            #print("[DEBUG] Can not find configuration to meet constraints: max node reached [" . join(',', @max_node) . "]\n");
             return { AC => \@curr_AC, LC => \@LC };;
             # /!\ IMPROVABLE WHEN ONLY 1 TIER IS BOTTLENECK
 #            for my $i (0..$nb_tiers-1){
