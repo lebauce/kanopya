@@ -364,11 +364,19 @@ sub preManageCluster{
     # [Format] workload_class: {visit_ratio, service_time, delay, think_time}
     my $workload     = $self->getWorkload( cluster => $cluster);
     
+    $log->info("Monitored workload amount $workload->{workload_amount}");
+    $log->info("Monitored workload_class 
+        visit_ratio = $workload->{workload_class}->{visit_ratio};
+        service_time = $workload->{workload_class}->{service_time};
+        delay = $workload->{workload_class}->{delay}; 
+        think_time = $workload->{workload_class}->{think_time}"
+     );
+    
     # [Format] curr_perf: {throughput, latency, abort_rate} 
     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);     
     my $cluster_conf = $self->getClusterConf( cluster => $cluster );     
 
-    $log->info("[Controller] Monitored perf latency = $curr_perf->{latency}, 
+    $log->info("Monitored perf latency = $curr_perf->{latency}, 
     abort_rate = $curr_perf->{abort_rate} (not implemented yet), 
     throughput = $curr_perf->{throughput} (not implemented)");
 
