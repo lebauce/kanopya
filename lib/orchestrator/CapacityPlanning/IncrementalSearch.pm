@@ -64,7 +64,7 @@ sub search {
         }
         push @LC, $max_mpl;
     }
-    print "AC = @AC, LC = @LC\n";
+    #print "AC = @AC, LC = @LC\n";
     
     my %perf;
     my @next_AC = @AC;
