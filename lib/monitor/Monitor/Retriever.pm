@@ -127,8 +127,8 @@ sub getData {
         }
     }
 
-    print "\n###############   ", "getData res data   # $args{rrd_name} #", "   ##########\n";
-    print Dumper \%res_data;
+    #print "\n###############   ", "getData res data   # $args{rrd_name} #", "   ##########\n";
+    #print Dumper \%res_data;
 
     ######################################################
     # Build resulting hash : ( ds_name => f(v1,v2,...) ) #
@@ -153,8 +153,8 @@ sub getData {
     }
 
     # debug
-    print "\n###############   ", "getData res", "   ##########\n";
-    print Dumper \%res;
+    #print "\n###############   ", "getData res", "   ##########\n";
+    #print Dumper \%res;
     
     Monitor::logRet( %res );
     
