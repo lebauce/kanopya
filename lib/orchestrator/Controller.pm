@@ -74,13 +74,13 @@ sub init {
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
-    print "[DEBUG][Controller.pm] Init constraints in controlleur init\n";
+    print "[Controller] Init constraints in controlleur init\n";
     
     my $max_latency    = 1;
     my $max_abort_rate = 0.5;
     
     $cap_plan->setConstraints(constraints => { max_latency => $max_latency, max_abort_rate => $max_abort_rate } );
-    print "[DEBUG] Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n";
+    print "[Controller] Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n";
     
     $self->{_cap_plan} = $cap_plan;
 
@@ -273,7 +273,6 @@ sub _updateModelInternalParameters {
     #print Dumper $best_params;
     #my $D_in_ms = $best_params->{S};
     
-    print "Set cluster $cluster_id: \n";
     
     # /!\ Set only the first value => 1 tier hardcoding
     # TODO manage DB in order to save n tiers configuration
@@ -560,7 +559,7 @@ sub manageCluster {
         workload_class  => $workload->{workload_class}
     );
     
-    print "[DEBUG] Configuration optimale : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n";
+    print "[Controller] Configuration optimale : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n";
     
     # All the end of the algo is the new perf computation only useful for [DEBUG]
     
@@ -582,7 +581,7 @@ sub manageCluster {
     
 
     my %new_perf = $self->{_model}->calculate(%model_optim_params);
-    print "[DEBUG] Nouvelles performances : throughput = $new_perf{throughput}, latency = $new_perf{latency}, abort_rate = $new_perf{abort_rate}\n";
+    printf("[Controller] Nouvelles performances : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate});
      
     return $optim_params;
     
