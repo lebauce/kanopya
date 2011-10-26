@@ -66,7 +66,7 @@ sub init {
     
     $self->{_monitor} = Monitor::Retriever->new( );
     
-    $self->{_time_step} = 20; # controller update frequency
+    $self->{_time_step} = 60; # controller update frequency
     $self->{_time_laps} = 60; # metrics retrieving laps
     
     my $model = Model::MVAModel->new();
