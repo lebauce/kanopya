@@ -366,9 +366,9 @@ sub preManageCluster{
     
     $log->info("Monitored workload amount $workload->{workload_amount}");
     $log->info("Monitored workload_class 
-        visit_ratio = $workload->{workload_class}->{visit_ratio};
-        service_time = $workload->{workload_class}->{service_time};
-        delay = $workload->{workload_class}->{delay}; 
+        visit_ratio = @{$workload->{workload_class}->{visit_ratio}};
+        service_time = @{$workload->{workload_class}->{service_time}};
+        delay = @{$workload->{workload_class}->{delay}}; 
         think_time = $workload->{workload_class}->{think_time}"
      );
     
