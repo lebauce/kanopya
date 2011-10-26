@@ -197,7 +197,7 @@ sub getMonitoredPerfMetrics {
     #print Dumper $cluster_data_aggreg;
     
     return {
-      latency => $cluster_data_aggreg->{Tt},
+      latency => $cluster_data_aggreg->{Tt}/1000, #get ms and return seconds
       abort_rate => 0,
       throughput => 0,
     };
@@ -368,7 +368,9 @@ sub preManageCluster{
     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);     
     my $cluster_conf = $self->getClusterConf( cluster => $cluster );     
 
-    $log->info("[Controller] Monitored perf latency = $curr_perf->{latency}, abort_rate = $curr_perf->{abort_rate} (not implemented yet), throughput = $curr_perf->{throughput} (not implemented yet)");
+    $log->info("[Controller] Monitored perf latency = $curr_perf->{latency}, 
+    abort_rate = $curr_perf->{abort_rate} (not implemented yet), 
+    throughput = $curr_perf->{throughput} (not implemented)");
 
 #      latency => $cluster_data_aggreg->{Tt},
 #      abort_rate => 0,
@@ -588,7 +590,7 @@ sub manageCluster {
     
 
     my %new_perf = $self->{_model}->calculate(%model_optim_params);
-    $log->info("[Controller] Nouvelles performances : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate});
+    $log->info(sprintf("[Controller] New theoretical perf : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate}));
      
     return $optim_params;
     
