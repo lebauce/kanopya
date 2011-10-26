@@ -66,7 +66,7 @@ sub init {
     
     $self->{_monitor} = Monitor::Retriever->new( );
     
-    $self->{_time_step} = 1; # controller update frequency
+    $self->{_time_step} = 10; # controller update frequency
     $self->{_time_laps} = 60; # metrics retrieving laps
     
     my $model = Model::MVAModel->new();
@@ -135,7 +135,7 @@ sub getWorkload {
 
     #my $cluster = $args{cluster};
 
-    my $service_info_set = "haproxy_conn"; #"apache_workers";
+    my $service_info_set = "haproxy_conns"; #"apache_workers";
     my $load_metric = "Active"; #"BusyWorkers";
 
 
