@@ -1,13 +1,9 @@
-
 use LogAnalyzer;
 use Data::Dumper;
 use XML::Simple;
 use Administrator;
 use Entity::Cluster;
 use Monitor;
-
-#my @files = </var/log/kanopya_nodes/requests/*.log>;
-#print Dumper \@files;
 
 my $monitor = Monitor->new();
 
@@ -28,7 +24,7 @@ sub parseFile {
 
     $analyzer->reset();
     while (<FILE>) {
-	$analyzer->parse( log => $_ );
+    $analyzer->parse( log => $_ );
     }
     my $stats = $analyzer->getStats();
     return $stats;
@@ -42,14 +38,19 @@ sub storeStats {
     return if (not defined $data); 
 
     for my $set ("timers", "conns") {
-	my $set_name = "haproxy_$set";
-	my $rrd_name = $monitor->rrdName( set_name => $set_name, host_name => $args{cluster_name} );
-	$rrd_name .= "_avg";
-	print ">>>>>>>>>>>>>>>>>>><";
-	print Dumper $data->{$set};
-
-	# TODO change this because when not exist, the rrd is created using the time step of monitoring, which can be different than time step of haproxy manager (1min)
-	$monitor->updateRRD( rrd_name => $rrd_name, set_name => $set_name, ds_type => 'GAUGE', time => time(), data => $data->{$set} );
+        my $set_name = "haproxy_$set";
+        my $rrd_name = $monitor->rrdName( set_name => $set_name, host_name => $args{cluster_name} );
+        $rrd_name .= "_avg";
+        print Dumper $data->{$set};
+    
+        $monitor->updateRRD(
+           rrd_name  => $rrd_name,
+           set_name  => $set_name,
+           ds_type   => 'GAUGE',
+           time      => $args{time},
+           data      => $data->{$set},
+           time_step => $time_step, 
+        );
     }
 
 }
@@ -59,18 +60,22 @@ sub manageLog {
 
     my $logdir = "$rootlogdir/$args{host}";
     if ( not -d $logdir ) {
-	print "No log for $args{host}\n";
-	return;
+        print "No log for $args{host}\n";
+        return;
     }
 
     my $logfile_path = "$logdir/$args{file}";
     if (-f $logfile_path) {
-	print "FILE: $logfile_path\n";
-	my $stats = parseFile( file => $logfile_path );
-	unlink $logfile_path;
-	storeStats( stats => $stats, cluster_name => $args{cluster_name} );
+        print "FILE: $logfile_path\n";
+        my $stats = parseFile( file => $logfile_path );
+        unlink $logfile_path;
+        storeStats(
+            stats => $stats,
+            cluster_name => $args{cluster_name},
+            time => $args{time},
+        );
     } else {
-	print "No file $logfile_path\n";
+        print "No file $logfile_path\n";
     }
 }
 
@@ -86,11 +91,16 @@ sub update {
     # Browse clusters to parse corresponding log file
     my @clusters = Entity::Cluster->getClusters( hash => { } );
     foreach my $cluster (@clusters) {
-	print "Cluster : ", $cluster->toString(), "\n";
-	my $master_ip =  $cluster->getMasterNodeIp();
-	if (defined $master_ip) {
-	    manageLog( host => $master_ip, file => $logfile_name, cluster_name => $cluster->toString() );
-	}
+        print "Cluster : ", $cluster->toString(), "\n";
+        my $master_ip =  $cluster->getMasterNodeIp();
+        if (defined $master_ip) {
+            manageLog(
+                host => $master_ip,
+                file => $logfile_name,
+                cluster_name => $cluster->toString(),
+                time => $args{time},
+            );
+        }
     }
 }
 
@@ -109,18 +119,16 @@ sub run {
     sleep ($wait_sec);
 
     while ( 1 ) {
-	
-	my $start_time = time();
-	
-	#manageLog( time => $start_time);
-	update( time => $start_time);
-
-	my $update_duration = time() - $start_time;
-	#$log->info( "Manage duration : $update_duration seconds" );
-	if ( $update_duration > $time_step ) {
-	    #$log->warn("Log management duration > to $time_step");
-	} else {
-	    sleep( $time_step - $update_duration );
-	}
+        my $start_time = time();
+        
+        update( time => $start_time);
+    
+        my $update_duration = time() - $start_time;
+        #$log->info( "Manage duration : $update_duration seconds" );
+        if ( $update_duration > $time_step ) {
+            #$log->warn("Log management duration > to $time_step");
+        } else {
+            sleep( $time_step - $update_duration );
+        }
     }
 }
