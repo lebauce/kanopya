@@ -361,7 +361,7 @@ sub createRRD {
 
     $log->info("## CREATE RRD : '$args{file}' ##");
 
-    my $time_step   = $arg{time_step} || $self->{_time_step};
+    my $time_step   = $args{time_step} || $self->{_time_step};
     my $dsname_list = $args{dsname_list};
     my $set_def     = $self->getSetDesc( set_label => $args{set_name} );
     my $ds_list     = General::getAsHashRef( data => $set_def, tag => 'ds', key => 'label');
