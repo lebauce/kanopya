@@ -54,12 +54,12 @@ body {
         position: absolute;
         top: 0px;
         right: 25px;
-        background-color: $color_purple;
+        background: $color_purple url(/images/picto_logout.png) no-repeat left;
         color: $color_white;
         text-align: center;
         width: 84px;
         height: 25px;
-        padding-top: 5px;
+        padding-top: 10px;
         font-size: 11px;
         font-weight: bold;
         a {
