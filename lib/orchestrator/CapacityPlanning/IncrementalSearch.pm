@@ -40,9 +40,9 @@ sub search {
     my $workload_amount = $args{workload_amount};
     my %workload_class = %{ $args{workload_class} };
     
-    
-#    print Dumper \%workload_class;
-#    print "kikou $nb_tiers, $workload_amount\n";
+    $log->debug('Capacity planning input:');
+    $log->debug(Dumper \%workload_class);
+    $log->debug("Nb tiers: $nb_tiers, Workload amount: $workload_amount");
         
     
 #    print Dumper $self->{_search_spaces};
@@ -114,6 +114,8 @@ sub search {
                                              workload_class => \%workload_class,
                                              workload_amount => $workload_amount);
         
+        $log->debug("[phase 1] With AC = @curr_AC ==> perf = " . (Dumper \%perf));
+        
         # Add one node on each tiers if possible
         $new_conf = 0;
         for my $i (0..$nb_tiers-1) {
@@ -141,14 +143,16 @@ sub search {
             %perf = $self->{_model}->calculate( configuration => { M => $nb_tiers, AC => \@curr_AC, LC => \@LC},
                                                  workload_class => \%workload_class,
                                                  workload_amount => $workload_amount);
+                                                 
+            $log->debug("[phase 2] With AC = @curr_AC ==> perf = " . (Dumper \%perf));
+        
             $first_try = 0;
         };
         $curr_AC[$i] += 1;
     }
-    
-#    print "##### BEST ####\n";
-#    print Dumper \@curr_AC;
-    $log->debug(Dumper \@curr_AC);
+
+    $log->debug("Best AC: @curr_AC");
+
     return { AC => \@curr_AC, LC => \@LC };
 }
 
