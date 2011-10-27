@@ -243,9 +243,9 @@ sub getClusterModelParameters {
     }
     
     return {    visit_ratio => 1,
-                service_time => 2, # ms
-                delay => 0, # ms
-                think_time => 10000 # ms
+                service_time => 0.010, # s
+                delay => 0, # s
+                think_time => 10 # s
 			};
 }
 
