@@ -743,8 +743,8 @@ sub _computeDiff {
     }
     $dev /= $weight if ($weight > 0);
     
-    $log->debug("* Deviation * " . (Dumper \%deviations));
-    $log->debug("==> $dev");
+    #$log->debug("* Deviation * " . (Dumper \%deviations));
+    #$log->debug("==> $dev");
     
     return $dev;
 }
