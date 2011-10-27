@@ -681,8 +681,8 @@ CREATE TABLE `workload_characteristic` (
 
 CREATE TABLE `qos_constraint` (
   `constraint_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `constraint_max_latency` int(8) NOT NULL,
-  `constraint_max_abort_rate` int(8) NOT NULL,
+  `constraint_max_latency` double NOT NULL,
+  `constraint_max_abort_rate` double NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`constraint_id`),
   KEY `fk_constraint_1` (`cluster_id`),
