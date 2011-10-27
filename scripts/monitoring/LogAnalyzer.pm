@@ -32,8 +32,8 @@ sub init {
     $self->{frontend_name_idx} = scalar(@log_head) + 3; # for tcp and http log, this idx is the same
     # Associate frontend name with its mode (as defined in haproxy configuration)
     $self->{frontends_mode} = {
-	"https-in" => "tcp",
-	"http-in" => "http",
+        "https-in" => "tcp",
+        "http-in" => "http",
     };
 }
 
@@ -64,7 +64,7 @@ sub parse {
     my $frontend_name = $raw[ $self->{frontend_name_idx} ];
     my $mode =  $self->{frontends_mode}{ $frontend_name };
     if (not defined $mode) {
-	print "Warning: log not analyzed (don't know how to parse it, mode key is '$frontend_name') => @raw\n";
+        print "Warning: log not analyzed (don't know how to parse it, mode key is '$frontend_name') => @raw\n";
         return;
     }
     my $idx_map = $self->{field_idx}{ $mode };
@@ -72,8 +72,12 @@ sub parse {
     # Check errors
     my $termination_state = $raw[ $idx_map->{termination_state} ];
     if ( $termination_state !~ '^--' ) { # normal termination state begin with --
-	$self->{counters}{ $frontend_name }{'errors'}{ $termination_state } += 1;
-	return;
+        $self->{counters}{ $frontend_name }{'errors'}{ $termination_state } += 1;
+        
+        if ( $termination_state =~ '^s.*' ) { # server side abort
+            $self->{counters}{ $frontend_name }{'server_abort'} += 1;
+        }
+        return;
     }
     
     # Timers
@@ -81,9 +85,9 @@ sub parse {
     my $Tt = $timers[-1];
     my $total_time;
     if ($Tt =~ /\+(\d+)/) { # haproxy option logasap
-	$total_time = $1;
+        $total_time = $1;
     } else {
-	$total_time = $Tt;
+        $total_time = $Tt;
     }
     $self->{counters}{ $frontend_name }{'timers'}{'Tt'} += $total_time;
 
@@ -103,12 +107,17 @@ sub getStats {
 
     my %stats;
     while (my ($frontend, $info) = each %{$self->{counters}}) {
-	if (defined $info->{ok_count}) {
-	    $stats{$frontend}{'timers'}{'Tt'} = $info->{'timers'}{'Tt'} / $info->{ok_count};
-	    $stats{$frontend}{'timers'}{'Tc'} = 0; #TODO
-	    $stats{$frontend}{'timers'}{'Tw'} = 0; #TODO
-	    $stats{$frontend}{'conns'}{'Active'} = $info->{'conns'}{'act'} / $info->{ok_count};
-	}
+        if (defined $info->{ok_count}) {
+            $stats{$frontend}{'timers'}{'Tt'} = $info->{'timers'}{'Tt'} / $info->{ok_count};
+            $stats{$frontend}{'timers'}{'Tc'} = 0; #TODO
+            $stats{$frontend}{'timers'}{'Tw'} = 0; #TODO
+            $stats{$frontend}{'conns'}{'Active'} = $info->{'conns'}{'act'} / $info->{ok_count};
+            
+            # Considering all errors are logged we can compute abort rate using server error relativly to active connections
+            $stats{$frontend}{'experimental_abort_rate'} = $info->{'server_abort'} / $stats{$frontend}{'conns'}{'Active'};
+            # or:
+            # $stats{$frontend}{'experimental_abort_rate'} = $info->{'server_abort'} / ($info->{'server_abort'} + $stats{$frontend}{'conns'}{'Active'});
+        }
     }
 
     print "#### STATS #####\n", Dumper \%stats;
