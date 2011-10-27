@@ -77,11 +77,11 @@ sub init {
     
     #$log->info( "Init constraints in controlleur init\n");
     
-    my $max_latency    = 1;
-    my $max_abort_rate = 0.5;
-    
-    $cap_plan->setConstraints(constraints => { max_latency => $max_latency, max_abort_rate => $max_abort_rate } );
-    $log->info("Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n");
+    # Set constarints directly on DB
+    #my $max_latency    = 0.3;
+    #my $max_abort_rate = 0.5;
+    #$cap_plan->setConstraints(constraints => { max_latency => $max_latency, max_abort_rate => $max_abort_rate } );
+    #$log->info("Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n");
     
     $self->{_cap_plan} = $cap_plan;
 
