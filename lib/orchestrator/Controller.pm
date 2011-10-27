@@ -81,8 +81,7 @@ sub init {
     #my $max_latency    = 0.3;
     #my $max_abort_rate = 0.5;
     #$cap_plan->setConstraints(constraints => { max_latency => $max_latency, max_abort_rate => $max_abort_rate } );
-    
-    $log->info("Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n");
+    #$log->info("Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n");
     
     $self->{_cap_plan} = $cap_plan;
 
