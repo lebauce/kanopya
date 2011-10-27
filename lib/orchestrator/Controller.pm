@@ -74,13 +74,14 @@ sub init {
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
-    $log->info( "[Controller] Init constraints in controlleur init\n");
+    
+    #$log->info( "Init constraints in controlleur init\n");
     
     my $max_latency    = 1;
     my $max_abort_rate = 0.5;
     
     $cap_plan->setConstraints(constraints => { max_latency => $max_latency, max_abort_rate => $max_abort_rate } );
-    $log->info("[Controller] Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n");
+    $log->info("Constraints max_latency = $max_latency ; max_abort_rate = $max_abort_rate\n");
     
     $self->{_cap_plan} = $cap_plan;
 
@@ -222,7 +223,7 @@ sub getMonitoredPerfMetrics {
         best_params: Until DB saving is not managed, otherwise return void.
 =cut
 
-sub _updateModelInternalParameters {
+sub _autoTuneAndUpdateModelInternalParameters {
     
     my $self = shift;
     my %args = @_;
@@ -304,7 +305,7 @@ sub _updateModelInternalParameters {
         HASHREF {latency=>float, abort_rate=>float (not implemented yet)); throughput=>(not implemented yet)}
 =cut
 
-sub updateModelInternaParameters_old {
+sub _updateModelInternaParameters_old {
     my $self = shift;
     my %args = @_;
     
@@ -345,15 +346,16 @@ sub preManageCluster{
         
     # Refresh qos constraints
     # TODO make one sub with these two instruction ($contraints not used elsewhere)
-     
+    # Perhaps Cap Planner can set contraints directly from DB when called ?
+    
     my $constraints = $self->{data_manager}
                             ->getClusterQoSConstraints( 
                                 cluster_id => $cluster_id 
     );
     $self->{_cap_plan}->setConstraints(constraints => $constraints );
     
+    
     $log->info("Qos constraints: Max abort rate = $constraints->{max_abort_rate}, Max latency = $constraints->{max_latency}");
-    #print Dumper $constraints;
      
     # TODO Study where to get this information (need real study)
     my $nb_tiers = 1; 
@@ -380,9 +382,9 @@ sub preManageCluster{
     abort_rate = $curr_perf->{abort_rate} (not implemented yet), 
     throughput = $curr_perf->{throughput} (not implemented)");
 
-#      latency => $cluster_data_aggreg->{Tt},
-#      abort_rate => 0,
-#      throughput => 0,
+    # latency => $cluster_data_aggreg->{Tt},
+    # abort_rate => 0,
+    # throughput => 0,
 
     # TODO Study where to get this information (need real study)
     my $infra_conf   = {
@@ -391,12 +393,12 @@ sub preManageCluster{
         LC       => [$cluster_conf->{mpl}],
     };
     
-    # TODO just use cluster_id this param is only used 
+    # TODO just use cluster_id instead of $cluster_params, since only cluster_id is used
     my $cluster_params = {
                     cluster_id => $cluster->getAttr('name' => 'cluster_id'),
     };
 
-    # TODO Study where to get this information (need real study)
+    # TODO Study where to get this information from (need real study)
     my @search_space = (); 
     for (0..$nb_tiers)
     {
@@ -419,9 +421,12 @@ sub preManageCluster{
     );
     
 
+    # Store and graph results for futur consultation
+    # $self->_validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
+
     # Apply optimal configuration
     # TODO This method signature should be changed to handle infra in a better way
-
+    
     $self->{_actuator}->changeInfraConf(
                         infra => [ { cluster => $cluster, conf => $cluster_conf } ],
                         target_conf => $optim_params,
@@ -467,13 +472,10 @@ sub manageCluster {
     # [Format] infra_conf:     {M, AC, LC} 
     # [Format] search_space
     
-    #my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');    
-    
-    #print "[DEBUG] Constraints not updated here (preManagaCluster) \n";
-    # Refresh qos constraints
+    # Refresh qos constraints => Now done in preManager
     # my $constraints = $self->{data_manager}->getClusterQoSConstraints( cluster_id => $cluster_id );
     # $self->{_cap_plan}->setConstraints(constraints => $constraints );    
-    
+
     
     # Capacity planning settings 
     # TODO one setting sub 
@@ -492,53 +494,18 @@ sub manageCluster {
     #                ]
     #    );
     
-    #print "[DEBUG] Hardcoding metrics\n";
-    #my $workload    = $self->getWorkload( cluster => $cluster);
-    #my $workload    = $self->getWorkloadHC();
-
-    # Manage internal parameters tuning
-    #my $curr_perf   = $self->getMonitoredPerfMetrics( cluster => $args{cluster});
-    #my $curr_perf   = $self->getMonitoredPerfMetricsHC();
-    
-    #print Dumper $workload;
-    #print Dumper $curr_perf;
-    
-    #/!\ hardcoding 1 tier /!\
-    # my $infra_conf  = {
-    #     M        => 1,
-    #    AC       => [$cluster_conf->{nb_nodes}],
-    #    LC       => [$cluster_conf->{mpl}],
-    #};
-    
-    
-    #print "[DEBUG] these lines must be deleted /!\\\n "; 
-    #$infra_conf->{AC}=[2];
-    #print Dumper $infra_conf;
-    
-    
+    # TODO Manage DB in order to store the algo configuration instead of hardcoding    
     my $algo_conf   = {
         nb_steps            => 40,
         init_step_size      => 5,
         init_point_position => 1,
     };
     
-#    my $best_params = $self->modelTuning( 
-#            algo_conf  => $algo_conf, 
-#            workload   => $workload, 
-#            infra_conf => $infra_conf, 
-#            curr_perf  => $curr_perf 
-#        );
-#
-#    $self->updateModelInternaParameters( cluster_id   => $cluster_params->{cluster_id}, 
-#                                         delay        => $best_params->{D}, 
-#                                         service_time => $best_params->{S});
-
-
     # Autotune Model and set model parameters (Si and Di)
     # /!\ Output $best_params only used until infra not managed in DB
     # TODO Modify DB in order to store params (need real study)
     my $best_params = 
-        $self->_updateModelInternalParameters(
+        $self->_autoTuneAndUpdateModelInternalParameters(
         algo_conf    => $algo_conf,
         workload     => $workload,
         infra_conf   => $infra_conf,
@@ -566,9 +533,7 @@ sub manageCluster {
     # $workload->{workload_class}->{delay}        = $best_params->{D};
     $log->info("Computed params Si = @{$workload->{workload_class}->{service_time}} ; Di = @{$workload->{workload_class}->{delay}}\n");
     
-    # Store and graph results for futur consultation
-    # $self->validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
-    
+
     
     # Calculate optimal configuration
     my $optim_params = $self->{_cap_plan}->calculate(
@@ -576,7 +541,7 @@ sub manageCluster {
         workload_class  => $workload->{workload_class}
     );
     
-    $log->info("[Controller] Configuration optimale : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n");
+    $log->info("Computed optimal configuration : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n");
     
     # All the end of the algo is the new perf computation only useful for [DEBUG]
     
@@ -598,7 +563,7 @@ sub manageCluster {
     
 
     my %new_perf = $self->{_model}->calculate(%model_optim_params);
-    $log->info(sprintf("[Controller] New theoretical perf : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate}));
+    $log->info(sprintf("New theoretical perf : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate}));
      
     return $optim_params;
     
@@ -705,8 +670,8 @@ sub modelTuning {
                 #print "## BEST out ##\n";
                 #print Dumper \%best_out;
                 
-                my $pDBest = $self->computeDiff( model_output => \%best_out, monitored_perf => $curr_perf );
-                my $pDNew  = $self->computeDiff( model_output => \%new_out, monitored_perf => $curr_perf );
+                my $pDBest = $self->_computeDiff( model_output => \%best_out, monitored_perf => $curr_perf );
+                my $pDNew  = $self->_computeDiff( model_output => \%new_out, monitored_perf => $curr_perf );
                 my $gain   = $pDBest - $pDNew;
                 
                 
@@ -735,7 +700,22 @@ sub modelTuning {
     return { D => \@best_D, S => \@best_S };
 }
 
-sub computeDiff {
+=head2 _computeDiff
+    
+    Class : Private
+    
+    Desc : Compute 1-norm weighted distance between monitored performance and model output
+    
+    Args :
+        monitored_perf : Monitored performance
+        model_output   : Model output
+        
+    Return :
+        1-norm weighted distance between monitored performance and model output (double)
+        
+=cut
+
+sub _computeDiff {
     my $self = shift;
     my %args = @_;
     
@@ -769,7 +749,7 @@ sub computeDiff {
     return $dev;
 }
 
-sub validateModel {
+sub _validateModel {
     
     my $self = shift;
     my %args = @_;
