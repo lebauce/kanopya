@@ -1,3 +1,5 @@
+<h2>Create a new disk</h2>
+
 <form id="target" method="POST" action="/infrastructures/hosts/<% host_id %>/addharddisk">
 <table class="form">
 	<tr>

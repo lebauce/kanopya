@@ -1,3 +1,5 @@
+<h2>Create a new cluster</h2>
+
 <form id="target" method="POST" action="/architectures/clusters/add">
 <table class="form">
 	<tr>

@@ -1,3 +1,5 @@
+<h2>Set a public ip to a cluster</h2>
+
 <form id="target" method="POST" action="/architectures/clusters/<% cluster_id %>/ips/public/add">
 <table class="form">	
 	<tr><td><select name="publicip_id">
