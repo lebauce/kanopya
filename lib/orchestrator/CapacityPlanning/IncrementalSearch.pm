@@ -36,6 +36,9 @@ sub search {
 
     # No needs to check args, done by parent
     
+    # Dumper inline
+    $Data::Dumper::Indent = 0;
+    
     my $nb_tiers = $self->{_nb_tiers};    
     my $workload_amount = $args{workload_amount};
     my %workload_class = %{ $args{workload_class} };
