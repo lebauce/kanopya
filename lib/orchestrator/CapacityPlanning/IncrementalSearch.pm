@@ -109,9 +109,6 @@ sub search {
         @curr_AC = @next_AC;
         #print "AC: @curr_AC  #  LC: @LC, $workload_amount\n";
         
-
-        #print Dumper \%workload_class;
-        
         
         %perf = $self->{_model}->calculate( configuration => { M => $nb_tiers, AC => \@curr_AC, LC => \@LC},
                                              workload_class => \%workload_class,
