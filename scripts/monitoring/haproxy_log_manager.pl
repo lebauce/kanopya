@@ -86,13 +86,12 @@ sub _logFileName {
     my $last_minute = $args{time} - 60;
     my ($sec,$min,$hour,$mday,$mon,$year) = localtime($last_minute);
     $mon += 1;
-    $year += 1900; 
-    $min  = "0".$min  if ( length($min) == 1 );
-    $hour = "0".$hour if ( length($hour) == 1 );
-    $mday = "0".$mday if ( length($mday) == 1 );
-    $mon  = "0".$mon  if ( length($mon) == 1 );
+    $year += 1900;
+    # Add a 0 before value if only 1 digit for each variables (e.g. "1" => "01")
+    for my $v ('$min', '$hour', '$mday', '$mon') {
+        eval "$v  = '0'.$v  if ( length($v) == 1 )";
+    }
     return "$mday-$mon-$year" . "_$hour:$min.log";
-    
 }
 
 sub update {
