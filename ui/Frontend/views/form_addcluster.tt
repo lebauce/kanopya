@@ -2,89 +2,89 @@
 
 <form id="target" method="POST" action="/architectures/clusters/add">
 <table class="form">
-	<tr>
-		<td class="label">Name :</td>
-		<td><input type="text" name="name" maxlength="32" size="32"/>
-		<span style="color: red"><% err_name %></span></td>
-	</tr>
-	<tr>
-		<td class="label">Description :</td>
-		<td><textarea cols="50" name="desc" value=""></textarea></td>
-	</tr>
-		<tr>
-		<td class="label">Cluster type :</td>
-		<td>
-		<input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via
-		<select name="exporttype" style="width: 50px">
-			<option value="iscsi">ISCSI</option>
-		</select>&nbsp;<!--|&nbsp;
-		<input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local -->
-		</td>
-	</tr>
-	<tr>
-		<td class="label">System image :</td><td>
+    <tr>
+        <td class="label">Name :</td>
+        <td><input type="text" name="name" maxlength="32" size="32"/>
+        <span style="color: red"><% err_name %></span></td>
+    </tr>
+    <tr>
+        <td class="label">Description :</td>
+        <td><textarea cols="50" name="desc" value=""></textarea></td>
+    </tr>
+        <tr>
+        <td class="label">Cluster type :</td>
+        <td>
+        <input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via
+        <select name="exporttype" style="width: 50px">
+            <option value="iscsi">ISCSI</option>
+        </select>&nbsp;<!--|&nbsp;
+        <input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local -->
+        </td>
+    </tr>
+    <tr>
+        <td class="label">System image :</td><td>
         <% IF systemimages_forshared %>
         <input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared :
-		<select name="systemimage_forshared">
-		<% FOREACH si IN systemimages_forshared %>
-			<option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
-		<% END %>
-		</select>
+        <select name="systemimage_forshared">
+        <% FOREACH si IN systemimages_forshared %>
+            <option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
+        <% END %>
+        </select>
         <% END %>
         <% IF systemimages_fordedicated %>
         <input type="radio" name="si_shareordedicate" value="dedicated" />dedicated :
         <select name="systemimage_fordedicated">
-		<% FOREACH si IN systemimages_fordedicated %>
-			<option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
-		<% END %>
-		</select>
+        <% FOREACH si IN systemimages_fordedicated %>
+            <option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
+        <% END %>
+        </select>
         <% END %>
         </td>
     </tr>
     <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
     <tr>
-		<td class="label">minimum node to used :</td>
-		<td><select name="min_node">
-		<% FOREACH node IN nodescount %>
-			<option value="<% node.nodes %>"><% node.nodes %></option>
-		<% END %>
-		</select></td>
-		<span style="color: red"><% err_min_node %></span></td>
-	</tr>
-	<tr>
-		<td class="label">maximum node to used :</td>
-		<td><select name="max_node">
-		<% FOREACH node IN nodescount %>
-			<option value="<% node.nodes %>"><% node.nodes %></option>
-		<% END %>
-		</select></td>
-		<span style="color: red"><% err_max_node %></span></td>
-	</tr>
-	<tr>
-		<td class="label">Priority :</td>
-		<td><input type="text" name="priority" maxlength="5" size="5"/>
-		<span style="color: red"><% err_priority %></span></td></td>
-	</tr>
+        <td class="label">minimum node to used :</td>
+        <td><select name="min_node">
+        <% FOREACH node IN nodescount %>
+            <option value="<% node.nodes %>"><% node.nodes %></option>
+        <% END %>
+        </select></td>
+        <span style="color: red"><% err_min_node %></span></td>
+    </tr>
+    <tr>
+        <td class="label">maximum node to used :</td>
+        <td><select name="max_node">
+        <% FOREACH node IN nodescount %>
+            <option value="<% node.nodes %>"><% node.nodes %></option>
+        <% END %>
+        </select></td>
+        <span style="color: red"><% err_max_node %></span></td>
+    </tr>
+    <tr>
+        <td class="label">Priority :</td>
+        <td><input type="text" name="priority" maxlength="5" size="5"/>
+        <span style="color: red"><% err_priority %></span></td></td>
+    </tr>
 
-	<tr>
-		<td class="label">Kernel :</td>
-		<td><select name="kernel_id">
-		<option value="0">default motherboard kernel</option>
-		<% FOREACH kernel IN kernels_list %>
-			<option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
-		<% END %>
-		</select>
-		<span style="color: red"><% err_kernel %></span></td>
-	</tr>
-	<tr>
-		<td class="label">Domain name :</td>
-		<td><input type="text" name="domainname" maxlength="64" size="32" value="hedera-technology.com"/>
-		<span style="color: red"><% err_domainname %></span></td></td>
-	</tr>
-	<tr>
-		<td class="label">Name server :</td>
-		<td><input type="text" name="nameserver" maxlength="15" size="15" value="<% nameserver %>"/>
-		<span style="color: red"><% err_nameserver %></span></td></td>
-	</tr>
+    <tr>
+        <td class="label">Kernel :</td>
+        <td><select name="kernel_id">
+        <option value="0">default motherboard kernel</option>
+        <% FOREACH kernel IN kernels_list %>
+            <option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
+        <% END %>
+        </select>
+        <span style="color: red"><% err_kernel %></span></td>
+    </tr>
+    <tr>
+        <td class="label">Domain name :</td>
+        <td><input type="text" name="domainname" maxlength="64" size="32" value="hedera-technology.com"/>
+        <span style="color: red"><% err_domainname %></span></td></td>
+    </tr>
+    <tr>
+        <td class="label">Name server :</td>
+        <td><input type="text" name="nameserver" maxlength="15" size="15" value="<% nameserver %>"/>
+        <span style="color: red"><% err_nameserver %></span></td></td>
+    </tr>
 </table>
 </form>
