@@ -242,6 +242,10 @@ sub _autoTuneAndUpdateModelInternalParameters {
     my $infra_conf        = $args{infra_conf};
     my $cluster_id        = $args{cluster_id};
     
+    # Dumper inline
+    $Data::Dumper::Indent = 0;
+    $log->debug("Infra conf: " . (Dumper $infra_conf));
+    
 #    print "algo_conf\n";
 #    print Dumper $algo_conf;
 #    print "workload\n";
