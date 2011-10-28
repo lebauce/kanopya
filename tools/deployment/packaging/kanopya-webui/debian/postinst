@@ -1,9 +1,5 @@
 #!/bin/bash -e
 
-#We modify fast cgi conf:
-sed -i s/\ .fcgi/\ .cgi/ /etc/apache2/mods-available/fcgid.conf
+update-rc.d kanopya-front defaults
+chmod +x /etc/init.d/kanopya-front
 
-#we install the apache virtual host config for kanopya web ui
-cp /opt/kanopya/ui/web/virtualhost.conf /etc/apache2/sites-available/default || true
-mkdir /var/log/apache2/kanopya || true
-service apache2 restart || true
