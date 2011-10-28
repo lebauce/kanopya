@@ -84,9 +84,9 @@ sub update {
 
     # Build expected log file name according to time 
     my $last_minute = $args{time} - 60;
-    my ($sec,$min,$hour) = localtime($last_minute);
+    my ($sec,$min,$hour,$mday,$mon,$year) = localtime($last_minute);
     $min = "0".$min if ( length($min) == 1 ); 
-    my $logfile_name = "$hour:$min.log";
+    my $logfile_name = "$mday-$mon-$year" . "_$hour:$min.log";
 
     # Browse clusters to parse corresponding log file
     my @clusters = Entity::Cluster->getClusters( hash => { } );
