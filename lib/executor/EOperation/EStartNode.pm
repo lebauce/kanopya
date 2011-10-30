@@ -1,37 +1,3 @@
-# EStartNode.pm - Operation class implementing Node starting operation
-
-#    Copyright © 2011 Hedera Technology SAS
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of the
-#    License, or (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU Affero General Public License for more details.
-#
-#    You should have received a copy of the GNU Affero General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
-
-=head1 NAME
-
-EEntity::Operation::EStartNode - Operation class implementing Node starting operation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement Node starting operation
-
-=head1 DESCRIPTION
-
-=head1 METHODS
-
-=cut
-
 package EOperation::EStartNode;
 use base "EOperation";
 
@@ -63,16 +29,6 @@ my $config = {
     RELATIVE => 1,                   # desactive par defaut
 };
 
-
-=head2 new
-
-    my $op = EOperation::EStartNode->new();
-
-    # Operation::EStartNode->new creates a new AddMotheboardInCluster operation.
-    # RETURN : EOperation::EStartNode : Operation add motherboard in a cluster
-
-=cut
-
 sub new {
     my $class = shift;
     my %args = @_;
@@ -83,13 +39,6 @@ sub new {
     return $self;
 }
 
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
 sub _init {
     my $self = shift;
     $self->{nas} = {};
@@ -99,12 +48,6 @@ sub _init {
     $self->{_objs} = {};
     return;
 }
-
-=head2 prepare
-
-    $op->prepare(internal_cluster => \%internal_clust);
-
-=cut
 
 sub prepare {
 
@@ -139,7 +82,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
 
     #### Instanciate Clusters
     $log->info("Get Internal Clusters");
@@ -243,15 +185,17 @@ sub execute {
         $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
     }
 
-    $self->{_objs}->{component_dhcpd}->addHost( dhcpd3_subnet_id                => $subnet,
-                                                dhcpd3_hosts_ipaddr             => $motherboard_ip,
-                                                dhcpd3_hosts_mac_address        => $motherboard_mac,
-                                                dhcpd3_hosts_hostname           => $motherboard_hostname,
-                                                dhcpd3_hosts_ntp_server         => $self->{bootserver}->{obj}->getMasterNodeIp(),
-                                                dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
-                                                dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver"),
-                                                kernel_id                       => $motherboard_kernel_id,
-                                                erollback                       => $self->{erollback});
+    $self->{_objs}->{component_dhcpd}->addHost(
+	dhcpd3_subnet_id                => $subnet,
+	dhcpd3_hosts_ipaddr             => $motherboard_ip,
+	dhcpd3_hosts_mac_address        => $motherboard_mac,
+	dhcpd3_hosts_hostname           => $motherboard_hostname,
+	dhcpd3_hosts_ntp_server         => $self->{bootserver}->{obj}->getMasterNodeIp(),
+	dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
+	dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver"),
+	kernel_id                       => $motherboard_kernel_id,
+	erollback                       => $self->{erollback});
+
     my $eroll_add_dhcp_host = $self->{erollback}->getLastInserted();
     # generate new configuration file
     $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_dhcp_host);
@@ -314,22 +258,28 @@ sub execute {
 
     # Generate node etc export
     ################################################################################
-    $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number    => 0,
-                                                iscsitarget1_lun_device    => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
-                                                iscsitarget1_lun_typeio    => "fileio",
-                                                iscsitarget1_lun_iomode    => "wb",
-                                                iscsitarget1_target_name=>$target_name,
-                                                econtext                 => $self->{nas}->{econtext},
-                                                erollback               => $self->{erollback});
+    $self->{_objs}->{component_export}->addExport(
+	iscsitarget1_lun_number    => 0,
+	iscsitarget1_lun_device    => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}",
+	iscsitarget1_lun_typeio    => "fileio",
+	iscsitarget1_lun_iomode    => "wb",
+	iscsitarget1_target_name   =>$target_name,
+	econtext                   => $self->{nas}->{econtext},
+	erollback                  => $self->{erollback});
     my $eroll_add_export = $self->{erollback}->getLastInserted();
     # generate new configuration file
-    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-    $self->{_objs}->{component_export}->generate(econtext   => $self->{nas}->{econtext},
-                                                 erollback  => $self->{erollback});
+    $self->{erollback}->insertNextErollBefore(
+	erollback => $eroll_add_export);
+    $self->{_objs}->{component_export}->generate(
+	econtext   => $self->{nas}->{econtext},
+	erollback  => $self->{erollback});
 
     # finaly we start the node
-    my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
-    $emotherboard->start(econtext =>$self->{executor}->{econtext},erollback => $self->{erollback});
+    my $emotherboard = EFactory::newEEntity(
+	data => $self->{_objs}->{motherboard});
+    $emotherboard->start(
+	econtext =>$self->{executor}->{econtext},
+	erollback => $self->{erollback});
 }
 
 sub _generateNodeConf {
@@ -349,12 +299,6 @@ sub _generateNodeConf {
     $log->info("Generate Udev Conf");
     $self->_generateUdevConf(mount_point=>$args{mount_point});
 
-    # /etc/fstab is now managed by mounttable1 system component
-
-    #$self->_generateFstabConf(    mount_point=>$args{mount_point},
-    #                            root_dev => $args{root_dev},
-    #                            etc_dev => $args{etc_dev});
-
     $log->info("Generate Kanopya Halt script Conf");
     $self->_generateKanopyaHalt(mount_point=>$args{mount_point}, etc_targetname => $args{etc_targetname});
 #    $log->info("Generate Hosts Conf");
@@ -362,8 +306,6 @@ sub _generateNodeConf {
 
     $log->info("Generate Network Conf");
     $self->_generateNetConf(mount_point=>$args{mount_point});
-
-
 
     $log->info("Generate resolv.conf");
     $self->_generateResolvConf(mount_point=>$args{mount_point});
@@ -475,8 +417,9 @@ sub _generateHosts {
     my $input = "hosts.tt";
     my $nodes = $args{nodes};
     my @nodes_list = ();
-    my $vars = {hostname        => $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname"),
-                   domainname            => "hedera-technology.com",
+    my $vars = {hostname        => $self->{_objs}->{motherboard}->getAttr(
+		    name => "motherboard_hostname"),
+	        domainname            => "hedera-technology.com",
                 hosts        => \@nodes_list,
           };
     foreach my $i (keys %$nodes) {
@@ -654,11 +597,225 @@ sub _generateNtpdateConf {
 }
 
 1;
+
 __END__
+
+=pod
+
+=head1 NAME
+
+EEntity::Operation::EStartNode - Operation class implementing Node starting operation
+
+=head1 SYNOPSIS
+
+This Object represent an operation.
+It allows to implement Node starting operation
+
+=head1 DESCRIPTION
+
+This operation is the second in node addition in cluster process.
+Cluster was prepare during PreStartNode, this operation :
+- create the node configuration
+- create export if node is diskless
+- configure dhcp and node network configuration
+- generate information used during node booting process (in the initramfs)
+- finally start the node (etherwake, psu or other)
+
+=head1 METHODS
+
+=head2 new
+
+my $op = EOperation::EStartNode->new();
+
+Operation::EStartNode->new creates a new AddMotheboardInCluster operation.
+return : EOperation::EStartNode : Operation add motherboard in a cluster
+
+=head2 _init
+
+    $op->_init();
+    This private method is used to define some hash in Operation
+
+=head2 _cancel
+
+    Class : Private
+
+    Desc : This private method is used to rollback the operation
+
+=head2 prepare
+
+    Class : Private
+
+    Desc : This private method is used to prepare the operation execution
+
+    Args : internal_cluster : Hash ref : config part of executor config file
+
+=head2 _generateNodeConf
+
+    Class : Private
+
+    Desc : This is the method which call node configuration methods (udev, net...)
+
+    Args : root_dev : Hash ref : This value come from
+                                 $cluster->getSystemImage()->getDevices()->{root},
+                                 It represents information on root device of cluster's
+                                 system image
+           etc_dev  : Hash ref : This value come from $motherboard}->getEtcDev()
+                                 It represents information on etc device of motherboard
+           etc_targetname   : String : This is the targetname of etc export
+           mount_point      : String : This is the node etc disk mount point
+
+=head2 _generateHostnameConf
+
+    Class : Private
+
+    Desc : This file generate file /etc/hostname which contains node host name
+
+    Args : mount_point  : String : path to the directory where is mounted etc of node
+           hostname : String : it is the node host name
+
+=head2 _generateInitiatorConf
+
+    Class : Private
+
+    Desc : This file generate file /etc/iscsi/initiatorname.iscsi which contains node initiatorname
+
+    Args : mount_point  : String : path to the directory where is mounted etc of node
+           initatorname : String : it is the node initiator name
+
+=head2 _generateUdevConf
+
+    Class : Private
+
+    Desc : This method generates and copies /etc/udev/rules.d/70-persistent-net.rules
+           This file defines name of the network interface name with their MAC address
+
+    Args : mount_point  : String : path to the directory where is mounted etc of node
+
+=head2 _generateKanopyaHalt
+
+    Class : Private
+
+    Desc : This script generate and copy KanopyaHalt and iscsi_omitted script on /etc/init.d of node and add them into rc0.d
+
+    Args : mount_point      : String : path to the directory where is mounted etc of node
+           etc_targetname   : String : the tagetname of the etc device
+
+=head2 _generateHosts
+
+    Class : Private
+
+    Desc : This method generate and copy hosts file in /etc disk of the node
+
+    Args : mount_point      : String : path to the directory where is mounted etc of node
+
+=head2 _generateNetConf
+
+    Class : Private
+
+    Desc : This method generate and copy network configuration file
+           (man /etc/network/interface) file in /etc disk of the node
+           It disables iscsi unmount at halt time through deleting rc0.d/S35networking
+
+    Args : mount_point      : String : path to the directory where is mounted etc of node
+
+=head2 _generateBootConf
+
+    Class : Private
+
+    Desc : This method generate the boot configuration file.
+           This file contains disk connection specification and system image access method
+
+    Args : root_dev : Hash ref : This value come from
+                             $cluster->getSystemImage()->getDevices()->{root},
+                             It represents information on root device of cluster's system image
+       etc_dev  : Hash ref : This value come from $motherboard}->getEtcDev()
+                             It represents information on etc device of motherboard
+       etc_targetname   : String : This is the targetname of etc export
+       initiatorname    : String : This is the node initiator name
+
+=head2 _generateResolvConf
+
+    Class : Private
+
+    Desc : This method generate the file /etc/resolv.conf which is the linux file to define dns server name.
+
+    Args : mount_point  : String : path to the directory where is mounted etc of node
+
+=head2 _generateNtpdateConf
+
+    Class : Private
+
+    Desc : This method generate the file /etc/default/ntpdate which is the config file of ntpdate.
+           It allows to synchronize host with time server.
+
+Args : mount_point  : String : path to the directory where is mounted etc of node
+
+
+=head2 finish
+
+    Class : Public
+
+    Desc : This method is the last execution operation method called.
+    It is used to clean and finalize operation execution
+
+    Args :
+        None
+
+    Return : Nothing
+
+    Throw
+
+=head1 DIAGNOSTICS
+
+Exceptions are thrown when mandatory arguments are missing.
+Exception : Kanopya::Exception::Internal::IncorrectParam
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+This module need to be used into Kanopya environment. (see Kanopya presentation)
+This module is a part of Administrator package so refers to Administrator configuration
+
+=head1 DEPENDENCIES
+
+This module depends of
+
+=over
+
+=item KanopyaException module used to throw exceptions managed by handling programs
+
+=item Entity::Component module which is its mother class implementing global component method
+
+=back
+
+=head1 INCOMPATIBILITIES
+
+None
+
+=head1 BUGS AND LIMITATIONS
+
+There are no known bugs in this module.
+
+Please report problems to <Maintainer name(s)> (<contact address>)
+
+Patches are welcome.
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
+<HederaTech Dev Team> (<dev@hederatech.com>)
 
-=cut
+=head1 LICENCE AND COPYRIGHT
+
+Copyright 2011 Hedera Technology SAS
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
