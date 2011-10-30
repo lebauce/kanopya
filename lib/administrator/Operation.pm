@@ -318,6 +318,10 @@ sub setHopedExecutionTime {
     $log->debug("hoped_execution_time updated with value : $t");
 }
 
+=head setProcessing
+    Set execution_rank to 0, it signifies that operation is in execution
+=cut
+
 sub setProcessing {
     my $self = shift;
     $self->{_dbix}->update({'execution_rank' => 0});
