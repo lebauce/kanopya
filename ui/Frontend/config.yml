@@ -14,7 +14,7 @@ layout: "main"
 # about unicode within your app when this setting is set (recommended).
 charset: "UTF-8"
 
-session: "simple"
+session: "YAML"
 session_expires: "1800"
 
 # template engine

@@ -1,3 +1,5 @@
+<h2>Upload a new component</h2>
+
 <form id="target" method="POST" action="/infrastructures/components/upload" enctype="multipart/form-data">
 <table class="form">
 <tr>

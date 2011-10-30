@@ -1,3 +1,5 @@
+<h2>Set permission</h2>
+
 <form id="target" method="POST" action="/rights/permissions/set">
 <table>
 <% FOREACH m IN methods %>

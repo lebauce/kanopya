@@ -260,22 +260,6 @@ writeFile('/etc/iet/ietd.conf', '');
 writeFile('/etc/default/iscsitarget', "ISCSITARGET_ENABLE=true");
 system('invoke-rc.d iscsitarget restart');
 
-# We enable apache2 modules, configure them and restart it
-system('a2enmod status');
-
-useTemplate(
-    template => "status.conf.tt",
-    datas    => {
-        internal_network => $answers->{internal_net_add}
-    },
-    conf     => "/etc/apache2/mods-enabled/status.conf",
-    include  => $conf_vars->{install_template_dir}
-);
-
-my $fcgid_conf = "<IfModule mod_fcgid.c>\n AddHandler fcgid-script .cgi\n FcgidConnectTimeout 20\n FcgidIOTimeout 180\n MaxRequestLen 512000000\n</IfModule>\n";
-writeFile('/etc/apache2/mods-available/fcgid.conf', $fcgid_conf);
-system('a2enmod fcgid');
-
 my $templateslink = '/templates';
 if(not -e $templateslink) {
     eval {
@@ -284,7 +268,7 @@ if(not -e $templateslink) {
     print "Your system don't support symbolic links", "\n" if $@;
 }
 
-system('invoke-rc.d apache2 restart');
+system('invoke-rc.d kanopya-front restart');
 
 # We allow snmp access
 useTemplate(

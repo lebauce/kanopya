@@ -1,0 +1,88 @@
+#!/bin/sh
+#Provides: Starman
+#Required-start: $plackup $plackup_args $DANCER_APP $website $lockfile $retval
+#Required-Stop: $website $PID $lockfile $retval
+# This a init script to launch kanopya app, use Starman server and plackup
+
+
+set -e
+
+. /lib/lsb/init-functions
+
+PID="/var/run/plackup.front_kanopya.pid"
+PORT=5000
+WORKERS=10
+DANCER_DIR="/opt/kanopya/ui/Frontend"
+DANCER_APP="$DANCER_DIR/bin/app.pl"
+
+plackup="/usr/bin/plackup"
+plackup_args="-E production -p $PORT -s Starman --pid=$PID --workers $WORKERS -D"
+website="Kanopya"
+
+lockfile="/var/lock/plackup.front_kanopya"
+
+PERL5LIB=\
+/opt/kanopya/lib/monitor/:\
+/opt/kanopya/lib/administrator/:\
+/opt/kanopya/lib/executor/:\
+/opt/kanopya/lib/orchestrator/:\
+/opt/kanopya/lib/common
+export PERL5LIB
+
+#If plackup install with cpan
+if [ ! -e "$plackup" ]
+then
+    plackup="/usr/local/bin/plackup"
+fi
+
+start() {
+    [ -x $plackup ] || exit 5
+    [ -f $DANCER_APP ] || exit 6
+    echo -n "Starting $website: "
+    $plackup $plackup_args -a $DANCER_APP 2>&1 > /dev/null
+    retval=$?
+    if [ $retval -eq 0 ]; then
+        log_success_msg "$website started"
+        touch $lockfile
+    else
+        log_failure_msg "Unable to start"
+    fi
+    echo
+    return $retval
+}
+
+stop() {
+    echo -n "Stopping $website: "
+    if [ -f $PID ]; then
+        kill `cat $PID` 2>&1 > /dev/null
+        retval=$?
+        [ $retval -eq 0 ] && rm -f $lockfile
+        echo
+        return $retval
+    fi
+    log_failure_msg "pid $PID not found"
+    echo
+    return 1
+}
+
+restart() {
+    stop
+    start
+}
+
+case "$1" in
+    start)
+        $1
+        ;;
+    stop)
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|restart}"
+        exit 2
+esac
+
+exit 0

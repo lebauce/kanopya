@@ -1,3 +1,5 @@
+<h2>Install a new component</h2>
+
 <form id="target" method="POST" action="/systems/images/<% systemimage_id %>/installcomponent">
 <table class="form">
 	<tr>

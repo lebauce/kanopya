@@ -1,3 +1,5 @@
+<h2>Create a new user</h2>
+
 <form id="target" method="POST" action="/rights/users/add">
 <table class="form">
 	<tr>

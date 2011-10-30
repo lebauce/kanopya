@@ -1,3 +1,5 @@
+<h2>Create a new motherboard</h2>
+
 <form id="target" method="POST" action="/infrastructures/hosts/add">
 <table class="form">
 	<tr>

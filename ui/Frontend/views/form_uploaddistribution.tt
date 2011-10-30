@@ -1,3 +1,5 @@
+<h2>Upload a new distribution</h2>
+
 <form id="target" method="POST" action="/systems/distributions/upload" enctype="multipart/form-data">
 <table class="form">
 <tr>

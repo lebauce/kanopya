@@ -1,3 +1,5 @@
+<h2>Create a new processors model</h2>
+
 <form id="target" method="POST" action="/models/processors/add">
 <table class="form">
 	<tr>

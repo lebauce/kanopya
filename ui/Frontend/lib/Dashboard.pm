@@ -2,6 +2,7 @@ package Dashboard;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
+use Dancer::Plugin::EscapeHTML;
 
 use Entity::Cluster;
 use Entity::Component;
@@ -9,6 +10,8 @@ use Entity::Component;
 use Log::Log4perl "get_logger";
 
 prefix '/dashboard';
+
+my $log = get_logger("webui");
 
 get '/status' => sub {
     my $admin_components  = adminComponentsDef();
@@ -72,6 +75,72 @@ get '/xml_admin_status' => sub {
 
     content_type('text/xml');
     return '<data>' . $xml . '</data>';
+};
+
+get '/logs' => sub {
+    my @dirs_info     = ();
+    my $admin_cluster = Entity::Cluster->get( id => 1 );
+    my $error_msg;
+    my $logger_comp;
+
+    eval {
+        $logger_comp = $admin_cluster->getComponent(
+            category => 'Logger',
+            name     => 'Syslogng',
+            version  => 3
+        );
+    };
+
+    if ($@) {
+        $log->warn($@);
+        $error_msg = "Syslogng3 must be installed on admin cluster";
+    }
+    else {
+        my @log_dirs = $logger_comp->getKanopyaAdmLogDirectories();
+
+        foreach my $path (@log_dirs) {
+            my $dir_error;
+            my @files_info = ();
+            my $ls_output = `ls $path`;
+
+            if ( ! defined $dir_error ) {
+                my @files = grep { -f "$path$_" and not $_ =~ '\.gz$' } split(" ", $ls_output);
+
+                @files_info = map { {
+                    path     => $path,
+                    filename => $_
+                } } @files;
+
+                my @dirs = grep { -d "$path$_" } split(" ", $ls_output);
+                @dirs = map { $path . $_ . '/'  } @dirs;
+
+                push @log_dirs, @dirs
+            }
+
+            push @dirs_info, {
+                path       => $path,
+                dir_locked => $dir_error,
+                files      => \@files_info
+            };
+        }
+    }
+
+    template 'logs', {
+        title_page => 'Dashbord logs',
+        dirs       => \@dirs_info,
+        error_msg  => $error_msg
+    };
+};
+
+ajax '/logs' => sub {
+    my $log_path = params->{log_id};
+
+    my $log_str = `tail -50 $log_path`;
+    $log_str    = escape_html($log_str);
+
+    content_type('text/plain');
+
+    return $log_str;
 };
 
 =head1 adminComponentsDef

@@ -195,7 +195,6 @@
                     <% ELSIF is_menu_selected('infrastructures') %>
                         <li <% submenu_selection('hosts') %>><a href="/infrastructures/hosts">Hosts</a></li>
                         <li <% submenu_selection('models') %>><a href="/infrastructures/models">Models</a></li>
-                        <li <% submenu_selection('powersupply') %>><a href="/infrastructures/powersupply">Power supply cards</a></li>
                     <% ELSIF is_menu_selected('systems') %>
                         <li <% submenu_selection('kernels') %>><a href="/systems/kernels">Kernels</a></li>
                         <li <% submenu_selection('distributions') %>><a href="/systems/distributions">Distributions</a></li>

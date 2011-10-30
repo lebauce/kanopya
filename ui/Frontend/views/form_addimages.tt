@@ -1,3 +1,5 @@
+<h2>Create a new image</h2>
+
 <form id="target" method="POST" action="/systems/images/add">
 <table class="form">
 <tr>
