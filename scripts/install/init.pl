@@ -317,7 +317,7 @@ system('invoke-rc.d kanopya-orchestrator restart');
 system('invoke-rc.d kanopya-front restart');
 
 print "\ninitial configuration: done.\n";
-print "You can now visit http://$internal_ip_add/cgi/kanopya.cgi and start using Kanopya!\n";
+print "You can now visit http://$internal_ip_add:5000 and start using Kanopya!\n";
 print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
