@@ -98,6 +98,8 @@ sub _init {
         master_opts => [
          -o => "StrictHostKeyChecking=no" 
         ],
+        timeout => 10,
+        #kill_ssh_on_timeout => 1
     );
     
     my $ssh = Net::OpenSSH->new($self->{ip}, %opts);
