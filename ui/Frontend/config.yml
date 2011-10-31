@@ -32,7 +32,7 @@ engines:
 
 plugins:
   "Preprocess::Sass":
-#    save: 1
+    save: 1
     paths:
       - css
   FormValidator:
