@@ -9,5 +9,5 @@ Vcs-Git: git://git.kanopya.org/mcs/administrator.git
 
 Package: kanopya-webui
 Architecture: all
-Depends: apache2, libcgi-application-plugins-perl, libjson-perl, libhtml-template-perl, libcgi-application-perl, libcgi-fast-perl, libkanopya-perl, libapache2-mod-fcgid
+Depends: libdancer-perl, libplack-perl, libdancer-plugin-escapehtml-perl, libdancer-plugin-formvalidator-perl, libdancer-plugin-preprocess-sass-perl, starman, libtemplate-perl, libjson-perl, libkanopya-perl
 Description: The web UI allows to manage kanopya from a web interface.
