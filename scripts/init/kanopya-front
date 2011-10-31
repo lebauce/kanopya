@@ -16,7 +16,7 @@ DANCER_DIR="/opt/kanopya/ui/Frontend"
 DANCER_APP="$DANCER_DIR/bin/app.pl"
 
 plackup="/usr/bin/plackup"
-plackup_args="-E production -p $PORT -s Starman --pid=$PID --workers $WORKERS -D"
+plackup_args="-E production -p $PORT -s Starman --pid=$PID --workers $WORKERS --user=kanopya -D"
 website="Kanopya"
 
 lockfile="/var/lock/plackup.front_kanopya"
