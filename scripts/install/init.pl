@@ -303,7 +303,8 @@ useTemplate(
 
 # Create sessions dir
 my $sessions_dir = "/opt/kanopya/ui/Frontend/sessions";
-mkdir( $sessions_dir, 0757 ) || die "Can't create dancer sessions directory";
+mkdir( $sessions_dir ) || die "Can't create dancer sessions directory";
+chmod 0757, $sessions_dir;
 
 # Configure log rotate
 copy("$conf_vars->{install_template_dir}/logrotate-kanopya", '/etc/logrotate.d') || die "Copy failed $!";
