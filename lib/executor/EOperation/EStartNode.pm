@@ -604,7 +604,7 @@ __END__
 
 =head1 NAME
 
-EEntity::Operation::EStartNode - Operation class implementing Node starting operation
+EOperation::EStartNode - Operation class implementing Node starting operation
 
 =head1 SYNOPSIS
 
