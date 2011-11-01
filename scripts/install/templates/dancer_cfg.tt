@@ -17,6 +17,12 @@ charset: "UTF-8"
 session: "YAML"
 session_expires: "1800"
 
+# Log dir
+log_path: "[% log_directory %]"
+
+log_file: "starman.log"
+
+
 # template engine
 # simple: default and very basic template engine
 # template_toolkit: TT

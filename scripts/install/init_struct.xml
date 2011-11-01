@@ -9,9 +9,7 @@
     schemas_dir="/opt/kanopya/scripts/database/mysql/schemas"
     data_dir="/opt/kanopya/scripts/database/mysql/data/"
     data_sql="/opt/kanopya/scripts/database/mysql/data/Data.sql"
-    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"
-    apache_user="www-data"
-  />
+    schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"/>
   <genfiles>
     <executor.conf template="executor.conf.tt">
       <datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>

@@ -107,13 +107,17 @@ chomp(@kanopya_pvs);
 #########################
 #Directory manipulations#
 #########################
-#We create the logging directory and give rights to apache user on it
+#We create the logging directory and give rights
 print "creating the logging directory...";
 $answers->{log_directory} = $answers->{log_directory} . '/'
     if ( $answers->{log_directory} !~ /\/$/ );
 
 make_path("$answers->{log_directory}", { verbose => 1 });
-chownRecursif($conf_vars->{apache_user}, $answers->{log_directory});
+
+# Give write access to nobody /!\ TEMPORARY
+chmod 0757, $answers->{log_directory};
+
+#chownRecursif($conf_vars->{apache_user}, $answers->{log_directory});
 print "done\n";
 
 ######################
@@ -268,8 +272,6 @@ if(not -e $templateslink) {
     print "Your system don't support symbolic links", "\n" if $@;
 }
 
-system('invoke-rc.d kanopya-front restart');
-
 # We allow snmp access
 useTemplate(
     template => "snmpd.conf.tt",
@@ -289,6 +291,21 @@ useTemplate(
 );
 system('invoke-rc.d snmpd restart');
 
+# Dancer configuration
+useTemplate(
+    template => "dancer_cfg.tt",
+    datas    => {
+       log_directory => $answers->{log_directory}
+    },
+    conf     => "/opt/kanopya/ui/Frontend/config.yml",
+    include  => $conf_vars->{install_template_dir}
+);
+
+# Create sessions dir
+my $sessions_dir = "/opt/kanopya/ui/Frontend/sessions";
+mkdir( $sessions_dir ) || die "Can't create dancer sessions directory";
+chmod 1757, $sessions_dir;
+
 # Configure log rotate
 copy("$conf_vars->{install_template_dir}/logrotate-kanopya", '/etc/logrotate.d') || die "Copy failed $!";
 
@@ -298,8 +315,10 @@ system('invoke-rc.d kanopya-state-manager restart');
 system('invoke-rc.d kanopya-collector restart');
 system('invoke-rc.d kanopya-grapher restart');
 system('invoke-rc.d kanopya-orchestrator restart');
+system('invoke-rc.d kanopya-front restart');
+
 print "\ninitial configuration: done.\n";
-print "You can now visit http://$internal_ip_add/cgi/kanopya.cgi and start using Kanopya!\n";
+print "You can now visit http://$internal_ip_add:5000 and start using Kanopya!\n";
 print "To Connect to Kanopya web use :\n";
 print "user : <admin>\n";
 print "password : <$answers->{dbpassword1}>\n";
