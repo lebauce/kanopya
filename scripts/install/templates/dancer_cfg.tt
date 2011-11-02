@@ -15,6 +15,7 @@ layout: "main"
 charset: "UTF-8"
 
 session: "YAML"
+session_dir: "/tmp/kanopya-sessions"
 session_expires: "1800"
 
 # Log dir
