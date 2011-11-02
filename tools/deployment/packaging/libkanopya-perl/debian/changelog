@@ -1,6 +1,19 @@
+libkanopya-perl (0.10.1) stable; urgency=low
+
+  * [Core] Infrastructure implementation
+  * [KICA] Model auto-tuning mechanism
+  * [KICA] Reconfiguration plan building
+  * [Core] Data management
+  * [Core] User roles and abilitation study
+  * [web ui] Migrate Cgi to Dancer
+  * [Component] private cloud manager
+  * [KICA] Cluster queuing model finalization
+  * [Component] Openldap
+
+ -- Hedera Dev Team <dev@hederatech.com>  Tue, 01 Nov 2011 12:48:29 +0100
+
 libkanopya-perl (0.8.1) stable; urgency=low
 
-  * New components : Iptables, Mysql, HAProxy
   * Bug fixes
   * Backup operations system
   * Backup messages system
@@ -70,7 +83,7 @@ libkanopya-perl (0.3.1) stable; urgency=low
   * [Core] Powersupply model integration and web interface
   * [Core] Seperate Motherboard state and node state
   * [Global] Packaging
- * [Component] Syslog-ng client
+  * [Component] Syslog-ng client
 
  -- Hedera Dev Team <dev@hederatech.com>  Fri, 18 Feb 2011 00:00:00 +0200
 
