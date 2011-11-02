@@ -62,7 +62,7 @@ stop() {
     fi
     log_failure_msg "pid $PID not found"
     echo
-    return 1
+    return 0
 }
 
 restart() {
