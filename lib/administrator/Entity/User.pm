@@ -21,6 +21,7 @@ use base "Entity";
 
 use strict;
 use warnings;
+use Digest::MD5 "md5_hex";
 use Kanopya::Exceptions;
 use General;
 use Log::Log4perl "get_logger";
@@ -184,7 +185,8 @@ sub create {
     if(not $granted) {
         throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
     }
-    
+
+    $self->{_dbix}->user_password( md5_hex($self->{_dbix}->user_password) );
     $self->{_dbix}->user_creationdate(\'NOW()');
     $self->{_dbix}->user_lastaccess(undef);
     $self->save();
