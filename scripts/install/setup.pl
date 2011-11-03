@@ -63,6 +63,9 @@ getConf();
 #Function used to generate conf files
 genConf();
 
+#create a user for kanopya
+createUser();
+
 ###############
 #Network setup#
 ###############
@@ -568,6 +571,13 @@ sub genConf {
             include  => $conf_vars->{install_template_dir}
         );
     }
+}
+
+sub createUser {
+    system("useradd kanopya -r -c 'Kanopya User' -s '/bin/false' -b '/opt'");
+    make_path("/tmp/kanopya-sessions", { verbose => 1 });
+    chownRecursif('kanopya', '/tmp/kanopya-sessions');
+    chownRecursif('kanopya', '/opt/kanopya');
 }
 
 sub useTemplate{
