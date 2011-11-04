@@ -63,6 +63,9 @@ getConf();
 #Function used to generate conf files
 genConf();
 
+# creating the graph directory to avoid bug in createUser function
+make_path("/tmp/monitor/graph", { verbose => 1 }); 
+
 #create a user for kanopya
 createUser();
 
@@ -122,6 +125,8 @@ chmod 0757, $answers->{log_directory};
 
 #chownRecursif($conf_vars->{apache_user}, $answers->{log_directory});
 print "done\n";
+
+
 
 ######################
 # SSH key generation #
