@@ -1,4 +1,8 @@
 .project
 .includepath
+.metadata
+.settings
+build.properties
+META-INF
 *~
 Data.sql
