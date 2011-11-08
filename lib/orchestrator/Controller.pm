@@ -191,16 +191,29 @@ sub getMonitoredPerfMetrics {
     my $cluster_name = $args{cluster}->getAttr('name' => 'cluster_name');
 
    # Get the monitored values    
-    my $cluster_data_aggreg = $self->{_monitor}->getClusterData( cluster => $cluster_name,
-                                                                 set => "haproxy_timers",
-                                                                 time_laps => $self->{_time_laps});
-
+    my $monitored_latency = $self->{_monitor}
+                                   ->getClusterData( 
+                                        cluster   => $cluster_name,
+                                        set       => "haproxy_timers",
+                                        time_laps => $self->{_time_laps}
+                                     );
+                                     
+    #Get monitored througput by apache
+    my $monitored_througput = $self->{_monitor}
+                                   ->getClusterData( 
+                                        cluster    => $cluster_name,
+                                        set        => "apache_stats",
+                                        time_laps  => $self->{_time_laps},
+                                        aggregator => 'total',
+                                     ); 
+    
+    
     #print Dumper $cluster_data_aggreg;
     
     return {
-      latency => $cluster_data_aggreg->{Tt}/1000, #get ms and return seconds
-      abort_rate => 0,
-      throughput => 0,
+      latency => $monitored_latency->{Tt}/1000, #get ms and return seconds
+      abort_rate => 0, #TODO implement abort rate
+      throughput => $monitored_througput,
     };
 }
 
@@ -379,12 +392,13 @@ sub preManageCluster{
      );
     
     # [Format] curr_perf: {throughput, latency, abort_rate} 
-    my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);     
-    my $cluster_conf = $self->getClusterConf( cluster => $cluster );     
+    my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);
+    my $cluster_conf = $self->getClusterConf( cluster => $cluster);
 
-    $log->info("Monitored perf latency = $curr_perf->{latency}, 
-    abort_rate = $curr_perf->{abort_rate} (not implemented yet), 
-    throughput = $curr_perf->{throughput} (not implemented)");
+    $log->info("Monitored latency (ha_proxy)  = $curr_perf->{latency}");
+    $log->info("Monitored throughput (apache) = $curr_perf->{throughput}");
+    $log->info("Monitored abort_rate = $curr_perf->{abort_rate} (not implemented yet)");
+    
 
     # latency => $cluster_data_aggreg->{Tt},
     # abort_rate => 0,

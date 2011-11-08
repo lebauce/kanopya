@@ -193,7 +193,22 @@ sub getClusterData {
     
     my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{cluster} );
     
-    $rrd_name .= "_avg";
+    # Unable the monitoring of _total based and stay compatible with existant code 
+    if(exists $args{aggregation} and defined $args{aggregation}){
+        if($args{aggregation} eq 'total'){
+            $rrd_name .= "_total";
+        }
+        elsif($args{aggregation} eq 'average'){
+            $rrd_name .= "_avg";
+        }
+        else{
+            $rrd_name .= "_avg";
+        }
+    }
+    else{
+        $rrd_name .= "_avg";
+    }
+    
     
     my $set_def = $self->getSetDesc(set_label => $args{set});
     my @max_def;
