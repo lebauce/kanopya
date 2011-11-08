@@ -199,7 +199,8 @@ sub calculate {
     
     $log->debug($log_string);
     
-    my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
+    #my $throughput = 1000 * $Ta_total; # Jean arnaud thesis throughput -> aberrant result
+    my $throughput = $Ta_total;
     #my $throughput = ( 1 / $latency );  # Alternative throughput -> works for open network but not for our case (closed network)
                                         # TO STUDY
     
