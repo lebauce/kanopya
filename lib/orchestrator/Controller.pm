@@ -191,7 +191,7 @@ sub getMonitoredPerfMetrics {
     my $cluster_name = $args{cluster}->getAttr('name' => 'cluster_name');
 
    # Get the monitored values    
-    my $monitored_latency = $self->{_monitor}
+    my $monitored_haproxy_timers = $self->{_monitor}
                                    ->getClusterData( 
                                         cluster   => $cluster_name,
                                         set       => "haproxy_timers",
@@ -199,7 +199,7 @@ sub getMonitoredPerfMetrics {
                                      );
                                      
     #Get monitored througput by apache
-    my $monitored_througput = $self->{_monitor}
+    my $monitored_apache_stats = $self->{_monitor}
                                    ->getClusterData( 
                                         cluster    => $cluster_name,
                                         set        => "apache_stats",
@@ -211,9 +211,9 @@ sub getMonitoredPerfMetrics {
     #print Dumper $cluster_data_aggreg;
     
     return {
-      latency => $monitored_latency->{Tt}/1000, #get ms and return seconds
+      latency => $monitored_haproxy_timers->{Tt}/1000, #get ms and return seconds
       abort_rate => 0, #TODO implement abort rate
-      throughput => $monitored_througput,
+      throughput => $monitored_apache_stats->{ReqPerSec},
     };
 }
 
