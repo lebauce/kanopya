@@ -255,6 +255,10 @@ sub _autoTuneAndUpdateModelInternalParameters {
     my $infra_conf        = $args{infra_conf};
     my $cluster_id        = $args{cluster_id};
     
+    # Dumper inline
+    $Data::Dumper::Indent = 0;
+    $log->debug("Infra conf: " . (Dumper $infra_conf));
+    
 #    print "algo_conf\n";
 #    print Dumper $algo_conf;
 #    print "workload\n";
@@ -757,8 +761,8 @@ sub _computeDiff {
     }
     $dev /= $weight if ($weight > 0);
     
-    $log->debug("* Deviation * " . (Dumper \%deviations));
-    $log->debug("==> $dev");
+    #$log->debug("* Deviation * " . (Dumper \%deviations));
+    #$log->debug("==> $dev");
     
     return $dev;
 }

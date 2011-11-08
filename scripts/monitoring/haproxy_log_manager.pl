@@ -79,14 +79,25 @@ sub manageLog {
     }
 }
 
+# Build expected log file name according to time and syslogn-ng conf
+sub _logFileName {
+    my %args = @_;
+    
+    my $last_minute = $args{time} - 60;
+    my ($sec,$min,$hour,$mday,$mon,$year) = localtime($last_minute);
+    $mon += 1;
+    $year += 1900;
+    # Add a 0 before value if only 1 digit for each variables (e.g. "1" => "01")
+    for my $v ('$min', '$hour', '$mday', '$mon') {
+        eval "$v  = '0'.$v  if ( length($v) == 1 )";
+    }
+    return "$mday-$mon-$year" . "_$hour:$min.log";
+}
+
 sub update {
     my %args = @_;
 
-    # Build expected log file name according to time 
-    my $last_minute = $args{time} - 60;
-    my ($sec,$min,$hour) = localtime($last_minute);
-    $min = "0".$min if ( length($min) == 1 ); 
-    my $logfile_name = "$hour:$min.log";
+    my $logfile_name = _logFileName( time => $args{time} );
 
     # Browse clusters to parse corresponding log file
     my @clusters = Entity::Cluster->getClusters( hash => { } );
