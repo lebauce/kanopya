@@ -366,7 +366,7 @@ get '/clusters/:clusterid' => sub {
         link_start         => $methods->{'start'}->{'granted'} && $link_start,
         link_stop          => $methods->{'stop'}->{'granted'} && $link_stop,
         link_edit          => $methods->{'update'}->{'granted'}, 
-        link_addnode       => $methods->{'addnode'}->{'granted'} ? $link_addnode : 0,
+        link_addnode       => $methods->{'addNode'}->{'granted'} ? $link_addnode : 0,
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
         can_setperm        => $methods->{'setperm'}->{'granted'},        
                        
