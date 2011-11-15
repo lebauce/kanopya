@@ -28,11 +28,11 @@ our $VERSION = '0.1';
 
 Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
 
-before sub {
+hook 'before' => sub {
     $ENV{EID} = session('EID');
 };
 
-before_template sub {
+hook 'before_template' => sub {
     my $tokens = shift;
 
     $tokens->{css_head}  = [];
