@@ -23,7 +23,9 @@ use Monitor::Retriever;
 use Entity::Cluster;
 use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
+use Tuning;
 use Actuator;
+
 
 use Log::Log4perl "get_logger";
 
@@ -74,6 +76,8 @@ sub init {
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
+    
+    $self->{_modelTuning} = Tuning->new(model=>$model);
     
     #$log->info( "Init constraints in controlleur init\n");
     
@@ -188,6 +192,9 @@ sub getMonitoredPerfMetrics {
     my $self = shift;
     my %args = @_;
     
+    my $time_laps = $args{time_laps} || $self->{_time_laps};
+    
+    
     my $cluster_name = $args{cluster}->getAttr('name' => 'cluster_name');
 
    # Get the monitored values    
@@ -195,18 +202,20 @@ sub getMonitoredPerfMetrics {
                                    ->getClusterData( 
                                         cluster   => $cluster_name,
                                         set       => "haproxy_timers",
-                                        time_laps => $self->{_time_laps}
+                                        time_laps => $time_laps
                                      );
                                      
-    #Get monitored througput by apache
+
+    #Get monitored througput by apache 
     my $monitored_apache_stats = $self->{_monitor}
                                    ->getClusterData( 
                                         cluster    => $cluster_name,
                                         set        => "apache_stats",
-                                        time_laps  => $self->{_time_laps},
-                                        aggregator => 'total',
-                                     ); 
-    
+                                        time_laps  => $time_laps,
+                                        aggregation => 'total',
+                                     );
+   
+
     
     #print Dumper $cluster_data_aggreg;
     
@@ -270,14 +279,23 @@ sub _autoTuneAndUpdateModelInternalParameters {
     
     # Launch autoTune algorithm in order to get Si/Di that match with real
     # monitored model 
-    my $best_params = $self->modelTuning( 
+#    my $best_params = $self->modelTuning_old( 
+#        algo_conf  => $algo_conf, 
+#        workload   => $workload, 
+#        infra_conf => $infra_conf, 
+#        curr_perf  => $curr_perf 
+#    );
+
+
+    
+    my $best_params = $self->{_modelTuning}->modelTuning( 
         algo_conf  => $algo_conf, 
         workload   => $workload, 
         infra_conf => $infra_conf, 
         curr_perf  => $curr_perf 
     );
 
-# print Dumper $best_params;
+print Dumper $best_params;
     
     
     
@@ -393,10 +411,17 @@ sub preManageCluster{
     
     # [Format] curr_perf: {throughput, latency, abort_rate} 
     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);
+    my $mean_perf    = $self->getMonitoredPerfMetrics( 
+                                cluster   => $cluster,
+                                time_laps => 600,
+                              );
+                              
     my $cluster_conf = $self->getClusterConf( cluster => $cluster);
 
-    $log->info("Monitored latency (ha_proxy)  = $curr_perf->{latency}");
-    $log->info("Monitored throughput (apache) = $curr_perf->{throughput}");
+    $log->info("Monitored latency (ha_proxy)  = $curr_perf->{latency}"); 
+    $log->info("Monitored latency (ha_proxy) last 10 min  = $mean_perf->{latency}"); 
+    $log->info("Monitored throughput (apache) = $curr_perf->{throughput}"); 
+    $log->info("Monitored throughput (apache) last 10 min = $mean_perf->{throughput}");
     $log->info("Monitored abort_rate = $curr_perf->{abort_rate} (not implemented yet)");
     
 
@@ -598,7 +623,7 @@ sub manageCluster {
     
 =cut
 
-sub modelTuning {
+sub modelTuning_old {
     
     my $self = shift;
     my %args = @_;
