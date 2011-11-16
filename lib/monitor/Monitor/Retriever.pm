@@ -209,6 +209,11 @@ sub getClusterData {
         $rrd_name .= "_avg";
     }
     
+# TODO : A TESTER    
+#    my %corresponding_table = (total   => 'total',
+#                               average => 'avg',
+#    );
+#    $rrd_name .= "_".($corresponding_table{$args{aggregation} || 'avg'});
     
     my $set_def = $self->getSetDesc(set_label => $args{set});
     my @max_def;
