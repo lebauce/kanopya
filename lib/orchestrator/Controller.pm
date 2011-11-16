@@ -375,9 +375,9 @@ sub preManageCluster{
 
     General::checkParams args => \%args, required => ['cluster'];
 
-    my $cluster    = $args{cluster};
-    my $cluster_id = $args{cluster}->getAttr('name' => 'cluster_id');
-    
+    my $cluster      = $args{cluster};
+    my $cluster_id   = $args{cluster}->getAttr('name' => 'cluster_id');
+    my $cluster_name = $cluster->getAttr('name' => 'cluster_name');
         
     # Refresh qos constraints
     # TODO make one sub with these two instruction ($contraints not used elsewhere)
@@ -417,11 +417,13 @@ sub preManageCluster{
                               );
                               
     my $cluster_conf = $self->getClusterConf( cluster => $cluster);
-
-    $log->info("Monitored latency (ha_proxy)  = $curr_perf->{latency}"); 
-    $log->info("Monitored latency (ha_proxy) last 10 min  = $mean_perf->{latency}"); 
-    $log->info("Monitored throughput (apache) = $curr_perf->{throughput}"); 
-    $log->info("Monitored throughput (apache) last 10 min = $mean_perf->{throughput}");
+    
+    
+    $log->info("$cluster_name : Monitored latency (ha_proxy)         = $curr_perf->{latency}"); 
+    $log->info("$cluster_name : Monitored latency (ha_proxy, 10min)  = $mean_perf->{latency}"); 
+    $log->info("$cluster_name : Monitored throughput (apache)        = $curr_perf->{throughput}"); 
+    $log->info("$cluster_name : Monitored throughput (apache, 10min) = $mean_perf->{throughput}");
+    
     $log->info("Monitored abort_rate = $curr_perf->{abort_rate} (not implemented yet)");
     
 
@@ -915,7 +917,9 @@ sub update {
     
     for my $cluster (@clusters) {        
         my $cluster_name = $cluster->getAttr('name' => 'cluster_name');
-        $log->info( "CLUSTER: " . $cluster_name . "\n ");
+        $log->info( "***********************************");
+        $log->info( "* CLUSTER: " . $cluster_name . "\n ");
+        $log->info( "***********************************");
         #if($cluster->getAttr('name' => 'active')) 
         {
             # TODO get controller/orchestration conf for this cluster and init this controller
