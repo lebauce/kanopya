@@ -23,7 +23,7 @@ use Monitor::Retriever;
 use Entity::Cluster;
 use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
-use Tuning;
+#use Tuning;
 use Actuator;
 
 
@@ -77,7 +77,7 @@ sub init {
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
     
-    $self->{_modelTuning} = Tuning->new(model=>$model);
+    # $self->{_modelTuning} = Tuning->new(model=>$model);
     
     #$log->info( "Init constraints in controlleur init\n");
     
@@ -279,21 +279,21 @@ sub _autoTuneAndUpdateModelInternalParameters {
     
     # Launch autoTune algorithm in order to get Si/Di that match with real
     # monitored model 
-#    my $best_params = $self->modelTuning_old( 
-#        algo_conf  => $algo_conf, 
-#        workload   => $workload, 
-#        infra_conf => $infra_conf, 
-#        curr_perf  => $curr_perf 
-#    );
-
-
-    
-    my $best_params = $self->{_modelTuning}->modelTuning( 
+    my $best_params = $self->modelTuning( 
         algo_conf  => $algo_conf, 
         workload   => $workload, 
         infra_conf => $infra_conf, 
         curr_perf  => $curr_perf 
     );
+
+
+    
+#    my $best_params = $self->{_modelTuning}->modelTuning( 
+#        algo_conf  => $algo_conf, 
+#        workload   => $workload, 
+#        infra_conf => $infra_conf, 
+#        curr_perf  => $curr_perf 
+#    );
 
 print Dumper $best_params;
     
@@ -623,7 +623,7 @@ sub manageCluster {
     
 =cut
 
-sub modelTuning_old {
+sub modelTuning {
     
     my $self = shift;
     my %args = @_;
