@@ -136,7 +136,8 @@ sub calculate {
     
     for my $i (0 .. $M-1) {
         $Ql[$i] = 0;
-        $W[$i] = ($S[$i] - $D[$i]) * $V[$i];
+        #$W[$i] = ($S[$i] - $D[$i]) * $V[$i];
+        $W[$i] = $S[$i] * $V[$i];
     }
     
 #    print "M = $M, $Na[0], $Na[1]\n";
@@ -149,7 +150,7 @@ sub calculate {
         #for (my $j = 1; $j < $Na[$i]; $j++) {
         for (my $j = 1; $j <= $Na[$i]; $j++) {
             my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
-   
+           
             $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );  
             
             
@@ -176,7 +177,7 @@ sub calculate {
     }
    
     my $latency = $La[0];
-        
+    
     ######
     #  Service throughput and abandon rate
     ######
@@ -208,6 +209,8 @@ sub calculate {
         latency => $latency,              # ms (mean time for execute client request)
         abort_rate => $abort_rate,        # %  (rejected_request/total_request)
         throughput => $throughput,        # req/sec (successful requests per sec) = reply rate?
+        Ql         => \@Ql,
+        La         => \@La,
     );    
 }
 
