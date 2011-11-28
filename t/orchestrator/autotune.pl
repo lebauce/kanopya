@@ -1,6 +1,7 @@
 use lib qw(/opt/kanopya/lib/administrator /opt/kanopya/lib/monitor /opt/kanopya/lib/orchestrator /opt/kanopya/lib/common);
 use Test::More 'no_plan';
 use Test::Deep;
+use Model::MVAModel;
 #use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init();
 use Log::Log4perl "get_logger";
@@ -104,60 +105,59 @@ my $workload = {
     
     my $workload = {
        workload_class => {
-              visit_ratio => [1,1],
+              visit_ratio => [1,0.13],
               #service_time => [0.1],
               #delay => [0],
-              think_time => 5, 
+              think_time => 6.313
        },
-       workload_amount => 2000
+       workload_amount => 226
     };
     
     my $algo_conf = {
-        nb_steps            => 40,
+        nb_steps            => 500,
         init_step_size      => 5,
         init_point_position => 1,
     };
     
     my $infra_conf = {       
         M        => 2,
-        AC       => [2,2],
-        LC       => [250,250], 
+        AC       => [1,1],
+        LC       => [10000,10000], 
     };
     
     my $curr_perf = {
-        latency    =>  0.01,
-        abort_rate => 0.8,
-        throughput => 40000,
+        latency    =>  0.00382,
+        abort_rate => 0,
+        throughput => 35.77,
     };
     
 my $best_params = $controller->modelTuning( algo_conf => $algo_conf, workload => $workload, infra_conf => $infra_conf, curr_perf => $curr_perf );
 print Dumper $best_params; 
 
+$workload->{workload_class}->{service_time} = $best_params->{S};
+$workload->{workload_class}->{delay}   = $best_params->{D};
+
 my %verify = (
-          'workload_amount' => 2000,
-          'workload_class' => {
-                                'visit_ratio' => [
-                                                   1,1
-                                                 ],
-                                #'service_time' => $best_params->{S},
-                                #'delay' => $best_params->{D},
-                                                                'service_time' => [
-                                                    '0.00390625',
-                                                    '0.453125'
-                                                  ],
-                                'delay' => [
-                                             '0',
-                                             '4.0078125'
-                                           ],
-                                
-                                'think_time' => 5
-                              },
+          'workload_amount' => $workload->{workload_amount},
+          'workload_class' => $workload->{workload_class},
           'configuration' => $infra_conf
         );
 
 print Dumper \%verify;
-use Model::MVAModel;
+
+
 my $model = Model::MVAModel->new();
 my %QoS = $model->calculate(%verify);
-use Data::Dumper;
 print Dumper \%QoS;
+
+print "Waited values : \n";
+print "latency = $curr_perf->{latency} \n";
+print "throughput = $curr_perf->{throughput} \n";
+
+$verify{workload_amount} = 2251;
+#$verify{workload_class}{service_time}[0] *= 10;
+
+print Dumper \%verify;
+my %QoS = $model->calculate(%verify);
+print Dumper \%QoS;
+
