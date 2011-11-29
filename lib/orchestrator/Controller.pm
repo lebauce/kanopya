@@ -413,16 +413,16 @@ sub preManageCluster{
     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);
     my $mean_perf    = $self->getMonitoredPerfMetrics( 
                                 cluster   => $cluster,
-                                time_laps => 600,
+                                time_laps => 1200,
                               );
                               
     my $cluster_conf = $self->getClusterConf( cluster => $cluster);
     
     
     $log->info("$cluster_name : Monitored latency (ha_proxy)         = $curr_perf->{latency}"); 
-    $log->info("$cluster_name : Monitored latency (ha_proxy, 10min)  = $mean_perf->{latency}"); 
+    $log->info("$cluster_name : Monitored latency (ha_proxy, 20min)  = $mean_perf->{latency}"); 
     $log->info("$cluster_name : Monitored throughput (apache)        = $curr_perf->{throughput}"); 
-    $log->info("$cluster_name : Monitored throughput (apache, 10min) = $mean_perf->{throughput}");
+    $log->info("$cluster_name : Monitored throughput (apache, 20min) = $mean_perf->{throughput}");
     
     $log->info("Monitored abort_rate = $curr_perf->{abort_rate} (not implemented yet)");
     
