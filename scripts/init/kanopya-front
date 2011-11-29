@@ -18,6 +18,7 @@ PORT=5000
 WORKERS=10
 DANCER_DIR="/opt/kanopya/ui/Frontend"
 DANCER_APP="$DANCER_DIR/bin/app.pl"
+SESSIONS_DIR="/tmp/kanopya-sessions"
 
 plackup="/usr/bin/plackup"
 plackup_args="-E production -p $PORT -s Starman --pid=$PID --workers $WORKERS --user=kanopya -D"
@@ -42,6 +43,11 @@ fi
 start() {
     [ -x $plackup ] || exit 5
     [ -f $DANCER_APP ] || exit 6
+    if [ ! -e $SESSIONS_DIR ]; then
+      mkdir -p $SESSIONS_DIR
+      chown kanopya.kanopya $SESSIONS_DIR
+    fi
+
     echo -n "Starting $website: "
     $plackup $plackup_args -a $DANCER_APP 2>&1 > /dev/null
     retval=$?
@@ -60,7 +66,7 @@ stop() {
     if [ -f $PID ]; then
         kill `cat $PID` 2>&1 > /dev/null
         retval=$?
-        [ $retval -eq 0 ] && rm -f $lockfile
+        [ $retval -eq 0 ] && rm -f $lockfile $PID
         echo
         return $retval
     fi
