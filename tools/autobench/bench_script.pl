@@ -248,7 +248,7 @@ sub configBench {
 sub checkRequirements {
     # TODO check than needed scripts runs
     print "Haproxy log manager runs on admin? [enter]\n";
-    print <STDIN>;
+    <STDIN>;
 }
 
 sub run {
