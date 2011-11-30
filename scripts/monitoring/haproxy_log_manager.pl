@@ -38,7 +38,7 @@ sub storeStats {
 
     return if (not defined $data); 
 
-    for my $set ("timers", "conns") {
+    for my $set ("timers", "conns", "errors") {
         my $set_name = "haproxy_$set";
         my $rrd_name = $monitor->rrdName( set_name => $set_name, host_name => $args{cluster_name} );
         $rrd_name .= "_avg";
