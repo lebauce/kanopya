@@ -34,7 +34,7 @@ sub stop {
 	    
         my $client_cmd = 'ssh root@' . $client . ' \"pgrep -f specwebclient | xargs kill -9\"';
         my $cmd = 'ssh root@10.1.1.1 "' . $client_cmd . '"';
-        print $cmd, "\n";        
+        #print $cmd, "\n";        
         system( $cmd );
 
         # Direct access (local ssh public key must be on nodes)
@@ -42,6 +42,7 @@ sub stop {
     }
 }
 
+$SIG{INT} = \&onKill;
 
 if ($ARGV[0] eq "start") {
     start();
@@ -62,3 +63,10 @@ if ($ARGV[0] eq "start") {
 } else {
     print "Need params:\nstart : start all clients\nstop : stop all clients\nbench : start all clients and then start the prime client\n";
 }
+
+sub onKill {
+    print "\nKill clients\n";
+    system( "perl specweb_clients.pl stop" );
+    exit;
+}
+

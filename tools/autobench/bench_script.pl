@@ -111,7 +111,8 @@ sub getLogs {
 }
 
 sub launchBench {
-    system( "perl specweb_clients.pl bench" ); 
+    #system( "perl specweb_clients.pl bench" );
+    `perl specweb_clients.pl bench > specweb.out 2> specweb.err`;
 }
 
 sub extractInfo {
@@ -306,6 +307,8 @@ sub stats {
 
 ## MAIN
 
+$SIG{INT} = \&onKill;
+
 my $opt = shift;
 if ($opt eq "stat") {
     print "STAT\n";
@@ -320,5 +323,11 @@ if ($opt eq "stat") {
 
 sub usage {
     print "./bench_script.pl stat|run [stat_dir]\n";
+}
+
+sub onKill {
+    print "\nKill clients\n";
+    system( "perl specweb_clients.pl stop" );
+    exit;
 }
 
