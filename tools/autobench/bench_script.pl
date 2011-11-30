@@ -40,6 +40,17 @@ sub ssh {
     `$cmd`;
 }
 
+# Clear apache log file content on nodes
+sub clearApacheLogs {
+    my %logs = ($frontend_log_path => \@frontend_nodes, $backend_log_path => \@backend_nodes);
+    while (my ($log_path, $ips) = each %logs) {
+        for my $ip (@$ips) {
+            #ssh( ip => $ip, cmd => "> $log_path");
+            ssh( ip => $ADMIN_IP, cmd => 'ssh -i /root/.ssh/kanopya_rsa root@' . $ip . " \"> $log_path\""); 
+        }
+    }
+}
+
 sub getApacheLogs {
     my %args = @_;
     my $dest_dir = $args{dest_dir};
@@ -55,11 +66,6 @@ sub getApacheLogs {
 	        # Get apache log file from admin
 	        #scp( ip => $ip, src_path => $log_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
 	        scp( ip => $ADMIN_IP, src_path => $tmp_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
-
-	        # Clear apache log file content on remote machine
-	        #ssh( ip => $ip, cmd => "> $log_path");
-            #ssh( ip => $ADMIN_IP, cmd => 'ssh root@' . $ip . " '> $log_path'");
-            ssh( ip => $ADMIN_IP, cmd => 'ssh -i /root/.ssh/kanopya_rsa root@' . $ip . " \"> $log_path\""); 
         }
     }
 }
@@ -100,6 +106,7 @@ sub getLogs {
     my %args = @_;
     getSpecWebResult(%args);
     getApacheLogs(%args);
+    clearApacheLogs();
     getOrchestratorLogs(%args);
 }
 
@@ -111,7 +118,7 @@ sub extractInfo {
     my %args = @_;
     my $dir = $args{dir};
 
-    my %info = ();
+    my %info = ( dir => $dir);
 
     # Info from apache logs
     for my $ip (@frontend_nodes, @backend_nodes) {
@@ -186,8 +193,10 @@ sub addHead {
 
     my $row = 0;
 
+    $sheet->cellValue($table_name, $row++, 0, "dir");
+
     for my $field (@spec_fields) {
-         $sheet->cellValue($table_name, $row++, 0, "spec.$field");    
+         $sheet->cellValue($table_name, $row++, 0, "spec.$field");
     }
     
     for my $node (@frontend_nodes, @backend_nodes) {
@@ -205,6 +214,8 @@ sub addInfo {
 
     my ($sheet, $info, $col) = ($args{sheet}, $args{info}, $args{col});   
     my $row = 0;
+
+    $sheet->cellValue($table_name, $row++, $col, $info->{dir});
 
     for my $field (@spec_fields) { 
         $sheet->cellValue($table_name, $row++, $col, $info->{spec}{$field});
@@ -234,8 +245,20 @@ sub configBench {
         || die "Template error: ", $tt->error(), "\n";
 }
 
+sub checkRequirements {
+    # TODO check than needed scripts runs
+    print "Haproxy log manager runs on admin? [enter]\n";
+    print <STDIN>;
+}
+
 sub run {
     mkdir "res" unless (-d "res");
+
+    print "Check requirements\n";
+    checkRequirements();
+
+    print "Clear apache logs on nodes before bench...\n";
+    clearApacheLogs();
 
     for my $sessions (@sessions_evo) {
 
