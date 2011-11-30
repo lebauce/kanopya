@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 use LogAnalyzer;
 use Data::Dumper;
 use XML::Simple;
