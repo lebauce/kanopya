@@ -411,7 +411,7 @@ sub preManageCluster{
     
     # [Format] curr_perf: {throughput, latency, abort_rate}
     
-    my $time_laps = 1200; # Monitored windows in ms
+    my $time_laps = 15*60; # Monitored windows in s
     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);
     my $mean_perf    = $self->getMonitoredPerfMetrics( 
                                 cluster   => $cluster,

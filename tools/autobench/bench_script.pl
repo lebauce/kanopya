@@ -76,7 +76,7 @@ sub getOrchestratorLogs {
 
     my $ip = $ADMIN_IP;
     my $orchestrator_log_file = "/var/log/kanopya/orchestrator.log";
-    my $grep_regexp = ": Monitored";
+    my $grep_regexp = '": Monitored"';
     
     #my $lookback_minute = 60;
     #my $tail_lines = $lookback_minute * 4; # 2 lines (latency and throughput) for 2 tiers;
