@@ -289,9 +289,12 @@ sub run {
 sub stats {
     my %args = @_;
     my $rootdir = defined $args{rootdir} ? ($args{rootdir}) : 'res';
+    $rootdir = ($rootdir =~ '(.*)/$') ? $1 : $rootdir;
+
     my @dirs = map { "$rootdir/$_" } (split ' ', `ls $rootdir`);
     
     my $sheet = odfDocument(file => "$rootdir/$rootdir.ods", create => 'spreadsheet');
+    print "output file : $rootdir/$rootdir.ods\n";
     $sheet->appendTable($table_name, 100, 100);
 
     #displayHeadInfo();
