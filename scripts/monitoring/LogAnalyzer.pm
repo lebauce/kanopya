@@ -73,6 +73,7 @@ sub parse {
     my $termination_state = $raw[ $idx_map->{termination_state} ];
     if ( $termination_state !~ '^--' ) { # normal termination state begin with --
         $self->{counters}{ $frontend_name }{'errors'}{ $termination_state } += 1;
+        $self->{counters}{ $frontend_name }{'errors'}{'total'} += 1;
         
         if ( $termination_state =~ '^s.*' ) { # server side abort
             $self->{counters}{ $frontend_name }{'server_abort'} += 1;
@@ -111,7 +112,9 @@ sub getStats {
             $stats{$frontend}{'timers'}{'Tt'} = $info->{'timers'}{'Tt'} / $info->{ok_count};
             $stats{$frontend}{'timers'}{'Tc'} = 0; #TODO
             $stats{$frontend}{'timers'}{'Tw'} = 0; #TODO
+            $stats{$frontend}{'timers'}{'num_logs'} = $info->{ok_count};
             $stats{$frontend}{'conns'}{'Active'} = $info->{'conns'}{'act'} / $info->{ok_count};
+            $stats{$frontend}{'errors'}{'Total'} = $info->{'errors'}{'total'};
             
             # Considering all errors are logged we can compute abort rate using server error relativly to active connections
             $stats{$frontend}{'experimental_abort_rate'} = $info->{'server_abort'} / $stats{$frontend}{'conns'}{'Active'};
