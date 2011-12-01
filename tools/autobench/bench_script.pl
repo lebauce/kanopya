@@ -12,6 +12,9 @@ use strict;
 use warnings;
 use Template;
 use Data::Dumper;
+use Monitor::Retriever;
+
+
 
 use OpenOffice::OODoc; # libopenoffice-oodoc-perl
 
@@ -26,7 +29,7 @@ my $ADMIN_IP        = "10.1.2.1";
 my $frontend_log_path   = "/tmp/apache_access.log";
 my $backend_log_path    = "/var/log/apache2/access.log";
 
-my @sessions_evo = (50,100,150,200,250,300,350,400,450,500,550,600,650,700);
+my @sessions_evo = (100,200,300,400,500,600,700);
 
 # Copy <src_path> from <ip> to <dest_path> on localhost
 sub scp {
@@ -293,10 +296,13 @@ sub run {
 # If <dir> is specified then stat this dir else stat and report all dirs under res/
 sub stats {
     my %args = @_;
+    my $rootdir = defined $args{rootdir} ? ($args{rootdir}) : 'res';
+    $rootdir = ($rootdir =~ '(.*)/$') ? $1 : $rootdir;
+
+    my @dirs = map { "$rootdir/$_" } (split ' ', `ls $rootdir`);
     
-    my @dirs = defined $args{dir} ? ($args{dir}) : map { "res/$_" } (split ' ', `ls res`);
-    
-    my $sheet = odfDocument(file => 'res.ods', create => 'spreadsheet');
+    my $sheet = odfDocument(file => "$rootdir/$rootdir.ods", create => 'spreadsheet');
+    print "output file : $rootdir/$rootdir.ods\n";
     $sheet->appendTable($table_name, 100, 100);
 
     #displayHeadInfo();
@@ -304,10 +310,11 @@ sub stats {
 
     my $col = 1;
     for my $dir (@dirs) {
-        print "$dir\n";
-        my $info = extractInfo( dir => $dir );
-        #displayRawInfo( info => $info);
-        addInfo( sheet => $sheet, info => $info, col => $col++ );
+	next unless (-d $dir);
+	print "$dir\n";
+	my $info = extractInfo( dir => $dir );
+	#displayRawInfo( info => $info);
+	addInfo( sheet => $sheet, info => $info, col => $col++ );
     }
 
     $sheet->save;
@@ -321,8 +328,8 @@ $SIG{INT} = \&onKill;
 my $opt = shift;
 if ($opt eq "stat") {
     print "STAT\n";
-    my $dir = shift;
-    stats( dir => $dir );
+    my $rootdir = shift;
+    stats(rootdir => $rootdir );
 } elsif ($opt eq "run") {
     print "RUN\n";
     $mode = "run";
