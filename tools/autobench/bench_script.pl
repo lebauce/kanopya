@@ -219,13 +219,17 @@ sub addInfo {
     $sheet->cellValue($table_name, $row++, $col, $info->{dir});
 
     for my $field (@spec_fields) { 
+        my $cell = $sheet->getCell($table_name, $row, $col);
+        $sheet->cellValueType($cell, 'float');
         $sheet->cellValue($table_name, $row++, $col, $info->{spec}{$field});
     }
     
     for my $node (@frontend_nodes, @backend_nodes) {
         for my $comp (@node_fields) {
             for my $field (@{ $comp->{fields} }) {
-                $sheet->cellValue($table_name, $row++, $col, $info->{$node}{$comp->{name}}{$field});   
+                my $cell = $sheet->getCell($table_name, $row, $col);
+                $sheet->cellValueType($cell, 'float');
+                $sheet->cellValue($table_name, $row++, $col, $info->{$node}{$comp->{name}}{$field});
             }
         }
     }    
@@ -307,6 +311,7 @@ sub stats {
 
 ## MAIN
 
+my $mode = "";
 $SIG{INT} = \&onKill;
 
 my $opt = shift;
@@ -316,6 +321,7 @@ if ($opt eq "stat") {
     stats( dir => $dir );
 } elsif ($opt eq "run") {
     print "RUN\n";
+    $mode = "run";
     run();
 } else {
     usage();
@@ -326,8 +332,10 @@ sub usage {
 }
 
 sub onKill {
-    print "\nKill clients\n";
-    system( "perl specweb_clients.pl stop" );
+    if ($mode eq "run") {
+        print "\nKill clients\n";
+        system( "perl specweb_clients.pl stop" );
+    }
     exit;
 }
 
