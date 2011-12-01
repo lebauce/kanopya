@@ -19,6 +19,8 @@ my $SPECWEB_DIR = "/web2005-1.31";
 
 my @frontend_nodes  = ("10.1.2.2");
 my @backend_nodes   = ("10.1.2.253");
+my @nodes = (@frontend_nodes, @backend_nodes);
+my @tiers = ("ServerBench", "BeSim");
 my $ADMIN_IP        = "10.1.2.1";
 
 my $frontend_log_path   = "/tmp/apache_access.log";
@@ -143,7 +145,23 @@ sub extractInfo {
     $info{spec}{avg_resp_time} = $avg_resp;
 
     # Info from orchestrator logs
-    
+    my $log_offset = 2; # control wich logs set we want (last, last-1, last-2..) => 1 = last
+    my $cmd = "tail -" . (8*$log_offset) . " $dir/orchestrator.log | tac | tail -8 | grep ', [0-9]*min'";
+    my @logs = split "\n", `$cmd`;
+    print Dumper @logs;
+    for my $log (@logs) {
+        my $value = (split ' ', $log)[-1];
+        for my $tier (@tiers) {
+            if ($log =~ $tier) {
+                my %fields = ('apache' => 'throughput', 'Haproxy' => 'latency');
+                while (my ($comp, $metric) = each (%fields)) {
+                    if ($log =~ $metric) {
+                        $info{$tier}{$comp}{$metric} = $value;
+                    }
+                }
+            }        
+        }
+    }
 
 #    print Dumper \%info;
 
@@ -152,39 +170,10 @@ sub extractInfo {
 
 my @spec_fields = ('sessions', 'requests', 'reqs/sec/session', 'errors', 'avg_resp_time');
 my @node_fields = ({name =>'apache', fields => ['latency', 'line_count'] });
+my @tier_fields = ({name => 'apache', fields => ['throughput'] }, {name => 'Haproxy', fields => ['latency'] });
 
 my $table_name = "RESULTS";
 
-sub displayHeadInfo {
-    for my $field (@spec_fields) { print "spec.$field | " }
-    
-    for my $node (@frontend_nodes, @backend_nodes) {
-        for my $comp (@node_fields) {
-            for my $field (@{ $comp->{fields} }) {
-                print "$node.$comp->{name}.$field | ";             
-            }
-        }
-    }
-
-    print "\n";    
-}
-
-sub displayRawInfo {
-    my %args = @_;
-    
-    my $info = $args{info};
-    for my $field (@spec_fields) { print "$info->{spec}{$field} | " }
-    
-    for my $node (@frontend_nodes, @backend_nodes) {
-        for my $comp (@node_fields) {
-            for my $field (@{ $comp->{fields} }) {
-                print "$info->{$node}{$comp->{name}}{$field} | ";             
-            }
-        }
-    }    
-
-    print "\n";
-}
 
 # Add head in spreadsheet
 sub addHead {
@@ -200,13 +189,25 @@ sub addHead {
          $sheet->cellValue($table_name, $row++, 0, "spec.$field");
     }
     
-    for my $node (@frontend_nodes, @backend_nodes) {
-        for my $comp (@node_fields) {
-            for my $field (@{ $comp->{fields} }) {
-                $sheet->cellValue($table_name, $row++, 0, "$node.$comp->{name}.$field");  
-            }
-        }
+    for my $data (  { entities => \@nodes, fields => \@node_fields },
+                    { entities => \@tiers, fields => \@tier_fields }) {
+        for my $entity (@{$data->{entities}}) {
+            for my $comp (@{$data->{fields}}) {
+                for my $field (@{ $comp->{fields} }) {
+                    $sheet->cellValue($table_name, $row++, 0, "$entity.$comp->{name}.$field");  
+                }
+            }        
+        }   
     }
+#    for my $node (@frontend_nodes, @backend_nodes) {
+#        for my $comp (@node_fields) {
+#            for my $field (@{ $comp->{fields} }) {
+#                $sheet->cellValue($table_name, $row++, 0, "$node.$comp->{name}.$field");  
+#            }
+#        }
+#    }
+
+
 }
 
 # Add info of a bench in spreadsheet
@@ -224,12 +225,15 @@ sub addInfo {
         $sheet->cellValue($table_name, $row++, $col, $info->{spec}{$field});
     }
     
-    for my $node (@frontend_nodes, @backend_nodes) {
-        for my $comp (@node_fields) {
-            for my $field (@{ $comp->{fields} }) {
-                my $cell = $sheet->getCell($table_name, $row, $col);
-                $sheet->cellValueType($cell, 'float');
-                $sheet->cellValue($table_name, $row++, $col, $info->{$node}{$comp->{name}}{$field});
+     for my $data (  { entities => \@nodes, fields => \@node_fields },
+                    { entities => \@tiers, fields => \@tier_fields }) {
+        for my $entity (@{$data->{entities}}) {
+            for my $comp (@{$data->{fields}}) {
+                for my $field (@{ $comp->{fields} }) {
+                    my $cell = $sheet->getCell($table_name, $row, $col);
+                    $sheet->cellValueType($cell, 'float');
+                    $sheet->cellValue($table_name, $row++, $col, $info->{$entity}{$comp->{name}}{$field});
+                }
             }
         }
     }    
