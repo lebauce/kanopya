@@ -29,7 +29,8 @@ my $ADMIN_IP        = "10.1.2.1";
 my $frontend_log_path   = "/tmp/apache_access.log";
 my $backend_log_path    = "/var/log/apache2/access.log";
 
-my @sessions_evo = (100,200,300,400,500,600,700);
+my @sessions_evo = (50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900,950,1000);
+
 
 # Copy <src_path> from <ip> to <dest_path> on localhost
 sub scp {
