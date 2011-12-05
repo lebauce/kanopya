@@ -12,9 +12,6 @@ use strict;
 use warnings;
 use Template;
 use Data::Dumper;
-use Monitor::Retriever;
-
-
 
 use OpenOffice::OODoc; # libopenoffice-oodoc-perl
 
@@ -151,7 +148,6 @@ sub extractInfo {
     my $log_offset = 2; # control wich logs set we want (last, last-1, last-2..) => 1 = last
     my $cmd = "tail -" . (8*$log_offset) . " $dir/orchestrator.log | tac | tail -8 | grep ', [0-9]*min'";
     my @logs = split "\n", `$cmd`;
-    print Dumper @logs;
     for my $log (@logs) {
         my $value = (split ' ', $log)[-1];
         for my $tier (@tiers) {
