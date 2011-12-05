@@ -64,7 +64,7 @@ sub new {
     
     $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
-    $self->_init();
+    #$self->_init();
     
     return $self;
 }
