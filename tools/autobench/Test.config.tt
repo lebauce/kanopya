@@ -7,7 +7,7 @@ SIMULTANEOUS_SESSIONS   = [% simultaneous_sessions %]
 
 THREAD_RAMPUP_SECONDS   = 30   #A >= 180
 WARMUP_SECONDS          = 30   #B >= 300
-RUN_SECONDS             = 1200  #C = 1800
+RUN_SECONDS             = 3600  #C = 1800
 THREAD_RAMPDOWN_SECONDS = 30   #D >= 180
 RAMPDOWN_SECONDS        = 30   #E =300
 RAMPUP_SECONDS          = 30   #F ( =B) (=300)
