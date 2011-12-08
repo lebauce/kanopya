@@ -149,7 +149,7 @@
                             resizable: true,
                             buttons: {
                                 Send: function() {
-                                    $('#target').submit();
+                                    $(this).find('#target').submit();
                                     $(this).dialog('close');
                                 },
                                 Cancel: function() {
