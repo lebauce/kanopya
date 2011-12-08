@@ -109,7 +109,7 @@ sub updateHostData {
                 # Retrieve the map ref { index => { var_name => value } } corresponding to required var_map for each entry #
                 ############################################################################################################
                 my $retrieve_set_start_time = time();
-                if ( exists $set->{table_oid} ) {
+                if ( defined $set->{table_oid} ) {
                     ($time, $update_values) = $data_provider->retrieveTableData( table_oid => $set->{table_oid}, index_oid => $set->{index_oid}, var_map => \%var_map );
                 } else {
                     ($time, $update_values->{"0"}) = $data_provider->retrieveData( var_map => \%var_map );
