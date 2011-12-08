@@ -66,9 +66,9 @@ sub getApacheLogs {
             # Get log from node to admin    
             ssh( ip => $ADMIN_IP, cmd => 'scp -i /root/.ssh/kanopya_rsa root@' . $ip . ':' . $log_path . " $tmp_path" );
 
-	        # Get apache log file from admin
-	        #scp( ip => $ip, src_path => $log_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
-	        scp( ip => $ADMIN_IP, src_path => $tmp_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
+            # Get apache log file from admin
+            #scp( ip => $ip, src_path => $log_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
+            scp( ip => $ADMIN_IP, src_path => $tmp_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
         }
     }
 }
@@ -181,12 +181,12 @@ sub addHead {
 
     my ($sheet) = ($args{sheet});
 
-    my $row = 0;
+    my $col = 0;
 
-    $sheet->cellValue($table_name, $row++, 0, "dir");
+    $sheet->cellValue($table_name, 0, $col++, "dir");
 
     for my $field (@spec_fields) {
-         $sheet->cellValue($table_name, $row++, 0, "spec.$field");
+         $sheet->cellValue($table_name, 0, $col++, "spec.$field");
     }
     
     for my $data (  { entities => \@nodes, fields => \@node_fields },
@@ -194,19 +194,11 @@ sub addHead {
         for my $entity (@{$data->{entities}}) {
             for my $comp (@{$data->{fields}}) {
                 for my $field (@{ $comp->{fields} }) {
-                    $sheet->cellValue($table_name, $row++, 0, "$entity.$comp->{name}.$field");  
+                    $sheet->cellValue($table_name, 0, $col++, "$entity.$comp->{name}.$field");  
                 }
             }        
         }   
     }
-#    for my $node (@frontend_nodes, @backend_nodes) {
-#        for my $comp (@node_fields) {
-#            for my $field (@{ $comp->{fields} }) {
-#                $sheet->cellValue($table_name, $row++, 0, "$node.$comp->{name}.$field");  
-#            }
-#        }
-#    }
-
 
 }
 
@@ -214,15 +206,15 @@ sub addHead {
 sub addInfo {
     my %args = @_;
 
-    my ($sheet, $info, $col) = ($args{sheet}, $args{info}, $args{col});   
-    my $row = 0;
+    my ($sheet, $info, $row) = ($args{sheet}, $args{info}, $args{row});   
+    my $col = 0;
 
-    $sheet->cellValue($table_name, $row++, $col, $info->{dir});
+    $sheet->cellValue($table_name, $row, $col++, $info->{dir});
 
     for my $field (@spec_fields) { 
         my $cell = $sheet->getCell($table_name, $row, $col);
         $sheet->cellValueType($cell, 'float');
-        $sheet->cellValue($table_name, $row++, $col, $info->{spec}{$field});
+        $sheet->cellValue($table_name, $row, $col++, $info->{spec}{$field});
     }
     
      for my $data (  { entities => \@nodes, fields => \@node_fields },
@@ -232,7 +224,7 @@ sub addInfo {
                 for my $field (@{ $comp->{fields} }) {
                     my $cell = $sheet->getCell($table_name, $row, $col);
                     $sheet->cellValueType($cell, 'float');
-                    $sheet->cellValue($table_name, $row++, $col, $info->{$entity}{$comp->{name}}{$field});
+                    $sheet->cellValue($table_name, $row, $col++, $info->{$entity}{$comp->{name}}{$field});
                 }
             }
         }
@@ -256,7 +248,7 @@ sub configBench {
 
 sub checkRequirements {
     # TODO check than needed scripts runs
-    print "Haproxy log manager runs on admin? [enter]\n";
+    print "Haproxy log manager runs on admin? [enter]";
     <STDIN>;
 }
 
@@ -302,16 +294,14 @@ sub stats {
     print "output file : $rootdir/$rootdir.ods\n";
     $sheet->appendTable($table_name, 100, 100);
 
-    #displayHeadInfo();
     addHead( sheet => $sheet );
 
-    my $col = 1;
+    my $row = 1;
     for my $dir (@dirs) {
-	next unless (-d $dir);
-	print "$dir\n";
-	my $info = extractInfo( dir => $dir );
-	#displayRawInfo( info => $info);
-	addInfo( sheet => $sheet, info => $info, col => $col++ );
+        next unless (-d $dir);
+        print "$dir\n";
+        my $info = extractInfo( dir => $dir );
+        addInfo( sheet => $sheet, info => $info, row => $row++ );
     }
 
     $sheet->save;
