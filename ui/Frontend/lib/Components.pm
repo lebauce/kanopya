@@ -36,7 +36,9 @@ get '/components' => sub {
 };
 
 get '/components/upload' => sub {
-    template 'form_uploadcomponent', {}, { layout => ''};
+    template 'form_uploadcomponent', {
+			title_page         => 'Systems - Components upload',
+	}, { layout => ''};
 };
 
 post '/components/upload' => sub {
