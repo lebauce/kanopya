@@ -148,6 +148,14 @@ sub extractInfo {
     my $avg_resp = (split " ", $totals)[7];
     $info{spec}{avg_resp_time} = $avg_resp;
 
+    # Info from SpecWeb conf
+    for my $conf_key ('PARALLEL_CONNS') {
+        my $line = `grep '$conf_key =' $dir/SPECweb_Banking*raw`;
+        $line =~ /$conf_key = "(.*)"/;
+        $info{spec}{$conf_key} = $1;
+    }
+    
+
     # Info from orchestrator logs
     my $log_offset = 2; # control wich logs set we want (last, last-1, last-2..) => 1 = last
     my $cmd = "tail -" . (8*$log_offset) . " $dir/orchestrator.log | tac | tail -8 | grep ', [0-9]*min'";
@@ -171,7 +179,8 @@ sub extractInfo {
     return \%info;
 }
 
-my @spec_fields = ('sessions', 'requests', 'reqs/sec/session', 'errors', 'avg_resp_time');
+# Define what is included in result ods file (and in which order)
+my @spec_fields = ('sessions', 'PARALLEL_CONNS', 'requests', 'reqs/sec/session', 'errors', 'avg_resp_time');
 my @node_fields = ({name =>'apache', fields => ['latency', 'line_count'] });
 my @tier_fields = ({name => 'apache', fields => ['throughput'] }, {name => 'Haproxy', fields => ['latency'] });
 
