@@ -15,18 +15,21 @@ use Data::Dumper;
 
 use OpenOffice::OODoc; # libopenoffice-oodoc-perl
 
+require "autobench.conf";
+
+# autobench.conf must export:
+our @frontend_nodes; # list of ip
+our @backend_nodes;  # list of ip
+our @sessions_evo;   # list of simultaneous sessions number
+
 my $SPECWEB_DIR = "/web2005-1.31";
 
-my @frontend_nodes  = ("10.1.2.2");
-my @backend_nodes   = ("10.1.2.253");
 my @nodes = (@frontend_nodes, @backend_nodes);
 my @tiers = ("ServerBench", "BeSim");
 my $ADMIN_IP        = "10.1.2.1";
 
 my $frontend_log_path   = "/tmp/apache_access.log";
 my $backend_log_path    = "/var/log/apache2/access.log";
-
-my @sessions_evo = (50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900,950,1000);
 
 
 # Copy <src_path> from <ip> to <dest_path> on localhost
