@@ -383,10 +383,13 @@ sub getComponents {
 
 #    my $adm = Administrator->new();
     my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
-                                            { '+columns' => [ "component.component_name",
-                                                              "component.component_category",
-                                                              "component.component_version"],
-                                                    join => ["component"]});
+                                            { '+columns' => {"component_name" => "component.component_name",
+                                                            "component_version" => "component.component_version",
+                                                            "component_category" => "component.component_category"},
+#                                                [ "component.component_name",
+#                                                              "component.component_category",
+#                                                              "component.component_version"],
+                                           join => ["component"]});
 
     my %comps;
     $log->debug("Category is $args{category}");
@@ -432,9 +435,9 @@ sub getComponent{
 
     my $hash = {'component.component_name' => $args{name}, 'component.component_version' => $args{version}};
     my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
-                                            { '+columns' => [ "component.component_name",
-                                                              "component.component_version",
-                                                              "component.component_category"],
+                                            { '+columns' => {"component_name" => "component.component_name",
+                                                            "component_version" => "component.component_version",
+                                                            "component_category" => "component.component_category"},
                                                     join => ["component"]});
 
     $log->debug("name is $args{name}, version is $args{version}");
@@ -463,9 +466,9 @@ sub getComponentByInstanceId{
 
     my $hash = {'component_instance_id' => $args{component_instance_id}};
     my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
-                                            { '+columns' => [ "component.component_name",
-                                                              "component.component_version",
-                                                              "component.component_category"],
+                                            { '+columns' => {"component_name" => "component.component_name",
+                                                            "component_version" => "component.component_version",
+                                                            "component_category" => "component.component_category"},
                                                     join => ["component"]});
 
     my $comp_instance_row = $comp_instance_rs->next;

@@ -182,12 +182,14 @@ sub getInstance {
     my $adm = Administrator->new;
     my $comp_instance_row = $adm->{db}->resultset("ComponentInstance")->find(
      { component_instance_id => $args{id} }, 
-     { '+columns' => [ "component.component_name",
-                       "component.component_version",
-                       "component.component_category"], 
+     { '+columns' => {"component_name" => "component.component_name",
+                      "component_version" => "component.component_version",
+                      "component_category" => "component.component_category"},
+#     { '+columns' => [ "component.component_name",
+#                       "component.component_version",
+#                       "component.component_category"], 
      join => ["component"]}
     );
-    
 #    $class = "Entity::Component::".$comp_instance_row->get_column('component_category')."::" .
 #                 $comp_instance_row->get_column('component_name') . 
 #                 $comp_instance_row->get_column('component_version');

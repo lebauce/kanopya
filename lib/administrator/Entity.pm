@@ -308,7 +308,8 @@ sub getGroups {
             'ingroups.entity_id' => $self->{_dbix}->get_column('entity_id'),
             'gp_name' => $mastergroup ]},
             
-        {     '+columns' => [ 'gp_entity.entity_id' ], 
+        {     '+columns' => {'entity_id' => 'gp_entity.entity_id'},
+            #'+columns' => [ 'gp_entity.entity_id' ], 
             join => [qw/ingroups gp_entity/] }
     );
     return $groups;

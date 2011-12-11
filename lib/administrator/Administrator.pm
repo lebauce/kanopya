@@ -139,10 +139,9 @@ sub authenticate {
             user_login => $args{login},
             user_password => md5_hex($args{password}),
         },{
-            '+columns' => ['user_entity.entity_id'],
-            join => ['user_entity']
+            '+columns' => {'entity_id' => 'user_entity.entity_id'},
+            join => ['user_entity'],
         },
-
     )->single;
 
     if(not defined $user_data) {
@@ -332,7 +331,8 @@ sub _getDbix {
     my $dbix;
     eval {
         $dbix = $self->{db}->resultset( $args{table} )->find(  $args{id},
-                                        {     '+columns' => [ {entity_id => "entitylink.entity_id"} ],
+                                        {'+columns' => {'entity_id' => 'entitylink.entity_id'},  
+#                                            '+columns' => [ {entity_id => "entitylink.entity_id"} ],
                                         join => ["entitylink"] });};
     if ($@) {
         $errmsg = "Administrator->_getDbix error ".$@;
@@ -366,15 +366,23 @@ sub _getDbixFromHash {
     eval {
         my $hash = $args{hash};
         if (keys(%$hash)){
+
             $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-                                        {     '+columns' => [ "$entitylink.entity_id" ],
-                                        join => ["$entitylink"] });
+                                        {'+columns' => {'entity_id' => "$entitylink.entity_id"},
+                                         join => ["$entitylink"] });
+#                                                 '+columns' => [ "$entitylink.entity_id" ],
+#                                        join => ["$entitylink"] });
         }
         else {
             $dbix = $self->{db}->resultset( $args{table} )->search( undef,
-                                        {     '+columns' => [ "$entitylink.entity_id" ],
-                                        join => ["$entitylink"] });
+                                            {'+columns' => {'entity_id' => "$entitylink.entity_id"},
+                                         join => ["$entitylink"] });
+#                                        {     '+columns' => [ "$entitylink.entity_id" ],
+#                                        join => ["$entitylink"] });
         }
+#        $dbix = $self->{db}->resultset( $args{table} )->search( $search_param,
+#                                        {'+columns' => {'entity_id' => 'entitylink.entity_id'},
+#                                         join => ["entitylink"] });
     };
     if ($@) {
         $errmsg = "Administrator->_getDbix error ".$@;
@@ -403,8 +411,10 @@ sub _getAllDbix {
     General::checkParams(args => \%args, required => ['table']);
 
     my $entitylink = lc($args{table})."_entity";
-    return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ],
+    return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => {'entity_id' => "$entitylink.entity_id"},
         join => ["$entitylink"]});
+#    return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ],
+#        join => ["$entitylink"]});
 }
 
 =head2 _newDbix
@@ -530,7 +540,8 @@ sub getOperations {
     my $self = shift;
     my $Operations = $self->{db}->resultset('Operation')->search(undef, {
         order_by => { -asc => [qw/execution_rank/] },
-        '+columns' => [ 'user.user_login' ],
+        '+columns' => {'user_login' => 'user.user_login'},
+#        '+columns' => [ 'user.user_login' ],
         join => [ 'user' ]
     });
 

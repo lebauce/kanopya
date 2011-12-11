@@ -376,10 +376,10 @@ sub getInstalledComponents {
     }
     my $components = [];
     my $search = $self->{_dbix}->components_installed->search(undef, 
-        { '+columns' => [ 'component.component_id', 
-                        'component.component_name', 
-                        'component.component_version', 
-                        'component.component_category' ],
+        { '+columns' => {'component_id' => 'component.component_id', 
+                         'component_name' => 'component.component_name', 
+                         'component_version' => 'component.component_version', 
+                         'component_category' => 'component.component_category' },
             join => ['component'] } 
     );
     while (my $row = $search->next) {

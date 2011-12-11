@@ -241,7 +241,7 @@ sub getGroupsFromEntity {
             'ingroups.entity_id' => $args{entity}->{_dbix}->get_column('entity_id'),
             'gp_name' => $mastergroup ]},
             
-        {     '+columns' => [ 'gp_entity.entity_id' ], 
+        {     '+columns' => { 'entity_id' => 'gp_entity.entity_id' }, 
             join => [qw/ingroups gp_entity/] }
     );
     while(my $row = $gp_rs->next) {
