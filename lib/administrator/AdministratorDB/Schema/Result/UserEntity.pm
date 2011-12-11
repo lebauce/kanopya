@@ -69,7 +69,7 @@ __PACKAGE__->belongs_to(
   "entity",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "entity_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 user
@@ -84,7 +84,7 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
