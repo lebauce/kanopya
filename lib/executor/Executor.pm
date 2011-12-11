@@ -120,6 +120,7 @@ sub run {
 sub oneRun {
     my $self = shift;
     my $adm = Administrator->new();
+    $log->debug("Try to get an operation");
     my $opdata = Operation::getNextOp();
     
     if ($opdata){
@@ -155,7 +156,7 @@ sub oneRun {
                     my $error2 = $@;
                     $log->error("Error during operation cancel :\n$error2");
                 }
-                if (!$error->hidden){
+                if (!$error->{hidden}){
                     Message->send(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
                     $log->error("Error during execution : $error");} 
                 else {
