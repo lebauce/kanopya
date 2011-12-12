@@ -31,6 +31,7 @@ my $ADMIN_IP        = "10.1.2.1";
 my $frontend_log_path   = "/tmp/apache_access.log";
 my $backend_log_path    = "/var/log/apache2/access.log";
 
+my $parse_apache = 1;
 
 # Copy <src_path> from <ip> to <dest_path> on localhost
 sub scp {
@@ -129,13 +130,18 @@ sub extractInfo {
 
     # Info from apache logs
     for my $ip (@frontend_nodes, @backend_nodes) {
-        # Gloups TODO do func call instead of perl script exec in a perl script and stdout parse...
-        my $cmd = "./parse_apache_log.pl $dir/$ip" . "_access.log";
-        my $out = `$cmd`;
-        $out =~ '=> line count: ([0-9]*)';
-        $info{$ip}{apache}{line_count} = $1;
-        $out =~ '=> mean time.*: ([0-9.]*)';
-        $info{$ip}{apache}{latency} = $1;
+        if ($parse_apache) {
+            # Gloups TODO do func call instead of perl script exec in a perl script and stdout parse...
+            my $cmd = "./parse_apache_log.pl $dir/$ip" . "_access.log";
+            my $out = `$cmd`;
+            $out =~ '=> line count: ([0-9]*)';
+            $info{$ip}{apache}{line_count} = $1;
+            $out =~ '=> mean time.*: ([0-9.]*)';
+            $info{$ip}{apache}{latency} = $1;
+        } else {
+            $info{$ip}{apache}{line_count} = '-';
+            $info{$ip}{apache}{latency} = '-';
+        }
     }
 
     # Info from SpecWeb res
@@ -304,7 +310,7 @@ sub stats {
     
     my $sheet = odfDocument(file => "$rootdir/$rootdir.ods", create => 'spreadsheet');
     print "output file : $rootdir/$rootdir.ods\n";
-    $sheet->appendTable($table_name, 100, 100);
+    $sheet->appendTable($table_name, 500, 100);
 
     addHead( sheet => $sheet );
 
@@ -328,6 +334,11 @@ my $opt = shift;
 if ($opt eq "stat") {
     print "STAT\n";
     my $rootdir = shift;
+    my $opt = shift;
+    if (defined $opt && $opt eq 'noapache') {
+        $parse_apache = 0;
+        print "Don't parse apache logs.\n";
+    }
     stats(rootdir => $rootdir );
 } elsif ($opt eq "run") {
     print "RUN\n";
@@ -338,7 +349,8 @@ if ($opt eq "stat") {
 }
 
 sub usage {
-    print "./bench_script.pl stat|run [stat_dir]\n";
+    print "./bench_script.pl run\n";
+    print "./bench_script.pl stat [stat_dir] [noapache]\n";
 }
 
 sub onKill {
