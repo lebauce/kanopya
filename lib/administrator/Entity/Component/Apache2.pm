@@ -377,12 +377,14 @@ sub getNetConf{
 
 sub getClusterizationType { return 'loadbalanced'; }
 
-sub getExecToTest {
-    return {apache =>   {cmd => 'invoke-rc.d apache2 status',
-                         answer => 'Apache2? is running.*$',
-                         return_code => '0'}
-    };
-}
+# SYP: this sub is commented because when workload is high on a node, ssh sometimes fail
+#      and so the node is considered broken even if it's no really broken.
+#sub getExecToTest {
+#    return {apache =>   {cmd => 'invoke-rc.d apache2 status',
+#                         answer => 'Apache2? is running.*$',
+#                         return_code => '0'}
+#    };
+#}
 
 =head1 DIAGNOSTICS
 
