@@ -266,8 +266,16 @@ sub configBench {
 
 sub checkRequirements {
     # TODO check than needed scripts runs
-    print "Haproxy log manager runs on admin? [enter]";
-    <STDIN>;
+
+    print "Check Haproxy log manager runs on admin...";
+    my $cmd = 'ssh root@' . $ADMIN_IP . ' "pgrep -f haproxy"';
+    my $res = `$cmd`;
+    if ($res ne '') {
+	print "ok";
+    } else {
+	print "NOT RUNNING!\nContinue? [enter]";
+	<STDIN>;
+    }
 }
 
 sub run {
