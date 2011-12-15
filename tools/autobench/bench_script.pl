@@ -105,7 +105,7 @@ sub getSpecWebResult {
     my $cmd_res = `$cmd`;
     my @files = split "\n", $cmd_res;
     for my $file (@files) {
-	`cp $file $dest_dir/`;
+        `cp $file $dest_dir/`;
     }
 }
 
@@ -271,10 +271,10 @@ sub checkRequirements {
     my $cmd = 'ssh root@' . $ADMIN_IP . ' "pgrep -f haproxy"';
     my $res = `$cmd`;
     if ($res ne '') {
-	print "ok";
+        print "ok\n";
     } else {
-	print "NOT RUNNING!\nContinue? [enter]";
-	<STDIN>;
+        print "NOT RUNNING!\nContinue? [enter]";
+        <STDIN>;
     }
 }
 
