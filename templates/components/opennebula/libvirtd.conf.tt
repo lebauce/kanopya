@@ -224,4 +224,8 @@ auth_unix_rw = "none"
 # By default, no Username's are checked
 #sasl_allowed_username_list = ["joe@EXAMPLE.COM", "fred@EXAMPLE.COM" ]
 
+# log warnings and errors
+#log_level = 3
 
+log_outputs = "3:syslog:libvirtd"
+ 
