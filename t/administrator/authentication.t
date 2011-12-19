@@ -17,7 +17,7 @@ BEGIN {
     use_ok('Administrator'); 
     use_ok('Entity::User');
     use_ok('Entity::Gp');
-    use_ok('Entity::Motherboard');
+    use_ok('Entity::Host');
     use_ok('Entity::Systemimage');
     use_ok('Entity::Cluster');
 }
@@ -27,7 +27,7 @@ diag('authentification tests');
 throws_ok { my $admin = Administrator->new(); } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to instanciate Administrator';
 throws_ok { my $user = Entity::User->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::User';
 throws_ok { my $groups = Entity::Gp->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Groups';
-throws_ok { my $motherboard = Entity::Motherboard->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Motherboard';
+throws_ok { my $host = Entity::Host->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Host';
 throws_ok { my $systemimage = Entity::Systemimage->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Systemimage';
 throws_ok { my $cluster = Entity::Cluster->get(id => 1) } "Kanopya::Exception::AuthenticationRequired", 'Authentication required to retrieve an Entity::Cluster';
 

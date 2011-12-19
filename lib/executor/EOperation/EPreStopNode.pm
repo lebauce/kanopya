@@ -19,18 +19,18 @@
 
 =head1 NAME
 
-EEntity::Operation::EPreStopNode - Operation class implementing Motherboard creation operation
+EEntity::Operation::EPreStopNode - Operation class implementing Host creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Host creation operation
 
 =head1 DESCRIPTION
 
 EPreStopNode allows to prepare cluster for node addition.
 It takes as parameters :
-- motherboard_id : Int (Scalar) : motherboard_id identifies motherboard 
+- host_id : Int (Scalar) : host_id identifies host 
     which will be migrated into cluster to become a node.
 - cluster_id : Int (Scalar) : cluster_id identifies cluster which will grow.
 
@@ -43,7 +43,7 @@ use base "EOperation";
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 
 use strict;
 use warnings;
@@ -70,8 +70,8 @@ my $config = {
 
     my $op = EOperation::EPreStopNode->new();
 
-    # Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
+    # Operation::EAddHost->new creates a new AddMotheboard operation.
+    # RETURN : EOperation::EAddHost : Operation add motherboar on execution side
 
 =cut
 
@@ -136,15 +136,15 @@ sub prepare {
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
 
-    # Get instance of Motherboard Entity
-    $log->info("Load Motherboard instance");
-    $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
-    $log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+    # Get instance of Host Entity
+    $log->info("Load Host instance");
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
+    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
-    if ($node_count > 1 && $master_node_id == $params->{motherboard_id}){
-        $errmsg = "Node <$params->{motherboard_id}> is master node and not alone";
+    if ($node_count > 1 && $master_node_id == $params->{host_id}){
+        $errmsg = "Node <$params->{host_id}> is master node and not alone";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg, hidden=>1);
     }
@@ -164,10 +164,10 @@ sub execute {
     foreach my $i (keys %$components) {        
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->preStopNode(motherboard => $self->{_objs}->{motherboard}, 
+        $tmp->preStopNode(host => $self->{_objs}->{host}, 
                             cluster => $self->{_objs}->{cluster});
     }
-    $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingout");
+    $self->{_objs}->{host}->setNodeState(state=>"pregoingout");
 }
 
 

@@ -26,7 +26,7 @@
 	</tr>
 	<% FOREACH n IN nodes %>
 		<tr>
-			<td id='<% n.id %>' class='node_selector imgMonitMotherboard'><% n.name %><% IF n.name==master %> (master) <% END %></td>
+			<td id='<% n.id %>' class='node_selector imgMonitHost'><% n.name %><% IF n.name==master %> (master) <% END %></td>
 			<td id='<% n.id %>_content' class='content_container'></td>
 		</tr>
 	<% END %>

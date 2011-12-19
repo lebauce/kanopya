@@ -39,7 +39,7 @@ use base "EOperation";
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 
 use strict;
 use warnings;
@@ -85,9 +85,9 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
-    # Get instance of Motherboard Entity
-    $log->info("Load Motherboard instance");
-    $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+    # Get instance of Host Entity
+    $log->info("Load Host instance");
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     
     # Get instance of Cluster Entity
     $log->info("Load cluster instance");
@@ -100,8 +100,8 @@ sub prepare {
     $log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
     # Get node context
     $self->{node_econtext} = EFactory::newEContext(ip_source => "127.0.0.1",
-                                                   ip_destination => $self->{_objs}->{motherboard}->getInternalIP()->{ipv4_internal_address});
-    $log->debug("Get econtext for motherboard with ref ". ref($self->{node_econtext}));
+                                                   ip_destination => $self->{_objs}->{host}->getInternalIP()->{ipv4_internal_address});
+    $log->debug("Get econtext for host with ref ". ref($self->{node_econtext}));
 
 }
 
@@ -117,15 +117,15 @@ sub execute {
     foreach my $i (keys %$components) {
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->stopNode(motherboard => $self->{_objs}->{motherboard}, 
+        $tmp->stopNode(host => $self->{_objs}->{host}, 
                         cluster => $self->{_objs}->{cluster} );
     }
     # finaly we halt the node
-    my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
-    $emotherboard->halt(node_econtext =>$self->{node_econtext});
+    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->halt(node_econtext =>$self->{node_econtext});
 
-    $self->{_objs}->{motherboard}->setNodeState(state=>"goingout");
-    $self->{_objs}->{motherboard}->save();
+    $self->{_objs}->{host}->setNodeState(state=>"goingout");
+    $self->{_objs}->{host}->save();
 
 }
 

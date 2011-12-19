@@ -46,7 +46,7 @@ sub configureNode {
                 };
     if ( $data->{session_handler} eq "memcache" ) { # This handler needs specific configuration (depending on master node)
         my $masternodeip =     $args{cluster}->getMasterNodeIp() ||
-                            $args{motherboard}->getInternalIP()->{ipv4_internal_address}; # current node is the master node
+                            $args{host}->getInternalIP()->{ipv4_internal_address}; # current node is the master node
         my $port = '11211'; # default port of memcached TODO: retrieve memcached port using component
         $data->{session_path} = "tcp://$masternodeip:$port";
     }

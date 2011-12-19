@@ -36,7 +36,7 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext','motherboard','mount_point']);
+    General::checkParams(args => \%args, required => ['econtext','host','mount_point']);
 
     my $data = $self->_getEntity()->getConf();    
         

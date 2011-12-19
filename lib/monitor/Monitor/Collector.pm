@@ -18,7 +18,7 @@ use warnings;
 use threads;
 #use threads::shared;
 use Net::Ping;
-use Entity::Motherboard;
+use Entity::Host;
 use Data::Dumper;
 use Message;
 use base "Monitor";
@@ -275,7 +275,7 @@ sub updateClusterData{
     my ($cluster, $hosts_values, $collect_time ) = ($args{cluster}, $args{hosts_values}, $args{collect_time});
     my $cluster_name = $cluster->getAttr( name => "cluster_name" );
     
-    my @mbs = values %{ $cluster->getMotherboards( ) };
+    my @mbs = values %{ $cluster->getHosts( ) };
     my @in_node_mb = grep { $_->getNodeState() =~ '^in' } @mbs; 
     
     
@@ -318,7 +318,7 @@ sub updateClusterData{
     
     # log cluster nodes state
     my @state_log = map {     $_->getInternalIP()->{ipv4_internal_address} .
-                            " (" . $_->getAttr( name => "motherboard_state" ) .
+                            " (" . $_->getAttr( name => "host_state" ) .
                             ", node:" .  $_->getNodeState() . ")"
                         } @mbs;
     $log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
@@ -366,12 +366,12 @@ sub update {
             #my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
             my %components_by_name = map { $_->getComponentAttr()->{component_name} => $_ } values %$components;
             # Collect data for nodes in the cluster
-            foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
+            foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
                 if ( $mb->getNodeState() =~ '^in' ) {
                     my $host_ip = $mb->getInternalIP()->{ipv4_internal_address};
                     my %params = (
                         host_ip => $host_ip,
-                        host_state => $mb->getAttr( name => "motherboard_state" ),
+                        host_state => $mb->getAttr( name => "host_state" ),
                         components => \%components_by_name,
                         sets => $monitored_sets,
                     );
@@ -441,10 +441,10 @@ sub updateConsumption {
     }
     
     my $consumption = 0;
-    my @up_motherboards = Entity::Motherboard->getMotherboards( hash => { motherboard_state => { -like => 'up:%'}} );
-    for (@up_motherboards) {
+    my @up_hosts = Entity::Host->getHosts( hash => { host_state => { -like => 'up:%'}} );
+    for (@up_hosts) {
         my %model = $_->getModel();
-        $consumption += $model{motherboardmodel_consumption};
+        $consumption += $model{hostmodel_consumption};
     }
     
     $rrd->update( time => time(), values => { 'consumption' => $consumption } );

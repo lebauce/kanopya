@@ -456,8 +456,8 @@ sub _isNodeMigrating {
     my $cluster_name = $args{cluster_name};
     
     my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
-    my $motherboards = $cluster->getMotherboards();
-    for my $mb (values %$motherboards) {
+    my $hosts = $cluster->getHosts();
+    for my $mb (values %$hosts) {
         if (not $mb->getNodeState() eq "in") {
             return 1;
         }
@@ -543,7 +543,7 @@ sub _canAddNode {
 #    }
 #    
 #    # Check if there is a corresponding add node operation in operation queue #
-#    if ( $self->_isOpInQueue( cluster => $cluster_name, type => 'AddMotherboardInCluster' ) ) {
+#    if ( $self->_isOpInQueue( cluster => $cluster_name, type => 'AddHostInCluster' ) ) {
 #        $log->info(" => An operation to add node in cluster '$cluster_name' is already in queue");
 #        return 0;
 #    }
@@ -601,7 +601,7 @@ sub _canRemoveNode {
     }
     
 #    # Check if there is a corresponding remove node operation in operation queue #
-#    if (     $self->_isOpInQueue( cluster => $cluster, type => 'RemoveMotherboardFromCluster' ) || 
+#    if (     $self->_isOpInQueue( cluster => $cluster, type => 'RemoveHostFromCluster' ) || 
 #            $self->_isOpInQueue( cluster => $cluster, type => 'StopNode' ) )
 #    {
 #        $log->info(" => An operation to remove node from cluster '$cluster' is already in queue");
@@ -651,18 +651,18 @@ sub addNode {
     
     $log->info("====> add node in $args{cluster_name}");
     
-#    #my @free_motherboards = Entity::Motherboard->getMotherboards( hash => { active => 1, motherboard_state => 'down'} );
-#    my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
+#    #my @free_hosts = Entity::Host->getHosts( hash => { active => 1, host_state => 'down'} );
+#    my @free_hosts = Entity::Host->getFreeHosts();
 #    
-#    die "No free motherboard to add in cluster '$args{cluster_name}'" if ( scalar @free_motherboards == 0 );
+#    die "No free host to add in cluster '$args{cluster_name}'" if ( scalar @free_hosts == 0 );
 #    
 #    #TODO  Select the best node ?
-#    my $motherboard = pop @free_motherboards;
+#    my $host = pop @free_hosts;
     
     my $cluster = $self->getClusterByName( cluster_name => $args{cluster_name} );
     
     ############################################
-    # Enqueue the add motherboard operation
+    # Enqueue the add host operation
     ############################################
     $cluster->addNode( );
 
@@ -688,16 +688,16 @@ sub removeNode {
     ($node_to_remove = shift @up_nodes) if ($node_to_remove->{ip} eq $master_node_ip);
     die "No up node to remove in cluster '$cluster_name'." if ( not defined $node_to_remove );
     
-    # TODO keep the motherboard ID and get it with this id! (ip can be not unique)
-    my @mb_res = Entity::Motherboard->getMotherboardFromIP( ipv4_internal_ip => $node_to_remove->{ip} );
-    die "Several motherboards with ip '$node_to_remove->{ip}', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
+    # TODO keep the host ID and get it with this id! (ip can be not unique)
+    my @mb_res = Entity::Host->getHostFromIP( ipv4_internal_ip => $node_to_remove->{ip} );
+    die "Several hosts with ip '$node_to_remove->{ip}', can not determine the wanted one" if (1 < @mb_res); # this die must desappear when we'll get mb by id
     my $mb_to_remove = shift @mb_res;
-    die "motherboard '$node_to_remove->{ip}' no more in DB" if (not defined $mb_to_remove);
+    die "host '$node_to_remove->{ip}' no more in DB" if (not defined $mb_to_remove);
     
     ############################################
-    # Enqueue the remove motherboard operation
+    # Enqueue the remove host operation
     ############################################
-    $cluster->removeNode( motherboard_id => $mb_to_remove->getAttr(name => 'motherboard_id') );
+    $cluster->removeNode( host_id => $mb_to_remove->getAttr(name => 'host_id') );
 }
 
 =head2 _storeTime

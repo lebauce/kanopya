@@ -42,7 +42,7 @@ use base "EOperation";
 
 use Kanopya::Exceptions;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -112,15 +112,15 @@ sub execute {
         
     $log->info('getting minimum number of nodes to start');
     my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');    
-    $log->info('getting free motherboards');
-#    my @free_motherboards = Entity::Motherboard->getMotherboards(hash => { active => 1, motherboard_state => 'down'});
+    $log->info('getting free hosts');
+#    my @free_hosts = Entity::Host->getHosts(hash => { active => 1, host_state => 'down'});
 #    
 #    my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
 #    
 #
 #    for(my $i=0 ; $i < $nodes_to_start ; $i++) {
-#        my $motherboard = pop @free_motherboards;
-#        $self->{_objs}->{cluster}->addNode(motherboard_id => $motherboard->getAttr(name => 'motherboard_id'));
+#        my $host = pop @free_hosts;
+#        $self->{_objs}->{cluster}->addNode(host_id => $host->getAttr(name => 'host_id'));
 #    }     
 
     # Just call Master node addition, other node will be add by the state manager

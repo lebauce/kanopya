@@ -237,13 +237,13 @@ Desc : This function insert a new power supply card in Kanopya
 #    return $psc;
 #}
 
-sub getMotherboardPort{
+sub getHostPort{
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['motherboard_powersupply_id']);
+    General::checkParams(args => \%args, required => ['host_powersupply_id']);
 
-    return $self->{_dbix}->powersupplies->find($args{motherboard_powersupply_id})->get_column('powersupplyport_number');
+    return $self->{_dbix}->powersupplies->find($args{host_powersupply_id})->get_column('powersupplyport_number');
 }
 
 sub addPowerSupplyPort {

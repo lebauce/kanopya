@@ -11,8 +11,8 @@ prefix '/rights';
 
 my $log = get_logger("webui");
 
-my @entity_types = qw/Motherboardmodel Processormodel Cluster
-                        Motherboard Systemimage Distribution Kernel
+my @entity_types = qw/Hostmodel Processormodel Cluster
+                        Host Systemimage Distribution Kernel
                         User/;
 
 sub _types_list {

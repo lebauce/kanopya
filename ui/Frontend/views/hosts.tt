@@ -1,10 +1,10 @@
-<% FOREACH m IN motherboards_list %>
+<% FOREACH m IN hosts_list %>
 	<table class="listing">
-	<tr><td colspan="3"><h1><% m.motherboard_label %></h1></td></tr>
-	<tr><td><% m.motherboard_hostname %></td><td>
+	<tr><td colspan="3"><h1><% m.host_label %></h1></td></tr>
+	<tr><td><% m.host_hostname %></td><td>
 	<% IF m.active %>Active<% ELSE %>Deactivated<% END %></td><td class="toright">
-	<a class="imgManage" href="/infrastructures/hosts/<% m.motherboard_id %>">details</a></td></tr>
-	<tr><td><% m.motherboard_ip %></td>
+	<a class="imgManage" href="/infrastructures/hosts/<% m.host_id %>">details</a></td></tr>
+	<tr><td><% m.host_ip %></td>
 	<% IF m.active %>
 		<% IF m.state_up %><td><span class="state imgUp">Up</span></td><% END %>
 		<% IF m.state_down %><td><span class="state imgDown">Unused</span></td><% END %>
@@ -13,7 +13,7 @@
 		<% IF m.state_broken %><td><span class="state imgWarning">Broken</span></td><% END %>
 	<% END %>
 	</tr>
-	<tr><td class="italic" colspan="3"><% m.motherboard_desc %></td></tr>
+	<tr><td class="italic" colspan="3"><% m.host_desc %></td></tr>
 	</table>
 <% END %>
 <div class="actions">

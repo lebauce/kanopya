@@ -41,7 +41,7 @@ use base "EOperation";
 
 use Kanopya::Exceptions;
 use Entity::Infrastructure;
-use Entity::Motherboard;
+use Entity::Host;
 
 my $log = get_logger("executor");
 my $errmsg;

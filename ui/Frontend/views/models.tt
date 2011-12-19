@@ -1,7 +1,7 @@
 <table class="simplelisting">
-	<caption>Motherboard Models</caption>
+	<caption>Host Models</caption>
 	<tr><th>model</th><th>chipset</th><th>processors<br/>number</th><th>consumption</th><th>iface<br/>number</th><th>RAM<br/>slots</th><th>RAM<br/>max</th><th></th></tr>
-	<% FOREACH m IN motherboardmodels %>
+	<% FOREACH m IN hostmodels %>
 		<td><% m.mmodel_brand %> <span class="bold"><% m.mmodel_name %></span></td>
 		<td><% m.mmodel_chipset %></td>
 		<td class="right"><% m.mmodel_processornum %></td>
@@ -13,10 +13,10 @@
 			<a class="imgEdit">edit</a>
 		<% END %>
 		<% IF m.can_delete %>
-			<br /><a class="imgRemove" href="/infrastructures/models/motherboards/<% m.mmodel_id %>/remove">remove</a>
+			<br /><a class="imgRemove" href="/infrastructures/models/hosts/<% m.mmodel_id %>/remove">remove</a>
 		<% END %>
 		<% IF m.can_setperm %>
-			<br /><a class="imgPermission" href="/rights/permissions/motherboardmodel/<% m.mmodel_id %>">permissions</a>
+			<br /><a class="imgPermission" href="/rights/permissions/hostmodel/<% m.mmodel_id %>">permissions</a>
 		<% END %>
 		</td>
 		</tr>
@@ -41,9 +41,9 @@
 	<% END %>
 </table>
 <div class="actions">
-<% IF can_createmotherboardmodel %>
-	<a class="action modal" href="/infrastructures/models/motherboards/add">create a motherboard model</a>
-	<p class="italic">Create a new model of motherboard.</p>
+<% IF can_createhostmodel %>
+	<a class="action modal" href="/infrastructures/models/hosts/add">create a host model</a>
+	<p class="italic">Create a new model of host.</p>
 <% END %>
 <% IF can_createprocessormodel %>
 	<a class="action modal" href="/infrastructures/models/processors/add">create a processor model</a>

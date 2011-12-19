@@ -61,9 +61,9 @@ our $VERSION = '1.00';
 
 =head2 new
 
-    my $op = EEntity::EOperation::EAddMotherboard->new();
+    my $op = EEntity::EOperation::EAddHost->new();
 
-EEntity::Operation::EAddMotherboard->new creates a new AddMotheboard operation.
+EEntity::Operation::EAddHost->new creates a new AddMotheboard operation.
 
 =cut
 

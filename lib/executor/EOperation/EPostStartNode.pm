@@ -19,12 +19,12 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EEntity::Operation::EAddHost - Operation class implementing Host creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Host creation operation
 
 =head1 DESCRIPTION
 
@@ -42,7 +42,7 @@ use warnings;
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -64,10 +64,10 @@ my $config = {
 
 =head2 new
 
-    my $op = EOperation::EAddMotherboard->new();
+    my $op = EOperation::EAddHost->new();
 
-    # Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
+    # Operation::EAddHost->new creates a new AddMotheboard operation.
+    # RETURN : EOperation::EAddHost : Operation add motherboar on execution side
 
 =cut
 
@@ -133,10 +133,10 @@ sub prepare {
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
 
-    # Get instance of Motherboard Entity
-    $log->info("Load Motherboard instance");
-    $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
-    $log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+    # Get instance of Host Entity
+    $log->info("Load Host instance");
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
+    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 }
 
 sub execute {
@@ -144,7 +144,7 @@ sub execute {
     $self->SUPER::execute();
     
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
-        $self->{_objs}->{motherboard}->becomeMasterNode();
+        $self->{_objs}->{host}->becomeMasterNode();
     }
     
     my $components = $self->{_objs}->{components};
@@ -153,7 +153,7 @@ sub execute {
         
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->postStartNode(motherboard => $self->{_objs}->{motherboard}, 
+        $tmp->postStartNode(host => $self->{_objs}->{host}, 
                             cluster => $self->{_objs}->{cluster});
     }
     
@@ -170,7 +170,7 @@ sub execute {
 #        $masternode =1;
 #    }
 #    
-#    $self->{_objs}->{motherboard}->becomeMasterNode(master_node => $masternode);
+#    $self->{_objs}->{host}->becomeMasterNode(master_node => $masternode);
 #}
 1;
 __END__

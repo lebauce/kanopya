@@ -4,7 +4,7 @@ use Dancer ':syntax';
 
 use Administrator;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 use Entity::Systemimage;
 use Entity::Kernel;
 use Log::Log4perl "get_logger";
@@ -88,9 +88,9 @@ get '/clusters/add' => sub {
     my @ekernels = Entity::Kernel->getKernels(hash => {});
     my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
     my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
-    my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
+    my @ehosts = Entity::Host->getHosts(hash => {});
 
-    my $count = scalar @emotherboards;
+    my $count = scalar @ehosts;
     my $c =[];
     for (my $i=1; $i<=$count; $i++) {
         my $tmp->{nodes}=$i;
@@ -247,8 +247,8 @@ get '/clusters/:clusterid' => sub {
     # state info
     my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
     
-    my $motherboards = $ecluster->getMotherboards(administrator => Administrator->new);
-    my $nbnodesup = scalar(keys(%$motherboards));
+    my $hosts = $ecluster->getHosts(administrator => Administrator->new);
+    my $nbnodesup = scalar(keys(%$hosts));
     my $nodes = [];
 
     my $active = $ecluster->getAttr('name' => 'active');
@@ -299,11 +299,11 @@ get '/clusters/:clusterid' => sub {
     # nodes list
     if($nbnodesup) {
         my $master_id = $ecluster->getMasterNodeId();
-        while( my ($id, $n) = each %$motherboards) {
+        while( my ($id, $n) = each %$hosts) {
             my $tmp = {
-                motherboard_id => $id,
-                motherboard_hostname => $n->getAttr(name => 'motherboard_hostname'),
-                motherboard_internal_ip => $n->getInternalIP()->{ipv4_internal_address},
+                host_id => $id,
+                host_hostname => $n->getAttr(name => 'host_hostname'),
+                host_internal_ip => $n->getInternalIP()->{ipv4_internal_address},
                 cluster_id => $cluster_id,
             };
             
@@ -621,7 +621,7 @@ get '/clusters/:clusterid/nodes/add' => sub {
     eval {
         my $ecluster = Entity::Cluster->get(id => param('clusterid'));
         $ecluster->addNode();
-        $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddMotherboardInCluster operation adding to execution queue');
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddHostInCluster operation adding to execution queue');
     };
     if($@) {
         my $exception = $@;
@@ -640,7 +640,7 @@ get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
     my $adm = Administrator->new;
     eval {
         my $ecluster = Entity::Cluster->get(id => param('clusterid'));
-        $ecluster->removeNode(motherboard_id => param('nodeid'));
+        $ecluster->removeNode(host_id => param('nodeid'));
     };
        if($@) {
         my $exception = $@;

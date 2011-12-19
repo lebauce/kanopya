@@ -64,24 +64,24 @@ CREATE TABLE `powersupplycardmodel` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `motherboardmodel`
+-- Table structure for table `hostmodel`
 --
 
-CREATE TABLE `motherboardmodel` (
-  `motherboardmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboardmodel_brand` char(64) NOT NULL,
-  `motherboardmodel_name` char(32) NOT NULL,
-  `motherboardmodel_chipset` char(64) NOT NULL,
-  `motherboardmodel_processor_num` int(1) unsigned NOT NULL,
-  `motherboardmodel_consumption` int(2) unsigned NOT NULL,
-  `motherboardmodel_iface_num` int(1) unsigned NOT NULL,
-  `motherboardmodel_ram_slot_num` int(1) unsigned NOT NULL,
-  `motherboardmodel_ram_max` int(1) unsigned NOT NULL,
+CREATE TABLE `hostmodel` (
+  `hostmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `hostmodel_brand` char(64) NOT NULL,
+  `hostmodel_name` char(32) NOT NULL,
+  `hostmodel_chipset` char(64) NOT NULL,
+  `hostmodel_processor_num` int(1) unsigned NOT NULL,
+  `hostmodel_consumption` int(2) unsigned NOT NULL,
+  `hostmodel_iface_num` int(1) unsigned NOT NULL,
+  `hostmodel_ram_slot_num` int(1) unsigned NOT NULL,
+  `hostmodel_ram_max` int(1) unsigned NOT NULL,
   `processormodel_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`motherboardmodel_id`),
-  UNIQUE KEY `motherboardmodel_name_UNIQUE` (`motherboardmodel_name`),
-  KEY `fk_motherboardmodel_1` (`processormodel_id`),
-  CONSTRAINT `fk_motherboardmodel_1` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY (`hostmodel_id`),
+  UNIQUE KEY `hostmodel_name_UNIQUE` (`hostmodel_name`),
+  KEY `fk_hostmodel_1` (`processormodel_id`),
+  CONSTRAINT `fk_hostmodel_1` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -91,62 +91,62 @@ CREATE TABLE `motherboardmodel` (
 --
 CREATE TABLE `harddisk` (
   `harddisk_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboard_id` int(8) unsigned NOT NULL,
+  `host_id` int(8) unsigned NOT NULL,
   `harddisk_device` char(32) NOT NULL,
   PRIMARY KEY (`harddisk_id`),
-  KEY `fk_harddisk_1` (`motherboard_id`),
-  CONSTRAINT `fk_harddisk_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY `fk_harddisk_1` (`host_id`),
+  CONSTRAINT `fk_harddisk_1` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `motherboard`
+-- Table structure for table `host`
 --
 
-CREATE TABLE `motherboard` (
-  `motherboard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `motherboardmodel_id` int(8) unsigned NULL DEFAULT NULL,
+CREATE TABLE `host` (
+  `host_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `hostmodel_id` int(8) unsigned NULL DEFAULT NULL,
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
-  `motherboard_serial_number` char(64) NOT NULL,
-  `motherboard_powersupply_id` int(8) unsigned,
-  `motherboard_ipv4_internal_id` int(8) unsigned  DEFAULT NULL,
-  `motherboard_desc` char(255) DEFAULT NULL,
+  `host_serial_number` char(64) NOT NULL,
+  `host_powersupply_id` int(8) unsigned,
+  `host_ipv4_internal_id` int(8) unsigned  DEFAULT NULL,
+  `host_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
-  `motherboard_mac_address` char(18) NOT NULL,
-  `motherboard_initiatorname` char(64) DEFAULT NULL,
-  `motherboard_internal_ip` char(15) DEFAULT NULL,
-  `motherboard_hostname` char(32) DEFAULT NULL,
+  `host_mac_address` char(18) NOT NULL,
+  `host_initiatorname` char(64) DEFAULT NULL,
+  `host_internal_ip` char(15) DEFAULT NULL,
+  `host_hostname` char(32) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
-  `motherboard_state` char(32) NOT NULL DEFAULT 'down',
-  `motherboard_prev_state` char(32),
-  PRIMARY KEY (`motherboard_id`),
-  UNIQUE KEY `motherboard_internal_ip_UNIQUE` (`motherboard_internal_ip`),
-  UNIQUE KEY `motherboard_mac_address_UNIQUE` (`motherboard_mac_address`),
-  KEY `fk_motherboard_1` (`motherboardmodel_id`),
-  KEY `fk_motherboard_2` (`processormodel_id`),
-  KEY `fk_motherboard_3` (`kernel_id`),
-  KEY `fk_motherboard_4` (`etc_device_id`),
-  KEY `fk_motherboard_5` (`motherboard_powersupply_id`),
-  KEY `fk_motherboard_6` (`motherboard_ipv4_internal_id`),
-  CONSTRAINT `fk_motherboard_1` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_5` FOREIGN KEY (`motherboard_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_6` FOREIGN KEY (`motherboard_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  `host_state` char(32) NOT NULL DEFAULT 'down',
+  `host_prev_state` char(32),
+  PRIMARY KEY (`host_id`),
+  UNIQUE KEY `host_internal_ip_UNIQUE` (`host_internal_ip`),
+  UNIQUE KEY `host_mac_address_UNIQUE` (`host_mac_address`),
+  KEY `fk_host_1` (`hostmodel_id`),
+  KEY `fk_host_2` (`processormodel_id`),
+  KEY `fk_host_3` (`kernel_id`),
+  KEY `fk_host_4` (`etc_device_id`),
+  KEY `fk_host_5` (`host_powersupply_id`),
+  KEY `fk_host_6` (`host_ipv4_internal_id`),
+  CONSTRAINT `fk_host_1` FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_5` FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_6` FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `motherboarddetails`
+-- Table structure for table `hostdetails`
 --
 
-CREATE TABLE `motherboarddetails` (
-  `motherboard_id` int(8) unsigned NOT NULL,
+CREATE TABLE `hostdetails` (
+  `host_id` int(8) unsigned NOT NULL,
   `name` char(32) NOT NULL,
   `value` char(255) DEFAULT NULL,
-  PRIMARY KEY (`motherboard_id`,`name`),
-  KEY `fk_motherboarddetails_1` (`motherboard_id`),
-  CONSTRAINT `fk_motherboarddetails_1` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY (`host_id`,`name`),
+  KEY `fk_hostdetails_1` (`host_id`),
+  CONSTRAINT `fk_hostdetails_1` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`)  ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -245,16 +245,16 @@ CREATE TABLE `clusterdetails` (
 CREATE TABLE `node` (
   `node_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `cluster_id` int(8) unsigned NOT NULL,
-  `motherboard_id` int(8) unsigned NOT NULL,
+  `host_id` int(8) unsigned NOT NULL,
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(32),
   `node_prev_state` char(32),
   PRIMARY KEY (`node_id`),
-  UNIQUE `cluster_id` (`cluster_id`,`motherboard_id`),
-  UNIQUE `fk_node_2` (`motherboard_id`),
+  UNIQUE `cluster_id` (`cluster_id`,`host_id`),
+  UNIQUE `fk_node_2` (`host_id`),
   KEY `fk_node_1` (`cluster_id`),
   CONSTRAINT `fk_node_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_node_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_node_2` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -833,17 +833,17 @@ CREATE TABLE `distribution_entity` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `motherboard_entity`
+-- Table structure for table `host_entity`
 --
 
-CREATE TABLE `motherboard_entity` (
+CREATE TABLE `host_entity` (
   `entity_id` int(8) unsigned NOT NULL,
-  `motherboard_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`motherboard_id`),
-  UNIQUE KEY `fk_motherboard_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_motherboard_entity_2` (`motherboard_id`),
-  CONSTRAINT `fk_motherboard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboard_entity_2` FOREIGN KEY (`motherboard_id`) REFERENCES `motherboard` (`motherboard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `host_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`host_id`),
+  UNIQUE KEY `fk_host_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_host_entity_2` (`host_id`),
+  CONSTRAINT `fk_host_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_host_entity_2` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -960,17 +960,17 @@ CREATE TABLE `gp_entity` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `motherboardmodel_entity`
+-- Table structure for table `hostmodel_entity`
 --
 
-CREATE TABLE `motherboardmodel_entity` (
+CREATE TABLE `hostmodel_entity` (
   `entity_id` int(8) unsigned NOT NULL,
-  `motherboardmodel_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`motherboardmodel_id`),
-  UNIQUE KEY `fk_motherboardmodel_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_motherboardmodel_entity_2` (`motherboardmodel_id`),
-  CONSTRAINT `fk_motherboardmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_motherboardmodel_entity_2` FOREIGN KEY (`motherboardmodel_id`) REFERENCES `motherboardmodel` (`motherboardmodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `hostmodel_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`,`hostmodel_id`),
+  UNIQUE KEY `fk_hostmodel_entity_1` (`entity_id`),
+  UNIQUE KEY `fk_hostmodel_entity_2` (`hostmodel_id`),
+  CONSTRAINT `fk_hostmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_hostmodel_entity_2` FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

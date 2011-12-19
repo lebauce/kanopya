@@ -33,7 +33,7 @@ __PACKAGE__->table("node");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 motherboard_id
+=head2 host_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -78,7 +78,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "motherboard_id",
+  "host_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -93,8 +93,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("node_id");
-__PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "motherboard_id"]);
-__PACKAGE__->add_unique_constraint("fk_node_2", ["motherboard_id"]);
+__PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "host_id"]);
+__PACKAGE__->add_unique_constraint("fk_node_2", ["host_id"]);
 
 =head1 RELATIONS
 
@@ -113,18 +113,18 @@ __PACKAGE__->belongs_to(
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 motherboard
+=head2 host
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "motherboard",
-  "AdministratorDB::Schema::Result::Motherboard",
-  { motherboard_id => "motherboard_id" },
+  "host",
+  "AdministratorDB::Schema::Result::Host",
+  { host_id => "host_id" },
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 

@@ -131,17 +131,17 @@ __PACKAGE__->belongs_to(
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 motherboards
+=head2 hosts
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->has_many(
-  "motherboards",
-  "AdministratorDB::Schema::Result::Motherboard",
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
   { "foreign.etc_device_id" => "self.lvm2_lv_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

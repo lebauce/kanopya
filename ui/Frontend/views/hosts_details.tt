@@ -1,25 +1,25 @@
 <%#
 <script type="text/javascript" src="/js/details.js"></script>
 %>
-<h2>Host : <% motherboard_hostname %></h2>
+<h2>Host : <% host_hostname %></h2>
 <hr/>
 <span id="state" class="title simpleexpand">State</span>
 <table id="Xstate" class="detailspart">
 <tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
 <td class="actions" rowspan="2">
 <% IF can_activate %>
-	<a class="imgActivate" href="/infrastructures/hosts/<% motherboard_id %>/activate">activate</a><br />
-	<span class="desc">Activate this motherboard.</span><br /><br />
+	<a class="imgActivate" href="/infrastructures/hosts/<% host_id %>/activate">activate</a><br />
+	<span class="desc">Activate this host.</span><br /><br />
 <% END %>
 <% IF can_deactivate %>
-	<a class="imgDeactivate" href="/infrastructures/hosts/<% motherboard_id %>/deactivate">deactivate</a><br />
-	<span class="desc">Deactivate this motherboard.</span><br /><br />
+	<a class="imgDeactivate" href="/infrastructures/hosts/<% host_id %>/deactivate">deactivate</a><br />
+	<span class="desc">Deactivate this host.</span><br /><br />
 <% END %>
 </td></tr>
 <tr>
 <% IF active %>
     <td>
-    <% SWITCH motherboard_state %>
+    <% SWITCH host_state %>
         <% CASE 'up' %>
             <span class="state imgUp">Up on <% cluster_name %> cluster (<% state_time %>)</span></td>
         <% CASE 'down' %>
@@ -40,31 +40,31 @@
 <hr/>
 <span id="settings" class="title simpleexpand">Main settings</span>
 <table id="Xsettings" class="detailspart">
-<tr><td class="italic" colspan="4"><% motherboard_desc %></td>
+<tr><td class="italic" colspan="4"><% host_desc %></td>
 <td class="actions" rowspan="9">
 <% IF can_update %>
-	<a class="modal" href="/infrastructures/hosts/<% motherboard_id %>/edit">edit</a><br />
+	<a class="modal" href="/infrastructures/hosts/<% host_id %>/edit">edit</a><br />
 	<span class="desc">Modify these global parameters.</span><br /><br />
 <% END %>
 <% IF can_delete %>
-	<a class="imgRemove" href="/infrastructures/hosts/<% motherboard_id %>/remove">remove</a><br />
-	<span class="desc">Delete this motherboard.</span><br /><br />
+	<a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/remove">remove</a><br />
+	<span class="desc">Delete this host.</span><br /><br />
 <% END %>
 <% IF can_setperm %>
-	<a class="imgPermission" href="/rights/permissions/motherboard/<% motherboard_id %>">permissions</a><br />
+	<a class="imgPermission" href="/rights/permissions/host/<% host_id %>">permissions</a><br />
 	<span class="desc">View/set permissiosn for this host.</span><br /><br />
 <% END %>
 </td><tr/>
 <tr><td colspan="4">&nbsp;</td></tr>
-<tr><td class="label">Model :</td><td><% IF motherboard_model %><% motherboard_model %><% ELSE %>-<% END %></td>
-<td class="label">MAC address :</td><td><% motherboard_mac %></td></tr>
+<tr><td class="label">Model :</td><td><% IF host_model %><% host_model %><% ELSE %>-<% END %></td>
+<td class="label">MAC address :</td><td><% host_mac %></td></tr>
 <tr><td class="label">Processor :</td><td><% IF processor_model %><% processor_model %><% ELSE %>-<% END %></td>
-<td class="label">Internal IP :</td><td><% motherboard_ip %></td></tr>
-<tr><td class="label">S/N :</td><td><% motherboard_sn %></td></tr>
-<tr><td class="label">Power Supply Card :</td><td><% IF motherboard_powersupply %><% motherboard_powersupply %>-<% ELSE %>none<% END %>
+<td class="label">Internal IP :</td><td><% host_ip %></td></tr>
+<tr><td class="label">S/N :</td><td><% host_sn %></td></tr>
+<tr><td class="label">Power Supply Card :</td><td><% IF host_powersupply %><% host_powersupply %>-<% ELSE %>none<% END %>
 </td></tr>
 <tr><td colspan="2">&nbsp;</td></tr>
-<tr><td class="label">Kernel :</td><td><% IF motherboard_kernel %><% motherboard_kernel %><% ELSE %>-<% END %></td></tr>
+<tr><td class="label">Kernel :</td><td><% IF host_kernel %><% host_kernel %><% ELSE %>-<% END %></td></tr>
 </table>
 
 <hr />
@@ -74,23 +74,23 @@
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions" rowspan="<% nbharddisks %>">
 	<% IF can_addHarddisk %>
-		<a class="modal" href="/infrastructures/hosts/<% motherboard_id %>/addharddisk">add hard disk</a><br />
-		<span class="desc">Add a hard disk to this motherboard.</span><br /><br />
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/addharddisk">add hard disk</a><br />
+		<span class="desc">Add a hard disk to this host.</span><br /><br />
 	<% END %>
 	</td></tr>
 	<% FOREACH hd IN harddisks_list %>
 		<td class="label2">device: <% hd.harddisk_device %></td>
-		<td class="action"><% IF hd.link_removeharddisk %><a class="imgRemove" href="/infrastructures/hosts/<% motherboard_id %>/harddisks/<% hd.harddisk_id %>/remove">remove</a><% END %></td></tr>
+		<td class="action"><% IF hd.link_removeharddisk %><a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/harddisks/<% hd.harddisk_id %>/remove">remove</a><% END %></td></tr>
 	<% END %>
 <% ELSE %>
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions">
 	<% IF can_addHarddisk %>
-		<a class="modal" href="/infrastructures/hosts/<% motherboard_id %>/harddisks/add">add hard disk</a><br />
-		<span class="desc">Add a hard disk to this motherboard.</span>
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/harddisks/add">add hard disk</a><br />
+		<span class="desc">Add a hard disk to this host.</span>
 	<% END %>
 	</td></tr>
-	<tr><td>This motherboard has no hard disk</td></tr>
+	<tr><td>This host has no hard disk</td></tr>
 <% END %>
 </table>
 

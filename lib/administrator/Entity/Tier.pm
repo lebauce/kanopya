@@ -23,7 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Component;
-use Entity::Motherboard;
+use Entity::Host;
 use Entity::Systemimage;
 use Operation;
 use Administrator;

@@ -39,9 +39,9 @@ sub preStartNode {
     my %args = @_;
     my $pleskpanel = $self->_getEntity();
     my $conf = $pleskpanel->getConf();
-    my $motherboard = $args{motherboard};
-    $motherboard->setAttr(name => 'motherboard_hostname', value => $conf->{pleskpanel10_hostname});
-    $motherboard->save();
+    my $host = $args{host};
+    $host->setAttr(name => 'host_hostname', value => $conf->{pleskpanel10_hostname});
+    $host->save();
 }
 
 1;

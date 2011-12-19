@@ -3,7 +3,7 @@ package Models;
 use Dancer ':syntax';
 
 use Administrator;
-use Entity::Motherboardmodel;
+use Entity::Hostmodel;
 use Entity::Processormodel;
 
 prefix '/infrastructures';
@@ -11,9 +11,9 @@ prefix '/infrastructures';
 sub _models {
     
     my @eprocessormodels = Entity::Processormodel->getProcessormodels(hash => {});
-    my @emotherboardmodels = Entity::Motherboardmodel->getMotherboardmodels(hash => {});
+    my @ehostmodels = Entity::Hostmodel->getHostmodels(hash => {});
     my $processormodels = [];
-    my $motherboardmodels = [];
+    my $hostmodels = [];
     
     for my $p (@eprocessormodels) {
         my $h = {};
@@ -34,48 +34,48 @@ sub _models {
         push @$processormodels, $h;
     }
     
-    for my $p (@emotherboardmodels) {
+    for my $p (@ehostmodels) {
         my $h = {};
-        $h->{mmodel_id} = $p->getAttr(name => 'motherboardmodel_id');
-        $h->{mmodel_brand} = $p->getAttr(name => 'motherboardmodel_brand');
-        $h->{mmodel_name} = $p->getAttr(name => 'motherboardmodel_name');
-        $h->{mmodel_chipset} = $p->getAttr(name => 'motherboardmodel_chipset');
-        $h->{mmodel_processornum} = $p->getAttr(name => 'motherboardmodel_processor_num');
-        $h->{mmodel_consumption} = $p->getAttr(name => 'motherboardmodel_consumption');
-        $h->{mmodel_ifacenum} = $p->getAttr(name => 'motherboardmodel_iface_num');
-        $h->{mmodel_ramslotnum} = $p->getAttr(name => 'motherboardmodel_ram_slot_num');
-        $h->{mmodel_rammax} = $p->getAttr(name => 'motherboardmodel_ram_max');
+        $h->{mmodel_id} = $p->getAttr(name => 'hostmodel_id');
+        $h->{mmodel_brand} = $p->getAttr(name => 'hostmodel_brand');
+        $h->{mmodel_name} = $p->getAttr(name => 'hostmodel_name');
+        $h->{mmodel_chipset} = $p->getAttr(name => 'hostmodel_chipset');
+        $h->{mmodel_processornum} = $p->getAttr(name => 'hostmodel_processor_num');
+        $h->{mmodel_consumption} = $p->getAttr(name => 'hostmodel_consumption');
+        $h->{mmodel_ifacenum} = $p->getAttr(name => 'hostmodel_iface_num');
+        $h->{mmodel_ramslotnum} = $p->getAttr(name => 'hostmodel_ram_slot_num');
+        $h->{mmodel_rammax} = $p->getAttr(name => 'hostmodel_ram_max');
         #$h->{PROCID} = $p->getAttr(name => 'processormodel_id');
         my $methods = $p->getPerms();
         if($methods->{'update'}->{'granted'}) { $h->{can_update} = 1; }
         if($methods->{'remove'}->{'granted'}) { $h->{can_delete} = 1; }
         if($methods->{'setperm'}->{'granted'}) { $h->{can_setperm} = 1; }
             
-        push @$motherboardmodels, $h;
+        push @$hostmodels, $h;
     } 
-    return ($motherboardmodels,$processormodels);
+    return ($hostmodels,$processormodels);
 }
 
 get '/models' => sub {
-	my ($motherboardmodels,$processormodels) = _models();
+	my ($hostmodels,$processormodels) = _models();
 	my $can_createprocessormodel;
-	my $can_createmotherboardmodel;
+	my $can_createhostmodel;
 
     my $methods = Entity::Processormodel->getPerms();
     if($methods->{'create'}->{'granted'}) { $can_createprocessormodel = 1 }
-    $methods = Entity::Motherboardmodel->getPerms();
-    if($methods->{'create'}->{'granted'}) { $can_createmotherboardmodel = 1 }
+    $methods = Entity::Hostmodel->getPerms();
+    if($methods->{'create'}->{'granted'}) { $can_createhostmodel = 1 }
 
 	template 'models', {
 		titlepage => 'Hardware - Models',
         can_createprocessormodel => $can_createprocessormodel,
-		can_createmotherboardmodel => $can_createmotherboardmodel,
+		can_createhostmodel => $can_createhostmodel,
 		processormodels => $processormodels,
-		motherboardmodels => $motherboardmodels,
+		hostmodels => $hostmodels,
 	};
 };
 
-get '/models/motherboards/add' => sub {
+get '/models/hosts/add' => sub {
     my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});
     my $pmodels = [];
     foreach my $x (@processormodels){
@@ -85,22 +85,22 @@ get '/models/motherboards/add' => sub {
         };
         push (@$pmodels, $tmp);
     }
-    template 'form_addmotherboardmodel', {
+    template 'form_addhostmodel', {
         processormodels_list => $pmodels,
     }, { layout => '' };
 };
 
-post '/models/motherboards/add' => sub {
+post '/models/hosts/add' => sub {
     my $adm = Administrator->new;
-    my $mothmodel = Entity::Motherboardmodel->new(
-        motherboardmodel_brand         => params->{brand},
-        motherboardmodel_name          => params->{name},
-        motherboardmodel_chipset       => params->{chipset},
-        motherboardmodel_processor_num => params->{procnum},
-        motherboardmodel_consumption   => params->{consumption},
-        motherboardmodel_iface_num     => params->{ifacenum},
-        motherboardmodel_ram_slot_num  => params->{ramslotnum},
-        motherboardmodel_ram_max       => params->{rammax},
+    my $mothmodel = Entity::Hostmodel->new(
+        hostmodel_brand         => params->{brand},
+        hostmodel_name          => params->{name},
+        hostmodel_chipset       => params->{chipset},
+        hostmodel_processor_num => params->{procnum},
+        hostmodel_consumption   => params->{consumption},
+        hostmodel_iface_num     => params->{ifacenum},
+        hostmodel_ram_slot_num  => params->{ramslotnum},
+        hostmodel_ram_max       => params->{rammax},
         processormodel_id              => params->{processorid} ne '0' ? params->{processorid} : undef,
     );
     eval { $mothmodel->create(); };
@@ -143,12 +143,12 @@ post '/models/processors/add' => sub {
     else { redirect('/infrastructures/models'); }
 };
 
-get '/models/motherboards/:modelid/remove' => sub {
+get '/models/hosts/:modelid/remove' => sub {
     my $adm = Administrator->new;
     my $id = params->{modelid};
     eval {
-        my $emotherboardmodel = Entity::Motherboardmodel->get(id => $id);
-        $emotherboardmodel->delete();
+        my $ehostmodel = Entity::Hostmodel->get(id => $id);
+        $ehostmodel->delete();
     };
     if($@) {
         my $exception = $@;

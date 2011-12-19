@@ -10,8 +10,8 @@ SET @eid := 1;
 INSERT INTO `groups` VALUES 
 (1,'User','User master group',1),
 (2,'Processortemplate','Processortemplate master group',1),
-(3,'Motherboardtemplate','Motherboardtemplate master group',1),
-(4,'Motherboard','Motherboard master group',1),
+(3,'Hosttemplate','Hosttemplate master group',1),
+(4,'Host','Host master group',1),
 (5,'Cluster','Cluster master group',1),
 (6,'Distribution','Distribution master group',1),
 (7,'Kernel','Kernel master group',1),
@@ -41,28 +41,28 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
 
--- motherboard models
-INSERT INTO `motherboardmodel` VALUES (1,'INTEL','DG945GCLF2','945GC',1,42,1,1,2,1);
-INSERT INTO `motherboardmodel` VALUES (2,'ASUS','AT3GC-I','945GC',1,42,1,1,2,1);
-INSERT INTO `motherboardmodel` VALUES (3,'ASUS','AT3N7A-I','NVIDIA ION',1,42,1,2,4,1);
-INSERT INTO `motherboardmodel` VALUES (4,'J&W','MINIX ATOM330','945GC',1,42,1,1,2,1);
-INSERT INTO `motherboardmodel` VALUES (5,'VIA','VB8001','VIA CN896',1,42,1,2,4,3);
-INSERT INTO `motherboardmodel` VALUES (6,'GIGABYTE','GA-D510UD','INTEL NM10',1,42,1,2,4,2);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboardmodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
+-- host models
+INSERT INTO `hostmodel` VALUES (1,'INTEL','DG945GCLF2','945GC',1,42,1,1,2,1);
+INSERT INTO `hostmodel` VALUES (2,'ASUS','AT3GC-I','945GC',1,42,1,1,2,1);
+INSERT INTO `hostmodel` VALUES (3,'ASUS','AT3N7A-I','NVIDIA ION',1,42,1,2,4,1);
+INSERT INTO `hostmodel` VALUES (4,'J&W','MINIX ATOM330','945GC',1,42,1,1,2,1);
+INSERT INTO `hostmodel` VALUES (5,'VIA','VB8001','VIA CN896',1,42,1,2,4,3);
+INSERT INTO `hostmodel` VALUES (6,'GIGABYTE','GA-D510UD','INTEL NM10',1,42,1,2,4,2);
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
 
 
 -- operation types list
 INSERT INTO `operationtype` VALUES 
-(1,'AddMotherboard'),
-(2,'ModifyMotherboard'),
-(3,'RemoveMotherboard'),
-(4,'ActivateMotherboard'),
-(5,'DeactivateMotherboard'),
+(1,'AddHost'),
+(2,'ModifyHost'),
+(3,'RemoveHost'),
+(4,'ActivateHost'),
+(5,'DeactivateHost'),
 (6,'AddCluster'),
 (7,'ModifyCluster'),
 (8,'RemoveCluster'),
@@ -76,8 +76,8 @@ INSERT INTO `operationtype` VALUES
 (16,'RemoveSystemimage'),
 (17,'ActivateSystemimage'),
 (18,'DeactivateSystemimage'),
-(19,'AddMotherboardInCluster'),
-(20,'RemoveMotherboardFromCluster'),
+(19,'AddHostInCluster'),
+(20,'RemoveHostFromCluster'),
 (21,'AddComponentToCluster'),
 (22,'RemoveComponentFromCluster'),
 (23,'StopNode'),
@@ -166,9 +166,9 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1)
 -- public ip for admin cluster
 INSERT INTO `publicip` VALUES (1,'192.168.0.1','255.255.255.0',NULL,1); 
 
--- admin motherboard
-INSERT INTO `motherboard` VALUES (1,1,1,1,'Admin SN',1,'Admin motherboard',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `motherboard_entity` VALUES (@eid,1); SET @eid := @eid +1;
+-- admin host
+INSERT INTO `host` VALUES (1,1,1,1,'Admin SN',1,'Admin host',1,'00:1c:c0:c0:a9:1b','adm.hederatech.com','10.0.0.1','node001',NULL, 'up');
+INSERT INTO `entity` VALUES (@eid); INSERT INTO `host_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
 INSERT INTO `node` VALUES (1,1,1,1);

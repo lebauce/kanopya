@@ -38,9 +38,9 @@ sub addNode {
     my %args = @_;
     
     if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{motherboard} or ! defined $args{motherboard}) ||
+        (! exists $args{host} or ! defined $args{host}) ||
         (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::ESnmpd5->configureNode needs a motherboard, mount_point and econtext named argument!";
+        $errmsg = "EComponent::ESnmpd5->configureNode needs a host, mount_point and econtext named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -49,7 +49,7 @@ sub addNode {
     
     # generation of /etc/default/snmpd 
     my $data = {};
-    $data->{node_ip_address} = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
+    $data->{node_ip_address} = $args{host}->getInternalIP()->{ipv4_internal_address};
     $data->{options} = $conf->{snmpd_options};       
     
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},

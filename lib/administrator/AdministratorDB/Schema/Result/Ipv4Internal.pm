@@ -66,19 +66,19 @@ __PACKAGE__->add_unique_constraint("ipv4_internal_address_UNIQUE", ["ipv4_intern
 
 =head1 RELATIONS
 
-=head2 motherboards
+=head2 hosts
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->has_many(
-  "motherboards",
-  "AdministratorDB::Schema::Result::Motherboard",
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
   {
-    "foreign.motherboard_ipv4_internal_id" => "self.ipv4_internal_id",
+    "foreign.host_ipv4_internal_id" => "self.ipv4_internal_id",
   },
   { cascade_copy => 0, cascade_delete => 0 },
 );

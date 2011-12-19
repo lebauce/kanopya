@@ -69,7 +69,7 @@
     <tr>
         <td class="label">Kernel :</td>
         <td><select name="kernel_id">
-        <option value="0">default motherboard kernel</option>
+        <option value="0">default host kernel</option>
         <% FOREACH kernel IN kernels_list %>
             <option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
         <% END %>

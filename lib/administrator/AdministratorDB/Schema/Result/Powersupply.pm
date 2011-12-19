@@ -63,18 +63,18 @@ __PACKAGE__->set_primary_key("powersupply_id");
 
 =head1 RELATIONS
 
-=head2 motherboards
+=head2 hosts
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->has_many(
-  "motherboards",
-  "AdministratorDB::Schema::Result::Motherboard",
-  { "foreign.motherboard_powersupply_id" => "self.powersupply_id" },
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
+  { "foreign.host_powersupply_id" => "self.powersupply_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

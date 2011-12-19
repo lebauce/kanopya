@@ -184,7 +184,7 @@ It is time waited by operation when it is reported.
     Desc : This method is the first method execute during eoperation execution.
     Its goal is to prepare the operation execution. In this method args are
     checked, entities and eentities need by operation execution 
-    ( ex : cluster, motherboard, component, ecomponent, econtext ...) are load in $self
+    ( ex : cluster, host, component, ecomponent, econtext ...) are load in $self
     
     Args :
         None

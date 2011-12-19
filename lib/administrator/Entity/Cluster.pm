@@ -23,7 +23,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Component;
-use Entity::Motherboard;
+use Entity::Host;
 use Entity::Systemimage;
 use Entity::Tier;
 use Operation;
@@ -512,8 +512,8 @@ sub getMasterNodeIp {
     my $adm = Administrator->new();
     my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
     if(defined $node_instance_rs) {
-         my $motherboard_ipv4_internal_id = $node_instance_rs->motherboard->get_column('motherboard_ipv4_internal_id');
-         my $node_ip = $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $motherboard_ipv4_internal_id)->{ipv4_internal_address};
+         my $host_ipv4_internal_id = $node_instance_rs->host->get_column('host_ipv4_internal_id');
+         my $node_ip = $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $host_ipv4_internal_id)->{ipv4_internal_address};
         $log->debug("Master node found and its ip is $node_ip");
         return $node_ip;
     } else {
@@ -526,7 +526,7 @@ sub getMasterNodeId {
     my $self = shift;
     my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
     if(defined $node_instance_rs) {
-        my $id = $node_instance_rs->motherboard->get_column('motherboard_id');
+        my $id = $node_instance_rs->host->get_column('host_id');
         return $id;
     } else {
         return;
@@ -583,29 +583,29 @@ sub removeComponent {
 
 }
 
-=head2 getMotherboards
+=head2 getHosts
 
-    Desc : This function get motherboards executing the cluster.
+    Desc : This function get hosts executing the cluster.
     args:
         administrator : Administrator : Administrator object to instanciate all components
-    return : a hashref of motherboard, it is indexed on motherboard_id
+    return : a hashref of host, it is indexed on host_id
 
 =cut
 
-sub getMotherboards {
+sub getHosts {
     my $self = shift;
 
-    my $motherboard_rs = $self->{_dbix}->nodes;
-    my %motherboards;
-    while ( my $node_row = $motherboard_rs->next ) {
-        my $motherboard_row = $node_row->motherboard;
+    my $host_rs = $self->{_dbix}->nodes;
+    my %hosts;
+    while ( my $node_row = $host_rs->next ) {
+        my $host_row = $node_row->host;
         $log->debug("Nodes found");
-        my $motherboard_id = $motherboard_row->get_column('motherboard_id');
-        eval { $motherboards{$motherboard_id} = Entity::Motherboard->get (
-                        id => $motherboard_id,
-                        type => "Motherboard") };
+        my $host_id = $host_row->get_column('host_id');
+        eval { $hosts{$host_id} = Entity::Host->get (
+                        id => $host_id,
+                        type => "Host") };
     }
-    return \%motherboards;
+    return \%hosts;
 }
 
 =head2 getCurrentNodesCount
@@ -696,7 +696,7 @@ sub removeNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['motherboard_id']);
+    General::checkParams(args => \%args, required => ['host_id']);
 
     my $adm = Administrator->new();
     # removeNode method concerns an existing entity so we use his entity_id
@@ -706,9 +706,9 @@ sub removeNode {
        }
     my %params = (
         cluster_id => $self->getAttr(name =>"cluster_id"),
-        motherboard_id => $args{motherboard_id},
+        host_id => $args{host_id},
     );
-    $log->debug("New Operation AddMotherboardInCluster with attrs : " . %params);
+    $log->debug("New Operation AddHostInCluster with attrs : " . %params);
 
     Operation->enqueue(
         priority => 200,

@@ -47,7 +47,7 @@ use Date::Simple (':all');
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 use Template;
 
 my $log = get_logger("executor");

@@ -121,7 +121,7 @@ sub prepare {
     
     
     #### Instanciate cluster nodes.
-    $self->{_objs}->{motherboards} = $self->{_objs}->{cluster}->getMotherboards();
+    $self->{_objs}->{hosts} = $self->{_objs}->{cluster}->getHosts();
         
     #### Instanciate Clusters
     $log->info("Get Internal Clusters");
@@ -160,7 +160,7 @@ sub execute {
     $log->debug("After EOperation exec and before new Adm");
     my $adm = Administrator->new();
     my $errmsg;
-    my $nodes = $self->{_objs}->{motherboards};
+    my $nodes = $self->{_objs}->{hosts};
     
     
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
@@ -172,34 +172,34 @@ sub execute {
             my $node_context = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $node->getInternalIP()->{ipv4_internal_address});
             
             # Halt Node
-            my $emotherboard = EFactory::newEEntity(data => $node);
-            $emotherboard->halt(node_econtext =>$node_context);
+            my $ehost = EFactory::newEEntity(data => $node);
+            $ehost->halt(node_econtext =>$node_context);
         };
         if ($@) {
             my $error = $@;
-            $errmsg = "Problem with node <" .$node->getAttr(name=>"motherboard_hostname"). "> during force stop cluster : $error";
+            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_hostname"). "> during force stop cluster : $error";
             $log->info($errmsg);
         }
         # Update Dhcp component conf
-        my $motherboard_mac = $node->getAttr(name => "motherboard_mac_address");
+        my $host_mac = $node->getAttr(name => "host_mac_address");
         my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id            => $subnet,
-                                                                               dhcpd3_hosts_mac_address    => $motherboard_mac);
+                                                                               dhcpd3_hosts_mac_address    => $host_mac);
         $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id    => $subnet,
                                                       dhcpd3_hosts_id    => $hostid);
 
         # component migration
         my $components = $self->{_objs}->{components};
-        $log->info('Processing cluster components quick remove for node <'.$node->getAttr(name=>'motherboard_hostname').'>');
+        $log->info('Processing cluster components quick remove for node <'.$node->getAttr(name=>'host_hostname').'>');
         foreach my $i (keys %$components) {
             my $tmp = EFactory::newEEntity(data => $components->{$i});
             $log->debug("component is ".ref($tmp));
-            $tmp->cleanNode(motherboard => $node, 
+            $tmp->cleanNode(host => $node, 
                             mount_point => '',
                             cluster => $self->{_objs}->{cluster},
                             econtext => $self->{nas}->{econtext});
         }
 
-        ## Remove motherboard etc export from iscsitarget 
+        ## Remove host etc export from iscsitarget 
         my $node_dev = $node->getEtcDev();
         my $lv_name = $node_dev->{etc}->{lvname};
         my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $lv_name);
@@ -210,7 +210,7 @@ sub execute {
         # clean initiator session 
         $self->{_objs}->{component_export}->cleanInitiatorSession(
                                                     econtext => $self->{nas}->{econtext},
-                                                    initiator => $node->getAttr(name => 'motherboard_initiatorname'), 
+                                                    initiator => $node->getAttr(name => 'host_initiatorname'), 
                                                 );
         # Remove Target and Lun
         $self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id       => $lun_id,
@@ -222,15 +222,15 @@ sub execute {
         };
         if ($@) {
             my $error = $@;
-            $errmsg = "Problem with node <" .$node->getAttr(name=>"motherboard_hostname"). "> during taget removing : $error";
+            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_hostname"). "> during taget removing : $error";
             $log->info($errmsg);
         }
-        $node->setAttr(name => "motherboard_hostname", value => undef);
-        $node->setAttr(name => "motherboard_initiatorname", value => undef);
-        ## Update Motherboard internal ip
+        $node->setAttr(name => "host_hostname", value => undef);
+        $node->setAttr(name => "host_initiatorname", value => undef);
+        ## Update Host internal ip
         $node->removeInternalIP();
         $node->setState(state=>"down");
-        ## finaly save motherboard 
+        ## finaly save host 
         $node->save();
 
         $node->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));

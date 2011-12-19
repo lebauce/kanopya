@@ -286,7 +286,7 @@ sub getParams {
     Desc : Save operation and its params
     args : 
         op : Entity::Operation::OperationType : 
-            concrete Entity::Operation type (Real Operation type (AddMotherboard, MigrateNode, ...))
+            concrete Entity::Operation type (Real Operation type (AddHost, MigrateNode, ...))
 
 =cut
 

@@ -174,7 +174,7 @@ sub getConf {
     $data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
     $data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
     $data->{server_name} =  $dhcpd3->get_column('dhcpd3_servername');
-    my $ipv4_internal_id = $cluster->search_related("nodes", { master_node => 1 })->single->motherboard->get_column('motherboard_ipv4_internal_id');
+    my $ipv4_internal_id = $cluster->search_related("nodes", { master_node => 1 })->single->host->get_column('host_ipv4_internal_id');
     $data->{server_ip}= $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $ipv4_internal_id)->{ipv4_internal_address};
     
     my $subnets = $dhcpd3->dhcpd3_subnets;
@@ -183,7 +183,7 @@ sub getConf {
         my $hosts = $subnet->dhcpd3_hosts;
         my @data_hosts = ();
         while(my $host = $hosts->next) {
-        #my $motherboard = Motherboard::getMotherboardFromIP(ipv4_internal_ip => $host->get_column('dhcpd3_hosts_ipaddr'));
+        #my $host = Host::getHostFromIP(ipv4_internal_ip => $host->get_column('dhcpd3_hosts_ipaddr'));
             push @data_hosts, {
                 domain_name =>$host->get_column('dhcpd3_hosts_domain_name'),
                 domain_name_server => $host->get_column('dhcpd3_hosts_domain_name_server'),

@@ -13,9 +13,9 @@
 			<option value="User">User</option>	
 			<option value="Cluster">Cluster</option>
 			<option value="Systemimage">System image</option>
-			<option value="Motherboard">Motherboard</option>
+			<option value="Host">Host</option>
 			<option value="Processormodel">Processor model</option>
-			<option value="Motherboardmodel">Motherboard model</option>
+			<option value="Hostmodel">Host model</option>
 			<option value="Powersupplymodel">Powersupply card model</option>
 			<option value="Distribution">Distribution</option>
 			<option value="Kernel">Kernel</option>

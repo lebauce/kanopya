@@ -136,7 +136,7 @@ sub getFreeIP{
 
     my ($i, $row, $freeip) = 0;
     
-    # try to find a matching motherboard of each ip of our network    
+    # try to find a matching host of each ip of our network    
     while ($freeip = $network->nth($i)) {
         $row = $self->{db}->resultset("Ipv4".$uppertype)->find({ "ipv4_".$type ."_address" => $freeip->addr });
         
@@ -169,7 +169,7 @@ sub getFreeInternalIP{
 #    
 #    my ($i, $row, $freeip) = 0;
 #    
-#    # try to find a matching motherboard of each ip of our network    
+#    # try to find a matching host of each ip of our network    
 #    while ($freeip = $network->nth($i)) {
 #        $row = $self->{db}->resultset('Ipv4Internal')->find({ ipv4_internal_address => $freeip->addr });
 #        

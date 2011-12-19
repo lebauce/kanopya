@@ -3,11 +3,11 @@ package Hosts;
 use Dancer ':syntax';
 
 use Administrator;
-use Entity::Motherboard;
+use Entity::Host;
 use Entity::Kernel;
 use Entity::Cluster;
 use Entity::Processormodel;
-use Entity::Motherboardmodel;
+use Entity::Hostmodel;
 use Entity::Powersupplycard;
 use Log::Log4perl "get_logger";
 
@@ -31,10 +31,10 @@ sub _timestamp_format {
 }
 
 sub _hosts {
-    my @emotherboards = Entity::Motherboard->getMotherboards(hash => {});
-    my $motherboards = [];
+    my @ehosts = Entity::Host->getHosts(hash => {});
+    my $hosts = [];
 
-    foreach my $m (@emotherboards) {
+    foreach my $m (@ehosts) {
         my $tmp = {};
         $tmp->{link_activity} = 0;
         $tmp->{state_up} = 0;
@@ -43,13 +43,13 @@ sub _hosts {
         $tmp->{state_stopping} =0;
         $tmp->{state_broken} = 0;
         
-        $tmp->{motherboard_id} = $m->getAttr(name => 'motherboard_id');
+        $tmp->{host_id} = $m->getAttr(name => 'host_id');
         
-        $tmp->{motherboard_label} = $m->toString();
-        my $state = $m->getAttr(name => 'motherboard_state');
-        #$tmp->{motherboard_mac} = $m->getAttr(name => 'motherboard_mac_address');
-        $tmp->{motherboard_hostname} = $m->getAttr(name => 'motherboard_hostname');
-        $tmp->{motherboard_ip} = $m->getInternalIP()->{ipv4_internal_address};
+        $tmp->{host_label} = $m->toString();
+        my $state = $m->getAttr(name => 'host_state');
+        #$tmp->{host_mac} = $m->getAttr(name => 'host_mac_address');
+        $tmp->{host_hostname} = $m->getAttr(name => 'host_hostname');
+        $tmp->{host_ip} = $m->getInternalIP()->{ipv4_internal_address};
         $tmp->{active} = $m->getAttr(name => 'active');
           
         if($tmp->{active}) {
@@ -68,31 +68,31 @@ sub _hosts {
             }
         }
                 
-        $tmp->{motherboard_desc} = $m->getAttr(name => 'motherboard_desc');
-        push (@$motherboards, $tmp);
+        $tmp->{host_desc} = $m->getAttr(name => 'host_desc');
+        push (@$hosts, $tmp);
     }
-    return $motherboards;
+    return $hosts;
 }
 
 get '/hosts' => sub {
-    my $methods = Entity::Motherboard->getPerms();
+    my $methods = Entity::Host->getPerms();
     template 'hosts', {
-        motherboards_list => _hosts(),
+        hosts_list => _hosts(),
         can_create        => $methods->{'create'}->{'granted'}
     };
 };
 
 get '/hosts/add' => sub {
-    my @motherboardmodels = Entity::Motherboardmodel->getMotherboardmodels(hash => {});
+    my @hostmodels = Entity::Hostmodel->getHostmodels(hash => {});
     my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});
     my @kernel = Entity::Kernel->getKernels(hash => {});
     my @powersupplycards = Entity::Powersupplycard->getPowerSupplyCards(hash => {});
     
     my $mmodels = [];
-    foreach my $x (@motherboardmodels){
+    foreach my $x (@hostmodels){
         my $tmp = {
-            id => $x->getAttr( name => 'motherboardmodel_id'),
-            name => join(' ',$x->getAttr(name =>'motherboardmodel_brand'),$x->getAttr(name => 'motherboardmodel_name')),
+            id => $x->getAttr( name => 'hostmodel_id'),
+            name => join(' ',$x->getAttr(name =>'hostmodel_brand'),$x->getAttr(name => 'hostmodel_name')),
         };
         push (@$mmodels, $tmp);
     }
@@ -124,8 +124,8 @@ get '/hosts/add' => sub {
         push (@$pscards, $tmp);
     }
     
-    template 'form_addmotherboard', {
-        motherboardmodels_list => $mmodels,
+    template 'form_addhost', {
+        hostmodels_list => $mmodels,
         processormodels_list   => $pmodels,
         kernels_list           => $kernels,
         powersupplycards_list  => $pscards,
@@ -135,19 +135,19 @@ get '/hosts/add' => sub {
 post '/hosts/add' => sub {
     my $adm = Administrator->new;
     my %parameters = (
-        motherboard_mac_address   => params->{mac_address}, 
+        host_mac_address   => params->{mac_address}, 
         kernel_id                 => params->{kernel},  
-        motherboard_serial_number => params->{serial_number}, 
-        motherboardmodel_id       => params->{motherboard_model}, 
+        host_serial_number => params->{serial_number}, 
+        hostmodel_id       => params->{host_model}, 
         processormodel_id         => params->{cpu_model}, 
-        motherboard_desc          => params->{desc},
+        host_desc          => params->{desc},
     );
     if(params->{powersupplycard_id} ne "none") {
         $parameters{powersupplycard_id}     = params->{powersupplycard_id};
         $parameters{powersupplyport_number} = params->{powersupplyport_number};
     }
-    my $motherboard = Entity::Motherboard->new(%parameters);     
-    eval { $motherboard->create() };
+    my $host = Entity::Host->new(%parameters);     
+    eval { $host->create() };
     if($@) { 
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -165,8 +165,8 @@ post '/hosts/add' => sub {
 get '/hosts/:hostid/remove' => sub {
     my $adm = Administrator->new;
     eval {
-        my $motherboard = Entity::Motherboard->get(id => param('hostid'));
-        $motherboard->remove();
+        my $host = Entity::Host->get(id => param('hostid'));
+        $host->remove();
     };
     if($@) { 
         my $exception = $@;
@@ -182,8 +182,8 @@ get '/hosts/:hostid/remove' => sub {
 get '/hosts/:hostid/activate' => sub {
     my $adm = Administrator->new;
     eval {
-        my $motherboard = Entity::Motherboard->get(id => params->{hostid});
-         $motherboard->activate();
+        my $host = Entity::Host->get(id => params->{hostid});
+         $host->activate();
     };
     if($@) { 
         my $exception = $@;
@@ -202,8 +202,8 @@ get '/hosts/:hostid/activate' => sub {
 get '/hosts/:hostid/deactivate' => sub {
     my $adm = Administrator->new;
     eval {
-        my $motherboard = Entity::Motherboard->get(id => param('hostid'));
-         $motherboard->deactivate();
+        my $host = Entity::Host->get(id => param('hostid'));
+         $host->deactivate();
     };
     if($@) { 
         my $exception = $@;
@@ -225,8 +225,8 @@ get '/hosts/:hostid/addharddisk' => sub {
 post '/hosts/:hostid/addharddisk' => sub {
     my $adm = Administrator->new;
     eval { 
-        my $motherboard = Entity::Motherboard->get(id => param('hostid'));
-        $motherboard->addHarddisk(device => param('device'));
+        my $host = Entity::Host->get(id => param('hostid'));
+        $host->addHarddisk(device => param('device'));
     };
     if($@) {
         my $exception = $@;
@@ -241,8 +241,8 @@ post '/hosts/:hostid/addharddisk' => sub {
 get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
     my $adm = Administrator->new;
     eval { 
-        my $motherboard = Entity::Motherboard->get(id => param('hostid'));
-        $motherboard->removeHarddisk(harddisk_id => param('harddiskid'));
+        my $host = Entity::Host->get(id => param('hostid'));
+        $host->removeHarddisk(harddisk_id => param('harddiskid'));
     };
     if($@) {
         my $exception = $@;
@@ -256,29 +256,29 @@ get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
 };
 
 get '/hosts/:hostid' => sub {
-    my $motherboard_model;
+    my $host_model;
     my $processor_model;
-    my $motherboard_kernel;
+    my $host_kernel;
     my $active;
     my $cluster_name;
-    my $motherboard_state;
+    my $host_state;
     my $timestamp;
     
-    my $emotherboard = Entity::Motherboard->get(id => param('hostid'));
-    my $methods = $emotherboard->getPerms();
+    my $ehost = Entity::Host->get(id => param('hostid'));
+    my $methods = $ehost->getPerms();
 
-    # motherboard model    
-    my $mmodel_id = $emotherboard->getAttr(name => 'motherboardmodel_id');
+    # host model    
+    my $mmodel_id = $ehost->getAttr(name => 'hostmodel_id');
     if($mmodel_id) {
         eval {
-            my $emmodel = Entity::Motherboardmodel->get(id => $mmodel_id);
-            $motherboard_model = $emmodel->getAttr(name =>'motherboardmodel_brand')." ".$emmodel->getAttr(name => 'motherboardmodel_name');
+            my $emmodel = Entity::Hostmodel->get(id => $mmodel_id);
+            $host_model = $emmodel->getAttr(name =>'hostmodel_brand')." ".$emmodel->getAttr(name => 'hostmodel_name');
         };
     }
-    else { $motherboard_model = 'not defined'; }
+    else { $host_model = 'not defined'; }
 
     # processor model
-    my $pmodel_id = $emotherboard->getAttr(name => 'processormodel_id');
+    my $pmodel_id = $ehost->getAttr(name => 'processormodel_id');
     if($pmodel_id) {
         eval {
             my $epmodel = Entity::Processormodel->get(id => $pmodel_id);
@@ -289,33 +289,33 @@ get '/hosts/:hostid' => sub {
 
     # kernel
     eval {
-        my $ekernel = Entity::Kernel->get(id => $emotherboard->getAttr(name => 'kernel_id'));
-        $motherboard_kernel = $ekernel->getAttr('name' => 'kernel_name');
+        my $ekernel = Entity::Kernel->get(id => $ehost->getAttr(name => 'kernel_id'));
+        $host_kernel = $ekernel->getAttr('name' => 'kernel_name');
     };
 
     # state
-    if($emotherboard->getAttr('name' => 'active')) {
+    if($ehost->getAttr('name' => 'active')) {
         $active = 1;
-        ($motherboard_state, $timestamp) = split ':', $emotherboard->getAttr('name' => 'motherboard_state');
-        if($motherboard_state =~ /up|starting/) {
+        ($host_state, $timestamp) = split ':', $ehost->getAttr('name' => 'host_state');
+        if($host_state =~ /up|starting/) {
             eval {
-                my $ecluster = Entity::Cluster->get(id => $emotherboard->getClusterId());
+                my $ecluster = Entity::Cluster->get(id => $ehost->getClusterId());
                 $cluster_name = $ecluster->getAttr('name' => 'cluster_name');
             };
         }
     } else {
         $active = 0;
-        $motherboard_state = 'down';
+        $host_state = 'down';
     }
 
     # harddisks list
-    my $harddisks = $emotherboard->getHarddisks();
+    my $harddisks = $ehost->getHarddisks();
     my $hds= [];
     foreach my $hd (@$harddisks) {
         my $tmp = {};
         $tmp->{harddisk_id}     = $hd->{harddisk_id};
         $tmp->{harddisk_device} = $hd->{harddisk_device};
-        $tmp->{motherboard_id}  = $emotherboard->getAttr(name => 'motherboard_id');
+        $tmp->{host_id}  = $ehost->getAttr(name => 'host_id');
 
         if((not $methods->{'removeHarddisk'}->{'granted'}) || $active) {
             $tmp->{link_removeharddisk} = 0;
@@ -324,22 +324,22 @@ get '/hosts/:hostid' => sub {
     }
 
     template 'hosts_details', {
-        motherboard_id          => $emotherboard->getAttr('name' => 'motherboard_id'),
-        motherboard_hostname    => $emotherboard->getAttr('name' => 'motherboard_hostname'),
-        motherboard_desc        => $emotherboard->getAttr('name' => 'motherboard_desc'),
-        motherboard_mac         => $emotherboard->getAttr('name' => 'motherboard_mac_address'),
-        motherboard_ip          => $emotherboard->getInternalIP()->{ipv4_internal_address},
-        motherboard_sn          => $emotherboard->getAttr('name' => 'motherboard_serial_number'),
-        motherboard_powersupply => $emotherboard->getAttr('name' => 'motherboard_powersupply_id'),
-        motherboard_model       => $motherboard_model,
+        host_id          => $ehost->getAttr('name' => 'host_id'),
+        host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
+        host_desc        => $ehost->getAttr('name' => 'host_desc'),
+        host_mac         => $ehost->getAttr('name' => 'host_mac_address'),
+        host_ip          => $ehost->getInternalIP()->{ipv4_internal_address},
+        host_sn          => $ehost->getAttr('name' => 'host_serial_number'),
+        host_powersupply => $ehost->getAttr('name' => 'host_powersupply_id'),
+        host_model       => $host_model,
         processor_model         => $processor_model,
-        motherboard_kernel      => $motherboard_kernel,
-        motherboard_state       => $motherboard_state,
+        host_kernel      => $host_kernel,
+        host_state       => $host_state,
         state_time              => _timestamp_format('timestamp' => $timestamp),
         nbharddisks             => scalar(@$hds)+1,
         harddisks_list          => $hds,
         active                  => $active,
-        can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && $motherboard_state =~ /down/,
+        can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && $host_state =~ /down/,
         can_delete              => $methods->{'remove'}->{'granted'} && !$active,
         can_activate            => $methods->{'activate'}->{'granted'} && !$active,
         can_setperm             => $methods->{'setperm'}->{'granted'},

@@ -83,7 +83,7 @@ sub checkOp{
     my $self = shift;
     my %args = @_;
     
-    if($self->{_objs}->{motherboard}->getAttr(name => 'motherboard_state') =~ /^stopping:/) {
+    if($self->{_objs}->{host}->getAttr(name => 'host_state') =~ /^stopping:/) {
         my $msg = "Node is still in stopping state.";
         $log->error($msg);
         throw Kanopya::Exception::Execution::OperationReported(error => $msg);
@@ -114,13 +114,13 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
     
-# Instantiate motherboard and so check if exists
-    $log->debug("checking motherboard existence with id <$params->{motherboard_id}>");
+# Instantiate host and so check if exists
+    $log->debug("checking host existence with id <$params->{host_id}>");
     eval {
-        $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     };
     if($@) {
-        $errmsg = "EOperation::EActivateMotherboard->new : motherboard_id $params->{motherboard_id} does not exist";
+        $errmsg = "EOperation::EActivateHost->new : host_id $params->{host_id} does not exist";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -146,7 +146,7 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Operation ActivateMotherboard failed an error occured :\n$error";
+        $errmsg = "Operation ActivateHost failed an error occured :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -199,20 +199,20 @@ sub execute {
     $log->debug("After EOperation exec and before new Adm");
     my $adm = Administrator->new();
     
-    # We stop motherboard (to update powersupply)
-    my $emotherboard = EFactory::newEEntity(data => $self->{_objs}->{motherboard});
-    $emotherboard->stop();
+    # We stop host (to update powersupply)
+    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->stop();
 
-     $self->{_objs}->{motherboard}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+     $self->{_objs}->{host}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
 
-    ## Remove Motherboard in the dhcp
+    ## Remove Host in the dhcp
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-    my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
+    my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
     my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id            => $subnet,
-                                                                            dhcpd3_hosts_mac_address    => $motherboard_mac);
+                                                                            dhcpd3_hosts_mac_address    => $host_mac);
     $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id    => $subnet,
                                                   dhcpd3_hosts_id    => $hostid);
-    ########## Strange : $self->{_objs}->{motherboard}->removeInternalIP();
+    ########## Strange : $self->{_objs}->{host}->removeInternalIP();
     $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
     
     $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
@@ -224,7 +224,7 @@ sub execute {
         
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->removeNode(motherboard => $self->{_objs}->{motherboard}, 
+        $tmp->removeNode(host => $self->{_objs}->{host}, 
                             mount_point => '',
                             cluster => $self->{_objs}->{cluster},
                             econtext => $self->{nas}->{econtext});
@@ -233,8 +233,8 @@ sub execute {
 
 
     
-    ## Remove motherboard etc export from iscsitarget 
-    my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
+    ## Remove host etc export from iscsitarget 
+    my $node_dev = $self->{_objs}->{host}->getEtcDev();
     my $lv_name = $node_dev->{etc}->{lvname};
     my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $lv_name);
     my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $lv_name);
@@ -244,7 +244,7 @@ sub execute {
     # clean initiator session 
     $self->{_objs}->{component_export}->cleanInitiatorSession(
         econtext => $self->{nas}->{econtext},
-        initiator => $self->{_objs}->{motherboard}->getAttr(name => 'motherboard_initiatorname'), 
+        initiator => $self->{_objs}->{host}->getAttr(name => 'host_initiatorname'), 
     );
     
     
@@ -256,13 +256,13 @@ sub execute {
                                                                   
     $self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext});
     
-    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname", value => undef);
-    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname", value => undef);
-    ## Update Motherboard internal ip
-    $self->{_objs}->{motherboard}->removeInternalIP();
+    $self->{_objs}->{host}->setAttr(name => "host_hostname", value => undef);
+    $self->{_objs}->{host}->setAttr(name => "host_initiatorname", value => undef);
+    ## Update Host internal ip
+    $self->{_objs}->{host}->removeInternalIP();
     
-    ## finaly save motherboard 
-    $self->{_objs}->{motherboard}->save();
+    ## finaly save host 
+    $self->{_objs}->{host}->save();
 
 
 }

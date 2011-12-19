@@ -26,7 +26,7 @@ __PACKAGE__->table("harddisk");
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 motherboard_id
+=head2 host_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -49,7 +49,7 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "motherboard_id",
+  "host_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -63,18 +63,18 @@ __PACKAGE__->set_primary_key("harddisk_id");
 
 =head1 RELATIONS
 
-=head2 motherboard
+=head2 host
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "motherboard",
-  "AdministratorDB::Schema::Result::Motherboard",
-  { motherboard_id => "motherboard_id" },
+  "host",
+  "AdministratorDB::Schema::Result::Host",
+  { host_id => "host_id" },
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 

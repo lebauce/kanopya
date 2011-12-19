@@ -39,7 +39,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
 
     #TODO insert configuration files generation
 }
@@ -47,7 +47,7 @@ sub configureNode {
 sub addNode {
     my $self = shift;
     my %args = @_;    
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);   
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);   
     $self->configureNode(%args);   
     #TODO addInitScript(..) if there is a daemon associated to this component
     my $data = $self->_getEntity()->getConf();    

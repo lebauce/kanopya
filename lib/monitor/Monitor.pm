@@ -117,7 +117,7 @@ sub _mbState {
     if ($state_info =~ /([a-zA-Z]+):?([\d]*)/) {
         ($mb_state, $mb_state_time) = ($1, $2);
     } else {
-        $log->error("Bad motherboard state format '$state_info'.");
+        $log->error("Bad host state format '$state_info'.");
         ($mb_state, $mb_state_time) = ("unknown", 0);
     }
     
@@ -146,10 +146,10 @@ sub retrieveHostsByCluster {
         my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
 
         my %mb_info;
-        foreach my $mb ( values %{ $cluster->getMotherboards( ) } ) {
-            my $mb_name = $mb->getAttr( name => "motherboard_hostname" );
+        foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
+            my $mb_name = $mb->getAttr( name => "host_hostname" );
             my $mb_ip = $mb->getInternalIP()->{ipv4_internal_address};
-            my $mb_state = $mb->getAttr( name => "motherboard_state" );
+            my $mb_state = $mb->getAttr( name => "host_state" );
 
             $mb_info{ $mb_name } = { ip => $mb_ip, state => $mb_state, components => \@components_name };
         }

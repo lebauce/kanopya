@@ -169,7 +169,7 @@ sub cleanNode {
 #    my %args = @_;
 #
 #    General::checkParams(args => \%args,
-#                         required => ['motherboard', ]);
+#                         required => ['host', ]);
 
 }
 

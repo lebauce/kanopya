@@ -115,7 +115,7 @@ sub getClusterConf {
 
     my $cluster = $args{cluster};
     
-    my @hosts = values %{ $cluster->getMotherboards( ) };
+    my @hosts = values %{ $cluster->getHosts( ) };
     my @in_nodes = grep { $_->getNodeState() =~ '^in' } @hosts; 
 
     # TODO get mpl from cluster/component

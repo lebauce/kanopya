@@ -41,7 +41,7 @@ sub configureNode {
     # Generation of memcached.conf
     my $data = { 
                 connection_port => $conf->{memcached1_port},
-                listening_address => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
+                listening_address => $args{host}->getInternalIP()->{ipv4_internal_address},
                 };
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => "/templates/components/memcached",
@@ -57,7 +57,7 @@ sub addNode {
     
     # Memcached run only on master node
     if(not defined $masternodeip) {
-        # no masternode defined, this motherboard becomes the masternode
+        # no masternode defined, this host becomes the masternode
             
         $self->configureNode(%args);
         

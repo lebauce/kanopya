@@ -117,18 +117,18 @@ sub checkAttr{
 
     if ((! exists $args{name} or ! defined $args{name}) ||
         (! exists $args{value})) { 
-        $errmsg = "Entity::Motherboard->checkAttr need a name and value named argument!";
+        $errmsg = "Entity::Host->checkAttr need a name and value named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     if (! defined $args{value} && $attr_def->{$args{name}}->{is_mandatory}){
-        $errmsg = "Entity::Motherboard->checkAttr detect a null value for a mandatory attr ($args{name})";
+        $errmsg = "Entity::Host->checkAttr detect a null value for a mandatory attr ($args{name})";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
     if (!exists $attr_def->{$args{name}}){
-        $errmsg = "Entity::Motherboard->checkAttr invalid attr name : '$args{name}'";
+        $errmsg = "Entity::Host->checkAttr invalid attr name : '$args{name}'";
         $log->error($errmsg);    
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }

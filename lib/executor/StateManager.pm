@@ -51,10 +51,10 @@ use Operation;
 use EFactory;
 use Administrator;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 use Message;
 
-use StateManager::Motherboard;
+use StateManager::Host;
 use StateManager::Cluster;
 use StateManager::Node;
 
@@ -126,16 +126,16 @@ sub run {
     
     # main loop
     while ($$running) {
-        # First Check Motherboard status
+        # First Check Host status
         
-        $log->debug("<<< Motherboards status changes >>>");
-        my @motherboards = Entity::Motherboard->getMotherboards(hash => {-not => {motherboard_state => {'like','down%'}}});
-        foreach my $mb (@motherboards) {
+        $log->debug("<<< Hosts status changes >>>");
+        my @hosts = Entity::Host->getHosts(hash => {-not => {host_state => {'like','down%'}}});
+        foreach my $mb (@hosts) {
             $adm->{db}->txn_begin;
             eval {
-                  my $emotherboard = EFactory::newEEntity(data => $mb);
-                  my $is_up = $emotherboard->checkUp();
-                  StateManager::Motherboard::updateMotherboardStatus(pingable => $is_up, motherboard=>$mb);
+                  my $ehost = EFactory::newEEntity(data => $mb);
+                  my $is_up = $ehost->checkUp();
+                  StateManager::Host::updateHostStatus(pingable => $is_up, host=>$mb);
             };
             if($@) {
                 my $exception = $@;
@@ -153,15 +153,15 @@ sub run {
         foreach my $cluster (@clusters) {
                         
             $log->debug("On cluster " . $cluster->getAttr(name=>'cluster_name')." ...");
-            my $motherboards = $cluster->getMotherboards();
-            my @moth_index = keys %$motherboards;
+            my $hosts = $cluster->getHosts();
+            my @moth_index = keys %$hosts;
             foreach my $mb (@moth_index) {
                 $adm->{db}->txn_begin;
                 eval {
-                    my $srv_available = StateManager::Node::checkNodeUp(motherboard=>$motherboards->{$mb}, 
+                    my $srv_available = StateManager::Node::checkNodeUp(host=>$hosts->{$mb}, 
                                                     cluster=>$cluster,
                                                     executor_ip=>Entity::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
-                    StateManager::Node::updateNodeStatus(motherboard=>$motherboards->{$mb}, services_available => $srv_available, cluster => $cluster);
+                    StateManager::Node::updateNodeStatus(host=>$hosts->{$mb}, services_available => $srv_available, cluster => $cluster);
                 };
                 if($@) {
                     my $exception = $@;
@@ -175,7 +175,7 @@ sub run {
             
             $adm->{db}->txn_begin;
             eval {
-                StateManager::Cluster::updateClusterStatus(motherboards=>$motherboards,cluster=>$cluster);
+                StateManager::Cluster::updateClusterStatus(hosts=>$hosts,cluster=>$cluster);
             };
             if($@) {
                 my $exception = $@;

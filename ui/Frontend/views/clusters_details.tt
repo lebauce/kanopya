@@ -150,8 +150,8 @@ activate</a><br />
 	<% END %>
 	</td></tr>
 	<% FOREACH node IN nodes_list %>
-		<tr><td class="label2"><span class="bold"><% node.motherboard_hostname %></span><% IF node.master_node %> (master)<% END %></td>
-		<td class="label2">ip: <% node.motherboard_internal_ip %></td>
+		<tr><td class="label2"><span class="bold"><% node.host_hostname %></span><% IF node.master_node %> (master)<% END %></td>
+		<td class="label2">ip: <% node.host_internal_ip %></td>
 		<td class="label2">
 		<% IF node.state_up %><span class="state imgUp">Up (<% node.state_time %>)</span><% END %>
 		<% IF node.state_starting %><span class="state imgDown">Starting... (<% node.real_state %> <% node.state_time %>)</span><% END %>
@@ -160,7 +160,7 @@ activate</a><br />
 		</td>
 		<td class="action">
 		<% IF node.link_remove %>
-			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.motherboard_id %>/remove">remove</a>
+			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
 		<% END %></td></tr>
 	<% END %>
 <% ELSE %>

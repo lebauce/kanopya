@@ -51,7 +51,7 @@ use Operation;
 use EFactory;
 use Administrator;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 
 use XML::Simple;
 use Data::Dumper;
@@ -69,9 +69,9 @@ my $log = get_logger("statemanager");
 sub checkNodeUp {
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['cluster', 'motherboard', 'executor_ip']);
+    General::checkParams(args => \%args, required => ['cluster', 'host', 'executor_ip']);
     my $adm = Administrator->new();
-    if ($args{motherboard}->getAttr(name => "motherboard_state") !~ /^up:.*/){
+    if ($args{host}->getAttr(name => "host_state") !~ /^up:.*/){
         return 0;
     }
 
@@ -80,7 +80,7 @@ sub checkNodeUp {
     my $node_available = 1;
     my $host_econtext;
 
-    my $node_ip = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
+    my $node_ip = $args{host}->getInternalIP()->{ipv4_internal_address};
     if (!$node_ip) {
         $errmsg = "Node without IP!";    
         $log->error($errmsg);
@@ -91,7 +91,7 @@ sub checkNodeUp {
     };
     if ($@) {
         Message->send(from => 'StateManager', level => 'info', content => "Kanopya could not connect to node <"
-                        .$args{motherboard}->getAttr(name=>"motherboard_hostname")."> with ip <"
+                        .$args{host}->getAttr(name=>"host_hostname")."> with ip <"
                         . $node_ip ."> in cluster <".$args{cluster}->getAttr(name=>"cluster_name").">");
         return 0;
     }
@@ -99,10 +99,10 @@ sub checkNodeUp {
     foreach my $i (keys %$components) {
         $log->debug("Browse component : " .$components->{$i}->getComponentAttr()->{component_name});
         my $tmp_ecomp = EFactory::newEEntity(data => $components->{$i});
-        if (!$tmp_ecomp->isUp(host=>$args{motherboard}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
+        if (!$tmp_ecomp->isUp(host=>$args{host}, cluster=>$args{cluster}, host_econtext => $host_econtext)) {
             Message->send(from => 'StateManager', level => 'info', content => "Kanopya detects a component \""
             .$components->{$i}->getComponentAttr()->{component_name}."\" not available on node \""
-            .$args{motherboard}->getAttr(name=>"motherboard_hostname")."\" with ip \""
+            .$args{host}->getAttr(name=>"host_hostname")."\" with ip \""
             . $node_ip ."\" in cluster \"".$args{cluster}->getAttr(name=>"cluster_name")."\"");
             return 0;
         }
@@ -115,11 +115,11 @@ sub checkNodeUp {
 
 sub nodeBroken{
     my %args = @_;
-    General::checkParams(args => \%args, required => ['motherboard']);
+    General::checkParams(args => \%args, required => ['host']);
        
-    $args{motherboard}->setNodeState(state => 'broken');
+    $args{host}->setNodeState(state => 'broken');
     logNodeStateChange(
-        ip_address => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
+        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
         newstatus => 'broken',
         level => 'warning'        
     );
@@ -127,11 +127,11 @@ sub nodeBroken{
 
 sub nodeRepaired{
     my %args = @_;
-    General::checkParams(args => \%args, required => ['motherboard']);
+    General::checkParams(args => \%args, required => ['host']);
     
-    $args{motherboard}->setNodeState(state => $args{motherboard}->getPrevNodeState());
+    $args{host}->setNodeState(state => $args{host}->getPrevNodeState());
     logNodeStateChange(
-        ip_address => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
+        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
         newstatus => 'in',
         level => 'info'        
     );
@@ -139,11 +139,11 @@ sub nodeRepaired{
 
 sub nodeOut{
     my %args = @_;
-    # service are not available but motherboard answer to ping,
+    # service are not available but host answer to ping,
     # states are stoping and goingout
-    General::checkParams(args => \%args, required => ['motherboard']);
+    General::checkParams(args => \%args, required => ['host']);
 #    logNodeStateChange(
-#        ip_address => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
+#        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
 #        newstatus => 'BAH LA JE SAIS PAS QUOI METTRE...',
 #        level => 'info'        
 #    );
@@ -151,10 +151,10 @@ sub nodeOut{
 
 sub nodeIn {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['motherboard']);
-    $args{motherboard}->setNodeState(state => "in");
+    General::checkParams(args => \%args, required => ['host']);
+    $args{host}->setNodeState(state => "in");
     logNodeStateChange(
-        ip_address => $args{motherboard}->getInternalIP()->{ipv4_internal_address},
+        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
         newstatus => 'in',
         level => 'info'        
     );
@@ -163,15 +163,15 @@ sub nodeIn {
 
 sub incorrectStates {
     my %args = @_;
-    if ((!defined $args{motherboard} or !exists $args{motherboard})||
+    if ((!defined $args{host} or !exists $args{host})||
         ((!defined $args{services_available} or !exists $args{services_available})&&
          (!defined $args{pingable} or !exists $args{pingable}))){
-            $errmsg = "StateManager::incorrectStates need a motherboard and (pingable or services_available) named argument!";    
+            $errmsg = "StateManager::incorrectStates need a host and (pingable or services_available) named argument!";    
             $log->error($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
     my $state = $args{pingable} || $args{services_available};
-    my $error = "Wrong state <$state> for motherboard <". $args{motherboard}->getAttr(name=>'motherboard_mac_address').">\n";
+    my $error = "Wrong state <$state> for host <". $args{host}->getAttr(name=>'host_mac_address').">\n";
     throw Kanopya::Exception::Internal(error => $error);
 }
 
@@ -179,8 +179,8 @@ sub testPreGoingInNode {
     my %args = @_;
     
     if ((!defined $args{cluster} or !exists $args{cluster})||
-        (!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::testPreGoingInNode need a cluster and motherboard named argument!";    
+        (!defined $args{host} or !exists $args{host})){
+            $errmsg = "StateManager::testPreGoingInNode need a cluster and host named argument!";    
             $log->error($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -190,19 +190,19 @@ sub testPreGoingInNode {
 
        foreach my $i (keys %$components) {
            if ($cluster_ready){
-        $cluster_ready = $components->{$i}->readyNodeAddition(motherboard_id => $args{motherboard}->getAttr(name => "motherboard_id"));}
+        $cluster_ready = $components->{$i}->readyNodeAddition(host_id => $args{host}->getAttr(name => "host_id"));}
            $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
     }
 
     if ($cluster_ready) {
-    $log->debug("StateManager::testPreGoingInNode before enqueueing Startnode with motherboard_id <" .
-                $args{motherboard}->getAttr(name=>'motherboard_id')."> and cluster_id <" .
+    $log->debug("StateManager::testPreGoingInNode before enqueueing Startnode with host_id <" .
+                $args{host}->getAttr(name=>'host_id')."> and cluster_id <" .
                 $args{cluster}->getAttr(name=>'cluster_id').">");
     Operation->enqueue(
         priority => 200,
         type     => 'StartNode',
         params   => {cluster_id => $args{cluster}->getAttr(name=>'cluster_id'),
-                     motherboard_id => $args{motherboard}->getAttr(name=>'motherboard_id')});
+                     host_id => $args{host}->getAttr(name=>'host_id')});
     }
 }
 
@@ -210,8 +210,8 @@ sub testPreGoingOutNode {
     my %args = @_;
     
     if ((!defined $args{cluster} or !exists $args{cluster})||
-        (!defined $args{motherboard} or !exists $args{motherboard})){
-            $errmsg = "StateManager::testPreGoingOutNode need a cluster and motherboard named argument!";    
+        (!defined $args{host} or !exists $args{host})){
+            $errmsg = "StateManager::testPreGoingOutNode need a cluster and host named argument!";    
             $log->error($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -220,19 +220,19 @@ sub testPreGoingOutNode {
     my $cluster_ready = 1;
 
        foreach my $i (keys %$components) {
-        $cluster_ready = $components->{$i}->readyNodeRemoving(motherboard_id => $args{motherboard}->getAttr(name => "motherboard_id")) && $cluster_ready;
+        $cluster_ready = $components->{$i}->readyNodeRemoving(host_id => $args{host}->getAttr(name => "host_id")) && $cluster_ready;
            $log->debug("Test if ready for node addition and now ready is <$cluster_ready>");
     }
 
     if ($cluster_ready) {
-    $log->debug("StateManager::testPreGoingOutNode before enqueueing StopNode with motherboard_id <" .
-                $args{motherboard}->getAttr(name=>'motherboard_id')."> and cluster_id <" .
+    $log->debug("StateManager::testPreGoingOutNode before enqueueing StopNode with host_id <" .
+                $args{host}->getAttr(name=>'host_id')."> and cluster_id <" .
                 $args{cluster}->getAttr(name=>'cluster_id').">");
     Operation->enqueue(
         priority => 200,
         type     => 'StopNode',
         params   => {cluster_id => $args{cluster}->getAttr(name=>'cluster_id'),
-                     motherboard_id => $args{motherboard}->getAttr(name=>'motherboard_id')},
+                     host_id => $args{host}->getAttr(name=>'host_id')},
                      );
     }
 }
@@ -248,7 +248,7 @@ sub testGoingOutNode {
 sub updateNodeStatus {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['motherboard','cluster','services_available']);
+    General::checkParams(args => \%args, required => ['host','cluster','services_available']);
 
     # state pregoingout is impossible when node is not available (it has to be repaired before)
     my %actions = (0 => { in        => \&nodeBroken,
@@ -263,12 +263,12 @@ sub updateNodeStatus {
                           goingin  => \&nodeIn,
                           pregoingout => \&testPreGoingOutNode,
                           goingout  => \&testGoingOutNode});
-   my $node_state = $args{motherboard}->getNodeState();
+   my $node_state = $args{host}->getNodeState();
    my @tmp = split(/:/, $node_state);
    $node_state = $tmp[0];
    print "Node state <$node_state>";
    my $method = $actions{$args{services_available}}->{$node_state} || \&incorrectStates;
-   $method->(services_available=>$args{services_available},motherboard=>$args{motherboard}, cluster=>$args{cluster});
+   $method->(services_available=>$args{services_available},host=>$args{host}, cluster=>$args{cluster});
 }
 
 

@@ -33,8 +33,8 @@ get '/clusters/:clusterid/monitoring/graphs' => sub {
     
     my $cluster_id = params->{'clusterid'};
     my $cluster = Entity::Cluster->get( id => $cluster_id );
-    my $motherboards = $cluster->getMotherboards();
-    my @all_ids = keys %$motherboards;
+    my $hosts = $cluster->getHosts();
+    my @all_ids = keys %$hosts;
     my $cluster_name = $cluster->getAttr( name => 'cluster_name' ); 
     push @all_ids, $cluster_name;
 
@@ -58,7 +58,7 @@ get '/clusters/:clusterid/monitoring/graphs' => sub {
             $node_ip = $cluster_name;    
 
         } else {
-            $node_ip = $motherboards->{$node_id}->getInternalIP()->{ipv4_internal_address};
+            $node_ip = $hosts->{$node_id}->getInternalIP()->{ipv4_internal_address};
         }
         
 #        foreach my $set ( defined $set_name ? ($set_name) : @sets_name ) {
@@ -94,12 +94,12 @@ get '/clusters/:clusterid/monitoring' => sub {
     
     #NODES
     my $cluster = Entity::Cluster->get( id => $cluster_id );
-    my $motherboards = $cluster->getMotherboards();
+    my $hosts = $cluster->getHosts();
     my $masterId = $cluster->getMasterNodeId();
-    my @nodes = map { { id => $_->getAttr(name=>'motherboard_id'),
+    my @nodes = map { { id => $_->getAttr(name=>'host_id'),
                         name => $_->getInternalIP()->{ipv4_internal_address},
-                        master => ($_->getAttr(name=>'motherboard_id') == $masterId) }
-                    } values %$motherboards;
+                        master => ($_->getAttr(name=>'host_id') == $masterId) }
+                    } values %$hosts;
     
     #CLUSTER
     my $cluster_name = $cluster->getAttr( name => 'cluster_name' );

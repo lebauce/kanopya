@@ -19,18 +19,18 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EEntity::Operation::EAddHost - Operation class implementing Host creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Host creation operation
 
 =head1 DESCRIPTION
 
 EPreStartNode allows to prepare cluster for node addition.
 It takes as parameters :
-- motherboard_id : Int (Scalar) : motherboard_id identifies motherboard 
+- host_id : Int (Scalar) : host_id identifies host 
     which will be migrated into cluster to become a node.
 - cluster_id : Int (Scalar) : cluster_id identifies cluster which will grow.
 
@@ -43,7 +43,7 @@ use base "EOperation";
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 use Operation;
 use strict;
 use warnings;
@@ -68,10 +68,10 @@ my $config = {
 
 =head2 new
 
-    my $op = EOperation::EAddMotherboard->new();
+    my $op = EOperation::EAddHost->new();
 
-    # Operation::EAddMotherboard->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddMotherboard : Operation add motherboar on execution side
+    # Operation::EAddHost->new creates a new AddMotheboard operation.
+    # RETURN : EOperation::EAddHost : Operation add motherboar on execution side
 
 =cut
 
@@ -136,21 +136,21 @@ sub prepare {
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
 
-    # Get instance of Motherboard Entity
-    $log->info("Load Motherboard instance");
-    my @free_motherboards = Entity::Motherboard->getFreeMotherboards();
-    if ( scalar @free_motherboards == 0) {
-        $errmsg = "EPreStartNode->prepare no free motherboard!";
+    # Get instance of Host Entity
+    $log->info("Load Host instance");
+    my @free_hosts = Entity::Host->getFreeHosts();
+    if ( scalar @free_hosts == 0) {
+        $errmsg = "EPreStartNode->prepare no free host!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    $self->{_objs}->{motherboard} = $free_motherboards[0];
-    $log->debug("get Motherboard self->{_objs}->{motherboard} of type : " . ref($self->{_objs}->{motherboard}));
+    $self->{_objs}->{host} = $free_hosts[0];
+    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
     if (! $master_node_id && $node_count){
-        $errmsg = "No master node when motherboard <$free_motherboards[0]> migrating, pls wait...";
+        $errmsg = "No master node when host <$free_hosts[0]> migrating, pls wait...";
         $log->error($errmsg);
 
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -173,12 +173,12 @@ sub execute {
         
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->preStartNode(motherboard => $self->{_objs}->{motherboard}, 
+        $tmp->preStartNode(host => $self->{_objs}->{host}, 
                             cluster => $self->{_objs}->{cluster});
     }
-    $self->{_objs}->{motherboard}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+    $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
                                                 master_node => 0);
-    $self->{_objs}->{motherboard}->setNodeState(state=>"pregoingin");
+    $self->{_objs}->{host}->setNodeState(state=>"pregoingin");
 
 }
 
@@ -188,8 +188,8 @@ sub _cancel {
     my $params = $self->_getOperation()->getParams();
 
     my $cluster = Entity::Cluster->get(id => $params->{cluster_id});
-    my $motherboards = $cluster->getMotherboards();
-    if (! scalar keys %$motherboards) {
+    my $hosts = $cluster->getHosts();
+    if (! scalar keys %$hosts) {
         $cluster->setState(state => 'down');
     }
 }

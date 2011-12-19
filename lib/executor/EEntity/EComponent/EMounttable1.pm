@@ -39,9 +39,9 @@ sub configureNode {
     my %args = @_;
     
     if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{motherboard} or ! defined $args{motherboard}) ||
+        (! exists $args{host} or ! defined $args{host}) ||
         (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::EMonitoragent::EMounttable1->configureNode needs a motherboard, mount_point and econtext named argument!";
+        $errmsg = "EComponent::EMonitoragent::EMounttable1->configureNode needs a host, mount_point and econtext named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -74,7 +74,7 @@ sub addNode {
     
     if((! exists $args{econtext} or ! defined $args{econtext}) ||
         (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::EMounttable1->addNode needs a motherboard, mount_point and econtext named argument!";
+        $errmsg = "EComponent::EMounttable1->addNode needs a host, mount_point and econtext named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }

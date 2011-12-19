@@ -38,7 +38,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point', 'cluster']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
 
     my $template_path = $args{template_path} || "/templates/components/haproxy";
     
@@ -68,7 +68,7 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point', 'cluster']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
     
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     

@@ -12,7 +12,7 @@ use Date::Simple (':all');
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::Cluster;
-use Entity::Motherboard;
+use Entity::Host;
 use Template;
 use General;
 
@@ -71,14 +71,14 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-     # Motherboard instantiation
-    $log->debug("checking Motherboard existence with id <$params->{motherboard_id}>");
+     # Host instantiation
+    $log->debug("checking Host existence with id <$params->{host_id}>");
     eval {
-        $self->{_objs}->{motherboard} = Entity::Motherboard->get(id => $params->{motherboard_id});
+        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EStartNode->prepare : motherboard_id $params->{motherboard_id} does not find\n" . $err;
+        $errmsg = "EOperation::EStartNode->prepare : host_id $params->{host_id} does not find\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -130,12 +130,12 @@ sub _cancel {
     my $self = shift;
 
     my $params = $self->_getOperation()->getParams();
-    my $motherboard = Entity::Motherboard->get(id => $params->{motherboard_id});
-    $log->info("Cancel start node, we will try to remove node link for <" . $motherboard->getAttr(name=>"motherboard_mac_address") . ">");
-    $motherboard->stopToBeNode();
+    my $host = Entity::Host->get(id => $params->{host_id});
+    $log->info("Cancel start node, we will try to remove node link for <" . $host->getAttr(name=>"host_mac_address") . ">");
+    $host->stopToBeNode();
     my $cluster = Entity::Cluster->get(id => $params->{cluster_id});
-    my $motherboards = $cluster->getMotherboards();
-    if (! scalar keys %$motherboards) {
+    my $hosts = $cluster->getHosts();
+    if (! scalar keys %$hosts) {
         $cluster->setState("down");
     }
 }
@@ -144,56 +144,56 @@ sub execute {
     my $self = shift;
     my $adm = Administrator->new();
 
-    ## Clone system image etc on motherboard etc
+    ## Clone system image etc on host etc
     # Get system image etc
     my $sysimg_dev = $self->{_objs}->{cluster}->getSystemImage()->getDevices();
-    my $node_dev = $self->{_objs}->{motherboard}->getEtcDev();
-    # copy of systemimage etc source to motherboard etc device
+    my $node_dev = $self->{_objs}->{host}->getEtcDev();
+    # copy of systemimage etc source to host etc device
     my $command = "dd if=/dev/$sysimg_dev->{etc}->{vgname}/$sysimg_dev->{etc}->{lvname} of=/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} bs=1M";
     my $result = $self->{nas}->{econtext}->execute(command => $command);
     $log->info("Clone node etc disk with system image <".$self->{_objs}->{cluster}->getSystemImage()->getAttr(name=>"systemimage_name")."> one");
 
-    ## Update export to allow to motherboard to boot
-    #TODO Update export root and etc to add motherboard as allowed to access to this disk
+    ## Update export to allow to host to boot
+    #TODO Update export root and etc to add host as allowed to access to this disk
 
-    # Generate the target name from the motherboard etc device
-    my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{motherboard}->getEtcName());
+    # Generate the target name from the host etc device
+    my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => $self->{_objs}->{host}->getEtcName());
 
 
-    ## ADD Motherboard in the dhcp
+    ## ADD Host in the dhcp
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
-    my $motherboard_ip = $adm->{manager}->{network}->getFreeInternalIP();
+    my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
     # Set Hostname
-    my $motherboard_hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
-    if(not $motherboard_hostname) {
-        $motherboard_hostname = $self->{_objs}->{motherboard}->generateHostname(ip=>$motherboard_ip);
-        $self->{_objs}->{motherboard}->setAttr(name => "motherboard_hostname",
-                                           value => $motherboard_hostname);
+    my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
+    if(not $host_hostname) {
+        $host_hostname = $self->{_objs}->{host}->generateHostname(ip=>$host_ip);
+        $self->{_objs}->{host}->setAttr(name => "host_hostname",
+                                           value => $host_hostname);
     }
 
     # Set initiatorName
-    $self->{_objs}->{motherboard}->setAttr(name => "motherboard_initiatorname",
-                                           value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{motherboard}->getAttr(name=>'motherboard_hostname')));
+    $self->{_objs}->{host}->setAttr(name => "host_initiatorname",
+                                           value => $self->{_objs}->{component_export}->generateInitiatorname(hostname => $self->{_objs}->{host}->getAttr(name=>'host_hostname')));
 
     # Configure DHCP Component
-    my $motherboard_mac = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address");
-    my $motherboard_kernel_id;
+    my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
+    my $host_kernel_id;
     my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
     if ($tmp_kernel_id) {
-        $motherboard_kernel_id = $tmp_kernel_id;
+        $host_kernel_id = $tmp_kernel_id;
     } else {
-        $motherboard_kernel_id = $self->{_objs}->{motherboard}->getAttr(name => "kernel_id");
+        $host_kernel_id = $self->{_objs}->{host}->getAttr(name => "kernel_id");
     }
 
     $self->{_objs}->{component_dhcpd}->addHost(
 	dhcpd3_subnet_id                => $subnet,
-	dhcpd3_hosts_ipaddr             => $motherboard_ip,
-	dhcpd3_hosts_mac_address        => $motherboard_mac,
-	dhcpd3_hosts_hostname           => $motherboard_hostname,
+	dhcpd3_hosts_ipaddr             => $host_ip,
+	dhcpd3_hosts_mac_address        => $host_mac,
+	dhcpd3_hosts_hostname           => $host_hostname,
 	dhcpd3_hosts_ntp_server         => $self->{bootserver}->{obj}->getMasterNodeIp(),
 	dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
 	dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver"),
-	kernel_id                       => $motherboard_kernel_id,
+	kernel_id                       => $host_kernel_id,
 	erollback                       => $self->{erollback});
 
     my $eroll_add_dhcp_host = $self->{erollback}->getLastInserted();
@@ -208,21 +208,21 @@ sub execute {
                                               erollback => $self->{erollback});
     $log->info('Update Admin Dhcp server');
 
-    #Update Motherboard internal ip
-    $log->info("get subnet <$subnet> and have motherboard ip <$motherboard_ip>");
+    #Update Host internal ip
+    $log->info("get subnet <$subnet> and have host ip <$host_ip>");
     my %subnet_hash = $self->{_objs}->{component_dhcpd}->_getEntity()->getSubNet(dhcpd3_subnet_id => $subnet);
 
-    my $ipv4_internal_id = $self->{_objs}->{motherboard}->setInternalIP(ipv4_address => $motherboard_ip,
+    my $ipv4_internal_id = $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
                                                  ipv4_mask => $subnet_hash{'dhcpd3_subnet_mask'});
 
-    # Mount Motherboard etc to populate it
+    # Mount Host etc to populate it
     my $mkdir_cmd = "mkdir -p /mnt/$node_dev->{etc}->{lvname}";
     $self->{nas}->{econtext}->execute(command => $mkdir_cmd);
     my $mount_cmd = "mount /dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname} /mnt/$node_dev->{etc}->{lvname}";
     $self->{nas}->{econtext}->execute(command => $mount_cmd);
 
 #   Later we may need to have node list to create new node conf
-#    my $clust_nodes = $self->{_objs}->{cluster}->getMotherboards();
+#    my $clust_nodes = $self->{_objs}->{cluster}->getHosts();
     # Generate Node configuration
     $self->_generateNodeConf(mount_point => "/mnt/$node_dev->{etc}->{lvname}",
                              root_dev     => $sysimg_dev->{root},
@@ -237,14 +237,14 @@ sub execute {
     foreach my $i (keys %$components) {
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->addNode(motherboard   => $self->{_objs}->{motherboard},
+        $tmp->addNode(host   => $self->{_objs}->{host},
                       mount_point   => "/mnt/$node_dev->{etc}->{lvname}",
                       cluster       => $self->{_objs}->{cluster},
                       econtext      => $self->{nas}->{econtext},
                       erollback     => $self->{erollback});
     }
 
-    # Umount Motherboard etc
+    # Umount Host etc
     my $sync_cmd = "sync";
     $self->{nas}->{econtext}->execute(command => $sync_cmd);
     my $umount_cmd = "umount /mnt/$node_dev->{etc}->{lvname}";
@@ -253,8 +253,8 @@ sub execute {
     $self->{nas}->{econtext}->execute(command => $rmdir_cmd);
 
     # Create node instance
-    $self->{_objs}->{motherboard}->setNodeState(state=>"goingin");
-    $self->{_objs}->{motherboard}->save();
+    $self->{_objs}->{host}->setNodeState(state=>"goingin");
+    $self->{_objs}->{host}->save();
 
     # Generate node etc export
     ################################################################################
@@ -275,9 +275,9 @@ sub execute {
 	erollback  => $self->{erollback});
 
     # finaly we start the node
-    my $emotherboard = EFactory::newEEntity(
-	data => $self->{_objs}->{motherboard});
-    $emotherboard->start(
+    my $ehost = EFactory::newEEntity(
+	data => $self->{_objs}->{host});
+    $ehost->start(
 	econtext =>$self->{executor}->{econtext},
 	erollback => $self->{erollback});
 }
@@ -288,11 +288,11 @@ sub _generateNodeConf {
 
     General::checkParams(args=>\%args, required => ["mount_point","root_dev","etc_dev","etc_targetname"]);
 
-    my $hostname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname");
+    my $hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
     $log->info("Generate Hostname Conf");
     $self->_generateHostnameConf(hostname => $hostname, mount_point=>$args{mount_point});
 
-    my $initiatorname = $self->{_objs}->{motherboard}->getAttr(name => "motherboard_initiatorname");
+    my $initiatorname = $self->{_objs}->{host}->getAttr(name => "host_initiatorname");
     $log->info("Generate Initiator Conf");
     $self->_generateInitiatorConf(initiatorname => $initiatorname, mount_point=>$args{mount_point});
 
@@ -352,7 +352,7 @@ sub _generateUdevConf{
     my $input = "udev_70-persistent-net.rules.tt";
 
     #TODO Get ALL network interface !
-    my $interfaces = [{mac_address => lc($self->{_objs}->{motherboard}->getAttr(name => "motherboard_mac_address")), net_interface => "eth0"}];
+    my $interfaces = [{mac_address => lc($self->{_objs}->{host}->getAttr(name => "host_mac_address")), net_interface => "eth0"}];
     $log->debug("generateUdevConf with ".Dumper($interfaces));
     $template->process($input, {interfaces => $interfaces}, "/tmp/".$tmpfile) || die $template->error(), "\n";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules");
@@ -417,13 +417,13 @@ sub _generateHosts {
     my $input = "hosts.tt";
     my $nodes = $args{nodes};
     my @nodes_list = ();
-    my $vars = {hostname        => $self->{_objs}->{motherboard}->getAttr(
-		    name => "motherboard_hostname"),
+    my $vars = {hostname        => $self->{_objs}->{host}->getAttr(
+		    name => "host_hostname"),
 	        domainname            => "hedera-technology.com",
                 hosts        => \@nodes_list,
           };
     foreach my $i (keys %$nodes) {
-        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'motherboard_hostname'),
+        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'host_hostname'),
                    domainname    => "hedera-technology.com",
                    ip            => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
         push @nodes_list, $tmp;
@@ -449,8 +449,8 @@ sub _generateNetConf {
     #TODO Get ALL network interface !
     #TODO Manage virtual IP for master node
     my @interfaces = ();
-    my $ip = $self->{_objs}->{motherboard}->getInternalIP();
-    my %model = $self->{_objs}->{motherboard}->getModel();
+    my $ip = $self->{_objs}->{host}->getInternalIP();
+    my %model = $self->{_objs}->{host}->getModel();
 
     my $need_bridge= 0;
     my $components = $self->{_objs}->{components};
@@ -544,10 +544,10 @@ sub _generateBootConf {
         }
     }
 #    $log->debug(Dumper $vars);
-    $template->process($input, $vars, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal(error=>"EOperation::EAddMotherboard->GenerateNetConf error when parsing template");
+    $template->process($input, $vars, "/tmp/$tmpfile") || throw Kanopya::Exception::Internal(error=>"EOperation::EAddHost->GenerateNetConf error when parsing template");
     #TODO problem avec fichier de boot a voir.
     my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
-    my $dest = $tftp_conf->{'repository'}.'/'. $self->{_objs}->{motherboard}->getAttr(name => "motherboard_hostname") . ".conf";
+    my $dest = $tftp_conf->{'repository'}.'/'. $self->{_objs}->{host}->getAttr(name => "host_hostname") . ".conf";
     $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
 }
@@ -628,7 +628,7 @@ Cluster was prepare during PreStartNode, this operation :
 my $op = EOperation::EStartNode->new();
 
 Operation::EStartNode->new creates a new AddMotheboardInCluster operation.
-return : EOperation::EStartNode : Operation add motherboard in a cluster
+return : EOperation::EStartNode : Operation add host in a cluster
 
 =head2 _init
 
@@ -659,8 +659,8 @@ return : EOperation::EStartNode : Operation add motherboard in a cluster
                                  $cluster->getSystemImage()->getDevices()->{root},
                                  It represents information on root device of cluster's
                                  system image
-           etc_dev  : Hash ref : This value come from $motherboard}->getEtcDev()
-                                 It represents information on etc device of motherboard
+           etc_dev  : Hash ref : This value come from $host}->getEtcDev()
+                                 It represents information on etc device of host
            etc_targetname   : String : This is the targetname of etc export
            mount_point      : String : This is the node etc disk mount point
 
@@ -728,8 +728,8 @@ return : EOperation::EStartNode : Operation add motherboard in a cluster
     Args : root_dev : Hash ref : This value come from
                              $cluster->getSystemImage()->getDevices()->{root},
                              It represents information on root device of cluster's system image
-       etc_dev  : Hash ref : This value come from $motherboard}->getEtcDev()
-                             It represents information on etc device of motherboard
+       etc_dev  : Hash ref : This value come from $host}->getEtcDev()
+                             It represents information on etc device of host
        etc_targetname   : String : This is the targetname of etc export
        initiatorname    : String : This is the node initiator name
 

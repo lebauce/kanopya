@@ -393,29 +393,29 @@ sub removeTier {
 
 }
 
-=head2 getMotherboards
+=head2 getHosts
 
-    Desc : This function get motherboards executing the infrastructure.
+    Desc : This function get hosts executing the infrastructure.
     args:
         administrator : Administrator : Administrator object to instanciate all tiers
-    return : a hashref of motherboard, it is indexed on motherboard_id
+    return : a hashref of host, it is indexed on host_id
 
 =cut
 
-sub getMotherboards {
+sub getHosts {
     my $self = shift;
 
-    my $motherboard_rs = $self->{_dbix}->nodes;
-    my %motherboards;
-    while ( my $node_row = $motherboard_rs->next ) {
-        my $motherboard_row = $node_row->motherboard;
+    my $host_rs = $self->{_dbix}->nodes;
+    my %hosts;
+    while ( my $node_row = $host_rs->next ) {
+        my $host_row = $node_row->host;
         $log->debug("Nodes found");
-        my $motherboard_id = $motherboard_row->get_column('motherboard_id');
-        eval { $motherboards{$motherboard_id} = Entity::Motherboard->get (
-                        id => $motherboard_id,
-                        type => "Motherboard") };
+        my $host_id = $host_row->get_column('host_id');
+        eval { $hosts{$host_id} = Entity::Host->get (
+                        id => $host_id,
+                        type => "Host") };
     }
-    return \%motherboards;
+    return \%hosts;
 }
 
 =head2 getCurrentNodesCount

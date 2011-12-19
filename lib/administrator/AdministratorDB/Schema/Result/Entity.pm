@@ -176,32 +176,32 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 motherboard_entity
+=head2 host_entity
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::MotherboardEntity>
+Related object: L<AdministratorDB::Schema::Result::HostEntity>
 
 =cut
 
 __PACKAGE__->might_have(
-  "motherboard_entity",
-  "AdministratorDB::Schema::Result::MotherboardEntity",
+  "host_entity",
+  "AdministratorDB::Schema::Result::HostEntity",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 motherboardmodel_entity
+=head2 hostmodel_entity
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::MotherboardmodelEntity>
+Related object: L<AdministratorDB::Schema::Result::HostmodelEntity>
 
 =cut
 
 __PACKAGE__->might_have(
-  "motherboardmodel_entity",
-  "AdministratorDB::Schema::Result::MotherboardmodelEntity",
+  "hostmodel_entity",
+  "AdministratorDB::Schema::Result::HostmodelEntity",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

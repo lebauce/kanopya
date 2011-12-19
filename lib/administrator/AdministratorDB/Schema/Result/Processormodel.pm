@@ -100,32 +100,32 @@ __PACKAGE__->add_unique_constraint("processormodel_name_UNIQUE", ["processormode
 
 =head1 RELATIONS
 
-=head2 motherboards
+=head2 hosts
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Motherboard>
+Related object: L<AdministratorDB::Schema::Result::Host>
 
 =cut
 
 __PACKAGE__->has_many(
-  "motherboards",
-  "AdministratorDB::Schema::Result::Motherboard",
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
   { "foreign.processormodel_id" => "self.processormodel_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 motherboardmodels
+=head2 hostmodels
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Motherboardmodel>
+Related object: L<AdministratorDB::Schema::Result::Hostmodel>
 
 =cut
 
 __PACKAGE__->has_many(
-  "motherboardmodels",
-  "AdministratorDB::Schema::Result::Motherboardmodel",
+  "hostmodels",
+  "AdministratorDB::Schema::Result::Hostmodel",
   { "foreign.processormodel_id" => "self.processormodel_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

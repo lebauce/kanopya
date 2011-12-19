@@ -158,7 +158,7 @@ sub activate {
     ## provide root rsa pub key to provide ssh key authentication
     $self->generateAuthorizedKeys(econtext=>$args{econtext});
 
-    ## Update export to allow to motherboard to boot with this systemimage
+    ## Update export to allow to host to boot with this systemimage
     my $target_name = $args{component_export}->generateTargetname(name => 'root_'.$self->_getEntity()->getAttr(name => 'systemimage_name'));
 
     # Get etc iscsi target information

@@ -19,12 +19,12 @@
 
 =head1 NAME
 
-EEntity::Operation::EAddMotherboard - Operation class implementing Motherboard creation operation
+EEntity::Operation::EAddHost - Operation class implementing Host creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement Motherboard creation operation
+It allows to implement Host creation operation
 
 =head1 DESCRIPTION
 
@@ -53,9 +53,9 @@ our $VERSION = '1.00';
 
 =head2 new
 
-    my $op = EEntity::EOperation::ERemoveMotherboard->new();
+    my $op = EEntity::EOperation::ERemoveHost->new();
 
-EEntity::Operation::ERemoveMotherboard->new creates a new RemoveMotheboard operation.
+EEntity::Operation::ERemoveHost->new creates a new RemoveMotheboard operation.
 
 =cut
 
