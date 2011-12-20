@@ -477,6 +477,14 @@ sub preManageCluster{
     $optim_params->{AC} 
     ");
     
+    $log->info("
+    $cluster_name 
+    $cluster_conf->{AC} 
+    $mean_perf->{latency} 
+    $mean_perf->{throughput} 
+    => 
+    $optim_params->{AC} 
+    ");
     # Store and graph results for futur consultation
     # $self->_validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
 
