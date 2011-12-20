@@ -529,6 +529,7 @@ sub manageCluster {
     
     # Capacity planning settings 
     # TODO one setting sub 
+    
     $self->{_cap_plan}->setSearchSpaceForTiers(search_spaces => $search_space);
     $self->{_cap_plan}->setNbTiers( tiers => $infra_conf->{M});
 
@@ -562,6 +563,13 @@ sub manageCluster {
         cluster_id   => $cluster_params->{cluster_id},
         curr_perf    => $curr_perf,
     );
+    
+    
+    $log->info("/!\ WARNING /!\ NO AUTOTUNE");
+    $best_params = {
+        S => [0.001670911,0.0000001],
+        D => [0,0.0001]
+    };
 
     # Get actual internal model parameters (Si and Di)
     # Get from DB (theoreticaly updated by _updateModelInternalParameters() sub)
@@ -925,7 +933,7 @@ sub update {
     for my $cluster (@clusters) {        
         my $cluster_name = $cluster->getAttr('name' => 'cluster_name');
         $log->info( "***********************************");
-        $log->info( "* CLUSTER: " . $cluster_name . "\n ");
+        $log->info( "* CLUSTER: " . $cluster_name . "");
         $log->info( "***********************************");
         #if($cluster->getAttr('name' => 'active')) 
         {
