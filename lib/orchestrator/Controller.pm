@@ -27,9 +27,11 @@ use Model::MVAModel;
 use Actuator;
 
 
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
+my $results_log = get_logger("results");
 
 sub new {
     my $class = shift;
@@ -214,8 +216,6 @@ sub getMonitoredPerfMetrics {
                                         time_laps  => $time_laps,
                                         aggregation => 'total',
                                      );
-   
-
     
     #print Dumper $cluster_data_aggreg;
     
@@ -468,8 +468,18 @@ sub preManageCluster{
     );
     
 
+    $results_log->info("
+    $cluster_name 
+    $cluster_conf->{AC} 
+    $mean_perf->{latency} 
+    $mean_perf->{throughput} 
+    => 
+    $optim_params->{AC} 
+    ");
+    
     # Store and graph results for futur consultation
     # $self->_validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
+
 
     # Apply optimal configuration
     # TODO This method signature should be changed to handle infra in a better way
@@ -612,6 +622,8 @@ sub manageCluster {
     my %new_perf = $self->{_model}->calculate(%model_optim_params);
     $log->info(sprintf("New theoretical perf : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate}));
      
+
+    
     return $optim_params;
     
     #$self->{_actuator}->changeClusterConf( cluster => $cluster, current_conf => $cluster_conf, target_conf => $optim_conf,);
