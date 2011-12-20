@@ -1,4 +1,4 @@
-package AdministratorDB::Component::Php5Instance;
+package AdministratorDB::Component::Apache2Instance;
 
 AdministratorDB::Schema::Result::ComponentInstance->has_many(
   "apache2s",
