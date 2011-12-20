@@ -150,6 +150,7 @@ sub calculate {
         #for (my $j = 1; $j < $Na[$i]; $j++) {
         for (my $j = 1; $j <= $Na[$i]; $j++) {
             my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
+            #print "$Wip vs $W[$i]\n";
            
             $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );  
             
@@ -168,10 +169,12 @@ sub calculate {
             # /!\ WARNING /!\ Potential cast problem in the original java algo ?
             $Ta[$i] = ($j * $Nap[$i] / $Na[$i]) / ($La[$i] + $Z);
             $Tr[$i] = ($j * ($Na[$i] - $Nap[$i])/ $Na[$i]) / ($Lr[$i] + $Z);
-             
-            #$Ql[$i] = ($Ta[$i] + $Tr[$i]) * $R[$i]; # Ti’s total queue length with Little’s law
+            
+            $Ql[$i] = ($Ta[$i] + $Tr[$i]) * $R[$i]; # Ti’s total queue length with Little’s law
+            #print "$j $i : ($j * $Nap[$i] / $Na[$i]) / ($La[$i] + $Z);\n";
+            #print "$j $i : $Ql[$i] = ($Ta[$i] + $Tr[$i]) * $R[$i]\n";
             #Compliance with MOKA code
-            $Ql[$i] = int(($Ta[$i] + $Tr[$i]) * $R[$i]);
+            #$Ql[$i] = int(($Ta[$i] + $Tr[$i]) * $R[$i]);
         }
         #print "La[$i] = $La[$i]\n";
     }
@@ -211,6 +214,9 @@ sub calculate {
         throughput => $throughput,        # req/sec (successful requests per sec) = reply rate?
         Ql         => \@Ql,
         La         => \@La,
+        Ta         => \@Ta,
+        Tr         => \@Tr,
+        R         => \@R
     );    
 }
 
