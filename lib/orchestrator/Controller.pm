@@ -530,6 +530,8 @@ sub manageCluster {
     # Capacity planning settings 
     # TODO one setting sub 
     
+    
+    
     $self->{_cap_plan}->setSearchSpaceForTiers(search_spaces => $search_space);
     $self->{_cap_plan}->setNbTiers( tiers => $infra_conf->{M});
 
@@ -591,13 +593,19 @@ sub manageCluster {
     # $workload->{workload_class}->{delay}        = $best_params->{D};
     $log->info("Computed params Si = @{$workload->{workload_class}->{service_time}} ; Di = @{$workload->{workload_class}->{delay}}\n");
     
-
-    
+    $log->info("HARDCODE num_conn => num_session");
+    $workload->{workload_amount} /= 2;
+     
     # Calculate optimal configuration
     my $optim_params = $self->{_cap_plan}->calculate(
         workload_amount => $workload->{workload_amount},
         workload_class  => $workload->{workload_class}
     );
+
+    $log->info("HARDCODE Num node = num node + 1");
+    $optim_params->{AC}++;
+    
+
     
     $log->info("Computed optimal configuration : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n");
     
