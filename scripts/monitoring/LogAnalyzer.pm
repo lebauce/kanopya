@@ -82,7 +82,12 @@ sub parse {
     }
     
     # Timers
+    my @timers_name = ('Tq', 'Tw', 'Tc', 'Tr'); # + Tt managed separatly
     my @timers = split '/', $raw[ $idx_map->{timers} ];
+    for my $idx (0..$#timers_name) {
+        $self->{counters}{ $frontend_name }{'timers'}{ $timers_name[$idx] } += $timers[$idx];           
+    }
+    # manage Tt
     my $Tt = $timers[-1];
     my $total_time;
     if ($Tt =~ /\+(\d+)/) { # haproxy option logasap
@@ -109,9 +114,12 @@ sub getStats {
     my %stats;
     while (my ($frontend, $info) = each %{$self->{counters}}) {
         if (defined $info->{ok_count}) {
-            $stats{$frontend}{'timers'}{'Tt'} = $info->{'timers'}{'Tt'} / $info->{ok_count};
-            $stats{$frontend}{'timers'}{'Tc'} = 0; #TODO
-            $stats{$frontend}{'timers'}{'Tw'} = 0; #TODO
+            #$stats{$frontend}{'timers'}{'Tt'} = $info->{'timers'}{'Tt'} / $info->{ok_count};
+
+            while (my ($timer_name, $value) = each %{ $info->{'timers'} }) {
+                $stats{$frontend}{'timers'}{$timer_name} = $value / $info->{ok_count};
+            } 
+
             $stats{$frontend}{'timers'}{'num_logs'} = $info->{ok_count};
             $stats{$frontend}{'conns'}{'Active'} = $info->{'conns'}{'act'} / $info->{ok_count};
             $stats{$frontend}{'errors'}{'Total'} = $info->{'errors'}{'total'};

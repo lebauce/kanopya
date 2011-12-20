@@ -12,16 +12,18 @@ use strict;
 use warnings;
 use Template;
 use Data::Dumper;
-use Monitor::Retriever;
-
-
 
 use OpenOffice::OODoc; # libopenoffice-oodoc-perl
 
+require "autobench.conf";
+
+# autobench.conf must export:
+our @frontend_nodes; # list of ip
+our @backend_nodes;  # list of ip
+our @sessions_evo;   # list of simultaneous sessions number
+
 my $SPECWEB_DIR = "/web2005-1.31";
 
-my @frontend_nodes  = ("10.1.2.2");
-my @backend_nodes   = ("10.1.2.253");
 my @nodes = (@frontend_nodes, @backend_nodes);
 my @tiers = ("ServerBench", "BeSim");
 my $ADMIN_IP        = "10.1.2.1";
@@ -29,8 +31,7 @@ my $ADMIN_IP        = "10.1.2.1";
 my $frontend_log_path   = "/tmp/apache_access.log";
 my $backend_log_path    = "/var/log/apache2/access.log";
 
-my @sessions_evo = (50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900,950,1000);
-
+my $parse_apache = 1;
 
 # Copy <src_path> from <ip> to <dest_path> on localhost
 sub scp {
@@ -69,9 +70,9 @@ sub getApacheLogs {
             # Get log from node to admin    
             ssh( ip => $ADMIN_IP, cmd => 'scp -i /root/.ssh/kanopya_rsa root@' . $ip . ':' . $log_path . " $tmp_path" );
 
-	        # Get apache log file from admin
-	        #scp( ip => $ip, src_path => $log_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
-	        scp( ip => $ADMIN_IP, src_path => $tmp_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
+            # Get apache log file from admin
+            #scp( ip => $ip, src_path => $log_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
+            scp( ip => $ADMIN_IP, src_path => $tmp_path, dest_path =>  "$dest_dir/$ip" . "_access.log");
         }
     }
 }
@@ -104,7 +105,7 @@ sub getSpecWebResult {
     my $cmd_res = `$cmd`;
     my @files = split "\n", $cmd_res;
     for my $file (@files) {
-	`cp $file $dest_dir/`;
+        `cp $file $dest_dir/`;
     }
 }
 
@@ -129,13 +130,18 @@ sub extractInfo {
 
     # Info from apache logs
     for my $ip (@frontend_nodes, @backend_nodes) {
-        # Gloups TODO do func call instead of perl script exec in a perl script and stdout parse...
-        my $cmd = "./parse_apache_log.pl $dir/$ip" . "_access.log";
-        my $out = `$cmd`;
-        $out =~ '=> line count: ([0-9]*)';
-        $info{$ip}{apache}{line_count} = $1;
-        $out =~ '=> mean time.*: ([0-9.]*)';
-        $info{$ip}{apache}{latency} = $1;
+        if ($parse_apache) {
+            # Gloups TODO do func call instead of perl script exec in a perl script and stdout parse...
+            my $cmd = "./parse_apache_log.pl $dir/$ip" . "_access.log";
+            my $out = `$cmd`;
+            $out =~ '=> line count: ([0-9]*)';
+            $info{$ip}{apache}{line_count} = $1;
+            $out =~ '=> mean time.*: ([0-9.]*)';
+            $info{$ip}{apache}{latency} = $1;
+        } else {
+            $info{$ip}{apache}{line_count} = '-';
+            $info{$ip}{apache}{latency} = '-';
+        }
     }
 
     # Info from SpecWeb res
@@ -148,11 +154,18 @@ sub extractInfo {
     my $avg_resp = (split " ", $totals)[7];
     $info{spec}{avg_resp_time} = $avg_resp;
 
+    # Info from SpecWeb conf
+    for my $conf_key ('PARALLEL_CONNS') {
+        my $line = `grep '$conf_key =' $dir/SPECweb_Banking*raw`;
+        $line =~ /$conf_key = "(.*)"/;
+        $info{spec}{$conf_key} = $1;
+    }
+    
+
     # Info from orchestrator logs
     my $log_offset = 2; # control wich logs set we want (last, last-1, last-2..) => 1 = last
     my $cmd = "tail -" . (8*$log_offset) . " $dir/orchestrator.log | tac | tail -8 | grep ', [0-9]*min'";
     my @logs = split "\n", `$cmd`;
-    print Dumper @logs;
     for my $log (@logs) {
         my $value = (split ' ', $log)[-1];
         for my $tier (@tiers) {
@@ -172,7 +185,8 @@ sub extractInfo {
     return \%info;
 }
 
-my @spec_fields = ('sessions', 'requests', 'reqs/sec/session', 'errors', 'avg_resp_time');
+# Define what is included in result ods file (and in which order)
+my @spec_fields = ('sessions', 'PARALLEL_CONNS', 'requests', 'reqs/sec/session', 'errors', 'avg_resp_time');
 my @node_fields = ({name =>'apache', fields => ['latency', 'line_count'] });
 my @tier_fields = ({name => 'apache', fields => ['throughput'] }, {name => 'Haproxy', fields => ['latency'] });
 
@@ -185,12 +199,12 @@ sub addHead {
 
     my ($sheet) = ($args{sheet});
 
-    my $row = 0;
+    my $col = 0;
 
-    $sheet->cellValue($table_name, $row++, 0, "dir");
+    $sheet->cellValue($table_name, 0, $col++, "dir");
 
     for my $field (@spec_fields) {
-         $sheet->cellValue($table_name, $row++, 0, "spec.$field");
+         $sheet->cellValue($table_name, 0, $col++, "spec.$field");
     }
     
     for my $data (  { entities => \@nodes, fields => \@node_fields },
@@ -198,19 +212,11 @@ sub addHead {
         for my $entity (@{$data->{entities}}) {
             for my $comp (@{$data->{fields}}) {
                 for my $field (@{ $comp->{fields} }) {
-                    $sheet->cellValue($table_name, $row++, 0, "$entity.$comp->{name}.$field");  
+                    $sheet->cellValue($table_name, 0, $col++, "$entity.$comp->{name}.$field");  
                 }
             }        
         }   
     }
-#    for my $node (@frontend_nodes, @backend_nodes) {
-#        for my $comp (@node_fields) {
-#            for my $field (@{ $comp->{fields} }) {
-#                $sheet->cellValue($table_name, $row++, 0, "$node.$comp->{name}.$field");  
-#            }
-#        }
-#    }
-
 
 }
 
@@ -218,15 +224,15 @@ sub addHead {
 sub addInfo {
     my %args = @_;
 
-    my ($sheet, $info, $col) = ($args{sheet}, $args{info}, $args{col});   
-    my $row = 0;
+    my ($sheet, $info, $row) = ($args{sheet}, $args{info}, $args{row});   
+    my $col = 0;
 
-    $sheet->cellValue($table_name, $row++, $col, $info->{dir});
+    $sheet->cellValue($table_name, $row, $col++, $info->{dir});
 
     for my $field (@spec_fields) { 
         my $cell = $sheet->getCell($table_name, $row, $col);
         $sheet->cellValueType($cell, 'float');
-        $sheet->cellValue($table_name, $row++, $col, $info->{spec}{$field});
+        $sheet->cellValue($table_name, $row, $col++, $info->{spec}{$field});
     }
     
      for my $data (  { entities => \@nodes, fields => \@node_fields },
@@ -236,7 +242,7 @@ sub addInfo {
                 for my $field (@{ $comp->{fields} }) {
                     my $cell = $sheet->getCell($table_name, $row, $col);
                     $sheet->cellValueType($cell, 'float');
-                    $sheet->cellValue($table_name, $row++, $col, $info->{$entity}{$comp->{name}}{$field});
+                    $sheet->cellValue($table_name, $row, $col++, $info->{$entity}{$comp->{name}}{$field});
                 }
             }
         }
@@ -260,8 +266,16 @@ sub configBench {
 
 sub checkRequirements {
     # TODO check than needed scripts runs
-    print "Haproxy log manager runs on admin? [enter]\n";
-    <STDIN>;
+
+    print "Check Haproxy log manager runs on admin...";
+    my $cmd = 'ssh root@' . $ADMIN_IP . ' "pgrep -f haproxy"';
+    my $res = `$cmd`;
+    if ($res ne '') {
+        print "ok\n";
+    } else {
+        print "NOT RUNNING!\nContinue? [enter]";
+        <STDIN>;
+    }
 }
 
 sub run {
@@ -304,18 +318,16 @@ sub stats {
     
     my $sheet = odfDocument(file => "$rootdir/$rootdir.ods", create => 'spreadsheet');
     print "output file : $rootdir/$rootdir.ods\n";
-    $sheet->appendTable($table_name, 100, 100);
+    $sheet->appendTable($table_name, 500, 100);
 
-    #displayHeadInfo();
     addHead( sheet => $sheet );
 
-    my $col = 1;
+    my $row = 1;
     for my $dir (@dirs) {
-	next unless (-d $dir);
-	print "$dir\n";
-	my $info = extractInfo( dir => $dir );
-	#displayRawInfo( info => $info);
-	addInfo( sheet => $sheet, info => $info, col => $col++ );
+        next unless (-d $dir);
+        print "$dir\n";
+        my $info = extractInfo( dir => $dir );
+        addInfo( sheet => $sheet, info => $info, row => $row++ );
     }
 
     $sheet->save;
@@ -330,6 +342,11 @@ my $opt = shift;
 if ($opt eq "stat") {
     print "STAT\n";
     my $rootdir = shift;
+    my $opt = shift;
+    if (defined $opt && $opt eq 'noapache') {
+        $parse_apache = 0;
+        print "Don't parse apache logs.\n";
+    }
     stats(rootdir => $rootdir );
 } elsif ($opt eq "run") {
     print "RUN\n";
@@ -340,7 +357,8 @@ if ($opt eq "stat") {
 }
 
 sub usage {
-    print "./bench_script.pl stat|run [stat_dir]\n";
+    print "./bench_script.pl run\n";
+    print "./bench_script.pl stat [stat_dir] [noapache]\n";
 }
 
 sub onKill {

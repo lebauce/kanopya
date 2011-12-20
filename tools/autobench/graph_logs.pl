@@ -1,5 +1,10 @@
 #!/usr/bin/perl
 
+# This script graph one data find in logs according to the time, for each log lines matching a particular regexp
+# Options: 
+# -f <log_file_path>
+# -p <regexp> : the pattern to match for analyzed logs (don't forget to escape special characters)
+
 use warnings;
 use strict;
 use Getopt::Std;
@@ -11,8 +16,8 @@ getopt('pf', \%opts);
 
 my $file_path = $opts{f};
 my $pattern = $opts{p} || ".*";
+my $time_idx = shift;
 my $data_idx = shift;
-my $time_idx = shift || 4;
 
 my @skip_logs = ('/bank/images/');#("init.php", "/srv/www/bank/images/subdir");
 my $date_analyser = DateTime::Format::Strptime->new( pattern => '%T' );
@@ -33,7 +38,7 @@ while (<FILE>) {
 #	next LINE;
 #    }
 
-    next if ($line !~ $pattern);
+    next if ($line !~ "$pattern");
 
     print $line;
     my @raw = split ' ';

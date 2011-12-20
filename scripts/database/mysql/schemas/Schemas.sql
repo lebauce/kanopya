@@ -705,6 +705,7 @@ CREATE TABLE `indicatorset` (
   `indicatorset_type` char(32) NOT NULL,
   `indicatorset_component` char(32),
   `indicatorset_max` char(128),
+  `indicatorset_tableoid` char(64),
   PRIMARY KEY (`indicatorset_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

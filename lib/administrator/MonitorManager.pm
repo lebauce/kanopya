@@ -90,11 +90,12 @@ sub getIndicatorSets {
             };
         }
         
-        push @sets, {     'label' => $set->get_column( 'indicatorset_name' ),
+        push @sets, {   'label' => $set->get_column( 'indicatorset_name' ),
                         'ds_type' => $set->get_column( 'indicatorset_type' ),
                         'data_provider' => $set->get_column( 'indicatorset_provider' ),
                         'component' => $set->get_column( 'indicatorset_component' ),
                         'max' => $set->get_column( 'indicatorset_max' ),
+                        'table_oid' => $set->get_column( 'indicatorset_tableoid' ),
                         'ds' => \@indicators
                     };    
     }

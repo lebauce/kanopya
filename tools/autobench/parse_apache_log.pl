@@ -8,7 +8,7 @@ my $file_path = shift;
 
 my @skip_logs = ("init.php", "/srv/www/bank/images/subdir");
 
-open FILE, "<", $file_path;
+open FILE, "<", $file_path or die "# ERROR: file not found: $file_path";
 
 my $time_sum = 0;
 my $line_count = 0;
