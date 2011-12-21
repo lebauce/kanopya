@@ -214,10 +214,6 @@ sub setConf {
 
 }
 
-sub addLv {
-    
-}
-
 sub createLogicalVolume {
     my $self = shift;
     my %args = @_;

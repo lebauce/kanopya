@@ -158,6 +158,10 @@ __PACKAGE__->add_columns(
   },
   "host_serial_number",
   { data_type => "char", is_nullable => 0, size => 64 },
+  "host_ram",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "host_core",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "host_powersupply_id",
   {
     data_type => "integer",
