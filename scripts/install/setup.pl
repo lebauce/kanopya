@@ -56,7 +56,7 @@ my %param_test = (
     dmz_net_mask               => \&checkIp,
     log_directory              => \&matchRegexp,
     vg                         => \&matchRegexp,
-    
+
 );
 
 #Welcome message - accepting Licence is mandatory
@@ -67,7 +67,7 @@ getConf();
 genConf();
 
 # creating the graph directory to avoid bug in createUser function
-make_path("/tmp/monitor/graph", { verbose => 1 }); 
+make_path("/tmp/monitor/graph", { verbose => 1 });
 
 #create a user for kanopya
 createUser();
@@ -586,6 +586,7 @@ sub createUser {
     make_path("/tmp/kanopya-sessions", { verbose => 1 });
     chownRecursif('kanopya', '/tmp/kanopya-sessions');
     chownRecursif('kanopya', '/opt/kanopya');
+    chmod 0775, '/opt/kanopya';
 }
 
 sub useTemplate{
