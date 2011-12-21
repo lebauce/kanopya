@@ -207,7 +207,7 @@ sub getMonitoredPerfMetrics {
                                         time_laps => $time_laps
                                      );
                                      
-
+    
     #Get monitored througput by apache 
     my $monitored_apache_stats = $self->{_monitor}
                                    ->getClusterData( 
@@ -468,7 +468,7 @@ sub preManageCluster{
     );
     
 
-    $results_log->info("$cluster_name $cluster_conf->{nb_nodes} $mean_perf->{latency} $mean_perf->{throughput} => @{$optim_params->{AC}}");
+    $results_log->info("$cluster_name $cluster_conf->{nb_nodes} $workload->{workload_amount} $curr_perf->{latency} $mean_perf->{latency} $curr_perf->{throughput} $mean_perf->{throughput} => @{$optim_params->{AC}}");
   
     # Store and graph results for futur consultation
     # $self->_validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
