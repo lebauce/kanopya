@@ -96,6 +96,13 @@ use constant ATTR_DEF => {
               host_hostname        => {pattern         => '^\w*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
+              host_ram        =>      {pattern         => '^\w*$',
+                                            is_mandatory    => 0,
+                                            is_extended     => 0},
+              host_core        => {pattern         => '^\w*$',
+                                            is_mandatory    => 0,
+                                            is_extended     => 0},
+
               host_initiatorname    => {pattern         => '^.*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
