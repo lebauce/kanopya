@@ -5,16 +5,21 @@ Log::Log4perl->init('/opt/kanopya/conf/orchestrator-log.conf');
 
 use Entity::Cluster;
 use Actuator;
-
 use Administrator;
-
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
+
+
+my $cluster_name = "adm";
 
 my $actuator = Actuator->new();
 
-my $cluster = Entity::Cluster->getCluster(hash => {'cluster_name' => 'adm'});
+my $cluster = Entity::Cluster->getCluster(hash => {'cluster_name' => $cluster_name});
 
-print "CLUSTER: $cluster\n";
+print "CLUSTER $cluster_name: $cluster\n";
 
-$actuator->changeClusterConf(current_conf => { nb_nodes => 2}, target_conf => { nb_nodes => 1}, cluster => $cluster);
+$actuator->changeClusterConf(
+    current_conf => { nb_nodes => 2},
+    target_conf => { nb_nodes => 1},
+    cluster => $cluster
+);
 
