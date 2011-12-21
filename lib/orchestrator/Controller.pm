@@ -602,12 +602,10 @@ sub manageCluster {
         workload_class  => $workload->{workload_class}
     );
 
-    $log->info("HARDCODE Num node = num node + 1");
-    $optim_params->{AC}++;
-    
-
-    
     $log->info("Computed optimal configuration : AC = @{$optim_params->{AC}}, LC = @{$optim_params->{LC}} \n");
+    $optim_params->{AC}->[0]++;
+    $log->info("HARDCODE Numnode++ : optimal nodes  ".($optim_params->{AC}->[0])."");
+    
     
     # All the end of the algo is the new perf computation only useful for [DEBUG]
     
