@@ -278,7 +278,7 @@ INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1)
 INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal_netmask %]', NULL);
 
 -- admin host
-INSERT INTO `host` VALUES (1,NULL,NULL,1,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','[% ipv4_internal_ip %]', '4294967296', '4','node001',NULL, 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (1,NULL,NULL,1,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','[% ipv4_internal_ip %]', '4294967296', '4','node001',NULL,NULL, 'up:[% tmstp %]',NULL);
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `host_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin node
