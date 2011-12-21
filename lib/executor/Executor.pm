@@ -89,11 +89,8 @@ sub _init {
     my $self = shift;
     
     $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
-    if ((! exists $self->{config}->{user}->{name} ||
-         ! defined exists $self->{config}->{user}->{name}) &&
-        (! exists $self->{config}->{user}->{password} ||
-         ! defined exists $self->{config}->{user}->{password})){ 
-        throw Kanopya::Exception::Internal::IncorrectParam(error => "Executor->new need user definition in config file!"); }
+    General::checkParams(args=>$self->{config}->{user}, required=>["name","password"]);
+
     my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
                                  password => $self->{config}->{user}->{password});
     return;
