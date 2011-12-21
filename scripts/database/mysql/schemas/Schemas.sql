@@ -115,6 +115,8 @@ CREATE TABLE `host` (
   `host_mac_address` char(18) NOT NULL,
   `host_initiatorname` char(64) DEFAULT NULL,
   `host_internal_ip` char(15) DEFAULT NULL,
+  `host_ram` bigint unsigned DEFAULT NULL,
+  `host_core` int(1) unsigned DEFAULT NULL,
   `host_hostname` char(32) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `host_state` char(32) NOT NULL DEFAULT 'down',
