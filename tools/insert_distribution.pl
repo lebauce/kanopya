@@ -55,3 +55,4 @@ my $distribution = Entity::Distribution->new(distribution_name      => $dist_con
 					    etc_device_id         => $etc_id,
 					    root_device_id        => $root_id);
 $distribution->save();
+$distribution->updateProvidedComponents();
