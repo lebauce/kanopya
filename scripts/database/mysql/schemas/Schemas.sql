@@ -220,6 +220,7 @@ CREATE TABLE `cluster` (
   `kernel_id` int(8) unsigned DEFAULT NULL,
   `cluster_state` char(32) NOT NULL DEFAULT 'down',
   `cluster_prev_state` char(32),
+   `cluster_basehostname` char(64) NOT NULL,
   PRIMARY KEY (`cluster_id`),
 --  KEY `fk_cluster_1` (`infrastructure_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)

@@ -98,6 +98,10 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 0},
+    cluster_basehostname            => {pattern         => '^[a-z_]+$',
+                                is_mandatory    => 1,
+                                is_extended     => 0,
+                                is_editable        => 1},
 
 
     };
@@ -787,6 +791,7 @@ sub setState {
     $self->{_dbix}->update({'cluster_prev_state' => $current_state,
                             'cluster_state' => $new_state.":".time})->discard_changes();;
 }
+ 
 
 
 1;

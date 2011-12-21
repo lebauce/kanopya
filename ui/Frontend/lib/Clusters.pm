@@ -39,7 +39,8 @@ sub _clusters {
         my $tmp = {
             link_activity => 0,
             cluster_id    => $n->getAttr(name => 'cluster_id'),
-            cluster_name  => $n->getAttr(name => 'cluster_name')
+            cluster_name  => $n->getAttr(name => 'cluster_name'),
+            cluster_basehostname => $n->getAttr(name=>'cluster_basehostname')
         };
 
         my $minnode = $n->getAttr(name => 'cluster_min_node');
@@ -165,6 +166,7 @@ post '/clusters/add' => sub {
             systemimage_id => $systemimage_id,
             cluster_domainname => params->{'domainname'},
             cluster_nameserver => params->{'nameserver'},
+            cluster_basehostname => params->{'cluster_basehostname'},
         };
         if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
         my $ecluster = Entity::Cluster->new(%$params);
@@ -215,7 +217,7 @@ get '/clusters/:clusterid' => sub {
 
     my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
     my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
-
+    my $cluster_basehostname = $ecluster->getAttr(name=>'cluster_basehostname');
     my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
     my ($systemimage_name, $systemimage_active);
     if($systemimage_id) {
@@ -347,6 +349,7 @@ get '/clusters/:clusterid' => sub {
         cluster_nameserver => $ecluster->getAttr(name => 'cluster_nameserver'),
         cluster_min_node   => $minnode,
         cluster_max_node   => $maxnode,
+        cluster_basehostname => $cluster_basehostname,
         type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
         systemimage_name   => $systemimage_name,
         systemimage_active => $systemimage_active,

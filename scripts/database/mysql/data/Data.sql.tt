@@ -270,7 +270,7 @@ INSERT INTO `kernel` VALUES (1,'2.6.39.3','2.6.39.3','generic kernel with lots o
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- admin cluster
-INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,1, 'up:[% tmstp %]', NULL);
+INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,1, 'up:[% tmstp %]', NULL,'test_');
 INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1); SET @eid := @eid +1;
 
 -- internal ip for admin node

@@ -43,6 +43,11 @@
     </tr>
     <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
     <tr>
+        <td class="label">Cluster_basehostname :</td>
+        <td><input type="text" name="cluster_basehostname" maxlength="64" size="32"/>
+        <span style="color: red"><% err_cluster_basehostname %></span></td>
+    </tr>
+     <tr>
         <td class="label">minimum node to used :</td>
         <td><select name="min_node">
         <% FOREACH node IN nodescount %>
