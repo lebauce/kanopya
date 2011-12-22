@@ -682,8 +682,8 @@ post '/clusters/:clusterid/nodes/add' => sub {
     
     
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
-        #$ecluster->addNode(%args);
+        my $cluster = Entity::Cluster->get(id => param('clusterid'));
+        $cluster->addNode(%args);
         $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddHostInCluster operation adding to execution queue');
     };
     if($@) {
