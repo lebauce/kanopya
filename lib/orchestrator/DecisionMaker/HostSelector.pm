@@ -21,7 +21,6 @@ use warnings;
 use Kanopya::Exceptions;
 use General;
 use Entity::Host;
-use Entity::Cluster;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -52,26 +51,21 @@ my $log = get_logger("orchestrator");
 sub getHost {
     my $self = shift;
     my %args = @_;
+    my ($default_core, $default_ram) = (1,"512M");
 
     General::checkParams(args => \%args, required => ["cluster_id"]);
     
     my %type_handlers = ('phys' => \&getPhysicalHost, 'virt' => \&getVirtualHost );
-    my @type_list = defined $args{type} ? @{$args{type}} : (keys %type_handlers); 
+    my @type_list = defined $args{type} ? ($args{type}) : (keys %type_handlers); 
     delete $args{type};
 
-    #my ($value, $unit) = General::convertSizeFormat(size => $args{lvm2_lv_size});
-    #$args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
+    # Set default Ram and convert in B.
+    my $ram = defined $args{ram} ? $args{ram} : $default_ram;
+    my ($value, $unit) = General::convertSizeFormat(size => $ram);
+    $args{ram} = General::convertToBytes(value => $value, units => $unit);
     
-    # TODO :
-    #$args{ram}  = defined $args{ram} ? CONVERTIR EN BYTE : DEFAULT VALUE FOR RAM;
-    #$args{core} = $DEFAULT_CORE if (not defined $args{core});
-
-
-    # TODO get constraints from cluster components and intersect with input constraints
-    # e.g args{type} = ['phys', 'virt'] and cluster component CloudManager need 'virt' => type = ["virt"],
-    # e.g args{type} = ['phys'] and cluster component CloudManager need 'virt' => exception,
-    #my $cluster_constraints = $cluster->getHostConstraints(); 
-    #@type_list = intersectConstraints();
+    # Set default core
+    $args{core} = $default_core if (not defined $args{core});
 
     TYPE:
     for my $type (@type_list) {
@@ -143,10 +137,7 @@ sub getVirtualHost {
     
     $log->info( "Looking for a virtual host" );
     
-    my @clusters =  defined $args{cloud_cluster_id}
-                    ? (Entity::Cluster->get( id => $args{cloud_cluster_id}))
-                    : Entity::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
-    
+    my @clusters = @{$args{clusters}};
     CLUSTER:                
     for my $cluster (@clusters) {
         my $components = $cluster->getComponents( category => 'Cloudmanager');
@@ -160,7 +151,7 @@ sub getVirtualHost {
         };
         if ($@) {
             # We can't create virtual host for some reasons (e.g can't meet constraints)
-            #$log->debug($@->message);
+            $log->debug($@->message);
             next CLUSTER;
         }
         return $host_id;

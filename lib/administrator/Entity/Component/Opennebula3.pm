@@ -148,7 +148,7 @@ sub getTemplateDataLibvirtd {
     my $self = shift;
     return {};
 }
-
+sub getHostConstraints {return "phys";}
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
