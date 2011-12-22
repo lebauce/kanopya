@@ -47,7 +47,6 @@ use Data::Dumper;
 
 use Entity::Host;
 use Entity::Cluster;
-use Entity::Kernel;
 use Entity::Gp;
 use Operation;
 use ERollback;
@@ -86,32 +85,6 @@ sub _init {
     return;
 }
 
-sub checkOp {
-    my $self = shift;
-    my %args = @_;
-    
-   # check if kernel_id exist
-    $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
-    eval {
-          Entity::Kernel->get(id => $self->{_objs}->{host}->getAttr(name=>'kernel_id'));
-        };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddVirtualHost->prepare : Wrong kernel_id attribute detected <". $self->{_objs}->{host}->getAttr(name=>'kernel_id') .">\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    
-    # check mac address unicity
-    $log->debug("checking unicity of mac address <".$self->{_objs}->{host}->getAttr(name=>'host_mac_address'). ">");
-    if (defined Entity::Host->getHost(hash => {host_mac_address => $self->{_objs}->{host}->getAttr(name=>'host_mac_address')})){
-        $errmsg = "Operation::AddHost->new : host_mac_address ". $self->{_objs}->{host}->getAttr(name=>'host_mac_address') ." already exist";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
- 
-}
-
 =head2 prepare
 
     $op->prepare();
@@ -132,32 +105,25 @@ sub prepare {
     $self->{_objs} = {};
     $self->{nas} = {};
     $self->{executor} = {};
-
-	$self->{target_cluster_id} = $params->{target_cluster_id};
-	delete $params->{target_cluster_id};
-		
-    # First review params 
-    ## Put in lowcase mac address
-    $params->{host_mac_address} = lc($params->{host_mac_address});
-
-    # Instanciate new Host Entity
-#    $log->debug("checking host validity with params" . Dumper %$params);
+	
+    # Instanciate the pre created Host Entity
     eval {
-        $self->{_objs}->{host} = Entity::Host->new(%$params);
+        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id} );
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EAddVirtualHost->prepare : Wrong host attributes detected\n" . $err;
+        $errmsg = "EOperation::EAddVirtualHost->prepare : No host found with id $params->{host_id}\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
-    eval {
-        $self->checkOp(params => $params);
+    # Instanciate target cluster
+        eval {
+        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{target_cluster_id} );
     };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation EAddVirtualHost failed an error occured :\n$error";
+    if($@) {
+        my $err = $@;
+        $errmsg = "EOperation::EAddVirtualHost->prepare : No cluster found with id $params->{target_cluster_id}\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -178,17 +144,13 @@ sub prepare {
     # Get context for nas
     $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
     
-    ## Instanciate Component needed (here LVM and ISCSITARGET on nas cluster)
+    ## Instanciate LVM Component
     # Instanciate Cluster Storage component.
     my $tmp = $self->{nas}->{obj}->getComponent(name       => "Lvm",
                                                 version    => "2");
-    $log->debug("Value return by getcomponent ". ref($tmp));
+   
     $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
     $log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
-    # Instanciate Cluster Export component.
-    $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-                                                                                      version=> "1"));
-    $log->debug("Load Iscsitarget component version 1, it ref is " . ref($self->{_objs}->{component_export}));
     
 }
 
@@ -198,19 +160,15 @@ sub execute {
     
     my $etc_id = $self->{_objs}->{component_storage}->createDisk(
 		name       => $self->{_objs}->{host}->getEtcName(),
-        size        => "52M", 
-        filesystem  => "ext3",
-        econtext    => $self->{nas}->{econtext},
-        erollback   => $self->{erollback}
+        size       => "52M", 
+        filesystem => "ext3",
+        econtext   => $self->{nas}->{econtext},
+        erollback  => $self->{erollback}
     );
 	$self->{_objs}->{host}->setAttr(name=>'etc_device_id', value=>$etc_id);
 	
 	$log->info("Host <".$self->{_objs}->{host}->getAttr(name=>"host_mac_address") ."> etc disk is now created");
-
-	# active host and set initial state to lock
-	$self->{_objs}->{host}->setAttr(name => 'active', value => 1);
-	$self->{_objs}->{host}->setState(state => 'lock');
-
+	
 	# AddHost finish, just save the Entity in DB
 	$self->{_objs}->{host}->save();
 	my @group = Entity::Gp->getGroups(hash => {gp_name=>'Host'});
@@ -222,7 +180,7 @@ sub execute {
 		priority => 100,
 		params   => {  
 			host_id    => $self->{_objs}->{host}->getAttr(name => 'host_id'),
-			cluster_id => $self->{target_cluster_id}
+			cluster_id => $self->{_obj}->{cluster}->getAttr(name => 'cluster_id'),
 		}
 	);
 
