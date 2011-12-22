@@ -38,7 +38,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
      
@@ -52,14 +52,14 @@ sub configureNode {
         $self->generateLibvirtdconf(
             econtext    => $args{econtext}, 
             mount_point => $args{mount_point}, 
-            motherboard => $args{motherboard}
+            host => $args{host}
         );
 
 		$log->debug('generate /etc/libvirt/qemu.conf');    
         $self->generateQemuconf(
             econtext    => $args{econtext}, 
             mount_point => $args{mount_point}, 
-            motherboard => $args{motherboard}
+            host => $args{host}
         );
 
 		$self->addInitScripts(
@@ -141,10 +141,10 @@ sub generateLibvirtdconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'motherboard']);
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     my $data = $self->_getEntity()->getTemplateDataLibvirtd();
-    $data->{listen_ip_address} = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
+    $data->{listen_ip_address} = $args{host}->getInternalIP()->{ipv4_internal_address};
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => "/templates/components/opennebula",
                          input_file => "libvirtd.conf.tt", output => "/libvirt/libvirtd.conf", data => $data);            
@@ -156,7 +156,7 @@ sub generateQemuconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'motherboard']);
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     my $data = {};
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
@@ -186,7 +186,7 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'motherboard', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
     
     $self->configureNode(%args);
     
@@ -197,11 +197,11 @@ sub postStartNode {
      my $self = shift;
      my %args = @_;
      my $masternodeip = $args{cluster}->getMasterNodeIp();
-     my $nodeip = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
+     my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
      if($masternodeip eq $nodeip) {
-         # this motherboard is the master node so we do nothing
+         # this host is the master node so we do nothing
      } else {
-         # this motherboard is a new cluster node so we declare it to opennebula
+         # this host is a new cluster node so we declare it to opennebula
          my $command = $self->_oneadmin_command(command => "onehost create $nodeip im_kvm vmm_kvm tm_nfs");
          use EFactory;
          my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
@@ -214,11 +214,11 @@ sub preStopNode {
      #~ my $self = shift;
      #~ my %args = @_;
      #~ my $masternodeip = $args{cluster}->getMasterNodeIp();
-     #~ my $nodeip = $args{motherboard}->getInternalIP()->{ipv4_internal_address};
+     #~ my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
      #~ if($masternodeip eq $nodeip) {
-         #~ # this motherboard is the master node so we do nothing
+         #~ # this host is the master node so we do nothing
      #~ } else {
-         #~ # this motherboard is a new cluster node so we declare it to opennebula
+         #~ # this host is a new cluster node so we declare it to opennebula
          #~ my $command = $self->_oneadmin_command(command => "onehost delete $nodeip");
          #~ use EFactory;
          #~ my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
