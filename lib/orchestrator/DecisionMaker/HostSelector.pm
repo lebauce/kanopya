@@ -20,6 +20,12 @@ use strict;
 use warnings;
 use Kanopya::Exceptions;
 use General;
+use Entity::Host;
+use Entity::Cluster;
+use Data::Dumper;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("orchestrator");
 
 =head2 getHost
     
@@ -27,10 +33,17 @@ use General;
     
     Desc :  Select and return the more suitable host according to constraints
      
-    Args :  type :  array ref of host type ordered by preference
+    Args :  cluster_id : id of the cluster requesting a host
+            
+            CONSTRAINTS
+            type :  array ref of host type ordered by preference
                     type can be 'phys' or 'virt'
             core : min number of desired core
-            ram  : min amount of desired ram
+            ram  : min amount of desired ram                                    # TODO manage unit (M,G,..)
+            cloud_cluster_id : id of the cluster to use for virt host
+            
+            All constraints args are optional, not defined means no constraint for this arg
+            Final constraints are intersection of input constraints and cluster components contraints.
             
     Return : Entity::Host
     
@@ -39,8 +52,122 @@ use General;
 sub getHost {
     my $self = shift;
     my %args = @_;
+
+    General::checkParams(args => \%args, required => ["cluster_id"]);
     
-    print "GETHOST\n";
+    my %type_handlers = ('phys' => \&getPhysicalHost, 'virt' => \&getVirtualHost );
+    my @type_list = defined $args{type} ? @{$args{type}} : (keys %type_handlers); 
+    delete $args{type};
+
+    #my ($value, $unit) = General::convertSizeFormat(size => $args{lvm2_lv_size});
+    #$args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
+    
+    # TODO :
+    #$args{ram}  = defined $args{ram} ? CONVERTIR EN BYTE : DEFAULT VALUE FOR RAM;
+    #$args{core} = $DEFAULT_CORE if (not defined $args{core});
+
+
+    # TODO get constraints from cluster components and intersect with input constraints
+    # e.g args{type} = ['phys', 'virt'] and cluster component CloudManager need 'virt' => type = ["virt"],
+    # e.g args{type} = ['phys'] and cluster component CloudManager need 'virt' => exception,
+    #my $cluster_constraints = $cluster->getHostConstraints(); 
+    #@type_list = intersectConstraints();
+
+    TYPE:
+    for my $type (@type_list) {
+        unless ( exists $type_handlers{$type} ) {
+            $log->error("Unknown required host type: '$type'");
+            next TYPE;
+        }
+        my $host_id = eval {
+            return $type_handlers{$type}( $self, %args );
+        };
+        if ($@) {
+            $log->debug($@->message);
+            next TYPE;
+        }
+        return $host_id;
+    }
+    
+    my $errmsg = "no free host respecting constraints";
+    throw Kanopya::Exception::Internal(error => $errmsg);
+}
+
+sub _matchHostConstraints {
+    my $self = shift;
+    my %args = @_;
+    
+    my $host = $args{host};
+    
+    for my $constraint ('core', 'ram') {
+        if (defined $args{$constraint}) {
+            my $host_value = $host->getAttr( name => "host_$constraint");
+            $log->debug("constraint '$constraint' ($host_value) >= $args{$constraint}");
+            if ($host_value < $args{$constraint}) {
+                return 0;
+            }
+        }
+    }
+    
+    return 1;
+}
+
+sub getPhysicalHost {
+    my $self = shift;
+    my %args = @_;
+    
+    $log->info( "Looking for a physical host" );
+    print Dumper \%args;
+    
+    # Get all free hosts
+    my @free_hosts = Entity::Host->getFreeHosts();
+    
+    # Keep only hosts matching constraints (cpu,mem)
+    my @valid_hosts = grep { $self->_matchHostConstraints( host => $_, %args ) } @free_hosts;
+    
+    if ( scalar @valid_hosts == 0) {
+        my $errmsg = "no free physical host respecting constraints";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    
+    # Get the first valid host
+    # TODO get the better hosts according to rank (e.g min consumption, max cpu, ...)
+    my $host = $valid_hosts[0];
+
+    return $host->getAttr(name => 'host_id');
+}
+
+sub getVirtualHost {
+    my $self = shift;
+    my %args = @_;
+    
+    $log->info( "Looking for a virtual host" );
+    
+    my @clusters =  defined $args{cloud_cluster_id}
+                    ? (Entity::Cluster->get( id => $args{cloud_cluster_id}))
+                    : Entity::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+    
+    CLUSTER:                
+    for my $cluster (@clusters) {
+        my $components = $cluster->getComponents( category => 'Cloudmanager');
+        next CLUSTER if (0 == keys %$components);
+        my $cm_component = (values %$components)[0];
+        my $host_id = eval {
+            return $cm_component->createHost(
+                core => $args{core},
+                ram => $args{ram},
+            );
+        };
+        if ($@) {
+            # We can't create virtual host for some reasons (e.g can't meet constraints)
+            #$log->debug($@->message);
+            next CLUSTER;
+        }
+        return $host_id;
+    }
+
+    my $errmsg = "can't create a virtual host";
+    throw Kanopya::Exception::Internal(error => $errmsg);
 }
 
 1;
