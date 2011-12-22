@@ -145,7 +145,7 @@ activate</a><br />
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_addnode %>
-		<a class="imgAdding" href="/architectures/clusters/<% cluster_id %>/nodes/add">add a node</a><br />
+		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/nodes/add">add a node</a><br />
 		<span class="desc">Add a node to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
