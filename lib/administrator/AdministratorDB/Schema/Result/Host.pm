@@ -142,6 +142,14 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "cloudcluster_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+
   "processormodel_id",
   {
     data_type => "integer",
@@ -353,6 +361,14 @@ __PACKAGE__->might_have(
   "node",
   "AdministratorDB::Schema::Result::Node",
   { "foreign.host_id" => "self.host_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+############################################## TO CHECK
+__PACKAGE__->might_have(
+  "cloud_cluster",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.cluster_id" => "self.cloud_cluster_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
