@@ -137,14 +137,7 @@ sub prepare {
     $log->debug("Load all component from cluster");
 
     # Get instance of Host Entity
-    $log->info("Load Host instance");
-    my @free_hosts = Entity::Host->getFreeHosts();
-    if ( scalar @free_hosts == 0) {
-        $errmsg = "EPreStartNode->prepare no free host!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    $self->{_objs}->{host} = $free_hosts[0];
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
