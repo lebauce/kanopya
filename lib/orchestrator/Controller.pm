@@ -44,6 +44,8 @@ sub new {
     
     $self->init();
     
+    $self->$_
+    
     return $self;
 }
 
@@ -70,8 +72,10 @@ sub init {
     
     $self->{_monitor} = Monitor::Retriever->new( );
     
-    $self->{_time_step} = 60; # controller update frequency
-    $self->{_time_laps} = 60; # metrics retrieving laps
+    $self->{_time_step}             = 60; # controller update frequency
+    $self->{_time_laps}             = 60; # metrics retrieving laps
+    $self->{_max_requests_in_infra} = ();
+    $self->{_estimated_S_instant}   = ();
     
     my $model = Model::MVAModel->new();
     $self->{_model} = $model;
@@ -390,6 +394,7 @@ sub preManageCluster{
     $self->{_cap_plan}->setConstraints(constraints => $constraints );
     
     
+    
     $log->info("Qos constraints: Max abort rate = $constraints->{max_abort_rate}, Max latency = $constraints->{max_latency}");
      
     # TODO Study where to get this information (need real study)
@@ -411,7 +416,7 @@ sub preManageCluster{
     
     # [Format] curr_perf: {throughput, latency, abort_rate}
     
-    my $time_laps = 60*60; # Monitored windows in s
+    my $time_laps = 5*60; # Monitored windows in s
     my $curr_perf    = $self->getMonitoredPerfMetrics( cluster => $cluster);
     my $mean_perf    = $self->getMonitoredPerfMetrics( 
                                 cluster   => $cluster,
@@ -420,15 +425,25 @@ sub preManageCluster{
                               
     my $cluster_conf = $self->getClusterConf( cluster => $cluster);
     
+    my $num_requests_in_infra = $curr_perf->{latency} * $curr_perf->{latency};
+    my $estimated_S_instant = $curr_perf->{latency} /(1 + $num_requests_in_infra);     
+    
+    if ($num_requests_in_infra > ($self->{_max_requests_in_infra}->[$cluster->{nb_nodes}]))
+    {
+        $self->{_max_requests_in_infra}->[$cluster->{nb_nodes}] = $num_requests_in_infra;
+        $self->{_estimated_S_instant}->[$cluster->{nb_nodes}] = $estimated_S_instant;
+    }
+       
     
     $log->info("$cluster_name : Monitored latency (ha_proxy)         = $curr_perf->{latency}"); 
     $log->info("$cluster_name : Monitored latency (ha_proxy, ".($time_laps/60)."min)  = $mean_perf->{latency}"); 
     $log->info("$cluster_name : Monitored throughput (apache)        = $curr_perf->{throughput}"); 
     $log->info("$cluster_name : Monitored throughput (apache, ".($time_laps/60)."min) = $mean_perf->{throughput}");
-    
+    $log->info("$cluster_name : Monitored num_requests = $num_requests_in_infra (max $self->{_max_requests_in_infra}->[$cluster->{nb_nodes}])");
+    $log->info("$cluster_name : Monitored estimated current Si  = $estimated_S_instant (max $self->{_estimated_S_instant}->[$cluster->{nb_nodes}])");
     $log->info("Monitored abort_rate = $curr_perf->{abort_rate} (not implemented yet)");
     
-
+    
     # latency => $cluster_data_aggreg->{Tt},
     # abort_rate => 0,
     # throughput => 0,
