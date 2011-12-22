@@ -142,7 +142,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "cloudcluster_id",
+  "cloud_cluster_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -289,6 +289,22 @@ __PACKAGE__->belongs_to(
   { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+############################################## TO CHECK
+#__PACKAGE__->might_have(
+#  "cloud_cluster",
+#  "AdministratorDB::Schema::Result::Cluster",
+#  { "foreign.cluster_id" => "self.cloud_cluster_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
+
+__PACKAGE__->belongs_to(
+  "cloud_cluster",
+  "AdministratorDB::Schema::Result::Cluster",
+  { cluster_id => "cloud_cluster_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+
 =head2 host_powersupply
 
 Type: belongs_to
@@ -361,14 +377,6 @@ __PACKAGE__->might_have(
   "node",
   "AdministratorDB::Schema::Result::Node",
   { "foreign.host_id" => "self.host_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-############################################## TO CHECK
-__PACKAGE__->might_have(
-  "cloud_cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { "foreign.cluster_id" => "self.cloud_cluster_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
