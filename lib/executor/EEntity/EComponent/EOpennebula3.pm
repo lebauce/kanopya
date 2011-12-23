@@ -210,7 +210,7 @@ sub postStartNode {
          my $id = split(/ID:/, $result->{stdout});
          $log->info('hypervisor id: '.$id);
          $self->_getEntity()->addHypervisor(
-			host_id => $args{host}->getAttr(name => host_id),
+			host_id => $args{host}->getAttr(name => 'host_id'),
 			id		=> $id,
 		);
      }

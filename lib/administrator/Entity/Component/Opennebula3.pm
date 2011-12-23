@@ -193,6 +193,15 @@ sub removeHypervisor {
 }
 
 sub addVm {
+	my $self = shift;
+	my %args = @_;
+	$self->{_dbix}->opennebula3->create_related(
+		'opennebula3_hypervisors',
+		{ hypervisor_host_id => $args{host_id},
+		  hypervisor_id		 => $args{id},
+		}
+	);
+	
 	
 }
 
