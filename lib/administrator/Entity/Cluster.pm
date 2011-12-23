@@ -695,6 +695,7 @@ sub addNode {
                 }
             }
             $args{type} = defined $args{type} ? $args{type} : $cluster_constraints;
+            $log->debug("Cluster <$args{cluster_id}> ask for a <$args{type}> host");
             if (!defined $args{type} || $args{type} eq "virt") {
                 
                 my @clusters =  defined $args{cloud_cluster_id}
@@ -706,7 +707,7 @@ sub addNode {
         }
 
     $log->debug("New Operation PreStartNode with attrs : " . %params);
-     throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
+#     throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
     Operation->enqueue(
         priority => 200,
         type     => 'PreStartNode',
@@ -718,7 +719,7 @@ sub getHostConstraints {
     my $self = shift;
 
     #TODO BIG IA, HYPER INTELLIGENCE TO REMEDIATE CONSTRAINTS CONFLICTS
-    my $components = $self->getComponents();
+    my $components = $self->getComponents(category=>"all");
 
     # Return the first constraint found.
     foreach my $k (keys %$components) {
@@ -773,7 +774,7 @@ sub start {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
        }
 
-    $self->addNode(type=>"physical", host_id=> 2);
+    $self->addNode(type=>"physical");
 #    $self->setState(state => 'starting');
     $self->save();
 

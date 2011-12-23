@@ -24,7 +24,7 @@ use Entity::Host;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
-my $log = get_logger("orchestrator");
+my $log = get_logger("administrator");
 
 =head2 getHost
     
@@ -55,9 +55,11 @@ sub getHost {
 
     General::checkParams(args => \%args, required => ["cluster_id"]);
     
-    my %type_handlers = ('phys' => \&getPhysicalHost, 'virt' => \&getVirtualHost );
+    my %type_handlers = ('physical' => \&getPhysicalHost, 'virtual' => \&getVirtualHost );
     my @type_list = defined $args{type} ? ($args{type}) : (keys %type_handlers); 
     delete $args{type};
+
+    $log->debug("Node type order : <" . Dumper @type_list .">");
 
     # Set default Ram and convert in B.
     my $ram = defined $args{ram} ? $args{ram} : $default_ram;
@@ -67,6 +69,7 @@ sub getHost {
     # Set default core
     $args{core} = $default_core if (not defined $args{core});
 
+    $log->debug("Host selector search for a node with ram : <$args{ram}> and core : <$args{core}>");
     TYPE:
     for my $type (@type_list) {
         unless ( exists $type_handlers{$type} ) {
