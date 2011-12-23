@@ -180,6 +180,8 @@ sub checkUp {
     my $p = Net::Ping->new();
     my $pingable = $p->ping($ip);
     $p->close();
+    
+    print "In checkUP test if host <$ip> is pingable <$pingable>\n";
 
     return $pingable;
 }
