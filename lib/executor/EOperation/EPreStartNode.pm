@@ -145,7 +145,6 @@ sub prepare {
     if (! $master_node_id && $node_count){
         $errmsg = "No master node when host <$params->{host_id}> migrating, pls wait...";
         $log->error($errmsg);
-
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 

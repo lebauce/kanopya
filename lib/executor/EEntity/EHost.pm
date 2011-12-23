@@ -180,15 +180,7 @@ sub checkUp {
     my $p = Net::Ping->new();
     my $pingable = $p->ping($ip);
     $p->close();
-#    eval {
-#        my $ssh = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $ip);
-#    };
-#     if($@) {
-#        my $exception = $@;
-#        if ($exception->isa('Kanopya::Exception::Network')) {
-#            return 0;
-#        }
-#    }
+
     return $pingable;
 }
 
