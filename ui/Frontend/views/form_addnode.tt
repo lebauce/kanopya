@@ -1,6 +1,6 @@
 <h2>Add a new node</h2>
 
-<form id="target" method="POST" action="/architectures/clusters/<% cluster_id %>/node/add">
+<form id="target" method="POST" action="/architectures/clusters/<% cluster_id %>/nodes/add">
 <table class="form">
     <tr>
         <td class="label">Node type :</td>
