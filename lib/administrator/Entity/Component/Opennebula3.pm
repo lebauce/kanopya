@@ -60,6 +60,8 @@ use warnings;
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use Administrator;
+use NetworkManager;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -151,7 +153,24 @@ sub getTemplateDataLibvirtd {
 
 sub getHostConstraints {return "phys";}
 
-sub createVirtualHost {}
+sub createVirtualHost {
+    my $self = shift;
+    my %args = @_;
+    
+    my $adm =  Administrator->new();
+    my $new_mac_address = $adm->{manager}->{network}->generateMacAddress();
+    
+    my $vm = Entity::Host->new(
+            host_mac_address => $new_mac_address,
+            kernel_id => 1,
+            host_serial_number => "Virtual Host with mac $new_mac_address",
+            host_ram => $args{ram},
+            host_core => $args{core},
+            cloud_cluster_id => $self->getAttr(name=>"cluster_id")
+            );
+    $vm->save();
+    return $vm->getAttr(name=>"host_id");
+}
 
 sub addHypervisor {
 
