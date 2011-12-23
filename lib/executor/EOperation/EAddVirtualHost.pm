@@ -180,7 +180,7 @@ sub execute {
 		priority => 100,
 		params   => {  
 			host_id    => $self->{_objs}->{host}->getAttr(name => 'host_id'),
-			cluster_id => $self->{_obj}->{cluster}->getAttr(name => 'cluster_id'),
+			cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'),
 		}
 	);
 
