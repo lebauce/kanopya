@@ -674,7 +674,7 @@ sub addNode {
     my %params = (cluster_id  => $self->getAttr(name =>"cluster_id"));
     
     # Check mandatory parameters
-    General::checkParams(args => \%args, required => ["type"]);
+#    General::checkParams(args => \%args, required => ["type"]);
 
     # Check Rights
     my $adm = Administrator->new();
@@ -696,7 +696,7 @@ sub addNode {
             }
             $args{type} = defined $args{type} ? $args{type} : $cluster_constraints;
             $log->debug("Cluster <$args{cluster_id}> ask for a <$args{type}> host");
-            if (!defined $args{type} || $args{type} eq "virt") {
+            if (!defined $args{type} || $args{type} eq "virtual") {
                 my @clusters;
                 if (defined $args{cloud_cluster_id}){
                     push @clusters, Entity::Cluster->get( id => $args{cloud_cluster_id});

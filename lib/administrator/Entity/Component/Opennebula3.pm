@@ -151,7 +151,7 @@ sub getTemplateDataLibvirtd {
     return {};
 }
 
-sub getHostConstraints {return "phys";}
+sub getHostConstraints {return "physical";}
 
 sub createVirtualHost {
     my $self = shift;
