@@ -189,9 +189,7 @@ sub addNode {
     
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
     
-    $self->configureNode(%args);
-    
-    
+    $self->configureNode(%args);    
 }
 
 sub postStartNode {
@@ -202,12 +200,19 @@ sub postStartNode {
      if($masternodeip eq $nodeip) {
          # this host is the master node so we do nothing
      } else {
-         # this host is a new cluster node so we declare it to opennebula
-         my $command = $self->_oneadmin_command(command => "onehost create $nodeip im_kvm vmm_kvm tm_shared");
+         # this host is a new hypervisor node so we declare it to opennebula
+         my $hostname = $args{host}->getAttr(name => 'host_hostname');
+         my $command = $self->_oneadmin_command(command => "onehost create $hostname im_kvm vmm_kvm tm_shared");
          use EFactory;
          my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
 		 sleep(10);
          my $result = $masternode_econtext->execute(command => $command);
+         my $id = split(/ID:/, $result->{stdout});
+         $log->info('hypervisor id: '.$id);
+         $self->_getEntity()->addHypervisor(
+			host_id => $args{host}->getAttr(name => host_id),
+			id		=> $id,
+		);
      }
 }
 
