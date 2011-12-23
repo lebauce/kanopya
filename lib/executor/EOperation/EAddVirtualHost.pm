@@ -118,8 +118,8 @@ sub prepare {
     }
     
     # Instanciate target cluster
-        eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{target_cluster_id} );
+    eval {
+        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id} );
     };
     if($@) {
         my $err = $@;

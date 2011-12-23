@@ -148,7 +148,26 @@ sub getTemplateDataLibvirtd {
     my $self = shift;
     return {};
 }
+
 sub getHostConstraints {return "phys";}
+
+sub createVirtualHost {}
+
+sub addHypervisor {
+
+}
+
+sub removeHypervisor {
+
+}
+
+sub addVm {
+
+}
+
+sub removeVm {
+
+}
 
 =head1 DIAGNOSTICS
 
