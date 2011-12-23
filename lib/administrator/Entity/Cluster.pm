@@ -708,16 +708,18 @@ sub addNode {
             $params{host_id} = DecisionMaker::HostSelector->getHost( %args );
         }
     
-    $log->debug("New Operation PreStartNode with attrs : " . %params);
+
 
     my $host = Entity::Host->get(id=>$params{host_id});
     $host->setState(state=>"locked");
     if ($host->getAttr(name => "cloud_cluster_id")) {
+    $log->debug("New Operation AddVirtualHost with attrs : " . %params);
         Operation->enqueue(
             priority => 200,
             type     => 'AddVirtualHost',
             params   => \%params);
     } else {
+            $log->debug("New Operation PreStartNode with attrs : " . %params);
         Operation->enqueue(
             priority => 200,
             type     => 'PreStartNode',

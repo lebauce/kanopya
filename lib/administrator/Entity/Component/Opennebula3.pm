@@ -166,9 +166,12 @@ sub createVirtualHost {
             host_serial_number => "Virtual Host with mac $new_mac_address",
             host_ram => $args{ram},
             host_core => $args{core},
-            cloud_cluster_id => $self->getAttr(name=>"cluster_id")
+            cloud_cluster_id => $self->getAttr(name=>"cluster_id"),
+            active  => 1
             );
     $vm->save();
+    $log->debug("return host with <" .$vm->getAttr(name=>"host_id").">");
+    $self->addVM(host_id=>$vm->getAttr(name=>"host_id"));
     return $vm->getAttr(name=>"host_id");
 }
 

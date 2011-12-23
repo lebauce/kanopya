@@ -35,6 +35,18 @@ EHost::EVirtual is the execution class for virtual host entities
 package EEntity::EHost::EVirtual;
 use base "EEntity::EHost";
 
+sub new {
+    my $class = shift;
+    my %args = @_;
+    
+    my $virtual_comp = $args{virt_comp};
+    delete $args{virt_comp};
+    my $self = $class->SUPER::new(%args);
+    $self->{virtual_component} = $virtual_comp;
+    
+    return $self;
+}
+
 sub start{
     
 }

@@ -46,6 +46,7 @@ use vars qw(@ISA $VERSION);
 
 use General;
 use Kanopya::Exceptions;
+use Entity::Cluster;
 use Net::IP qw(:PROC);
 
 my $log = get_logger("executor");
@@ -84,8 +85,19 @@ sub newEEntity {
     
     General::checkParams(args => \%args, required => ['data']);
     my $data = $args{data};
+    my %params = (data=>$args{data});
     my $class = General::getClassEEntityFromEntity(entity => $data);
 #    $log->debug("GetClassEEntityFromEntity return $class"); 
+
+    # Manage differences between virtual and physical hosts
+    if ($class eq "Entity::Host"){
+        if ($data->getAttr(name=>"cloud_cluster_id")){
+            $class .= "::EVirtual";
+            my $tmp = Entity::Cluster->get(id=>$data->getAttr(name=>"cloud_cluster_id"))->getComponents( category => 'Cloudmanager');
+            $params{virt_comp} = (values %$tmp)[0];
+        }
+    }
+
     my $location = General::getLocFromClass(entityclass => $class);
     
     eval { require $location; };
@@ -96,7 +108,7 @@ sub newEEntity {
     }
     
 #    $log->info("$class instanciated");
-    return $class->new(data => $args{data});
+    return $class->new(%params);
 }
 
 =head2 newEContext
