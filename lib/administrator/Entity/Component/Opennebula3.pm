@@ -38,7 +38,7 @@ my $cluster_id = 3;
 
 # Component id are fixed, please refer to component id table
 
-my $component_id =2 
+my $component_id =2
 
 Entity::Component::Opennebula3->new(component_id=>$component_id, cluster_id=>$cluster_id);
 
@@ -67,15 +67,15 @@ my $errmsg;
 =head2 new
 B<Class>   : Public
 B<Desc>    : This method allows to create a new instance of IAAS component and concretly Opennebula3.
-B<args>    : 
+B<args>    :
     B<component_id> : I<Int> : Identify component. Refer to component identifier table
     B<cluster_id> : I<int> : Identify cluster owning the component instance
 B<Return>  : a new Entity::Component::Opennebula3 from parameters.
 B<Comment>  : Like all component, instantiate it creates a new empty component instance.
         You have to populate it with dedicated methods.
-B<throws>  : 
+B<throws>  :
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
+
 =cut
 
 sub new {
@@ -91,7 +91,7 @@ sub getConf {
     my $confindb = $self->{_dbix}->opennebula3;
     if($confindb) {
         %conf = $confindb->get_columns();
-        
+
     }
     return \%conf;
 }
@@ -99,7 +99,7 @@ sub getConf {
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
-    
+
     if(not $conf->{opennebula3_id}) {
         # new configuration -> create
         $self->{_dbix}->create_related('opennebula3', $conf);
@@ -121,13 +121,13 @@ sub insertDefaultConfiguration {
     my $self = shift;
     my %args = @_;
     my $conf = {}; # default config is provided by database default fields values
-    $self->{_dbix}->create_related('opennebula3', $conf);    
+    $self->{_dbix}->create_related('opennebula3', $conf);
 }
 
 sub getTemplateDataOned {
     my $self = shift;
     my %data = $self->{_dbix}->opennebula3->get_columns();
-    delete $data{opennebula3_id};            
+    delete $data{opennebula3_id};
     delete $data{component_instance_id};
     return \%data;
 }
@@ -141,7 +141,7 @@ sub getTemplateDataOnedInitScript {
 
 sub getTemplateDataLibvirtbin {
     my $self = shift;
-    return {}; 
+    return {};
 }
 
 sub getTemplateDataLibvirtd {
@@ -149,6 +149,7 @@ sub getTemplateDataLibvirtd {
     return {};
 }
 sub getHostConstraints {return "phys";}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
@@ -161,7 +162,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 

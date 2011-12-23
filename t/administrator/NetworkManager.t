@@ -36,6 +36,9 @@ eval {
      throws_ok {$net_manager->getInternalIPId('ipv4_internal_address' => $internal_ip) } 'Kanopya::Exception::DB',
      "get deleted internal ip";
 
+	my $macaddress = $net_manager->generateMacAddress();
+	ok( $macaddress =~ /[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}/, 'mac address auto generation '.$macaddress);
+
      $adm->{db}->txn_commit;
 };
 if($@) {

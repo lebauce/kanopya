@@ -25,6 +25,7 @@ use Data::Dumper;
 use NetAddr::IP;
 use Kanopya::Exceptions;
 use General;
+use String::Random 'random_regex';
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -710,4 +711,26 @@ sub getRoutes {
     }
     return $routearray;
 }
+
+=head generateMacAddress
+
+return a mac address auto generated and not used by any host
+
+=cut
+
+sub generateMacAddress {
+	my $self = shift;
+	my $macaddress;
+	my @hosts = ();
+	my $regexp = '[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
+	do {
+		$macaddress = random_regex($regexp);
+		@hosts = $self->{db}->resultset('Host')->search(
+			{ host_mac_address => $macaddress },
+			{ rows => 1 }
+		);
+	} while( scalar(@hosts) );
+	return $macaddress;
+}
+
 1;

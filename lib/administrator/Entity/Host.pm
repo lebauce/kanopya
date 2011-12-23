@@ -66,6 +66,7 @@ It could be :
 =cut
 
 use constant ATTR_DEF => {
+<<<<<<< HEAD
               hostmodel_id    =>    {pattern            => '^\d*$',
                                             is_mandatory    => 1,
                                             is_extended        => 0},
@@ -121,6 +122,76 @@ use constant ATTR_DEF => {
             host_toto                => {pattern         => '^.*$',
                                             is_mandatory    => 0,
                                             is_extended     => 1}
+=======
+              hostmodel_id    	  => { pattern      => '^\d*$',
+                                       is_mandatory => 0,
+                                       is_extended  => 0
+                                     },
+              processormodel_id   => { pattern      => '^\d*$',
+                                       is_mandatory => 0,
+                                       is_extended  => 0
+                                     },
+              kernel_id           => { pattern      => '^\d*$',
+                                       is_mandatory => 1,
+                                       is_extended  => 0
+                                     },
+              host_serial_number  => { pattern      => '^.*$',
+                                       is_mandatory => 1,
+                                       is_extended  => 0
+                                     },
+              host_powersupply_id => { pattern      => '^\w*$',
+                                       is_mandatory => 0,
+                                       is_extended  => 0
+                                     },
+              host_desc           => { pattern      => '^[\w\s]*$',
+                                       is_mandatory => 0,
+                                       is_extended  => 0
+                                     },
+              active              => { pattern         => '^[01]$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+              host_mac_address    => { pattern         => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',  # mac address format must be lower case
+                                       is_mandatory    => 1,        # to have udev persistent net rules work
+                                       is_extended     => 0
+                                     },
+              host_internal_ip    => { pattern         => '^.*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+              host_hostname       => { pattern         => '^\w*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+              host_ram            => { pattern         => '^\w*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+              host_core           => { pattern         => '^\w*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+              host_initiatorname  => { pattern         => '^.*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+              etc_device_id       => { pattern         => 'm/^\d*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+              host_state          => { pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+            host_ipv4_internal_id => { pattern         => 'm/^\d*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 0
+                                     },
+            host_toto             => { pattern         => '^.*$',
+                                       is_mandatory    => 0,
+                                       is_extended     => 1
+                                     }
+>>>>>>> 4eef3384e4a590d73cbcbd4629efbcc6c24cf2ec
             };
 
 sub getAttrDef{

@@ -672,7 +672,7 @@ post '/clusters/:clusterid/nodes/add' => sub {
     my $adm = Administrator->new;
     
     my %args = (
-		type          => param('node_type'),
+		type          => param('node_type') eq 'auto' ? undef : param('node_type'),
 		core          => param('core')    eq '' ? undef : param('core'),
 		ram			  => param('ram')     eq '' ? undef : param('ram'),
 		host_id       => param('host_id') eq '-1' ? undef : param('host_id'),
@@ -682,8 +682,8 @@ post '/clusters/:clusterid/nodes/add' => sub {
     
     
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
-        #$ecluster->addNode(%args);
+        my $cluster = Entity::Cluster->get(id => param('clusterid'));
+        $cluster->addNode(%args);
         $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddHostInCluster operation adding to execution queue');
     };
     if($@) {
