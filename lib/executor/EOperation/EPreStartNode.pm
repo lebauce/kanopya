@@ -143,7 +143,7 @@ sub prepare {
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
     if (! $master_node_id && $node_count){
-        $errmsg = "No master node when host <$free_hosts[0]> migrating, pls wait...";
+        $errmsg = "No master node when host <$params->{host_id}]> migrating, pls wait...";
         $log->error($errmsg);
 
         throw Kanopya::Exception::Internal(error => $errmsg);
