@@ -80,7 +80,7 @@ sub getHost {
             return $type_handlers{$type}( $self, %args );
         };
         if ($@) {
-            $log->debug($@->message);
+            $log->debug($@->error);
             next TYPE;
         }
         return $host_id;
@@ -139,22 +139,23 @@ sub getVirtualHost {
     my %args = @_;
     
     $log->info( "Looking for a virtual host" );
-    
-    my @clusters = @{$args{clusters}};
+    my $tmp = $args{clusters};
+    my @clusters = @$tmp;
     CLUSTER:                
     for my $cluster (@clusters) {
         my $components = $cluster->getComponents( category => 'Cloudmanager');
         next CLUSTER if (0 == keys %$components);
         my $cm_component = (values %$components)[0];
         my $host_id = eval {
-            return $cm_component->createHost(
+            return $cm_component->createVirtualHost(
                 core => $args{core},
                 ram => $args{ram},
             );
         };
         if ($@) {
             # We can't create virtual host for some reasons (e.g can't meet constraints)
-            $log->debug($@->message);
+            $log->debug("This cluster ". $cluster->getattr(name=>"cluster_name")
+                        ."does not have capabilities to host this vm core <$args{core}> and rm <$args{vm}>");
             next CLUSTER;
         }
         return $host_id;

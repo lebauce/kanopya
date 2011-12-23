@@ -697,22 +697,34 @@ sub addNode {
             $args{type} = defined $args{type} ? $args{type} : $cluster_constraints;
             $log->debug("Cluster <$args{cluster_id}> ask for a <$args{type}> host");
             if (!defined $args{type} || $args{type} eq "virt") {
-                
-                my @clusters =  defined $args{cloud_cluster_id}
-                    ? (Entity::Cluster->get( id => $args{cloud_cluster_id}))
-                    : $self->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
-                $args{cluster} = \@clusters;
+                my @clusters;
+                if (defined $args{cloud_cluster_id}){
+                    push @clusters, Entity::Cluster->get( id => $args{cloud_cluster_id});
+                } else {
+                    @clusters = $self->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+                }
+                $args{clusters} = \@clusters;
             }
             $params{host_id} = DecisionMaker::HostSelector->getHost( %args );
         }
-
+    
     $log->debug("New Operation PreStartNode with attrs : " . %params);
-#     throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
-    Operation->enqueue(
-        priority => 200,
-        type     => 'PreStartNode',
-        params   => \%params,
-    );
+
+    my $host = Entity::Host->get(id=>$params{host_id});
+    $host->setState(state=>"locked");
+    if ($host->getAttr(name => "cloud_cluster_id")) {
+        Operation->enqueue(
+            priority => 200,
+            type     => 'AddVirtualHost',
+            params   => \%params);
+    } else {
+        Operation->enqueue(
+            priority => 200,
+            type     => 'PreStartNode',
+            params   => \%params);
+    }
+
+
 }
 
 sub getHostConstraints {
@@ -774,8 +786,8 @@ sub start {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
        }
 
-    $self->addNode(type=>"physical");
-#    $self->setState(state => 'starting');
+    $self->addNode();
+    $self->setState(state => 'starting');
     $self->save();
 
 #    $log->debug("New Operation StartCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
