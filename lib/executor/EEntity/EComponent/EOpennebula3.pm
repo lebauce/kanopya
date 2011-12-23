@@ -12,11 +12,12 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EOpennebula3;
+use base "EEntity::EComponent";
 
 use strict;
 use Template;
 use String::Random;
-use base "EEntity::EComponent";
+
 use Log::Log4perl "get_logger";
 use General;
 
@@ -202,7 +203,7 @@ sub postStartNode {
          # this host is the master node so we do nothing
      } else {
          # this host is a new cluster node so we declare it to opennebula
-         my $command = $self->_oneadmin_command(command => "onehost create $nodeip im_kvm vmm_kvm tm_nfs");
+         my $command = $self->_oneadmin_command(command => "onehost create $nodeip im_kvm vmm_kvm tm_shared");
          use EFactory;
          my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
 		 sleep(10);

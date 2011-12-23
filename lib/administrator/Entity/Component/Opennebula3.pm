@@ -149,7 +149,21 @@ sub getTemplateDataLibvirtd {
     return {};
 }
 
+sub addHypervisor {
+	
+}
 
+sub removeHypervisor {
+	
+}
+
+sub addVm {
+	
+}
+
+sub removeVm {
+	
+}
 
 =head1 DIAGNOSTICS
 
