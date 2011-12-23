@@ -176,7 +176,7 @@ sub execute {
         $tmp->preStartNode(host => $self->{_objs}->{host}, 
                             cluster => $self->{_objs}->{cluster});
     }
-    $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+    $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),node_number=>0,
                                                 master_node => 0);
     $self->{_objs}->{host}->setNodeState(state=>"pregoingin");
 

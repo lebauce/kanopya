@@ -166,10 +166,10 @@ sub execute {
     # Set Hostname
     my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
     if(not $host_hostname) {
-        #$host_hostname = $self->{_objs}->{host}->generateHostname(ip=>$host_ip);
-         $host_hostname = $self ->{_objs}->{cluster}->generateHostname();
+       # $host_hostname = $self->{_objs}->{host}->generateHostname(ip=>$host_ip);
+        $host_hostname = $self ->{_objs}->{cluster}->generateHostname();
         $self->{_objs}->{host}->setAttr(name => "host_hostname",
-                                           value => $host_hostname);
+                                          value => $host_hostname);
     }
 
     # Set initiatorName

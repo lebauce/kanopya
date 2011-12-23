@@ -792,6 +792,42 @@ sub setState {
                             'cluster_state' => $new_state.":".time})->discard_changes();;
 }
  
+sub generateHostname {
+  my $self = shift;
+  my $base_hostname = $self->getAttr(name=>'cluster_basehostname');
+  $log->info("basehostname $base_hostname");
+ my $count_node=$self->getCurrentNodesCount();
+ $log->info("currentnode $count_node");
+ if ($count_node==1)
+ { 
+ return ("$base_hostname"."1");
+ }
+ else
+ {
+  my @nodes =$self->getHosts();
+  my @nodenumber_list;
+ BOUCLE1:foreach my $node (@nodes) 
+   { 
+	 my $tmp=$node->getNodeNumber();
+	 push(@nodenumber_list,$tmp);
+   }
+    my $max_node= $self->getAttr(name =>"cluster_max_node");
+    $log->debug("max_node = $max_node");
+    my $i;
+    my $node_num;
+      for ($i=1;$i<=$max_node;$i++)
+         {
+          foreach $node_num(@nodenumber_list)
+            {
+		     if ($i!=$node_num)
+		     {next;}
+		     return("$base_hostname"."$i");
+		     $log->info("Hostname generated : $base_hostname"."$i");
+			 last BOUCLE1;
+	        }
+         }
+}
+}
 
 
 1;

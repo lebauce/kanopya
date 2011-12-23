@@ -224,6 +224,15 @@ sub getNodeState {
     my $state = $self->{_dbix}->node->get_column('node_state');
     return wantarray ? split(/:/, $state) : $state;
 }
+=head2 getNodeNumber
+
+=cut
+sub getNodeNumber {
+    my $self = shift;
+    my $node_number = $self->{_dbix}->node->get_column('node_number');
+    return $node_number;
+}
+
 
 sub getPrevNodeState {
     my $self = shift;
@@ -268,6 +277,7 @@ sub becomeNode{
     my $adm = Administrator->new();
     my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
                                             host_id =>$self->getAttr(name=>'host_id'),
+                                            node_number=>$args{node_number},
                                             master_node => $args{master_node}});
     return $res->get_column("node_id");
 }
@@ -407,9 +417,6 @@ sub remove {
         params   => {host_id => $self->getAttr(name=>"host_id")},
     );
 }
-
-
-
 
 sub extension {
     return "hostdetails";

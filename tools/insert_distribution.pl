@@ -20,8 +20,8 @@ my $conf = XMLin("/opt/kanopya/conf/executor.conf");
 General::checkParams(args=>$conf->{user}, required=>["name","password"]);
 
 ########################## Here insert information on distribution inserted ##############
-my $dist_conf = {dist_name      => "debian",
-	       dist_version   => 6,
+my $dist_conf = {dist_name      => "Debian",
+	       dist_version   => 5,
 	       dist_desc      => "SI d openNebula",
 	       root_size      => "2G",
 	       filesystem     => "ext3"};

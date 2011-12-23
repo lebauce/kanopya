@@ -252,6 +252,7 @@ CREATE TABLE `node` (
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(32),
   `node_prev_state` char(32),
+  `node_number` int(8) unsigned NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE `cluster_id` (`cluster_id`,`host_id`),
   UNIQUE `fk_node_2` (`host_id`),
