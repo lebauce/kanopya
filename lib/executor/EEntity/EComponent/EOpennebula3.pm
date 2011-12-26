@@ -15,11 +15,10 @@ package EEntity::EComponent::EOpennebula3;
 use base "EEntity::EComponent";
 
 use strict;
-use Template;
-use String::Random;
+use warnings;
+use General;
 
 use Log::Log4perl "get_logger";
-use General;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -312,8 +311,15 @@ sub _generateVmTemplate {
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['econtext', 'host']);
 	
+	# host_ram is stored in octect, so we convert it to megaoctect
+	my $ram = General::convertFromBytes(
+		value => $args{host}->getAttr(name => 'host_ram'),
+		units => 'M'
+	);
+	
+	
 	my $data = {
-		memory      => $args{host}->getAttr(name => 'host_ram'),
+		memory      => $ram,
 		cpu		    => $args{host}->getAttr(name => 'host_core'),
 		mac_address => $args{host}->getAttr(name => 'host_mac_address'),
 	};
