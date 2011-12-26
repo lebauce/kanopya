@@ -62,6 +62,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Administrator;
 use NetworkManager;
+use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -157,6 +158,8 @@ sub createVirtualHost {
     my $self = shift;
     my %args = @_;
     
+    General::checkParams(args => \%args, required => ['ram', 'core']);
+    
     my $adm =  Administrator->new();
     my $new_mac_address = $adm->{manager}->{network}->generateMacAddress();
     
@@ -184,6 +187,7 @@ sub createVirtualHost {
 sub addHypervisor {
 	my $self = shift;
 	my %args = @_;
+	General::checkParams(args => \%args, required => ['host_id', 'id']);
 	$self->{_dbix}->opennebula3->create_related(
 		'opennebula3_hypervisors',
 		{ hypervisor_host_id => $args{host_id},
@@ -196,14 +200,15 @@ sub addHypervisor {
 sub removeHypervisor {
 	my $self = shift;
 	my %args = @_;
+	General::checkParams(args => \%args, required => ['host_id']);
 	$self->{_dbix}->opennebula3->opennebula3_hypervisors->find($args{host_id})->delete;
 }
 
 sub getHypervisorIdFromHostId {
 	my $self = shift;
 	my %args = @_;
-	my $id = 
-		$self->{_dbix}->opennebula3->opennebula3_hypervisors->find($args{host_id})->get_column('hypervisor_id');
+	General::checkParams(args => \%args, required => ['host_id']);
+	my $id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->find($args{host_id})->get_column('hypervisor_id');
 	return $id;
 }
 
@@ -212,6 +217,7 @@ sub getHypervisorIdFromHostId {
 sub addVm {
 	my $self = shift;
 	my %args = @_;
+	General::checkParams(args => \%args, required => ['host_id']);
 	$self->{_dbix}->opennebula3->create_related(
 		'opennebula3_vms',
 		{ vm_host_id => $args{host_id} }
@@ -221,14 +227,15 @@ sub addVm {
 sub removeVm {
 	my $self = shift;
 	my %args = @_;
+	General::checkParams(args => \%args, required => ['host_id']);
 	$self->{_dbix}->opennebula3->opennebula3_vms->find($args{host_id})->delete;
 }
 
 sub getVmIdFromHostId {
 	my $self = shift;
 	my %args = @_;
-	my $id = 
-		$self->{_dbix}->opennebula3->opennebula3_vms->find($args{host_id})->get_column('vm_id');
+	General::checkParams(args => \%args, required => ['host_id']);
+	my $id = $self->{_dbix}->opennebula3->opennebula3_vms->find($args{host_id})->get_column('vm_id');
 	return $id;
 }
 
