@@ -201,14 +201,14 @@ sub removeHypervisor {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	$self->{_dbix}->opennebula3->opennebula3_hypervisors->find($args{host_id})->delete;
+	$self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->delete;
 }
 
 sub getHypervisorIdFromHostId {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	my $id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->find($args{host_id})->get_column('hypervisor_id');
+	my $id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->get_column('hypervisor_id');
 	return $id;
 }
 
