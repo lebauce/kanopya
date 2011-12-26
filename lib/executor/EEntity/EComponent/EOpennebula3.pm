@@ -318,6 +318,7 @@ sub _generateVmTemplate {
 		mac_address => $args{host}->getAttr(name => 'host_mac_address'),
 	};
 	
+
 	$self->generateFile( econtext     => $args{econtext}, 
 						 mount_point  => '',
                          template_dir => "/templates/components/opennebula",
