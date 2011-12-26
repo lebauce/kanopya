@@ -150,12 +150,14 @@ sub getVirtualHost {
             return $cm_component->createVirtualHost(
                 core => $args{core},
                 ram => $args{ram},
+                cluster_id => $cluster->getAttr(name=>"cluster_id")
             );
         };
         if ($@) {
+            my $error =$@;
             # We can't create virtual host for some reasons (e.g can't meet constraints)
-            $log->debug("This cluster ". $cluster->getattr(name=>"cluster_name")
-                        ."does not have capabilities to host this vm core <$args{core}> and rm <$args{vm}>");
+            $log->debug("This cluster ". $cluster->getAttr(name=>"cluster_name")
+                        ."does not have capabilities to host this vm core <$args{core}> and rm <$args{vm}>". $error);
             next CLUSTER;
         }
         return $host_id;

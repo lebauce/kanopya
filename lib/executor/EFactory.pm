@@ -90,7 +90,8 @@ sub newEEntity {
 #    $log->debug("GetClassEEntityFromEntity return $class"); 
 
     # Manage differences between virtual and physical hosts
-    if ($class eq "Entity::Host"){
+    if ($class eq "EEntity::EHost"){
+        $log->debug("Get a new EHost !");
         if ($data->getAttr(name=>"cloud_cluster_id")){
             $class .= "::EVirtual";
             $params{virt_cluster} = Entity::Cluster->get(id=>$data->getAttr(name=>"cloud_cluster_id"));

@@ -35,6 +35,11 @@ EHost::EVirtual is the execution class for virtual host entities
 package EEntity::EHost::EVirtual;
 use base "EEntity::EHost";
 use Entity::Cluster;
+use strict;
+use warnings;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("executor");
 
 sub new {
     my $class = shift;
@@ -47,9 +52,9 @@ sub new {
     
     my $self = $class->SUPER::new(%args);
     
-    $self->{ecomponent_virt} = $virtual_comp;
+    $self->{ecomponent_virt} = $evirtual_ecomp;
     $self->{virt_cluster} = $virt_cluster;
-    
+    $log->debug("Create a Virtual Host");
     return $self;
 }
 
