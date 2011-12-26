@@ -93,8 +93,8 @@ sub newEEntity {
     if ($class eq "Entity::Host"){
         if ($data->getAttr(name=>"cloud_cluster_id")){
             $class .= "::EVirtual";
-            my $tmp = Entity::Cluster->get(id=>$data->getAttr(name=>"cloud_cluster_id"))->getComponents( category => 'Cloudmanager');
-            $params{virt_comp} = (values %$tmp)[0];
+            $params{virt_cluster} = Entity::Cluster->get(id=>$data->getAttr(name=>"cloud_cluster_id"));
+            $params{evirt_ecomp} = EFactory::newEEntity(data => $params{virt_cluster}->getComponent(name=>"Opennebula", version=>"3"));
         }
     }
 

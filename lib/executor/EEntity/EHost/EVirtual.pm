@@ -34,15 +34,21 @@ EHost::EVirtual is the execution class for virtual host entities
 =cut
 package EEntity::EHost::EVirtual;
 use base "EEntity::EHost";
+use Entity::Cluster;
 
 sub new {
     my $class = shift;
     my %args = @_;
     
-    my $virtual_comp = $args{virt_comp};
-    delete $args{virt_comp};
+    my $evirtual_ecomp = $args{evirt_ecomp};
+    my $virt_cluster = $args{virt_cluster};
+    delete $args{evirt_ecomp};
+    delete $args{virt_cluster};
+    
     my $self = $class->SUPER::new(%args);
-    $self->{virtual_component} = $virtual_comp;
+    
+    $self->{ecomponent_virt} = $virtual_comp;
+    $self->{virt_cluster} = $virt_cluster;
     
     return $self;
 }
@@ -51,7 +57,7 @@ sub start{
     my $self = shift;
     my %args = @_;
     
-    
+    $self->{ecomponent_virt}->startvm(cluster=>$self->{virt_cluster}, host => $self->_getEntity());
 }
 
 sub stop {
