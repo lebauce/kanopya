@@ -235,12 +235,12 @@ sub convertFromBytes {
     my %args = @_;
     if((! exists $args{value} or ! defined $args{value}) ||
        (! exists $args{units} or ! defined $args{units})) {
-        $errmsg = "convertToBytes needs value and units named argument!";
+        $errmsg = "convertFromBytes needs value and units named argument!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     if($args{units} !~ /^[BKMGTPE]$/) {
-        $errmsg = "convertToBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
+        $errmsg = "convertFromBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
     } 
