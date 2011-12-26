@@ -63,6 +63,7 @@ sub start{
     my %args = @_;
     
     $self->{ecomponent_virt}->startvm(cluster=>$self->{virt_cluster}, host => $self->_getEntity());
+    $self->_getEntity()->setState(state => 'starting');
 }
 
 sub stop {
