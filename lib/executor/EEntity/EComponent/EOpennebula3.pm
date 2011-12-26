@@ -208,7 +208,7 @@ sub postStartNode {
          my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
 		 sleep(10);
          my $result = $masternode_econtext->execute(command => $command);
-         my $id = split(/ID:/, $result->{stdout});
+         my $id = substr($result->{stdout}, 4);
          $log->info('hypervisor id returned by opennebula: '.$id);
          $self->_getEntity()->addHypervisor(
 			host_id => $args{host}->getAttr(name => 'host_id'),
@@ -297,7 +297,7 @@ sub startvm {
 	my $result = $masternode_econtext->execute(command => $command);
     
 	# declare vm in database
-	my $id = split(/ID:/, $result->{stdout});
+	my $id = substr($result->{stdout}, 4);
     $log->info('vm id returned by opennebula: '.$id);
     $self->_getEntity()->addVm(
 		host_id => $args{host}->getAttr(name => 'host_id'),
