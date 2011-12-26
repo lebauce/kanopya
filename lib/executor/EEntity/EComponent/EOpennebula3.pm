@@ -195,6 +195,7 @@ sub addNode {
 sub postStartNode {
      my $self = shift;
      my %args = @_;
+     General::checkParams(args => \%args, required => ['cluster', 'host']);
      my $masternodeip = $args{cluster}->getMasterNodeIp();
      my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
      if($masternodeip eq $nodeip) {
@@ -212,7 +213,7 @@ sub postStartNode {
          $self->_getEntity()->addHypervisor(
 			host_id => $args{host}->getAttr(name => 'host_id'),
 			id		=> $id,
-		);
+		 );
 		
      }
 }
@@ -220,6 +221,7 @@ sub postStartNode {
 sub preStopNode {
      my $self = shift;
      my %args = @_;
+     General::checkParams(args => \%args, required => ['cluster', 'host']);
      my $masternodeip = $args{cluster}->getMasterNodeIp();
      my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
      if($masternodeip eq $nodeip) {
@@ -273,6 +275,60 @@ sub isUp {
     }   
 }
 
+# generate vm template and start a vm from the template
+sub startvm {
+	my $self = shift;
+	my %args = @_;
+	General::checkParams(args => \%args, required => ['cluster', 'host']);
+	
+	# instanciate opennebula master node econtext 
+	my $masternodeip = $args{cluster}->getMasterNodeIp();
+	use EFactory;
+	my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+	
+	# generate template in opennebula master node
+	my $template = $self->_generateVmTemplate(
+		econtext => $masternode_econtext,
+		host	 => $args{host},
+	);
+	
+	# create the vm from template
+	my $command = $self->_oneadmin_command(command => "onevm create $template");
+	my $result = $masternode_econtext->execute(command => $command);
+    
+	# declare vm in database
+	my $id = split(/ID:/, $result->{stdout});
+    $log->info('vm id returned by opennebula: '.$id);
+    $self->_getEntity()->addVm(
+		host_id => $args{host}->getAttr(name => 'host_id'),
+		id		=> $id,
+	);
+
+}
+
+# generate vm template and push it on opennebula master node
+sub _generateVmTemplate {
+	my $self = shift;
+	my %args = @_;
+	General::checkParams(args => \%args, required => ['econtext', 'host']);
+	
+	my $data = {
+		memory      => $args{host}->getAttr(name => 'host_ram'),
+		cpu		    => $args{host}->getAttr(name => 'host_core'),
+		mac_address => $args{host}->getAttr(name => 'host_mac_address'),
+	};
+	
+
+	$self->generateFile( econtext     => $args{econtext}, 
+						 mount_point  => '',
+                         template_dir => "/templates/components/opennebula",
+                         input_file   => "vm.tt", 
+                         output       => "/tmp/vm.template", 
+                         data         => $data
+    );
+    return "/tmp/vm.template";
+}
+
 # prefix commands to use oneadmin account with its environment variables
 sub _oneadmin_command {
 	my $self = shift;
@@ -288,5 +344,8 @@ sub _oneadmin_command {
 	$command .= $args{command} ."'";
 	return $command;
 }
+
+
+
 
 1;
