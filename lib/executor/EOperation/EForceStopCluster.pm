@@ -206,7 +206,7 @@ sub execute {
         my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $lv_name);
         my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
                                                                                  iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
-    
+        eval {
         # clean initiator session 
         $self->{_objs}->{component_export}->cleanInitiatorSession(
                                                     econtext => $self->{nas}->{econtext},
@@ -215,7 +215,7 @@ sub execute {
         # Remove Target and Lun
         $self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id       => $lun_id,
                                                       iscsitarget1_target_id    => $target_id);
-        eval {
+
             $self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id         => $target_id,
                                                              iscsitarget1_target_name     => $target_name,
                                                              econtext                     => $self->{nas}->{econtext});
