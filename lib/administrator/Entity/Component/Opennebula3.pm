@@ -174,7 +174,6 @@ sub createVirtualHost {
             );
     $vm->save();
     $log->debug("return host with <" .$vm->getAttr(name=>"host_id").">");
-    $self->addVm(host_id=>$vm->getAttr(name=>"host_id"));
     return $vm->getAttr(name=>"host_id");
 }
 
