@@ -722,7 +722,7 @@ sub generateMacAddress {
 	my $self = shift;
 	my $macaddress;
 	my @hosts = ();
-	my $regexp = '[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
+	my $regexp = '00:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
 	do {
 		$macaddress = random_regex($regexp);
 		@hosts = $self->{db}->resultset('Host')->search(
