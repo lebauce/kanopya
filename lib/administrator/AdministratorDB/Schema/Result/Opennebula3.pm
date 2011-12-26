@@ -197,9 +197,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 opennebula3_vms
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-12-23 11:19:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:f3vUX2p+4WpSl2OsHDniAw
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3Vm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "opennebula3_vms",
+  "AdministratorDB::Schema::Result::Opennebula3Vm",
+  { "foreign.opennebula3_id" => "self.opennebula3_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-12-26 10:20:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Sl/VQr4Km/91CQoHfI/BLg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

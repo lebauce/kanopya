@@ -208,29 +208,33 @@ sub postStartNode {
 		 sleep(10);
          my $result = $masternode_econtext->execute(command => $command);
          my $id = split(/ID:/, $result->{stdout});
-         $log->info('hypervisor id: '.$id);
+         $log->info('hypervisor id returned by opennebula: '.$id);
          $self->_getEntity()->addHypervisor(
 			host_id => $args{host}->getAttr(name => 'host_id'),
 			id		=> $id,
 		);
+		
      }
 }
 
 sub preStopNode {
-     #~ my $self = shift;
-     #~ my %args = @_;
-     #~ my $masternodeip = $args{cluster}->getMasterNodeIp();
-     #~ my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
-     #~ if($masternodeip eq $nodeip) {
-         #~ # this host is the master node so we do nothing
-     #~ } else {
-         #~ # this host is a new cluster node so we declare it to opennebula
-         #~ my $command = $self->_oneadmin_command(command => "onehost delete $nodeip");
-         #~ use EFactory;
-         #~ my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
-		 #~ sleep(10);
-         #~ my $result = $masternode_econtext->execute(command => $command);
-     #~ }
+     my $self = shift;
+     my %args = @_;
+     my $masternodeip = $args{cluster}->getMasterNodeIp();
+     my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
+     if($masternodeip eq $nodeip) {
+		# this host is the master node so we do nothing
+     } else {
+         # this host is a hypervisor node so we remove it from opennebula
+         my $id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
+         my $command = $self->_oneadmin_command(command => "onehost delete $id");
+         use EFactory;
+         my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+		 sleep(10);
+         my $result = $masternode_econtext->execute(command => $command);
+         # TODO verifier le succes de la commande
+         $self->_getEntity()->removeHypervisor(host_id => $args{host}->getAttr(name => 'host_id'));
+     }
 }
 
 sub isUp {

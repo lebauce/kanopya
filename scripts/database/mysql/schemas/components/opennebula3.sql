@@ -46,16 +46,16 @@ CREATE TABLE `opennebula3_vm` (
   `opennebula3_vm_id` int(8) unsigned NOT NULL AUTO_INCREMENT, 
   `opennebula3_id` int(8) unsigned NOT NULL,  
   `vm_host_id` int(8) unsigned NOT NULL,
-  `hypervisor_id` int(8) unsigned NULL DEFAULT NULL,  
+  `opennebula3_hypervisor_id` int(8) unsigned NULL DEFAULT NULL,  
   `vm_id` int(8) unsigned NULL DEFAULT NULL,  
   `vnc_port` int(8) unsigned NULL DEFAULT NULL,
-  PRIMARY KEY (`opennebula3_vm_id	`),
+  PRIMARY KEY (`opennebula3_vm_id`),
   KEY `fk_opennebula3vm_1` (`opennebula3_id`),
-  CONSTRAINT `fk_opennebula3vm_1` FOREIGN KEY (`opennebula3_id`) REFERENCES `opennebula3` (`opennebula3_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_opennebula3vm_2` (`vm_host_id`),
+  KEY `fk_opennebula3vm_3` (`opennebula3_hypervisor_id`),
+  CONSTRAINT `fk_opennebula3vm_1` FOREIGN KEY (`opennebula3_id`) REFERENCES `opennebula3` (`opennebula3_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_opennebula3vm_2` FOREIGN KEY (`vm_host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY `fk_opennebula3vm_3` (`hypervisor_id`),
-  CONSTRAINT `fk_opennebula3vm_3` FOREIGN KEY (`hypervisor_id`) REFERENCES `opennebula3_hypervisor` (`hypervisor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_opennebula3vm_3` FOREIGN KEY (`opennebula3_hypervisor_id`) REFERENCES `opennebula3_hypervisor` (`opennebula3_hypervisor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

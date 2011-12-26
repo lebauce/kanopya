@@ -175,6 +175,12 @@ sub createVirtualHost {
     return $vm->getAttr(name=>"host_id");
 }
 
+### hypervisors manipulation ###
+
+# declare an new hypervisor into database
+# real declaration in opennebula must have been done
+# since `hypervisor_id` is required 
+
 sub addHypervisor {
 	my $self = shift;
 	my %args = @_;
@@ -186,27 +192,44 @@ sub addHypervisor {
 	);
 }
 
+
 sub removeHypervisor {
 	my $self = shift;
 	my %args = @_;
 	$self->{_dbix}->opennebula3->opennebula3_hypervisors->find($args{host_id})->delete;
 }
 
+sub getHypervisorIdFromHostId {
+	my $self = shift;
+	my %args = @_;
+	my $id = 
+		$self->{_dbix}->opennebula3->opennebula3_hypervisors->find($args{host_id})->get_column('hypervisor_id');
+	return $id;
+}
+
+### VMs manipulations ###
+
 sub addVm {
 	my $self = shift;
 	my %args = @_;
 	$self->{_dbix}->opennebula3->create_related(
-		'opennebula3_hypervisors',
-		{ hypervisor_host_id => $args{host_id},
-		  hypervisor_id		 => $args{id},
-		}
+		'opennebula3_vms',
+		{ vm_host_id => $args{host_id} }
 	);
-	
-	
 }
 
 sub removeVm {
+	my $self = shift;
+	my %args = @_;
+	$self->{_dbix}->opennebula3->opennebula3_vms->find($args{host_id})->delete;
+}
 
+sub getVmIdFromHostId {
+	my $self = shift;
+	my %args = @_;
+	my $id = 
+		$self->{_dbix}->opennebula3->opennebula3_vms->find($args{host_id})->get_column('vm_id');
+	return $id;
 }
 
 =head1 DIAGNOSTICS
