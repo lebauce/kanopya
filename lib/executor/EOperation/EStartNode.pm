@@ -403,38 +403,6 @@ sub _generateKanopyaHalt{
     $self->{nas}->{econtext}->execute(command=> "chmod 755 $args{mount_point}/init.d/Kanopya_omitted_iscsid");
     $self->{nas}->{econtext}->execute(command=> "ln -sf ../init.d/Kanopya_omitted_iscsid $args{mount_point}/rc0.d/S19Kanopya_omitted_iscsid");
 }
-
-sub _generateHosts {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ["mount_point"]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    # create Template object
-    my $template = Template->new($config);
-    my $input = "hosts.tt";
-    my $nodes = $args{nodes};
-    my @nodes_list = ();
-    my $vars = {hostname        => $self->{_objs}->{host}->getAttr(
-		    name => "host_hostname"),
-	        domainname            => "hedera-technology.com",
-                hosts        => \@nodes_list,
-          };
-    foreach my $i (keys %$nodes) {
-        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'host_hostname'),
-                   domainname    => "hedera-technology.com",
-                   ip            => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
-        push @nodes_list, $tmp;
-    }
-    $log->debug(Dumper($vars));
-       $template->process($input, $vars, "/tmp/".$tmpfile) || die $template->error(), "\n";
-    $self->{nas}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$args{mount_point}/hosts");
-    unlink     "/tmp/$tmpfile";
-}
-
 sub _generateNetConf {
     my $self = shift;
     my %args = @_;

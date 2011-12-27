@@ -277,11 +277,10 @@ sub becomeNode{
     my $adm = Administrator->new();
     my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
                                             host_id =>$self->getAttr(name=>'host_id'),
-                                            node_number=>$args{node_number},
                                             master_node => $args{master_node}});
     return $res->get_column("node_id");
 }
-
+#node_number=>$args{node_number},
 sub becomeMasterNode{
     my $self = shift;
 
@@ -584,28 +583,7 @@ sub removeInternalIP{
 
 }
 
-sub generateHostname {
-#    my $self = shift;
-#    my $mac = $self->getAttr(name => 'host_mac_address');
-#    $mac =~ s/://g;
-#    return "node".$mac;
-    my $self = shift;
-    my %args = @_;
-    my $hostname = "node";
 
-    $log->debug("Create hostname with ip $args{'ip'}");
-    my @tmp = split(/\./, $args{ip});
-
-    $log->debug("differents ip part are <$tmp[0]> <$tmp[1]> <$tmp[2]> <$tmp[3]>");
-    my $cpt = 3 - length $tmp[3];
-    while ($cpt) {
-        $hostname .= "0";
-        $cpt--;
-    }
-    $hostname .= $tmp[3];
-    $log->info("Hostname generated : $hostname");
-    return $hostname;
-}
 
 
 sub getClusterId {

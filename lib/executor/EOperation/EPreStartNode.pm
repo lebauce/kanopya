@@ -176,12 +176,12 @@ sub execute {
         $tmp->preStartNode(host => $self->{_objs}->{host}, 
                             cluster => $self->{_objs}->{cluster});
     }
-    $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),node_number=>0,
+    $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
                                                 master_node => 0);
     $self->{_objs}->{host}->setNodeState(state=>"pregoingin");
 
 }
-
+#node_number=>0,
 sub _cancel {
     my $self = shift;
 
