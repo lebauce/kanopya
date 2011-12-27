@@ -240,6 +240,20 @@ sub getVmIdFromHostId {
 	return $id;
 }
 
+sub updateVm {
+	my $self = shift;
+	my %args = @_;
+	General::checkParams(args => \%args, required => ['vm_host_id', 'hypervisor_id', 'vnc_port']);
+	my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_id=>$args{hypervisor_id}})->single()->get_column('opennebula3_hypervisor_id');
+	$self->{_dbix}->opennebula3->opennebula3_vms->search(
+		{vm_host_id=>$args{vm_host_id}})->single()->update(
+			{ opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
+			  vnc_port                  => $args{vnc_port},
+		}
+	);	  
+}
+
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

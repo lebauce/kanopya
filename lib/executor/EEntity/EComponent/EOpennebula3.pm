@@ -17,8 +17,9 @@ use base "EEntity::EComponent";
 use strict;
 use warnings;
 use General;
-
+use XML::Simple;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -305,6 +306,7 @@ sub startvm {
 
 }
 
+# delete a vm from opennebula
 sub stopvm {
 	my $self = shift;
 	my %args = @_;
@@ -315,11 +317,43 @@ sub stopvm {
 	use EFactory;
 	my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
 	
-	# delete the vm from opennebula
+	# retrieve vm info from opennebula
+	
 	my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
 	my $command = $self->_oneadmin_command(command => "onevm delete $id");
 	my $result = $masternode_econtext->execute(command => $command);
+}
 
+# update a vm information (hypervisor host and vnc port)
+sub updatevm {
+	my $self = shift;
+	my %args = @_;
+	General::checkParams(args => \%args, required => ['cluster', 'host']);
+	
+	# instanciate opennebula master node econtext 
+	my $masternodeip = $args{cluster}->getMasterNodeIp();
+	use EFactory;
+	my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+	
+	# retrieve hypervisor hostname for the vm from opennebula
+	my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
+	my $command = $self->_oneadmin_command(command => "onevm show $id --xml");
+	my $result = $masternode_econtext->execute(command => $command);
+	my $hxml = XMLin($result->{stdout});
+	my $hypervisor_hostname = $hxml->{HISTORY_RECORDS}->{HISTORY}->{HOSTNAME};
+	my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
+	
+	# retrieve hypervisor id from his hostname
+	$command = $self->_oneadmin_command(command => "onehost show $hypervisor_hostname --xml");
+	$result = $masternode_econtext->execute(command => $command);
+	$hxml = XMLin($result->{stdout});
+	
+	$self->_getEntity()->updateVm( 
+		vm_host_id    => $args{host}->getAttr(name => 'host_id'),
+		hypervisor_id => $hxml->{ID},
+		vnc_port      => $vnc_port,
+	);
+	
 }
 
 # generate vm template and push it on opennebula master node
