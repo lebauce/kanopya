@@ -240,6 +240,19 @@ sub getVmIdFromHostId {
 	return $id;
 }
 
+# Execute host migration to a new hypervisor
+sub migrateHost{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host', 'hypervisor_dst', 'hypervisor_cluster']);
+    
+    my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    
+    my $vm_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
