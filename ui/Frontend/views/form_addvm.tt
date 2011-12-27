@@ -1,0 +1,42 @@
+<h2>Add a new node</h2>
+
+<form id="target" method="POST" action="/infrastructures/vms/add">
+<table class="form">
+    <tr>
+		<td class="label">Host constraints</td><td></td>
+    </tr>
+    <tr>
+		<td class="label">Cores :</td>
+        <td><input type="text" name="core" size="4"/></td>
+	</tr>
+	<tr>
+		<td class="label">RAM quantity:</td>
+        <td><input type="text" name="ram" size="4"/></td>
+	</tr>
+	<tr class="virtual"><td colspan="2"><hr /></td></tr>
+	<tr class="virtual">
+		<td class="label">Hypervisor cluster to use:</td>
+		<td>
+		<select name="cloud_cluster">
+			<option value="-1">auto</option>
+			<% FOREACH cluster IN virt_clusters %>
+			<option value="<% cluster.cluster_id %>"><% cluster.cluster_name %></option>
+			<% END %>
+		</select>
+		</td>
+	</tr>
+
+	<tr class="virtual">
+		<td class="label">use a specific template:</td>
+		<td>
+		<select name="vm_templates">
+			<option value="-1">no template found</option>
+			<% FOREACH template IN vm_template %>
+			<option value="<% template.template_id %>"><% template.template_name %></option>
+			<% END %>
+		</select>
+		</td>
+	</tr>
+
+</table>
+</form>
