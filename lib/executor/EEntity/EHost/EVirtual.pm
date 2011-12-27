@@ -76,4 +76,10 @@ sub stop {
     $self->_getEntity()->save;
     $self->_getEntity()->remove;
 }
+
+sub postStart {
+	my $self = shift;
+	$self->{ecomponent_virt}->updatevm(cluster=>$self->{virt_cluster}, host => $self->_getEntity());
+}
+
 1;

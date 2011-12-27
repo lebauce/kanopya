@@ -168,11 +168,7 @@ sub stop {
 
 }
 
-=head2 _init
-
-EHost::checkUp : return 1 if host is pingable, 0 otherwise
-
-=cut
+sub postStart {}
 
 sub checkUp {
     my $self = shift;

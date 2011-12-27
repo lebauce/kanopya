@@ -157,6 +157,8 @@ sub execute {
                             cluster => $self->{_objs}->{cluster});
     }
     
+    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->postStart();	
 
 }
 
