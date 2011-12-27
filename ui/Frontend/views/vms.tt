@@ -12,7 +12,7 @@
 		<% IF vm.state_stopping %><td><span class="state imgDown">Stopping...</span></td><% END %>
 		<% IF vm.state_broken %><td><span class="state imgWarning">Broken</span></td><% END %>
 	<% END %>
-	<td class="toright"><a class="imgManage" href="/infrastructures/clusters/<% vm.cloud_cluster_id %>">Cloud Manager</a></td>
+	<td class="toright"><a class="imgManage" href="/architectures/clusters/<% vm.cloud_cluster_id %>">Cloud Manager</a></td>
 	</tr>
 	<tr><td class="italic" colspan="3"><% vm.host_desc %></td></tr>
 	</table>
