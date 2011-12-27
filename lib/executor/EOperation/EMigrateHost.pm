@@ -106,40 +106,33 @@ sub prepare {
     $self->{_objs} = {};
     
     # Check Operation params
-    General::checkParams(args => $params, required => ["hypervisor_src", "hypervisor_dst", "host_id"]);
+    General::checkParams(args => $params, required => ["hypervisor_dst", "host_id"]);
     $self->{params} = $params;
     
     eval {
-        # Check if hypervisor_src node exists and is in a Cloud manager cluster
-        $self->{_objs}->{'hypervisor_src'} = Entity::Host->get(id => $params->{hypervisor_src});
-    
+
+        # Check if hypervisor_src node exists and is in a 
+        $self->{_objs}->{'hypervisor_dst'} = Entity::Host->get(id => $params->{hypervisor_dst});
+        
         # Check cloudCluster
-        $self->{_objs}->{'hypervisor_cluster'} = Entity::Cluster->get(id => $self->{_objs}->{'hypervisor_src'}->getClusterId());
+        $self->{_objs}->{'hypervisor_cluster'} = Entity::Cluster->get(id => $self->{_objs}->{'hypervisor_dst'}->getClusterId());
         
         #TODO Check if a cloudmanager is in the cluster
         # Get OpenNebula Cluster (now fix but will be configurable)
         $self->{_objs}->{'cloudmanager_comp'} = $self->{_objs}->{'hypervisor_cluster'}->getComponent(name=>"Opennebula", version=>3);
         $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
         
-        # Check if hypervisor_src node exists and is in a 
-        $self->{_objs}->{'hypervisor_dst'} = Entity::Host->get(id => $params->{hypervisor_dst});
-        
-        # Check if hypervisor are in the same cluster
-        if ($self->{_objs}->{'hypervisor_src'}->getClusterId() != $self->{_objs}->{'hypervisor_dst'}->getClusterId()){
-            throw Kanopya::Exception::Internal::WrongValue(error => "the 2 hypervisor are not in the same cluster");
-        }
-        
         # Get the host to move
         $self->{_objs}->{'host'} = Entity::Host->get(id => $params->{host_id});
         
         # Check if host is on the hypervisors cluster
-        if ($self->{_objs}->{'hypervisor_cluster'} != $self->{_objs}->{'host'}->getAttr(name=>"cloud_cluster_id")){
-            throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisors cluster");
+        if ($self->{_objs}->{'hypervisor_dst'}->getClusterId() != $self->{_objs}->{'host'}->getAttr(name=>"cloud_cluster_id")){
+            throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisor cluster");
         }
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EMigrateHost->prepare : Incorrect Parameters src<$params->{hypervisor_src}> dst<$params->{hypervisor_dst}> host <$params->{host_id}>\n" . $err;
+        $errmsg = "EOperation::EMigrateHost->prepare : Incorrect Parameters dst<$params->{hypervisor_dst}> host <$params->{host_id}>\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -149,10 +142,9 @@ sub prepare {
 sub execute{
     my $self = shift;
     # 
-    $self->{_objs}->{'cloudmanager_ecomp'}->migrateHost(host            => $self->{_objs}->{'host'},
-                                                        hypervisor_src  => $self->{_objs}->{'hypervisor_src'},
-                                                        hypervisor_dst  => $self->{_objs}->{'hypervisor_dst'});
-
+    $self->{_objs}->{'cloudmanager_ecomp'}->migrateHost(host                => $self->{_objs}->{'host'},
+                                                        hypervisor_dst      => $self->{_objs}->{'hypervisor_dst'},
+                                                        hypervisor_cluster  => $self->{_objs}->{'hypervisor_cluster'});
 
     $log->info(" Host <$self->{params}->{host_id}> from <$self->{params}->{hypervisor_src}> to <$self->{params}->{hypervisor_dst}>");
 }
