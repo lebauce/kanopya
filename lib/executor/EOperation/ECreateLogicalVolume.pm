@@ -99,27 +99,15 @@ sub prepare {
     $log->info("Operation preparation");
 
     # Check if internal_cluster exists
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "ECreateExport->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
     
 
-    if ((! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) ||
-        (! exists $params->{disk_name} or ! defined $params->{disk_name})||
-        (! exists $params->{size} or ! defined $params->{size})||
-        (! exists $params->{filesystem} or ! defined $params->{filesystem}) ||
-        (! exists $params->{vg_id} or ! defined $params->{vg_id})){
-        my $error = $@;
-        $errmsg = "Operation ECreateLogicalVolume failed, missing parameters";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+    General::checkParams(args => $params, required => ["component_instance_id", "disk_name", "size", "filesystem", "vg_id"]);
+
     $self->{params} = $params;
     # Test if component instance id is really a Entity::Component::Iscsitarget
     my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_instance_id});

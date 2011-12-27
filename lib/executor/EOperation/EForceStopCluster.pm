@@ -93,11 +93,7 @@ sub prepare {
 
     $log->info("Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EForceStopCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
     
