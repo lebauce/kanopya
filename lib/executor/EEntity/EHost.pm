@@ -181,7 +181,17 @@ sub checkUp {
     my $pingable = $p->ping($ip);
     $p->close();
     
-    print "In checkUP test if host <$ip> is pingable <$pingable>\n";
+    if ($pingable) {
+        eval {
+            my $node_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $ip);
+            $log->debug("In checkUP test if host <$ip> is pingable <$pingable>\n");
+        };
+        if($@) {
+            $errmsg = "Ehost->checkUp for host <$ip>, host pingable but not sshable";
+            $log->info($errmsg);
+            return 0;
+        }
+    }
 
     return $pingable;
 }
