@@ -124,9 +124,10 @@ sub oneRun {
         # start transaction
         $opdata->setProcessing();
         my $op = EFactory::newEOperation(op => $opdata);
+        my $opclass = ref($op);
         
         $log->info("New operation (".ref($op).") retrieve ; execution processing");
-        Message->send(from => 'Executor', level => 'info', content => "Executor begin an operation process (".ref($op).")");
+        Message->send(from => 'Executor', level => 'info', content => "Operation Processing [$opclass]...");
         
         $adm->{db}->txn_begin;
         eval {
@@ -139,8 +140,8 @@ sub oneRun {
                 $op->report();
                 # commit transaction
                 $adm->{db}->txn_commit;
-                Message->send(from => 'Executor', level => 'info', content => ref($op)." reported");
-                $log->debug("Operation ".ref($op)." reported");
+                Message->send(from => 'Executor', level => 'info', content => "Operation Execution Reported [$opclass]");
+                $log->debug("Operation $opclass reported");
             } else {
                 # rollback transaction
                 $adm->{db}->txn_rollback;
@@ -154,7 +155,7 @@ sub oneRun {
                     $log->error("Error during operation cancel :\n$error2");
                 }
                 if (!$error->{hidden}){
-                    Message->send(from => 'Executor',level => 'error', content => ref($op)." abording:<br/> $error");
+                    Message->send(from => 'Executor',level => 'error', content => "[$opclass] Execution Aborted : $error");
                     $log->error("Error during execution : $error");} 
                 else {
                     $log->info("Warning : $error");}
@@ -163,13 +164,13 @@ sub oneRun {
                    # commit transaction
                    $op->finish();
                    $adm->{db}->txn_commit;
-                   Message->send(from => 'Executor',level => 'info', content => ref($op)." processing finished");    
+                   Message->send(from => 'Executor',level => 'info', content => "[$opclass] Execution Success");    
         }
         eval {$op->delete();};
         if ($@) {
             my $error = $@;
             $log->error("Error during operation deletion : $error"); 
-            Message->send(from => 'Executor', level => 'error', content => "Error during operation deletion : $error");}
+            Message->send(from => 'Executor', level => 'error', content => "[$opclass] Deletion Error : $error");}
      }
      else { sleep 5; }
 }

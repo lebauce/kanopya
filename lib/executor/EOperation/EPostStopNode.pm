@@ -120,7 +120,7 @@ sub prepare {
         $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     };
     if($@) {
-        $errmsg = "EOperation::EActivateHost->new : host_id $params->{host_id} does not exist";
+        $errmsg = "EOperation::EPostStopNode->prepare : host_id $params->{host_id} does not found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -131,7 +131,7 @@ sub prepare {
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+        $errmsg = "EOperation::EPostStopNode->prepare : cluster_id $params->{cluster_id} does not found\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -146,7 +146,7 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Operation ActivateHost failed an error occured :\n$error";
+        $errmsg = "EOperation::EPostStopNode->checkOp failed :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
