@@ -157,12 +157,12 @@ sub getHostConstraints {return "physical";}
 sub createVirtualHost {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['ram', 'core', 'cluster_id']);
-    
+
     my $adm =  Administrator->new();
     my $new_mac_address = $adm->{manager}->{network}->generateMacAddress();
-    
+
     my $vm = Entity::Host->new(
             host_mac_address => $new_mac_address,
             kernel_id => 1,
@@ -181,7 +181,7 @@ sub createVirtualHost {
 
 # declare an new hypervisor into database
 # real declaration in opennebula must have been done
-# since `hypervisor_id` is required 
+# since `hypervisor_id` is required
 
 sub addHypervisor {
 	my $self = shift;
@@ -219,8 +219,8 @@ sub addVm {
 	General::checkParams(args => \%args, required => ['host_id', 'id']);
 	$self->{_dbix}->opennebula3->create_related(
 		'opennebula3_vms',
-		{ vm_host_id => $args{host_id}, 
-		  vm_id      => $args{id}, 
+		{ vm_host_id => $args{host_id},
+		  vm_id      => $args{id},
 		}
 	);
 }
@@ -240,6 +240,21 @@ sub getVmIdFromHostId {
 	return $id;
 }
 
+
+# Execute host migration to a new hypervisor
+sub migrateHost{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host', 'hypervisor_dst', 'hypervisor_cluster']);
+
+    my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+
+    my $vm_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+
+}
+
+
 sub updateVm {
 	my $self = shift;
 	my %args = @_;
@@ -250,7 +265,7 @@ sub updateVm {
 			{ opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
 			  vnc_port                  => $args{vnc_port},
 		}
-	);	  
+	);
 }
 
 

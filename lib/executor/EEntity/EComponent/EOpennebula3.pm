@@ -109,6 +109,28 @@ sub configureNode {
     }
 }
 
+# Execute host migration to a new hypervisor
+sub migrateHost{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host', 'hypervisor_dst', 'hypervisor_cluster']);
+
+    # instanciate opennebula master node econtext 
+    my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
+    use EFactory;
+    my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+    
+    my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    
+    my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    
+    my $command = $self->_oneadmin_command(command => "onevm livemigrate $host_id $hypervisor_id");
+    my $result = $masternode_econtext->execute(command => $command);
+    
+    return $self->_getEntity()->migrateHost(%args);
+}
+
 # generate $ONE_LOCATION/etc/oned.conf configuration file
 sub generateOnedConf {
      my $self = shift;

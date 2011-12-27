@@ -140,7 +140,7 @@ sub oneRun {
                 $op->report();
                 # commit transaction
                 $adm->{db}->txn_commit;
-                Message->send(from => 'Executor', level => 'info', content => "Operation Execution Reported [$opclass]");
+                #Message->send(from => 'Executor', level => 'info', content => "Operation Execution Reported [$opclass]");
                 $log->debug("Operation $opclass reported");
             } else {
                 # rollback transaction
