@@ -156,8 +156,11 @@ sub updateClusterStatus {
             my $mb_id;
             foreach my $mb (keys %$hosts){
                 if ($mb != $master_id){
-                    $mb_id = $mb;
-                }
+		    my ($state, $time) = $hosts->{$mb}->getNodeState(); 
+		    if ($state eq 'in') {
+			$mb_id = $mb;
+		    }
+		}
             }
             $log->debug("############# Want to remove node <$mb_id> from <" .$args{cluster}->getAttr(name=>"cluster_id")."> master node is <$master_id>");
             my %params = (cluster_id => $args{cluster}->getAttr(name =>"cluster_id"),
