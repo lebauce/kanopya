@@ -157,7 +157,7 @@ sub getVirtualHost {
             my $error =$@;
             # We can't create virtual host for some reasons (e.g can't meet constraints)
             $log->debug("This cluster ". $cluster->getAttr(name=>"cluster_name")
-                        ."does not have capabilities to host this vm core <$args{core}> and rm <$args{vm}>". $error);
+                        ."does not have capabilities to host this vm core <$args{core}> and ram <$args{ram}>". $error);
             next CLUSTER;
         }
         return $host_id;
