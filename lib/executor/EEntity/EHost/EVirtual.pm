@@ -38,6 +38,7 @@ use Entity::Cluster;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
+use Operation;
 
 my $log = get_logger("executor");
 
@@ -67,6 +68,12 @@ sub start{
 }
 
 sub stop {
+	my $self = shift;
+    my %args = @_;
     
+    $self->{ecomponent_virt}->stopvm(cluster=>$self->{virt_cluster}, host => $self->_getEntity());
+    $self->_getEntity()->setAttr(name => 'active', value => 0);
+    $self->_getEntity()->save;
+    $self->_getEntity()->remove;
 }
 1;

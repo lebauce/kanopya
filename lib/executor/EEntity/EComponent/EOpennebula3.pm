@@ -305,6 +305,23 @@ sub startvm {
 
 }
 
+sub stopvm {
+	my $self = shift;
+	my %args = @_;
+	General::checkParams(args => \%args, required => ['cluster', 'host']);
+	
+	# instanciate opennebula master node econtext 
+	my $masternodeip = $args{cluster}->getMasterNodeIp();
+	use EFactory;
+	my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+	
+	# delete the vm from opennebula
+	my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
+	my $command = $self->_oneadmin_command(command => "onevm delete $id");
+	my $result = $masternode_econtext->execute(command => $command);
+
+}
+
 # generate vm template and push it on opennebula master node
 sub _generateVmTemplate {
 	my $self = shift;

@@ -216,10 +216,12 @@ sub getHypervisorIdFromHostId {
 sub addVm {
 	my $self = shift;
 	my %args = @_;
-	General::checkParams(args => \%args, required => ['host_id']);
+	General::checkParams(args => \%args, required => ['host_id', 'id']);
 	$self->{_dbix}->opennebula3->create_related(
 		'opennebula3_vms',
-		{ vm_host_id => $args{host_id} }
+		{ vm_host_id => $args{host_id}, 
+		  vm_id      => $args{id}, 
+		}
 	);
 }
 
@@ -227,14 +229,14 @@ sub removeVm {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	$self->{_dbix}->opennebula3->opennebula3_vms->find($args{host_id})->delete;
+	$self->{_dbix}->opennebula3->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->delete;
 }
 
 sub getVmIdFromHostId {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	my $id = $self->{_dbix}->opennebula3->opennebula3_vms->find($args{host_id})->get_column('vm_id');
+	my $id = $self->{_dbix}->opennebula3->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->get_column('vm_id');
 	return $id;
 }
 
