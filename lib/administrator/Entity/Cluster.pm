@@ -791,22 +791,20 @@ sub setState {
     $self->{_dbix}->update({'cluster_prev_state' => $current_state,
                             'cluster_state' => $new_state.":".time})->discard_changes();;
 }
- 
-sub generateHostname {
+ #*******************************************************************************************************
+ sub getBestNodeNumber{
   my $self = shift;
-  my $base_hostname = $self->getAttr(name=>'cluster_basehostname');
-  $log->info("basehostname $base_hostname");
  my $count_node=$self->getCurrentNodesCount();
  $log->info("currentnode $count_node");
  if ($count_node==1)
  { 
- return ("$base_hostname"."1");
+ return ("1");
  }
  else
  {
-  my @nodes =$self->getHosts();
+  my $nodes =$self->getHosts();
   my @nodenumber_list;
- BOUCLE1:foreach my $node (@nodes) 
+ BOUCLE1:foreach my $node (keys %$nodes) 
    { 
 	 my $tmp=$node->getNodeNumber();
 	 push(@nodenumber_list,$tmp);
@@ -821,13 +819,22 @@ sub generateHostname {
             {
 		     if ($i!=$node_num)
 		     {next;}
-		     return("$base_hostname"."$i");
-		     $log->info("Hostname generated : $base_hostname"."$i");
+		     return("$i");
 			 last BOUCLE1;
 	        }
          }
 }
 }
+ 
+ sub generateHostname{
+	 my $self = shift;
+	 my $bestNode_number=$self->getBestNodeNumber();
+	 my $base_hostname = $self->getAttr(name=>'cluster_basehostname');
+     $log->info("basehostname $base_hostname");
+     return("$base_hostname"."$bestNode_number");
+      $log->info("Hostname generated : $base_hostname.$bestNode_number");
+	 
+ }
 
 
 1;

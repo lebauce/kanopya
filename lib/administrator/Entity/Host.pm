@@ -233,6 +233,14 @@ sub getNodeNumber {
     return $node_number;
 }
 
+sub setNodeNumber{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['node_number']);
+    my $best_node_number = $args{'node_number'};
+    $self->{_dbix}->node->update({'node_number' => $best_node_number});
+}
 
 sub getPrevNodeState {
     my $self = shift;

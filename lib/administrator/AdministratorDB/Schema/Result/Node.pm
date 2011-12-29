@@ -52,7 +52,7 @@ __PACKAGE__->table("node");
   is_nullable: 1
   size: 20
 
-=cut
+
 
 =head2 node_prev_state
 
@@ -60,8 +60,14 @@ __PACKAGE__->table("node");
   is_nullable: 1
   size: 20
 
-=cut
+=head2 node_number
 
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=cut
 
 __PACKAGE__->add_columns(
   "node_id",
@@ -91,6 +97,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
   "node_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
+  "node_number",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("node_id");
 __PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "host_id"]);
