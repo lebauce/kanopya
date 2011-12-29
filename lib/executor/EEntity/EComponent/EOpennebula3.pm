@@ -121,7 +121,7 @@ sub migrateHost{
     use EFactory;
     my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
     
-    my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{hypervisor_dst}->getAttr(name => "host_id"));
     
     my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
     

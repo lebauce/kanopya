@@ -242,16 +242,26 @@ sub getVmIdFromHostId {
 
 
 # Execute host migration to a new hypervisor
-sub migrateHost{
+sub migrateHost {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['host', 'hypervisor_dst', 'hypervisor_cluster']);
+    $log->info('<<<<< hypervisor_dst: '.$args{hypervisor_dst}->getAttr(name => 'host_id').'  host: '.$args{host}->getAttr(name => 'host_id'));
+    my $hypervisor_id = $self->getHypervisorIdFromHostId(host_id => $args{hypervisor_dst}->getAttr(name => "host_id"));
 
-    my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    my $vm_id = $self->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
 
-    my $vm_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_id => $hypervisor_id})->single()->get_column('opennebula3_hypervisor_id'); 
 
+    $self->{_dbix}->opennebula3->opennebula3_vms->search(
+		{vm_id=>$vm_id})->single()->update(
+			{ opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
+			  
+		}
+	);
+
+	
 }
 
 
