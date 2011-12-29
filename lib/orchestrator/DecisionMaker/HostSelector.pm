@@ -55,8 +55,9 @@ sub getHost {
 
     General::checkParams(args => \%args, required => ["cluster_id"]);
     
-    my %type_handlers = ('physical' => \&getPhysicalHost, 'virtual' => \&getVirtualHost );
-    my @type_list = defined $args{type} ? ($args{type}) : (keys %type_handlers); 
+    my %type_handlers = ('virtual' => \&getVirtualHost,'physical' => \&getPhysicalHost );
+    my @keys = ('virtual','physical');
+    my @type_list = defined $args{type} ? ($args{type}) : @keys; 
     delete $args{type};
 
     $log->debug("Node type order : <" . Dumper @type_list .">");
