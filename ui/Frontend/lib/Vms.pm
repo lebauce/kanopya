@@ -219,6 +219,46 @@ get '/vms/:hostid/deactivate' => sub {
     else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
 
+get '/vms/migrate/:host_id' => sub {
+    
+
+    my $hypervisors = [];
+    my $host = Entity::Host->get(id => params->{'host_id'});
+    my $cluster = Entity::Cluster->get(id => $host->getAttr(name => 'cloud_cluster_id'));
+    my $opennebula = $cluster->getComponent(name => 'opennebula', version => 3);
+    my $hypervisors_r = $opennebula->{_dbix}->opennebula3->opennebula3_hypervisors->search({});
+    $log->info('<<<<<<<<<<'.ref($hypervisors_r));
+    while (my $row = $hypervisors_r->next) {
+	$log->info('<<<<<<<<'.$row->get_column('hypervisor_id'));
+	my $h = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
+	my $tmp = {
+	    hypervisor_id => $row->get_column('hypervisor_host_id'),
+	    hypervisor_hostname => $h->getAttr(name => 'host_hostname'),
+	};
+	push @$hypervisors, $tmp;
+    }
+
+    template 'form_migratevm',  {
+	host_id => params->{'host_id'},
+	hypervisor_list => $hypervisors,    
+    }, { layout => '' };
+};
+
+post '/vms/migrate' => sub {
+    
+    #my $dest = 
+
+    Operation->enqueue(
+	type => 'MigrateHost',
+	priority => 1,
+	params => {
+	    host_id => params->{host_id},
+	    hypervisor_dst => params->{hypervisors}
+	}
+   ); 
+redirect '/infrastructures/vms';
+};
+
 get '/vms/:hostid/addharddisk' => sub {
     template 'form_addharddisk', {
         host_id => param('hostid')

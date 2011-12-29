@@ -15,6 +15,7 @@
 	<td class="toright"><a class="imgManage" href="/architectures/clusters/<% vm.cloud_cluster_id %>">Cloud Manager</a></td>
 	</tr>
 	<tr><td class="italic" colspan="3"><% vm.host_desc %></td></tr>
+	<tr><td colspan="3"><a class="modal" href="/infrastructures/vms/migrate/<% vm.host_id %>">migrate</a></td></tr>
 	</table>
 <% END %>
 <div class="actions">
