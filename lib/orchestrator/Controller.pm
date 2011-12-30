@@ -23,7 +23,7 @@ use Monitor::Retriever;
 use Entity::Cluster;
 use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
-#use Tuning;
+use MultiTuning;
 use Actuator;
 
 
@@ -44,7 +44,7 @@ sub new {
     
     $self->init();
     
-    $self->$_
+
     
     return $self;
 }
@@ -74,15 +74,21 @@ sub init {
     
     $self->{_time_step}             = 60; # controller update frequency
     $self->{_time_laps}             = 60; # metrics retrieving laps
-    $self->{_max_requests_in_infra} = ();
-    $self->{_estimated_S_instant}   = ();
     
+    $self->{_max_request} = -1;
+    $self->{_max_requests_in_infra} = ();
+    $self->{_estimated_Si}   = ();
+    $self->{_history}               = ();
+
     my $model = Model::MVAModel->new();
     $self->{_model} = $model;
     
     my $cap_plan = CapacityPlanning::IncrementalSearch->new();
     $cap_plan->setModel(model => $model);
     
+    my $multi_tuning = MultiTuning->new(model => $model);
+    $self->{_multi_tuning} = $multi_tuning;
+     
     # $self->{_modelTuning} = Tuning->new(model=>$model);
     
     #$log->info( "Init constraints in controlleur init\n");
@@ -96,6 +102,7 @@ sub init {
     $self->{_cap_plan} = $cap_plan;
 
     $self->{_actuator} = Actuator->new();
+    
 }
 
 sub getControllerRRD {
@@ -299,7 +306,7 @@ sub _autoTuneAndUpdateModelInternalParameters {
 #        curr_perf  => $curr_perf 
 #    );
 
-print Dumper $best_params;
+#print Dumper $best_params;
     
     
     
@@ -394,17 +401,26 @@ sub preManageCluster{
     $self->{_cap_plan}->setConstraints(constraints => $constraints );
     
     
-    
     $log->info("Qos constraints: Max abort rate = $constraints->{max_abort_rate}, Max latency = $constraints->{max_latency}");
      
     # TODO Study where to get this information (need real study)
-    my $nb_tiers = 1; 
+    my $nb_tiers = 2; 
     
     #Get all data before launching ManageCluster
     
     # [Format] workload: {workload_amount, workload_class}
     # [Format] workload_class: {visit_ratio, service_time, delay, think_time}
     my $workload     = $self->getWorkload( cluster => $cluster);
+    if ( not defined $workload->{workload_amount}){
+        if($cluster_name eq "ServerBench") {
+            $log->info("No workload detected, sleeping 1 min 05 to avoid synchro");
+            sleep(65);
+        }
+        die "## ASSERT: Controller: no workload amount detected (sleep 65 sec)\n" ;
+    }
+    
+    $workload->{workload_class}->{visit_ratio}  = [1,0.13];
+    ;
     
     $log->info("Monitored workload amount $workload->{workload_amount}");
     $log->info("Monitored workload_class 
@@ -422,28 +438,53 @@ sub preManageCluster{
                                 cluster   => $cluster,
                                 time_laps => $time_laps,
                               );
-                              
+
+    die "## ASSERT: Controller: no throughput detected\n" if ( not defined $curr_perf->{throughput});
+    die "## ASSERT: Controller: no latency detected\n" if ( not defined $curr_perf->{latency});
+    
     my $cluster_conf = $self->getClusterConf( cluster => $cluster);
+    my $num_used_node = $cluster_conf->{nb_nodes} - 1; #DO NOT COUNT MASTER WHEN LVM 0
+    my $num_requests_in_infra = $curr_perf->{latency} * $curr_perf->{throughput};
     
-    my $num_requests_in_infra = $curr_perf->{latency} * $curr_perf->{latency};
-    my $estimated_S_instant = $curr_perf->{latency} /(1 + $num_requests_in_infra);     
-    
-    if ($num_requests_in_infra > ($self->{_max_requests_in_infra}->[$cluster->{nb_nodes}]))
-    {
-        $self->{_max_requests_in_infra}->[$cluster->{nb_nodes}] = $num_requests_in_infra;
-        $self->{_estimated_S_instant}->[$cluster->{nb_nodes}] = $estimated_S_instant;
+    if (defined $self->{_last_num_used_node}->{$cluster_id} and $num_used_node != $self->{_last_num_used_node}->{$cluster_id}){
+        $self->{_last_num_used_node}->{$cluster_id} = $num_used_node;
+        die "## ASSERT: Controller: Change just happened, no Controller \n";
     }
-       
     
-    $log->info("$cluster_name : Monitored latency (ha_proxy)         = $curr_perf->{latency}"); 
-    $log->info("$cluster_name : Monitored latency (ha_proxy, ".($time_laps/60)."min)  = $mean_perf->{latency}"); 
-    $log->info("$cluster_name : Monitored throughput (apache)        = $curr_perf->{throughput}"); 
-    $log->info("$cluster_name : Monitored throughput (apache, ".($time_laps/60)."min) = $mean_perf->{throughput}");
-    $log->info("$cluster_name : Monitored num_requests = $num_requests_in_infra (max $self->{_max_requests_in_infra}->[$cluster->{nb_nodes}])");
-    $log->info("$cluster_name : Monitored estimated current Si  = $estimated_S_instant (max $self->{_estimated_S_instant}->[$cluster->{nb_nodes}])");
+    $self->{_last_num_used_node}->{$cluster_id} = $num_used_node;
+    
+    my $measures = {
+        latency               => $curr_perf->{latency},
+        throughput            => $curr_perf->{throughput},
+        workload_amount       => $workload->{workload_amount},
+        num_requests_in_infra => $num_requests_in_infra,
+        estimated_S           => $curr_perf->{latency} /(1 + $num_requests_in_infra),
+    };
+    
+    $self->{_history}->{$cluster_id}->{$num_used_node}->{int($num_requests_in_infra / 10)} = $measures;
+    $log->info(Dumper $self->{_history}->{$cluster_id});
+    my $Z_and_alpha = $self->_find_compatible_Z_alpha(measures_for_all_nodes => $self->{_history}->{$cluster_id});
+    
+    $self->{_estimated_Si}->{$cluster_id} = $self->_compute_estimated_Si(measures_for_all_nodes => $self->{_history}->{$cluster_id});
+    
+    
+    $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Monitored latency (ha_proxy)         = $curr_perf->{latency}"); 
+    $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Monitored latency (ha_proxy, ".($time_laps/60)."min)  = $mean_perf->{latency}"); 
+    $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Monitored throughput (apache)        = $curr_perf->{throughput}"); 
+    $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Monitored throughput (apache, ".($time_laps/60)."min) = $mean_perf->{throughput}");
+    $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Computed  num_requests = $num_requests_in_infra (max $self->{_max_requests_in_infra}->{$cluster_id}->{$cluster_conf->{nb_nodes}}))");
+    $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Computed estimated current Si  =  $self->{_estimated_Si}->{$cluster_id}");
     $log->info("Monitored abort_rate = $curr_perf->{abort_rate} (not implemented yet)");
     
+    if ($cluster_name eq "BeSim")
+    {
+        die "## ASSERT: No Controller for BeSim\n"
+    }
     
+    if ($self->{_actuator}->_isNodeMigrating(cluster => $cluster)) {
+        die "## ASSERT: Node in migration , no computation\n"
+    }
+     
     # latency => $cluster_data_aggreg->{Tt},
     # abort_rate => 0,
     # throughput => 0,
@@ -451,8 +492,8 @@ sub preManageCluster{
     # TODO Study where to get this information (need real study)
     my $infra_conf   = {
         M        => $nb_tiers,
-        AC       => [$cluster_conf->{nb_nodes}],
-        LC       => [$cluster_conf->{mpl}],
+        AC       => [$num_used_node,1],
+        LC       => [$cluster_conf->{mpl},10000],
     };
     
     # TODO just use cluster_id instead of $cluster_params, since only cluster_id is used
@@ -462,7 +503,7 @@ sub preManageCluster{
 
     # TODO Study where to get this information from (need real study)
     my @search_space = (); 
-    for (0..$nb_tiers)
+    #for (0..$nb_tiers)
     {
        push @search_space, 
         {
@@ -473,6 +514,19 @@ sub preManageCluster{
         };
     }
     
+     #BESIM
+   push @search_space, 
+    {
+        min_node => 1, 
+        max_node => 1,
+        min_mpl  => $cluster_conf->{mpl},
+        max_mpl  => $cluster_conf->{mpl},
+    };   
+
+    $workload->{workload_class}->{think_time}   = $Z_and_alpha->{Z};
+    $workload->{workload_class}->{alpha}        = $Z_and_alpha->{alpha};
+         
+        
     # Launch the algorithm with all the data
     my $optim_params = $self->manageCluster( 
         cluster_params => $cluster_params, 
@@ -482,15 +536,21 @@ sub preManageCluster{
         search_space   => \@search_space,
     );
     
-
-    $results_log->info("$cluster_name $cluster_conf->{nb_nodes} $workload->{workload_amount} $curr_perf->{latency} $mean_perf->{latency} $curr_perf->{throughput} $mean_perf->{throughput} => @{$optim_params->{AC}}");
-  
+    $results_log->info("$cluster_name $num_used_node $workload->{workload_amount} $curr_perf->{latency} $curr_perf->{throughput}  *** Optim param @{$optim_params->{AC}}");
+    
+    
     # Store and graph results for futur consultation
     # $self->_validateModel( workload => $workload, cluster_conf => $cluster_conf, cluster => $cluster );
 
 
     # Apply optimal configuration
     # TODO This method signature should be changed to handle infra in a better way
+    
+    
+    pop(@{$optim_params->{AC}}); 
+    pop(@{$optim_params->{LC}}); 
+    
+    $log->info("Warning REMOVE BESIM".(Dumper $optim_params));
     
     $self->{_actuator}->changeInfraConf(
                         infra => [ { cluster => $cluster, conf => $cluster_conf } ],
@@ -549,7 +609,7 @@ sub manageCluster {
     
     $self->{_cap_plan}->setSearchSpaceForTiers(search_spaces => $search_space);
     $self->{_cap_plan}->setNbTiers( tiers => $infra_conf->{M});
-
+    $log->info("With Besim = $infra_conf->{M} tier ");
     #my $mpl = $infra_conf->{LC}->[0];
     #    $self->{_cap_plan}->setSearchSpaceForTiers( search_spaces =>     [ 
     #                {   
@@ -569,24 +629,61 @@ sub manageCluster {
         init_point_position => 1,
     };
     
+    my $multi_algo_conf = {
+        nb_steps             => 100,
+        init_step_size       => 0.01,
+        authorized_deviation => 1,
+        precision            => 10**(-6),
+        S_init               => [$self->{_estimated_Si}->{2} || 0,$self->{_estimated_Si}->{9} || 0],
+        D_init               => [0,0],
+        service_time_mask    => [1,1],
+        delay_mask           => [0,1],
+    };
+    
+    $log->info("Estimated Sis");
+    $log->info(Dumper $multi_algo_conf->{S_init});
+    
     # Autotune Model and set model parameters (Si and Di)
     # /!\ Output $best_params only used until infra not managed in DB
     # TODO Modify DB in order to store params (need real study)
-    my $best_params = 
-        $self->_autoTuneAndUpdateModelInternalParameters(
-        algo_conf    => $algo_conf,
-        workload     => $workload,
-        infra_conf   => $infra_conf,
-        cluster_id   => $cluster_params->{cluster_id},
-        curr_perf    => $curr_perf,
+#    $self->{_best_params} = 
+#        $self->_autoTuneAndUpdateModelInternalParameters(
+#        algo_conf    => $algo_conf,
+#        workload     => $workload,
+#        infra_conf   => $infra_conf,
+#        cluster_id   => $cluster_params->{cluster_id},
+#        curr_perf    => $curr_perf,
+#    );
+    
+
+    
+    
+    my $learning_data = $self->_format_data(
+        workload        => $workload, 
+        curr_perf       => $curr_perf, 
+        history         => $self->{_history}->{$cluster_params->{cluster_id}},
     );
     
+    $log->info("Learning data :");
+    $log->info(Dumper $learning_data);
+    $log->info();
     
-    $log->info("/!\ WARNING /!\ NO AUTOTUNE");
-    $best_params = {
-        S => [0.001670911,0.0000001],
-        D => [0,0.0001]
-    };
+    my $multi_best_params = $self->{_multi_tuning}->modelTuning( 
+        algo_conf       => $multi_algo_conf,
+        learning_data   => $learning_data 
+    );
+    
+#    $log->info("ORIGINAL BEST PARAMS : ");
+#    $log->info(Dumper $self->{_best_params});
+    $log->info("MULTI TUNE  BEST PARAMS :");
+    $self->{_best_params} = $multi_best_params;
+    $log->info(Dumper $self->{_best_params} );
+    
+#    $best_params = {
+#        S => [ $workload->{workload_class}->{estimated_Si},0.0000001],
+#        D => [0,0.0001]
+#    };
+
 
     # Get actual internal model parameters (Si and Di)
     # Get from DB (theoreticaly updated by _updateModelInternalParameters() sub)
@@ -595,25 +692,28 @@ sub manageCluster {
                                             cluster_id =>$cluster_params->{cluster_id} 
                                        );
                                        
+                                       
     #  /!\ Useful while DB INFRA NOT MANAGED ! /!\ 
     # Need to update here for the moment
-    $cluster_workload_class -> {service_time} = $best_params -> {S};
-    $cluster_workload_class -> {delay} = $best_params -> {D};
+    #$cluster_workload_class -> {service_time} = $self->{_best_params} -> {S};
+    #$cluster_workload_class -> {delay}        = $self->{_best_params} -> {D};
     
     # Feed capacity planning with computed Si/Di
-    $workload->{workload_class}->{service_time} = $cluster_workload_class->{service_time}; 
-    $workload->{workload_class}->{delay}        = $cluster_workload_class->{delay};
+    #$workload->{workload_class}->{service_time} = $cluster_workload_class->{service_time}; 
+    #$workload->{workload_class}->{delay}        = $cluster_workload_class->{delay};
+    
+    $workload->{workload_class}->{service_time} = $self->{_best_params} -> {S}; 
+    $workload->{workload_class}->{delay}        = $self->{_best_params} -> {D};
+    
     
     # $workload->{workload_class}->{service_time} = $best_params->{S};
     # $workload->{workload_class}->{delay}        = $best_params->{D};
     $log->info("Computed params Si = @{$workload->{workload_class}->{service_time}} ; Di = @{$workload->{workload_class}->{delay}}\n");
     
-    $log->info("HARDCODE num_conn => num_session");
-    $workload->{workload_amount} /= 2;
-     
+    
     # Calculate optimal configuration
     my $optim_params = $self->{_cap_plan}->calculate(
-        workload_amount => $workload->{workload_amount},
+        workload_amount => $workload->{workload_amount} * $workload->{workload_class}->{alpha},
         workload_class  => $workload->{workload_class}
     );
 
@@ -634,17 +734,17 @@ sub manageCluster {
         
     my %model_optim_params = (
         configuration   => $optim_conf,
-        workload_amount => $workload->{workload_amount},
+        workload_amount => $workload->{workload_amount} * $workload->{workload_class}->{alpha},
         workload_class  => $workload->{workload_class}
     );
     
     #print Dumper \%model_optim_params;
     
-
+    print Dumper \%model_optim_params;
     my %new_perf = $self->{_model}->calculate(%model_optim_params);
-    $log->info(sprintf("New theoretical perf : throughput = %.2f, latency = %.3f, abort_rate = %.2f\n",$new_perf{throughput},$new_perf{latency},$new_perf{abort_rate}));
-     
-
+    $log->info("New theoretical perf : throughput = $new_perf{throughput}, latency = $new_perf{latency}\n");
+    
+    
     
     return $optim_params;
     
@@ -970,6 +1070,182 @@ sub update {
         }    
     }
     
+}
+sub _find_compatible_Z_alpha {
+    my $self = shift;
+    my %args = @_;
+    General::checkParams args => \%args, required => [
+        'measures_for_all_nodes',
+    ];
+    $log->info("*** START Z ALPHA ***");
+    
+    my $measures_for_all_nodes = $args{measures_for_all_nodes};
+    
+
+
+    my @Z_range = map{$_ * 0.05} (1..99);
+    my @alpha_range = map{$_ * 0.01} (1..99);
+    
+    my $Z = 0; my $alpha = 0;
+    my $min = 999999999; #TODO This is not good
+    my $error = 0;
+    my $Z_min = 0;
+    my $alpha_min = 0;
+    
+    for my $Z (@Z_range) {
+        for my $alpha (@alpha_range) {
+            $error = $self->_compute_Z_alpha_error(measures_for_all_nodes => $measures_for_all_nodes,Z => $Z, alpha => $alpha); 
+            if($min > $error) {
+                $min = $error;
+                $Z_min = $Z;
+                $alpha_min = $alpha;
+            }
+        }
+    }
+    
+    $self->_error_detector(Z=>$Z_min, alpha=>$alpha_min, measures_for_all_nodes => $measures_for_all_nodes);
+    
+    $log->info("*** alpha = $alpha_min , Z = $Z_min ; min = $min");
+    $log->info("*** END Z ALPHA ***");
+    return {Z=>$Z_min, alpha=>$alpha_min};
+}
+
+sub _error_detector{
+    my $self = shift;
+    my %args = @_;
+    print "ENTERING ERROR DETECTOR \n"; 
+    General::checkParams args => \%args, required => [
+        'measures_for_all_nodes','Z','alpha'
+    ];
+    
+    my $measures_for_all_nodes = $args{measures_for_all_nodes};
+    my $Z           = $args{Z};
+    my $alpha       = $args{alpha};
+        
+    my $error = 0;
+    my $ratio = 0;
+    my $num_users = 0;
+    my $num_users_in_Z = 0;
+    my $num_users_in_queues = 0;
+    
+    foreach my $measures_for_one_node (values(%$measures_for_all_nodes)){
+        while( my ($measures_key,$measures_values) = each(%$measures_for_one_node) ) {
+            $num_users = $alpha*$measures_values->{workload_amount};
+            $num_users_in_Z = $Z*$measures_values->{throughput};
+            $num_users_in_queues = $measures_values->{num_requests_in_infra};
+            $error =  $num_users - $num_users_in_Z - $num_users_in_queues;
+            $ratio = abs($error / $num_users );
+            print "$ratio - ";
+            if ($ratio > 1.5) {
+                $log->info("!!!! MEASURE $measures_key seems to be an error, I delete it !!!!");
+                delete( $measures_for_one_node->{$measures_key});
+            }
+        }
+    }
+    print "\n LEAVING ERROR DETECTOR \n"; 
+    
+}
+
+sub _compute_Z_alpha_error{
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams args => \%args, required => [
+        'measures_for_all_nodes','Z','alpha'
+    ];
+    
+    my $measures_for_all_nodes = $args{measures_for_all_nodes};
+    my $Z           = $args{Z};
+    my $alpha       = $args{alpha};
+    
+    my $sum = 0;
+    my $error = 0;
+    my $num_users = 0;
+    my $num_users_in_Z = 0;
+    my $num_users_in_queues = 0;
+    foreach my $measures_for_one_node (values(%$measures_for_all_nodes)){
+        foreach my $measures (values(%$measures_for_one_node)){      
+            $num_users = $alpha*$measures->{workload_amount};
+            $num_users_in_Z = $Z*$measures->{throughput};
+            $num_users_in_queues = $measures->{num_requests_in_infra};
+            $error =  $num_users - $num_users_in_Z - $num_users_in_queues;
+            $sum += ($error / $num_users ) * ($error / $num_users );
+        } 
+    }
+    return $sum;
+}
+
+sub _compute_estimated_Si {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams args => \%args, required => [
+        'measures_for_all_nodes'
+    ];
+    
+    my $measures_for_all_nodes = $args{measures_for_all_nodes};
+    my $counter = 0;
+    my $sum     = 0;
+    while( my ($key_num_nodes,$all_measures_for_n_node) = each(%$measures_for_all_nodes) ) {
+        while( my ($key_Q,$measures_values) = each(%$all_measures_for_n_node) ) {
+            if($key_Q > 0) {
+                $counter++;
+                $sum += $measures_values->{estimated_S}*$key_num_nodes;
+            }
+        }
+    }
+    return ($counter > 0)?$sum/$counter : 0;
+}
+
+sub _format_data {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams args => \%args, required => [
+        'workload', 'history'
+    ];
+    $log->info("*** START FORMAT LEARNING DATA ***");
+    my $workload  = $args{workload};
+    my $history   = $args{history};
+
+
+    
+    my @learning_data = ();
+    
+    while( my ($key_num_nodes,$all_measures_for_n_node) = each(%$history) ) {
+
+        #while( my ($key_Q,$measures_values) = each(%$all_measures_for_n_node) ) {
+        foreach my $measures_values (values(%$all_measures_for_n_node)){      
+            my $infra_conf = {       
+                M        => 2,
+                AC       => [$key_num_nodes,1],
+                LC       => [10000,10000], 
+            };
+            my $data_workload = {
+                workload_class => {
+                 visit_ratio => [1,0.13],
+                  think_time => $workload->{workload_class}->{think_time}
+                 },
+            workload_amount => $measures_values->{workload_amount} 
+                               * ($workload->{workload_class}->{alpha})
+            };
+
+
+            my $data = {
+                workload    => $data_workload, 
+                infra_conf  => $infra_conf,
+                curr_perf   => {
+                    latency    => $measures_values->{latency},
+                    throughput => $measures_values->{throughput},
+                }            
+            };
+            
+            #$log->info(Dumper $data);
+            push(@learning_data, $data);
+        }
+    }
+    $log->info("*** STOP FORMAT LEARNING DATA ***");
+    return \@learning_data;
 }
 
 sub run {
