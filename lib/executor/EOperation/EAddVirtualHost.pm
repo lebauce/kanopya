@@ -1,4 +1,4 @@
-# ECreateLogicalVolume.pm - Operation class implementing component installation on systemimage
+# EAddVirtualHost.pm - Operation class implementing Virtual Machine creation operation
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,12 +19,12 @@
 
 =head1 NAME
 
-EOperation::ECreateLogicalVolume - Operation class implementing component installation on systemimage
+EEntity::Operation::EAddVirtualHost - Operation class implementing Virutal machine creation operation
 
 =head1 SYNOPSIS
 
 This Object represent an operation.
-It allows to implement cluster activation operation
+It allows to implement Virutal machine creation operation
 
 =head1 DESCRIPTION
 
@@ -33,30 +33,33 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::ECreateLogicalVolume;
+package EOperation::EAddVirtualHost;
 use base "EOperation";
 
 use strict;
 use warnings;
 
+use Kanopya::Exceptions;
+use EFactory;
+use Template;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use Kanopya::Exceptions;
+
+use Entity::Host;
 use Entity::Cluster;
-use Entity::Component::Lvm2;;
-use EFactory;
+use Entity::Gp;
+use Operation;
+use ERollback;
 
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
 =head2 new
 
-    my $op = EOperation::ECreateLogicalVolume->new();
+    my $op = EEntity::EOperation::EAddVirtualHost->new();
 
-    # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
-    # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
+EEntity::Operation::EAddVirtualHost->new creates a new AddMotheboard operation.
 
 =cut
 
@@ -64,7 +67,6 @@ sub new {
     my $class = shift;
     my %args = @_;
     
-    $log->debug("Class is : $class");
     my $self = $class->SUPER::new(%args);
     $self->_init();
     
@@ -73,21 +75,19 @@ sub new {
 
 =head2 _init
 
-    $op->_init();
-    # This private method is used to define some hash in Operation
+    $op->_init() is a private method used to define internal parameters.
 
 =cut
 
 sub _init {
     my $self = shift;
-    $self->{_objs} = {};
-    $self->{executor} = {};
+
     return;
 }
 
 =head2 prepare
 
-    $op->prepare(internal_cluster => \%internal_clust);
+    $op->prepare();
 
 =cut
 
@@ -96,58 +96,94 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $log->info("Operation preparation");
-
-    # Check if internal_cluster exists
     General::checkParams(args => \%args, required => ["internal_cluster"]);
     
-    # Get Operation parameters
+    $log->debug("After Eoperation prepare and before get Administrator singleton");
+    my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
+
     $self->{_objs} = {};
-    
-
-    General::checkParams(args => $params, required => ["component_instance_id", "disk_name", "size", "filesystem", "vg_id"]);
-
-    $self->{params} = $params;
-    # Test if component instance id is really a Entity::Component::Iscsitarget
-    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_instance_id});
-    my $comp_desc = $comp_lvm->getComponentAttr();
-    if (! $comp_desc->{component_name} eq "Lvm") {
-        $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
+    $self->{nas} = {};
+    $self->{executor} = {};
+	
+    # Instanciate the pre created Host Entity
+    eval {
+        $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id} );
+    };
+    if($@) {
+        my $err = $@;
+        $errmsg = "EOperation::EAddVirtualHost->prepare : No host found with id $params->{host_id}\n" . $err;
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
-    my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
-    my ($state, $timestamp) = $self->{_objs}->{cluster}->getState();
-    if ($state ne 'up'){
-        $errmsg = "Cluster has to be up !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
+    # Instanciate target cluster
+    eval {
+        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id} );
+    };
+    if($@) {
+        my $err = $@;
+        $errmsg = "EOperation::EAddVirtualHost->prepare : No cluster found with id $params->{target_cluster_id}\n" . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+    
+    ## Instanciate Clusters
+    # Instanciate nas Cluster 
+    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
     # Instanciate executor Cluster
     $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
     
+    ## Get Internal IP
+    # Get Internal Ip address of Master node of cluster Executor
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
+    # Get Internal Ip address of Master node of cluster nas
+    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+        
+    ## Instanciate context 
+    # Get context for nas
+    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
     
-    $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
+    ## Instanciate LVM Component
+    # Instanciate Cluster Storage component.
+    my $tmp = $self->{nas}->{obj}->getComponent(name       => "Lvm",
+                                                version    => "2");
+   
+    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
+    $log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
     
 }
 
-sub execute{
+sub execute {
     my $self = shift;
-    
     my $adm = Administrator->new();
-    $self->{_objs}->{ecomp_lvm}->createDisk(name       => $self->{params}->{disk_name},
-                                            size       => $self->{params}->{size},
-                                            filesystem => $self->{params}->{filesystem},
-                                            econtext   => $self->{cluster_econtext},
-                                            erollback  => $self->{erollback});
+    
+    my $etc_id = $self->{_objs}->{component_storage}->createDisk(
+		name       => $self->{_objs}->{host}->getEtcName(),
+        size       => "52M", 
+        filesystem => "ext3",
+        econtext   => $self->{nas}->{econtext},
+        erollback  => $self->{erollback}
+    );
+	$self->{_objs}->{host}->setAttr(name=>'etc_device_id', value=>$etc_id);
+	
+	$log->info("Host <".$self->{_objs}->{host}->getAttr(name=>"host_mac_address") ."> etc disk is now created");
+	
+	# AddHost finish, just save the Entity in DB
+	$self->{_objs}->{host}->save();
+	my @group = Entity::Gp->getGroups(hash => {gp_name=>'Host'});
+	$group[0]->appendEntity(entity => $self->{_objs}->{host});
+	$log->info("Virtual Host <".$self->{_objs}->{host}->getAttr(name=>"host_mac_address") ."> is now created");
 
-    $log->info("New Logical volume <" . $self->{params}->{disk_name} . "> created");
+	Operation->enqueue( 
+		type     => 'PreStartNode',
+		priority => 100,
+		params   => {  
+			host_id    => $self->{_objs}->{host}->getAttr(name => 'host_id'),
+			cluster_id => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'),
+		}
+	);
+
 }
 
 =head1 DIAGNOSTICS

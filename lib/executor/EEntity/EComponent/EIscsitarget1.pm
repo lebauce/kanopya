@@ -267,7 +267,7 @@ sub _getIetdSessions {
     General::checkParams(args => \%args, required => ["econtext"]);
 
     my $target_regexp = qr/^tid:([0-9]+)\sname:(.+)/;
-    my $session_regexp = qr/^\tsid:([0-9]+)\sinitiator:(.+)/;
+    my $session_regexp = qr/^\tsid:([0-9]+)\sinitiator:(.*)/;
     my $connection_regexp = qr/^\t\tcid:([0-9]+)\sip:(.+)state:(.+)\shd:(.+)\sdd:(.+)/;
 
     my $result = $args{econtext}->execute(command => 'cat /proc/net/iet/session');
@@ -342,7 +342,8 @@ sub cleanInitiatorSession {
     # next we clean existing sessions for the given initiatorname
     foreach my $target (@$ietdsessions) {
         foreach my $session(@{$target->{sessions}}) {
-            if($session->{initiator} eq $args{initiator}) {
+			$log->info(">>>>> session initiator: $session->{initiator}");
+            if(($session->{initiator} eq $args{initiator})|| !$session->{initiator}){
                 for my $connection (@{$session->{connections}}) {
                     my $command = "ietadm --op delete --tid=$target->{tid} --sid=$session->{sid} --cid=$connection->{cid}";
                     my $result = $args{econtext}->execute(command => $command);

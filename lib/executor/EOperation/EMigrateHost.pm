@@ -1,4 +1,4 @@
-# ECreateLogicalVolume.pm - Operation class implementing component installation on systemimage
+# EMigrateHost.pm - Operation class implementing component installation on systemimage
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 
 =head1 NAME
 
-EOperation::ECreateLogicalVolume - Operation class implementing component installation on systemimage
+EOperation::EMigrateHost - Operation class implementing component installation on systemimage
 
 =head1 SYNOPSIS
 
@@ -33,7 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::ECreateLogicalVolume;
+package EOperation::EMigrateHost;
 use base "EOperation";
 
 use strict;
@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Cluster;
-use Entity::Component::Lvm2;;
+use Entity::Host;
 use EFactory;
 
 my $log = get_logger("executor");
@@ -53,7 +53,7 @@ our $VERSION = '1.00';
 
 =head2 new
 
-    my $op = EOperation::ECreateLogicalVolume->new();
+    my $op = EOperation::EMigrateHost->new();
 
     # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
     # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
@@ -98,56 +98,55 @@ sub prepare {
 
     $log->info("Operation preparation");
 
-    # Check if internal_cluster exists
+
     General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
     
-
-    General::checkParams(args => $params, required => ["component_instance_id", "disk_name", "size", "filesystem", "vg_id"]);
-
+    # Check Operation params
+    General::checkParams(args => $params, required => ["hypervisor_dst", "host_id"]);
     $self->{params} = $params;
-    # Test if component instance id is really a Entity::Component::Iscsitarget
-    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_instance_id});
-    my $comp_desc = $comp_lvm->getComponentAttr();
-    if (! $comp_desc->{component_name} eq "Lvm") {
-        $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
+    
+    eval {
+
+        # Check if hypervisor_src node exists and is in a 
+        $self->{_objs}->{'hypervisor_dst'} = Entity::Host->get(id => $params->{hypervisor_dst});
+        
+        # Check cloudCluster
+        $self->{_objs}->{'hypervisor_cluster'} = Entity::Cluster->get(id => $self->{_objs}->{'hypervisor_dst'}->getClusterId());
+        
+        #TODO Check if a cloudmanager is in the cluster
+        # Get OpenNebula Cluster (now fix but will be configurable)
+        $self->{_objs}->{'cloudmanager_comp'} = $self->{_objs}->{'hypervisor_cluster'}->getComponent(name=>"Opennebula", version=>3);
+        $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
+        
+        # Get the host to move
+        $self->{_objs}->{'host'} = Entity::Host->get(id => $params->{host_id});
+        
+        # Check if host is on the hypervisors cluster
+        if ($self->{_objs}->{'hypervisor_dst'}->getClusterId() != $self->{_objs}->{'host'}->getAttr(name=>"cloud_cluster_id")){
+            throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisor cluster");
+        }
+    };
+    if($@) {
+        my $err = $@;
+        $errmsg = "EOperation::EMigrateHost->prepare : Incorrect Parameters dst<$params->{hypervisor_dst}> host <$params->{host_id}>\n" . $err;
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
-    my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
-    my ($state, $timestamp) = $self->{_objs}->{cluster}->getState();
-    if ($state ne 'up'){
-        $errmsg = "Cluster has to be up !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
-    # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
-    
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
-    
-    $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
     
 }
 
 sub execute{
     my $self = shift;
-    
-    my $adm = Administrator->new();
-    $self->{_objs}->{ecomp_lvm}->createDisk(name       => $self->{params}->{disk_name},
-                                            size       => $self->{params}->{size},
-                                            filesystem => $self->{params}->{filesystem},
-                                            econtext   => $self->{cluster_econtext},
-                                            erollback  => $self->{erollback});
+    # 
+    $self->{_objs}->{'cloudmanager_ecomp'}->migrateHost(host                => $self->{_objs}->{'host'},
+                                                        hypervisor_dst      => $self->{_objs}->{'hypervisor_dst'},
+                                                        hypervisor_cluster  => $self->{_objs}->{'hypervisor_cluster'});
 
-    $log->info("New Logical volume <" . $self->{params}->{disk_name} . "> created");
+    $log->info(" Host <$self->{params}->{host_id}> from <$self->{params}->{hypervisor_src}> to <$self->{params}->{hypervisor_dst}>");
 }
 
 =head1 DIAGNOSTICS

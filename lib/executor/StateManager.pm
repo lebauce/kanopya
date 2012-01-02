@@ -130,9 +130,12 @@ sub run {
         
         $log->debug("<<< Hosts status changes >>>");
         my @hosts = Entity::Host->getHosts(hash => {-not => {host_state => {'like','down%'}}});
+        @hosts = grep {$_->getState() !~ /^locked:/} @hosts;
         foreach my $mb (@hosts) {
             $adm->{db}->txn_begin;
             eval {
+                  
+                    print "loop on not down host <" .$mb->getAttr(name=>"host_mac_address").">\n";
                   my $ehost = EFactory::newEEntity(data => $mb);
                   my $is_up = $ehost->checkUp();
                   StateManager::Host::updateHostStatus(pingable => $is_up, host=>$mb);

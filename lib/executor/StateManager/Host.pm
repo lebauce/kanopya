@@ -195,8 +195,9 @@ sub testStoppingHost{
 sub updateHostStatus {
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['pingable', 'host']);
+    General::checkParams(args => \%args, required => ['host']);
 
+    print "UpdateHost Status with pingable <$args{pingable}>\n";
     my %actions = (0 => { up        => \&hostBroken,
                           starting  => \&testStartingHost,
                           broken    => sub {},

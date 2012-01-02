@@ -60,7 +60,8 @@ sub process{
     };
     if ($@){
         my $error = $@;
-        $errmsg = "Operation <".ref($self)."> failed an error occured :\n";
+        my $class = ref($self);
+        $errmsg = "Operation <".$class."> failed an error occured :\n";
         $errmsg .= "$error\nOperation will be rollbacked";
         $log->error($errmsg);
         $self->{erollback}->undo();
