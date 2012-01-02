@@ -304,11 +304,7 @@ sub generateHosts {
                    ip           => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
         push @nodes_list, $tmp;
     }
-    my $vars = {hostname    => $self->{_objs}->{host}->getAttr(
-		        name        => "host_hostname"),
-	            domainname  => "hedera-technology.com",
-                hosts       => \@nodes_list,
-               };
+    my $vars = { hosts       => \@nodes_list };
     $log->debug(Dumper($vars));
     $template->process($input, $vars, "/tmp/$tmpfile") || die $template->error(), "\n";
    return("/tmp/".$tmpfile);
