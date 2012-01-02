@@ -29,7 +29,8 @@ test -x "/opt/kanopya/sbin/$EXEC" || exit 0
 PERL5LIB=\
 /opt/kanopya/lib/monitor/:\
 /opt/kanopya/lib/administrator/:\
-/opt/kanopya/lib/common
+/opt/kanopya/lib/common:\
+/opt/kanopya/lib/orchestrator
 export PERL5LIB
 KANOPYA_COLLECTOR_RUN=yes
 KANOPYA_COLLECTOR_OPTS=''

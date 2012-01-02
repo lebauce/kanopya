@@ -93,11 +93,7 @@ sub prepare {
 
     $log->info("Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EForceStopCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
     
@@ -174,12 +170,7 @@ sub execute {
             # Halt Node
             my $ehost = EFactory::newEEntity(data => $node);
             $ehost->halt(node_econtext =>$node_context);
-        };
-        if ($@) {
-            my $error = $@;
-            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_hostname"). "> during force stop cluster : $error";
-            $log->info($errmsg);
-        }
+
         # Update Dhcp component conf
         my $host_mac = $node->getAttr(name => "host_mac_address");
         my $hostid =$self->{_objs}->{component_dhcpd}->_getEntity()->getHostId(dhcpd3_subnet_id            => $subnet,
@@ -187,6 +178,13 @@ sub execute {
         $self->{_objs}->{component_dhcpd}->removeHost(dhcpd3_subnet_id    => $subnet,
                                                       dhcpd3_hosts_id    => $hostid);
 
+
+        };
+        if ($@) {
+            my $error = $@;
+            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_hostname"). "> during force stop cluster : $error";
+            $log->info($errmsg);
+        }
         # component migration
         my $components = $self->{_objs}->{components};
         $log->info('Processing cluster components quick remove for node <'.$node->getAttr(name=>'host_hostname').'>');
@@ -199,6 +197,7 @@ sub execute {
                             econtext => $self->{nas}->{econtext});
         }
 
+        eval {
         ## Remove host etc export from iscsitarget 
         my $node_dev = $node->getEtcDev();
         my $lv_name = $node_dev->{etc}->{lvname};
@@ -206,7 +205,7 @@ sub execute {
         my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $lv_name);
         my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
                                                                                  iscsitarget1_lun_device => "/dev/$node_dev->{etc}->{vgname}/$node_dev->{etc}->{lvname}");
-    
+
         # clean initiator session 
         $self->{_objs}->{component_export}->cleanInitiatorSession(
                                                     econtext => $self->{nas}->{econtext},
@@ -215,7 +214,7 @@ sub execute {
         # Remove Target and Lun
         $self->{_objs}->{component_export}->removeLun(iscsitarget1_lun_id       => $lun_id,
                                                       iscsitarget1_target_id    => $target_id);
-        eval {
+
             $self->{_objs}->{component_export}->removeTarget(iscsitarget1_target_id         => $target_id,
                                                              iscsitarget1_target_name     => $target_name,
                                                              econtext                     => $self->{nas}->{econtext});

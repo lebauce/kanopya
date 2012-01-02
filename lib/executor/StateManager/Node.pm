@@ -142,6 +142,13 @@ sub nodeOut{
     # service are not available but host answer to ping,
     # states are stoping and goingout
     General::checkParams(args => \%args, required => ['host']);
+    
+    my %params;
+    $params{cluster_id} = $args{host}->getClusterId();
+    $params{host_id} = $args{host}->getAttr(name=>"host_id");
+    Operation->enqueue(priority => 200,
+                   type     => 'PostStopNode',
+                   params   => \%params);
 #    logNodeStateChange(
 #        ip_address => $args{host}->getInternalIP()->{ipv4_internal_address},
 #        newstatus => 'BAH LA JE SAIS PAS QUOI METTRE...',
@@ -266,7 +273,7 @@ sub updateNodeStatus {
    my $node_state = $args{host}->getNodeState();
    my @tmp = split(/:/, $node_state);
    $node_state = $tmp[0];
-   print "Node state <$node_state>";
+   print "Node state <$node_state> and service availability <$args{services_available}>\n";
    my $method = $actions{$args{services_available}}->{$node_state} || \&incorrectStates;
    $method->(services_available=>$args{services_available},host=>$args{host}, cluster=>$args{cluster});
 }

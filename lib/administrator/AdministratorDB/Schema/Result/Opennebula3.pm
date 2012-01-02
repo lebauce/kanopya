@@ -36,7 +36,7 @@ __PACKAGE__->table("opennebula3");
 =head2 install_dir
 
   data_type: 'char'
-  default_value: '/srv/cloud/one   '
+  default_value: '/srv/cloud/one'
   is_nullable: 0
   size: 255
 
@@ -106,7 +106,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-    "install_dir",
+  "install_dir",
   {
     data_type => "char",
     default_value => "/srv/cloud/one",
@@ -182,10 +182,40 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 opennebula3_hypervisors
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-09-01 15:09:26
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bbBjcDIocQxdjT2PKBGFNA
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3Hypervisor>
+
+=cut
+
+__PACKAGE__->has_many(
+  "opennebula3_hypervisors",
+  "AdministratorDB::Schema::Result::Opennebula3Hypervisor",
+  { "foreign.opennebula3_id" => "self.opennebula3_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 opennebula3_vms
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3Vm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "opennebula3_vms",
+  "AdministratorDB::Schema::Result::Opennebula3Vm",
+  { "foreign.opennebula3_id" => "self.opennebula3_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-12-26 10:20:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Sl/VQr4Km/91CQoHfI/BLg
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

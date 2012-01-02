@@ -168,7 +168,7 @@ sub stop {
 
 }
 
-
+sub postStart {}
 
 sub checkUp {
     my $self = shift;
@@ -176,15 +176,19 @@ sub checkUp {
     my $p = Net::Ping->new();
     my $pingable = $p->ping($ip);
     $p->close();
-    eval {
-        my $ssh = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $ip);
-    };
-     if($@) {
-        my $exception = $@;
-        if ($exception->isa('Kanopya::Exception::Network')) {
-           return 0;
+    
+    if ($pingable) {
+        eval {
+            my $node_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $ip);
+            $log->debug("In checkUP test if host <$ip> is pingable <$pingable>\n");
+        };
+        if($@) {
+            $errmsg = "Ehost->checkUp for host <$ip>, host pingable but not sshable";
+            $log->info($errmsg);
+            return 0;
         }
     }
+
     return $pingable;
 }
 

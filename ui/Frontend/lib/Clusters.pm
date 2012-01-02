@@ -84,6 +84,21 @@ sub _clusters {
     return $clusters;
 }
 
+# return an array containing running clusters with Cloudmanager component
+
+sub _virtualization_clusters {
+	my @clusters = Entity::Cluster->getClusters(hash => {});
+	my @virtualization_clusters = ();
+	foreach my $cluster (@clusters) {
+		my $components = $cluster->getComponents(category => 'Cloudmanager');
+		my ($state, $timestamp) = $cluster->getState();
+		if(scalar(keys %$components) && $state eq 'up') {
+			push @virtualization_clusters, $cluster;
+		}
+	}
+	return @virtualization_clusters;
+}
+
 get '/clusters/add' => sub {
     my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});
     my @ekernels = Entity::Kernel->getKernels(hash => {});
@@ -620,10 +635,58 @@ get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
 };
 
 get '/clusters/:clusterid/nodes/add' => sub {
+	
+	my @freehosts = Entity::Host->getFreeHosts();
+	#$log->info("nombre de free hosts : ".scalar(@freehosts));
+	my $physical_hosts = [];
+	foreach my $host (@freehosts) {
+		my $tmp = {
+			host_id 	=> $host->getAttr(name => 'host_id'),
+			host_label  => $host->toString(),
+		};
+		push @$physical_hosts, $tmp;
+	}
+	
+	my @virtclusters = _virtualization_clusters();
+    $log->info("nombre de virt clusters : ".scalar(@virtclusters));
+    my $virt_clusters = [];
+    foreach my $cluster (@virtclusters) {
+		my $tmp = {
+			cluster_id 	  => $cluster->getAttr(name => 'cluster_id'),
+			cluster_name  => $cluster->getAttr(name => 'cluster_name'),
+		};
+		push @$virt_clusters, $tmp;
+	}
+    
+    template 'form_addnode', {
+        title_page                  => "Clusters - Add node",
+        'cluster_id'                => params->{clusterid},
+        'physical_hosts'			=> $physical_hosts,
+        'virt_clusters'			    => $virt_clusters,
+        'vm_template'				=> [],
+        
+
+    }, { layout => '' };
+    
+
+};
+
+post '/clusters/:clusterid/nodes/add' => sub {
     my $adm = Administrator->new;
+    
+    my %args = (
+		type          => param('node_type') eq 'auto' ? undef : param('node_type'),
+		core          => param('core')    eq '' ? undef : param('core'),
+		ram			  => param('ram')     eq '' ? undef : param('ram'),
+		host_id       => param('host_id') eq '-1' ? undef : param('host_id'),
+		cloud_cluster => param('cloud_cluster') eq '-1' ? undef : param('cloud_cluster'),
+    );
+    
+    
+    
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
-        $ecluster->addNode();
+        my $cluster = Entity::Cluster->get(id => param('clusterid'));
+        $cluster->addNode(%args);
         $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddHostInCluster operation adding to execution queue');
     };
     if($@) {

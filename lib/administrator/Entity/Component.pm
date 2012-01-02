@@ -384,7 +384,7 @@ sub getClusterizationType{}
 sub getExecToTest{}
 sub getNetConf{}
 sub needBridge{ return 0; }
-
+sub getHostConstraints {return;}
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

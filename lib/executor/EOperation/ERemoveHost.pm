@@ -89,7 +89,7 @@ sub checkOp{
     # check if host is not active
     $log->debug("checking host active value <$args{params}->{host_id}>");
        if($self->{_objs}->{host}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EActivateHost->new : host $args{params}->{host_id} is already active";
+            $errmsg = "EOperation::ERemoveHost->prepare : host $args{params}->{host_id} is still active";
             $log->error($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -126,7 +126,7 @@ sub prepare {
         $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     };
     if($@) {
-        $errmsg = "EOperation::EActivateHost->new : host_id $params->{host_id} does not exist";
+        $errmsg = "EOperation::ERemoveHost->prepare : host_id $params->{host_id} not found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -136,7 +136,7 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Operation ActivateHost failed an error occured :\n$error";
+        $errmsg = "EOperation::ERemoveHost->checkOp failed :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }

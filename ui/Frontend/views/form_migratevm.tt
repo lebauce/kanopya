@@ -1,0 +1,18 @@
+<h2>Migrate a vm</h2>
+
+<form id="target" method="POST" action="/infrastructures/vms/migrate">
+<table class="form">
+    <tr>
+    <td class="label">Target Hypervisor:</td><td>
+		<select name="hypervisors">
+			
+			<% FOREACH hyper IN hypervisor_list %>
+			<option value="<% hyper.hypervisor_id %>"><% hyper.hypervisor_hostname %></option>
+			<% END %>
+		</select>
+		</td>
+	</tr>
+
+	<input type="hidden" name="host_id" value="<% host_id %>" />	
+</table>
+</form>

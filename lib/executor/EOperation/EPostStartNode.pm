@@ -158,6 +158,7 @@ sub execute {
         $tmp->postStartNode(host => $self->{_objs}->{host}, 
                            cluster => $self->{_objs}->{cluster});
     }
+
     my $nodes = $self->{_objs}->{cluster}->getHosts();
    $log->info("Generate Hosts Conf");
     my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
@@ -167,7 +168,10 @@ sub execute {
         my $node_econtext = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $nodes->{$i}->getInternalIP()->{ipv4_internal_address});
         $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
     }    
- }
+	my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->postStart();
+}
+ 
 sub generateHosts {
     my $self = shift;
     my %args = @_;
