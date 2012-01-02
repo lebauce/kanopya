@@ -285,10 +285,11 @@ sub becomeNode{
     my $adm = Administrator->new();
     my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
                                             host_id =>$self->getAttr(name=>'host_id'),
+                                            node_number=>$args{node_number},
                                             master_node => $args{master_node}});
     return $res->get_column("node_id");
 }
-#node_number=>$args{node_number},
+
 sub becomeMasterNode{
     my $self = shift;
 

@@ -177,10 +177,10 @@ sub execute {
                             cluster => $self->{_objs}->{cluster});
     }
     $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-                                                master_node => 0);
+                                                master_node => 0,node_number=>$self->{_objs}->{cluster}->getBestNodeNumber());
     $self->{_objs}->{host}->setNodeState(state=>"pregoingin");
 
-}
+} 
 #node_number=>0,
 sub _cancel {
     my $self = shift;
