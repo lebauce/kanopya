@@ -276,16 +276,21 @@ sub setNodeState {
 
 =cut
 
-sub becomeNode{
+sub becomeNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_id','master_node']);
+    General::checkParams(args => \%args, required => ['cluster_id','master_node','node_number']);
 
     my $adm = Administrator->new();
-    my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
-                                            host_id =>$self->getAttr(name=>'host_id'),
-                                            master_node => $args{master_node}});
+    my $res =$adm->{db}->resultset('Node')->create(
+		{	cluster_id=>$args{cluster_id},
+            host_id =>$self->getAttr(name=>'host_id'),
+            master_node => $args{master_node},
+			node_number => $args{node_number}
+        }
+    );
+        
     return $res->get_column("node_id");
 }
 #node_number=>$args{node_number},
