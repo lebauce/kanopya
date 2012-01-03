@@ -167,10 +167,6 @@ sub execute {
         $tmp->preStartNode(host => $self->{_objs}->{host}, 
                             cluster => $self->{_objs}->{cluster});
     }
-<<<<<<< HEAD
-    $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-                                                master_node => 0,node_number=>$self->{_objs}->{cluster}->getBestNodeNumber());
-=======
     
     my $node_number =  $self->{_objs}->{cluster}->getNewNodeNumber();
     $log->debug("Node number for this new node: $node_number");
@@ -181,9 +177,7 @@ sub execute {
         node_number => $node_number,
     );
     
->>>>>>> 9cb126e9af7981fef03dc1a37bc880db5d22aad7
     $self->{_objs}->{host}->setNodeState(state=>"pregoingin");
-
 } 
 #node_number=>0,
 sub _cancel {
