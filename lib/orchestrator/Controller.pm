@@ -413,8 +413,8 @@ sub preManageCluster{
     my $workload     = $self->getWorkload( cluster => $cluster);
     if ( not defined $workload->{workload_amount}){
         if($cluster_name eq "ServerBench") {
-            $log->info("No workload detected, sleeping 1 min 05 to avoid synchro");
-            sleep(65);
+            $log->info("No workload detected, sleeping time_step + 5 sec to avoid synchro");
+            sleep($self->{_time_step}+5);
         }
         die "## ASSERT: Controller: no workload amount detected (sleep 65 sec)\n" ;
     }
