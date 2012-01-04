@@ -20,8 +20,8 @@ my $conf = XMLin("/opt/kanopya/conf/executor.conf");
 General::checkParams(args=>$conf->{user}, required=>["name","password"]);
 
 ########################## Here insert information on distribution inserted ##############
-my $dist_conf = {dist_name      => "debian",
-	       dist_version   => 6,
+my $dist_conf = {dist_name      => "Debian",
+	       dist_version   => 5,
 	       dist_desc      => "SI d openNebula",
 	       root_size      => "2G",
 	       filesystem     => "ext3"};
@@ -55,3 +55,4 @@ my $distribution = Entity::Distribution->new(distribution_name      => $dist_con
 					    etc_device_id         => $etc_id,
 					    root_device_id        => $root_id);
 $distribution->save();
+$distribution->updateProvidedComponents();

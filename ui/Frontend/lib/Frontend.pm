@@ -10,6 +10,7 @@ use Components;
 use Clusters;
 use Distributions;
 use Hosts;
+use Vms;
 use Images;
 use Kernels;
 use Images;

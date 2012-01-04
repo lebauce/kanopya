@@ -137,6 +137,8 @@ sub prepare {
     $log->info("Load Host instance");
     $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
+    #Get instance of Context
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");#a voir 
 }
 
 sub execute {
@@ -149,15 +151,54 @@ sub execute {
     
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
-    foreach my $i (keys %$components) {
-        
+    foreach my $i (keys %$components) 
+    {
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
         $tmp->postStartNode(host => $self->{_objs}->{host}, 
-                            cluster => $self->{_objs}->{cluster});
+                           cluster => $self->{_objs}->{cluster});
     }
-    
 
+    my $nodes = $self->{_objs}->{cluster}->getHosts();
+   $log->info("Generate Hosts Conf");
+    my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
+    foreach my $i (keys %$nodes) 
+    {
+	    my $node = $nodes->{$i};
+        my $node_econtext = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $nodes->{$i}->getInternalIP()->{ipv4_internal_address});
+        $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
+    }    
+	my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    $ehost->postStart();
+}
+ 
+sub generateHosts {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args);
+
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+
+    # create Template object
+    my $template = Template->new($config);
+    my $input = "hosts.tt";
+    my $nodes = $args{nodes};
+    my @nodes_list = ();
+    
+    foreach my $i (keys %$nodes) {
+        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'host_hostname'),
+                   domainname    => "hedera-technology.com",
+                   ip            => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
+        push @nodes_list, $tmp;
+    }
+    my $vars = { hosts       => \@nodes_list };
+    $log->debug(Dumper($vars));
+    $template->process($input, $vars, "/tmp/$tmpfile") || die $template->error(), "\n";
+   return("/tmp/".$tmpfile);
+   # $self->{nas}->{econtext}->send(src => "/tmp/".$tmpfile, dest => "/etc/hosts");
+   # unlink     "/tmp/$tmpfile";
 }
 
 #sub finish {

@@ -137,22 +137,14 @@ sub prepare {
     $log->debug("Load all component from cluster");
 
     # Get instance of Host Entity
-    $log->info("Load Host instance");
-    my @free_hosts = Entity::Host->getFreeHosts();
-    if ( scalar @free_hosts == 0) {
-        $errmsg = "EPreStartNode->prepare no free host!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    $self->{_objs}->{host} = $free_hosts[0];
+    $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
     if (! $master_node_id && $node_count){
-        $errmsg = "No master node when host <$free_hosts[0]> migrating, pls wait...";
+        $errmsg = "No master node when host <$params->{host_id}> migrating, pls wait...";
         $log->error($errmsg);
-
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -165,7 +157,6 @@ sub execute {
     $log->debug("After EOperation exec and before new Adm");
     my $adm = Administrator->new();
     
-        
     #TODO  component migrate (node, exec context?)
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
@@ -176,12 +167,19 @@ sub execute {
         $tmp->preStartNode(host => $self->{_objs}->{host}, 
                             cluster => $self->{_objs}->{cluster});
     }
-    $self->{_objs}->{host}->becomeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
-                                                master_node => 0);
+    
+    my $node_number =  $self->{_objs}->{cluster}->getNewNodeNumber();
+    $log->debug("Node number for this new node: $node_number");
+    
+    $self->{_objs}->{host}->becomeNode(
+		cluster_id  => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+        master_node => 0,
+        node_number => $node_number,
+    );
+    
     $self->{_objs}->{host}->setNodeState(state=>"pregoingin");
-
-}
-
+} 
+#node_number=>0,
 sub _cancel {
     my $self = shift;
 

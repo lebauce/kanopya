@@ -34,12 +34,13 @@ sub _clusters {
     my $clusters = [];
     my $clusters_list;
     my $can_create;
-
+    my $can_configure;
     foreach my $n (@eclusters){
         my $tmp = {
             link_activity => 0,
             cluster_id    => $n->getAttr(name => 'cluster_id'),
-            cluster_name  => $n->getAttr(name => 'cluster_name')
+            cluster_name  => $n->getAttr(name => 'cluster_name'),
+            cluster_basehostname => $n->getAttr(name=>'cluster_basehostname')
         };
 
         my $minnode = $n->getAttr(name => 'cluster_min_node');
@@ -81,6 +82,21 @@ sub _clusters {
     #}
 
     return $clusters;
+}
+
+# return an array containing running clusters with Cloudmanager component
+
+sub _virtualization_clusters {
+	my @clusters = Entity::Cluster->getClusters(hash => {});
+	my @virtualization_clusters = ();
+	foreach my $cluster (@clusters) {
+		my $components = $cluster->getComponents(category => 'Cloudmanager');
+		my ($state, $timestamp) = $cluster->getState();
+		if(scalar(keys %$components) && $state eq 'up') {
+			push @virtualization_clusters, $cluster;
+		}
+	}
+	return @virtualization_clusters;
 }
 
 get '/clusters/add' => sub {
@@ -165,6 +181,7 @@ post '/clusters/add' => sub {
             systemimage_id => $systemimage_id,
             cluster_domainname => params->{'domainname'},
             cluster_nameserver => params->{'nameserver'},
+            cluster_basehostname => params->{'cluster_basehostname'},
         };
         if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
         my $ecluster = Entity::Cluster->new(%$params);
@@ -205,17 +222,18 @@ get '/clusters' => sub {
         title_page         => 'Clusters - Clusters',
         clusters_list => _clusters(),
         can_create => $can_create,
+        
     };
 };
 
 get '/clusters/:clusterid' => sub {
     my $cluster_id = params->{clusterid};
+    my $can_configure;
     my $ecluster = Entity::Cluster->get(id => $cluster_id);
     my $methods = $ecluster->getPerms();
-
     my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
     my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
-
+    my $cluster_basehostname = $ecluster->getAttr(name=>'cluster_basehostname');
     my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
     my ($systemimage_name, $systemimage_active);
     if($systemimage_id) {
@@ -246,7 +264,14 @@ get '/clusters/:clusterid' => sub {
     
     # state info
     my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
-    
+    if($cluster_id==1) {$can_configure=1}
+    else
+    {
+		if($cluster_state ne "down")
+           {$can_configure=0;}
+           else{$can_configure=1}
+	}
+	 
     my $hosts = $ecluster->getHosts(administrator => Administrator->new);
     my $nbnodesup = scalar(keys(%$hosts));
     my $nodes = [];
@@ -272,7 +297,6 @@ get '/clusters/:clusterid' => sub {
         $link_activate = 1;
         $link_delete = 1;
     }
-
     # components list
     my $components = $ecluster->getComponents(category => 'all');
     my $comps = [];
@@ -340,6 +364,7 @@ get '/clusters/:clusterid' => sub {
     template 'clusters_details', {
         title_page         => "Clusters - Cluster's overview",
         cluster_id         => $cluster_id,
+        can_configure      =>$can_configure,
         cluster_name       => $ecluster->getAttr(name => 'cluster_name'),
         cluster_desc       => $ecluster->getAttr(name => 'cluster_desc'),
         cluster_priority   => $ecluster->getAttr(name => 'cluster_priority'),
@@ -347,6 +372,7 @@ get '/clusters/:clusterid' => sub {
         cluster_nameserver => $ecluster->getAttr(name => 'cluster_nameserver'),
         cluster_min_node   => $minnode,
         cluster_max_node   => $maxnode,
+        cluster_basehostname => $cluster_basehostname,
         type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
         systemimage_name   => $systemimage_name,
         systemimage_active => $systemimage_active,
@@ -617,10 +643,58 @@ get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
 };
 
 get '/clusters/:clusterid/nodes/add' => sub {
+	
+	my @freehosts = Entity::Host->getFreeHosts();
+	#$log->info("nombre de free hosts : ".scalar(@freehosts));
+	my $physical_hosts = [];
+	foreach my $host (@freehosts) {
+		my $tmp = {
+			host_id 	=> $host->getAttr(name => 'host_id'),
+			host_label  => $host->toString(),
+		};
+		push @$physical_hosts, $tmp;
+	}
+	
+	my @virtclusters = _virtualization_clusters();
+    $log->info("nombre de virt clusters : ".scalar(@virtclusters));
+    my $virt_clusters = [];
+    foreach my $cluster (@virtclusters) {
+		my $tmp = {
+			cluster_id 	  => $cluster->getAttr(name => 'cluster_id'),
+			cluster_name  => $cluster->getAttr(name => 'cluster_name'),
+		};
+		push @$virt_clusters, $tmp;
+	}
+    
+    template 'form_addnode', {
+        title_page                  => "Clusters - Add node",
+        'cluster_id'                => params->{clusterid},
+        'physical_hosts'			=> $physical_hosts,
+        'virt_clusters'			    => $virt_clusters,
+        'vm_template'				=> [],
+        
+
+    }, { layout => '' };
+    
+
+};
+
+post '/clusters/:clusterid/nodes/add' => sub {
     my $adm = Administrator->new;
+    
+    my %args = (
+		type          => param('node_type') eq 'auto' ? undef : param('node_type'),
+		core          => param('core')    eq '' ? undef : param('core'),
+		ram			  => param('ram')     eq '' ? undef : param('ram'),
+		host_id       => param('host_id') eq '-1' ? undef : param('host_id'),
+		cloud_cluster => param('cloud_cluster') eq '-1' ? undef : param('cloud_cluster'),
+    );
+    
+    
+    
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
-        $ecluster->addNode();
+        my $cluster = Entity::Cluster->get(id => param('clusterid'));
+        $cluster->addNode(%args);
         $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddHostInCluster operation adding to execution queue');
     };
     if($@) {

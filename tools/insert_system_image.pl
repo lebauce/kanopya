@@ -20,7 +20,7 @@ my $conf = XMLin("/opt/kanopya/conf/executor.conf");
 General::checkParams(args=>$conf->{user}, required=>["name","password"]);
 
 ########################## Here insert information on SI inserted ##############
-my $si_conf = {si_name      => "opennebula3",
+my $si_conf = {si_name      => "testnode",
 	       si_desc      => "SI d openNebula",
 	       root_size    => "2G",
 	       filesystem   => "ext3"};

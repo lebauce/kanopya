@@ -4,7 +4,7 @@
 # if you need to adapt this configuration file,
 # please modify the template on Kanopya Private Cloud Admin server
 
-127.0.0.1 localhost [% hostname %] [% hostname %].[% domainname %]
+127.0.0.1 localhost 
 [% FOREACH host=hosts %]
 [% host.ip %] [% host.hostname %] [% host.hostname %].[% host.domainname %]
 [% END %]

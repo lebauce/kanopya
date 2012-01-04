@@ -142,6 +142,14 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "cloud_cluster_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+
   "processormodel_id",
   {
     data_type => "integer",
@@ -158,6 +166,10 @@ __PACKAGE__->add_columns(
   },
   "host_serial_number",
   { data_type => "char", is_nullable => 0, size => 64 },
+  "host_ram",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "host_core",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "host_powersupply_id",
   {
     data_type => "integer",
@@ -276,6 +288,22 @@ __PACKAGE__->belongs_to(
   { lvm2_lv_id => "etc_device_id" },
   { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
+
+############################################## TO CHECK
+#__PACKAGE__->might_have(
+#  "cloud_cluster",
+#  "AdministratorDB::Schema::Result::Cluster",
+#  { "foreign.cluster_id" => "self.cloud_cluster_id" },
+#  { cascade_copy => 0, cascade_delete => 0 },
+#);
+
+__PACKAGE__->belongs_to(
+  "cloud_cluster",
+  "AdministratorDB::Schema::Result::Cluster",
+  { cluster_id => "cloud_cluster_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 
 =head2 host_powersupply
 

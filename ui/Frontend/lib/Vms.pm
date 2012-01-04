@@ -1,4 +1,4 @@
-package Hosts;
+package Vms;
 
 use Dancer ':syntax';
 
@@ -30,8 +30,8 @@ sub _timestamp_format {
     return $time_str;
 }
 
-sub _hosts {
-    my @ehosts = Entity::Host->getHosts(hash => {cloud_cluster_id => { '=', undef }});
+sub _vms {
+    my @ehosts = Entity::Host->getHosts(hash => {cloud_cluster_id => { '!=', undef }});
     my $hosts = [];
 
     foreach my $m (@ehosts) {
@@ -51,6 +51,7 @@ sub _hosts {
         $tmp->{host_hostname} = $m->getAttr(name => 'host_hostname');
         $tmp->{host_ip} = $m->getInternalIP()->{ipv4_internal_address};
         $tmp->{active} = $m->getAttr(name => 'active');
+        $tmp->{cloud_cluster_id} = $m->getAttr(name => 'cloud_cluster_id');
 
         if($tmp->{active}) {
             if($state =~ /up/) {
@@ -74,15 +75,15 @@ sub _hosts {
     return $hosts;
 }
 
-get '/hosts' => sub {
+get '/vms' => sub {
     my $methods = Entity::Host->getPerms();
-    template 'hosts', {
-        hosts_list => _hosts(),
+    template 'vms', {
+        vms_list => _vms(),
         can_create        => $methods->{'create'}->{'granted'}
     };
 };
 
-get '/hosts/add' => sub {
+get '/vms/add' => sub {
     my @hostmodels = Entity::Hostmodel->getHostmodels(hash => {});
     my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});
     my @kernel = Entity::Kernel->getKernels(hash => {});
@@ -132,7 +133,7 @@ get '/hosts/add' => sub {
     }, { layout => '' };
 };
 
-post '/hosts/add' => sub {
+post '/vms/add' => sub {
     my $adm = Administrator->new;
     my %parameters = (
         host_mac_address   => params->{mac_address},
@@ -164,7 +165,7 @@ post '/hosts/add' => sub {
     }
 };
 
-get '/hosts/:hostid/remove' => sub {
+get '/vms/:hostid/remove' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => param('hostid'));
@@ -181,7 +182,7 @@ get '/hosts/:hostid/remove' => sub {
     else { redirect '/infrastructures/hosts'; }
 };
 
-get '/hosts/:hostid/activate' => sub {
+get '/vms/:hostid/activate' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => params->{hostid});
@@ -201,7 +202,7 @@ get '/hosts/:hostid/activate' => sub {
     }
 };
 
-get '/hosts/:hostid/deactivate' => sub {
+get '/vms/:hostid/deactivate' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => param('hostid'));
@@ -218,13 +219,53 @@ get '/hosts/:hostid/deactivate' => sub {
     else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
 
-get '/hosts/:hostid/addharddisk' => sub {
+get '/vms/migrate/:host_id' => sub {
+    
+
+    my $hypervisors = [];
+    my $host = Entity::Host->get(id => params->{'host_id'});
+    my $cluster = Entity::Cluster->get(id => $host->getAttr(name => 'cloud_cluster_id'));
+    my $opennebula = $cluster->getComponent(name => 'opennebula', version => 3);
+    my $hypervisors_r = $opennebula->{_dbix}->opennebula3->opennebula3_hypervisors->search({});
+    $log->info('<<<<<<<<<<'.ref($hypervisors_r));
+    while (my $row = $hypervisors_r->next) {
+	$log->info('<<<<<<<<'.$row->get_column('hypervisor_id'));
+	my $h = Entity::Host->get(id => $row->get_column('hypervisor_host_id'));
+	my $tmp = {
+	    hypervisor_id => $row->get_column('hypervisor_host_id'),
+	    hypervisor_hostname => $h->getAttr(name => 'host_hostname'),
+	};
+	push @$hypervisors, $tmp;
+    }
+
+    template 'form_migratevm',  {
+	host_id => params->{'host_id'},
+	hypervisor_list => $hypervisors,    
+    }, { layout => '' };
+};
+
+post '/vms/migrate' => sub {
+    
+    #my $dest = 
+
+    Operation->enqueue(
+	type => 'MigrateHost',
+	priority => 1,
+	params => {
+	    host_id => params->{host_id},
+	    hypervisor_dst => params->{hypervisors}
+	}
+   ); 
+redirect '/infrastructures/vms';
+};
+
+get '/vms/:hostid/addharddisk' => sub {
     template 'form_addharddisk', {
         host_id => param('hostid')
     }, { layout => '' };
 };
 
-post '/hosts/:hostid/addharddisk' => sub {
+post '/vms/:hostid/addharddisk' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => param('hostid'));
@@ -240,7 +281,7 @@ post '/hosts/:hostid/addharddisk' => sub {
     } else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
 
-get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
+get '/vms/:hostid/removeharddisk/:harddiskid' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => param('hostid'));
@@ -257,7 +298,7 @@ get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
     else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
 
-get '/hosts/:hostid' => sub {
+get '/vms/:hostid' => sub {
     my $host_model;
     my $processor_model;
     my $host_kernel;

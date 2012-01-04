@@ -1,0 +1,27 @@
+<% FOREACH vm IN vms_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% vm.host_label %></h1></td></tr>
+	<tr><td><% vm.host_hostname %></td><td>
+	<% IF vm.active %>Active<% ELSE %>Deactivated<% END %></td><td class="toright">
+	<a class="imgManage" href="/infrastructures/hosts/<% vm.host_id %>">details</a></td></tr>
+	<tr><td><% vm.host_ip %></td>
+	<% IF vm.active %>
+		<% IF vm.state_up %><td><span class="state imgUp">Up</span></td><% END %>
+		<% IF vm.state_down %><td><span class="state imgDown">Unused</span></td><% END %>
+		<% IF vm.state_starting %><td><span class="state imgDown">Starting...</span></td><% END %>
+		<% IF vm.state_stopping %><td><span class="state imgDown">Stopping...</span></td><% END %>
+		<% IF vm.state_broken %><td><span class="state imgWarning">Broken</span></td><% END %>
+	<% END %>
+	<td class="toright"><a class="imgManage" href="/architectures/clusters/<% vm.cloud_cluster_id %>">Cloud Manager</a></td>
+	</tr>
+	<tr><td class="italic" colspan="3"><% vm.host_desc %></td></tr>
+	<tr><td colspan="3"><a class="modal" href="/infrastructures/vms/migrate/<% vm.host_id %>">migrate</a></td></tr>
+	</table>
+<% END %>
+<div class="actions">
+<% IF can_create %>
+	<a class="action modal" href="/infrastructures/vms/add">add a new vm</a>
+	<p class="italic">add a new vm.</p>
+<% END %>&nbsp;
+</div>
+

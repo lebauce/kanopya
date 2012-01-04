@@ -12,6 +12,14 @@
 		<td><input type="text" name="serial_number" size="50" /></td>
 	</tr>
 	<tr>
+		<td class="label">Ram amount :</td>
+		<td><input type="text" name="ram" size="20" /></td>
+	</tr>
+	<tr>
+		<td class="label">Core Number :</td>
+		<td><input type="text" name="core" size="10" /></td>
+	</tr>
+	<tr>
 		<td class="label">Host model :</td>
 		<td><select name="host_model">
 		<% FOREACH model IN hostmodels_list %>

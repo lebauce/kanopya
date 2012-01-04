@@ -67,10 +67,10 @@ It could be :
 
 use constant ATTR_DEF => {
               hostmodel_id    =>    {pattern            => '^\d*$',
-                                            is_mandatory    => 1,
+                                            is_mandatory    => 0,
                                             is_extended        => 0},
               processormodel_id        => {pattern            => '^\d*$',
-                                            is_mandatory    => 1,
+                                            is_mandatory    => 0,
                                             is_extended     => 0},
               kernel_id                    => {pattern            => '^\d*$',
                                             is_mandatory    => 1,
@@ -96,16 +96,26 @@ use constant ATTR_DEF => {
               host_hostname        => {pattern         => '^\w*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
+              host_ram        =>      {pattern         => '^\w*$',
+                                            is_mandatory    => 0,
+                                            is_extended     => 0},
+              host_core        => {pattern         => '^\w*$',
+                                            is_mandatory    => 0,
+                                            is_extended     => 0},
+
               host_initiatorname    => {pattern         => '^.*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
-              etc_device_id                => {pattern         => 'm/^\d*$',
+              etc_device_id                => {pattern         => '^\d*$',
+                                            is_mandatory    => 0,
+                                            is_extended     => 0},
+              cloud_cluster_id                => {pattern         => '^\d*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
             host_state                => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
-            host_ipv4_internal_id     => {pattern         => 'm/^\d*$',
+            host_ipv4_internal_id     => {pattern         => '^\d*$',
                                             is_mandatory    => 0,
                                             is_extended     => 0},
             host_toto                => {pattern         => '^.*$',
@@ -217,6 +227,23 @@ sub getNodeState {
     my $state = $self->{_dbix}->node->get_column('node_state');
     return wantarray ? split(/:/, $state) : $state;
 }
+=head2 getNodeNumber
+
+=cut
+sub getNodeNumber {
+    my $self = shift;
+    my $node_number = $self->{_dbix}->node->get_column('node_number');
+    return $node_number;
+}
+
+sub setNodeNumber{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['node_number']);
+    my $best_node_number = $args{'node_number'};
+    $self->{_dbix}->node->update({'node_number' => $best_node_number});
+}
 
 sub getPrevNodeState {
     my $self = shift;
@@ -252,16 +279,21 @@ sub setNodeState {
 
 =cut
 
-sub becomeNode{
+sub becomeNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_id','master_node']);
+    General::checkParams(args => \%args, required => ['cluster_id','master_node','node_number']);
 
     my $adm = Administrator->new();
-    my $res =$adm->{db}->resultset('Node')->create({cluster_id=>$args{cluster_id},
-                                            host_id =>$self->getAttr(name=>'host_id'),
-                                            master_node => $args{master_node}});
+    my $res =$adm->{db}->resultset('Node')->create(
+		{	cluster_id=>$args{cluster_id},
+            host_id =>$self->getAttr(name=>'host_id'),
+            master_node => $args{master_node},
+			node_number => $args{node_number}
+        }
+    );
+
     return $res->get_column("node_id");
 }
 
@@ -400,9 +432,6 @@ sub remove {
         params   => {host_id => $self->getAttr(name=>"host_id")},
     );
 }
-
-
-
 
 sub extension {
     return "hostdetails";
@@ -570,28 +599,7 @@ sub removeInternalIP{
 
 }
 
-sub generateHostname {
-#    my $self = shift;
-#    my $mac = $self->getAttr(name => 'host_mac_address');
-#    $mac =~ s/://g;
-#    return "node".$mac;
-    my $self = shift;
-    my %args = @_;
-    my $hostname = "node";
 
-    $log->debug("Create hostname with ip $args{'ip'}");
-    my @tmp = split(/\./, $args{ip});
-
-    $log->debug("differents ip part are <$tmp[0]> <$tmp[1]> <$tmp[2]> <$tmp[3]>");
-    my $cpt = 3 - length $tmp[3];
-    while ($cpt) {
-        $hostname .= "0";
-        $cpt--;
-    }
-    $hostname .= $tmp[3];
-    $log->info("Hostname generated : $hostname");
-    return $hostname;
-}
 
 
 sub getClusterId {

@@ -29,6 +29,7 @@ use Entity::Tier;
 use Operation;
 use Administrator;
 use General;
+use DecisionMaker::HostSelector;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -98,6 +99,10 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 0},
+    cluster_basehostname            => {pattern         => '^[a-z_]+$',
+                                is_mandatory    => 1,
+                                is_extended     => 0,
+                                is_editable        => 1},
 
 
     };
@@ -669,23 +674,79 @@ sub getQoSConstraints {
 
 sub addNode {
     my $self = shift;
+    my %args = @_;
+    my %params = (cluster_id  => $self->getAttr(name =>"cluster_id"));
+    
+    # Check mandatory parameters
+#    General::checkParams(args => \%args, required => ["type"]);
 
+    # Check Rights
     my $adm = Administrator->new();
     # addNode method concerns an existing entity so we use his entity_id
        my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addNode');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
        }
-    my %params = (
-        cluster_id => $self->getAttr(name =>"cluster_id"),
-    );
-    $log->debug("New Operation PreStartNode with attrs : " . %params);
+    
+    if (($args{type} eq "physical") && (defined $args{host_id})) {
+             $params{host_id} = $args{host_id};
+        } else {
+            $args{cluster_id} = $self->getAttr(name =>"cluster_id");
+            my $cluster_constraints = $self->getHostConstraints();
+            if ($cluster_constraints && defined $args{type}){
+                if ($cluster_constraints->[0] ne $args{type}){
+                    throw Kanopya::Exception(error => "Cluster constraints ($cluster_constraints->[0]) and host type chosen by the user ($args{type}) are different");
+                }
+            }
+            $args{type} = defined $args{type} ? $args{type} : $cluster_constraints;
+            $log->debug("Cluster <$args{cluster_id}> ask for a <$args{type}> host");
+            if (!defined $args{type} || $args{type} eq "virtual") {
+                my @clusters;
+                if (defined $args{cloud_cluster_id}){
+                    push @clusters, Entity::Cluster->get( id => $args{cloud_cluster_id});
+                } else {
+                    @clusters = $self->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+                }
+                $args{clusters} = \@clusters;
+            }
+            $params{host_id} = DecisionMaker::HostSelector->getHost( %args );
+        }
+    
 
-    Operation->enqueue(
-        priority => 200,
-        type     => 'PreStartNode',
-        params   => \%params,
-    );
+
+    my $host = Entity::Host->get(id=>$params{host_id});
+    $host->setState(state=>"locked");
+    if ($host->getAttr(name => "cloud_cluster_id")) {
+    $log->debug("New Operation AddVirtualHost with attrs : " . %params);
+        Operation->enqueue(
+            priority => 200,
+            type     => 'AddVirtualHost',
+            params   => \%params);
+    } else {
+            $log->debug("New Operation PreStartNode with attrs : " . %params);
+        Operation->enqueue(
+            priority => 200,
+            type     => 'PreStartNode',
+            params   => \%params);
+    }
+
+
+}
+
+sub getHostConstraints {
+    my $self = shift;
+
+    #TODO BIG IA, HYPER INTELLIGENCE TO REMEDIATE CONSTRAINTS CONFLICTS
+    my $components = $self->getComponents(category=>"all");
+
+    # Return the first constraint found.
+    foreach my $k (keys %$components) {
+        my $constraints = $components->{$k}->getHostConstraints();
+        if ($constraints){
+            return $constraints;
+        }
+    }
+    return;
 }
 
 =head2 removeNode
@@ -731,12 +792,16 @@ sub start {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
        }
 
-    $log->debug("New Operation StartCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
-    Operation->enqueue(
-        priority => 200,
-        type     => 'StartCluster',
-        params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
-    );
+    $self->addNode();
+    $self->setState(state => 'starting');
+    $self->save();
+
+#    $log->debug("New Operation StartCluster with cluster_id : " . $self->getAttr(name=>'cluster_id'));
+#    Operation->enqueue(
+#        priority => 200,
+#        type     => 'StartCluster',
+#        params   => { cluster_id => $self->getAttr(name =>"cluster_id") },
+#    );
 }
 
 =head2 stop
@@ -788,5 +853,31 @@ sub setState {
                             'cluster_state' => $new_state.":".time})->discard_changes();;
 }
 
+
+sub getNewNodeNumber {
+	my $self = shift;
+	my $nodes = $self->getHosts();
+	
+	# if no nodes already registered, number is 1
+	if(! keys %$nodes) { return 1; }
+	
+	my @current_nodes_number = ();
+	while( my ($host_id, $host) = each(%$nodes) ) {
+		push @current_nodes_number, $host->getNodeNumber();	
+	}
+	@current_nodes_number = sort(@current_nodes_number);
+	$log->debug("Nodes number sorted: ".Dumper(@current_nodes_number));
+	
+	my $counter = 1;
+	for my $number (@current_nodes_number) {
+		if("$counter" eq "$number") {
+			$counter += 1;
+			next;
+		} else {
+			return $counter;
+		}
+	}
+	return $counter;
+}
 
 1;

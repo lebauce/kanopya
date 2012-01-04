@@ -45,11 +45,18 @@ use Kanopya::Exceptions;
 use Entity::Cluster;
 use Entity::Systemimage;
 use EFactory;
-
+use String::Random;
 my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
+my $config = {
+    INCLUDE_PATH => '/templates/internal/',
+    INTERPOLATE  => 1,               # expand "$var" in plain text
+    POST_CHOMP   => 0,               # cleanup whitespace 
+    EVAL_PERL    => 1,               # evaluate Perl code blocks
+    RELATIVE => 1,                   # desactive par defaut
+};
 =head2 new
 
 EOperation::EPostStopNode->new creates a new EPostStopNode operation.
@@ -120,7 +127,7 @@ sub prepare {
         $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     };
     if($@) {
-        $errmsg = "EOperation::EActivateHost->new : host_id $params->{host_id} does not exist";
+        $errmsg = "EOperation::EPostStopNode->prepare : host_id $params->{host_id} does not found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -131,7 +138,7 @@ sub prepare {
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
+        $errmsg = "EOperation::EPostStopNode->prepare : cluster_id $params->{cluster_id} does not found\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -146,7 +153,7 @@ sub prepare {
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Operation ActivateHost failed an error occured :\n$error";
+        $errmsg = "EOperation::EPostStopNode->checkOp failed :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -263,8 +270,46 @@ sub execute {
     
     ## finaly save host 
     $self->{_objs}->{host}->save();
+    ## update of etc/hosts
+   my $nodes = $self->{_objs}->{cluster}->getHosts();
+   $log->info("Generate Hosts Conf");
+    my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
+    foreach my $i (keys %$nodes) 
+    {
+	    my $node = $nodes->{$i};
+        my $node_econtext = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $nodes->{$i}->getInternalIP()->{ipv4_internal_address});
+        $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
+    }    
 
 
+}
+sub generateHosts {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args);
+
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+
+    # create Template object
+    my $template = Template->new($config);
+    my $input = "hosts.tt";
+    my $nodes = $args{nodes};
+    my @nodes_list = ();
+    
+    foreach my $i (keys %$nodes) {
+        my $tmp = {hostname     => $nodes->{$i}->getAttr(name => 'host_hostname'),
+                   domainname   => "hedera-technology.com",
+                   ip           => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}};
+        push @nodes_list, $tmp;
+    }
+    my $vars = { hosts       => \@nodes_list };
+    $log->debug(Dumper($vars));
+    $template->process($input, $vars, "/tmp/$tmpfile") || die $template->error(), "\n";
+   return("/tmp/".$tmpfile);
+   # $self->{nas}->{econtext}->send(src => "/tmp/".$tmpfile, dest => "/etc/hosts");
+   # unlink     "/tmp/$tmpfile";
 }
 
 =head1 DIAGNOSTICS
