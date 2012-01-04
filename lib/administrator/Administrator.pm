@@ -580,6 +580,23 @@ sub getOperations {
 
 }
 
+sub getOperationSum {
+# this method is used to calcul number of operations enqueued
+    my $self = shift;
+    # get number of roxs in operation table
+    my $oposum = $self->{db}->resultset('Operation')->search(
+	{},
+	{
+	   select => [ { count => { distinct => '*' } } ], as => [ 'count' ]
+	}
+    );
+    # force oposum var to NULL if there's no operations enqueued (to avoid unnecesary display)
+    if ($oposum eq 0) {
+	$oposum = '';
+    } 
+    return $oposum;
+}
+
 sub getComponentsListByCategory {
     my $self = shift;
     my $components = $self->{db}->resultset('Component')->search({},
