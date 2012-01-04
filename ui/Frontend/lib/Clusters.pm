@@ -34,7 +34,7 @@ sub _clusters {
     my $clusters = [];
     my $clusters_list;
     my $can_create;
-
+    my $can_configure;
     foreach my $n (@eclusters){
         my $tmp = {
             link_activity => 0,
@@ -222,14 +222,15 @@ get '/clusters' => sub {
         title_page         => 'Clusters - Clusters',
         clusters_list => _clusters(),
         can_create => $can_create,
+        
     };
 };
 
 get '/clusters/:clusterid' => sub {
     my $cluster_id = params->{clusterid};
+    my $can_configure;
     my $ecluster = Entity::Cluster->get(id => $cluster_id);
     my $methods = $ecluster->getPerms();
-
     my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
     my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
     my $cluster_basehostname = $ecluster->getAttr(name=>'cluster_basehostname');
@@ -263,7 +264,14 @@ get '/clusters/:clusterid' => sub {
     
     # state info
     my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
-    
+    if($cluster_id==1) {$can_configure=1}
+    else
+    {
+		if($cluster_state ne "down")
+           {$can_configure=0;}
+           else{$can_configure=1}
+	}
+	 
     my $hosts = $ecluster->getHosts(administrator => Administrator->new);
     my $nbnodesup = scalar(keys(%$hosts));
     my $nodes = [];
@@ -289,7 +297,6 @@ get '/clusters/:clusterid' => sub {
         $link_activate = 1;
         $link_delete = 1;
     }
-
     # components list
     my $components = $ecluster->getComponents(category => 'all');
     my $comps = [];
@@ -357,6 +364,7 @@ get '/clusters/:clusterid' => sub {
     template 'clusters_details', {
         title_page         => "Clusters - Cluster's overview",
         cluster_id         => $cluster_id,
+        can_configure      =>$can_configure,
         cluster_name       => $ecluster->getAttr(name => 'cluster_name'),
         cluster_desc       => $ecluster->getAttr(name => 'cluster_desc'),
         cluster_priority   => $ecluster->getAttr(name => 'cluster_priority'),
