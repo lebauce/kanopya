@@ -1,0 +1,94 @@
+// /!\ Alredy defined in global.scss
+h2  {
+  color: #666666;
+  margin-bottom: 30px;
+}
+
+span.title {
+  color: #666666;
+  font-weight: bold;
+  font-size: 1.2em;
+  background-color: white;
+  padding: 0 10px;
+  text-decoration: underline;
+  position: relative;
+  top: -20px;
+  margin-left: 20px;
+  cursor: pointer;
+}
+
+table caption.title {
+  color: #AA8b22;
+  font-weight: bold;
+  font-size: 1.2em;
+  background-color: white;
+  padding: 0 10px;
+  text-decoration: underline;
+  position: relative;
+  top: -20px;
+  margin-left: 20px;
+  cursor: pointer;
+  border: 2px dotted  #AAA;
+}
+
+.state {
+  background-position: left;
+  background-repeat: no-repeat;
+  padding-left: 20px;
+}
+
+table.detailspart {
+  width: 100%;
+  margin-bottom: 30px;
+  border-collapse: collapse;
+}
+
+table.detailspart .list td {
+  height: 1em;
+}
+
+.label {
+  font-weight: bold;
+  text-align: right;
+}
+
+.label {
+  min-width: 10em;
+}
+
+.actions {
+  width: 30%;
+  background-color: #F9F9FF;
+  border: 2px dotted  #AAA;
+  vertical-align: top;
+  padding: 10px;
+}
+
+table.detailspart a {
+  color: #666666;
+  background-repeat: no-repeat;
+  padding-left: 20px;
+  text-decoration: none;
+}
+
+table.detailspart td.actions .desc {
+  font-size: 0.9em;
+  font-style: italic;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+.label2 {
+  padding: 10px 0;
+  border-bottom: thin solid #AAA;
+}
+
+.action {
+  border-bottom: thin solid #AAA;
+}
+
+.label2, table tr:hover td &.action {
+  background-color: #DFD;
+}

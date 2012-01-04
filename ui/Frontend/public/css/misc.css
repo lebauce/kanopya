@@ -1,0 +1,18 @@
+h2 {
+  text-transform: uppercase;
+  border-top: 2px solid #C2C2C2;
+}
+
+.clickable:hover {
+  cursor: pointer;
+  color: #00A;
+}
+
+.hidden {
+  display: none;
+}
+
+.form {
+  margin-left: auto;
+  margin-right: auto;
+}

@@ -1,0 +1,19 @@
+.imgDown {
+  background-image: url("/images/icons/down.png");
+  background-repeat: no-repeat;
+}
+
+.imgDeactive {
+  background-image: url("/images/icons/deactive.png");
+  background-repeat: no-repeat;
+}
+
+.imgUp {
+  background-image: url("/images/icons/up.png");
+  background-repeat: no-repeat;
+}
+
+.imgBroken {
+  background-image: url("/images/icons/broken.png");
+  background-repeat: no-repeat;
+}

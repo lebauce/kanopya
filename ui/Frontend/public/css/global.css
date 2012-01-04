@@ -1,0 +1,191 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  background-color: #7E388A;
+  color: #999999;
+  font-style: arial;
+  font-size: 0.9em;
+}
+
+#header {
+  position: fixed;
+  z-index: 10;
+  width: 100%;
+  background-color: white;
+  border-top: 2px solid #7E388A;
+  height: 140px;
+}
+
+#header #logo {
+  position: absolute;
+  top: 10px;
+  left: 110px;
+}
+
+#header #infologin {
+  position: absolute;
+  top: 5px;
+  right: 127px;
+  color: #C2C2C2;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+#header #infologin #username {
+  color: #7E388A;
+}
+
+#header .logout {
+  position: absolute;
+  top: 0px;
+  right: 25px;
+  background: #7E388A url(/images/picto_logout.png) no-repeat left;
+  color: white;
+  text-align: center;
+  width: 84px;
+  height: 25px;
+  padding-top: 10px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+#header .logout a {
+  color: white;
+  text-decoration: none;
+}
+
+#header #menu_separator {
+  border-bottom: 1px solid #C2C2C2;
+  top: 98px;
+  width: 100%;
+  position: absolute;
+}
+
+#header #menu {
+  margin-top: 60px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 65%;
+}
+
+#header #menu ul {
+  list-style-type: none;
+}
+
+#header #menu li {
+  float: left;
+}
+
+#header #menu ul li {
+  //padding-right: 37px;
+  padding: 8px 37px 8px 0px;
+}
+
+#header #menu ul li a {
+  display: block;
+  text-decoration: none;
+  color: #C2C2C2;
+  font-weight: bold;
+  //font-size: 1.0em;
+  font-size: 18px;
+}
+
+#header #menu ul li a:hover {
+  color: #80E254;
+}
+
+#header #menu ul .selected {
+  border-bottom: 3px solid #7E388A;
+}
+
+#header #menu ul .selected a {
+  color: #7E388A;
+}
+
+#header #submenu {
+  margin-top: 103px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 65%;
+}
+
+#header #submenu ul {
+  list-style-type: none;
+}
+
+#header #submenu ul li {
+  float: left;
+  padding: 5px 15px 5px 15px;
+  background-color: #C2C2C2;
+}
+
+#header #submenu ul li a {
+  display: block;
+  float: left;
+  text-decoration: none;
+  color: white;
+  //font-size: 0.875em;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+#header #submenu ul li:hover {
+  background-color: #80E254;
+}
+
+#header #submenu ul .selected {
+  background-color: #7E388A;
+}
+
+#header hr {
+  margin-top: 30px;
+}
+
+#container {
+  width: 85%;
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  background-color: white;
+  padding-top: 140px;
+  padding-right: 20px;
+  padding-left: 20px;
+  min-height: 100%;
+}
+
+#opsmsg {
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+}
+
+#opsmsg table {
+  width: 100%;
+  collapse: collapse;
+}
+
+#opsmsg table td {
+  background-color: white;
+  border: thin solid #7E388A;
+  width: 15em;
+  text-align: center;
+  cursor: pointer;
+}
+
+#opsmsg table td.active {
+  background-color: #7E388A;
+  color: white;
+  font-weight: bold;
+}
+
+#opsmsg #operations_content, #opsmsg #messages_content {
+  background-color: white;
+  border: thin solid #7E388A;
+  display: none;
+  font-size: 0.7em;
+  line-height: 1.4em;
+}
