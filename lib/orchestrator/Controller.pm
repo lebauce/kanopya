@@ -79,7 +79,7 @@ sub init {
     $self->{_max_requests_in_infra} = ();
     $self->{_estimated_Si}   = ();
     $self->{_history}               = ();
-
+    $self->{_history_low_charge}    = ();
     my $model = Model::MVAModel->new();
     $self->{_model} = $model;
     
@@ -446,12 +446,7 @@ sub preManageCluster{
     my $num_used_node = $cluster_conf->{nb_nodes} - 1; #DO NOT COUNT MASTER WHEN LVM 0
     my $num_requests_in_infra = $curr_perf->{latency} * $curr_perf->{throughput};
     
-    if (defined $self->{_last_num_used_node}->{$cluster_id} and $num_used_node != $self->{_last_num_used_node}->{$cluster_id}){
-        $self->{_last_num_used_node}->{$cluster_id} = $num_used_node;
-        die "## ASSERT: Controller: Change just happened, no Controller \n";
-    }
-    
-    $self->{_last_num_used_node}->{$cluster_id} = $num_used_node;
+
     
     my $measures = {
         latency               => $curr_perf->{latency},
@@ -461,13 +456,7 @@ sub preManageCluster{
         estimated_S           => $curr_perf->{latency} /(1 + $num_requests_in_infra),
     };
     
-    $self->{_history}->{$cluster_id}->{$num_used_node}->{int($num_requests_in_infra / 10)} = $measures;
-    $log->info(Dumper $self->{_history}->{$cluster_id});
-    my $Z_and_alpha = $self->_find_compatible_Z_alpha(measures_for_all_nodes => $self->{_history}->{$cluster_id});
-    
-    $self->{_estimated_Si}->{$cluster_id} = $self->_compute_estimated_Si(measures_for_all_nodes => $self->{_history}->{$cluster_id});
-    
-    
+        
     $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Monitored latency (ha_proxy)         = $curr_perf->{latency}"); 
     $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Monitored latency (ha_proxy, ".($time_laps/60)."min)  = $mean_perf->{latency}"); 
     $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Monitored throughput (apache)        = $curr_perf->{throughput}"); 
@@ -476,15 +465,40 @@ sub preManageCluster{
     $log->info("$cluster_name (id = $cluster_id n = $num_used_node) : Computed estimated current Si  =  $self->{_estimated_Si}->{$cluster_id}");
     $log->info("Monitored abort_rate = $curr_perf->{abort_rate} (not implemented yet)");
     
+    
     if ($cluster_name eq "BeSim")
     {
         die "## ASSERT: No Controller for BeSim\n"
     }
     
+    
     if ($self->{_actuator}->_isNodeMigrating(cluster => $cluster)) {
+        $log->info("WARNING MOVE THIS EARLIER !!! Saving wrong values in history !!!!!");
         die "## ASSERT: Node in migration , no computation\n"
     }
      
+         # Hack to avoid immediate control after an add or remove node
+    if (defined $self->{_last_num_used_node}->{$cluster_id} and $num_used_node != $self->{_last_num_used_node}->{$cluster_id}){
+        $self->{_last_num_used_node}->{$cluster_id} = $num_used_node;
+        die "## ASSERT: Controller: Change just happened, no Controller \n";
+    }
+    
+    $self->{_last_num_used_node}->{$cluster_id} = $num_used_node;
+     
+    $self->{_history}->{$cluster_id}->{$num_used_node}->{int($num_requests_in_infra / 10)} = $measures;
+    
+    if($measures->{num_requests_in_infra} < 10){
+        $self->{_history_low_charge}->{$cluster_id}->{$num_used_node}->{int($num_requests_in_infra)} = $measures;        
+    }
+    
+    $log->info(Dumper $self->{_history_low_charge}->{$cluster_id});
+    $log->info(Dumper $self->{_history}->{$cluster_id});
+    
+    my $Z_and_alpha = $self->_find_compatible_Z_alpha(measures_for_all_nodes => $self->{_history}->{$cluster_id});
+    
+    $self->{_estimated_Si}->{$cluster_id} = $self->_compute_estimated_Si(measures_for_all_nodes => $self->{_history}->{$cluster_id});
+    
+
     # latency => $cluster_data_aggreg->{Tt},
     # abort_rate => 0,
     # throughput => 0,
@@ -502,6 +516,7 @@ sub preManageCluster{
     };
 
     # TODO Study where to get this information from (need real study)
+    # look in base 
     my @search_space = (); 
     #for (0..$nb_tiers)
     {
@@ -631,10 +646,10 @@ sub manageCluster {
     
     my $multi_algo_conf = {
         nb_steps             => 100,
-        init_step_size       => 0.01,
+        init_step_size       => 0.2,
         authorized_deviation => 1,
         precision            => 10**(-6),
-        S_init               => [$self->{_estimated_Si}->{2} || 0,$self->{_estimated_Si}->{9} || 0],
+        S_init               => [$self->{_estimated_Si}->{2} || 0,$self->{_estimated_Si}->{9} || 0], #HEAVY HARCODE
         D_init               => [0,0],
         service_time_mask    => [1,1],
         delay_mask           => [0,1],
@@ -1223,7 +1238,7 @@ sub _format_data {
             };
             my $data_workload = {
                 workload_class => {
-                 visit_ratio => [1,0.13],
+                 visit_ratio => [1,0.13], #WARNING DOUBLE HARDCODING
                   think_time => $workload->{workload_class}->{think_time}
                  },
             workload_amount => $measures_values->{workload_amount} 
