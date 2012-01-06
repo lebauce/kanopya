@@ -6,5 +6,5 @@
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Memcached1.pm" src="lib/administrator/AdministratorDB/Schema/Result/Memcached1.pm" />
   <nas dest="scripts/database/mysql/schemas/components/memcached1.sql" src="scripts/database/mysql/schemas/components/memcached1.sql" />
   <nas dest="lib/administrator/AdministratorDB/Component/Memcached1Instance.pm" src="lib/administrator/AdministratorDB/Component/Memcached1Instance.pm" />
-  <nas dest="ui/web/KanopyaUI/templates/Components/form_memcached1.tmpl" src="ui/web/KanopyaUI/templates/Components/form_memcached1.tmpl" />
+  <nas dest="ui/Frontend/views/components/memcached1.tt" src="ui/Frontend/views/components/memcached1.tt" />
 </info>

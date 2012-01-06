@@ -10,5 +10,5 @@
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Syslogng3.pm" src="lib/administrator/AdministratorDB/Schema/Result/Syslogng3.pm" />
   <nas dest="scripts/database/mysql/schemas/components/syslogng3.sql" src="scripts/database/mysql/schemas/components/syslogng3.sql" />
   <nas dest="lib/administrator/AdministratorDB/Component/Syslogng3Instance.pm" src="lib/administrator/AdministratorDB/Component/Syslogng3Instance.pm" />
-  <nas dest="ui/web/KanopyaUI/templates/Components/form_syslogng3.tmpl" src="ui/web/KanopyaUI/templates/Components/form_syslogng3.tmpl" />
+  <nas dest="ui/Frontend/views/components/syslogng3.tt" src="ui/Frontend/views/components/syslogng3.tt" />
 </info>
