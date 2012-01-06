@@ -376,6 +376,7 @@ get '/clusters/:clusterid' => sub {
         type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
         systemimage_name   => $systemimage_name,
         systemimage_active => $systemimage_active,
+        systemimage_id     => $systemimage_id,
         kernel             => $kernel,
         publicip_list      => $publicips,
         nbpublicips        => scalar(@$publicips),

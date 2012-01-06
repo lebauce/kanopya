@@ -78,7 +78,7 @@ activate</a><br />
 <tr><td colspan="2">&nbsp;</td></tr>
 <tr><% IF systemimage_name %>
 	<td class="label">System Image :</td>
-	<td><% systemimage_name %> (<% IF systemimage_active %>Active<% ELSE %>Deactivated<% END %>)</td>
+	<td><a href="/systems/images/<% systemimage_id %>"><% systemimage_name %></a> (<% IF systemimage_active %>Active<% ELSE %>Deactivated<% END %>)</td>
 <% ELSE %>
 	<td></td>
 <% END %>
@@ -152,7 +152,7 @@ activate</a><br />
 	<% END %>
 	</td></tr>
 	<% FOREACH node IN nodes_list %>
-		<tr><td class="label2"><span class="bold"><% node.host_hostname %></span><% IF node.master_node %> (master)<% END %></td>
+		<tr><td class="label2"><span class="bold"><a href="/infrastructures/hosts/<% node.host_id %>"><% node.host_hostname %></a></span><% IF node.master_node %> (master)<% END %></td>
 		<td class="label2">ip: <% node.host_internal_ip %></td>
 		<td class="label2">
 		<% IF node.state_up %><span class="state imgUp">Up (<% node.state_time %>)</span><% END %>

@@ -26,8 +26,8 @@
         <script language="javascript" type="text/javascript">
 
             // functions to active and deactive blocks visibility and javascript
-            // functions call.
-
+            // functions call. 
+           
             function active(btn) {
                 $(btn).addClass('active');
                 $(btn.replace(/_btn/, '_content')).show();
@@ -36,7 +36,7 @@
                     interval_id = setInterval("operations_update()", 5000);
                     operations_update();
                 } else {
-                    interval_id = setInterval("messages_update()", 5000);
+                    interval_id = setInterval("messages_update()", 5000);  
                     messages_update();
                 }
                 $(btn).prop('interval_id', interval_id);
@@ -63,7 +63,7 @@
                             $("#messages_content").append(
                                 msg[i]['date']+"&nbsp&nbsp&nbsp"+
                                 msg[i]['time']+"&nbsp&nbsp&nbsp"+
-                                msg[i]['content']+"<br/>" );
+                                msg[i]['content']+"<br/>" );             
                         }
                     },
                     error: function(error, text, thor) {
@@ -86,7 +86,7 @@
                             $("#operations_content").append(
                                 "no operations in the queue");
                         } else {
-                            for(var i=0;i<msg.length;i++) {
+			    for(var i=0;i<msg.length;i++) {
                                 $("#operations_content").append(
                                     msg[i]['CREATION']+"&nbsp&nbsp&nbsp"+
                                     msg[i]['FROM']+"&nbsp&nbsp&nbsp"+
@@ -101,13 +101,31 @@
                 });
             };
 
-            $(document).ready(function() {
+	    // this function is call to print the number of operations enqueued
+	    var operation_sum = function() {
+		$.ajax({
+		    url: "/operationQuantity",
+                    type: "POST",
+                    dataType: "json",
+                    success: function(data) {
+			// display in html format the content of data var in a div
+			$("#operation_quantity").html(data);
+		    }
+		});
+	    }
+
+            $(document).ready(function() {  
 
                 // operations / messages
 
                 // add an attribute to track interval_id value returned by
                 // setInterval function and used by clearInterval
                 $('#operations_btn, #messages_btn').prop('interval_id', '');
+
+		// set operation_sum interval to 1s and call the function
+		interval_id = setInterval("operation_sum()", 1000);
+		$('#operation_quantity').prop('interval_id', '');
+		operation_sum();
 
                 $('#operations_btn, #messages_btn').click(function () {
                     var this_id = '#' + $(this).attr('id');
@@ -117,7 +135,7 @@
                         active( this_id );
                     // one is active, which ?
                     } else {
-                        var active_element;
+                        var active_element; 
                             $('#operations_btn, #messages_btn').each(function (index, domEle) {
                                 if($(domEle).hasClass('active')) {
                                     active_element = '#'+$(domEle).attr('id');
@@ -131,7 +149,7 @@
                         } else {
                             deactive(this_id);
                         }
-                    }
+                    } 
                 });
 
                 // modals
@@ -139,7 +157,6 @@
                     var $link = $(this);
 
                     var $dialog = $('<div></div>')
-                        .load($link.attr('href'))
                         .dialog({
                             autoOpen: false,
                             modal: true,
@@ -160,6 +177,7 @@
                         });
 
                     $link.click(function() {
+			$dialog.load($(this).attr('href'))
                         $dialog.dialog('open');
                         return false;
                     });
@@ -178,11 +196,11 @@
                     <li <% menu_selection('systems') %>><a href="/systems/kernels">Systems</a></li>
                     <li <% menu_selection('architectures') %>><a href="/architectures/clusters">Architectures</a></li>
                 </ul>
-
+            
             </div>
             <div id="menu_separator">
             </div>
-
+            
             <div id="submenu">
                 <ul>
                     <% IF is_menu_selected('dashboard') %>
@@ -194,7 +212,7 @@
                         <li <% submenu_selection('permissions') %>><a href="/rights/permissions">Permissions</a></li>
                     <% ELSIF is_menu_selected('infrastructures') %>
                         <li <% submenu_selection('hosts') %>><a href="/infrastructures/hosts">Hosts</a></li>
-                        <li <% submenu_selection('vms') %>><a href="/infrastructures/vms">Vms</a></li>
+                        <li <% submenu_selection('vm') %>><a href="/infrastructures/vms">Vms</a></li>
                         <li <% submenu_selection('models') %>><a href="/infrastructures/models">Models</a></li>
                     <% ELSIF is_menu_selected('systems') %>
                         <li <% submenu_selection('kernels') %>><a href="/systems/kernels">Kernels</a></li>
@@ -207,7 +225,7 @@
                     <% END %>
                 </ul>
             </div>
-
+            
             <div id="infologin">
                 logged as <span id="username"><% username %></span>
             </div>
@@ -215,18 +233,18 @@
             <div class="logout">
                 <a href="/logout">Logout</a>
             </div>
-
+            
         </div>
 
         <div id="container">
             <div id="content">
                 <% content %>
             </div>
-
+           
             <div id="opsmsg">
                 <table>
                     <tr>
-                        <td id="operations_btn">operations queue</td>
+                        <td id="operations_btn">operations queue <div style="display: inline;" id="operation_quantity"></div></td>
                         <td id="messages_btn">messages</td>
                     </tr>
                 </table>
