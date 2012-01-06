@@ -91,6 +91,12 @@ sub addNode {
         
         $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
                                 econtext => $args{econtext}, 
+                                scriptname => 'ipvsadm', 
+                                startvalue => 19, 
+                                stopvalue => 21);
+        
+        $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
+                                econtext => $args{econtext}, 
                                 scriptname => 'keepalived', 
                                 startvalue => 20, 
                                 stopvalue => 20);
