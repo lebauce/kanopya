@@ -2,6 +2,7 @@ package Hosts;
 
 use Dancer ':syntax';
 
+use General;
 use Administrator;
 use Entity::Host;
 use Entity::Kernel;
@@ -325,6 +326,10 @@ get '/hosts/:hostid' => sub {
         push @$hds, $tmp;
     }
 
+    # hostram
+    my $hostram = $ehost->getAttr('name' => 'host_ram');
+    my $hostramConverted = General::convertFromBytes('value' => $hostram, 'units' => 'G');
+
     template 'hosts_details', {
         host_id          => $ehost->getAttr('name' => 'host_id'),
         host_hostname    => $ehost->getAttr('name' => 'host_hostname'),
@@ -332,6 +337,8 @@ get '/hosts/:hostid' => sub {
         host_mac         => $ehost->getAttr('name' => 'host_mac_address'),
         host_ip          => $ehost->getInternalIP()->{ipv4_internal_address},
         host_sn          => $ehost->getAttr('name' => 'host_serial_number'),
+	host_ram	 => $hostramConverted,
+	host_core	 => $ehost->getAttr('name' => 'host_core'),
         host_powersupply => $ehost->getAttr('name' => 'host_powersupply_id'),
         host_model       => $host_model,
         processor_model         => $processor_model,

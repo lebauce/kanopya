@@ -60,9 +60,10 @@
 <td class="label">MAC address :</td><td><% host_mac %></td></tr>
 <tr><td class="label">Processor :</td><td><% IF processor_model %><% processor_model %><% ELSE %>-<% END %></td>
 <td class="label">Internal IP :</td><td><% host_ip %></td></tr>
-<tr><td class="label">S/N :</td><td><% host_sn %></td></tr>
-<tr><td class="label">Power Supply Card :</td><td><% IF host_powersupply %><% host_powersupply %>-<% ELSE %>none<% END %>
-</td></tr>
+<tr><td class="label">S/N :</td><td><% host_sn %></td>
+<td class="label">Core number :</td><td><% host_core %></td></tr>
+<tr><td class="label">Power Supply Card :</td><td><% IF host_powersupply %><% host_powersupply %>-<% ELSE %>none<% END %></td>
+<td class="label">RAM amount :</td><td><% host_ram %>G</td></tr>
 <tr><td colspan="2">&nbsp;</td></tr>
 <tr><td class="label">Kernel :</td><td><% IF host_kernel %><% host_kernel %><% ELSE %>-<% END %></td></tr>
 </table>
