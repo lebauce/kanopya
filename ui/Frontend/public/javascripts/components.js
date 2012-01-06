@@ -37,7 +37,7 @@ $(document).ready(function(){
 		$.get(save_component_conf_link, params, function(resp) {
 			//loading_stop();
 			alert(resp);
-			window.location= redirect_link ;//+ conf['cluster_id'];
+			window.location= redirect_link + "/" + conf['cluster_id'];
 		});
 		
 	}
