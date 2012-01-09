@@ -96,7 +96,8 @@ get '/logs' => sub {
         $error_msg = "Syslogng3 must be installed on admin cluster";
     }
     else {
-        my @log_dirs = $logger_comp->getKanopyaAdmLogDirectories();
+        my @log_dirs = ( $logger_comp->getKanopyaAdmLogDirectories(),
+        		 $logger_comp->getKanopyaNodesLogDirectories() );
 
         foreach my $path (@log_dirs) {
             my $dir_error;
