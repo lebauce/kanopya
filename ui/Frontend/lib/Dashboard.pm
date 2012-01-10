@@ -97,7 +97,7 @@ get '/logs' => sub {
     }
     else {
         my @log_dirs = ( $logger_comp->getKanopyaAdmLogDirectories(),
-        		 $logger_comp->getKanopyaNodesLogDirectories() );
+        		         $logger_comp->getKanopyaNodesLogDirectories() );
 
         foreach my $path (@log_dirs) {
             my $dir_error;
