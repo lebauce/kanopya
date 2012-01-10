@@ -161,6 +161,7 @@ activate</a><br />
 		<% IF node.state_broken %><span class="state imgWarning">Broken (<% node.state_time %>)</span><% END %>
 		</td>
 		<td class="action">
+			<a href="/dashboard/logs/<% node.host_internal_ip %>">logs</a>
 		<% IF node.link_remove %>
 			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
 		<% END %></td></tr>
