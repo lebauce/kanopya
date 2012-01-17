@@ -14,10 +14,17 @@ ajax '/messages' => sub {
 };
 
 ajax '/operation/queue' => sub {
-    my $adm      = Administrator->new();
+    my $adm = Administrator->new();
     my @operation_queue = $adm->getOperations();
     content_type('application/json');
     return to_json(@operation_queue);
+};
+
+ajax '/operationQuantity' => sub {
+    my $adm = Administrator->new();
+    my $operation_quantity = $adm->getOperationSum();
+    content_type('application/json');
+    return $operation_quantity;
 };
 
 1;

@@ -96,7 +96,8 @@ get '/logs' => sub {
         $error_msg = "Syslogng3 must be installed on admin cluster";
     }
     else {
-        my @log_dirs = $logger_comp->getKanopyaAdmLogDirectories();
+        my @log_dirs = ( $logger_comp->getKanopyaAdmLogDirectories(),
+        		         $logger_comp->getKanopyaNodesLogDirectories() );
 
         foreach my $path (@log_dirs) {
             my $dir_error;
@@ -141,6 +142,57 @@ ajax '/logs' => sub {
     content_type('text/plain');
 
     return $log_str;
+};
+
+# nodeip specific logs route
+get '/logs/:nodeip' => sub {
+    my $nodeip = params->{nodeip};
+    my @dirs_info     = ();
+    my $admin_cluster = Entity::Cluster->get( id => 1 );
+    my $error_msg;
+    my $logger_comp;
+
+    eval {
+        $logger_comp = $admin_cluster->getComponent(
+            category => 'Logger',
+            name     => 'Syslogng',
+            version  => 3
+        );
+    };
+
+    if ($@) {
+        $log->warn($@);
+        $error_msg = "Syslogng3 must be installed on admin cluster";
+    }
+    else {
+        my @log_dirs = $logger_comp->getKanopyaNodesLogDirectories();
+        my $path = $log_dirs[0].$nodeip . '/';
+
+        my $dir_error;
+        my @files_info = ();
+        my $ls_output = `ls $path`;
+
+        if ( ! defined $dir_error ) {
+            my @files = grep { -f "$path$_" and not $_ =~ '\.gz$' } split(" ", $ls_output);
+
+            @files_info = map { {
+                path     => $path,
+                filename => $_
+            } } @files;
+        }
+
+        push @dirs_info, {
+            path       => $path,
+            dir_locked => $dir_error,
+            files      => \@files_info
+        };
+
+        template 'logs', {
+            title_page => 'Dashbord logs',
+            dirs       => \@dirs_info,
+            error_msg  => $error_msg
+        };
+    }
 };
 
 =head1 adminComponentsDef
