@@ -76,6 +76,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
   "indicatorset_max",
   { data_type => "char", is_nullable => 1, size => 128 },
+  "indicatorset_tableoid",
+  { data_type => "char", is_nullable => 1, size => 64 },
 );
 __PACKAGE__->set_primary_key("indicatorset_id");
 

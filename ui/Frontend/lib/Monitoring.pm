@@ -200,4 +200,27 @@ get '/clusters/:clusterid/monitoring/settings/save' => sub  {
     return "$res";
 };
 
+get '/monitoring/browse' => sub  {
+    my $cluster_id = params->{clusterid};
+    
+    my $route_name = 'monitor_data';
+    my $path = "../public/";
+    
+    my $ls_output = `ls $path$route_name`;
+
+   # my @files = grep { -f "$path$_" } split(" ", $ls_output);
+    my @files = split(" ", $ls_output);
+ 
+    my @rrd_files = map { {
+                    route   => $route_name,
+                    name    => $_
+                } } @files;
+    
+    template 'view_clustermonitoring_flot', {
+        title_page      => "Monitor rrd plot",
+        cluster_id      => $cluster_id,
+        rrd_files       => \@rrd_files,
+    };
+};
+
 1;

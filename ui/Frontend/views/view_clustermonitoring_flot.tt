@@ -1,0 +1,75 @@
+
+<% js_head.push('rrdFlot/binaryXHR.js',
+                'rrdFlot/rrdFile.js',
+                'rrdFlot/rrdFlotSupport.js',
+                'rrdFlot/rrdFlot.js',
+                'flot/jquery.flot.js',
+                'flot/jquery.flot.selection.js',
+                'flot/jquery.flot.tooltip.js' ) %>
+
+<br/>
+<select id="select_fname" onchange="fname_update()">
+     <% FOREACH file IN rrd_files %>
+        <option value='/<% file.route %>/<% file.name %>'><% file.name %></option>
+     <% END %>
+</select>
+
+    <hr>
+
+    <div id="mygraph"></div>
+
+    <script type="text/javascript">
+    
+      // fname and rrd_data are the global variable used by all the functions below
+      fname=undefined;
+      rrd_data=undefined;
+
+      // This function updates the Web Page with the data from the RRD archive header
+      // when a new file is selected
+      function update_fname() {        
+        var graph_opts={legend: { noColumns:4 }};
+        var ds_graph_opts={
+//                           'Oscilator':{ color: "#ff8000", 
+//                                        lines: { show: true, fill: true, fillColor:"#ffff80"} },
+//                           'Idle':{ label: 'IdleJobs', color: "#00c0c0", 
+//                                    lines: { show: true, fill: true} },
+//                           'Running':{color: "#000000",yaxis:2}
+                           };
+
+        // the rrdFlot object creates and handles the graph
+        var f=new rrdFlot("mygraph",rrd_data,graph_opts,ds_graph_opts);
+      }
+ 
+      // This is the callback function that,
+      // given a binary file object,
+      // verifies that it is a valid RRD archive
+      // and performs the update of the Web page
+      function update_fname_handler(bf) {
+          var i_rrd_data=undefined;
+          try {
+            var i_rrd_data=new RRDFile(bf);            
+          } catch(err) {
+            alert("File "+fname+" is not a valid RRD archive!");
+          }
+          if (i_rrd_data!=undefined) {
+            rrd_data=i_rrd_data;
+            update_fname()
+          }
+      }
+
+      // this function is invoked when the RRD file name changes
+      function fname_update() {
+        //fname=document.getElementById("input_fname").value;
+        fname = $('#select_fname :selected').attr('value');
+        if (fname == undefined) {alert('No rrd found, maybe you have not public monitor data dir');exit;}
+        try {
+          FetchBinaryURLAsync(fname,update_fname_handler);
+        } catch (err) {
+           alert("Failed loading "+fname+"\n"+err);
+        }
+      }
+
+    fname_update();
+
+    </script>
+

@@ -127,8 +127,8 @@ sub getData {
         }
     }
 
-    print "\n###############   ", "getData res data   # $args{rrd_name} #", "   ##########\n";
-    print Dumper \%res_data;
+    #print "\n###############   ", "getData res data   # $args{rrd_name} #", "   ##########\n";
+    #print Dumper \%res_data;
 
     ######################################################
     # Build resulting hash : ( ds_name => f(v1,v2,...) ) #
@@ -153,8 +153,8 @@ sub getData {
     }
 
     # debug
-    print "\n###############   ", "getData res", "   ##########\n";
-    print Dumper \%res;
+    #print "\n###############   ", "getData res", "   ##########\n";
+    #print Dumper \%res;
     
     Monitor::logRet( %res );
     
@@ -193,7 +193,27 @@ sub getClusterData {
     
     my $rrd_name = $self->rrdName( set_name => $args{set}, host_name => $args{cluster} );
     
-    $rrd_name .= "_avg";
+    # Unable the monitoring of _total based and stay compatible with existant code 
+    if(exists $args{aggregation} and defined $args{aggregation}){
+        if($args{aggregation} eq 'total'){
+            $rrd_name .= "_total";
+        }
+        elsif($args{aggregation} eq 'average'){
+            $rrd_name .= "_avg";
+        }
+        else{
+            $rrd_name .= "_avg";
+        }
+    }
+    else{
+        $rrd_name .= "_avg";
+    }
+    
+# TODO : A TESTER    
+#    my %corresponding_table = (total   => 'total',
+#                               average => 'avg',
+#    );
+#    $rrd_name .= "_".($corresponding_table{$args{aggregation} || 'avg'});
     
     my $set_def = $self->getSetDesc(set_label => $args{set});
     my @max_def;

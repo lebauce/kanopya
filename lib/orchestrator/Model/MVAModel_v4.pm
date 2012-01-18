@@ -11,13 +11,14 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Model::MVAModel;
+package Model::MVAModel_v4;
 
 use strict;
 use warnings;
 use Data::Dumper;
-use List::Util qw(min max sum);
+use List::Util qw(min max sum reduce);
 use Log::Log4perl "get_logger";
+
 my $log = get_logger("MVAModel");
 
 use base "Model";
@@ -132,60 +133,52 @@ sub calculate {
     my @Lr  = (); # Latency of request admitted at Ti and rejected at Ti+1 ..TM
     my @Ta  = (); # Throughput of request admitted at Ti ..TM
     my @Tr  = (); # Throughput of request admitted at Ti and rejected at Ti+1 ..TM
-    
+    my $T = 0; # General throughput
     
     for my $i (0 .. $M-1) {
         $Ql[$i] = 0;
         #$W[$i] = ($S[$i] - $D[$i]) * $V[$i];
-        $W[$i] = $S[$i] * $V[$i];
+        $W[$i] = $S[$i]* $V[$i];
     }
     
 #    print "M = $M, $Na[0], $Na[1]\n";
 #    my $a = <>;
     
     # TODO study this part (difference between pseudo-code in thesis and moka implementation)
-    for (my $i = $M - 1; $i >= 0; $i--) {
-        
-        # Client insertion
-        #for (my $j = 1; $j < $Na[$i]; $j++) {
-        for (my $j = 1; $j <= $Na[$i]; $j++) {
-            my $Wip = (1 + $Ql[$i]) * $W[$i] / $AC[$i]; # Service demand per node at Ti
-            #print "$Wip vs $W[$i]\n";
-           
+
+my @count = (0)x($M+1);
+@La = (0)x($M+1);
+@R =(0)x($M+1);
+@Ql = (0)x($M+1);
+my @real_latency = (0)x($M+1);
+$R[$M] = $Z;
+$W[$M] = $Z;
+
+for (my $j = 1; $j <= $Na[0]; $j++) {
+    for (my $i = 0; $i <= $M-1; $i++) {
+            my $Wip = (1 + $Ql[$i]) * $W[$i]  / $AC[$i]; # Service demand per node at Ti
             $R[$i] = max( $Wip, $W[$i] ) + ( $D[$i] * $V[$i] );  
-            
-            
-            if ($i < $M - 1) {
-                    #print "$i $j $R[$i]+ $La[$i + 1] La[$i + 1]\n";
-                    $La[$i] = $R[$i] + $La[$i + 1];
-                    $Lr[$i] = $R[$i] + $Lr[$i + 1];
-            } else {
-                $La[$i] = $R[$i];
-                $Lr[$i] = $R[$i];
-            }
-            
-            
-            
-            # /!\ WARNING /!\ Potential cast problem in the original java algo ?
-            $Ta[$i] = ($j * $Nap[$i] / $Na[$i]) / ($La[$i] + $Z);
-            $Tr[$i] = ($j * ($Na[$i] - $Nap[$i])/ $Na[$i]) / ($Lr[$i] + $Z);
-            
-            $Ql[$i] = ($Ta[$i] + $Tr[$i]) * $R[$i]; # Ti’s total queue length with Little’s law
-            #print "$j $i : ($j * $Nap[$i] / $Na[$i]) / ($La[$i] + $Z);\n";
-            #print "$j $i : $Ql[$i] = ($Ta[$i] + $Tr[$i]) * $R[$i]\n";
-            #Compliance with MOKA code
-            #$Ql[$i] = int(($Ta[$i] + $Tr[$i]) * $R[$i]);
-        }
-        #print "La[$i] = $La[$i]\n";
     }
+    
+    my $L = (sum @R);
+    $T   = $j / $L;
+    for (my $i = $M - 1; $i >= 0; $i--) {
+        $real_latency[$i] = $R[$i] / $V[$i];
+        $Ql[$i] = $T * $R[$i]; # Tier i’s total queue length with Little’s law
+        #print "tier $i, $Ql[$i] = $T * $R[$i] = ".($T * $V[$i])." * ".($R[$i] / $V[$i])." **** \n";
+    }
+    $Ql[$M] = $T * $R[$M];
+     
+    print "$j Ql @Ql ; LatTierFromFront @R; LatFromTier @real_latency; Throu $T , Lattotal ".((sum @R) - $R[$M])."\n";
+}
    
-    my $latency = $La[0];
+    my $latency = (sum @R) - $R[$M];
     
     ######
     #  Service throughput and abandon rate
     ######
     
-    my $Ta_total = $N_admitted / ($La[0] + $Z);    # throughput of requets admitted at T1 ..TM <=> total throughput    
+    my $Ta_total = $N_admitted / (sum @R);    # throughput of requets admitted at T1 ..TM <=> total throughput    
     my $Tr_total = $Nr[0] / $Z;    # throughput of requets admitted at T1 and rejected at T2 ..TM
     my $Trp = ($N_rejected - $Nr[0]) / ($Lr[0] + $Z); # throughput of requests rejected at T1
     my $abort_rate = ($Tr_total+$Trp)/($Tr_total+$Trp+$Ta_total); # total abandon rate 
