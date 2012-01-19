@@ -694,7 +694,7 @@ sub addNode {
             $args{cluster_id} = $self->getAttr(name =>"cluster_id");
             my $cluster_constraints = $self->getHostConstraints();
             if ($cluster_constraints && defined $args{type}){
-                if ($cluster_constraints->[0] ne $args{type}){
+                if ($cluster_constraints ne $args{type}){
                     throw Kanopya::Exception(error => "Cluster constraints ($cluster_constraints->[0]) and host type chosen by the user ($args{type}) are different");
                 }
             }
