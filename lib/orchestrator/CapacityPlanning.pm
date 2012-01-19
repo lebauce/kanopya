@@ -102,6 +102,7 @@ sub setSearchSpaceForTiers {
 =cut
 
 sub calculate {
+    
     my $self = shift;
     my %args = @_;
     

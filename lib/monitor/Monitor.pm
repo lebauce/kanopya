@@ -349,6 +349,7 @@ sub getRRD {
         dsname_list : the list of var name to store in the rrd
         ds_type : the type of var ( GAUGE, COUNTER, DERIVE, ABSOLUTE )
         file : the name of the rrd file to create
+        (optionnal) time_step: overload monitoring time_step (conf)
     
     Return : The RRDTool object
     
@@ -360,28 +361,30 @@ sub createRRD {
 
     $log->info("## CREATE RRD : '$args{file}' ##");
 
+    my $time_step   = $args{time_step} || $self->{_time_step};
     my $dsname_list = $args{dsname_list};
-
-    my $set_def = $self->getSetDesc( set_label => $args{set_name} );
-    my $ds_list = General::getAsHashRef( data => $set_def, tag => 'ds', key => 'label');
+    my $set_def     = $self->getSetDesc( set_label => $args{set_name} );
+    my $ds_list     = General::getAsHashRef( data => $set_def, tag => 'ds', key => 'label');
 
     my $rrd = $self->getRRD( file => $args{file} );
 
-    my $raws = $self->{_period} / $self->{_time_step};
+    my $raws = $self->{_period} / $time_step;
 
-    my @rrd_params = (     'step', $self->{_time_step},
-                        'archive', { rows    => $raws },
-#                        'archive', {     rows => $raws,
-#                                        cpoints => 10,
-#                                        cfunc => "AVERAGE" },
+    my @rrd_params = (  'step',     $time_step,
+                        'archive',  { rows    => $raws },
+#                        'archive', { rows => $raws,
+#                                     cpoints => 10,
+#                                     cfunc => "AVERAGE" },
                      );
     for my $name ( @$dsname_list ) {
-        push @rrd_params,     (
-                                'data_source' => {     name      => $name,
-                                                      type      => $args{ds_type},
-                                                      min        => $ds_list->{$name}{min},
-                                                      max        => $ds_list->{$name}{max} },            
-                            );
+        push @rrd_params, (
+                            'data_source' => {
+                                name      => $name,
+                                type      => $args{ds_type},
+                                min        => $ds_list->{$name}{min},
+                                max        => $ds_list->{$name}{max} 
+                            },
+        );
     }
 
     # Create a round-robin database
@@ -430,13 +433,15 @@ sub rebuild {
     
     Class : Public
     
-    Desc : Store values in rrd
+    Desc :  Store values in rrd
+            If rrd doesn't exist, then create it
     
     Args :
         time: the time associated with values retrieving
         rrd_name: the name of the rrd
         data: hash ref { var_name => value }
         ds_type: the type of data sources (vars)
+        (optionnal) time_step: used if create rrd, to overload monitoring time_step (conf)
     
     Return : the hash of values as stored in rrd
 =cut
@@ -464,7 +469,13 @@ sub updateRRD {
         else {
             $log->info("=> update : unexisting RRD file or set definition changed in conf => we (re)create it ($rrdfile_name).\n (Reason: $error)");
             my @dsname_list = keys %{ $args{data} };
-            $rrd = $self->createRRD( file => $rrdfile_name, dsname_list => \@dsname_list, ds_type => $args{ds_type}, set_name => $args{set_name} );
+            $rrd = $self->createRRD( 
+                file        => $rrdfile_name,
+                dsname_list => \@dsname_list,
+                ds_type     => $args{ds_type},
+                set_name    => $args{set_name},
+                time_step   => $args{time_step},
+            );
             $rrd->update( time => $time, values =>  $args{data} );
         }
     } 

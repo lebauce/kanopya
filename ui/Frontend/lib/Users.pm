@@ -125,7 +125,7 @@ get '/users/:userid' => sub {
         user_lastname     => $euser->getAttr('name' => 'user_lastname'),
         user_email        => $euser->getAttr('name' => 'user_email'),
         user_login        => $euser->getAttr('name' => 'user_email'),
-        user_creationdate => $euser->getAttr('name' => 'user_login'),
+        user_creationdate => $euser->getAttr('name' => 'user_creationdate'),
         user_lastaccess   => $euser->getAttr('name' => 'user_lastaccess'),
         gp_list           => $groups,
         can_update        => $methods->{'update'}->{'granted'},
