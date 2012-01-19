@@ -123,9 +123,9 @@
                 $('#operations_btn, #messages_btn').prop('interval_id', '');
 
 		// set operation_sum interval to 1s and call the function
-		interval_id = setInterval("operation_sum()", 1000);
-		$('#operation_quantity').prop('interval_id', '');
-		operation_sum();
+		//interval_id = setInterval("operation_sum()", 1000);
+		//$('#operation_quantity').prop('interval_id', '');
+		//operation_sum();
 
                 $('#operations_btn, #messages_btn').click(function () {
                     var this_id = '#' + $(this).attr('id');
