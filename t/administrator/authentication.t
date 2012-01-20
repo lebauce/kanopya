@@ -38,7 +38,7 @@ lives_ok { Administrator::authenticate(login => 'admin', password => 'K4n0pY4');
 lives_ok { Administrator::authenticate(login => 'executor', password => 'K4n0pY4'); }  "Authentication succeed with correct login/password for executor user";
 lives_ok { Administrator::authenticate(login => 'guest', password => 'guest'); }  "Authentication succeed with correct login/password for guest user";
 
-Administrator::authenticate(login => 'admin', password => 'k4n0py4');
+Administrator::authenticate(login => 'admin', password => 'k4n0pY4');
 ok(exists $ENV{EID}, 'after authentication, environment variable EID exists');
 ok(defined $ENV{EID}, 'after authentication, environment variable EID defined');
 
