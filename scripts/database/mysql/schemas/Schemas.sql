@@ -103,7 +103,7 @@ CREATE TABLE `harddisk` (
 --
 
 CREATE TABLE `host` (
-  `host_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `host_id` int(8) unsigned NOT NULL,
   `hostmodel_id` int(8) unsigned NULL DEFAULT NULL,
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
@@ -123,6 +123,7 @@ CREATE TABLE `host` (
   `host_state` char(32) NOT NULL DEFAULT 'down',
   `host_prev_state` char(32),
   PRIMARY KEY (`host_id`),
+  CONSTRAINT FOREIGN KEY (`host_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `host_internal_ip_UNIQUE` (`host_internal_ip`),
   UNIQUE KEY `host_mac_address_UNIQUE` (`host_mac_address`),
   KEY `fk_host_1` (`hostmodel_id`),
@@ -139,6 +140,13 @@ CREATE TABLE `host` (
   CONSTRAINT `fk_host_5` FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_host_6` FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_host_7` FOREIGN KEY (`cloud_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `subhost` (
+  `subhost_id` int(8) unsigned NOT NULL,
+  `subhost_attr` char(128) NOT NULL,
+  PRIMARY KEY (`subhost_id`),
+  CONSTRAINT FOREIGN KEY (`subhost_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -840,19 +848,7 @@ CREATE TABLE `distribution_entity` (
   CONSTRAINT `fk_distribution_entity_2` FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `host_entity`
---
 
-CREATE TABLE `host_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `host_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`host_id`),
-  UNIQUE KEY `fk_host_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_host_entity_2` (`host_id`),
-  CONSTRAINT `fk_host_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_host_entity_2` FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 --
