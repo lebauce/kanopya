@@ -2,12 +2,17 @@
 
 package BaseDB;
 
+use Administrator;
 
 # _buildAttrsHierarchy : given a flat attributes hash ref, build 
 # attrs hash ref with correct class hierarchy to call 
 # result('concrettable')->new($hash)
 
 sub _buildAttrsHierarchy {
+	
+}
+
+sub _buildTableName {
 	
 }
 
@@ -26,7 +31,16 @@ sub checkAttrs {
 # new : return dbix resultset with full class hierarchy of this 
 
 sub new {
+	my $class = shitf;
+	my %args = @_;
 	
+	my $attrs = checkAttrs(class => $class, attrs => \%args);
+	my $adm = Administrator->new();
+	my $self = {
+		_dbix => $adm->_newDBIx(table => _buildTableName($class), row => $attrs),
+	};
+	bless $self, $class;
+	return $self;
 }
 
 # getAttr : retrieve a value given a name attribute ; search this
