@@ -95,19 +95,19 @@ get '/users/:userid/delete' => sub {
 get '/users/:userid' => sub {
     my $user_id = param('userid');
     my $euser = eval { Entity::User->get(id => $user_id) };
-    #******************************************
-   my $hosts={};
-    my $ehosts = Entity::Cluster->getHosts();
-    foreach my $eh (%$ehosts)
+    my @cluster = Entity::Cluster->getClusters( hash => { user_id => $user_id } );
+    my $clusters = [];
+    foreach my $ec (@cluster)
     {
-		my $tmp={};
-		$tmp->{host_ram}=$eh->getHostRAM();
-		$tmp->{host_core}=$eh->getHostCORE();
-	 push(@$hosts, $tmp);
+		my $cluster_id= $ec->getAttr(name => 'cluster_id');
+		my $tmpc = {};
+        $tmpc->{cluster_name}     = $ec->getAttr(name => 'cluster_name');
+        $tmpc->{url}        = "http://10.0.0.1:5000/architectures/clusters/$cluster_id";
+        
+         push(@$clusters, $tmpc);
 	}
-	
-    #*******************************************
-    if($@) {
+    
+       if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             my $adm = Administrator->new;
@@ -142,7 +142,7 @@ get '/users/:userid' => sub {
         user_creationdate => $euser->getAttr('name' => 'user_creationdate'),
         user_lastaccess   => $euser->getAttr('name' => 'user_lastaccess'),
         gp_list           => $groups,
-        hst_list          => $hosts,
+        clusters     => $clusters,
         can_update        => $methods->{'update'}->{'granted'},
         can_delete        => $methods->{'remove'}->{'granted'},
         can_setperm       => $methods->{'setperm'}->{'granted'},
