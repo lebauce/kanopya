@@ -138,10 +138,7 @@ sub authenticate {
         {
             user_login => $args{login},
             user_password => md5_hex($args{password}),
-        },{
-            '+columns' => {'entity_id' => 'user_entity.entity_id'},
-            join => ['user_entity'],
-        },
+        }
     )->single;
 
     if(not defined $user_data) {
@@ -150,7 +147,7 @@ sub authenticate {
     } else {
         $log->info("Authentication succeed for login ".$args{login});
         #$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
-        $ENV{EID} = $user_data->get_column('entity_id');
+        $ENV{EID} = $user_data->id;
     }
 }
 
@@ -185,9 +182,7 @@ sub buildEntityRights {
 
     General::checkParams(args => \%args, required => ['schema']);
 
-    my $user = $args{schema}->resultset('User')->search({ 'user_entity.entity_id' => $ENV{EID}},
-         { join => ['user_entity'] }
-    )->single;
+    my $user = $args{schema}->resultset('User')->find($ENV{EID});
 
     if($user->get_column('user_system')) {
         #$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
