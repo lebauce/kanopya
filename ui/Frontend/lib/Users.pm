@@ -142,7 +142,7 @@ get '/users/:userid' => sub {
         user_creationdate => $euser->getAttr('name' => 'user_creationdate'),
         user_lastaccess   => $euser->getAttr('name' => 'user_lastaccess'),
         gp_list           => $groups,
-        clusters     => $clusters,
+        clusters_list     => $clusters,
         can_update        => $methods->{'update'}->{'granted'},
         can_delete        => $methods->{'remove'}->{'granted'},
         can_setperm       => $methods->{'setperm'}->{'granted'},
