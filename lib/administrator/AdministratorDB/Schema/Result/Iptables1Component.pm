@@ -83,12 +83,12 @@ __PACKAGE__->belongs_to(
   "iptables1_sec_rule",
   "AdministratorDB::Schema::Result::Iptables1SecRule",
   { iptables1_sec_rule_id => "iptables1_sec_rule_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-07-25 15:07:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:u8T1Zxq+L+sn2/N7SdyTeA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:X15ahplX1YsSzJTQIHjhYg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

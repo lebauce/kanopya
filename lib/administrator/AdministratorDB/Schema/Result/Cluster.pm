@@ -23,7 +23,7 @@ __PACKAGE__->table("cluster");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 cluster_name
@@ -122,13 +122,12 @@ __PACKAGE__->table("cluster");
   data_type: 'char'
   is_nullable: 1
   size: 32
-  
+
 =head2 cluster_basehostname
 
   data_type: 'char'
   is_nullable: 0
   size: 64
-
 
 =cut
 
@@ -137,7 +136,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "cluster_name",
@@ -180,7 +179,7 @@ __PACKAGE__->add_columns(
   { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
   "cluster_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
-   "cluster_basehostname",
+  "cluster_basehostname",
   { data_type => "char", is_nullable => 0, size => 64 },
 );
 __PACKAGE__->set_primary_key("cluster_id");
@@ -188,19 +187,19 @@ __PACKAGE__->add_unique_constraint("cluster_name_UNIQUE", ["cluster_name"]);
 
 =head1 RELATIONS
 
-=head2 cluster_entity
+=head2 cluster
 
-Type: might_have
+Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ClusterEntity>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
-__PACKAGE__->might_have(
-  "cluster_entity",
-  "AdministratorDB::Schema::Result::ClusterEntity",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "cluster",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "cluster_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 cluster_ipv4_routes
@@ -275,6 +274,21 @@ __PACKAGE__->has_many(
   "graphs",
   "AdministratorDB::Schema::Result::Graph",
   { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 hosts
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Host>
+
+=cut
+
+__PACKAGE__->has_many(
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
+  { "foreign.cloud_cluster_id" => "self.cluster_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -369,8 +383,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-10-01 12:16:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YQHjwHosYkYAKMqNmT4uaQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZUlKwEzVslmRpQBkO1G1+w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

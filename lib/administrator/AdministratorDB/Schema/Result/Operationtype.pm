@@ -80,24 +80,9 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 operationtype_entity
 
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::OperationtypeEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "operationtype_entity",
-  "AdministratorDB::Schema::Result::OperationtypeEntity",
-  { "foreign.operationtype_id" => "self.operationtype_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZSMY49cxRx/GDbpzByktdQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:A1O6mlTiZdpk8yE+ZRfLtQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

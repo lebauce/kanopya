@@ -77,9 +77,7 @@ Related object: L<AdministratorDB::Schema::Result::Host>
 __PACKAGE__->has_many(
   "hosts",
   "AdministratorDB::Schema::Result::Host",
-  {
-    "foreign.host_ipv4_internal_id" => "self.ipv4_internal_id",
-  },
+  { "foreign.host_ipv4_internal_id" => "self.ipv4_internal_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -99,8 +97,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-07 12:42:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GDk8/9n+NAbQs1fB/qTiZA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e2X/k/O4TzqQXOtOtcGPlA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

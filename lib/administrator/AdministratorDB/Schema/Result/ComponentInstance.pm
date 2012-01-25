@@ -105,12 +105,12 @@ Related object: L<AdministratorDB::Schema::Result::Apache2>
 
 =cut
 
-#__PACKAGE__->has_many(
-#  "apache2s",
-#  "AdministratorDB::Schema::Result::Apache2",
-#  { "foreign.component_instance_id" => "self.component_instance_id" },
-#  { cascade_copy => 0, cascade_delete => 0 },
-#);
+__PACKAGE__->has_many(
+  "apache2s",
+  "AdministratorDB::Schema::Result::Apache2",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 atftpd0s
 
@@ -139,7 +139,12 @@ __PACKAGE__->belongs_to(
   "cluster",
   "AdministratorDB::Schema::Result::Cluster",
   { cluster_id => "cluster_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 component_template
@@ -154,7 +159,12 @@ __PACKAGE__->belongs_to(
   "component_template",
   "AdministratorDB::Schema::Result::ComponentTemplate",
   { component_template_id => "component_template_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 component
@@ -169,22 +179,7 @@ __PACKAGE__->belongs_to(
   "component",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "component_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 component_instance_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::ComponentInstanceEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "component_instance_entity",
-  "AdministratorDB::Schema::Result::ComponentInstanceEntity",
-  { "foreign.component_instance_id" => "self.component_instance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 tier
@@ -199,7 +194,12 @@ __PACKAGE__->belongs_to(
   "tier",
   "AdministratorDB::Schema::Result::Tier",
   { tier_id => "tier_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 dhcpd3s
@@ -213,6 +213,21 @@ Related object: L<AdministratorDB::Schema::Result::Dhcpd3>
 __PACKAGE__->has_many(
   "dhcpd3s",
   "AdministratorDB::Schema::Result::Dhcpd3",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 iptables1_sec_rule
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Iptables1SecRule>
+
+=cut
+
+__PACKAGE__->might_have(
+  "iptables1_sec_rule",
+  "AdministratorDB::Schema::Result::Iptables1SecRule",
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -232,21 +247,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 keepalived1
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Keepalived1>
-
-=cut
-
-#__PACKAGE__->might_have(
-#  "keepalived1",
-#  "AdministratorDB::Schema::Result::Keepalived1",
-#  { "foreign.component_instance_id" => "self.component_instance_id" },
-#  { cascade_copy => 0, cascade_delete => 0 },
-#);
-
 =head2 lvm2_vgs
 
 Type: has_many
@@ -262,21 +262,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 memcached1s
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Memcached1>
-
-=cut
-
-#__PACKAGE__->has_many(
-#  "memcached1s",
-#  "AdministratorDB::Schema::Result::Memcached1",
-#  { "foreign.component_instance_id" => "self.component_instance_id" },
-#  { cascade_copy => 0, cascade_delete => 0 },
-#);
-
 =head2 mounttable1s
 
 Type: has_many
@@ -288,6 +273,21 @@ Related object: L<AdministratorDB::Schema::Result::Mounttable1>
 __PACKAGE__->has_many(
   "mounttable1s",
   "AdministratorDB::Schema::Result::Mounttable1",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 mysql5s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Mysql5>
+
+=cut
+
+__PACKAGE__->has_many(
+  "mysql5s",
+  "AdministratorDB::Schema::Result::Mysql5",
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -322,20 +322,35 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 php5s
+=head2 openldap1
 
-Type: has_many
+Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Php5>
+Related object: L<AdministratorDB::Schema::Result::Openldap1>
 
 =cut
 
-#__PACKAGE__->has_many(
-#  "php5s",
-#  "AdministratorDB::Schema::Result::Php5",
-#  { "foreign.component_instance_id" => "self.component_instance_id" },
-#  { cascade_copy => 0, cascade_delete => 0 },
-#);
+__PACKAGE__->might_have(
+  "openldap1",
+  "AdministratorDB::Schema::Result::Openldap1",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 opennebula3s
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3>
+
+=cut
+
+__PACKAGE__->has_many(
+  "opennebula3s",
+  "AdministratorDB::Schema::Result::Opennebula3",
+  { "foreign.component_instance_id" => "self.component_instance_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 snmpd5s
 
@@ -360,31 +375,16 @@ Related object: L<AdministratorDB::Schema::Result::Syslogng3>
 
 =cut
 
-#__PACKAGE__->has_many(
-#  "syslogng3s",
-#  "AdministratorDB::Schema::Result::Syslogng3",
-#  { "foreign.component_instance_id" => "self.component_instance_id" },
-#  { cascade_copy => 0, cascade_delete => 0 },
-#);
-
-=head2 mysql5
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Mysql5>
-
-=cut
-
-__PACKAGE__->might_have(
-  "mysql5",
-  "AdministratorDB::Schema::Result::Mysql5",
+__PACKAGE__->has_many(
+  "syslogng3s",
+  "AdministratorDB::Schema::Result::Syslogng3",
   { "foreign.component_instance_id" => "self.component_instance_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-05-04 15:05:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XKBAccz1BPd0drl4orRjlA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8rRqXMFXPKHuPP4TJdcjVg
 
 
 

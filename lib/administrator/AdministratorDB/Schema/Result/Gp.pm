@@ -23,7 +23,7 @@ __PACKAGE__->table("gp");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 gp_name
@@ -57,7 +57,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "gp_name",
@@ -74,19 +74,19 @@ __PACKAGE__->add_unique_constraint("gp_name", ["gp_name"]);
 
 =head1 RELATIONS
 
-=head2 gp_entity
+=head2 gp
 
-Type: might_have
+Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::GpEntity>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
-__PACKAGE__->might_have(
-  "gp_entity",
-  "AdministratorDB::Schema::Result::GpEntity",
-  { "foreign.gp_id" => "self.gp_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "gp",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "gp_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 ingroups
@@ -105,8 +105,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JYAHWMAZux4YYZ74Ffejig
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jMYbXt/0v14tkAZ5edGTlA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

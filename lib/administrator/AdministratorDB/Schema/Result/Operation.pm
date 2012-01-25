@@ -49,6 +49,7 @@ __PACKAGE__->table("operation");
 =head2 creation_date
 
   data_type: 'date'
+  datetime_undef_if_invalid: 1
   is_nullable: 0
 
 =head2 creation_time
@@ -90,7 +91,7 @@ __PACKAGE__->add_columns(
   "priority",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "creation_date",
-  { data_type => "date", is_nullable => 0 },
+  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 0 },
   "creation_time",
   { data_type => "time", is_nullable => 0 },
   "hoped_execution_time",
@@ -115,7 +116,7 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 type
@@ -130,22 +131,7 @@ __PACKAGE__->belongs_to(
   "type",
   "AdministratorDB::Schema::Result::Operationtype",
   { operationtype_name => "type" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 operation_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::OperationEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "operation_entity",
-  "AdministratorDB::Schema::Result::OperationEntity",
-  { "foreign.operation_id" => "self.operation_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 operation_parameters
@@ -164,8 +150,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ppqfKycZCN5IYP1yDyP7UQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QwBHP4sPbYaW1w658upesw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

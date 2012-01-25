@@ -23,7 +23,7 @@ __PACKAGE__->table("processormodel");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 processormodel_brand
@@ -68,6 +68,12 @@ __PACKAGE__->table("processormodel");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 processormodel_virtsupport
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -75,7 +81,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "processormodel_brand",
@@ -130,24 +136,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 processormodel_entity
+=head2 processormodel
 
-Type: might_have
+Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ProcessormodelEntity>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
-__PACKAGE__->might_have(
-  "processormodel_entity",
-  "AdministratorDB::Schema::Result::ProcessormodelEntity",
-  { "foreign.processormodel_id" => "self.processormodel_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "processormodel",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "processormodel_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kx97oUcKGDSBYv5jtuokZg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ig5TncdiGCCgqUquQQZtRg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

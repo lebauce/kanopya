@@ -114,12 +114,12 @@ __PACKAGE__->belongs_to(
   "apache2",
   "AdministratorDB::Schema::Result::Apache2",
   { apache2_id => "apache2_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D8tr7FSnFgVux5CLzU/XrA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HfgeCZblj1Up+fY4qhBdMg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

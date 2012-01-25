@@ -23,7 +23,7 @@ __PACKAGE__->table("powersupplycardmodel");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 powersupplycardmodel_brand
@@ -51,7 +51,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "powersupplycardmodel_brand",
@@ -86,26 +86,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 powersupplycardmodel_entity
+=head2 powersupplycardmodel
 
-Type: might_have
+Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::PowersupplycardmodelEntity>
+Related object: L<AdministratorDB::Schema::Result::Entity>
 
 =cut
 
-__PACKAGE__->might_have(
-  "powersupplycardmodel_entity",
-  "AdministratorDB::Schema::Result::PowersupplycardmodelEntity",
-  {
-    "foreign.powersupplycardmodel_id" => "self.powersupplycardmodel_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "powersupplycardmodel",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "powersupplycardmodel_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ypIz2DDXUgQN9SoMDESZqg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eTfUzt6QXtQE9OUXBM2CMg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -75,7 +75,7 @@ __PACKAGE__->belongs_to(
   "nfsd3",
   "AdministratorDB::Schema::Result::Nfsd3",
   { nfsd3_id => "nfsd3_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 nfsd3_exportclients
@@ -94,8 +94,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-28 14:30:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:N2a+B/LjOhjxerui0V1ZxA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NZo+LBzr7T/fIMQRte2W8g
 
 
 

@@ -49,6 +49,7 @@ __PACKAGE__->table("old_operation");
 =head2 creation_date
 
   data_type: 'date'
+  datetime_undef_if_invalid: 1
   is_nullable: 0
 
 =head2 creation_time
@@ -59,6 +60,7 @@ __PACKAGE__->table("old_operation");
 =head2 execution_date
 
   data_type: 'date'
+  datetime_undef_if_invalid: 1
   is_nullable: 0
 
 =head2 execution_time
@@ -94,18 +96,17 @@ __PACKAGE__->add_columns(
   "priority",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "creation_date",
-  { data_type => "date", is_nullable => 0 },
+  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 0 },
   "creation_time",
   { data_type => "time", is_nullable => 0 },
   "execution_date",
-  { data_type => "date", is_nullable => 0 },
+  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 0 },
   "execution_time",
   { data_type => "time", is_nullable => 0 },
   "execution_status",
   { data_type => "char", is_nullable => 0, size => 32 },
 );
 __PACKAGE__->set_primary_key("old_operation_id");
-
 
 =head1 RELATIONS
 
@@ -121,7 +122,7 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 type
@@ -136,14 +137,14 @@ __PACKAGE__->belongs_to(
   "type",
   "AdministratorDB::Schema::Result::Operationtype",
   { operationtype_name => "type" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 old_operation_parameters
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::OperationParameter>
+Related object: L<AdministratorDB::Schema::Result::OldOperationParameter>
 
 =cut
 
@@ -155,8 +156,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ppqfKycZCN5IYP1yDyP7UQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ifJb/JogJIEYY/ot4YdwKQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

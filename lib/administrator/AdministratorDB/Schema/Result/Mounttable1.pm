@@ -114,7 +114,11 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("mounttable1_id");
 __PACKAGE__->add_unique_constraint(
   "mounttable1_unique1",
-  ["component_instance_id", "mounttable1_device", "mounttable1_mountpoint"],
+  [
+    "component_instance_id",
+    "mounttable1_device",
+    "mounttable1_mountpoint",
+  ],
 );
 
 =head1 RELATIONS
@@ -131,12 +135,12 @@ __PACKAGE__->belongs_to(
   "component_instance",
   "AdministratorDB::Schema::Result::ComponentInstance",
   { component_instance_id => "component_instance_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-05-04 15:05:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DWCE1KCGS3IioOw2s1tepQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iOH4qjV6mnL8FCZ/wSFpqA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

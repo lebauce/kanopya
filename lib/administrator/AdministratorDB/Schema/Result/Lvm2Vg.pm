@@ -41,12 +41,14 @@ __PACKAGE__->table("lvm2_vg");
 
 =head2 lvm2_vg_freespace
 
-  data_type: 'integer'
+  data_type: 'bigint'
+  extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 lvm2_vg_size
 
-  data_type: 'integer'
+  data_type: 'bigint'
+  extra: {unsigned => 1}
   is_nullable: 0
 
 =cut
@@ -69,9 +71,9 @@ __PACKAGE__->add_columns(
   "lvm2_vg_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "lvm2_vg_freespace",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
   "lvm2_vg_size",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 }
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("lvm2_vg_id");
 
@@ -119,12 +121,12 @@ __PACKAGE__->belongs_to(
   "component_instance",
   "AdministratorDB::Schema::Result::ComponentInstance",
   { component_instance_id => "component_instance_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HDtgRLkeHzYsbIUCKXi1ow
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NA37L6EGeFINVDSrOVHPUg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
