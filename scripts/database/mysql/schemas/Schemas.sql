@@ -24,11 +24,12 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `kernel` (
-  `kernel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `kernel_id` int(8) unsigned NOT NULL,
   `kernel_name` char(64) NOT NULL,
   `kernel_version` char(32) NOT NULL,
   `kernel_desc` char(255) DEFAULT NULL,
-  PRIMARY KEY (`kernel_id`)
+  PRIMARY KEY (`kernel_id`),
+  CONSTRAINT FOREIGN KEY (`kernel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -36,7 +37,7 @@ CREATE TABLE `kernel` (
 --
 
 CREATE TABLE `processormodel` (
-  `processormodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `processormodel_id` int(8) unsigned NOT NULL,
   `processormodel_brand` char(64) NOT NULL,
   `processormodel_name` char(32) NOT NULL,
   `processormodel_core_num` int(2) unsigned NOT NULL,
@@ -46,6 +47,7 @@ CREATE TABLE `processormodel` (
   `processormodel_64bits` int(1) unsigned NOT NULL,
   `processormodel_virtsupport` int(1) unsigned NOT NULL,
   PRIMARY KEY (`processormodel_id`),
+  CONSTRAINT FOREIGN KEY (`processormodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `processormodel_name_UNIQUE` (`processormodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -55,11 +57,12 @@ CREATE TABLE `processormodel` (
 --
 
 CREATE TABLE `powersupplycardmodel` (
-  `powersupplycardmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `powersupplycardmodel_id` int(8) unsigned NOT NULL,
   `powersupplycardmodel_brand` char(64) NOT NULL,
   `powersupplycardmodel_name` char(32) NOT NULL,
   `powersupplycardmodel_slotscount` int(2) unsigned NOT NULL,
   PRIMARY KEY (`powersupplycardmodel_id`),
+  CONSTRAINT FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `powersupplycardmodel_name_UNIQUE` (`powersupplycardmodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -68,7 +71,7 @@ CREATE TABLE `powersupplycardmodel` (
 --
 
 CREATE TABLE `hostmodel` (
-  `hostmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `hostmodel_id` int(8) unsigned NOT NULL,
   `hostmodel_brand` char(64) NOT NULL,
   `hostmodel_name` char(32) NOT NULL,
   `hostmodel_chipset` char(64) NOT NULL,
@@ -79,6 +82,7 @@ CREATE TABLE `hostmodel` (
   `hostmodel_ram_max` int(1) unsigned NOT NULL,
   `processormodel_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`hostmodel_id`),
+  CONSTRAINT FOREIGN KEY (`hostmodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `hostmodel_name_UNIQUE` (`hostmodel_name`),
   KEY `fk_hostmodel_1` (`processormodel_id`),
   CONSTRAINT `fk_hostmodel_1` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -142,13 +146,6 @@ CREATE TABLE `host` (
   CONSTRAINT `fk_host_7` FOREIGN KEY (`cloud_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `subhost` (
-  `subhost_id` int(8) unsigned NOT NULL,
-  `subhost_attr` char(128) NOT NULL,
-  PRIMARY KEY (`subhost_id`),
-  CONSTRAINT FOREIGN KEY (`subhost_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 --
 -- Table structure for table `hostdetails`
 --
@@ -179,13 +176,14 @@ CREATE TABLE `powersupply` (
 -- Table structure for table `powersupplycard`
 --
 CREATE TABLE `powersupplycard` (
-  `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `powersupplycard_id` int(8) unsigned NOT NULL,
   `powersupplycard_name` char(64) NOT NULL,
   `ipv4_internal_id` int(8) unsigned DEFAULT NULL,
   `powersupplycardmodel_id` int(8) unsigned DEFAULT NULL,
   `powersupplycard_mac_address` char(32) NOT NULL,
   `active` int(1),
   PRIMARY KEY (`powersupplycard_id`),
+  CONSTRAINT FOREIGN KEY (`powersupplycard_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_powersupplycardmodel` (`powersupplycardmodel_id`),
   KEY `fk_powersupplycard_ipv4_internal_id` (`ipv4_internal_id`),
   CONSTRAINT `fk_powersupplycardmodel` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -198,13 +196,14 @@ CREATE TABLE `powersupplycard` (
 --
 
 CREATE TABLE `distribution` (
-  `distribution_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `distribution_id` int(8) unsigned NOT NULL,
   `distribution_name` char(64) NOT NULL,
   `distribution_version` char(32) NOT NULL,
   `distribution_desc` char(255) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `root_device_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`distribution_id`),
+  CONSTRAINT FOREIGN KEY (`distribution_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_distribution_1` (`etc_device_id`),
   KEY `fk_distribution_2` (`root_device_id`),
   CONSTRAINT `fk_distribution_1` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -216,7 +215,7 @@ CREATE TABLE `distribution` (
 --
 
 CREATE TABLE `cluster` (
-  `cluster_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `cluster_id` int(8) unsigned NOT NULL,
   `cluster_name` char(32) NOT NULL,
   `cluster_desc` char(255) DEFAULT NULL,
   `cluster_type` int(1) unsigned DEFAULT NULL,
@@ -235,6 +234,7 @@ CREATE TABLE `cluster` (
   `cluster_prev_state` char(32),
    `cluster_basehostname` char(64) NOT NULL,
   PRIMARY KEY (`cluster_id`),
+  CONSTRAINT FOREIGN KEY (`cluster_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
 --  KEY `fk_cluster_1` (`infrastructure_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -360,7 +360,7 @@ CREATE TABLE `old_operation_parameter` (
 --
 
 CREATE TABLE `systemimage` (
-  `systemimage_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `systemimage_id` int(8) unsigned NOT NULL,
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
   `systemimage_dedicated` int(1) unsigned NOT NULL DEFAULT 0,
@@ -369,6 +369,7 @@ CREATE TABLE `systemimage` (
   `root_device_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
+  CONSTRAINT FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `systemimage_name_UNIQUE` (`systemimage_name`),
   KEY `fk_systemimage_1` (`distribution_id`),
   KEY `fk_systemimage_2` (`etc_device_id`),
@@ -459,7 +460,7 @@ CREATE TABLE `cluster_ipv4_route` (
 --
 
 CREATE TABLE `user` (
-  `user_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(8) unsigned NOT NULL,
   `user_system` int(1) unsigned NOT NULL DEFAULT 0,
   `user_login` char(32) NOT NULL,
   `user_password` char(32) NOT NULL,
@@ -470,6 +471,7 @@ CREATE TABLE `user` (
   `user_lastaccess` datetime DEFAULT NULL,
   `user_desc` char(255) DEFAULT 'Note concerning this user',
   PRIMARY KEY (`user_id`),
+  CONSTRAINT FOREIGN KEY (`user_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `user_login` (`user_login`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -478,12 +480,13 @@ CREATE TABLE `user` (
 --
 
 CREATE TABLE `gp` (
-  `gp_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `gp_id` int(8) unsigned NOT NULL,
   `gp_name` char(32) NOT NULL,
   `gp_type` char(32) NOT NULL,
   `gp_desc` char(255) DEFAULT NULL,
   `gp_system` int(1) unsigned NOT NULL,
   PRIMARY KEY (`gp_id`),
+  CONSTRAINT FOREIGN KEY (`gp_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `gp_name` (`gp_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -553,7 +556,7 @@ CREATE TABLE `component_installed` (
 --
 
 CREATE TABLE `infrastructure` (
-  `infrastructure_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `infrastructure_id` int(8) unsigned NOT NULL,
   `infrastructure_reference` char(64) NOT NULL,
   `infrastructure_min_node` int(2) unsigned NOT NULL,
   `infrastructure_max_node` int(2) unsigned NOT NULL,
@@ -566,7 +569,8 @@ CREATE TABLE `infrastructure` (
   `infrastructure_state` char(32) NOT NULL DEFAULT 'down',
   `infrastructure_prev_state` char(32),
   `infrastructure_priority` int(1) unsigned NOT NULL,
-  PRIMARY KEY (`infrastructure_id`)
+  PRIMARY KEY (`infrastructure_id`),
+  CONSTRAINT FOREIGN KEY (`infrastructure_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -582,6 +586,7 @@ CREATE TABLE `tier` (
   `tier_data_src` char(128) NOT NULL,
   `tier_poststart_script` char(64),
   PRIMARY KEY (`tier_id`),
+  CONSTRAINT FOREIGN KEY (`tier_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_tier_1` (`infrastructure_id`),
   KEY `fk_tier_2` (`cluster_id`),
   CONSTRAINT `fk_tier_1` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
