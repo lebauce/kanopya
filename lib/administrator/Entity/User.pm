@@ -52,7 +52,7 @@ use constant ATTR_DEF => {
                                         is_mandatory    => 1,
                                         is_extended        => 0,
                                         is_editable        => 0},
-            user_email            => {pattern            => '\w*$',
+            user_email            => {pattern            => '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$',
                                         is_mandatory    => 1,
                                         is_extended        => 0,
                                         is_editable        => 1},    

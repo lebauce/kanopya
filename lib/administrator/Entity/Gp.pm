@@ -171,13 +171,13 @@ sub getGroupsFromEntity {
         
     my $adm = Administrator->new();
        my $mastergroup = $args{entity}->getMasterGroupName();
-    my $gp_rs = $adm->{db}->resultset('Gp')->search({
+    my $gp_rs = $adm->{db}->resultset('Gp')->search(
+		{
         -or => [
-            'ingroups.entity_id' => $args{entity}->{_dbix}->get_column('entity_id'),
-            'gp_name' => $mastergroup ]},
-            
-        {     '+columns' => { 'entity_id' => 'gp_entity.entity_id' }, 
-            join => [qw/ingroups gp_entity/] }
+            'ingroups.entity_id' => $args{entity}->{_dbix}->id,
+            'gp_name' => $mastergroup ]
+        },
+        { join => [qw/ingroups/] }
     );
     while(my $row = $gp_rs->next) {
         eval {
@@ -235,7 +235,7 @@ sub removeEntity {
     
     General::checkParams(args => \%args, required => ['entity']);
     
-    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
+    my $entity_id = $args{entity}->{_dbix}->id;
     $self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();
     return;
 }
@@ -260,7 +260,7 @@ sub getEntities {
     my $idfield = lc($type)."_id";
     
     while(my $row = $entities_rs->next) {
-        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->get_column('entity_id')})->first;
+        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->id})->first;
         push @$ids, $concret->get_column("$idfield");
     }    
     
@@ -302,7 +302,7 @@ sub getExcludedEntities {
     
     # retrieve groups elements ids 
     while(my $row = $entities_rs->next) {
-        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->get_column('entity_id')})->first;
+        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->id})->first;
         push @$ids, $concret->get_column("$idfield");
     }    
     

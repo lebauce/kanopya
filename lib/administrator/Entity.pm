@@ -1,6 +1,11 @@
 package Entity;
 use base 'BaseDB';
 
+use Data::Dumper;
+use Log::Log4perl 'get_logger';
+
+my $log = get_logger('administrator');
+
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
@@ -35,7 +40,7 @@ sub getMasterGroupEid {
     my $self = shift;
     my $adm = Administrator->new();
     my $mastergroup = $self->getMasterGroupName();
-    my $eid = $adm->{db}->resultset('Gp')->find({ gp_name => $mastergroup })->entitylink->get_column('entity_id');
+    my $eid = $adm->{db}->resultset('Gp')->find({ gp_name => $mastergroup })->id;
     return $eid;
 }
 
