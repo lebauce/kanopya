@@ -1,13 +1,15 @@
 package Clusters;
 
 use Dancer ':syntax';
-
+use Dancer::Plugin::Ajax;
 use Administrator;
 use Entity::Cluster;
 use Entity::Host;
+use Entity::Gp;
 use Entity::Systemimage;
 use Entity::Kernel;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("webui");
 
@@ -38,11 +40,12 @@ sub _clusters {
     foreach my $n (@eclusters){
         my $tmp = {
             link_activity => 0,
-            cluster_id    => $n->getAttr(name => 'cluster_id'),
-            cluster_name  => $n->getAttr(name => 'cluster_name'),
+            cluster_id           => $n->getAttr(name => 'cluster_id'),
+            cluster_name         => $n->getAttr(name => 'cluster_name'),
             cluster_basehostname => $n->getAttr(name=>'cluster_basehostname')
+            
         };
-
+        my  $user_id = $n->getAttr(name=>'user_id');
         my $minnode = $n->getAttr(name => 'cluster_min_node');
         my $maxnode = $n->getAttr(name => 'cluster_max_node');
         if ( $minnode == $maxnode ) {
@@ -98,14 +101,66 @@ sub _virtualization_clusters {
 	}
 	return @virtualization_clusters;
 }
+#return user groups
+sub _groups {
+	  my $selected = shift;
+    my @egroups = Entity::Gp->getGroups(hash => { gp_type => "User" });
+    my $groups  = [];
+    if($selected) {
+        if(!scalar(grep(/$selected/, @egroups))) {
+            redirect('/architectures/clusters');
+        }
+    }
 
+
+    foreach my $group (@egroups) {
+        my $tmp = {};
+        $tmp->{gp_id}   = $group->getAttr('name' => 'gp_id');
+        $tmp->{gp_name} = $group->getAttr('name' => 'gp_name');
+        $tmp->{gp_desc} = $group->getAttr('name' => 'gp_desc');
+        $tmp->{gp_type} = $group->getAttr('name' => 'gp_type');
+        $tmp->{gp_size} = $group->getSize();
+        $tmp->{selected} = 'selected' if $selected eq $group;
+
+        push(@$groups, $tmp);
+    }
+
+    return $groups;
+}
+
+get '/clusters/userid/:userid' => sub {
+ my $user_id = param('userid');
+ return Dumper($user_id);
+};
+
+get '/clusters/users/:gpid' => sub {
+	 my $adm = Administrator->new();
+	 my $loguser=$adm->{_rightchecker}->{user_id};
+	 my $loguser_entity=Entity::User->get(id=>$loguser);
+	 
+     my $gp_id = param('gpid');
+     my $gp_selected=Entity::Gp->get(id=>param('gpid'));
+     my @eusers= $gp_selected->getEntities();
+     my $str="<option value="."$loguser".">"."current"." "."</option>";
+     foreach my $u (@eusers) {
+	   my $tmp = {};
+	   $tmp->{user_firstname} = $u->getAttr(name=>'user_firstname');
+	   $tmp->{user_lastname}=$u->getAttr(name=>'user_lastname');
+	   $tmp->{user_id}=$u->getAttr(name=>'user_id');
+	   $str .="<option value="."$tmp->{user_id}".">"."$tmp->{user_firstname} "."$tmp->{user_lastname}"."</option>";
+	  
+   }
+    content_type('text/html');
+  return $str;
+ };
+
+sub _users_list { return (); }
 get '/clusters/add' => sub {
     my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});
     my @ekernels = Entity::Kernel->getKernels(hash => {});
     my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
     my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
     my @ehosts = Entity::Host->getHosts(hash => {});
-
     my $count = scalar @ehosts;
     my $c =[];
     for (my $i=1; $i<=$count; $i++) {
@@ -143,6 +198,8 @@ get '/clusters/add' => sub {
         'kernels_list'              => $kmodels,
         'systemimages_forshared'    => $si_forshared,
         'systemimages_fordedicated' => $si_fordedicated,
+        'gp_list'                   => _groups(),
+        'users_list'                => _users_list(),
         'nameserver'                => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
     }, { layout => '' };
 };
@@ -170,18 +227,19 @@ post '/clusters/add' => sub {
 
     eval {
         my $params = {
-            cluster_name => params->{'name'},
-            cluster_desc => params->{'desc'},
-            cluster_si_location => $si_location,
+            cluster_name           => params->{'name'},
+            cluster_desc           => params->{'desc'},
+            cluster_si_location    => $si_location,
             cluster_si_access_mode => $si_access_mode,
-            cluster_si_shared => $si_shared,
-            cluster_min_node => params->{'min_node'},
-            cluster_max_node => params->{'max_node'},
-            cluster_priority => params->{'priority'},
-            systemimage_id => $systemimage_id,
-            cluster_domainname => params->{'domainname'},
-            cluster_nameserver => params->{'nameserver'},
-            cluster_basehostname => params->{'cluster_basehostname'},
+            cluster_si_shared      => $si_shared,
+            cluster_min_node       => params->{'min_node'},
+            cluster_max_node       => params->{'max_node'},
+            cluster_priority       => params->{'priority'},
+            systemimage_id         => $systemimage_id,
+            cluster_domainname     => params->{'domainname'},
+            cluster_nameserver     => params->{'nameserver'},
+            cluster_basehostname   => params->{'cluster_basehostname'},
+            user_id                => params->{'user_id'}
         };
         if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
         my $ecluster = Entity::Cluster->new(%$params);
@@ -235,6 +293,7 @@ get '/clusters/:clusterid' => sub {
     my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
     my $cluster_basehostname = $ecluster->getAttr(name=>'cluster_basehostname');
     my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
+    my $user_id = $ecluster->getAttr(name => 'user_id');
     my ($systemimage_name, $systemimage_active);
     if($systemimage_id) {
         my $esystemimage = eval { Entity::Systemimage->get(id => $systemimage_id) };
@@ -373,6 +432,7 @@ get '/clusters/:clusterid' => sub {
         cluster_min_node   => $minnode,
         cluster_max_node   => $maxnode,
         cluster_basehostname => $cluster_basehostname,
+        user_id             => $user_id,
         type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
         systemimage_name   => $systemimage_name,
         systemimage_active => $systemimage_active,

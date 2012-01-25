@@ -103,6 +103,10 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 1},
+   user_id                => {pattern         => '^\d*$',
+                                is_mandatory    => 1,
+                                is_extended     => 0,
+                                is_editable        => 1},
 
 
     };
@@ -852,8 +856,6 @@ sub setState {
     $self->{_dbix}->update({'cluster_prev_state' => $current_state,
                             'cluster_state' => $new_state.":".time})->discard_changes();;
 }
-
-
 sub getNewNodeNumber {
 	my $self = shift;
 	my $nodes = $self->getHosts();

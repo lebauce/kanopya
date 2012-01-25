@@ -6,6 +6,8 @@ use Log::Log4perl "get_logger";
 use Administrator;
 use Entity::User;
 use Entity::Gp;
+use Entity::Cluster;
+use Data::Dumper;
 
 prefix '/rights';
 
@@ -93,6 +95,18 @@ get '/users/:userid/delete' => sub {
 get '/users/:userid' => sub {
     my $user_id = param('userid');
     my $euser = eval { Entity::User->get(id => $user_id) };
+    #******************************************
+   my $hosts={};
+    my $ehosts = Entity::Cluster->getHosts();
+    foreach my $eh (%$ehosts)
+    {
+		my $tmp={};
+		$tmp->{host_ram}=$eh->getHostRAM();
+		$tmp->{host_core}=$eh->getHostCORE();
+	 push(@$hosts, $tmp);
+	}
+	
+    #*******************************************
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -128,6 +142,7 @@ get '/users/:userid' => sub {
         user_creationdate => $euser->getAttr('name' => 'user_creationdate'),
         user_lastaccess   => $euser->getAttr('name' => 'user_lastaccess'),
         gp_list           => $groups,
+        hst_list          => $hosts,
         can_update        => $methods->{'update'}->{'granted'},
         can_delete        => $methods->{'remove'}->{'granted'},
         can_setperm       => $methods->{'setperm'}->{'granted'},

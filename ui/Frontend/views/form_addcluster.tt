@@ -65,12 +65,34 @@
         </select></td>
         <span style="color: red"><% err_max_node %></span></td>
     </tr>
+         <tr>
+         <td class="label">Users groups :</td>
+         
+        <td><select id="groupschoice">
+        <% FOREACH gp IN gp_list %>
+        <option value="<% gp.gp_id %>" <% gp.selected %>><% gp.gp_name %></option>
+        <% END %>
+        </select></td>
+       <span style="color: red"><% err_owner %></span></td>
+    </tr>
     <tr>
         <td class="label">Priority :</td>
         <td><input type="text" name="priority" maxlength="5" size="5"/>
         <span style="color: red"><% err_priority %></span></td></td>
     </tr>
-
+    
+     <tr>
+         <td class="label">Users:</td>
+         <td><select id="owner" name="user_id">
+	     <% IF users_list %>
+		    <% FOREACH user IN users_list %>
+		    <option value="<% user.entity_id %> <% user.entitytype %>"><% user.user %></option>
+		    <% END %>
+	     <% END %>
+         </select>
+       </td>
+    </tr>
+       
     <tr>
         <td class="label">Kernel :</td>
         <td><select name="kernel_id">
@@ -93,3 +115,33 @@
     </tr>
 </table>
 </form>
+
+<script type="text/javascript">
+function Updateusers() {
+    var xhr = new XMLHttpRequest();
+    var gpid=document.getElementById("groupschoice").value;
+    var url = "/architectures/clusters/users/" + gpid;
+    xhr.open("GET", url);
+    
+    xhr.overrideMimeType('text/xml');
+    xhr.onreadystatechange = function() {
+		//alert(xhr.readyState + ' ' + xhr.status);
+		if (xhr.readyState == 4 && xhr.status == 200) {
+			select = document.getElementById('owner');
+			select.innerHTML = xhr.responseText;		
+      }
+	}	
+    xhr.send(null);
+    //setTimeout('Updateusers()', 5000);
+}
+function UpdateUpdateuserid() {
+var xhr = new XMLHttpRequest();
+    var userid=document.getElementById("owner").value;
+    var url = "/architectures/clusters/userid/" + userid;
+    xhr.open("GET", url);
+}
+
+
+document.getElementById('groupschoice').onchange = Updateusers;
+document.getElementById('owner').onchange = Updateuserid;
+</script>
