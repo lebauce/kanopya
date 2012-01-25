@@ -45,13 +45,8 @@ sub checkAttr {
 	my $self = shift;
     my $class = ref($self) || $self;
     my %args = @_;
-    
-     if ((! exists $args{name} or ! defined $args{name}) ||
-        (! exists $args{value})) { 
-        $errmsg = "Entity->setAttr need a name and value named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => ['name', 'value']);
     
     my $attributes_def = $class->getAttrDefs();
     foreach my $module (keys %$attributes_def) {
