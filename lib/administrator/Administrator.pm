@@ -256,27 +256,31 @@ sub new {
 # It is used to get a row from an id in a specific table
 
 sub getRow {
-    my $self = shift;
+	my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['id', 'table']);
 
-    # entity_dbix will contain resultset row integrated into Entity
-    # entity_class is Entity Class
-    my ($entity_dbix, $entity_class);
-    $entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
+    if ((! exists $args{table} or ! defined $args{table}) ||
+        (! exists $args{id} or ! defined $args{id})) {
+            $errmsg = "Administrator->getRow need a table and id named argument!";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
+    }
 
-    # Test if Dbix is get
-    if ( defined $entity_dbix ) {
-        # Extension Entity Management
-        return $entity_dbix;
-    } else {
-        $errmsg = "Administrator::getRow(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!";
+    my $dbix;
+    eval {
+        $dbix = $self->{db}->resultset( $args{table} )->find( $args{id} );
+	};
+    
+    if ($@) {
+        $errmsg = "Administrator->_getDbix error ".$@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
-        return;
     }
-}
+    return $dbix;
+}	
+
 
 =head2 _getLastRank
 
@@ -286,7 +290,7 @@ sub getRow {
 
 =cut
 
-sub _get_lastRank{
+sub _get_lastRank {
     my $self = shift;
     my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->first;
     if (! $row) {
@@ -315,32 +319,7 @@ sub _get_lastRank{
 
 =cut
 
-sub _getDbix {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => ['id', 'table']);
-
-    if ((! exists $args{table} or ! defined $args{table}) ||
-        (! exists $args{id} or ! defined $args{id})) {
-            $errmsg = "Administrator->_getDbix need a table and id named argument!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    my $dbix;
-    eval {
-        $dbix = $self->{db}->resultset( $args{table} )->find(  $args{id},
-                                        {'+columns' => {'entity_id' => 'entitylink.entity_id'},  
-#                                            '+columns' => [ {entity_id => "entitylink.entity_id"} ],
-                                        join => ["entitylink"] });};
-    if ($@) {
-        $errmsg = "Administrator->_getDbix error ".$@;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    return $dbix;
-}
 
 =head2 Administrator::_getDbixFromHash(%args)
 
@@ -362,30 +341,16 @@ sub _getDbixFromHash {
     General::checkParams(args => \%args, required => ['table', 'hash']);
 
     my $dbix;
-    my $entitylink = lc($args{table})."_entity";
     eval {
         my $hash = $args{hash};
-        if (keys(%$hash)){
-
-            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-                                        {'+columns' => {'entity_id' => "$entitylink.entity_id"},
-                                         join => ["$entitylink"] });
-#                                                 '+columns' => [ "$entitylink.entity_id" ],
-#                                        join => ["$entitylink"] });
+        if (keys(%$hash)) {
+            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash} );
+        } else {
+            $dbix = $self->{db}->resultset( $args{table} )->search( undef );
         }
-        else {
-            $dbix = $self->{db}->resultset( $args{table} )->search( undef,
-                                            {'+columns' => {'entity_id' => "$entitylink.entity_id"},
-                                         join => ["$entitylink"] });
-#                                        {     '+columns' => [ "$entitylink.entity_id" ],
-#                                        join => ["$entitylink"] });
-        }
-#        $dbix = $self->{db}->resultset( $args{table} )->search( $search_param,
-#                                        {'+columns' => {'entity_id' => 'entitylink.entity_id'},
-#                                         join => ["entitylink"] });
     };
     if ($@) {
-        $errmsg = "Administrator->_getDbix error ".$@;
+        $errmsg = "Administrator->_getDbixFromHash error ".$@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error =>  $errmsg);
     }

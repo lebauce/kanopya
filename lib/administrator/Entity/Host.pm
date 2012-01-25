@@ -163,29 +163,29 @@ sub methods {
 
 =cut
 
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $admin = Administrator->new();
-    my $host = $admin->{db}->resultset('Host')->find($args{id});
-    if(not defined $host) {
-        $errmsg = "Entity::Host->get : id <$args{id}> not found !";
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    my $entity_id = $host->entitylink->get_column('entity_id');
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get host with id $args{id}");
-    }
-
-    my $self = $class->SUPER::get( %args, table=>"Host");
-    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "hostdetails");
-    return $self;
-}
+#~ sub get {
+    #~ my $class = shift;
+    #~ my %args = @_;
+#~ 
+    #~ General::checkParams(args => \%args, required => ['id']);
+#~ 
+    #~ my $admin = Administrator->new();
+    #~ my $host = $admin->{db}->resultset('Host')->find($args{id});
+    #~ if(not defined $host) {
+        #~ $errmsg = "Entity::Host->get : id <$args{id}> not found !";
+     #~ $log->error($errmsg);
+     #~ throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    #~ }
+    #~ my $entity_id = $host->entitylink->get_column('entity_id');
+    #~ my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
+    #~ if(not $granted) {
+        #~ throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get host with id $args{id}");
+    #~ }
+#~ 
+    #~ my $self = $class->SUPER::get( %args, table=>"Host");
+    #~ $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "hostdetails");
+    #~ return $self;
+#~ }
 
 =head2 getState
 
@@ -236,7 +236,7 @@ sub getNodeNumber {
     return $node_number;
 }
 
-sub setNodeNumber{
+sub setNodeNumber {
     my $self = shift;
     my %args = @_;
 
@@ -343,7 +343,7 @@ sub getHosts {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    return $class->SUPER::getEntities( %args,  type => "Host");
+    return $class->search(%args);
 }
 
 sub getHost {
@@ -352,7 +352,7 @@ sub getHost {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @Hosts = $class->SUPER::getEntities( %args,  type => "Host");
+    my @Hosts = $class->search(%args);
     return pop @Hosts;
 }
 
@@ -383,20 +383,20 @@ sub getFreeHosts {
 
 =cut
 
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Host");
-
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-    return $self;
-}
+#~ sub new {
+    #~ my $class = shift;
+    #~ my %args = @_;
+#~ 
+    #~ # Check attrs ad throw exception if attrs missed or incorrect
+    #~ my $attrs = $class->checkAttrs(attrs => \%args);
+#~ 
+    #~ # We create a new DBIx containing new entity (only global attrs)
+    #~ my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Host");
+#~ 
+    #~ # Set the extended parameters
+    #~ $self->{_ext_attrs} = $attrs->{extended};
+    #~ return $self;
+#~ }
 
 =head2 create
 
@@ -576,7 +576,7 @@ sub getInternalIP {
 
 }
 
-sub setInternalIP{
+sub setInternalIP {
     my $self = shift;
     my %args = @_;
 
@@ -588,7 +588,7 @@ sub setInternalIP{
     return $net_id;
 }
 
-sub removeInternalIP{
+sub removeInternalIP {
     my $self = shift;
 
     my $internal_net_id = $self->getAttr(name =>"host_ipv4_internal_id");
