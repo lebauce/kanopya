@@ -186,10 +186,10 @@ __PACKAGE__->belongs_to(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::TierEntity",
-    { "foreign.tier_id" => "self.tier_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.tier_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 
 1;
