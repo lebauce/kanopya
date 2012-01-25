@@ -83,15 +83,15 @@ B<throws>  :
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['cluster_id','component_id']);
-    
+
     my $admin = Administrator->new();
     my $template_id = undef;
     if(exists $args{component_template_id} and defined $args{component_template_id}) {
         $template_id = $args{component_template_id};
     }
-    
+
     # check if component_id is valid
     my $row = $admin->{db}->resultset('Component')->find($args{component_id});
     if(not defined $row) {
@@ -99,8 +99,8 @@ sub new {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    
-    # check if instance of component_id is not already inserted for  this cluster
+
+    # check if instance of component_id is not already inserted for this cluster
     $row = $admin->{db}->resultset('ComponentInstance')->search(
         { component_id => $args{component_id}, 
           cluster_id => $args{cluster_id} })->single;
@@ -109,7 +109,7 @@ sub new {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    
+
     # check if component_template_id correspond to component_id
     if(defined $template_id) {
         my $row = $admin->{db}->resultset('ComponentTemplate')->find($template_id);
@@ -124,37 +124,32 @@ sub new {
         }
     }
     # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( attrs => \%args, table => "ComponentInstance");
+    # my $self = $class->SUPER::new( attrs => \%args, table => "ComponentInstance");
+    my $attrs = $class->checkAttrs(attrs => \%args);
+    my $self = {
+        _dbix => $adm->_newDbix(table => "ComponentInstance", row => $attrs),
+    };
+    bless $self, $class;
     return $self;
 }
-
-=head2 get
-
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing of component.
-          This is an abstract class, DO NOT instantiate it.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component from Kanopya Database
-B<Comment>  : To modify data in DB call save() on returned obj (after modification)
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
 
 sub get {
     my $class = shift;
     my %args = @_;
 
-     General::checkParams(args => \%args, required => ['id']);
+    General::checkParams(args => \%args, required => ['id']);
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   return $self;
+    my $table = "ComponentInstance"
+    my $adm = Administrator->new();
+
+    my $dbix = $adm->getRow(id=>$args{id}, table => $table);
+
+    my $self = {
+        _dbix => $dbix,
+    };
+
+    bless $self, $class;
+    return $self;
 }
 
 sub getComponentId{
