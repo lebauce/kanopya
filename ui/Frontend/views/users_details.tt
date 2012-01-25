@@ -48,3 +48,12 @@
 	</tr>
 <% END %>
 </table>
+<span id="hosts" class="title simpleexpand">Hosts</span>
+<table id="Xhosts" class="detailspart">
+<% FOREACH hs IN hst_list %>
+	<tr><td class="label3"><span class="bold"><% hs.host_ram %></span> - <span class="italic"><% hs.host_core %></span></td>
+	</tr>
+<% END %>
+</table>
+
+

@@ -226,9 +226,13 @@ CREATE TABLE `cluster` (
   `cluster_state` char(32) NOT NULL DEFAULT 'down',
   `cluster_prev_state` char(32),
    `cluster_basehostname` char(64) NOT NULL,
+   `user_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`cluster_id`),
 --  KEY `fk_cluster_1` (`infrastructure_id`),
-  UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
+  UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`),
+  UNIQUE `cluster_basehostname_UNIQUE` (`cluster_basehostname`),
+  KEY `fk_cluster_1` (`user_id`),
+  CONSTRAINT `fk_cluster_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

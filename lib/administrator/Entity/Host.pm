@@ -235,6 +235,20 @@ sub getNodeNumber {
     my $node_number = $self->{_dbix}->node->get_column('node_number');
     return $node_number;
 }
+=head2 getHostRAM
+=cut
+sub getHostRAM {
+    my $self = shift;
+    my $host_ram = $self->{_dbix}->get_column('host_ram');
+    return $host_ram;
+}
+=head2 getHostCore
+=cut
+sub getHostCORE {
+    my $self = shift;
+    my $host_core = $self->{_dbix}->get_column('host_core');
+    return $host_core;
+}
 
 sub setNodeNumber{
     my $self = shift;

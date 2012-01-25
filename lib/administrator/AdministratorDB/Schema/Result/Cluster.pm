@@ -129,7 +129,12 @@ __PACKAGE__->table("cluster");
   is_nullable: 0
   size: 64
 
+=head2 user_id
 
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key => 1,
+  is_nullable: 0
 =cut
 
 __PACKAGE__->add_columns(
@@ -182,6 +187,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
    "cluster_basehostname",
   { data_type => "char", is_nullable => 0, size => 64 },
+  "user_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("cluster_id");
 __PACKAGE__->add_unique_constraint("cluster_name_UNIQUE", ["cluster_name"]);
