@@ -127,7 +127,7 @@ sub new {
     # my $self = $class->SUPER::new( attrs => \%args, table => "ComponentInstance");
     my $attrs = $class->checkAttrs(attrs => \%args);
     my $self = {
-        _dbix => $adm->_newDbix(table => "ComponentInstance", row => $attrs),
+        _dbix => $admin->_newDbix(table => "ComponentInstance", row => $attrs),
     };
     bless $self, $class;
     return $self;
@@ -139,7 +139,7 @@ sub get {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    my $table = "ComponentInstance"
+    my $table = "ComponentInstance";
     my $adm = Administrator->new();
 
     my $dbix = $adm->getRow(id=>$args{id}, table => $table);
