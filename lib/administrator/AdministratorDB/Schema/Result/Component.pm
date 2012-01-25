@@ -131,4 +131,9 @@ __PACKAGE__->has_many(
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.component_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;
