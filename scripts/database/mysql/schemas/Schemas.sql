@@ -24,11 +24,12 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `kernel` (
-  `kernel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `kernel_id` int(8) unsigned NOT NULL,
   `kernel_name` char(64) NOT NULL,
   `kernel_version` char(32) NOT NULL,
   `kernel_desc` char(255) DEFAULT NULL,
-  PRIMARY KEY (`kernel_id`)
+  PRIMARY KEY (`kernel_id`),
+  CONSTRAINT FOREIGN KEY (`kernel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -36,7 +37,7 @@ CREATE TABLE `kernel` (
 --
 
 CREATE TABLE `processormodel` (
-  `processormodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `processormodel_id` int(8) unsigned NOT NULL,
   `processormodel_brand` char(64) NOT NULL,
   `processormodel_name` char(32) NOT NULL,
   `processormodel_core_num` int(2) unsigned NOT NULL,
@@ -46,6 +47,7 @@ CREATE TABLE `processormodel` (
   `processormodel_64bits` int(1) unsigned NOT NULL,
   `processormodel_virtsupport` int(1) unsigned NOT NULL,
   PRIMARY KEY (`processormodel_id`),
+  CONSTRAINT FOREIGN KEY (`processormodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `processormodel_name_UNIQUE` (`processormodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -55,11 +57,12 @@ CREATE TABLE `processormodel` (
 --
 
 CREATE TABLE `powersupplycardmodel` (
-  `powersupplycardmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `powersupplycardmodel_id` int(8) unsigned NOT NULL,
   `powersupplycardmodel_brand` char(64) NOT NULL,
   `powersupplycardmodel_name` char(32) NOT NULL,
   `powersupplycardmodel_slotscount` int(2) unsigned NOT NULL,
   PRIMARY KEY (`powersupplycardmodel_id`),
+  CONSTRAINT FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `powersupplycardmodel_name_UNIQUE` (`powersupplycardmodel_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -68,7 +71,7 @@ CREATE TABLE `powersupplycardmodel` (
 --
 
 CREATE TABLE `hostmodel` (
-  `hostmodel_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `hostmodel_id` int(8) unsigned NOT NULL,
   `hostmodel_brand` char(64) NOT NULL,
   `hostmodel_name` char(32) NOT NULL,
   `hostmodel_chipset` char(64) NOT NULL,
@@ -79,6 +82,7 @@ CREATE TABLE `hostmodel` (
   `hostmodel_ram_max` int(1) unsigned NOT NULL,
   `processormodel_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`hostmodel_id`),
+  CONSTRAINT FOREIGN KEY (`hostmodel_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `hostmodel_name_UNIQUE` (`hostmodel_name`),
   KEY `fk_hostmodel_1` (`processormodel_id`),
   CONSTRAINT `fk_hostmodel_1` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -142,13 +146,6 @@ CREATE TABLE `host` (
   CONSTRAINT `fk_host_7` FOREIGN KEY (`cloud_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `subhost` (
-  `subhost_id` int(8) unsigned NOT NULL,
-  `subhost_attr` char(128) NOT NULL,
-  PRIMARY KEY (`subhost_id`),
-  CONSTRAINT FOREIGN KEY (`subhost_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 --
 -- Table structure for table `hostdetails`
 --
@@ -179,13 +176,14 @@ CREATE TABLE `powersupply` (
 -- Table structure for table `powersupplycard`
 --
 CREATE TABLE `powersupplycard` (
-  `powersupplycard_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `powersupplycard_id` int(8) unsigned NOT NULL,
   `powersupplycard_name` char(64) NOT NULL,
   `ipv4_internal_id` int(8) unsigned DEFAULT NULL,
   `powersupplycardmodel_id` int(8) unsigned DEFAULT NULL,
   `powersupplycard_mac_address` char(32) NOT NULL,
   `active` int(1),
   PRIMARY KEY (`powersupplycard_id`),
+  CONSTRAINT FOREIGN KEY (`powersupplycard_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_powersupplycardmodel` (`powersupplycardmodel_id`),
   KEY `fk_powersupplycard_ipv4_internal_id` (`ipv4_internal_id`),
   CONSTRAINT `fk_powersupplycardmodel` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`)  ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -198,13 +196,14 @@ CREATE TABLE `powersupplycard` (
 --
 
 CREATE TABLE `distribution` (
-  `distribution_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `distribution_id` int(8) unsigned NOT NULL,
   `distribution_name` char(64) NOT NULL,
   `distribution_version` char(32) NOT NULL,
   `distribution_desc` char(255) DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `root_device_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`distribution_id`),
+  CONSTRAINT FOREIGN KEY (`distribution_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_distribution_1` (`etc_device_id`),
   KEY `fk_distribution_2` (`root_device_id`),
   CONSTRAINT `fk_distribution_1` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -216,7 +215,7 @@ CREATE TABLE `distribution` (
 --
 
 CREATE TABLE `cluster` (
-  `cluster_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `cluster_id` int(8) unsigned NOT NULL,
   `cluster_name` char(32) NOT NULL,
   `cluster_desc` char(255) DEFAULT NULL,
   `cluster_type` int(1) unsigned DEFAULT NULL,
@@ -235,6 +234,7 @@ CREATE TABLE `cluster` (
   `cluster_prev_state` char(32),
    `cluster_basehostname` char(64) NOT NULL,
   PRIMARY KEY (`cluster_id`),
+  CONSTRAINT FOREIGN KEY (`cluster_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
 --  KEY `fk_cluster_1` (`infrastructure_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -360,7 +360,7 @@ CREATE TABLE `old_operation_parameter` (
 --
 
 CREATE TABLE `systemimage` (
-  `systemimage_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `systemimage_id` int(8) unsigned NOT NULL,
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
   `systemimage_dedicated` int(1) unsigned NOT NULL DEFAULT 0,
@@ -369,6 +369,7 @@ CREATE TABLE `systemimage` (
   `root_device_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
+  CONSTRAINT FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `systemimage_name_UNIQUE` (`systemimage_name`),
   KEY `fk_systemimage_1` (`distribution_id`),
   KEY `fk_systemimage_2` (`etc_device_id`),
@@ -459,7 +460,7 @@ CREATE TABLE `cluster_ipv4_route` (
 --
 
 CREATE TABLE `user` (
-  `user_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(8) unsigned NOT NULL,
   `user_system` int(1) unsigned NOT NULL DEFAULT 0,
   `user_login` char(32) NOT NULL,
   `user_password` char(32) NOT NULL,
@@ -470,6 +471,7 @@ CREATE TABLE `user` (
   `user_lastaccess` datetime DEFAULT NULL,
   `user_desc` char(255) DEFAULT 'Note concerning this user',
   PRIMARY KEY (`user_id`),
+  CONSTRAINT FOREIGN KEY (`user_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `user_login` (`user_login`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -478,12 +480,13 @@ CREATE TABLE `user` (
 --
 
 CREATE TABLE `gp` (
-  `gp_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `gp_id` int(8) unsigned NOT NULL,
   `gp_name` char(32) NOT NULL,
   `gp_type` char(32) NOT NULL,
   `gp_desc` char(255) DEFAULT NULL,
   `gp_system` int(1) unsigned NOT NULL,
   PRIMARY KEY (`gp_id`),
+  CONSTRAINT FOREIGN KEY (`gp_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY `gp_name` (`gp_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -553,7 +556,7 @@ CREATE TABLE `component_installed` (
 --
 
 CREATE TABLE `infrastructure` (
-  `infrastructure_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `infrastructure_id` int(8) unsigned NOT NULL,
   `infrastructure_reference` char(64) NOT NULL,
   `infrastructure_min_node` int(2) unsigned NOT NULL,
   `infrastructure_max_node` int(2) unsigned NOT NULL,
@@ -566,7 +569,8 @@ CREATE TABLE `infrastructure` (
   `infrastructure_state` char(32) NOT NULL DEFAULT 'down',
   `infrastructure_prev_state` char(32),
   `infrastructure_priority` int(1) unsigned NOT NULL,
-  PRIMARY KEY (`infrastructure_id`)
+  PRIMARY KEY (`infrastructure_id`),
+  CONSTRAINT FOREIGN KEY (`infrastructure_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -574,7 +578,7 @@ CREATE TABLE `infrastructure` (
 --
 -- #TODO Warning Here delete tier when cluster removed by when cluster will be used by tier then they will not be destroyed when cluster are.
 CREATE TABLE `tier` (
-  `tier_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `tier_id` int(8) unsigned NOT NULL,
   `infrastructure_id` int(8) unsigned NOT NULL,
   `cluster_id` int(8) unsigned,
   `tier_name` char(32) NOT NULL,
@@ -582,6 +586,7 @@ CREATE TABLE `tier` (
   `tier_data_src` char(128) NOT NULL,
   `tier_poststart_script` char(64),
   PRIMARY KEY (`tier_id`),
+  CONSTRAINT FOREIGN KEY (`tier_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_tier_1` (`infrastructure_id`),
   KEY `fk_tier_2` (`cluster_id`),
   CONSTRAINT `fk_tier_1` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -820,225 +825,6 @@ CREATE TABLE `entityright` (
   CONSTRAINT `fk_entityright_2` FOREIGN KEY (`entityright_consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `user_entity`
---
-
-CREATE TABLE `user_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `user_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`user_id`),
-  UNIQUE KEY `fk_user_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_user_entity_2` (`user_id`),
-  CONSTRAINT `fk_user_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_user_entity_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `distribution_entity`
---
-
-CREATE TABLE `distribution_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `distribution_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`distribution_id`),
-  UNIQUE KEY `fk_distribution_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_distribution_entity_2` (`distribution_id`),
-  CONSTRAINT `fk_distribution_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_distribution_entity_2` FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
-
-
---
--- Table structure for table `powersupplycard_entity`
---
-
-CREATE TABLE `powersupplycard_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `powersupplycard_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`powersupplycard_id`),
-  UNIQUE KEY `fk_powersupplycard_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_powersupplycard_entity_2` (`powersupplycard_id`),
-  CONSTRAINT `fk_powersupplycard_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_powersupplycard_entity_2` FOREIGN KEY (`powersupplycard_id`) REFERENCES `powersupplycard` (`powersupplycard_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `operation_entity`
---
-
-CREATE TABLE `operation_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `operation_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`operation_id`),
-  UNIQUE KEY `fk_operation_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_operation_entity_2` (`operation_id`),
-  CONSTRAINT `fk_operation_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_operation_entity_2` FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `systemimage_entity`
---
-
-CREATE TABLE `systemimage_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `systemimage_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`systemimage_id`),
-  UNIQUE KEY `fk_systemimage_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_systemimage_entity_2` (`systemimage_id`),
-  CONSTRAINT `fk_systemimage_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_systemimage_entity_2` FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `component_instance_entity`
---
-
-CREATE TABLE `component_instance_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `component_instance_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`component_instance_id`),
-  UNIQUE KEY `fk_component_instance_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_component_instance_entity_2` (`component_instance_id`),
-  CONSTRAINT `fk_component_instance_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_component_instance_entity_2` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `message_entity`
---
-
-CREATE TABLE `message_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `message_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`message_id`),
-  UNIQUE KEY `fk_message_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_message_entity_2` (`message_id`),
-  CONSTRAINT `fk_message_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_message_entity_2` FOREIGN KEY (`message_id`) REFERENCES `message` (`message_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `kernel_entity`
---
-
-CREATE TABLE `kernel_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `kernel_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`kernel_id`),
-  UNIQUE KEY `fk_kernel_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_kernel_entity_2` (`kernel_id`),
-  CONSTRAINT `fk_kernel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_kernel_entity_2` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `operationtype_entity`
---
-
-CREATE TABLE `operationtype_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `operationtype_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`operationtype_id`),
-  UNIQUE KEY `fk_operationtype_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_operationtype_entity_2` (`operationtype_id`),
-  CONSTRAINT `fk_operationtype_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_operationtype_entity_2` FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `gp_entity`
---
-
-CREATE TABLE `gp_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `gp_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`gp_id`),
-  UNIQUE KEY `fk_gp_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_gp_entity_2` (`gp_id`),
-  CONSTRAINT `fk_gp_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_gp_entity_2` FOREIGN KEY (`gp_id`) REFERENCES `gp` (`gp_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `hostmodel_entity`
---
-
-CREATE TABLE `hostmodel_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `hostmodel_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`hostmodel_id`),
-  UNIQUE KEY `fk_hostmodel_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_hostmodel_entity_2` (`hostmodel_id`),
-  CONSTRAINT `fk_hostmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_hostmodel_entity_2` FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `processormodel_entity`
---
-
-CREATE TABLE `processormodel_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `processormodel_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`processormodel_id`),
-  UNIQUE KEY `fk_processormodel_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_processormodel_entity_2` (`processormodel_id`),
-  CONSTRAINT `fk_processormodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_processormodel_entity_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `powersupplycardmodel_entity`
---
-
-CREATE TABLE `powersupplycardmodel_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `powersupplycardmodel_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`powersupplycardmodel_id`),
-  UNIQUE KEY `fk_powersupplycardmodel_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_powersupplycardmodel_entity_2` (`powersupplycardmodel_id`),
-  CONSTRAINT `fk_powersupplycardmodel_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_powersupplycardmodel_entity_2` FOREIGN KEY (`powersupplycardmodel_id`) REFERENCES `powersupplycardmodel` (`powersupplycardmodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-
---
--- Table structure for table `cluster_entity`
---
-
-CREATE TABLE `cluster_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `cluster_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`cluster_id`),
-  UNIQUE KEY `fk_cluster_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_cluster_entity_2` (`cluster_id`),
-  CONSTRAINT `fk_cluster_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_cluster_entity_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `tier_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `tier_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`tier_id`),
-  UNIQUE KEY `fk_tier_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_tier_entity_2` (`tier_id`),
-  CONSTRAINT `fk_tier_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_tier_entity_2` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `infrastructure_entity` (
-  `entity_id` int(8) unsigned NOT NULL,
-  `infrastructure_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`entity_id`,`infrastructure_id`),
-  UNIQUE KEY `fk_infrastructure_entity_1` (`entity_id`),
-  UNIQUE KEY `fk_infrastructure_entity_2` (`infrastructure_id`),
-  CONSTRAINT `fk_infrastructure_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_infrastructure_entity_2` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
 
