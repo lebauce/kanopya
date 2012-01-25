@@ -25,10 +25,10 @@ eval {
     throws_ok { 
 		Entity::Host->new(
 		    host_mac_address => '70:71tbc:6c:2d:b1',
-		    kernel_id => 1,
+		    kernel_id => 44,
 		    host_serial_number => "Wrong Mac",
 		    hostmodel_id => 7,
-		    processormodel_id => 2) 
+		    processormodel_id => 26) 
 		} 
 		'Kanopya::Exception::Internal::WrongValue',
 		'bad attribute value';
@@ -36,9 +36,9 @@ eval {
     throws_ok { 
 		Entity::Host->new(
 		    host_mac_address => '70:71:bc:6c:2d:b1',
-		    kernel_id => 1,
+		    kernel_id => 44,
 		    hostmodel_id => 7,
-		    processormodel_id => 2) 
+		    processormodel_id => 26) 
 		} 
 		'Kanopya::Exception::Internal::IncorrectParam',
 		'missing mandatory attribute';
@@ -46,10 +46,10 @@ eval {
 
     my $host = Entity::Host->new(
 		host_mac_address => '00:00:00:00:00:00',
-		kernel_id => 1,
+		kernel_id => 44,
 		host_serial_number => "Second Host",
-		hostmodel_id => 8,
-		processormodel_id => 8
+		hostmodel_id => 7,
+		processormodel_id => 26
 	);
 
     isa_ok($host, "Entity::Host", 'Entity::Host instanciation');
