@@ -140,6 +140,7 @@ sub getAttr {
     my %args = @_;
     my $dbix = $self->{_dbix};
     my $value = undef;
+    my $found = 0;
     
     General::checkParams(args => \%args, required => ['name']);
 
@@ -147,6 +148,7 @@ sub getAttr {
 		# Search for attr in this dbix
 		if ( $dbix->has_column($args{name}) ) {
 			$value = $dbix->get_column($args{name});
+			$found = 1;
 			last;
 		} elsif($dbix->can('parent')) {
 			# go to parent dbix
@@ -157,7 +159,7 @@ sub getAttr {
 		}
 	}
 
-	if(not defined $value) {
+	if(not $found) {
 		$errmsg = ref($self) . " getAttr no attr name $args{name}!";
 		#$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
