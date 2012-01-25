@@ -22,37 +22,34 @@ INSERT INTO `gp` VALUES
 (12,'Gp','Gp','Groups master group containing all groups',1);
 
 
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,1); SET @MasterUserGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,2); SET @PrcessormodelGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,3); SET @HostmodelGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,4); SET @HostGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,5); SET @ClusterGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,6); SET @DistributionGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,7); SET @KernelGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,8); SET @SystemimageGroup_eid = @eid ; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,9); SET @OperationtypeGroup_eid = @eid;SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,10); SET @PowersupplycarmodelGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,11); SET @PowersupplycardGroup_eid = @eid; SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `gp_entity` VALUES (@eid,12); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @MasterUserGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @PrcessormodelGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @HostmodelGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @HostGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @ClusterGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @DistributionGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @KernelGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @SystemimageGroup_eid = @eid ; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @OperationtypeGroup_eid = @eid;SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @PowersupplycarmodelGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @PowersupplycardGroup_eid = @eid; SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- predefined groups
 INSERT INTO `gp` VALUES (13,'Admin','User','Privileged users for administration tasks',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,13);
- SET @eid := @eid +1;
+SET @eid := @eid +1;
 SET @Admin_group_id = @eid;
 
 
 INSERT INTO `gp` VALUES (14,'GuestGroup','User','Guest users with limited permissions',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,14);
 SET @GuestGroup_eid = @eid;
 SET @Guest_group_id = 14;
 SET @eid := @eid +1;
 
 INSERT INTO `gp` VALUES (15,'Applimanager','User','privilege on componenent and cluster',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,15);
 SET @Applimanager_eid=@eid ;
 SET @Appli_group_id =15;
 SET @eid := @eid +1;
@@ -61,7 +58,6 @@ SET @eid := @eid +1;
 
 INSERT INTO `gp` VALUES (16,'Systemmanager','User','privilege on Distibution and Systemimage',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,16);
 SET @Systemmamager_group_id = 16;
 SET @Systemmanager_eid = @eid;
 SET @eid := @eid +1;
@@ -69,7 +65,6 @@ SET @eid := @eid +1;
 
 INSERT INTO `gp` VALUES (17,'Hardwargroup','User','privilege on Host Hostmodel Kernel ',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,17);
 SET @Hardwar_eid=@eid;
 SET @Hardwar_group_id =17;
 SET @eid := @eid +1;
@@ -77,7 +72,6 @@ SET @eid := @eid +1;
 
 INSERT INTO `gp` VALUES (18,'Usermanager','User','owner entity',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,18);
 SET @Usermanager_eid=@eid;
 SET @Usermanager_group_id =18;
 SET @eid := @eid +1;
@@ -85,7 +79,6 @@ SET @eid := @eid +1;
 
 INSERT INTO `gp` VALUES (19,'Visitor','User','Visitor',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,19);
 SET @Visitor_eid=@eid;
 SET @Visitor_group_id =19;
 SET @eid := @eid +1;
@@ -93,7 +86,6 @@ SET @eid := @eid +1;
 
 INSERT INTO `gp` VALUES (20,'Component','Component','Component group containing all components',0);
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `gp_entity` VALUES (@eid,20);
 SET @Component_eid=@eid;
 SET @Component_group_id =20;
 SET @eid := @eid +1;
@@ -104,17 +96,17 @@ SET @eid := @eid +1;
 -- system user
 INSERT INTO `user` VALUES
 (1,1,'executor',MD5('[% admin_password %]'),'Kanopya','Executor','dev@hederatech.com',CURRENT_DATE(),NULL,'User used by executor');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- predefined user
 INSERT INTO `user` VALUES
 (2,1,'admin',MD5('[% admin_password %]'),'Kanopya','Administrator','dev@hederatech.com',CURRENT_DATE(),NULL,'God user for administrative tasks.');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,2);
+INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `ingroups` VALUES (@Admin_group_id, @eid); SET @eid := @eid +1;
 
 
 INSERT INTO `user` VALUES (3,0,'guest',MD5('guest'),'Guest','','guest@somewhere.com',CURRENT_DATE(),NULL,'Guest user with limited permissions.');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `user_entity` VALUES (@eid,3);
+INSERT INTO `entity` VALUES (@eid); 
 
 INSERT INTO `ingroups` VALUES (@Guest_group_id, @eid);
 
@@ -140,19 +132,19 @@ INSERT INTO `processormodel` VALUES (7,'Intel','i7-720QM',4,1.6,6,45,1,1);
 INSERT INTO `processormodel` VALUES (8,'AMD','Ontario',2,1.6,1,9,1,1);
 INSERT INTO `processormodel` VALUES (9,'AMD','G-T56N',2,1.6,1,18,1,1);
 
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,7); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,8); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `processormodel_entity` VALUES (@eid,9); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- powersupplycard models
 INSERT INTO `powersupplycardmodel` VALUES (1,'HEDERATECH','notresupermodeldecarte',12);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `powersupplycardmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- host models
 INSERT INTO `hostmodel` VALUES (1,'Intel','DG945GCLF2','945GC',1,42,1,1,2,1);
@@ -165,15 +157,15 @@ INSERT INTO `hostmodel` VALUES (7,'Intel','D510MO','INTEL NM10',1,21,1,2,4,2);
 INSERT INTO `hostmodel` VALUES (8,'Jetway','JNF81','Hudson E1',1,17,2,2,8,8);
 INSERT INTO `hostmodel` VALUES (9,'IEI','Kino HM551','Intel HM55',1,32,2,2,8,NULL);
 
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,1); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,4); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,5); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,6); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,7); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,8); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `hostmodel_entity` VALUES (@eid,9); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- operation types list
 INSERT INTO `operationtype` VALUES
@@ -216,41 +208,41 @@ INSERT INTO `operationtype` VALUES
 (37,'MigrateHost');
 
 
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,1); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,4); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,5); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,6); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,7); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,8); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,9); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,10); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,11); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,12); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,13); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,14); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,15); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,16); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,17); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,18); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,19); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,20); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,21); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,22); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,23); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,24); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,25); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,26); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,27); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,28); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,29); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,30); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,31); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,32); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,33); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,34); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `operationtype_entity` VALUES (@eid,35); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- components list
 INSERT INTO `component` VALUES
@@ -270,12 +262,11 @@ INSERT INTO `component` VALUES
 (14,'Opennebula','3','Cloudmanager');
 -- kernels
 INSERT INTO `kernel` VALUES (1,'2.6.39.3','2.6.39.3','generic kernel with lots of modules');
-
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `kernel_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- admin cluster
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,1, 'up:[% tmstp %]', NULL,'test_');
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `cluster_entity` VALUES (@eid,1); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 
 -- internal ip for admin node
 INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal_netmask %]', NULL);
@@ -298,14 +289,14 @@ INSERT INTO `component_template` VALUES (6,'nfsd','/templates/components/nfsd3',
 
 -- initial components instance for admin cluster:
 INSERT INTO `component_instance` VALUES (1,1,1,NULL,NULL),(3,1,3,NULL,NULL),(4,1,5,NULL,2),(5,1,6,NULL,NULL),(6,1,7,NULL,3),(7,1,8,NULL,6),(8,1,11,NULL,NULL);
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,1); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,2); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,3); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,4); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,5); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,6); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,7); SET @eid := @eid +1;
-INSERT INTO `entity` VALUES (@eid); INSERT INTO `component_instance_entity` VALUES (@eid,8); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@eid); SET @eid := @eid +1;
 -- main vg storage from only one pv
 INSERT INTO `lvm2_vg` VALUES (1,1,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
 SET @pvid := 1;
