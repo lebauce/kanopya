@@ -157,34 +157,6 @@ sub methods {
     };
 }
 
-=head2 get
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $admin = Administrator->new();
-    my $dbix_cluster = $admin->{db}->resultset('Cluster')->find($args{id});
-    if(not defined $dbix_cluster) {
-        $errmsg = "Entity::Cluster->get : id <$args{id}> not found !";
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    my $entity_id = $dbix_cluster->entitylink->get_column('entity_id');
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
-    }
-    my $self = $class->SUPER::get( %args,  table => "Cluster");
-    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
-    return $self;
-}
-
 =head2 getClusters
 
 =cut
@@ -192,12 +164,10 @@ sub get {
 sub getClusters {
     my $class = shift;
     my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    return $class->SUPER::getEntities( %args,  type => "Cluster");
+    return $class->search(%args);
 }
 
 sub getCluster {
@@ -206,28 +176,8 @@ sub getCluster {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
+    my @clusters = $class->search(%args);
     return pop @clusters;
-}
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
-
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
 }
 
 =head2 create

@@ -91,43 +91,6 @@ sub methods {
     };
 }
 
-
-=head2 get
-
-    Class: public
-    desc: retrieve a stored Entity::Gp instance
-    args:
-        id : scalar(int) : gp id
-    return: Entity::Gp instance 
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-    
-    my $admin = Administrator->new();
-       my $dbix_gp = $admin->{db}->resultset('Gp')->find($args{id});
-       if(not defined $dbix_gp) {
-           $errmsg = "Entity::Gp->get : id <$args{id}> not found !";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-       }   
-       # Entity::Gp->get method concerns an existing groups so we retrieve this groups'entity_id
-       my $entity_id = $dbix_gp->entitylink->get_column('entity_id');
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           $errmsg = "Permission denied to get group with id $args{id}";
-           $log->error($errmsg);
-           throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-       }
-    
-       my $self = $class->SUPER::get( %args,  table => "Gp");
-       return $self;
-}
-
 =head2 getGroups
 
     Class: public
@@ -141,38 +104,10 @@ sub get {
 sub getGroups {
     my $class = shift;
     my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my $adm = Administrator->new();
-    return $class->SUPER::getEntities( %args,  type => "Gp");
-}
-
-=head2 new
-
-    Class: Public
-    desc:  constructor
-    args: 
-    return: Entity::Gp instance 
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-    
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Gp");
-    
-    # Set the extended parameters
-    #$self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
+    return $class->search(%args);
 }
 
 =head2 create

@@ -106,33 +106,6 @@ sub methods {
     };
 }
 
-=head2 get
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $admin = Administrator->new();
-    my $dbix_tier = $admin->{db}->resultset('Tier')->find($args{id});
-    if(not defined $dbix_tier) {
-        $errmsg = "Entity::Tier->get : id <$args{id}> not found !";
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    my $entity_id = $dbix_tier->entitylink->get_column('entity_id');
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get tier with id $args{id}");
-    }
-    my $self = $class->SUPER::get( %args,  table => "Tier");
-    return $self;
-}
-
 =head2 getTiers
 
 =cut
@@ -140,12 +113,10 @@ sub get {
 sub getTiers {
     my $class = shift;
     my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    return $class->SUPER::getEntities( %args,  type => "Tier");
+    return $class->search(%args);
 }
 
 sub getTier {
@@ -154,25 +125,8 @@ sub getTier {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @tiers = $class->SUPER::getEntities( %args,  type => "Tier");
+    my @tiers = $class->search(%args);
     return pop @tiers;
-}
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Tier");
-
-    return $self;
 }
 
 =head2 create
