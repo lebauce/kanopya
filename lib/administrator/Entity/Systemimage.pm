@@ -88,42 +88,6 @@ sub methods {
     };
 }
 
-=head2 get
-
-    Class: public
-    desc: retrieve a stored Entity::Systemimage instance
-    args:
-        id : scalar(int) : user id
-    return: Entity::Systemimage instance 
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
- 
-    my $adm = Administrator->new();
-    my $dbix_systemimage = $adm->{db}->resultset('Systemimage')->find($args{id});
-    if(not defined $dbix_systemimage) {
-        $errmsg = "Entity::Systemiamge->get : id <$args{id}> not found !";    
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }       
-    
-    my $entity_id = $dbix_systemimage->entitylink->get_column('entity_id');
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        $errmsg = "Permission denied to get system image with id $args{id}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-    }
-       
-    my $self = $class->SUPER::get( %args, table=>"Systemimage");
-    return $self;
-}
-
 =head2 getSystemimages
 
     Class: public
@@ -140,8 +104,7 @@ sub getSystemimages {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my $adm = Administrator->new();
-    return $class->SUPER::getEntities( %args,  type => "Systemimage");
+    return $class->search(%args);
 }
 
 sub getSystemimage {
@@ -150,32 +113,8 @@ sub getSystemimage {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @systemimages = $class->SUPER::getEntities( %args,  type => "Systemimage");
+    my @systemimages = $class->search(%args);
     return pop @systemimages;
-}
-
-=head2 new
-
-    Public class method
-    desc:  Constructor
-    args: 
-    return: Entity::Systemimage instance 
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-    
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Systemimage");
-    
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-    return $self;
 }
 
 =head2 create
