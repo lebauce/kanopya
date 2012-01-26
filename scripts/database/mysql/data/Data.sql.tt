@@ -315,12 +315,15 @@ INSERT INTO `component_template` VALUES (6,'nfsd','/templates/components/nfsd3',
 -- initial components instance for admin cluster:
 --
 
+-- LVM2 component
+
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `component_instance` VALUES(@eid,@admin_cluster,1,NULL,NULL);
+INSERT INTO `component` VALUES(@eid,@admin_cluster,1,NULL,NULL);
+INSERT INTO `lvm2` VALUES(@eid);
 
 -- main vg storage from only one pv
 
-INSERT INTO `lvm2_vg` VALUES (1,@eid,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
+INSERT INTO `lvm2_vg` VALUES (@eid,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
 SET @pvid := 1;
 [% FOREACH pv = kanopya_pvs %]
 INSERT INTO `lvm2_pv` VALUES (@pvid,1,'[% pv %]');
@@ -331,41 +334,41 @@ SET @eid := @eid +1;
 -- iscsitarget 
 
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `component_instance` VALUES(@eid,@admin_cluster,3,NULL,NULL);
+INSERT INTO `component` VALUES(@eid,@admin_cluster,3,NULL,NULL);
 SET @eid := @eid +1;
 
 -- dhcpd configuration
 
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `component_instance` VALUES(@eid,@admin_cluster,5,NULL,2);
-INSERT INTO `dhcpd3` VALUES (1,@eid,'hedera-technology.com',NULL,'node001');
-INSERT INTO `dhcpd3_subnet` VALUES (1,1,'[% ipv4_internal_network_ip %]','[% ipv4_internal_netmask %]');
+INSERT INTO `component` VALUES(@eid,@admin_cluster,5,NULL,2);
+INSERT INTO `dhcpd3` VALUES (@eid,'hedera-technology.com',NULL,'node001');
+INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% ipv4_internal_netmask %]');
 SET @eid := @eid +1;
 
 -- atftp configuration
 
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `component_instance` VALUES(@eid,@admin_cluster,6,NULL,NULL);
-INSERT INTO `atftpd0` VALUES (1,@eid,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
+INSERT INTO `component` VALUES(@eid,@admin_cluster,6,NULL,NULL);
+INSERT INTO `atftpd0` VALUES (@eid,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
 SET @eid := @eid +1;
 
---
+--	snmpd
 
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `component_instance` VALUES(@eid,@admin_cluster,7,NULL,3);
+INSERT INTO `component` VALUES(@eid,@admin_cluster,7,NULL,3);
 SET @eid := @eid +1;
 
---
+-- Nfsd
 
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `component_instance` VALUES(@eid,@admin_cluster,8,NULL,6);
-INSERT INTO `nfsd3` VALUES(1,@eid,NULL,'no',8,0,NULL,'no',NULL);
+INSERT INTO `component` VALUES(@eid,@admin_cluster,8,NULL,6);
+INSERT INTO `nfsd3` VALUES(@eid,NULL,'no',8,0,NULL,'no',NULL);
 SET @eid := @eid +1;
 
---
+-- Syslogng
 
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `component_instance` VALUES(@eid,@admin_cluster,11,NULL,NULL);
+INSERT INTO `component` VALUES(@eid,@admin_cluster,11,NULL,NULL);
 SET @eid := @eid +1;
 
 

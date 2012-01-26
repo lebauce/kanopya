@@ -3,17 +3,29 @@ USE `administrator`;
 SET foreign_key_checks=0;
 
 --
+-- Table structure for table `iscsitarget1`
+--
+
+CREATE TABLE `iscsitarget1` (
+  `iscsitarget1_id` int(8) unsigned NOT NULL,
+  `iscsitarget1_target_name` char(128) NOT NULL,
+  PRIMARY KEY (`iscsitarget1_id`),
+  CONSTRAINT FOREIGN KEY (`iscsitarget1_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
 -- Table structure for table `iscsitarget1_target`
 --
 
 CREATE TABLE `iscsitarget1_target` (
   `iscsitarget1_target_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `component_instance_id` int(8) unsigned NOT NULL,
+  `iscsitarget1_id` int(8) unsigned NOT NULL,
   `iscsitarget1_target_name` char(128) NOT NULL,
   PRIMARY KEY (`iscsitarget1_target_id`),
   UNIQUE KEY `iscsitarget1_UNIQUE` (`iscsitarget1_target_name`),
-  KEY `fk_iscsitarget1_1` (`component_instance_id`),
-  CONSTRAINT `fk_iscsitarget1_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY `fk_iscsitarget1_1` (`iscsitarget1_id`),
+  CONSTRAINT `fk_iscsitarget1_1` FOREIGN KEY (`iscsitarget1_id`) REFERENCES `iscsitarget1` (`iscsitarget1_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

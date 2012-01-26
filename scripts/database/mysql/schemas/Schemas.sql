@@ -515,12 +515,12 @@ CREATE TABLE `message` (
 -- Table structure for table `component`
 --
 
-CREATE TABLE `component` (
-  `component_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+CREATE TABLE `component_type` (
+  `component_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `component_name` char(32) NOT NULL,
   `component_version` char(32) NOT NULL,
   `component_category` char(32) NOT NULL,
-  PRIMARY KEY (`component_id`)
+  PRIMARY KEY (`component_type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -528,12 +528,12 @@ CREATE TABLE `component` (
 --
 
 CREATE TABLE `component_provided` (
-  `component_id` int(8) unsigned NOT NULL,
+  `component_type_id` int(8) unsigned NOT NULL,
   `distribution_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`component_id`,`distribution_id`),
-  KEY `fk_component_provided_1` (`component_id`),
+  PRIMARY KEY (`component_type_id`,`distribution_id`),
+  KEY `fk_component_provided_1` (`component_type_id`),
   KEY `fk_component_provided_2` (`distribution_id`),
-  CONSTRAINT `fk_component_provided_1` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_component_provided_1` FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_provided_2` FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -542,12 +542,12 @@ CREATE TABLE `component_provided` (
 --
 
 CREATE TABLE `component_installed` (
-  `component_id` int(8) unsigned NOT NULL,
+  `component_type_id` int(8) unsigned NOT NULL,
   `systemimage_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`component_id`,`systemimage_id`),
-  KEY `fk_component_installed_1` (`component_id`),
+  PRIMARY KEY (`component_type_id`,`systemimage_id`),
+  KEY `fk_component_installed_1` (`component_type_id`),
   KEY `fk_component_installed_2` (`systemimage_id`),
-  CONSTRAINT `fk_component_installed_1` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_component_installed_1` FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_installed_2` FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -597,20 +597,20 @@ CREATE TABLE `tier` (
 -- Table structure for table `component_instance`
 --
 
-CREATE TABLE `component_instance` (
-  `component_instance_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `cluster_id` int(8) unsigned,
+CREATE TABLE `component` (
   `component_id` int(8) unsigned NOT NULL,
+  `cluster_id` int(8) unsigned,
+  `component_type_id` int(8) unsigned NOT NULL,
   `tier_id` int(8) unsigned,
   `component_template_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`component_instance_id`),
+  PRIMARY KEY (`component_id`),
   KEY `fk_component_instance_1` (`cluster_id`),
   KEY `fk_component_instance_2` (`component_template_id`),
-  KEY `fk_component_instance_3` (`component_id`),
+  KEY `fk_component_instance_3` (`component_type_id`),
   KEY `fk_component_instance_4` (`tier_id`),
   CONSTRAINT `fk_component_instance_1` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_2` FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT `fk_component_instance_3` FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_component_instance_4` FOREIGN KEY (`tier_id`) REFERENCES `tier` (`tier_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -622,11 +622,11 @@ CREATE TABLE `component_template` (
   `component_template_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `component_template_name` char(45) NOT NULL,
   `component_template_directory` char(45) NOT NULL,
-  `component_id` int(8) unsigned NOT NULL,
+  `component_type_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`component_template_id`),
   UNIQUE KEY `component_template_UNIQUE` (`component_template_name`),
-  KEY `fk_component_template_1` (`component_id`),
-  CONSTRAINT `fk_component_template_1` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY `fk_component_template_1` (`component_type_id`),
+  CONSTRAINT `fk_component_template_1` FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
