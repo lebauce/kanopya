@@ -147,11 +147,11 @@ sub installComponent {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args,required=>["component_id"]);
+    General::checkParams(args=>\%args,required=>["component_type_id"]);
     
     my %params = ();
     $params{systemimage_id} = $self->getAttr(name => 'systemimage_id');
-    $params{component_id} = $args{component_id};
+    $params{component_type_id} = $args{component_type_id};
     
     $log->debug("New Operation InstallComponentOnSystemImage with attrs : " . Dumper(%params));
     Operation->enqueue(
@@ -165,7 +165,7 @@ sub installedComponentLinkCreation {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args,required=>["component_id"]);
+    General::checkParams(args=>\%args,required=>["component_type_id"]);
     
     $args{systemimage_id} = $self->getAttr(name=>"systemimage_id");
     $self->{_dbix}->components_installed->create(\%args);
@@ -315,14 +315,14 @@ sub getInstalledComponents {
     }
     my $components = [];
     my $search = $self->{_dbix}->components_installed->search(undef, 
-        { '+columns' => {'component_name' => 'component.component_name', 
-                         'component_version' => 'component.component_version', 
-                         'component_category' => 'component.component_category' },
-            join => ['component'] } 
+        { '+columns' => {'component_name' => 'component_type.component_name', 
+                         'component_version' => 'component_type.component_version', 
+                         'component_category' => 'component_type.component_category' },
+            join => ['component_type'] } 
     );
     while (my $row = $search->next) {
         my $tmp = {};
-        $tmp->{component_id} = $row->get_column('component_id');
+        $tmp->{component_type_id} = $row->get_column('component_type_id');
         $tmp->{component_name} = $row->get_column('component_name');
         $tmp->{component_version} = $row->get_column('component_version');
         $tmp->{component_category} = $row->get_column('component_category');
@@ -347,7 +347,7 @@ sub cloneComponentsInstalledFrom {
     my $rs = $si_source->{_dbix}->components_installed->search;
     while(my $component = $rs->next) {
         $self->{_dbix}->components_installed->create(
-            {    component_id => $component->get_column('component_id') });    
+            {    component_type_id => $component->get_column('component_type_id') });    
     }
 }
 

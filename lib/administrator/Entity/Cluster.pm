@@ -337,34 +337,33 @@ sub getComponents {
     General::checkParams(args => \%args, required => ['category']);
 
 #    my $adm = Administrator->new();
-    my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
-                                            { '+columns' => {"component_name" => "component.component_name",
-                                                            "component_version" => "component.component_version",
-                                                            "component_category" => "component.component_category"},
-#                                                [ "component.component_name",
-#                                                              "component.component_category",
-#                                                              "component.component_version"],
-                                           join => ["component"]});
+    my $components_rs = $self->{_dbix}->search_related("components", undef,
+		{ '+columns' => { "component_name"     => "component_type.component_name",
+						  "component_version"  => "component_type.component_version",
+						  "component_category" => "component_type.component_category"},
+	   join => ["component_type"]}
+	);
 
     my %comps;
     $log->debug("Category is $args{category}");
-    while ( my $comp_instance_row = $comp_instance_rs->next ) {
-        my $comp_category = $comp_instance_row->get_column('component_category');
-        $log->debug("Component category: $comp_category");
-        my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
-        $log->debug("Component instance id: $comp_instance_id");
-        my $comp_name = $comp_instance_row->get_column('component_name');
-        $log->debug("Component name: $comp_name");
-        my $comp_version = $comp_instance_row->get_column('component_version');
-        $log->debug("Component version: $comp_version");
+    while ( my $component_row = $components_rs->next ) {
+        my $comptype_category = $component_row->get_column('component_category');
+        my $comptype_id = $component_row->get_column('component_type_id');
+        my $comptype_name = $component_row->get_column('component_name');
+        my $comptype_version = $component_row->get_column('component_version');
+        
+        $log->debug("Component name: $comptype_name");
+        $log->debug("Component version: $comptype_version");
+        $log->debug("Component category: $comptype_category");
+         $log->debug("Component instance id: $comptype_id");
+        
         if (($args{category} eq "all")||
-            ($args{category} eq $comp_category)){
-            $log->debug("One component instance found with " . ref($comp_instance_row));
-#            my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
-            my $class= "Entity::Component::" . $comp_name . $comp_version;
+            ($args{category} eq $comptype_category)){
+            $log->debug("One component instance found with " . ref($component_row));
+            my $class= "Entity::Component::" . $comptype_name . $comptype_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
-            $comps{$comp_instance_id} = $class->get(id =>$comp_instance_id);
+            $comps{$comptype_id} = $class->get(id =>$comptype_id);
         }
     }
     return \%comps;
@@ -388,29 +387,29 @@ sub getComponent{
 
     General::checkParams(args => \%args, required => ['name','version']);
 
-    my $hash = {'component.component_name' => $args{name}, 'component.component_version' => $args{version}};
-    my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
-                                            { '+columns' => {"component_name" => "component.component_name",
-                                                            "component_version" => "component.component_version",
-                                                            "component_category" => "component.component_category"},
-                                                    join => ["component"]});
+    my $hash = {'component_type.component_name' => $args{name}, 'component_type.component_version' => $args{version}};
+    my $components_rs = $self->{_dbix}->search_related("components", $hash,
+                                            { '+columns' => {"component_name" => "component_type.component_name",
+                                                            "component_version" => "component_type.component_version",
+                                                            "component_category" => "component_type.component_category"},
+                                                    join => ["component_type"]});
 
     $log->debug("name is $args{name}, version is $args{version}");
-    my $comp_instance_row = $comp_instance_rs->next;
-    if (not defined $comp_instance_row) {
+    my $component_row = $components_rs->next;
+    if (not defined $component_row) {
         throw Kanopya::Exception::Internal(error => "Component with name '$args{name}' version $args{version} not installed on this cluster");
     }
-    $log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
-    $log->debug("Component instance found with " . ref($comp_instance_row));
-    my $comp_category = $comp_instance_row->get_column('component_category');
-    my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
-    my $comp_name = $comp_instance_row->get_column('component_name');
-    my $comp_version = $comp_instance_row->get_column('component_version');
+    $log->debug("Comp name is " . $component_row->get_column('component_name'));
+    $log->debug("Component found with " . ref($component_row));
+    my $comp_category = $component_row->get_column('component_category');
+    my $comp_id = $component_row->id;
+    my $comp_name = $component_row->get_column('component_name');
+    my $comp_version = $component_row->get_column('component_version');
 #    my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
     my $class= "Entity::Component::" . $comp_name . $comp_version;
     my $loc = General::getLocFromClass(entityclass=>$class);
     eval { require $loc; };
-    return "$class"->get(id =>$comp_instance_id);
+    return "$class"->get(id =>$comp_id);
 }
 
 sub getComponentByInstanceId{

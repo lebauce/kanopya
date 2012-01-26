@@ -209,7 +209,7 @@ sub execute {
         my $components = $self->{_objs}->{distribution}->getProvidedComponents();
         foreach my $comp (@$components) {
             if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
-                $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_id => $comp->{component_id});
+                $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_type_id => $comp->{component_type_id});
             }
         }
 }

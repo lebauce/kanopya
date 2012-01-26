@@ -183,7 +183,7 @@ sub getComponents {
     my $list = [];
     while(my $c = $components->next) {
         my $tmp = {};
-        $tmp->{component_id}       = $c->get_column('component_id');
+        $tmp->{component_type_id}       = $c->get_column('component_type_id');
         $tmp->{component_name}     = $c->get_column('component_name');
         $tmp->{component_version}  = $c->get_column('component_version');
         $tmp->{component_category} = $c->get_column('component_category');
