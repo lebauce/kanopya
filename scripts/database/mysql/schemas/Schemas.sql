@@ -604,6 +604,7 @@ CREATE TABLE `component` (
   `tier_id` int(8) unsigned,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`component_id`),
+  CONSTRAINT FOREIGN KEY (`component_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_component_instance_1` (`cluster_id`),
   KEY `fk_component_instance_2` (`component_template_id`),
   KEY `fk_component_instance_3` (`component_type_id`),

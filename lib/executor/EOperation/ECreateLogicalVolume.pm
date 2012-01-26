@@ -106,11 +106,11 @@ sub prepare {
     $self->{_objs} = {};
     
 
-    General::checkParams(args => $params, required => ["component_instance_id", "disk_name", "size", "filesystem", "vg_id"]);
+    General::checkParams(args => $params, required => ["component_id", "disk_name", "size", "filesystem", "vg_id"]);
 
     $self->{params} = $params;
     # Test if component instance id is really a Entity::Component::Iscsitarget
-    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_instance_id});
+    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_id});
     my $comp_desc = $comp_lvm->getComponentAttr();
     if (! $comp_desc->{component_name} eq "Lvm") {
         $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";

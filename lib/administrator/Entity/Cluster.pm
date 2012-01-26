@@ -347,15 +347,15 @@ sub getComponents {
     my %comps;
     $log->debug("Category is $args{category}");
     while ( my $component_row = $components_rs->next ) {
+        my $comp_id           = $component_row->get_column('component_id');
         my $comptype_category = $component_row->get_column('component_category');
-        my $comptype_id = $component_row->get_column('component_type_id');
-        my $comptype_name = $component_row->get_column('component_name');
-        my $comptype_version = $component_row->get_column('component_version');
+        my $comptype_name     = $component_row->get_column('component_name');
+        my $comptype_version  = $component_row->get_column('component_version');
         
         $log->debug("Component name: $comptype_name");
         $log->debug("Component version: $comptype_version");
         $log->debug("Component category: $comptype_category");
-         $log->debug("Component instance id: $comptype_id");
+        $log->debug("Component id: $comp_id");
         
         if (($args{category} eq "all")||
             ($args{category} eq $comptype_category)){
@@ -363,7 +363,7 @@ sub getComponents {
             my $class= "Entity::Component::" . $comptype_name . $comptype_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
-            $comps{$comptype_id} = $class->get(id =>$comptype_id);
+            $comps{$comp_id} = $class->get(id =>$comp_id);
         }
     }
     return \%comps;
@@ -499,7 +499,7 @@ sub addComponent {
     my %args = @_;
     my $noconf;
 
-    General::checkParams(args => \%args, required => ['component_id']);
+    General::checkParams(args => \%args, required => ['component_type_id']);
 
     if(defined $args{noconf}){
         $noconf = $args{noconf};

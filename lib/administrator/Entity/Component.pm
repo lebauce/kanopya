@@ -80,6 +80,31 @@ B<throws>  :
     
 =cut
 
+use constant ATTR_DEF => {
+	cluster_id        =>  { pattern        => '^\d*$',
+                            is_mandatory   => 1,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    component_type_id => { pattern        => '^\d*$',
+                           is_mandatory   => 1,
+                           is_extended    => 0,
+                           is_editable    => 0
+                         },
+    tier_id           => { pattern        => '^\d*$',
+                           is_mandatory   => 0,
+                           is_extended    => 0,
+                           is_editable    => 0
+                         },
+    component_template_id => { pattern        => '^\d*$',
+                               is_mandatory   => 0,
+                               is_extended    => 0,
+                               is_editable    => 0
+                             },
+};
+
+sub getAttrDef { return ATTR_DEF; }
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -162,15 +187,19 @@ sub getInstance {
     my $adm = Administrator->new();
 
     # Retreive the component type.
-    my $row = $adm->{db}->resultset('ComponentType')->find($args{id});
-    my $table = $row->get_column('component_name') . $row->get_column('component_version');
+    my $component = $adm->{db}->resultset('Component')->find($args{id});
+    
+    my $table = $component->component_type->get_column('component_name') . $component->component_type->get_column('component_version');
 
     my $dbix = $adm->getRow(id=>$args{id}, table => $table);
     my $self = {
         _dbix => $dbix,
     };
 
-    bless $self, $class . $table;
+	my $concretclass = $class .'::'. $table;
+	my $location = General::getLocFromClass(entityclass => $concretclass);
+	eval { require $location; };
+    bless $self, $concretclass;
     return $self;
 }
 
@@ -183,7 +212,7 @@ sub getComponents {
     my $list = [];
     while(my $c = $components->next) {
         my $tmp = {};
-        $tmp->{component_type_id}       = $c->get_column('component_type_id');
+        $tmp->{component_type_id}  = $c->get_column('component_type_id');
         $tmp->{component_name}     = $c->get_column('component_name');
         $tmp->{component_version}  = $c->get_column('component_version');
         $tmp->{component_category} = $c->get_column('component_category');
@@ -256,12 +285,10 @@ B<throws>  : None
 sub getComponentAttr {
     my $self = shift;
     my $componentAttr = {};
-
-    $componentAttr->{component_name} = $self->{_dbix}->component_type->get_column('component_name');
-    $componentAttr->{component_id} = $self->{_dbix}->component_type->get_column('component_id');
-    $componentAttr->{component_version} = $self->{_dbix}->component_type->get_column('component_version');
-    $componentAttr->{component_category} = $self->{_dbix}->component_type->get_column('component_category');
-
+    $componentAttr->{component_name}     = $self->{_dbix}->parent->component_type->get_column('component_name');
+    $componentAttr->{component_type_id}  = $self->{_dbix}->parent->component_type->get_column('component_type_id');
+    $componentAttr->{component_version}  = $self->{_dbix}->parent->component_type->get_column('component_version');
+    $componentAttr->{component_category} = $self->{_dbix}->parent->component_type->get_column('component_category');
     return $componentAttr;
 }
 

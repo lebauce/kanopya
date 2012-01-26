@@ -110,7 +110,7 @@ sub create {
         my $components = $systemimage->getInstalledComponents(); 
         foreach my $comp (@$components) {
             if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
-                $self->_getEntity()->addComponent(component_id => $comp->{component_id});
+                $self->_getEntity()->addComponent(component_type_id => $comp->{component_type_id});
                 $log->info("Component $comp->{component_name} automatically added");
             }
         }

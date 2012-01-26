@@ -64,6 +64,9 @@ use General;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 sub getLun{
     my $self = shift;
     my %args = @_;

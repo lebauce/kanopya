@@ -8,6 +8,7 @@ use Entity::Host;
 use Entity::Systemimage;
 use Entity::Kernel;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("webui");
 
@@ -301,10 +302,10 @@ get '/clusters/:clusterid' => sub {
     my $components = $ecluster->getComponents(category => 'all');
     my $comps = [];
 
-    while( my ($instance_id, $comp) = each %$components) {
+    while( my ($component_id, $comp) = each %$components) {
         my $comphash = {};
         my $compAtt = $comp->getComponentAttr();
-        $comphash->{component_instance_id} = $instance_id;
+        $comphash->{component_id} = $component_id;
         $comphash->{component_name} = $compAtt->{component_name};
         $comphash->{component_version} = $compAtt->{component_version};
         $comphash->{component_category} = $compAtt->{component_category};

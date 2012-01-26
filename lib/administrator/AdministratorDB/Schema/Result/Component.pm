@@ -23,6 +23,7 @@ __PACKAGE__->table("component");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 cluster_id
@@ -57,7 +58,12 @@ __PACKAGE__->table("component");
 
 __PACKAGE__->add_columns(
   "component_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "cluster_id",
   {
     data_type => "integer",
@@ -119,6 +125,21 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::Atftpd0",
   { "foreign.atftpd0_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 component
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "component",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "component_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 cluster
@@ -422,11 +443,11 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 17:01:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:49StHrs4TdgwUAVhlDlKPg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 22:41:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TzozBOstHeuUb58Z3PWf4Q
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

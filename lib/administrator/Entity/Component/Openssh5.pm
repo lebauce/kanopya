@@ -62,6 +62,9 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 =head2 getNetConf
 B<Class>   : Public
 B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port

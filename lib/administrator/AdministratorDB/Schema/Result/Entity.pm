@@ -56,6 +56,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 component
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->might_have(
+  "component",
+  "AdministratorDB::Schema::Result::Component",
+  { "foreign.component_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 distribution
 
 Type: might_have
@@ -282,8 +297,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4ttPomp99oVdvobAXXvrcQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 23:11:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mkfRwSj8qcLv0RUMw/urTA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

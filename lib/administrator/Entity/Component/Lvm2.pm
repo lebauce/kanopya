@@ -66,6 +66,9 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 sub getMainVg{
     my $self = shift;
     my $vgname = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_name');
@@ -157,7 +160,7 @@ sub setConf {
 
     my $vg_id = $conf->{lvm2_vg_id};
     for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
-        $self->createLogicalVolume(    vg_id => $vg_id,
+        $self->createLogicalVolume( vg_id => $vg_id,
                                     disk_name => $new_lv->{lvm2_lv_name},
                                     size => $new_lv->{lvm2_lv_size},
                                     filesystem => $new_lv->{lvm2_lv_filesystem});
@@ -176,7 +179,7 @@ sub createLogicalVolume {
         priority => 200,
         type     => 'CreateLogicalVolume',
         params   => {
-            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            component_id => $self->getAttr(name => 'lvm2_id'),
             disk_name => $args{disk_name},
             size => $args{size},
             filesystem => $args{filesystem},

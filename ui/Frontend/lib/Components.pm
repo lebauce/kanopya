@@ -5,6 +5,7 @@ use Dancer::Plugin::EscapeHTML;
 
 use Entity::Component;
 use Entity::Cluster;
+use Data::Dumper;
 use Operation;
 
 use Log::Log4perl "get_logger";
@@ -93,13 +94,13 @@ get '/components/:instanceid/configure' => sub {
 };
 
 get '/components/:instanceid/saveconfig' => sub {
-    my $component_instance_id = param('instanceid'); 
-    my $component = Entity::Component->getInstance(id=>$component_instance_id);
+    my $component_id = param('instanceid'); 
+    my $component = Entity::Component->getInstance(id=>$component_id);
     
     my $conf_str = param('conf'); # stringified conf
-    my $conf = from_json( $conf_str )   ;
+    my $conf = from_json( $conf_str );
     
-    foreach ('cluster_id', 'component_name', 'component_instance_id') { delete $conf->{$_}; }
+    foreach ('cluster_id', 'component_name', 'component_id') { delete $conf->{$_}; }
     
     my $msg = "conf saved";
     eval {

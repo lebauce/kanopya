@@ -65,6 +65,9 @@ use Crypt::SaltedHash;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 sub insertDefaultConfiguration {
     my $self = shift;
     my %args = @_;

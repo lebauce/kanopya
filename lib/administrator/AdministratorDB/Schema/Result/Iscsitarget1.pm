@@ -26,12 +26,6 @@ __PACKAGE__->table("iscsitarget1");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 iscsitarget1_target_name
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 128
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -42,8 +36,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "iscsitarget1_target_name",
-  { data_type => "char", is_nullable => 0, size => 128 },
 );
 __PACKAGE__->set_primary_key("iscsitarget1_id");
 
@@ -80,8 +72,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OfxXNNzW3bokSTKw7Wblnw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 23:11:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YJ37EdndvBkuzR28C7Sa4A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

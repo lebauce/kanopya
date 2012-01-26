@@ -63,6 +63,9 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 =head2 addVirtualhost
 B<Class>   : Public
 B<Desc>    : This method allows to add a new virtualhost to component instance configuration.
@@ -80,6 +83,7 @@ B<throws>  :
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
     
 =cut
+
 
 sub addVirtualhost {
     #TODO AddVirtualhost

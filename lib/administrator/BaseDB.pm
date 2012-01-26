@@ -241,10 +241,7 @@ sub get {
 
     my $table = _buildClassName($class);
     my $adm = Administrator->new();
-
     my $dbix = $adm->getRow(id=>$args{id}, table => $table);
-    $log->debug("Named arguments: id = <$args{id}> , table = <$table>");
-
     my $self = {
         _dbix => $dbix,
     };

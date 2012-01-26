@@ -8,7 +8,6 @@ SET foreign_key_checks=0;
 
 CREATE TABLE `iscsitarget1` (
   `iscsitarget1_id` int(8) unsigned NOT NULL,
-  `iscsitarget1_target_name` char(128) NOT NULL,
   PRIMARY KEY (`iscsitarget1_id`),
   CONSTRAINT FOREIGN KEY (`iscsitarget1_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
