@@ -123,14 +123,14 @@ sub getProvidedComponents {
     }
     my $components = [];
     my $search = $self->{_dbix}->components_provided->search(undef, 
-        { '+columns' => {'component_name' => 'component.component_name', 
-                         'component_version' => 'component.component_version', 
-                         'component_category' => 'component.component_category' },
-            join => ['component'] } 
+        { '+columns' => {'component_name' => 'component_type.component_name', 
+                         'component_version' => 'component_type.component_version', 
+                         'component_category' => 'component_type.component_category' },
+            join => ['component_type'] } 
     );
     while (my $row = $search->next) {
         my $tmp = {};
-        $tmp->{component_id} = $row->get_column('component_id');
+        $tmp->{component_type_id} = $row->get_column('component_type_id');
         $tmp->{component_name} = $row->get_column('component_name');
         $tmp->{component_version} = $row->get_column('component_version');
         $tmp->{component_category} = $row->get_column('component_category');
@@ -154,7 +154,7 @@ sub updateProvidedComponents {
     }
     my $components = Entity::Component->getComponents();
     foreach my $c (@$components) {
-		$self->{_dbix}->components_provided->find_or_create({component_id => $c->{component_id}});
+		$self->{_dbix}->components_provided->find_or_create({component_type_id => $c->{component_type_id}});
 	}
 }
 
