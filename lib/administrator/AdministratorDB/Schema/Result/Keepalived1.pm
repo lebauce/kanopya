@@ -23,13 +23,6 @@ __PACKAGE__->table("keepalived1");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
-  is_nullable: 0
-
-=head2 component_instance_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
@@ -87,13 +80,6 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
-    is_nullable => 0,
-  },
-  "component_instance_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
@@ -138,23 +124,22 @@ __PACKAGE__->add_columns(
   },
 );
 __PACKAGE__->set_primary_key("keepalived_id");
-__PACKAGE__->add_unique_constraint("fk_keepalived1_1", ["component_instance_id"]);
 
 =head1 RELATIONS
 
-=head2 component_instance
+=head2 keepalived
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "component_instance",
-  "AdministratorDB::Schema::Result::ComponentInstance",
-  { component_instance_id => "component_instance_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  "keepalived",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "keepalived_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 keepalived1_virtualservers
@@ -173,9 +158,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sUchB7OYAX3HeQ312PkwBQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 17:01:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:pxoNDB0lrkMWX49S5MwDNA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Component",
+    { "foreign.component_id" => "self.keepalived_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

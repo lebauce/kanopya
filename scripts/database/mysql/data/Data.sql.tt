@@ -257,7 +257,7 @@ INSERT INTO `operationtype` VALUES
 
 -- components list
 
-INSERT INTO `component` VALUES
+INSERT INTO `component_type` VALUES
 (1,'Lvm','2','Storage'),
 (2,'Apache','2','Webserver'),
 (3,'Iscsitarget','1','Export'),
@@ -323,7 +323,7 @@ INSERT INTO `lvm2` VALUES(@eid);
 
 -- main vg storage from only one pv
 
-INSERT INTO `lvm2_vg` VALUES (@eid,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
+INSERT INTO `lvm2_vg` VALUES (1,@eid,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
 SET @pvid := 1;
 [% FOREACH pv = kanopya_pvs %]
 INSERT INTO `lvm2_pv` VALUES (@pvid,1,'[% pv %]');

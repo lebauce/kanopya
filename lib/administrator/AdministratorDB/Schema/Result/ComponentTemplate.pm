@@ -38,7 +38,7 @@ __PACKAGE__->table("component_template");
   is_nullable: 0
   size: 45
 
-=head2 component_id
+=head2 component_type_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -59,7 +59,7 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 45 },
   "component_template_directory",
   { data_type => "char", is_nullable => 0, size => 45 },
-  "component_id",
+  "component_type_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -72,33 +72,33 @@ __PACKAGE__->add_unique_constraint("component_template_UNIQUE", ["component_temp
 
 =head1 RELATIONS
 
-=head2 component_instances
+=head2 components
 
 Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
-
-=cut
-
-__PACKAGE__->has_many(
-  "component_instances",
-  "AdministratorDB::Schema::Result::ComponentInstance",
-  { "foreign.component_template_id" => "self.component_template_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 component
-
-Type: belongs_to
 
 Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "component",
+__PACKAGE__->has_many(
+  "components",
   "AdministratorDB::Schema::Result::Component",
-  { component_id => "component_id" },
+  { "foreign.component_template_id" => "self.component_template_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 component_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ComponentType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "component_type",
+  "AdministratorDB::Schema::Result::ComponentType",
+  { component_type_id => "component_type_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -118,8 +118,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k+dS7tY0zxUJHgwUQ0OOeA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gw0sMozq6xzpAMWpsLMiDg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

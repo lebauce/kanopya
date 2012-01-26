@@ -23,13 +23,6 @@ __PACKAGE__->table("syslogng3");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
-  is_nullable: 0
-
-=head2 component_instance_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
@@ -37,13 +30,6 @@ __PACKAGE__->table("syslogng3");
 
 __PACKAGE__->add_columns(
   "syslogng3_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_auto_increment => 1,
-    is_nullable => 0,
-  },
-  "component_instance_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -55,18 +41,18 @@ __PACKAGE__->set_primary_key("syslogng3_id");
 
 =head1 RELATIONS
 
-=head2 component_instance
+=head2 syslogng3
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "component_instance",
-  "AdministratorDB::Schema::Result::ComponentInstance",
-  { component_instance_id => "component_instance_id" },
+  "syslogng3",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "syslogng3_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -101,9 +87,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TLW/MShSBm0gA3jfn/RkGw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yArsmJM2HBuRQNxQRSjiEw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Component",
+    { "foreign.component_id" => "self.syslogng3_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

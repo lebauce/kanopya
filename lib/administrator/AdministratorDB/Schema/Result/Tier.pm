@@ -100,17 +100,17 @@ __PACKAGE__->set_primary_key("tier_id");
 
 =head1 RELATIONS
 
-=head2 component_instances
+=head2 components
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->has_many(
-  "component_instances",
-  "AdministratorDB::Schema::Result::ComponentInstance",
+  "components",
+  "AdministratorDB::Schema::Result::Component",
   { "foreign.tier_id" => "self.tier_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -181,8 +181,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JUBY+PuxQA/3uk03SRUT7g
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e7DAjLigcD68l6P6vJcXtg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -103,24 +103,9 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 component_instance
 
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "component_instance",
-  "AdministratorDB::Schema::Result::ComponentInstance",
-  { component_instance_id => "component_instance_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OAualQFmoK95c4/Gc/PkqA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/89f/82xcLuzs76YNZqidg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
