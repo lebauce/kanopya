@@ -53,6 +53,7 @@ sub checkAttr {
 		if (exists $attributes_def->{$module}->{$args{name}}){
 			if($args{value} !~ m/($attributes_def->{$module}->{$args{name}}->{pattern})/){
 				$errmsg = "$class"."->checkAttr detect a wrong value ($value) for param : $args{name} on class $module";
+				$log->error($errmsg);
 				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 			}
 			next;
@@ -94,6 +95,7 @@ sub checkAttrs {
 			} 
 		}
 		$errmsg = "$class" . "->checkAttrs detect a wrong attr $attr !";
+		$log->error($errmsg);
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     
@@ -102,6 +104,7 @@ sub checkAttrs {
 		foreach my $attr (keys(%{$attributes_def->{$module}})) {
 			if (($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
 				$errmsg = "$class" . "->checkAttrs detect a missing attribute $attr (on $module)!";
+				$log->error($errmsg);
 				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
 			}
 		}
@@ -161,7 +164,7 @@ sub getAttr {
 
 	if(not $found) {
 		$errmsg = ref($self) . " getAttr no attr name $args{name}!";
-		#$log->error($errmsg);
+		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
     } 
     return $value;
@@ -222,7 +225,7 @@ sub setAttr {
 
 	if(not $found) {
 		$errmsg = ref($self) . " setAttr no attr name $args{name}!";
-		#$log->error($errmsg);
+		$log->error($errmsg);
 		throw Kanopya::Exception::Internal(error => $errmsg);
     } 
     return $value;
