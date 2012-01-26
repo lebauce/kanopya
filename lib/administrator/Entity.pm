@@ -46,7 +46,7 @@ sub getMasterGroupEid {
 
 =head2 getGroups
 
-return groups resultset where this entity appears (only on an already saved entity)
+return groups resultset where this entity appears (only on an already stored entity)
 
 =cut
 
@@ -55,14 +55,14 @@ sub getGroups {
     if( not $self->{_dbix}->in_storage ) { return; } 
     #$log->debug("======> GetGroups call <======");
     my $mastergroup = $self->getMasterGroupEid();
-    my $groups = $self->{_rightschecker}->{_schema}->resultset('Gp')->search({
+    my $groups = $self->{_rightschecker}->{_schema}->resultset('Gp')->search(
+		{
         -or => [
-            'ingroups.entity_id' => $self->{_dbix}->get_column('entity_id'),
-            'gp_name' => $mastergroup ]},
+            'ingroups.entity_id' => $self->{_dbix}->id,
+            'gp_name' => $mastergroup ]
+        },
             
-        {     '+columns' => {'entity_id' => 'gp_entity.entity_id'},
-            #'+columns' => [ 'gp_entity.entity_id' ], 
-            join => [qw/ingroups gp_entity/] }
+        { join => [qw/ingroups/] }
     );
     return $groups;
 }
@@ -143,7 +143,7 @@ sub addPerm {
         # addPerm call from class $self
         my @list = split(/::/, "$self");
         my $mastergroup = pop(@list);
-        my $entity_id = $adm->{db}->resultset('Gp')->find({ gp_name => $mastergroup })->gp_entity->first->get_column('entity_id');
+        my $entity_id = $adm->{db}->resultset('Gp')->find({ gp_name => $mastergroup })->id;
         my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'setPerm');
               if(not $granted) {
                throw Kanopya::Exception::Permission::Denied(error => "Permission denied to set permission on cluster with id $args{id}");

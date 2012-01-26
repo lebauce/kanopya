@@ -371,10 +371,7 @@ sub _getAllDbix {
     General::checkParams(args => \%args, required => ['table']);
 
     my $entitylink = lc($args{table})."_entity";
-    return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => {'entity_id' => "$entitylink.entity_id"},
-        join => ["$entitylink"]});
-#    return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ],
-#        join => ["$entitylink"]});
+    return $self->{db}->resultset( $args{table} )->search(undef);
 }
 
 =head2 _newDbix
