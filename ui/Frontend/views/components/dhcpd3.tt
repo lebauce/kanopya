@@ -1,7 +1,7 @@
 <% js_head.push('components.js') %>
 <h2>Cluster <% cluster_name %> - Dhcpd3 Configuration</h2>
 <hr />
-<input type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input type="hidden" name="component_id" value="<% component_instance_id %>"/>
 <input type="hidden" name="cluster_id" value="<% cluster_id %>"/>
 <input type="hidden" name="apache2_id" value="<% apache2_id %>"/>
 <input type="hidden" name="component_name" value="Apache2"/>

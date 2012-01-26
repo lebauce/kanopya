@@ -64,6 +64,9 @@ use General;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 sub getLun{
     my $self = shift;
     my %args = @_;
@@ -318,7 +321,7 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            component_id => $self->getAttr(name=>'component_id'),
             export_name => $args{export_name},
             device => $args{device},
             typeio => $args{typeio},

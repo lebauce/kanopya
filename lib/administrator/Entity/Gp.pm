@@ -65,6 +65,8 @@ use constant ATTR_DEF => {
                                         is_editable        => 0},
 };
 
+sub primarykey { return 'gp_id' }
+
 sub methods {
     return {
         'create'    => {'description' => 'create a new group', 
@@ -213,7 +215,7 @@ sub appendEntity {
     General::checkParams(args => \%args, required => ['entity']);
     
 #    my $entity_id = $args{entity}->{_dbix}->get_column('entity_id');
- 	my $entity_id = $args{entity}->{_entity_id};
+ 	my $entity_id = $args{entity}->{_dbix}->id;
     $self->{_dbix}->ingroups->create({gp_id => $self->getAttr(name => 'gp_id'), entity_id => $entity_id} );
     return;
 }
@@ -260,8 +262,8 @@ sub getEntities {
     my $idfield = lc($type)."_id";
     
     while(my $row = $entities_rs->next) {
-        my $concret = $adm->{db}->resultset($type.'Entity')->search({entity_id => $row->id})->first;
-        push @$ids, $concret->get_column("$idfield");
+        my $concret = $adm->{db}->resultset($type)->find($row->get_column('entity_id'));
+        push @$ids, $concret->id;
     }    
     
     my @objs = ();

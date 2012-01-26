@@ -64,6 +64,22 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {
+	monitor_server_ip   => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+
+    snmpd_options => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                           },
+};
+
+sub getAttrDef { return ATTR_DEF; }
+
 sub getConf {
     my $self = shift;
     #TODO Load from file of default values ?
@@ -109,19 +125,14 @@ sub getNetConf {
     return { 161 => ['udp'] };
 }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    my $snmpd5_conf = {
-        snmpd5_id => undef,
+sub getBaseConfiguration {
+	return {
         monitor_server_ip => '127.0.0.1',
         snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
     };
-    if(exists $args{internal_cluster} and defined $args{internal_cluster}) {    
-        $snmpd5_conf->{monitor_server_ip} = $args{internal_cluster}->getMasterNodeIp(),
-    } 
-    $self->{_dbix}->create($snmpd5_conf);
 }
+
+sub insertDefaultConfiguration {}
 
 
 =head1 DIAGNOSTICS

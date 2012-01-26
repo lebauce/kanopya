@@ -10,6 +10,8 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub primarykey { return 'entity_id'; }
+
 =head2 getMasterGroupName
 
     Class : public

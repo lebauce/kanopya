@@ -62,6 +62,9 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 sub getConf{
     my $self = shift;
     my $conf_raw = $self->{_dbix};

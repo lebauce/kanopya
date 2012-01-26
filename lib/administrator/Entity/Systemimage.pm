@@ -59,6 +59,8 @@ use constant ATTR_DEF => {
                 is_extended => 0 },        
 };
 
+sub primarykey { return 'systemimage_id'; }
+
 sub methods {
     return {
         'create'    => {'description' => 'create a new system image', 
@@ -122,10 +124,10 @@ sub getSystemimage {
 =cut
 
 sub create {
-    my $self = shift;
-    my %params = $self->getAttrs();
+    my ($class, %params) = @_;
+    
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
        my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new system image");
@@ -328,6 +330,7 @@ sub getInstalledComponents {
         $tmp->{component_category} = $row->get_column('component_category');
         push @$components, $tmp;
     }
+    $log->debug('systemimage components:'.Dumper($components));
     return $components;
 }
 

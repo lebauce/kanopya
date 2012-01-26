@@ -134,22 +134,21 @@ sub getTier {
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %params) = @_;
 
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
        my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
        }
     # Before tier creation check some integrity configuration
     # Check if min node <
-    $log->info("###### Tier creation with min node <".$self->getAttr(name => "tier_min_node") . "> and max node <". $self->getAttr(name=>"tier_max_node").">");
-    if ($self->getAttr(name => "tier_min_node") > $self->getAttr(name=>"tier_max_node")){
-	throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
-    }
+    #$log->info("###### Tier creation with min node <".$self->getAttr(name => "tier_min_node") . "> and max node <". $self->getAttr(name=>"tier_max_node").">");
+    #if ($self->getAttr(name => "tier_min_node") > $self->getAttr(name=>"tier_max_node")){
+	#throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
+    #}
 
-    my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
         priority => 200,

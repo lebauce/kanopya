@@ -38,6 +38,12 @@ sub _buildClassName {
     return $class;
 }
 
+sub _rootTable {
+	my ($class) = @_;
+	$class =~ s/\:\:.*$//g;
+	return $class;
+}
+
 # checkAttrs : check attribute validity in the class hierarchy 
 # return dbix class row where the attr is found
 
@@ -63,34 +69,37 @@ sub checkAttr {
 
 
 # checkAttrs : check attributes validity in the class hierarchy 
-# return attrs hash ref with correct class hierarchy to class 
-# result('concrettable')->new($hash)
+# and build as the same time a hasref structure to pass to 'new' method
+# of dbix resultset for the root class of the hierarchy
 
 sub checkAttrs {
     my $self = shift;
     my $class = ref($self) || $self;
     my %args = @_;
-    my $sorted_attrs = {};
+    my $final_attrs = {};
     my $attributes_def = $class->getAttrDefs();
-
+    
+    $log->debug('>>>>>>> '.Dumper $attributes_def);
+	
     General::checkParams(args => \%args, required => ['attrs']);  
 
 	foreach my $module (keys %$attributes_def) {
-		$sorted_attrs->{$module} = {};
+		#$log->debug("$module added to sorted_attrs");
+		$final_attrs->{$module} = {};
 	}
 
-    my $attrs = $args{attrs};
+	my $attrs = $args{attrs};
     # search unknown attribute or invalid value attribute
     ATTRLOOP:
-    foreach my $attr (keys(%$attrs)) {
+    foreach my $attr (keys(%$attrs)) { 
         foreach my $module (keys %$attributes_def) {
 			if (exists $attributes_def->{$module}->{$attr}){
 				my $value = $attrs->{$attr};
-				if($value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/){
+				if($value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/) {
 					$errmsg = "$class"."->checkAttrs detect a wrong value ($value) for param : $attr on class $module";
 					throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 				}
-				$sorted_attrs->{$module}->{$attr} = $value;	
+				$final_attrs->{$module}->{$attr} = $value;	
 				next ATTRLOOP;
 			} 
 		}
@@ -99,7 +108,7 @@ sub checkAttrs {
 		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     
-    # search for non provided mandatory attribute
+    # search for non provided mandatory attribute and set primary keys to undef
     foreach my $module (keys %$attributes_def) {
 		foreach my $attr (keys(%{$attributes_def->{$module}})) {
 			if (($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
@@ -109,15 +118,16 @@ sub checkAttrs {
 			}
 		}
 	}
-    #TODO Check if id (systemimage, kernel, ...) exist and are correct.
     
-    my @modules = sort { $b cmp $a } keys %$sorted_attrs;
-    my $final = {};
+    my @modules = sort keys %$final_attrs;
+    # finaly restructure the hashref with dbix relationships         
     for my $i (0..$#modules-1) {
-		$sorted_attrs->{$modules[$i]}->{parent} = $sorted_attrs->{$modules[$i+1]};
+		my $classname = _buildClassName($modules[$i+1]);
+		my $relation = lc($classname);
+		$final_attrs->{$modules[$i]}->{$relation} = $final_attrs->{$modules[$i+1]};
 	}
-    $final = $sorted_attrs->{$modules[0]};
-    return $final;
+    
+    return $final_attrs->{$modules[0]};
 }
 
 # new : return dbix resultset with full class hierarchy of this 
@@ -127,10 +137,21 @@ sub new {
     my %args = @_;
     
     my $attrs = $class->checkAttrs(attrs => \%args);
+    $log->debug('checkAttrs for root class insertion return '.Dumper($attrs));
+       
     my $adm = Administrator->new();
+    my $dbixroot = $adm->_newDbix(table => _rootTable($class), row => $attrs);
+    $dbixroot->insert;
+    my $id = $dbixroot->id;
+    if($id) {
+		$log->debug("$class successully inserted in database");
+	}
+    
     my $self = {
-        _dbix => $adm->_newDbix(table => _buildClassName($class), row => $attrs),
+        _dbix => $adm->getRow(table => _buildClassName($class), id => $id),
+        _entity_id => $id
     };
+    $log->debug('dbix object type retrieve : '.ref($self->{_dbix}));
     bless $self, $class;
     return $self;
 }
@@ -180,7 +201,8 @@ sub getAttrs {
    my %attrs = ();
    	while(1) {	
 		# Search for attr in this dbix
-		%attrs = (%attrs, $dbix->get_columns);
+		my %currentattrs = $dbix->get_columns;
+		%attrs = (%attrs, %currentattrs);
 		if($dbix->can('parent')) {
 			$dbix = $dbix->parent;
 			next;
@@ -241,10 +263,7 @@ sub get {
 
     my $table = _buildClassName($class);
     my $adm = Administrator->new();
-
     my $dbix = $adm->getRow(id=>$args{id}, table => $table);
-    $log->debug("Named arguments: id = <$args{id}> , table = <$table>");
-
     my $self = {
         _dbix => $dbix,
     };
@@ -269,6 +288,7 @@ sub search {
 
     while ( my $row = $rs->next ) {
         my $obj = eval { $class->get(id => $row->id); };
+        $log->debug($obj->toString);
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -279,6 +299,7 @@ sub search {
         }
         else { push @objs, $obj; }
     }
+    
     return  @objs;
 }
 
@@ -287,23 +308,29 @@ sub search {
 
 sub save {
 	my $self = shift;
-    my $data = $self->{_dbix};
+    my $dbix = $self->{_dbix};
 
     my $id;
-    if ( $data->in_storage ) {
+    if ( $dbix->in_storage ) {
+        $log->debug('in storage !');
         # MODIFY existing db obj
-        $data->update;
-        #$self->_saveExtendedAttrs();
+        $dbix->update;
+        while(1) {	
+			if($dbix->can('parent')) {
+				$dbix = $dbix->parent;
+				$dbix->update;				
+				next;
+			} else {
+				last;
+			}
+		}
     } else {
-        # CREATE
-        my $adm = Administrator->new();
-        my $row = $self->{_dbix}->insert;
-        $row->discard_changes;
-        $id = $self->{_entity_id} = $row->id;
+		$errmsg = "$class" . "->save can't be called on a non saved instance! (new has not be called)";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         
-        #$self->_saveExtendedAttrs();
-        $log->info(ref($self)." saved to database");
     }
+    $log->info(ref($self)." updated in database");
     return $id;
 }
 
@@ -312,7 +339,7 @@ sub save {
 sub delete {
 	my $self = shift;
 	my $dbix = $self->{_dbix};
-	# Search for last table in the hierarchy
+	# Search for first mother table in the hierarchy
 	while(1) {	
 		if($dbix->can('parent')) {
 			# go to parent dbix

@@ -335,6 +335,7 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,3,NULL,NULL);
+INSERT INTO `iscsitarget1` VALUES(@eid);
 SET @eid := @eid +1;
 
 -- dhcpd configuration
@@ -356,6 +357,7 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,7,NULL,3);
+INSERT INTO `snmpd5` VALUES(@eid, '[% ipv4_internal_ip %]', '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
 SET @eid := @eid +1;
 
 -- Nfsd
@@ -369,6 +371,7 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,11,NULL,NULL);
+INSERT INTO `syslogng3` VALUES(@eid);
 SET @eid := @eid +1;
 
 

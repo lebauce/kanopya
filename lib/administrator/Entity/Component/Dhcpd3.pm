@@ -63,6 +63,9 @@ use General;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 =head2 getInternalSubNetId
 B<Class>   : Public
 B<Desc>    : This method return internal network subnet id
@@ -117,7 +120,7 @@ B<throws>  : None
 # return a data structure to pass to the template processor 
 sub getConf {
     my $self = shift;
-    my $cluster = $self->{_dbix}->cluster;
+    my $cluster = $self->{_dbix}->parent->cluster;
     my $dhcpd3 =  $self->{_dbix};
     my $data = {};
     my $adm = Administrator->new();

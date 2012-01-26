@@ -54,13 +54,13 @@ sub enqueue {
     
     my $params = $args{params};
     my @hash_keys = keys %$params;
-    foreach my $key (@hash_keys) {
-        if (! defined $params->{$key}){
-            $errmsg = "Operation->enqueue needs defined params";
-            $log->error($errmsg); 
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-    }
+    #foreach my $key (@hash_keys) {
+    #    if (! defined $params->{$key}){
+    #        $errmsg = "Operation->enqueue needs defined params ($key is undef)";
+    #        $log->error($errmsg); 
+    #        throw Kanopya::Exception::Internal(error => $errmsg);
+    #    }
+    #}
     my $adm = Administrator->new();
     my $nbparams = scalar(@hash_keys);
     my $whereclause = [];

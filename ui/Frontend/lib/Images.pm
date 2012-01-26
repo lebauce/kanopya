@@ -107,12 +107,12 @@ post '/images/add' => sub {
     } # system image creation from a distribution
     elsif(params->{source} eq 'distribution') {    
         eval {
-            my $esystemimage = Entity::Systemimage->new(
+            my %parameters = (
                 systemimage_name => params->{systemimage_name},
                  systemimage_desc => params->{systemimage_desc},
                  distribution_id => params->{distribution_id}, 
             );        
-             $esystemimage->create(); 
+             Entity::Systemimage->create(%parameters); 
         };     
         if($@) {
             my $exception = $@;

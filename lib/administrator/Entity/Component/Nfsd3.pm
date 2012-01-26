@@ -30,6 +30,10 @@ use Administrator;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
+
 sub getConf {
     my $self = shift;
     my %conf = ( );
@@ -309,7 +313,7 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            component_id => $self->getAttr(name=>'component_id'),
             device => $args{device},
             client_name => $args{client_name},
             client_options => $args{client_options}

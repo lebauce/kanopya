@@ -15,39 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
-=head1 NAME
 
-<Entity::Component> <General class for component abstraction>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component is an abstract class of component objects
-
-=head1 METHODS
-
-=cut
 package Entity::Component;
 use base "Entity";
 
@@ -80,56 +48,88 @@ B<throws>  :
     
 =cut
 
+use constant ATTR_DEF => {
+	cluster_id        =>  { pattern        => '^\d*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    component_type_id => { pattern        => '^\d*$',
+                           is_mandatory   => 1,
+                           is_extended    => 0,
+                           is_editable    => 0
+                         },
+    tier_id           => { pattern        => '^\d*$',
+                           is_mandatory   => 0,
+                           is_extended    => 0,
+                           is_editable    => 0
+                         },
+    component_template_id => { pattern        => '^\d*$',
+                               is_mandatory   => 0,
+                               is_extended    => 0,
+                               is_editable    => 0
+								
+                             },
+};
+
+sub getAttrDef { return ATTR_DEF; }
+
 sub new {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_id','component_id']);
+	# avoid abstract Entity::Component instanciation
+	if($class !~ /Entity::Component::(.+)(\d+)/) {
+		$errmsg = "Entity::Component->new : Entity::Component must not be instanciated without a concret component class";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+	my $component_name    = $1;
+	my $component_version = $2;
 
-    my $admin = Administrator->new();
+	# set base configuration if not passed to this constructor
+	my $config;
+	if(not %args) {
+		$config = $class->getBaseConfiguration();
+	} else {
+		$config = \%args;
+	}
+
+	
+	
     my $template_id = undef;
     if(exists $args{component_template_id} and defined $args{component_template_id}) {
         $template_id = $args{component_template_id};
     }
 
-    # Check if component_id is valid
-    my $row = $admin->{db}->resultset('ComponentType')->find($args{component_id});
-    if(not defined $row) {
-        $errmsg = "Entity::Component->new : component_id does not exist";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    my $table = $row->get_column('component_name') . $row->get_column('component_version');
+	# we set the corresponding component_type
+	my $admin = Administrator->new();
+	my $component_type_id = $admin->{db}->resultset('ComponentType')->search(
+		{ component_name    => $component_name,
+		  component_version => $component_version
+		}
+	)->single->id;
+		               
+	$config->{component_type_id} = $component_type_id;
+	
+		
+#~ 
+    #~ # Check if component_template_id correspond to component_id
+    #~ if(defined $template_id) {
+        #~ my $row = $admin->{db}->resultset('ComponentTemplate')->find($template_id);
+        #~ if(not defined $row) {
+            #~ $errmsg = "Entity::Component->new : component_template_id does not exist";
+            #~ $log->error($errmsg);
+            #~ throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        #~ }
+        #~ elsif($row->get_column('component_id') != $args{component_id}) {
+            #~ $errmsg = "Entity::Component->new : component_template_id does not belongs to component specified by component_id";
+            #~ $log->error($errmsg);
+            #~ throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        #~ }
+    #~ }
 
-    # Check if instance of component_id is not already inserted for this cluster
-    $row = $admin->{db}->resultset('Component')->search({ component_id => $args{component_id}, 
-                                                          cluster_id => $args{cluster_id} })->single;
-    if(defined $row) {
-        $errmsg = "Entity::Component->new : cluster has already the component with id $args{component_id}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check if component_template_id correspond to component_id
-    if(defined $template_id) {
-        my $row = $admin->{db}->resultset('ComponentTemplate')->find($template_id);
-        if(not defined $row) {
-            $errmsg = "Entity::Component->new : component_template_id does not exist";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-        elsif($row->get_column('component_id') != $args{component_id}) {
-            $errmsg = "Entity::Component->new : component_template_id does not belongs to component specified by component_id";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-    }
-
-    # We create a new DBIx containing new entity
-    my $attrs = $class->checkAttrs(attrs => \%args);
-    my $self = {
-        _dbix => $admin->_newDbix(table => $table, row => $attrs),
-    };
+    my $self = $class->SUPER::new(%$config);
 
     bless $self, $class;
     return $self;
@@ -162,16 +162,13 @@ sub getInstance {
     my $adm = Administrator->new();
 
     # Retreive the component type.
-    my $row = $adm->{db}->resultset('ComponentType')->find($args{id});
-    my $table = $row->get_column('component_name') . $row->get_column('component_version');
-
-    my $dbix = $adm->getRow(id=>$args{id}, table => $table);
-    my $self = {
-        _dbix => $dbix,
-    };
-
-    bless $self, $class . $table;
-    return $self;
+    my $component = $adm->{db}->resultset('Component')->find($args{id});
+    my $comp_name = $component->component_type->get_column('component_name');
+    my $comp_version = $component->component_type->get_column('component_version'); 
+    my $comp_class = $class .'::'. $comp_name.$comp_version;
+	my $location = General::getLocFromClass(entityclass => $comp_class);
+	eval { require $location; };
+    return $comp_class->get(id => $args{id});
 }
 
 sub getComponents {
@@ -183,7 +180,7 @@ sub getComponents {
     my $list = [];
     while(my $c = $components->next) {
         my $tmp = {};
-        $tmp->{component_type_id}       = $c->get_column('component_type_id');
+        $tmp->{component_type_id}  = $c->get_column('component_type_id');
         $tmp->{component_name}     = $c->get_column('component_name');
         $tmp->{component_version}  = $c->get_column('component_version');
         $tmp->{component_category} = $c->get_column('component_category');
@@ -256,12 +253,10 @@ B<throws>  : None
 sub getComponentAttr {
     my $self = shift;
     my $componentAttr = {};
-
-    $componentAttr->{component_name} = $self->{_dbix}->component_type->get_column('component_name');
-    $componentAttr->{component_id} = $self->{_dbix}->component_type->get_column('component_id');
-    $componentAttr->{component_version} = $self->{_dbix}->component_type->get_column('component_version');
-    $componentAttr->{component_category} = $self->{_dbix}->component_type->get_column('component_category');
-
+    $componentAttr->{component_name}     = $self->{_dbix}->parent->component_type->get_column('component_name');
+    $componentAttr->{component_type_id}  = $self->{_dbix}->parent->component_type->get_column('component_type_id');
+    $componentAttr->{component_version}  = $self->{_dbix}->parent->component_type->get_column('component_version');
+    $componentAttr->{component_category} = $self->{_dbix}->parent->component_type->get_column('component_category');
     return $componentAttr;
 }
 

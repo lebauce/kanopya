@@ -62,6 +62,9 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
+
 =head2 getVirtualservers
     
     Desc : return virtualservers list .

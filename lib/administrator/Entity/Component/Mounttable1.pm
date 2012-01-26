@@ -64,6 +64,12 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {};
+
+sub getAttrDef { return ATTR_DEF; }
+
+sub getBaseConfiguration { return {}; }
+
 sub getConf {
     my $self = shift;
     my $conf = {};

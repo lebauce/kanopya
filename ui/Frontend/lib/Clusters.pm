@@ -8,6 +8,7 @@ use Entity::Host;
 use Entity::Systemimage;
 use Entity::Kernel;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("webui");
 
@@ -184,8 +185,7 @@ post '/clusters/add' => sub {
             cluster_basehostname => params->{'cluster_basehostname'},
         };
         if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
-        my $ecluster = Entity::Cluster->new(%$params);
-        $ecluster->create();
+        Entity::Cluster->create(%$params);
     };
     if($@) {
         my $exception = $@;
@@ -301,10 +301,10 @@ get '/clusters/:clusterid' => sub {
     my $components = $ecluster->getComponents(category => 'all');
     my $comps = [];
 
-    while( my ($instance_id, $comp) = each %$components) {
+    while( my ($component_id, $comp) = each %$components) {
         my $comphash = {};
         my $compAtt = $comp->getComponentAttr();
-        $comphash->{component_instance_id} = $instance_id;
+        $comphash->{component_id} = $component_id;
         $comphash->{component_name} = $compAtt->{component_name};
         $comphash->{component_version} = $compAtt->{component_version};
         $comphash->{component_category} = $compAtt->{component_category};
@@ -530,6 +530,7 @@ get '/clusters/:clusterid/components/add' => sub {
         $ecluster = Entity::Cluster->get(id => $cluster_id);
         $esystemimage = Entity::Systemimage->get(id => $ecluster->getAttr(name => 'systemimage_id'));
         $systemimage_components = $esystemimage->getInstalledComponents();
+        
         $cluster_components = $ecluster->getComponents(administrator => $adm, category => 'all');
     };
     if($@) {
@@ -543,9 +544,10 @@ get '/clusters/:clusterid/components/add' => sub {
     else {
         foreach my $c  (@$systemimage_components) {
             my $found = 0;
-            while(my ($instance_id, $component) = each %$cluster_components) {
+            
+            while(my ($component_id, $component) = each %$cluster_components) {
                 my $attrs = $component->getComponentAttr();
-                if($attrs->{component_id} eq $c->{component_id}) { $found = 1; }
+                if($attrs->{component_type_id} eq $c->{component_type_id}) { $found = 1; }
             }
             if(not $found) { push @$components, $c; };
         }
@@ -560,10 +562,10 @@ get '/clusters/:clusterid/components/add' => sub {
 
 post '/clusters/:clusterid/components/add' => sub {
     my $adm = Administrator->new;
-    my $instanceid;
+    my $component_id;
     eval {
         my $ecluster = Entity::Cluster->get(id => param('clusterid'));
-        $instanceid = $ecluster->addComponent(component_id => param('component_id'));
+        $component_id = $ecluster->addComponentFromType(component_type_id => param('component_type_id'));
     };
     if($@) {
         my $exception = $@;
@@ -575,7 +577,7 @@ post '/clusters/:clusterid/components/add' => sub {
     }
     else {
         $adm->addMessage(from => 'Administrator',level => 'info', content => 'Component added sucessfully');
-        redirect("/systems/components/$instanceid/configure");
+        redirect("/systems/components/$component_id/configure");
     }
 };
 

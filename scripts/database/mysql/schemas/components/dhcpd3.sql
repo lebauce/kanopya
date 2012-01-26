@@ -12,7 +12,7 @@ CREATE TABLE `dhcpd3` (
   `dhcpd3_domain_server` char(128) DEFAULT NULL,
   `dhcpd3_servername` char(128) DEFAULT NULL,
   PRIMARY KEY (`dhcpd3_id`),
-  CONSTRAINT `fk_dhcpd3_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT FOREIGN KEY (`dhcpd3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

@@ -63,6 +63,34 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
+use constant ATTR_DEF => {
+    apache2_loglevel   => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+
+    apache2_serverroot => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                           },
+    apache2_ports      => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    apache2_sslports   => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+};
+
+sub getAttrDef { return ATTR_DEF; }
+
+sub primarykey { return 'apache2_id'; }
+
 =head2 addVirtualhost
 B<Class>   : Public
 B<Desc>    : This method allows to add a new virtualhost to component instance configuration.
@@ -80,6 +108,7 @@ B<throws>  :
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
     
 =cut
+
 
 sub addVirtualhost {
     #TODO AddVirtualhost
@@ -281,15 +310,18 @@ sub setConf {
     }    
 }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    my $apache2_conf = {
-        apache2_loglevel => 'debug',
+sub getBaseConfiguration {
+	return {
+		apache2_loglevel => 'debug',
         apache2_serverroot => '/srv',
         apache2_ports => 80,
         apache2_sslports => 443,
-        apache2_virtualhosts => [
+    };
+}
+
+sub insertDefaultConfiguration {
+    my $self = shift;
+    $self->{_dbix}->apache2_virtualhosts->create(
             {
               apache2_virtualhost_servername => 'www.yourservername.com',
               apache2_virtualhost_sslenable => 'no',
@@ -297,10 +329,8 @@ sub insertDefaultConfiguration {
               apache2_virtualhost_documentroot => '/srv',
               apache2_virtualhost_log => '/tmp/apache_access.log',
               apache2_virtualhost_errorlog => '/tmp/apache_error.log',
-            },
-        ]
-    };
-    $self->{_dbix}->create($apache2_conf);
+            }
+    );    
 }
 
 sub getNetConf{

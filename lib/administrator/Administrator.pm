@@ -269,10 +269,17 @@ sub getRow {
 	};
     
     if ($@) {
-        $errmsg = "Administrator->_getDbix error ".$@;
+        $errmsg = "Administrator->getRow error ".$@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    
+    if(not $dbix) {
+		$errmsg = "Administrator->getRow : no row found with id $args{id} in table $args{table}";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+	}
+    
     return $dbix;
 }	
 
@@ -394,7 +401,7 @@ sub _newDbix {
 
     General::checkParams(args => \%args, required => ['table', 'row']);
 
-    my $new_obj = $self->{db}->resultset($args{table} )->new( $args{row});
+    my $new_obj = $self->{db}->resultset($args{table})->new($args{row});
     return $new_obj;
 }
 

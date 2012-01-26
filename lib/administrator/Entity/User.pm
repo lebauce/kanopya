@@ -66,6 +66,8 @@ use constant ATTR_DEF => {
                                         is_editable        => 1},    
 };
 
+sub primarykey { return 'user_id' }
+
 sub methods {
     return {
         'create'    => {'description' => 'create a new user', 

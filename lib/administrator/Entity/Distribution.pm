@@ -37,6 +37,9 @@ use constant ATTR_DEF => {
     etc_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0},
     root_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0}
 };
+
+sub primarykey { return 'distribution_id'; }
+
 sub getAttrDef{
     return ATTR_DEF;
 }

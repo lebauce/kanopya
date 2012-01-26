@@ -149,8 +149,8 @@ post '/hosts/add' => sub {
         $parameters{powersupplycard_id}     = params->{powersupplycard_id};
         $parameters{powersupplyport_number} = params->{powersupplyport_number};
     }
-    my $host = Entity::Host->new(%parameters);
-    eval { $host->create() };
+    
+    eval { Entity::Host->create(%parameters); };
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {

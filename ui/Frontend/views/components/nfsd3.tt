@@ -2,7 +2,7 @@
 <h2>Cluster <% cluster_name %> - NFSd3 Configuration</h2>
 <hr />
 <form class="elem_root" name="conf">
-<input class="conf_simple_value" type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="component_id" value="<% component_instance_id %>"/>
 <input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
 <input class="conf_simple_value" type="hidden" name="nfsd3_id" value="<% nfsd3_id %>"/>
 <input class="conf_simple_value" type="hidden" name="component_name" value="Nfsd3"/>
@@ -30,7 +30,7 @@
 	Device to export: 
 	<input type="text" name="nfsd3_export_path" value="<% export.nfsd3_export_path %>" disabled />
 	<table id="clients">
-	<% FOREACH client IN clients %>
+	<% FOREACH client IN export.clients %>
 		<tr name="client">
 			<td>Host(s):<input type="text" size="20" name="nfsd3_exportclient_name" value="<% client.nfsd3_exportclient_name %>" disabled /></td>
 			<td>Options:<input type="text" size="50" name="nfsd3_exportclient_options" value="<% client.nfsd3_exportclient_options %>" disabled /></td></td>

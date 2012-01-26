@@ -51,43 +51,8 @@ my $errmsg;
 our $VERSION = '1.00';
 
 
-=head2 new
 
-    my $op = EOperation::ECreateExport->new();
 
-    # Operation::ECreateExport->new installs component on systemimage.
-    # RETURN : EOperation::ECreateExport : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-}
 
 =head2 prepare
 
@@ -113,15 +78,15 @@ sub prepare {
     my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
-    # test component_instance_id presence
-    if(! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) {
-        $errmsg = "Operation::ECreateExport need a component_instance_id parameter";
+    # test component_id presence
+    if(! exists $params->{component_id} or ! defined $params->{component_id}) {
+        $errmsg = "Operation::ECreateExport need a component_id parameter";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
     # instanciate component and check its type
-    my $component = Entity::Component->getInstance(id => $params->{component_instance_id});
+    my $component = Entity::Component->getInstance(id => $params->{component_id});
     $self->{component_name} = $component->getComponentAttr()->{component_name};
     if(!(($self->{component_name} eq 'Iscsitarget') or ($self->{component_name} eq 'Nfsd'))) {
         $errmsg = "Operation::ECreateExport need either a Iscstarget or Nfsd component";

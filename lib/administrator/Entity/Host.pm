@@ -123,9 +123,8 @@ use constant ATTR_DEF => {
                                             is_extended     => 1}
             };
 
-sub getAttrDef{
-    return ATTR_DEF;
-}
+sub getAttrDef { return ATTR_DEF; }
+
 sub methods {
     return {
         'create'    => {'description' => 'create a new host',
@@ -356,9 +355,8 @@ sub getFreeHosts {
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %params) = @_;
 
-    my %params = $self->getAttrs();
     $log->debug("New Operation AddHost with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
                        type     => 'AddHost',

@@ -103,9 +103,9 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 1},
+};
 
-
-    };
+sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
@@ -185,22 +185,22 @@ sub getCluster {
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %params) = @_;
 
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
        my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
        }
+    
     # Before cluster creation check some integrity configuration
     # Check if min node <
-    $log->info("###### Cluster creation with min node <".$self->getAttr(name => "cluster_min_node") . "> and max node <". $self->getAttr(name=>"cluster_max_node").">");
-    if ($self->getAttr(name => "cluster_min_node") > $self->getAttr(name=>"cluster_max_node")){
-	throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
-    }
+    #$log->info("###### Cluster creation with min node <".$self->getAttr(name => "cluster_min_node") . "> and max node <". $self->getAttr(name=>"cluster_max_node").">");
+    #if ($self->getAttr(name => "cluster_min_node") > $self->getAttr(name=>"cluster_max_node")){
+	#throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
+    #}
 
-    my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
         priority => 200,
@@ -284,9 +284,7 @@ sub deactivate {
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
 }
 
-sub getAttrDef{
-    return ATTR_DEF;
-}
+
 
 sub getTiers {
     my $self = shift;
@@ -347,15 +345,15 @@ sub getComponents {
     my %comps;
     $log->debug("Category is $args{category}");
     while ( my $component_row = $components_rs->next ) {
+        my $comp_id           = $component_row->get_column('component_id');
         my $comptype_category = $component_row->get_column('component_category');
-        my $comptype_id = $component_row->get_column('component_type_id');
-        my $comptype_name = $component_row->get_column('component_name');
-        my $comptype_version = $component_row->get_column('component_version');
+        my $comptype_name     = $component_row->get_column('component_name');
+        my $comptype_version  = $component_row->get_column('component_version');
         
         $log->debug("Component name: $comptype_name");
         $log->debug("Component version: $comptype_version");
         $log->debug("Component category: $comptype_category");
-         $log->debug("Component instance id: $comptype_id");
+        $log->debug("Component id: $comp_id");
         
         if (($args{category} eq "all")||
             ($args{category} eq $comptype_category)){
@@ -363,7 +361,7 @@ sub getComponents {
             my $class= "Entity::Component::" . $comptype_name . $comptype_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
-            $comps{$comptype_id} = $class->get(id =>$comptype_id);
+            $comps{$comp_id} = $class->get(id =>$comp_id);
         }
     }
     return \%comps;
@@ -489,8 +487,7 @@ sub getMasterNodeId {
 
 =head2 addComponent
 
-create a new component instance
-this is the first step of cluster setting
+link a existing component with the cluster
 
 =cut
 
@@ -499,24 +496,39 @@ sub addComponent {
     my %args = @_;
     my $noconf;
 
-    General::checkParams(args => \%args, required => ['component_id']);
+    General::checkParams(args => \%args, required => ['component']);
 
-    if(defined $args{noconf}){
-        $noconf = $args{noconf};
-        delete $args{noconf};
-    }
-    my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
-    my $component_instance_id = $componentinstance->save();
+	my $component = $args{component};
+    $component->setAttr(name => 'cluster_id', value => $self->getAttr(name => 'cluster_id'));
+    $component->save();
 
-    my $internal_cluster = Entity::Cluster->getCluster(hash => {cluster_name => 'adm'});
-    $log->info('internal cluster;'.Dumper($internal_cluster));
-    # Insert default configuration in db
-    # Remark: we must get concrete instance here because the component->new (above) return an Entity::Component and not a concrete child component
-    #          There must be a way to do this more properly (component management).
-    my $concrete_component = Entity::Component->getInstance(id => $component_instance_id);
-    if (! $noconf) {
-        $concrete_component->insertDefaultConfiguration(internal_cluster => $internal_cluster);}
-    return $component_instance_id;
+    return $component->{_dbix}->id;
+}
+
+=head2 addComponentFromType
+
+create a new componant and link it to the cluster 
+
+=cut
+
+sub addComponentFromType {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['component_type_id']);
+	my $type_id = $args{component_type_id};
+	my $adm = Administrator->new();
+	my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
+	my $comp_name = $row->get_column('component_name');	
+	my $comp_version = $row->get_column('component_version');
+	my $comp_class = 'Entity::Component::'.$comp_name.$comp_version;
+	my $location = General::getLocFromClass(entityclass => $comp_class);
+	eval {require $location };
+	my $component = $comp_class->new();
+	$component->setAttr(name => 'cluster_id', value => $self->getAttr(name => 'cluster_id'));
+    $component->save();
+
+    return $component->{_dbix}->id;
 }
 
 =head2 removeComponent
