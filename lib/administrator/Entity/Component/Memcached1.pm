@@ -69,7 +69,7 @@ sub getConf {
 
     my $conf = { memcached1_port => "11211" };
 
-    my $confindb = $self->{_dbix}->memcached1s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         my %row = $confindb->get_columns(); 
         $conf = \%row;
@@ -83,11 +83,11 @@ sub setConf {
     my ($conf) = @_;
     
     # delete old conf        
-    my $conf_row = $self->{_dbix}->memcached1s->first();
+    my $conf_row = $self->{_dbix};
     $conf_row->delete() if (defined $conf_row); 
 
     # create
-    $conf_row = $self->{_dbix}->memcached1s->create( $conf );
+    $conf_row = $self->{_dbix}->create( $conf );
 }
 
 # Commented because we want check this component only on master node

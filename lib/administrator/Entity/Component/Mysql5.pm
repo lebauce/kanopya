@@ -71,8 +71,8 @@ sub insertDefaultConfiguration {
         mysql5_datadir => "/var/lib/mysql",
         mysql5_bindaddress => '127.0.0.1'
     };
-    
-    $self->{_dbix}->create_related('mysql5', $default_conf);   
+
+    $self->{_dbix}->create($default_conf);
 }
 
 sub getConf {
@@ -84,7 +84,7 @@ sub getConf {
         mysql5_bindaddress => '127.0.0.1'
     };
     
-    my $confindb = $self->{_dbix}->mysql5;
+    my $confindb = $self->{_dbix};
     if($confindb) {
        $mysql5_conf = {
            mysql5_id => $confindb->get_column('mysql5_id'),
@@ -102,16 +102,16 @@ sub setConf {
         
     if(not $conf->{mysql5_id}) {
         # new configuration -> create
-        $self->{_dbix}->create_related('mysql5', $conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->mysql5->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 
 sub getNetConf {
     my $self = shift;
-    my $port = $self->{_dbix}->mysql5->get_column('mysql5_port');
+    my $port = $self->{_dbix}->get_column('mysql5_port');
     return { $port => ['tcp'] };
 }
 

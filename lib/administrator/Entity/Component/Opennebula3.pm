@@ -70,7 +70,7 @@ my $errmsg;
 sub getConf {
     my $self = shift;
     my %conf = ();
-    my $confindb = $self->{_dbix}->opennebula3;
+    my $confindb = $self->{_dbix};
     if($confindb) {
         %conf = $confindb->get_columns();
 
@@ -84,16 +84,16 @@ sub setConf {
 
     if(not $conf->{opennebula3_id}) {
         # new configuration -> create
-        $self->{_dbix}->create_related('opennebula3', $conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->opennebula3->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 
 sub getNetConf {
     my $self = shift;
-    my $port = $self->{_dbix}->opennebula3->get_column('port');
+    my $port = $self->{_dbix}->get_column('port');
     return { $port => ['tcp'] };
 }
 
@@ -103,12 +103,12 @@ sub insertDefaultConfiguration {
     my $self = shift;
     my %args = @_;
     my $conf = {}; # default config is provided by database default fields values
-    $self->{_dbix}->create_related('opennebula3', $conf);
+    $self->{_dbix}->create($conf);
 }
 
 sub getTemplateDataOned {
     my $self = shift;
-    my %data = $self->{_dbix}->opennebula3->get_columns();
+    my %data = $self->{_dbix}->get_columns();
     delete $data{opennebula3_id};
     delete $data{component_instance_id};
     return \%data;
@@ -116,7 +116,7 @@ sub getTemplateDataOned {
 
 sub getTemplateDataOnedInitScript {
     my $self = shift;
-    my $opennebula =  $self->{_dbix}->opennebula3;
+    my $opennebula =  $self->{_dbix};
     my $data = { install_dir => $opennebula->get_column('install_dir') };
     return $data;
 }
@@ -166,7 +166,7 @@ sub addHypervisor {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id', 'id']);
-	$self->{_dbix}->opennebula3->create_related(
+	$self->{_dbix}->create_related(
 		'opennebula3_hypervisors',
 		{ hypervisor_host_id => $args{host_id},
 		  hypervisor_id		 => $args{id},
@@ -179,14 +179,14 @@ sub removeHypervisor {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	$self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->delete;
+	$self->{_dbix}->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->delete;
 }
 
 sub getHypervisorIdFromHostId {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	my $id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->get_column('hypervisor_id');
+	my $id = $self->{_dbix}->opennebula3_hypervisors->search({hypervisor_host_id=>$args{host_id}})->single()->get_column('hypervisor_id');
 	return $id;
 }
 
@@ -196,7 +196,7 @@ sub addVm {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id', 'id']);
-	$self->{_dbix}->opennebula3->create_related(
+	$self->{_dbix}->create_related(
 		'opennebula3_vms',
 		{ vm_host_id => $args{host_id},
 		  vm_id      => $args{id},
@@ -208,14 +208,14 @@ sub removeVm {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	$self->{_dbix}->opennebula3->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->delete;
+	$self->{_dbix}->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->delete;
 }
 
 sub getVmIdFromHostId {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['host_id']);
-	my $id = $self->{_dbix}->opennebula3->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->get_column('vm_id');
+	my $id = $self->{_dbix}->opennebula3_vms->search({vm_host_id=>$args{host_id}})->single()->get_column('vm_id');
 	return $id;
 }
 
@@ -231,9 +231,9 @@ sub migrateHost {
 
     my $vm_id = $self->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
 
-    my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_id => $hypervisor_id})->single()->get_column('opennebula3_hypervisor_id'); 
+    my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search({hypervisor_id => $hypervisor_id})->single()->get_column('opennebula3_hypervisor_id'); 
 
-    $self->{_dbix}->opennebula3->opennebula3_vms->search(
+    $self->{_dbix}->opennebula3_vms->search(
 		{vm_id=>$vm_id})->single()->update(
 			{ opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
 			  
@@ -248,8 +248,8 @@ sub updateVm {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['vm_host_id', 'hypervisor_id', 'vnc_port']);
-	my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3->opennebula3_hypervisors->search({hypervisor_id=>$args{hypervisor_id}})->single()->get_column('opennebula3_hypervisor_id');
-	$self->{_dbix}->opennebula3->opennebula3_vms->search(
+	my $opennebula3_hypervisor_id = $self->{_dbix}->opennebula3_hypervisors->search({hypervisor_id=>$args{hypervisor_id}})->single()->get_column('opennebula3_hypervisor_id');
+	$self->{_dbix}->opennebula3_vms->search(
 		{vm_host_id=>$args{vm_host_id}})->single()->update(
 			{ opennebula3_hypervisor_id => $opennebula3_hypervisor_id,
 			  vnc_port                  => $args{vnc_port},

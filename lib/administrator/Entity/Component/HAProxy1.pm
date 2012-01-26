@@ -69,7 +69,7 @@ sub getConf {
 
     my $conf = {};
 
-    my $confindb = $self->{_dbix}->haproxy1s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         my %row = $confindb->get_columns(); 
         $conf = \%row;
@@ -84,10 +84,10 @@ sub setConf {
     
     if(not $conf->{haproxy1_id}) {
         # new configuration -> create
-        $self->{_dbix}->haproxy1s->create($conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->haproxy1s->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 
@@ -121,7 +121,7 @@ sub insertDefaultConfiguration {
         haproxy1_log_server_address => "$admin_ip:514",
     };
     
-    $self->{_dbix}->haproxy1s->create($conf);    
+    $self->{_dbix}->create($conf);
 }
 
 =head1 DIAGNOSTICS

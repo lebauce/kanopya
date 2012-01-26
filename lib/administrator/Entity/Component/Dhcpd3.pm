@@ -87,7 +87,7 @@ sub getSubNet {
 
     General::checkParams(args => \%args, required => ['dhcpd3_subnet_id']);
     
-    my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id});
+    my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id});
     return $dhcpd3_subnet->get_columns();
 }
 
@@ -118,7 +118,7 @@ B<throws>  : None
 sub getConf {
     my $self = shift;
     my $cluster = $self->{_dbix}->cluster;
-    my $dhcpd3 =  $self->{_dbix}->dhcpd3s->first();
+    my $dhcpd3 =  $self->{_dbix};
     my $data = {};
     my $adm = Administrator->new();
     $data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
@@ -180,7 +180,7 @@ sub addHost {
                                       'kernel_id', "dhcpd3_hosts_ntp_server",
                                       'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
 
-    my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
+    my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
     my $res = $dhcpd3_hosts_rs->create(\%args);
     return $res->get_column('dhcpd3_hosts_id');
 }
@@ -191,7 +191,7 @@ sub getHost {
 
     General::checkParams(args => \%args, required => ['dhcpd3_hosts_id','dhcpd3_subnet_id']);
     
-    my $dhcpd3_hosts_row = $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find($args{dhcpd3_hosts_id});
+    my $dhcpd3_hosts_row = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find($args{dhcpd3_hosts_id});
     my %host = $dhcpd3_hosts_row->get_columns();
     return \%host;
 }
@@ -214,7 +214,7 @@ sub getHostId {
 
     General::checkParams(args => \%args, required => ['dhcpd3_hosts_mac_address','dhcpd3_subnet_id']);
     
-    return $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->search({ dhcpd3_hosts_mac_address=> $args{dhcpd3_hosts_mac_address}})->first()->get_column('dhcpd3_hosts_id');
+    return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->search({ dhcpd3_hosts_mac_address=> $args{dhcpd3_hosts_mac_address}})->first()->get_column('dhcpd3_hosts_id');
     
 }
 
@@ -236,7 +236,7 @@ sub removeHost{
     
     General::checkParams(args => \%args, required => ['dhcpd3_hosts_id','dhcpd3_subnet_id']);
 
-    return $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find( $args{dhcpd3_hosts_id})->delete();
+    return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find( $args{dhcpd3_hosts_id})->delete();
 }
 
 =head2 getNetConf

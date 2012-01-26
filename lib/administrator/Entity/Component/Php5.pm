@@ -69,7 +69,7 @@ sub getConf {
 
     my $conf = { php5_session_handler => "files", php5_session_path => "/var/lib/php5" };
 
-    my $confindb = $self->{_dbix}->php5s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         my %row = $confindb->get_columns(); 
         $conf = \%row;        
@@ -84,10 +84,10 @@ sub setConf {
     
     if(not $conf->{php5_id}) {
         # new configuration -> create
-        $self->{_dbix}->php5s->create($conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->php5s->update($conf);
+        $self->{_dbix}->update($conf);
     }
     
 }
@@ -100,7 +100,7 @@ sub insertDefaultConfiguration() {
         php5_session_path => "/var/lib/php5",
     };
     
-    $self->{_dbix}->php5s->create( $default_conf );
+    $self->{_dbix}->create( $default_conf );
 }
 
 =head1 DIAGNOSTICS

@@ -70,7 +70,7 @@ sub getConf {
 
     my @logs = ();
     my @entries = ();
-    my $confindb = $self->{_dbix}->syslogng3s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         # Get entries
            my $entry_rs = $confindb->syslogng3_entries;
@@ -113,11 +113,11 @@ sub setConf {
     my ($conf) = @_;
     
     # delete old conf        
-    my $conf_row = $self->{_dbix}->syslogng3s->first();
+    my $conf_row = $self->{_dbix};
     $conf_row->delete() if (defined $conf_row); 
 
     # create
-    $conf_row = $self->{_dbix}->syslogng3s->create( {} );
+    $conf_row = $self->{_dbix}->create( {} );
     
     # Store entries
     foreach my $entry (@{ $conf->{entries} }) {
@@ -198,7 +198,7 @@ sub insertDefaultConfiguration {
             },
        ]
     };
-    $self->{_dbix}->syslogng3s->create($conf);
+    $self->{_dbix}->create($conf);
 }
 
 

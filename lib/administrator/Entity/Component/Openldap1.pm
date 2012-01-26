@@ -76,13 +76,13 @@ sub insertDefaultConfiguration {
 		openldap1_rootdn =>	"dc=admin,dc=nodomain",
 		openldap1_rootpw => undef
     };
-   $self->{_dbix}->create_related('openldap1', $default_conf);  
+   $self->{_dbix}->create($default_conf);
 }
 
 #sub getConf {
 #    my $self = shift;
 #    my $conf = {};
-#    my $confindb = $self->{_dbix}->openldap1s->first();
+#    my $confindb = $self->{_dbix};
 #    if($confindb) {   
 #        #TODO build conf hash with db data    
 #    }
@@ -100,7 +100,7 @@ sub getConf {
 		openldap1_rootpw => ""
     };
     
-    my $confindb = $self->{_dbix}->openldap1;
+    my $confindb = $self->{_dbix};
     if($confindb) {
        $slapd_conf = {
          openldap1_id  => $confindb->get_column('openldap1_id'),
@@ -115,8 +115,6 @@ sub getConf {
     return $slapd_conf; 
 }
 
-
-
 sub setConf {
     my $self = shift;
     my ($conf) = @_;   
@@ -129,14 +127,14 @@ sub setConf {
       		  	my $salted = $csh->generate;
       		    print $salted;
      		$conf->{openldap1_rootpw}=$salted;
-   $self->{_dbix}->openldap1->update($conf); 
+   $self->{_dbix}->update($conf);
 }    
 
 
 sub getNetConf {
     #TODO return { port => [protocol] };
     my $self = shift;
-    my $port = $self->{_dbix}->openldap1->get_column('openldap1_port');
+    my $port = $self->{_dbix}->get_column('openldap1_port');
     return { $port => ['tcp'] };
 }
 
