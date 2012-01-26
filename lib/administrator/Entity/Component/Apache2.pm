@@ -110,7 +110,7 @@ sub getVirtualhostConf{
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
-    my $virtualhost_rs = $self->{_dbix}->apache2s->first->apache2_virtualhosts;
+    my $virtualhost_rs = $self->{_dbix}->apache2_virtualhosts;
     my @tab_virtualhosts = ();
     while (my $virtualhost_row = $virtualhost_rs->next){
         my %virtualhost = $virtualhost_row->get_columns();
@@ -143,7 +143,7 @@ sub getGeneralConf{
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
-    my %apache2_conf = $self->{_dbix}->apache2s->first->get_columns();
+    my %apache2_conf = $self->{_dbix}->get_columns();
     $log->debug("Apache2 conf return is : " . Dumper(%apache2_conf));
     return \%apache2_conf;
 }
@@ -189,7 +189,7 @@ sub getConf {
         ]
     };
     
-    my $lineindb = $self->{_dbix}->apache2s->first;
+    my $lineindb = $self->{_dbix};
     if(defined $lineindb) {
         my %dbconf = $lineindb->get_columns();
         $apache2_conf = \%dbconf;
@@ -241,17 +241,17 @@ sub setConf {
     
     if(not $conf->{apache2_id}) {
         # new configuration -> create    
-        my $row = $self->{_dbix}->apache2s->create($conf);
-        $self->{_dbix}->apache2s->clear_cache();
+        my $row = $self->{_dbix}->create($conf);
+        $self->{_dbix}->clear_cache();
         foreach my $vh (@$virtualhosts) {
             $vh->{apache2_virtualhost_id} = undef;
-            $self->{_dbix}->apache2s->first()->apache2_virtualhosts->create($vh);
+            $self->{_dbix}->apache2_virtualhosts->create($vh);
         }
         
     } else {
         # old configuration -> update
-         $self->{_dbix}->apache2s->update($conf);
-         my $virtualhosts_indb = $self->{_dbix}->apache2s->first()->apache2_virtualhosts;
+         $self->{_dbix}->update($conf);
+         my $virtualhosts_indb = $self->{_dbix}->apache2_virtualhosts;
          
          # update existing virtual hosts
          while(my $vhost_indb = $virtualhosts_indb->next) {
@@ -300,13 +300,13 @@ sub insertDefaultConfiguration {
             },
         ]
     };
-    $self->{_dbix}->apache2s->create($apache2_conf);
+    $self->{_dbix}->create($apache2_conf);
 }
 
 sub getNetConf{
     my $self = shift;
-    my $http_port = $self->{_dbix}->apache2s->first()->get_column("apache2_ports");
-    my $https_port = $self->{_dbix}->apache2s->first()->get_column("apache2_sslports");
+    my $http_port = $self->{_dbix}->get_column("apache2_ports");
+    my $https_port = $self->{_dbix}->get_column("apache2_sslports");
 
     my %net_conf = ($http_port  => ['tcp']);
 

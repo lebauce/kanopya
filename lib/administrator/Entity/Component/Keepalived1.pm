@@ -73,7 +73,7 @@ my $errmsg;
 sub getVirtualservers {
     my $self = shift;
         
-    my $virtualserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers->search();
+    my $virtualserver_rs = $self->{_dbix}->keepalived1_virtualservers->search();
     my $result = [];
     while(my $vs = $virtualserver_rs->next) {
         my $hashvs = {};
@@ -107,7 +107,7 @@ sub getRealserverId {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $virtualserver = $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id});
+    my $virtualserver = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id});
     $log->debug("Virtualserver found with id <$args{virtualserver_id}>");
     my $realserver = $virtualserver->keepalived1_realservers->search({ realserver_ip => $args{realserver_ip} })->single;
     $log->debug("Realserver found with ip <$args{realserver_ip}>");
@@ -136,7 +136,7 @@ sub addVirtualserver {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $virtualserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers;
+    my $virtualserver_rs = $self->{_dbix}->keepalived1_virtualservers;
     my $row = $virtualserver_rs->create(\%args);
     $log->info("New virtualserver added with ip $args{virtualserver_ip} and port $args{virtualserver_port}");
     return $row->get_column("virtualserver_id");
@@ -168,7 +168,7 @@ sub addRealserver {
     }
     
     $log->debug("New real server try to be added on virtualserver_id <$args{virtualserver_id}>");
-    my $realserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
+    my $realserver_rs = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
 
     my $row = $realserver_rs->create(\%args);
     $log->info("New real server <$args{realserver_ip}> <$args{realserver_port}> added");
@@ -193,7 +193,7 @@ sub removeVirtualserver {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     $log->debug("Trying to delete virtualserver with id <$args{virtualserver_id}>");
-    return $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
+    return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
 }
 
 =head2 removeRealserver
@@ -215,7 +215,7 @@ sub removeRealserver {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     $log->debug("Trying to delete realserver with id <$args{realserver_id}>");
-    return $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
+    return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
 }
 
 =head2 getConf
@@ -227,7 +227,7 @@ sub removeRealserver {
 
 sub getConf {
     my $self = shift;
-    my $row = $self->{_dbix}->keepalived1;
+    my $row = $self->{_dbix};
     my $keepalived1_conf = {
         keepalived_id          => $row->get_column('keepalived_id'),
         daemon_method           => $row->get_column('daemon_method'),
@@ -252,12 +252,12 @@ sub setConf {
     my ($conf) = @_;
     if(not $conf->{keepalived_id}) {
          # new configuration -> create    
-         $self->{_dbix}->create_related('keepalived1', $conf);
+         $self->{_dbix}->create($conf);
          
          
     } else {
         # old configuration -> update
-         $self->{_dbix}->keepalived1->update($conf);
+         $self->{_dbix}->update($conf);
     }
 }
 
@@ -265,7 +265,7 @@ sub setConf {
 sub getTemplateDataIpvsadm {
     my $self = shift;
     my $data = {};
-    my $keepalived = $self->{_dbix}->keepalived1;
+    my $keepalived = $self->{_dbix};
     $data->{daemon_method} = $keepalived->get_column('daemon_method');
     $data->{iface} = $keepalived->get_column('iface');
     return $data;      
@@ -275,7 +275,7 @@ sub getTemplateDataIpvsadm {
 sub getTemplateDataKeepalived {
     my $self = shift;
     my $data = {};
-    my $keepalived = $self->{_dbix}->keepalived1;
+    my $keepalived = $self->{_dbix};
     $data->{notification_email} = $keepalived->get_column('notification_email');
     $data->{notification_email_from} = $keepalived->get_column('notification_email_from');
     $data->{smtp_server} = $keepalived->get_column('smtp_server');
@@ -322,7 +322,7 @@ sub insertDefaultConfiguration() {
         lvs_id                  => 'MAIN_LVS' 
     };
     
-    $self->{_dbix}->create_related('keepalived1', $default_conf);
+    $self->{_dbix}->create($default_conf);
 }
 
 =head1 DIAGNOSTICS

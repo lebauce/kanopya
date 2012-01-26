@@ -72,7 +72,7 @@ sub getConf {
         pleskpanel10_hostname => "hostname",
     };
     
-    my $confindb = $self->{_dbix}->pleskpanel10s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
        $pleskpanel10_conf = {
             pleskpanel10_id => $confindb->get_column('pleskpanel10_id'),
@@ -88,10 +88,10 @@ sub setConf {
         
     if(not $conf->{pleskpanel10_id}) {
         # new configuration -> create
-        $self->{_dbix}->pleskpanel10s->create($conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->pleskpanel10s->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 

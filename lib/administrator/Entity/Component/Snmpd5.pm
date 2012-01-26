@@ -73,7 +73,7 @@ sub getConf {
         snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
     };
     
-    my $confindb = $self->{_dbix}->snmpd5s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
        $snmpd5_conf = {
         snmpd5_id => $confindb->get_column('snmpd5_id'),
@@ -89,10 +89,10 @@ sub setConf {
         
     if(not $conf->{snmpd5_id}) {
         # new configuration -> create
-        $self->{_dbix}->snmpd5s->create($conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->snmpd5s->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 
@@ -120,7 +120,7 @@ sub insertDefaultConfiguration {
     if(exists $args{internal_cluster} and defined $args{internal_cluster}) {    
         $snmpd5_conf->{monitor_server_ip} = $args{internal_cluster}->getMasterNodeIp(),
     } 
-    $self->{_dbix}->snmpd5s->create($snmpd5_conf);    
+    $self->{_dbix}->create($snmpd5_conf);
 }
 
 
