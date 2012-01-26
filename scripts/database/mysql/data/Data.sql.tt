@@ -284,7 +284,7 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (1);
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_');
-SET @admin_cluster := @eid;
+SET @admin_cluster := 1;
 SET @eid := @eid +1;
 
 -- internal ip for admin node
