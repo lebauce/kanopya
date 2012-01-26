@@ -52,7 +52,7 @@ sub checkAttr {
     foreach my $module (keys %$attributes_def) {
 		if (exists $attributes_def->{$module}->{$args{name}}){
 			if($args{value} !~ m/($attributes_def->{$module}->{$args{name}}->{pattern})/){
-				$errmsg = "$class"."->checkAttr detect a wrong value ($value) for param : $args{name} on class $module";
+				$errmsg = "$class"."->checkAttr detect a wrong value $args{$value} for param : $args{name} on class $module";
 				$log->error($errmsg);
 				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
 			}
@@ -272,7 +272,7 @@ sub search {
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {
-                $log->info("no right to access to object <$args{type}> with  <$id>");
+                $log->info("no right to access to object <$table> with <$row->id>");
                 next;
             } 
             else { $exception->rethrow(); } 
@@ -288,7 +288,8 @@ sub search {
 sub save {
 	my $self = shift;
     my $data = $self->{_dbix};
-    
+
+    my $id;
     if ( $data->in_storage ) {
         # MODIFY existing db obj
         $data->update;
@@ -296,14 +297,14 @@ sub save {
     } else {
         # CREATE
         my $adm = Administrator->new();
-           
         my $row = $self->{_dbix}->insert;
         $row->discard_changes;
-        $self->{_entity_id} = $row->id;
+        $id = $self->{_entity_id} = $row->id;
         
         #$self->_saveExtendedAttrs();
         $log->info(ref($self)." saved to database");
     }
+    return $id;
 }
 
 # delete : remove records from the entire class hierarchy
@@ -322,6 +323,6 @@ sub delete {
 		}
 	}
 	$dbix->delete;
-}				
+}
 
 1;
