@@ -1,17 +1,11 @@
 USE `administrator`;
 SET foreign_key_checks=1;
-SET @eid := 1;
+SET @eid := 2;
 
 --
 -- permanents data
 --
 
--- admin cluster
-
-INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `cluster` VALUES (@eid,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,1, 'up:[% tmstp %]', NULL,'test_');
-SET @admin_cluster := @eid;
-SET @eid := @eid +1;
 
 -- system groups
 
@@ -284,6 +278,13 @@ INSERT INTO `component` VALUES
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `kernel` VALUES (@eid,'2.6.39.3','2.6.39.3','generic kernel with lots of modules');
 SET @kernel := @eid;
+SET @eid := @eid +1;
+
+-- admin cluster
+
+INSERT INTO `entity` VALUES (1);
+INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_');
+SET @admin_cluster := @eid;
 SET @eid := @eid +1;
 
 -- internal ip for admin node
