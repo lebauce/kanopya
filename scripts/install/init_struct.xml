@@ -81,13 +81,6 @@
        is_searchable="1"
        search_command="domainname"
        pattern="^[a-z0-9-]+(\.[a-z0-9-]+)+$"/>
-    <!-- Kanopya config-->
-    <internal_net_interface
-       question="Which Kanopya server network interface will be used to administrate infrastructure"
-       default=""
-       is_searchable="n"
-       pattern="^\d+$"
-       search_command="echo -n `ifconfig -a -s | awk 'NR!=1 { print $1 }'`"/>
     <internal_net_add
        question="What is the address of the network that will be used by node managed by Kanopya: this network will be booked for Kanopya!"
        default="10.0.0.0"
@@ -115,12 +108,5 @@
        is_searchable="0"
        search_command=""
        pattern="^.*\/$"/>
-    <!-- Penser a checker avec plusieurs vg -->
-    <vg
-       question="Which volume group will be used by Kanopya"
-       default=""
-       is_searchable="n"
-       search_command="echo -n `vgs  --noheadings -o vg_name --nosuffix --units M --rows`"
-       pattern="^\d+$"/>
   </questions>
 </init_struct>

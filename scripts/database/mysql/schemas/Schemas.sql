@@ -118,7 +118,6 @@ CREATE TABLE `host` (
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
   `host_hostname` char(32) DEFAULT NULL,
-  `cloud_cluster_id` int(8) unsigned DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `host_state` char(32) NOT NULL DEFAULT 'down',
   `host_prev_state` char(32),
@@ -131,14 +130,12 @@ CREATE TABLE `host` (
   KEY `fk_host_4` (`etc_device_id`),
   KEY `fk_host_5` (`host_powersupply_id`),
   KEY `fk_host_6` (`host_ipv4_internal_id`),
-  KEY `fk_host_7` (`cloud_cluster_id`),
   CONSTRAINT `fk_host_1` FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_host_2` FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_host_3` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_host_4` FOREIGN KEY (`etc_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
   CONSTRAINT `fk_host_5` FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_host_6` FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `fk_host_7` FOREIGN KEY (`cloud_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_host_6` FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -225,7 +222,6 @@ CREATE TABLE `cluster` (
   `kernel_id` int(8) unsigned DEFAULT NULL,
   `cluster_state` char(32) NOT NULL DEFAULT 'down',
   `cluster_prev_state` char(32),
-   `cluster_basehostname` char(64) NOT NULL,
   PRIMARY KEY (`cluster_id`),
 --  KEY `fk_cluster_1` (`infrastructure_id`),
   UNIQUE KEY `cluster_name_UNIQUE` (`cluster_name`)
@@ -255,7 +251,6 @@ CREATE TABLE `node` (
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(32),
   `node_prev_state` char(32),
-  `node_number` int(8) unsigned NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE `cluster_id` (`cluster_id`,`host_id`),
   UNIQUE `fk_node_2` (`host_id`),
@@ -564,7 +559,7 @@ CREATE TABLE `infrastructure` (
 --
 -- Table structure for `tier`
 --
--- #TODO Warning Here delete tier when cluster removed by when cluster will be used by tier then they will not be destroyed when cluster are.
+-- #TODO Warning Here delete tier when cluster removed by when cluster will be used by tier then they will not be destroyed when cluster are. 
 CREATE TABLE `tier` (
   `tier_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `infrastructure_id` int(8) unsigned NOT NULL,
@@ -672,10 +667,10 @@ CREATE TABLE `rule` (
 
 CREATE TABLE `workload_characteristic` (
   `wc_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `wc_visit_ratio` double NOT NULL,
-  `wc_service_time` double NOT NULL,
-  `wc_delay` double NOT NULL,
-  `wc_think_time` double NOT NULL,
+  `wc_visit_ratio` int(8) NOT NULL,
+  `wc_service_time` int(8) NOT NULL,
+  `wc_delay` int(8) NOT NULL,
+  `wc_think_time` int(8) NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`wc_id`),
   KEY `fk_wc_1` (`cluster_id`),
@@ -688,8 +683,8 @@ CREATE TABLE `workload_characteristic` (
 
 CREATE TABLE `qos_constraint` (
   `constraint_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `constraint_max_latency` double NOT NULL,
-  `constraint_max_abort_rate` double NOT NULL,
+  `constraint_max_latency` int(8) NOT NULL,
+  `constraint_max_abort_rate` int(8) NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`constraint_id`),
   KEY `fk_constraint_1` (`cluster_id`),
@@ -712,7 +707,6 @@ CREATE TABLE `indicatorset` (
   `indicatorset_type` char(32) NOT NULL,
   `indicatorset_component` char(32),
   `indicatorset_max` char(128),
-  `indicatorset_tableoid` char(64),
   PRIMARY KEY (`indicatorset_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
