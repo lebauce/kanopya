@@ -41,16 +41,6 @@ use base "EEntity::EComponent";
 my $log = get_logger("executor");
 my $errmsg;
 
-# contructor
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new( %args );
-    return $self;
-}
-
 sub generateInitiatorname{
     my $self = shift;
     my %args  = @_;

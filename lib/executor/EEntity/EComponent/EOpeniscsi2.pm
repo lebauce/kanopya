@@ -17,16 +17,6 @@ use base "EEntity::EComponent";
 use strict;
 use General;
 
-# contructor
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    my $self = $class->SUPER::new( %args );
-    return $self;
-}
-
-
 sub addNode {
     my $self = shift;
     my %args = @_;
