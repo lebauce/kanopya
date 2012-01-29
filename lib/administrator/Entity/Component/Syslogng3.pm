@@ -64,13 +64,8 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {};
-sub getAttrDef { 
-	syslogng3_id  =>     { pattern        => '^\d*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-}
+
+sub getAttrDef { return ATTR_DEF; }
 
 sub getBaseConfiguration { return {}; }
 

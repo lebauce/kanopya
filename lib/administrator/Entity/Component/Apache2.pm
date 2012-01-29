@@ -89,8 +89,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub primarykey { return 'apache2_id'; }
-
 =head2 addVirtualhost
 B<Class>   : Public
 B<Desc>    : This method allows to add a new virtualhost to component instance configuration.

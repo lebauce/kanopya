@@ -68,7 +68,6 @@ use constant ATTR_DEF => {
                                is_mandatory   => 0,
                                is_extended    => 0,
                                is_editable    => 0
-								
                              },
 };
 

@@ -79,7 +79,6 @@ sub create {
     # automatically add System|Monitoragent|Logger components
     
     if($systemimage) {
-        
         foreach my $compclass (qw/Entity::Component::Mounttable1
                                   Entity::Component::Syslogng3
                                   Entity::Component::Snmpd5/) {
