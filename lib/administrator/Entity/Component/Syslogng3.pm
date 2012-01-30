@@ -118,10 +118,8 @@ sub setConf {
     
     # delete old conf        
     my $conf_row = $self->{_dbix};
-    $conf_row->delete() if (defined $conf_row); 
-
-    # create
-    $conf_row = $self->{_dbix}->create( {} );
+    $conf_row->syslogng3_entries->delete_all;
+    $conf_row->syslogng3_logs->delete_all;
     
     # Store entries
     foreach my $entry (@{ $conf->{entries} }) {
@@ -168,41 +166,37 @@ sub insertDefaultConfiguration {
     } 
     
     # Conf to send all node logs to admin
-    my $conf = {
-        syslogng3_logs => [ {
-            syslogng3_log_params => [
-                {
-                    syslogng3_log_param_entrytype => "source",
-                    syslogng3_log_param_entryname => "s_all_local"
+    $self->{_dbix}->syslogng3_logs->populate([ 
+		{ syslogng3_log_params => [
+                { syslogng3_log_param_entrytype => "source",
+                  syslogng3_log_param_entryname => "s_all_local"
                 },
-                {
-                    syslogng3_log_param_entrytype => "destination",
-                    syslogng3_log_param_entryname => "d_kanopya_admin"
+                { syslogng3_log_param_entrytype => "destination",
+                  syslogng3_log_param_entryname => "d_kanopya_admin"
                 },
             ],
-        } ],
-        syslogng3_entries => [ 
-            {
-                syslogng3_entry_name => 's_all_local',
-                syslogng3_entry_type => 'source',
-                syslogng3_entry_params => [
-                    { syslogng3_entry_param_content => 'internal()' },
-                    { syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
-                    
-                    # Kernel logs: this conf doesn't work for current version of syslog-ng
-                    #{ syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
-                ]
-            },
-            {
-                syslogng3_entry_name => 'd_kanopya_admin',
-                syslogng3_entry_type => 'destination',
-                syslogng3_entry_params => [{
-                      syslogng3_entry_param_content => "udp('$admin_ip')",
-                }]
-            },
-       ]
-    };
-    $self->{_dbix}->create($conf);
+        }
+     ]);
+     
+     $self->{_dbix}->syslogng3_entries->populate([  
+		{ syslogng3_entry_name => 's_all_local',
+		  syslogng3_entry_type => 'source',
+		  syslogng3_entry_params => [
+				{ syslogng3_entry_param_content => 'internal()' },
+				{ syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
+				
+				# Kernel logs: this conf doesn't work for current version of syslog-ng
+				#{ syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
+			]
+		},
+		{
+			syslogng3_entry_name => 'd_kanopya_admin',
+			syslogng3_entry_type => 'destination',
+			syslogng3_entry_params => [{
+				  syslogng3_entry_param_content => "udp('$admin_ip')",
+			}]
+		},
+	]);
 }
 
 

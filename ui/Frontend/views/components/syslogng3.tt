@@ -20,7 +20,7 @@
 		<input class="entry_simple_value" type="text" name="entry_name" value="<% entry.name %>"/>
 		<a class="remove_entry imgRemove iconAction" ></a>
 		<table class="entry_array_value" id="params">
-		<% FOREACH param IN params %>
+		<% FOREACH param IN entry.params %>
 			<tr class="elem_params" name="param">
 				<td><input class="param_simple_value" type="text" size="50" name="content" value="<% param.content %>"/></td>
 				<td><a class="remove_param imgRemove iconAction" /></td>
@@ -40,7 +40,7 @@
 	<tr class="elem_logs" name="log"><td>log</td>
 		<td>
 		<table class="log_array_value" id="log_params">
-		<% FOREACH param IN params %>
+		<% FOREACH param IN log.params %>
 			<tr class="elem_log_params" name="log_param" >
 			<td>
 				<select class="log_param_simple_value" name="type" selected_value="<% param.type %>">
