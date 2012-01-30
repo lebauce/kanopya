@@ -52,11 +52,16 @@ sub checkAttr {
     my $class = ref($self) || $self;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['name', 'value']);
+    General::checkParams(args => \%args, required => ['name']);
+    if(! exists $args{value}) {
+		$errmsg = ref($self) . " checkAttr need a value named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
     
     my $attributes_def = $class->getAttrDefs();
     foreach my $module (keys %$attributes_def) {
-		if (exists $attributes_def->{$module}->{$args{name}}){
+		if (exists $attributes_def->{$module}->{$args{name}} && defined $args{value}){
 			if($args{value} !~ m/($attributes_def->{$module}->{$args{name}}->{pattern})/){
 				$errmsg = "$class"."->checkAttr detect a wrong value $args{$value} for param : $args{name} on class $module";
 				$log->error($errmsg);
@@ -223,7 +228,12 @@ sub setAttr {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['name', 'value']);
+    General::checkParams(args => \%args, required => ['name']);
+    if(! exists $args{value}) {
+		$errmsg = ref($self) . " setAttr need a value named argument!";
+		$log->error($errmsg);
+		throw Kanopya::Exception::Internal(error => $errmsg);
+	}
 	
 	my ($name, $value) = ($args{name}, $args{value});
     my $dbix = $self->{_dbix};
