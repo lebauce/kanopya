@@ -5,93 +5,42 @@ use Test::Pod;
 use Kanopya::Exceptions;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/component.t.log', layout=>'%F %L %p %m%n'});
 use Data::Dumper;
 
 use_ok ('Administrator');
-use_ok ('Entity::Component::Apache2');
+use_ok ('Entity::Component');
 
 eval {
-	#BEGIN { $ENV{DBIC_TRACE} = 1 }
-	Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-	my $adm = Administrator->new;
-	print "\n----------------------------------------------------\n";
-	my $apache2 = Entity::Component::Apache2->new(
-		apache2_serverroot => '/www',
-		apache2_loglevel   => 'debug',
-		apache2_ports      => '80',
-		apache2_sslports   => '',
-		component_type_id => 2
-	);
-	
+    #BEGIN { $ENV{DBIC_TRACE} = 1 }
+    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
+    my $adm = Administrator->new;
+    my $db = $adm->{db};
+
+    $db->txn_begin;
+
+    my $comp_types_rs = $adm->{db}->resultset('ComponentType')->search();
+    while ( my $comp_type = $comp_types_rs->next ) {
+        my $comp_name = $comp_type->get_column('component_name');
+        my $comp_version = $comp_type->get_column('component_version');
+
+        my $comp_class= "Entity::Component::" . $comp_name . $comp_version;
+
+        use_ok ($comp_class);
+
+        $db->txn_begin;
+
+        my $comp_instance;
+        lives_ok {
+            $comp_instance = $comp_class->new();
+            $comp_instance->insertDefaultConfiguration();
+        }   $comp_class . ' component instanciation and insert default conf';
+
+        $db->txn_rollback;
+    }
 };
-
-#~ eval {
-	#~ BEGIN { $ENV{DBIC_TRACE} = 1 }
-	#~ Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-	#~ my $adm = Administrator->new;
-	#~ print "\n----------------------------------------------------\n";
-	#~ my $db = $adm->{db};
-	#~ my $attrs = {
-		#~ component => { 
-			#~ component_type_id => 2,
-			#~ apache2 => {
-				#~ apache2_serverroot => '/www',
-				#~ apache2_loglevel   => 'debug',
-				#~ apache2_ports      => '80',
-				#~ apache2_sslports   => '',
-			#~ }
-		#~ }
-	#~ };
-	#~ 
-	#~ my $r1 = $db->resultset('Entity')->new($attrs);	
-	#~ $r1->insert;
-	#~ my $id = $r1->id;
-	#~ print "ID: $id\n";
-	#~ $r1 = $db->resultset('Apache2')->find($id);
-	#~ $r1->parent->set_column(cluster_id => 1);
-	#~ 
-	#~ $r1->parent->update;
-	#~ print Dumper(ref($r1->parent));
-	#~ print Dumper(ref($r1));
-	#~ 
-	#~ #my $r2 = $db->resultset('Entity')->new($attrs);
-	#~ #$r2->insert;
-	#~ 
-#~ };
-
-
-#~ eval {
-    #~ BEGIN { $ENV{DBIC_TRACE} = 1 }
-    #~ Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-#~ 
-	#~ my $adm = Administrator->new();
-#~ 
-	#~ my $cluster = Entity::Cluster->getCluster(hash => { cluster_name => 'adm' });
-#~ 
-	#~ my %attrs = (
-		#~ apache2_serverroot => '/www',
-		#~ apache2_loglevel   => 'debug',
-		#~ apache2_ports      => '80',
-		#~ apache2_sslports   => '',
-		#~ component_type_id  => 2,
-	#~ );
-	#~ 
-		#~ 
-	#~ 
-	#~ my $apache2 = Entity::Component::Apache2->new(%attrs);
-	#~ 
-	#~ 
-	#~ #$apache2->save();
-	#~ #$cluster->addComponent(component => $apache2);
-	#~ 
-#~ };
-
-
-
-
 if($@) {
-	my $error = $@;
-	print Dumper $error;
+    my $error = $@;
+    print Dumper $error;
 };
 
