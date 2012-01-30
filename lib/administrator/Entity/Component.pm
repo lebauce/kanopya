@@ -225,9 +225,9 @@ B<throws>  : None
 
 sub getTemplateDirectory {
     my $self = shift;
-
-    if( defined $self->{_dbix}->get_column('component_template_id') ) {
-        return $self->{_dbix}->component_template->get_column('component_template_directory');
+	my $template_id = $self->getAttr(name => 'component_template_id'); 
+    if( defined $template_id ) {
+        return $self->{_dbix}->parent->component_template->get_column('component_template_directory');
     } else {
         return;
     }
