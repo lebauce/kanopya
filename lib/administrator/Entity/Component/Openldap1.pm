@@ -65,7 +65,34 @@ use Crypt::SaltedHash;
 my $log = get_logger("administrator");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+	openldap1_port      => { pattern        => '^\d*$',
+                             is_mandatory   => 0,
+                             is_extended    => 0,
+                             is_editable    => 0
+                           },
+    openldap1_suffix    => { pattern        => '^.*$',
+                             is_mandatory   => 0,
+                             is_extended    => 0,
+                             is_editable    => 0
+                           },
+    openldap1_directory => { pattern        => '^.*$',
+                             is_mandatory   => 0,
+                             is_extended    => 0,
+                             is_editable    => 0
+                           },
+    openldap1_rootdn    => { pattern        => '^.*$',
+                             is_mandatory   => 0,
+                             is_extended    => 0,
+                             is_editable    => 0
+                           },
+    openldap1_rootpw    => { pattern        => '^.*$',
+                             is_mandatory   => 0,
+                             is_extended    => 0,
+                             is_editable    => 0
+                           },
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub getBaseConfiguration {
