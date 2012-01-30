@@ -666,7 +666,7 @@ sub addNode {
                 if (defined $args{cloud_cluster_id}){
                     push @clusters, Entity::Cluster->get( id => $args{cloud_cluster_id});
                 } else {
-                    @clusters = $self->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+                    @clusters = Entity::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
                 }
                 $args{clusters} = \@clusters;
             }
