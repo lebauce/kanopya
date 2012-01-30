@@ -357,6 +357,8 @@ sub getFreeHosts {
 sub create {
     my ($class, %params) = @_;
 
+	$class->checkAttrs(attrs => \%params);
+
     $log->debug("New Operation AddHost with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
                        type     => 'AddHost',
