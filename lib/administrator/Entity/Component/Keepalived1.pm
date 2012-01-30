@@ -311,11 +311,8 @@ sub getTemplateDataKeepalived {
     return $data;      
 }
 
-# Insert default configuration in db for this component 
-sub insertDefaultConfiguration() {
-    my $self = shift;
-    
-    my $default_conf = {
+sub getBaseConfiguration {
+    return {
         daemon_method           => 'both',
         iface                   => 'eth0',
         notification_email      => 'admin@mycluster.com',
@@ -324,8 +321,6 @@ sub insertDefaultConfiguration() {
         smtp_connect_timeout    => 30,
         lvs_id                  => 'MAIN_LVS' 
     };
-    
-    $self->{_dbix}->create($default_conf);
 }
 
 =head1 DIAGNOSTICS

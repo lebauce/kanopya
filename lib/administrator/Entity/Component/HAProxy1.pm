@@ -106,25 +106,28 @@ sub getNetConf {
 
 }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    
-    # Retrieve admin ip
-    my $admin_ip = "0.0.0.0";
-    if(defined $args{internal_cluster}) {    
-        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
-    } 
-    
-    my $conf = {
+sub getBaseConfiguration {
+    return {
         haproxy1_http_frontend_port => 80,
         haproxy1_http_backend_port => 8080,
         haproxy1_https_frontend_port => 443,
         haproxy1_https_backend_port => 4443,
-        haproxy1_log_server_address => "$admin_ip:514",
+        haproxy1_log_server_address => "0.0.0.0:514",
     };
-    
-    $self->{_dbix}->create($conf);
+}
+
+sub insertDefaultConfiguration {
+    my $self = shift;
+    my %args = @_;
+
+    # Retrieve admin ip
+    my $admin_ip = "0.0.0.0";
+    if(defined $args{internal_cluster}) {
+        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
+    }
+
+    $self->setAttr(name => "haproxy1_log_server_address", value => "$admin_ip:514");
+    $self->save();
 }
 
 =head1 DIAGNOSTICS

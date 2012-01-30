@@ -50,37 +50,6 @@ our $VERSION = '1.00';
 my $log = get_logger("executor");
 my $errmsg;
 
-
-=head2 new
-
-    my comp = EComponent->new();
-
-EComponent::new creates a new component object.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-
-    return $self;
-}
-
-=head2 _init
-
-EComponent::_init is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
-
 =head2 addInitScripts
 
 add start and stop rc init scripts

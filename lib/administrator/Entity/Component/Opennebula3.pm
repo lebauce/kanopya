@@ -102,13 +102,6 @@ sub getNetConf {
 
 sub needBridge { return 1; }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    my $conf = {}; # default config is provided by database default fields values
-    $self->{_dbix}->create($conf);
-}
-
 sub getTemplateDataOned {
     my $self = shift;
     my %data = $self->{_dbix}->get_columns();

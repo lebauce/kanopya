@@ -25,15 +25,6 @@ use base "EEntity::EComponent";
 my $log = get_logger("executor");
 my $errmsg;
 
-# contructor
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    my $self = $class->SUPER::new( %args );
-    return $self;
-}
-
 # called when a node is added to a cluster
 sub addNode {
     my $self = shift;

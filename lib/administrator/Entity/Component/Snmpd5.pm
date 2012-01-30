@@ -134,8 +134,6 @@ sub getBaseConfiguration {
     };
 }
 
-sub insertDefaultConfiguration {}
-
 
 =head1 DIAGNOSTICS
 

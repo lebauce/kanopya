@@ -63,19 +63,32 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+	mysql5_port        => { pattern        => '^\d*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    mysql5_datadir     => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    mysql5_bindaddress => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my $default_conf = {
-        mysql5_id => undef,
+sub getBaseConfiguration {
+    return {
         mysql5_port => 3306,
         mysql5_datadir => "/var/lib/mysql",
         mysql5_bindaddress => '127.0.0.1'
     };
-
-    $self->{_dbix}->create($default_conf);
 }
 
 sub getConf {
