@@ -101,8 +101,8 @@ sub setConf {
     while(my $mountdef_row = $mountdefs_rs->next) {
         my $found = 0;
         my $mountdef_data;
-        my $id = $mountdef_row->get_column('mounttable1_mount_id');
-        foreach    my $mountdef_conf (@$mountdefs_conf) {
+        my $id = $mountdef_row->id;
+        foreach my $mountdef_conf (@$mountdefs_conf) {
              if($mountdef_conf->{mounttable1_mount_id} == $id) {
                  $found = 1;
                  $mountdef_data = $mountdef_conf;
