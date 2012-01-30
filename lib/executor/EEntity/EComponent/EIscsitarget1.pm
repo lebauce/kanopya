@@ -238,8 +238,9 @@ sub removeTarget {
 
     # first we clean sessions for this target
     my $tid = $self->cleanTargetSession(targetname => $args{iscsitarget1_target_name}, econtext => $args{econtext});
-
-    my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
+	if(defined $tid) {
+		my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
+    }
     delete $args{econtext};
     return $self->_getEntity()->removeTarget(%args);
 }
