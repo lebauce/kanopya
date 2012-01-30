@@ -271,13 +271,13 @@ sub getRow {
     if ($@) {
         $errmsg = "Administrator->getRow error ".$@;
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
     }
     
     if(not $dbix) {
 		$errmsg = "Administrator->getRow : no row found with id $args{id} in table $args{table}";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
 	}
     
     return $dbix;
