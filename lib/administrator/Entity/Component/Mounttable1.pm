@@ -72,17 +72,18 @@ sub getConf {
     my $self = shift;
     my $conf = {};
 
-    my $conf_rs = $self->{_dbix}->mounttable1s;
+    my $conf_rs = $self->{_dbix}->mounttable1s_mount;
     my @mountdefs = ();
     while (my $conf_row = $conf_rs->next) {
-        push @mountdefs, {  mounttable1_id => $conf_row->get_column('mounttable1_id'),
-                            mounttable1_device => $conf_row->get_column('mounttable1_device'),
-                            mounttable1_mountpoint => $conf_row->get_column('mounttable1_mountpoint'),
-                            mounttable1_filesystem => $conf_row->get_column('mounttable1_filesystem'),
-                            mounttable1_options => $conf_row->get_column('mounttable1_options'),
-                            mounttable1_dumpfreq => $conf_row->get_column('mounttable1_dumpfreq'),
-                            mounttable1_passnum => $conf_row->get_column('mounttable1_passnum'),
-                        };
+        push @mountdefs, 
+        {  mounttable1_mount_id         => $conf_row->get_column('mounttable1_mount_id'),
+           mounttable1_mount_device     => $conf_row->get_column('mounttable1_mount_device'),
+           mounttable1_mount_point      => $conf_row->get_column('mounttable1_mount_point'),
+           mounttable1_mount_filesystem => $conf_row->get_column('mounttable1_mount_filesystem'),
+           mounttable1_mount_options    => $conf_row->get_column('mounttable1_mount_options'),
+           mounttable1_mount_dumpfreq   => $conf_row->get_column('mounttable1_mount_dumpfreq'),
+           mounttable1_mount_passnum    => $conf_row->get_column('mounttable1_mount_passnum'),
+        };
     }
     
     $conf->{mountdefs} = \@mountdefs;
@@ -96,13 +97,13 @@ sub setConf {
     my $mountdefs_conf = $conf->{mounttable_mountdefs};
     
     # for each mount definition , we search it in db for update or deletion
-    my $mountdefs_rs = $self->{_dbix}->mounttable1s;
+    my $mountdefs_rs = $self->{_dbix}->mounttable1s_mount;
     while(my $mountdef_row = $mountdefs_rs->next) {
         my $found = 0;
         my $mountdef_data;
-        my $id = $mountdef_row->get_column('mounttable1_id');
+        my $id = $mountdef_row->get_column('mounttable1_mount_id');
         foreach    my $mountdef_conf (@$mountdefs_conf) {
-             if($mountdef_conf->{mounttable1_id} == $id) {
+             if($mountdef_conf->{mounttable1_mount_id} == $id) {
                  $found = 1;
                  $mountdef_data = $mountdef_conf;
                  last;
@@ -116,8 +117,8 @@ sub setConf {
     }
     
     foreach    my $mtdef (@$mountdefs_conf) {
-        if (not exists $mtdef->{mounttable1_id}) {
-                $self->{_dbix}->mounttable1s->create($mtdef);
+        if (not exists $mtdef->{mounttable1_mount_id}) {
+                $self->{_dbix}->mounttable1s_mount->create($mtdef);
         }
     }
 }

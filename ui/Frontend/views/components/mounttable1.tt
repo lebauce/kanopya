@@ -10,13 +10,13 @@
 <tr><th>device</th><th>mount point</th><th>fs-type</th><th>options</th><th>dump</th><th>pass</th></tr>
 <% FOREACH mount IN mountdefs %>
 	<tr class="elem_mounttable_mountdefs" name="mountdefs">
-    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_device" value="<% mount.mounttable1_device %>" /></td>
-    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_mountpoint" value="<% mount.mounttable1_mountpoint %>" /></td>
-    <td><input type="text" size="6" class="mountdefs_simple_value" name="mounttable1_filesystem" value="<% mount.mounttable1_filesystem %>" /></td>
-    <td><input type="text" class="mountdefs_simple_value" name="mounttable1_options" value="<% mount.mounttable1_options %>" /></td>
-    <td><input type="text" maxlength="2" size="2" class="mountdefs_simple_value" name="mounttable1_dumpfreq" value="<% mount.mounttable1_dumpfreq %>" /></td>
-    <td><input type="text" maxlength="2" size="2" class="mountdefs_simple_value" name="mounttable1_passnum" value="<% mount.mounttable1_passnum %>" />
-    <input type="hidden" class="mountdefs_simple_value" name="mounttable1_id" value="<% mount.mounttable1_id %>" />
+    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_device" value="<% mount.mounttable1_mount_device %>" /></td>
+    <td><input type="text" size="25" class="mountdefs_simple_value" name="mounttable1_mountpoint" value="<% mount.mounttable1_mount_point %>" /></td>
+    <td><input type="text" size="6" class="mountdefs_simple_value" name="mounttable1_filesystem" value="<% mount.mounttable1_mount_filesystem %>" /></td>
+    <td><input type="text" class="mountdefs_simple_value" name="mounttable1_options" value="<% mount.mounttable1_mount_options %>" /></td>
+    <td><input type="text" maxlength="2" size="2" class="mountdefs_simple_value" name="mounttable1_dumpfreq" value="<% mount.mounttable1_mount_dumpfreq %>" /></td>
+    <td><input type="text" maxlength="2" size="2" class="mountdefs_simple_value" name="mounttable1_passnum" value="<% mount.mounttable1_mount_passnum %>" />
+    <input type="hidden" class="mountdefs_simple_value" name="mounttable1_id" value="<% mount.mounttable1_mount_id %>" />
     <a class="remove_mountdefs imgRemove iconAction"></a>
     </td>
     </tr>
