@@ -68,18 +68,14 @@ my $errmsg;
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    my $default_conf = { 
-    	openldap1_id => undef,
-    	openldap1_port 	=>	389, 
-    	openldap1_suffix =>	"dc=nodomain",
-		openldap1_directory  =>	"/var/lib/ldap",
-		openldap1_rootdn =>	"dc=admin,dc=nodomain",
-		openldap1_rootpw => undef
+sub getBaseConfiguration {
+    return { 
+        openldap1_port      => 389, 
+        openldap1_suffix    => "dc=nodomain",
+        openldap1_directory => "/var/lib/ldap",
+        openldap1_rootdn    => "dc=admin,dc=nodomain",
+        openldap1_rootpw    => undef
     };
-   $self->{_dbix}->create($default_conf);
 }
 
 #sub getConf {
@@ -95,12 +91,12 @@ sub insertDefaultConfiguration {
 sub getConf {
     my $self = shift;
     my $slapd_conf = {
-    	openldap1_id => undef,
-    	openldap1_port 	=>	389, 
-    	openldap1_suffix =>	"dc=nodomain",
-		openldap1_directory  =>	"/var/lib/ldap",
-		openldap1_rootdn =>	"dc=admin,dc=nodomain",
-		openldap1_rootpw => ""
+        openldap1_id => undef,
+        openldap1_port     =>    389, 
+        openldap1_suffix =>    "dc=nodomain",
+        openldap1_directory  =>    "/var/lib/ldap",
+        openldap1_rootdn =>    "dc=admin,dc=nodomain",
+        openldap1_rootpw => ""
     };
     
     my $confindb = $self->{_dbix};
@@ -122,15 +118,18 @@ sub setConf {
     my $self = shift;
     my ($conf) = @_;   
    
-   $log->debug(">>>>>>>>>>>>>>>>>>>>>>" . Dumper  $conf);  
+    $log->debug(">>>>>>>>>>>>>>>>>>>>>>" . Dumper  $conf);  
     my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-1');
-      		#$conf->{openldap1_rootpw}='splendid';
-      		my $a=$conf->{openldap1_rootpw}; 
-      		$csh->add($a);
-      		  	my $salted = $csh->generate;
-      		    print $salted;
-     		$conf->{openldap1_rootpw}=$salted;
-   $self->{_dbix}->update($conf);
+
+    #$conf->{openldap1_rootpw}='splendid';
+    my $a = $conf->{openldap1_rootpw}; 
+    $csh->add($a);
+
+    my $salted = $csh->generate;
+    print $salted;
+    $conf->{openldap1_rootpw} = $salted;
+
+    $self->{_dbix}->update($conf);
 }    
 
 

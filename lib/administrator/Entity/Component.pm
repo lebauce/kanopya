@@ -279,16 +279,17 @@ sub toString {
     return $component_name . " " . $component_version;
 }
 
-sub readyNodeAddition{return 1;}
-sub readyNodeRemoving{return 1;}
+sub readyNodeAddition { return 1; }
+sub readyNodeRemoving { return 1; }
 
 # Method to override to insert in db component default configuration
-sub insertDefaultConfiguration { }
-sub getClusterizationType{}
-sub getExecToTest{}
-sub getNetConf{}
-sub needBridge{ return 0; }
-sub getHostConstraints {return;}
+sub getBaseConfiguration { return {}; }
+sub insertDefaultConfiguration {}
+sub getClusterizationType {}
+sub getExecToTest {}
+sub getNetConf {}
+sub needBridge { return 0; }
+sub getHostConstraints { return; }
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.
