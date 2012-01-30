@@ -86,7 +86,7 @@ sub create {
 			eval { require $location; };
 			$log->debug("trying to add $compclass to cluster");
 			my $comp = $compclass->new();
-			
+			$comp->insertDefaultConfiguration();
 			$self->_getEntity()->addComponent(component => $comp);
 			$log->info("$compclass automatically added");
 		} 
