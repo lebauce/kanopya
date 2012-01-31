@@ -730,7 +730,7 @@ sub removeNode {
         cluster_id => $self->getAttr(name =>"cluster_id"),
         host_id => $args{host_id},
     );
-    $log->debug("New Operation AddHostInCluster with attrs : " . %params);
+    $log->debug("New Operation PreStopNode with attrs : " . %params);
 
     Operation->enqueue(
         priority => 200,
