@@ -42,17 +42,17 @@ eval {
 
     lives_ok {
         Entity::Cluster->create(
-            cluster_name     => "foobar",
-            cluster_min_node => "1",
-            cluster_max_node => "1",
-            cluster_priority => "100",
-            cluster_si_location => "diskless",
+            cluster_name           => "foobar",
+            cluster_min_node       => "1",
+            cluster_max_node       => "1",
+            cluster_priority       => "100",
+            cluster_si_location    => "diskless",
             cluster_si_access_mode => "ro",
-            cluster_si_shared => "0",
-            cluster_domainname => "test.org",
-            cluster_nameserver => "0.0.0.0",
-            cluster_basehostname => "test",
-            systemimage_id   => $sysimg->getAttr(name => 'systemimage_id'),
+            cluster_si_shared      => "0",
+            cluster_domainname     => "test.org",
+            cluster_nameserver     => "0.0.0.0",
+            cluster_basehostname   => "test",
+            systemimage_id         => $sysimg->getAttr(name => 'systemimage_id'),
         );
     } 'AddCluster operation enqueue';
 
@@ -67,7 +67,7 @@ eval {
         $cluster_id = $cluster->getAttr(name => 'cluster_id')
     } 'get Attribute cluster_id';
 
-    # Then instanciate component of each type, add then to the cluster.
+    # Then instanciate component of each type, add then add to the cluster.
     my $comp_types_rs = $adm->{db}->resultset('ComponentType')->search();
     while ( my $comp_type = $comp_types_rs->next ) {
         my $comp_name = $comp_type->get_column('component_name');
@@ -77,7 +77,7 @@ eval {
 
         use_ok ($comp_class);
 
-        my ($comp_instance, $comp_id, $comp_from_id, $cluster_from_comp);
+        my ($comp_instance, $comp_id, $comp_from_id);
         lives_ok {
             $comp_instance = $comp_class->new();
             $comp_id = $comp_instance->getAttr(name => 'component_id');
@@ -93,10 +93,33 @@ eval {
 
         lives_ok {
             $comp_from_id = Entity::Component->getInstance(id => $comp_id);
-            $cluster_from_comp = $comp_from_id->getAttr(name => 'cluster_id')
         } $comp_class . ' get instance from id.';
 
-        cmp_ok ($cluster_from_comp, '==', $cluster_id, $comp_class . ' cluster relation id.')
+        if (defined $comp_from_id) {
+            my ($cluster_from_comp, $conf);
+
+            # Get the associated cluster id.
+            lives_ok {
+                $cluster_from_comp = $comp_from_id->getAttr(name => 'cluster_id')
+            } $comp_class . ' get cluster id.';
+
+            # Check if the cluster id is valid.
+            cmp_ok ($cluster_from_comp, '==', $cluster_id, $comp_class . ' cluster relation id.');
+
+            # Get the configuration
+            if ($comp_from_id->can('getConf')) {
+                lives_ok {
+                    $conf = $comp_from_id->getConf();
+                } $comp_class . ' get configuration.';
+            }
+
+            # Set the configuration
+            if ($comp_from_id->can('setConf')) {
+                lives_ok {
+                    $comp_from_id->setConf($conf);
+                } $comp_class . ' set configuration.';
+            }
+        }
     }
 
     $db->txn_rollback;
