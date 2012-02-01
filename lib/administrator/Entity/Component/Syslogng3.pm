@@ -123,8 +123,8 @@ sub setConf {
     
     # Store entries
     foreach my $entry (@{ $conf->{entries} }) {
-        my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry->{entry_name},
-                                                                syslogng3_entry_type => $entry->{entry_type} } );
+        my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry->{name},
+                                                                syslogng3_entry_type => $entry->{type} } );
             foreach my $param (@{ $entry->{params} }) {
                 $entry_row->syslogng3_entry_params->create( { syslogng3_entry_param_content => $param->{content} } );
             }    
