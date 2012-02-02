@@ -6,7 +6,7 @@ use Log::Log4perl "get_logger";
 use Administrator;
 use Entity::User;
 use Entity::Gp;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Data::Dumper;
 
 prefix '/rights';
@@ -95,7 +95,7 @@ get '/users/:userid/delete' => sub {
 get '/users/:userid' => sub {
     my $user_id = param('userid');
     my $euser = eval { Entity::User->get(id => $user_id) };
-    my @cluster = Entity::Cluster->getClusters( hash => { user_id => $user_id } );
+    my @cluster = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { user_id => $user_id } );
     my $clusters = [];
     foreach my $ec (@cluster)
     {
