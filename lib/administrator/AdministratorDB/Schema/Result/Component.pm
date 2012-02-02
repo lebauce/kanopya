@@ -453,4 +453,21 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::Entity",
     { "foreign.entity_id" => "self.component_id" },
     { cascade_copy => 0, cascade_delete => 1 });
+
+
+#########################################
+# Load components relationship
+#########################################
+## Get list of component instance relathionship files
+#opendir(DIR, "/opt/kanopya/lib/administrator/AdministratorDB/ComponentRelationship");
+#my @comp_files = readdir(DIR);
+#closedir(DIR);
+## Load components relationship
+#for my $comp_file (@comp_files) {
+#    if ($comp_file =~ /(.*)\.pm/) {
+#        __PACKAGE__->load_components("+AdministratorDB::ComponentRelationship::$1");
+#    }
+#}
+
+
 1;
