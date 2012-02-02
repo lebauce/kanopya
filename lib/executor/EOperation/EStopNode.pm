@@ -38,7 +38,7 @@ use base "EOperation";
 
 use Kanopya::Exceptions;
 use EFactory;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 
 use strict;
@@ -91,7 +91,7 @@ sub prepare {
     
     # Get instance of Cluster Entity
     $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     
     $self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(category => "all");
     

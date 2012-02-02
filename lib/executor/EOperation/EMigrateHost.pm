@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use EFactory;
 
@@ -115,7 +115,7 @@ sub prepare {
         $self->{_objs}->{'hypervisor_dst'} = Entity::Host->get(id => $params->{hypervisor_dst});
         
         # Check cloudCluster
-        $self->{_objs}->{'hypervisor_cluster'} = Entity::Cluster->get(id => $self->{_objs}->{'hypervisor_dst'}->getClusterId());
+        $self->{_objs}->{'hypervisor_cluster'} = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_objs}->{'hypervisor_dst'}->getClusterId());
         
         #TODO Check if a cloudmanager is in the cluster
         # Get OpenNebula Cluster (now fix but will be configurable)

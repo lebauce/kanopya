@@ -64,61 +64,23 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 get
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing Snmpd component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Snmpd5 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
+use constant ATTR_DEF => {
+	monitor_server_ip   => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
 
-sub get {
-    my $class = shift;
-    my %args = @_;
+    snmpd_options => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                           },
+};
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component::Snmpd5->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   return $self;
-}
 
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Monitor component and concretly Snmpd.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Snmpd5 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
 
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-        (! exists $args{component_id} or ! defined $args{component_id})){ 
-        $errmsg = "Entity::Component::Snmpd5->new need a cluster_id and a component_id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
     my $self = shift;
@@ -129,7 +91,7 @@ sub getConf {
         snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
     };
     
-    my $confindb = $self->{_dbix}->snmpd5s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
        $snmpd5_conf = {
         snmpd5_id => $confindb->get_column('snmpd5_id'),
@@ -145,10 +107,10 @@ sub setConf {
         
     if(not $conf->{snmpd5_id}) {
         # new configuration -> create
-        $self->{_dbix}->snmpd5s->create($conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->snmpd5s->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 
@@ -165,18 +127,11 @@ sub getNetConf {
     return { 161 => ['udp'] };
 }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    my $snmpd5_conf = {
-        snmpd5_id => undef,
+sub getBaseConfiguration {
+	return {
         monitor_server_ip => '127.0.0.1',
         snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
     };
-    if(exists $args{internal_cluster} and defined $args{internal_cluster}) {    
-        $snmpd5_conf->{monitor_server_ip} = $args{internal_cluster}->getMasterNodeIp(),
-    } 
-    $self->{_dbix}->snmpd5s->create($snmpd5_conf);    
 }
 
 

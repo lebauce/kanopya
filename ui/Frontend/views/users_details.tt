@@ -48,3 +48,21 @@
 	</tr>
 <% END %>
 </table>
+<span id="hosts" class="title simpleexpand">Hosts</span>
+<table id="Xhosts" class="detailspart">
+<% FOREACH hs IN hst_list %>
+	<tr><td class="label3"><span class="bold"><% hs.host_ram %></span> - <span class="italic"><% hs.host_core %></span></td>
+	</tr>
+<% END %>
+</table>
+<span id="clusters" class="title simpleexpand">Clusters</span>
+<table id="Xclusters" class="detailspart">
+<% FOREACH cl IN clusters_list %>
+	<tr><td class="label3"><span class="bold"><% cl.cluster_name %></td>
+	<td class="action"><a class="imgManage" href="<% cl.url %>">details</a></td>
+	</tr>
+<% END %>
+</table>
+
+
+

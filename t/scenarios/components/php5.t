@@ -6,7 +6,7 @@ use Test::More 'no_plan';
 
 BEGIN {
       use_ok( 'Administrator' );
-      use_ok( 'Entity::Cluster' );
+      use_ok( 'Entity::ServiceProvider::Inside::Cluster' );
       use_ok( 'Entity::Component::Php5' );
 }
 

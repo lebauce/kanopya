@@ -98,7 +98,7 @@ sub prepare {
     my $infra = Entity::Infrastructure->get(id => $params->{infrastructure_id});
     
     # Get clusters to start from infra
-    #$self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    #$self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
 }
 
 sub execute {

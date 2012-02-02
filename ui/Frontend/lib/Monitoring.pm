@@ -3,7 +3,7 @@ package Monitoring;
 use Dancer ':syntax'; 
 use Dancer::Plugin::Ajax;
 
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -32,7 +32,7 @@ get '/clusters/:clusterid/monitoring/graphs' => sub {
     my $period      = params->{'period'} || "hour";
     
     my $cluster_id = params->{'clusterid'};
-    my $cluster = Entity::Cluster->get( id => $cluster_id );
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get( id => $cluster_id );
     my $hosts = $cluster->getHosts();
     my @all_ids = keys %$hosts;
     my $cluster_name = $cluster->getAttr( name => 'cluster_name' ); 
@@ -93,7 +93,7 @@ get '/clusters/:clusterid/monitoring' => sub {
     my @sets = map { { id => $_->{label}, label => $_->{label} } } @{_getMonitoredSets( cluster_id => $cluster_id )};
     
     #NODES
-    my $cluster = Entity::Cluster->get( id => $cluster_id );
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get( id => $cluster_id );
     my $hosts = $cluster->getHosts();
     my $masterId = $cluster->getMasterNodeId();
     my @nodes = map { { id => $_->getAttr(name=>'host_id'),

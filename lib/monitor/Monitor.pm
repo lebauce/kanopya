@@ -47,7 +47,7 @@ use warnings;
 use RRDTool::OO;
 use XML::Simple;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -140,7 +140,7 @@ sub retrieveHostsByCluster {
     my %hosts_by_cluster;
 
     my $adm = $self->{_admin};
-    my @clusters = Entity::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     foreach my $cluster (@clusters) {
         my $components = $cluster->getComponents(category => 'all');
         my @components_name = map { $_->getComponentAttr()->{component_name} } values %$components;
@@ -162,7 +162,7 @@ sub retrieveHostsByCluster {
 sub getClustersName {
     my $self = shift;
 
-    my @clusters = Entity::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     my @clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
     
     return @clustersName;    

@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
-package Entity::Cluster;
-use base "Entity";
+package Entity::ServiceProvider::Inside::Cluster;
+use base 'Entity::ServiceProvider::Inside';
 
 use strict;
 use warnings;
@@ -103,9 +103,9 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 1},
+};
 
-
-    };
+sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
@@ -157,34 +157,6 @@ sub methods {
     };
 }
 
-=head2 get
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $admin = Administrator->new();
-    my $dbix_cluster = $admin->{db}->resultset('Cluster')->find($args{id});
-    if(not defined $dbix_cluster) {
-        $errmsg = "Entity::Cluster->get : id <$args{id}> not found !";
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    my $entity_id = $dbix_cluster->entitylink->get_column('entity_id');
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get cluster with id $args{id}");
-    }
-    my $self = $class->SUPER::get( %args,  table => "Cluster");
-    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "clusterdetails");
-    return $self;
-}
-
 =head2 getClusters
 
 =cut
@@ -192,12 +164,10 @@ sub get {
 sub getClusters {
     my $class = shift;
     my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    return $class->SUPER::getEntities( %args,  type => "Cluster");
+    return $class->search(%args);
 }
 
 sub getCluster {
@@ -206,28 +176,8 @@ sub getCluster {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @clusters = $class->SUPER::getEntities( %args,  type => "Cluster");
+    my @clusters = $class->search(%args);
     return pop @clusters;
-}
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Cluster");
-
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
 }
 
 =head2 create
@@ -235,22 +185,17 @@ sub new {
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %params) = @_;
 
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
        my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
        }
-    # Before cluster creation check some integrity configuration
-    # Check if min node <
-    $log->info("###### Cluster creation with min node <".$self->getAttr(name => "cluster_min_node") . "> and max node <". $self->getAttr(name=>"cluster_max_node").">");
-    if ($self->getAttr(name => "cluster_min_node") > $self->getAttr(name=>"cluster_max_node")){
-	throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
-    }
+    
+    $class->checkAttrs(attrs => \%params);
 
-    my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
         priority => 200,
@@ -334,9 +279,7 @@ sub deactivate {
                    params   => {cluster_id => $self->getAttr(name=>'cluster_id')});
 }
 
-sub getAttrDef{
-    return ATTR_DEF;
-}
+
 
 sub getTiers {
     my $self = shift;
@@ -387,34 +330,33 @@ sub getComponents {
     General::checkParams(args => \%args, required => ['category']);
 
 #    my $adm = Administrator->new();
-    my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", undef,
-                                            { '+columns' => {"component_name" => "component.component_name",
-                                                            "component_version" => "component.component_version",
-                                                            "component_category" => "component.component_category"},
-#                                                [ "component.component_name",
-#                                                              "component.component_category",
-#                                                              "component.component_version"],
-                                           join => ["component"]});
+    my $components_rs = $self->{_dbix}->parent->search_related("components", undef,
+		{ '+columns' => { "component_name"     => "component_type.component_name",
+						  "component_version"  => "component_type.component_version",
+						  "component_category" => "component_type.component_category"},
+	   join => ["component_type"]}
+	);
 
     my %comps;
     $log->debug("Category is $args{category}");
-    while ( my $comp_instance_row = $comp_instance_rs->next ) {
-        my $comp_category = $comp_instance_row->get_column('component_category');
-        $log->debug("Component category: $comp_category");
-        my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
-        $log->debug("Component instance id: $comp_instance_id");
-        my $comp_name = $comp_instance_row->get_column('component_name');
-        $log->debug("Component name: $comp_name");
-        my $comp_version = $comp_instance_row->get_column('component_version');
-        $log->debug("Component version: $comp_version");
+    while ( my $component_row = $components_rs->next ) {
+        my $comp_id           = $component_row->get_column('component_id');
+        my $comptype_category = $component_row->get_column('component_category');
+        my $comptype_name     = $component_row->get_column('component_name');
+        my $comptype_version  = $component_row->get_column('component_version');
+        
+        $log->debug("Component name: $comptype_name");
+        $log->debug("Component version: $comptype_version");
+        $log->debug("Component category: $comptype_category");
+        $log->debug("Component id: $comp_id");
+        
         if (($args{category} eq "all")||
-            ($args{category} eq $comp_category)){
-            $log->debug("One component instance found with " . ref($comp_instance_row));
-#            my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
-            my $class= "Entity::Component::" . $comp_name . $comp_version;
+            ($args{category} eq $comptype_category)){
+            $log->debug("One component instance found with " . ref($component_row));
+            my $class= "Entity::Component::" . $comptype_name . $comptype_version;
             my $loc = General::getLocFromClass(entityclass=>$class);
             eval { require $loc; };
-            $comps{$comp_instance_id} = $class->get(id =>$comp_instance_id);
+            $comps{$comp_id} = $class->get(id =>$comp_id);
         }
     }
     return \%comps;
@@ -438,29 +380,29 @@ sub getComponent{
 
     General::checkParams(args => \%args, required => ['name','version']);
 
-    my $hash = {'component.component_name' => $args{name}, 'component.component_version' => $args{version}};
-    my $comp_instance_rs = $self->{_dbix}->search_related("component_instances", $hash,
-                                            { '+columns' => {"component_name" => "component.component_name",
-                                                            "component_version" => "component.component_version",
-                                                            "component_category" => "component.component_category"},
-                                                    join => ["component"]});
+    my $hash = {'component_type.component_name' => $args{name}, 'component_type.component_version' => $args{version}};
+    my $components_rs = $self->{_dbix}->parent->search_related("components", $hash,
+                                            { '+columns' => {"component_name" => "component_type.component_name",
+                                                            "component_version" => "component_type.component_version",
+                                                            "component_category" => "component_type.component_category"},
+                                                    join => ["component_type"]});
 
     $log->debug("name is $args{name}, version is $args{version}");
-    my $comp_instance_row = $comp_instance_rs->next;
-    if (not defined $comp_instance_row) {
+    my $component_row = $components_rs->next;
+    if (not defined $component_row) {
         throw Kanopya::Exception::Internal(error => "Component with name '$args{name}' version $args{version} not installed on this cluster");
     }
-    $log->debug("Comp name is " . $comp_instance_row->get_column('component_name'));
-    $log->debug("Component instance found with " . ref($comp_instance_row));
-    my $comp_category = $comp_instance_row->get_column('component_category');
-    my $comp_instance_id = $comp_instance_row->get_column('component_instance_id');
-    my $comp_name = $comp_instance_row->get_column('component_name');
-    my $comp_version = $comp_instance_row->get_column('component_version');
+    $log->debug("Comp name is " . $component_row->get_column('component_name'));
+    $log->debug("Component found with " . ref($component_row));
+    my $comp_category = $component_row->get_column('component_category');
+    my $comp_id = $component_row->id;
+    my $comp_name = $component_row->get_column('component_name');
+    my $comp_version = $component_row->get_column('component_version');
 #    my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
     my $class= "Entity::Component::" . $comp_name . $comp_version;
     my $loc = General::getLocFromClass(entityclass=>$class);
     eval { require $loc; };
-    return "$class"->get(id =>$comp_instance_id);
+    return "$class"->get(id =>$comp_id);
 }
 
 sub getComponentByInstanceId{
@@ -515,7 +457,7 @@ sub getSystemImage {
 sub getMasterNodeIp {
     my $self = shift;
     my $adm = Administrator->new();
-    my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
+    my $node_instance_rs = $self->{_dbix}->parent->search_related("nodes", { master_node => 1 })->single;
     if(defined $node_instance_rs) {
          my $host_ipv4_internal_id = $node_instance_rs->host->get_column('host_ipv4_internal_id');
          my $node_ip = $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $host_ipv4_internal_id)->{ipv4_internal_address};
@@ -529,7 +471,7 @@ sub getMasterNodeIp {
 
 sub getMasterNodeId {
     my $self = shift;
-    my $node_instance_rs = $self->{_dbix}->search_related("nodes", { master_node => 1 })->single;
+    my $node_instance_rs = $self->{_dbix}->parent->search_related("nodes", { master_node => 1 })->single;
     if(defined $node_instance_rs) {
         my $id = $node_instance_rs->host->get_column('host_id');
         return $id;
@@ -540,8 +482,7 @@ sub getMasterNodeId {
 
 =head2 addComponent
 
-create a new component instance
-this is the first step of cluster setting
+link a existing component with the cluster
 
 =cut
 
@@ -550,24 +491,39 @@ sub addComponent {
     my %args = @_;
     my $noconf;
 
-    General::checkParams(args => \%args, required => ['component_id']);
+    General::checkParams(args => \%args, required => ['component']);
 
-    if(defined $args{noconf}){
-        $noconf = $args{noconf};
-        delete $args{noconf};
-    }
-    my $componentinstance = Entity::Component->new(%args, cluster_id => $self->getAttr(name => "cluster_id"));
-    my $component_instance_id = $componentinstance->save();
+	my $component = $args{component};
+    $component->setAttr(name => 'inside_id', value => $self->getAttr(name => 'cluster_id'));
+    $component->save();
 
-    my $internal_cluster = Entity::Cluster->getCluster(hash => {cluster_name => 'adm'});
-    $log->info('internal cluster;'.Dumper($internal_cluster));
-    # Insert default configuration in db
-    # Remark: we must get concrete instance here because the component->new (above) return an Entity::Component and not a concrete child component
-    #          There must be a way to do this more properly (component management).
-    my $concrete_component = Entity::Component->getInstance(id => $component_instance_id);
-    if (! $noconf) {
-        $concrete_component->insertDefaultConfiguration(internal_cluster => $internal_cluster);}
-    return $component_instance_id;
+    return $component->{_dbix}->id;
+}
+
+=head2 addComponentFromType
+
+create a new componant and link it to the cluster 
+
+=cut
+
+sub addComponentFromType {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['component_type_id']);
+	my $type_id = $args{component_type_id};
+	my $adm = Administrator->new();
+	my $row = $adm->{db}->resultset('ComponentType')->find($type_id);
+	my $comp_name = $row->get_column('component_name');	
+	my $comp_version = $row->get_column('component_version');
+	my $comp_class = 'Entity::Component::'.$comp_name.$comp_version;
+	my $location = General::getLocFromClass(entityclass => $comp_class);
+	eval {require $location };
+	my $component = $comp_class->new();
+	$component->setAttr(name => 'inside_id', value => $self->getAttr(name => 'cluster_id'));
+    $component->save();
+
+    return $component->{_dbix}->id;
 }
 
 =head2 removeComponent
@@ -600,7 +556,7 @@ sub removeComponent {
 sub getHosts {
     my $self = shift;
 
-    my $host_rs = $self->{_dbix}->nodes;
+    my $host_rs = $self->{_dbix}->parent->nodes;
     my %hosts;
     while ( my $node_row = $host_rs->next ) {
         my $host_row = $node_row->host;
@@ -622,7 +578,7 @@ sub getHosts {
 
 sub getCurrentNodesCount {
     my $self = shift;
-    my $nodes = $self->{_dbix}->nodes;
+    my $nodes = $self->{_dbix}->parent->nodes;
     if ($nodes) {
     return $nodes->count;}
     else {
@@ -694,7 +650,7 @@ sub addNode {
             $args{cluster_id} = $self->getAttr(name =>"cluster_id");
             my $cluster_constraints = $self->getHostConstraints();
             if ($cluster_constraints && defined $args{type}){
-                if ($cluster_constraints->[0] ne $args{type}){
+                if ($cluster_constraints ne $args{type}){
                     throw Kanopya::Exception(error => "Cluster constraints ($cluster_constraints->[0]) and host type chosen by the user ($args{type}) are different");
                 }
             }
@@ -703,9 +659,9 @@ sub addNode {
             if (!defined $args{type} || $args{type} eq "virtual") {
                 my @clusters;
                 if (defined $args{cloud_cluster_id}){
-                    push @clusters, Entity::Cluster->get( id => $args{cloud_cluster_id});
+                    push @clusters, Entity::ServiceProvider::Inside::Cluster->get( id => $args{cloud_cluster_id});
                 } else {
-                    @clusters = $self->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+                    @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
                 }
                 $args{clusters} = \@clusters;
             }
@@ -769,7 +725,7 @@ sub removeNode {
         cluster_id => $self->getAttr(name =>"cluster_id"),
         host_id => $args{host_id},
     );
-    $log->debug("New Operation AddHostInCluster with attrs : " . %params);
+    $log->debug("New Operation PreStopNode with attrs : " . %params);
 
     Operation->enqueue(
         priority => 200,

@@ -107,12 +107,12 @@ __PACKAGE__->belongs_to(
   "virtualserver",
   "AdministratorDB::Schema::Result::Keepalived1Virtualserver",
   { virtualserver_id => "virtualserver_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mCfoaUBN4yed+CeRLnORMw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 17:01:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:08eRAcLFFIDYczmFbybr+w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

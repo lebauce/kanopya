@@ -23,7 +23,7 @@ __PACKAGE__->table("distribution");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 distribution_name
@@ -65,7 +65,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "distribution_name",
@@ -108,6 +108,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 distribution
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "distribution",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "distribution_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 etc_device
 
 Type: belongs_to
@@ -120,7 +135,12 @@ __PACKAGE__->belongs_to(
   "etc_device",
   "AdministratorDB::Schema::Result::Lvm2Lv",
   { lvm2_lv_id => "etc_device_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 root_device
@@ -135,22 +155,12 @@ __PACKAGE__->belongs_to(
   "root_device",
   "AdministratorDB::Schema::Result::Lvm2Lv",
   { lvm2_lv_id => "root_device_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 distribution_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::DistributionEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "distribution_entity",
-  "AdministratorDB::Schema::Result::DistributionEntity",
-  { "foreign.distribution_id" => "self.distribution_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 systemimages
@@ -169,14 +179,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:656+pnRcladlRVZ+xuvWVA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:pg+B4q5YlcvJJUOj3fyLuQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::DistributionEntity",
-    { "foreign.distribution_id" => "self.distribution_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.distribution_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

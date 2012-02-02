@@ -107,12 +107,12 @@ post '/images/add' => sub {
     } # system image creation from a distribution
     elsif(params->{source} eq 'distribution') {    
         eval {
-            my $esystemimage = Entity::Systemimage->new(
+            my %parameters = (
                 systemimage_name => params->{systemimage_name},
                  systemimage_desc => params->{systemimage_desc},
                  distribution_id => params->{distribution_id}, 
             );        
-             $esystemimage->create(); 
+             Entity::Systemimage->create(%parameters); 
         };     
         if($@) {
             my $exception = $@;
@@ -215,7 +215,7 @@ get '/images/:imageid/installcomponent' => sub {
         foreach my $dc  (@$distribution_components) {    
             my $found = 0;
             foreach my $sic (@$systemimage_components) {
-                if($sic->{component_id} eq $dc->{component_id}) { $found = 1; }
+                if($sic->{component_type_id} eq $dc->{component_type_id}) { $found = 1; }
             }
             if(not $found) { push @$components, $dc; };
         } 
@@ -233,7 +233,7 @@ post '/images/:imageid/installcomponent' => sub {
     my $adm = Administrator->new;    
     eval {
         my $esystemimage = Entity::Systemimage->get(id => params->{imageid});
-        $esystemimage->installComponent(component_id => params->{component_id});
+        $esystemimage->installComponent(component_type_id => params->{component_type_id});
     };
     if($@) {
         my $exception = $@;
@@ -275,7 +275,7 @@ get '/images/:imageid' => sub {
     my $components_list = $esystemimage->getInstalledComponents();
     my $nb = scalar(@$components_list);
     foreach my $c (@$components_list) {
-        delete $c->{component_id};
+        delete $c->{component_type_id};
     }
 
     template 'images_details', {

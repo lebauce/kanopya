@@ -5,7 +5,7 @@ use Dancer ':syntax';
 use Administrator;
 use Entity::Host;
 use Entity::Kernel;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Powersupplycard;
@@ -224,7 +224,7 @@ get '/vms/migrate/:host_id' => sub {
 
     my $hypervisors = [];
     my $host = Entity::Host->get(id => params->{'host_id'});
-    my $cluster = Entity::Cluster->get(id => $host->getAttr(name => 'cloud_cluster_id'));
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $host->getAttr(name => 'cloud_cluster_id'));
     my $opennebula = $cluster->getComponent(name => 'opennebula', version => 3);
     my $hypervisors_r = $opennebula->{_dbix}->opennebula3->opennebula3_hypervisors->search({});
     $log->info('<<<<<<<<<<'.ref($hypervisors_r));
@@ -342,7 +342,7 @@ get '/vms/:hostid' => sub {
         ($host_state, $timestamp) = split ':', $ehost->getAttr('name' => 'host_state');
         if($host_state =~ /up|starting/) {
             eval {
-                my $ecluster = Entity::Cluster->get(id => $ehost->getClusterId());
+                my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $ehost->getClusterId());
                 $cluster_name = $ecluster->getAttr('name' => 'cluster_name');
             };
         }

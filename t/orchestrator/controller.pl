@@ -7,7 +7,7 @@ Log::Log4perl->init('/opt/kanopya/conf/orchestrator-log.conf');
 my $log = get_logger("orchestrator");
 
 use Controller;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Administrator;
 use Data::Dumper;
 
@@ -16,7 +16,7 @@ my $adm = Administrator->new();
 
 eval{
     $adm->{db}->txn_begin;
-    my $cluster = Entity::Cluster->new(cluster_name => "foobar", 
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->new(cluster_name => "foobar", 
                  cluster_min_node => "1", 
                  cluster_max_node => "30", 
                  cluster_priority => "100", 

@@ -3,18 +3,27 @@ USE `administrator`;
 SET foreign_key_checks=0;
 
 --
+-- Table structure for table `lvm2`
+--
+
+CREATE TABLE `lvm2` (
+  `lvm2_id` int(8) unsigned NOT NULL,  
+  PRIMARY KEY (`lvm2_id`),
+  CONSTRAINT FOREIGN KEY (`lvm2_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `lvm2_vg`
 --
 
 CREATE TABLE `lvm2_vg` (
   `lvm2_vg_id` int(8) unsigned NOT NULL AUTO_INCREMENT,  
-  `component_instance_id` int(8) unsigned NOT NULL,
+  `lvm2_id` int(8) unsigned NOT NULL,
   `lvm2_vg_name` char(32) NOT NULL,
   `lvm2_vg_freespace` bigint unsigned NOT NULL,
   `lvm2_vg_size` bigint unsigned NOT NULL,
   PRIMARY KEY (`lvm2_vg_id`),
-  KEY `fk_lvm2_vg_1` (`component_instance_id`),
-  CONSTRAINT `fk_lvm2_vg_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT `fk_lvm2_vg_1` FOREIGN KEY (`lvm2_id`) REFERENCES `lvm2` (`lvm2_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

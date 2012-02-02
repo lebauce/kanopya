@@ -6,8 +6,7 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `keepalived1` (
-  `keepalived_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `component_instance_id` int(8) unsigned NOT NULL,
+  `keepalived_id` int(8) unsigned NOT NULL,
   `daemon_method` enum('master','backup','both') NOT NULL DEFAULT 'master',
   `iface` char(64) DEFAULT NULL,
   `notification_email` char(255) DEFAULT 'admin@hedera-technology.com',
@@ -16,8 +15,7 @@ CREATE TABLE `keepalived1` (
   `smtp_connect_timeout` int(2) unsigned NOT NULL DEFAULT 30,
   `lvs_id` char(32) NOT NULL DEFAULT 'MAIN_LVS',
   PRIMARY KEY (`keepalived_id`),
-  UNIQUE KEY `fk_keepalived1_1` (`component_instance_id`),
-  CONSTRAINT `fk_keepalived1_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT `fk_keepalived1_1` FOREIGN KEY (`keepalived_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

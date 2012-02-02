@@ -19,18 +19,18 @@ __PACKAGE__->table("infrastructure");
 
 =head1 ACCESSORS
 
+=head2 infrastructure_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =head2 infrastructure_reference
 
   data_type: 'char'
   is_nullable: 0
   size: 64
-
-=head2 infrastructure_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_auto_increment: 1
-  is_nullable: 0
 
 =head2 infrastructure_min_node
 
@@ -56,27 +56,60 @@ __PACKAGE__->table("infrastructure");
   is_nullable: 0
   size: 15
 
+=head2 infrastructure_name
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
+
+=head2 infrastructure_desc
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
+
+=head2 infrastructure_version
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
+
 =head2 infrastructure_tier_number
 
   data_type: 'integer'
   is_nullable: 1
 
+=head2 infrastructure_state
+
+  data_type: 'char'
+  default_value: 'down'
+  is_nullable: 0
+  size: 32
+
+=head2 infrastructure_prev_state
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
+=head2 infrastructure_priority
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
-  "infrastructure_reference",
-  { data_type => "char", is_nullable => 0, size => 64 },
   "infrastructure_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
-  "infrastructure_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
-  "infrastructure_version",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  "infrastructure_reference",
+  { data_type => "char", is_nullable => 0, size => 64 },
   "infrastructure_min_node",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "infrastructure_max_node",
@@ -85,20 +118,39 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 64 },
   "infrastructure_nameserver",
   { data_type => "char", is_nullable => 0, size => 15 },
+  "infrastructure_name",
+  { data_type => "char", is_nullable => 0, size => 32 },
+  "infrastructure_desc",
+  { data_type => "char", is_nullable => 1, size => 255 },
+  "infrastructure_version",
+  { data_type => "char", is_nullable => 0, size => 32 },
   "infrastructure_tier_number",
   { data_type => "integer", is_nullable => 1 },
   "infrastructure_state",
   { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
   "infrastructure_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
-  "infrastructure_desc",
-  { data_type => "char", is_nullable => 1, size => 255 },
   "infrastructure_priority",
-  { data_type => "integer", is_nullable => 1 },
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("infrastructure_id");
 
 =head1 RELATIONS
+
+=head2 infrastructure
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "infrastructure",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "infrastructure_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 =head2 ipv4_publics
 
@@ -131,15 +183,15 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-10-01 12:16:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dKBdqWDMwJDr3bor0Y5p6Q
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8pZiEXnHLMNzeMqsE0tr4g
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::InfrastructureEntity",
-    { "foreign.infrastructure_id" => "self.infrastructure_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.infrastructure_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 
 1;

@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Component::Iscsitarget1;
 use EFactory;
 
@@ -51,43 +51,8 @@ my $errmsg;
 our $VERSION = '1.00';
 
 
-=head2 new
 
-    my $op = EOperation::ECreateExport->new();
 
-    # Operation::ECreateExport->new installs component on systemimage.
-    # RETURN : EOperation::ECreateExport : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-}
 
 =head2 prepare
 
@@ -113,15 +78,15 @@ sub prepare {
     my $params = $self->_getOperation()->getParams();
     $self->{_objs} = {};
 
-    # test component_instance_id presence
-    if(! exists $params->{component_instance_id} or ! defined $params->{component_instance_id}) {
-        $errmsg = "Operation::ECreateExport need a component_instance_id parameter";
+    # test component_id presence
+    if(! exists $params->{component_id} or ! defined $params->{component_id}) {
+        $errmsg = "Operation::ECreateExport need a component_id parameter";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
     # instanciate component and check its type
-    my $component = Entity::Component->getInstance(id => $params->{component_instance_id});
+    my $component = Entity::Component->getInstance(id => $params->{component_id});
     $self->{component_name} = $component->getComponentAttr()->{component_name};
     if(!(($self->{component_name} eq 'Iscsitarget') or ($self->{component_name} eq 'Nfsd'))) {
         $errmsg = "Operation::ECreateExport need either a Iscstarget or Nfsd component";
@@ -130,7 +95,7 @@ sub prepare {
     }
     
     my $cluster_id =$component->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
     my ($state, $timestamp) = $self->{_objs}->{cluster}->getState();
     if ($state ne 'up'){
         $errmsg = "Cluster has to be up !";
@@ -167,7 +132,7 @@ sub prepare {
         $self->{_objs}->{ecomp_nfsd} = EFactory::newEEntity(data => $component);
     }
     
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
     $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);

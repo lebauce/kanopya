@@ -6,5 +6,5 @@
 #
 # <file system> <mount point>   <type>  <options>       <dump>  <pass>
 [% FOREACH mount=mountdefs %]
-[% mount.mounttable1_device %] [% mount.mounttable1_mountpoint %] [% mount.mounttable1_filesystem %] [% mount.mounttable1_options %] [% mount.mounttable1_dumpfreq %] [% mount.mounttable1_passnum %]
+[% mount.mounttable1_mount_device %] [% mount.mounttable1_mount_point %] [% mount.mounttable1_mount_filesystem %] [% mount.mounttable1_mount_options %] [% mount.mounttable1_mount_dumpfreq %] [% mount.mounttable1_mount_passnum %]
 [% END %]

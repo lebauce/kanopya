@@ -113,34 +113,6 @@ sub methods {
     };
 }
 
-=head2 get
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $admin = Administrator->new();
-    my $dbix_infrastructure = $admin->{db}->resultset('Infrastructure')->find($args{id});
-    if(not defined $dbix_infrastructure) {
-        $errmsg = "Entity::Infrastructure->get : id <$args{id}> not found !";
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    my $entity_id = $dbix_infrastructure->entitylink->get_column('entity_id');
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get infrastructure with id $args{id}");
-    }
-    my $self = $class->SUPER::get( %args,  table => "Infrastructure");
-    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "infrastructuredetails");
-    return $self;
-}
-
 =head2 getInfrastructures
 
 =cut
@@ -148,12 +120,10 @@ sub get {
 sub getInfrastructures {
     my $class = shift;
     my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    return $class->SUPER::getEntities( %args,  type => "Infrastructure");
+    return $class->search(%args);
 }
 
 sub getInfrastructure {
@@ -162,28 +132,8 @@ sub getInfrastructure {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @infrastructures = $class->SUPER::getEntities( %args,  type => "Infrastructure");
+    my @infrastructures = $class->search(%args);
     return pop @infrastructures;
-}
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Infrastructure");
-
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
 }
 
 =head2 create
@@ -191,22 +141,21 @@ sub new {
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %params) = @_;
 
     my $admin = Administrator->new();
-    my $mastergroup_eid = $self->getMasterGroupEid();
+    my $mastergroup_eid = $class->getMasterGroupEid();
        my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
        }
     # Before infrastructure creation check some integrity configuration
     # Check if min node <
-    $log->info("###### Infrastructure creation with min node <".$self->getAttr(name => "infrastructure_min_node") . "> and max node <". $self->getAttr(name=>"infrastructure_max_node").">");
-    if ($self->getAttr(name => "infrastructure_min_node") > $self->getAttr(name=>"infrastructure_max_node")){
-	throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
-    }
+    #$log->info("###### Infrastructure creation with min node <".$self->getAttr(name => "infrastructure_min_node") . "> and max node <". $self->getAttr(name=>"infrastructure_max_node").">");
+    #if ($self->getAttr(name => "infrastructure_min_node") > $self->getAttr(name=>"infrastructure_max_node")){
+	#throw Kanopya::Exception::Internal::WrongValue(error=> "Min node is superior to max node");
+    #}
 
-    my %params = $self->getAttrs();
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
         priority => 200,

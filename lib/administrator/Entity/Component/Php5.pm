@@ -64,37 +64,15 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Tool component and concretly Php5.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Php5 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
     my $self = shift;
 
     my $conf = { php5_session_handler => "files", php5_session_path => "/var/lib/php5" };
 
-    my $confindb = $self->{_dbix}->php5s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         my %row = $confindb->get_columns(); 
         $conf = \%row;        
@@ -109,24 +87,20 @@ sub setConf {
     
     if(not $conf->{php5_id}) {
         # new configuration -> create
-        $self->{_dbix}->php5s->create($conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->php5s->update($conf);
+        $self->{_dbix}->update($conf);
     }
     
 }
 
-# Insert default configuration in db for this component 
-sub insertDefaultConfiguration() {
-    my $self = shift;
-    
-    my $default_conf = {
+sub getBaseConfiguration {
+    return {
         php5_session_path => "/var/lib/php5",
     };
-    
-    $self->{_dbix}->php5s->create( $default_conf );
 }
+
 
 =head1 DIAGNOSTICS
 

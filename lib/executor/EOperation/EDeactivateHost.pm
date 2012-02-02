@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 
 my $log = get_logger("executor");
 my $errmsg;

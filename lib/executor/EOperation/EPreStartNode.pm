@@ -42,7 +42,7 @@ use base "EOperation";
 
 use Kanopya::Exceptions;
 use EFactory;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Operation;
 use strict;
@@ -128,7 +128,7 @@ sub prepare {
     
     #### Get instance of Cluster Entity
     $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
     #### Get cluster components Entities
@@ -172,7 +172,7 @@ sub execute {
     $log->debug("Node number for this new node: $node_number");
     
     $self->{_objs}->{host}->becomeNode(
-		cluster_id  => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+		inside_id  => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
         master_node => 0,
         node_number => $node_number,
     );
@@ -185,7 +185,7 @@ sub _cancel {
 
     my $params = $self->_getOperation()->getParams();
 
-    my $cluster = Entity::Cluster->get(id => $params->{cluster_id});
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     my $hosts = $cluster->getHosts();
     if (! scalar keys %$hosts) {
         $cluster->setState(state => 'down');

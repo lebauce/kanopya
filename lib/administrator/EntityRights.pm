@@ -71,16 +71,11 @@ sub _getEntityIds {
     # retrieve entity_id of groups containing this entity object
     my @groups = $self->{schema}->resultset('Gp')->search( 
         { 'ingroups.entity_id' => $args{entity_id} },
-        { 
-            columns     => [],                                     # use no columns from Groups table
-            '+columns' => {'entity_id' => 'gp_entity.entity_id'},
-#            '+columns'     => [ 'gp_entity.entity_id' ],     # but add the entity_id column from groups_entity related table
-            join         => [qw/ingroups gp_entity/],
-        }
+        { join                 => [qw/ingroups gp_entity/] }
     );
     # add entity_id groups to the arrayref
     foreach my $g (@groups) { 
-        push @$ids, $g->get_column('entity_id');
+        push @$ids, $g->id;
     }
     
     return $ids;

@@ -6,6 +6,8 @@ use Log::Log4perl "get_logger";
 use Administrator;
 use Entity::User;
 use Entity::Gp;
+use Entity::ServiceProvider::Inside::Cluster;
+use Data::Dumper;
 
 prefix '/rights';
 
@@ -93,7 +95,19 @@ get '/users/:userid/delete' => sub {
 get '/users/:userid' => sub {
     my $user_id = param('userid');
     my $euser = eval { Entity::User->get(id => $user_id) };
-    if($@) {
+    my @cluster = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { user_id => $user_id } );
+    my $clusters = [];
+    foreach my $ec (@cluster)
+    {
+		my $cluster_id= $ec->getAttr(name => 'cluster_id');
+		my $tmpc = {};
+        $tmpc->{cluster_name}     = $ec->getAttr(name => 'cluster_name');
+        $tmpc->{url}        = "http://10.0.0.1:5000/architectures/clusters/$cluster_id";
+        
+         push(@$clusters, $tmpc);
+	}
+    
+       if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             my $adm = Administrator->new;
@@ -128,6 +142,7 @@ get '/users/:userid' => sub {
         user_creationdate => $euser->getAttr('name' => 'user_creationdate'),
         user_lastaccess   => $euser->getAttr('name' => 'user_lastaccess'),
         gp_list           => $groups,
+        clusters_list     => $clusters,
         can_update        => $methods->{'update'}->{'granted'},
         can_delete        => $methods->{'remove'}->{'granted'},
         can_setperm       => $methods->{'setperm'}->{'granted'},

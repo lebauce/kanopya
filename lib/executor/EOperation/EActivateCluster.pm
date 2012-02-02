@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
 
@@ -132,7 +132,7 @@ sub prepare {
 
      # Cluster instantiation
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
         my $err = $@;

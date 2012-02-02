@@ -30,67 +30,15 @@ use Administrator;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 get
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
 
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing NFSd component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Nfsd3 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component::Nfsd31->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   return $self;
-}
-
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Export component and concretly Nfsd3.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Nfsd3 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-        (! exists $args{component_id} or ! defined $args{component_id})){ 
-        $errmsg = "Entity::Component::Nfsd3->new need a cluster_id and a component_id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
 
 sub getConf {
     my $self = shift;
     my %conf = ( );
     
-    my $conf_row = $self->{_dbix}->nfsd3s->first;
+    my $conf_row = $self->{_dbix};
     if($conf_row) {
         $conf{nfsd3_statdopts} = $conf_row->get_column('nfsd3_statdopts');
         $conf{nfsd3_need_gssd} = $conf_row->get_column('nfsd3_need_gssd');
@@ -150,11 +98,11 @@ sub setConf {
 #    my($conf) = @_;
 #    
 #    # delete old conf        
-#    my $conf_row = $self->{_dbix}->nfsd3s->first();
+#    my $conf_row = $self->{_dbix};
 #    $conf_row->delete() if (defined $conf_row); 
 #
 #    # create
-#    $conf_row = $self->{_dbix}->nfsd3s->create( {
+#    $conf_row = $self->{_dbix}->create( {
 #        nfsd3_statdopts => $conf->{nfsd3_statdopts},
 #        nfsd3_need_gssd => $conf->{nfsd3_need_gssd},
 #        nfsd3_rpcnfsdcount => $conf->{nfsd3_rpcnfsdcount},
@@ -209,7 +157,7 @@ sub addExport {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $component = $self->{_dbix}->nfsd3s->first;
+    my $component = $self->{_dbix};
     my $export = $component->nfsd3_exports->create({
         nfsd3_export_path => $args{device}
     });
@@ -234,7 +182,7 @@ sub addExportClient {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $component = $self->{_dbix}->nfsd3s->first;
+    my $component = $self->{_dbix};
     my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}})->nfsd3_exportclients;
     my $exportclient = $exportclient_rs->create({
         nfsd3_exportclient_name => $args{client_name},
@@ -258,7 +206,7 @@ sub removeExport {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $component = $self->{_dbix}->nfsd3s->first;
+    my $component = $self->{_dbix};
     return $component->nfsd3_exports->find($args{nfsd3_export_id})->delete();
 }
 
@@ -285,7 +233,7 @@ sub removeExportClient {
 sub getTemplateDataExports {
     my $self = shift;
     my $data = {};
-    my $general_config = $self->{_dbix}->nfsd3s->first;
+    my $general_config = $self->{_dbix};
     if(not $general_config) {
         # TODO throw exception then no configuration
     } 
@@ -313,7 +261,7 @@ sub getTemplateDataExports {
 sub getTemplateDataNfsCommon {
     my $self = shift;
     my $data = {};
-    my $general_config = $self->{_dbix}->nfsd3s->first;
+    my $general_config = $self->{_dbix};
     if(not $general_config) {
         # TODO throw exception then no configuration
     } 
@@ -327,7 +275,7 @@ sub getTemplateDataNfsCommon {
 sub getTemplateDataNfsKernelServer {
     my $self = shift;
     my $data = {};
-    my $general_config = $self->{_dbix}->nfsd3s->first;
+    my $general_config = $self->{_dbix};
     if(not $general_config) {
         # TODO throw exception then no configuration
     } 
@@ -365,7 +313,7 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            component_id => $self->getAttr(name=>'component_id'),
             device => $args{device},
             client_name => $args{client_name},
             client_options => $args{client_options}

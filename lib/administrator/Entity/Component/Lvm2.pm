@@ -66,54 +66,8 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 get
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing Lvm2 component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Lvm2 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args=>\%args, required=>["id"]);
-
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   return $self;
-}
-
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Storage component and concretly Lvm2.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Lvm2 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    General::checkParams(args=>\%args, required=>["cluster_id", "component_id"]);
-
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
 
 sub getMainVg{
     my $self = shift;
@@ -206,7 +160,7 @@ sub setConf {
 
     my $vg_id = $conf->{lvm2_vg_id};
     for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
-        $self->createLogicalVolume(    vg_id => $vg_id,
+        $self->createLogicalVolume( vg_id => $vg_id,
                                     disk_name => $new_lv->{lvm2_lv_name},
                                     size => $new_lv->{lvm2_lv_size},
                                     filesystem => $new_lv->{lvm2_lv_filesystem});
@@ -225,7 +179,7 @@ sub createLogicalVolume {
         priority => 200,
         type     => 'CreateLogicalVolume',
         params   => {
-            component_instance_id => $self->getAttr(name=>'component_instance_id'),
+            component_id => $self->getAttr(name => 'lvm2_id'),
             disk_name => $args{disk_name},
             size => $args{size},
             filesystem => $args{filesystem},

@@ -54,13 +54,13 @@ sub enqueue {
     
     my $params = $args{params};
     my @hash_keys = keys %$params;
-    foreach my $key (@hash_keys) {
-        if (! defined $params->{$key}){
-            $errmsg = "Operation->enqueue needs defined params";
-            $log->error($errmsg); 
-            throw Kanopya::Exception::Internal(error => $errmsg);
-        }
-    }
+    #foreach my $key (@hash_keys) {
+    #    if (! defined $params->{$key}){
+    #        $errmsg = "Operation->enqueue needs defined params ($key is undef)";
+    #        $log->error($errmsg); 
+    #        throw Kanopya::Exception::Internal(error => $errmsg);
+    #    }
+    #}
     my $adm = Administrator->new();
     my $nbparams = scalar(@hash_keys);
     my $whereclause = [];
@@ -104,14 +104,19 @@ sub new {
     my $execution_rank = $adm->_get_lastRank() + 1;
     my $user_id = $adm->{_rightchecker}->{user_id};
     
-    $self->{_dbix} = $adm->_newDbix( table => 'Operation', row => {     type => $args{type},
-                                                                    execution_rank => $execution_rank,
-                                                                    user_id => $user_id,
-                                                                    priority => $args{priority},
-                                                                    creation_date => \"CURRENT_DATE()",
-                                                                    creation_time => \"CURRENT_TIME()",
-                                                                    hoped_execution_time => $hoped_execution_time
-                                                                    });
+    $self->{_dbix} = $adm->_newDbix( 
+		table => 'Operation', 
+		row => {
+			type                 => $args{type},
+			execution_rank       => $execution_rank,
+			user_id              => $user_id,
+			priority             => $args{priority},
+			creation_date        => \"CURRENT_DATE()",
+			creation_time        => \"CURRENT_TIME()",
+			hoped_execution_time => $hoped_execution_time
+		}
+	);
+    
     $self->{_params} = $args{params};
     bless $self, $class;
 
@@ -210,15 +215,19 @@ sub delete {
         $op_status = "Cancelled";
     }
     my $params = $self->getParams();
-    my $new_old_op = $adm->_newDbix( table => 'OldOperation', row => {type => $self->getAttr(attr_name =>"type"),
-                                                                    user_id => $self->getAttr(attr_name =>"user_id"),
-                                                                    priority => $self->getAttr(attr_name =>"priority"),
-                                                                    creation_date =>$self->getAttr(attr_name =>"creation_date"),
-                                                                    creation_time => $self->getAttr(attr_name =>"creation_time"),
-                                                                    execution_date => \"CURRENT_DATE()",
-                                                                    execution_time => \"CURRENT_TIME()",
-                                                                    execution_status => $op_status,
-                                                                    });
+    my $new_old_op = $adm->_newDbix(
+		table => 'OldOperation',
+		row => {
+			type             => $self->getAttr(attr_name =>"type"),
+			user_id          => $self->getAttr(attr_name =>"user_id"),
+			priority         => $self->getAttr(attr_name =>"priority"),
+			creation_date    => $self->getAttr(attr_name =>"creation_date"),
+			creation_time    => $self->getAttr(attr_name =>"creation_time"),
+			execution_date   => \"CURRENT_DATE()",
+			execution_time   => \"CURRENT_TIME()",
+			execution_status => $op_status,
+		}
+	);
     $new_old_op->insert;
     foreach my $k (keys %$params) {
         $new_old_op->create_related( 'old_operation_parameters', { name => $k, value => $params->{$k} } );}
@@ -292,7 +301,6 @@ sub getParams {
 
 sub save {
     my $self = shift;
-
     my $newentity = $self->{_dbix}->insert;
     my $params = $self->{_params};
     

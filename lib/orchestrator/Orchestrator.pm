@@ -51,7 +51,7 @@ use Monitor::Retriever;
 use XML::Simple;
 use General;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
 use Log::Log4perl "get_logger";
@@ -131,7 +131,7 @@ sub manage {
 
         eval {
             #TODO keep cluster id from the beginning (get by name is not really good)
-            my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
+            my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
         
             my $rules_manager = $self->{_admin}->{manager}{rules};
             
@@ -492,7 +492,7 @@ sub _isOpInQueue {
     my $adm = $self->{_admin};
 
     #TODO keep cluster id from the beginning (get by name is not really good)
-    my $cluster_id = Entity::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
+    my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
         
     
     foreach my $op ( @{ $adm->getOperations() } ) {
@@ -639,7 +639,7 @@ sub getClusterByName {
     my $self = shift;
     my %args = @_;
 
-       my @cluster = Entity::Cluster->getClusters( hash => { cluster_name => $args{cluster_name} } );
+       my @cluster = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_name => $args{cluster_name} } );
        die "More than one cluster with the name '$args{cluster_name}'" if ( 1 < @cluster);
        die "Cluster with name '$args{cluster_name}' no longer exists" if ( 0 == @cluster);
        return pop @cluster;

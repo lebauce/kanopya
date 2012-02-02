@@ -46,7 +46,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 use Entity::Host;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Kernel;
 use Entity::Hostmodel;
 use Entity::Processormodel;
@@ -58,37 +58,8 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
 
-    my $op = EEntity::EOperation::EAddHost->new();
-
-EEntity::Operation::EAddHost->new creates a new AddMotheboard operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
-
-sub checkOp{
+sub checkOp {
     my $self = shift;
     my %args = @_;
     
@@ -132,8 +103,12 @@ sub checkOp{
 
     
     # check mac address unicity
-    $log->debug("checking unicity of mac address <".$self->{_objs}->{host}->getAttr(name=>'host_mac_address'). ">");
-    if (defined Entity::Host->getHost(hash => {host_mac_address => $self->{_objs}->{host}->getAttr(name=>'host_mac_address')})){
+    my $mac = $self->{_objs}->{host}->getAttr(name=>'host_mac_address');
+    $log->debug("checking unicity of mac address <$mac>");
+    my $truc = Entity::Host->getHost(hash => { host_mac_address => $mac });
+    $log->debug(ref($truc));
+    
+    if (defined $truc){
         $errmsg = "Operation::AddHost->new : host_mac_address ". $self->{_objs}->{host}->getAttr(name=>'host_mac_address') ." already exist";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -174,6 +149,7 @@ sub prepare {
     # First review params 
     ## Put in lowcase mac address
     $params->{host_mac_address} = lc($params->{host_mac_address});
+    
     ## When powersupply is used, we save value in Operation to use %$params to instantiate host
     if ((exists $params->{powersupplycard_id} && defined $params->{powersupplycard_id})&&
         ( exists $params->{powersupplyport_number} && defined $params->{powersupplyport_number})){
@@ -206,21 +182,22 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation EAddHost failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+    
+    #eval {
+    #    $self->checkOp(params => $params);
+    #};
+    #if ($@) {
+    #    my $error = $@;
+    #    $errmsg = "Operation EAddHost failed an error occured :\n$error";
+    #    $log->error($errmsg);
+    #    throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    #}
     
     ## Instanciate Clusters
     # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     
     ## Get Internal IP
     # Get Internal Ip address of Master node of cluster Executor
@@ -246,7 +223,7 @@ sub prepare {
     
 }
 
-sub execute{
+sub execute {
     my $self = shift;
 
     my $adm = Administrator->new();

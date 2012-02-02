@@ -49,7 +49,7 @@ use Entity::Infrastructure;
 use Entity::Systemimage;
 use Entity::Distribution;
 use Entity::Tier;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use EEntity::EComponent::ELvm2;
 use EEntity::EComponent::EIscsitarget1;
 use EEntity::EComponent::ENfsd3;
@@ -117,7 +117,7 @@ sub prepare {
     $self->{_objs} = {};
     
     # Load Nas Cluster
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
 
     # Instanciate Storage component.
@@ -315,7 +315,7 @@ sub execute {
                         tier_poststart_script   => $tier->{data}->[0]->{init_script}};
 
         # Cluster instantiation
-        $self->{_objs}->{clusters}->[$i] = Entity::Cluster->new(%$cluster);
+        $self->{_objs}->{clusters}->[$i] = Entity::ServiceProvider::Inside::Cluster->new(%$cluster);
         # Cluster Activation 
         $self->{_objs}->{clusters}->[$i]->setAttr(name => 'active', value => 1);
         # Save Cluster

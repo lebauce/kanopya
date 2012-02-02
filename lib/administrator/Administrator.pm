@@ -138,10 +138,7 @@ sub authenticate {
         {
             user_login => $args{login},
             user_password => md5_hex($args{password}),
-        },{
-            '+columns' => {'entity_id' => 'user_entity.entity_id'},
-            join => ['user_entity'],
-        },
+        }
     )->single;
 
     if(not defined $user_data) {
@@ -150,7 +147,7 @@ sub authenticate {
     } else {
         $log->info("Authentication succeed for login ".$args{login});
         #$rchecker = EntityRights::build(dbixuser => $user_data, schema => $schema);
-        $ENV{EID} = $user_data->get_column('entity_id');
+        $ENV{EID} = $user_data->id;
     }
 }
 
@@ -185,9 +182,7 @@ sub buildEntityRights {
 
     General::checkParams(args => \%args, required => ['schema']);
 
-    my $user = $args{schema}->resultset('User')->search({ 'user_entity.entity_id' => $ENV{EID}},
-         { join => ['user_entity'] }
-    )->single;
+    my $user = $args{schema}->resultset('User')->find($ENV{EID});
 
     if($user->get_column('user_system')) {
         #$log->debug("EntityRights build a new EntityRights::System with EID ".$ENV{EID});
@@ -256,27 +251,38 @@ sub new {
 # It is used to get a row from an id in a specific table
 
 sub getRow {
-    my $self = shift;
+	my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['id', 'table']);
 
-    # entity_dbix will contain resultset row integrated into Entity
-    # entity_class is Entity Class
-    my ($entity_dbix, $entity_class);
-    $entity_dbix = $self->_getDbix( table => $args{table}, id => $args{id} );
-
-    # Test if Dbix is get
-    if ( defined $entity_dbix ) {
-        # Extension Entity Management
-        return $entity_dbix;
-    } else {
-        $errmsg = "Administrator::getRow(".join(', ', map( { "$_ => $args{$_}" } keys(%args) )). ") : Object not found!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-        return;
+    if ((! exists $args{table} or ! defined $args{table}) ||
+        (! exists $args{id} or ! defined $args{id})) {
+            $errmsg = "Administrator->getRow need a table and id named argument!";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
+
+    my $dbix;
+    eval {
+        $dbix = $self->{db}->resultset( $args{table} )->find( $args{id} );
+	};
+    
+    if ($@) {
+        $errmsg = "Administrator->getRow error ".$@;
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+    }
+    
+    if(not $dbix) {
+		$errmsg = "Administrator->getRow : no row found with id $args{id} in table $args{table}";
+        $log->error($errmsg);
+        throw Kanopya::Exception::DB(error => $errmsg);
+	}
+    
+    return $dbix;
+}	
+
 
 =head2 _getLastRank
 
@@ -286,7 +292,7 @@ sub getRow {
 
 =cut
 
-sub _get_lastRank{
+sub _get_lastRank {
     my $self = shift;
     my $row = $self->{db}->resultset('Operation')->search(undef, {column => 'execution_rank', order_by=> ['execution_rank desc']})->first;
     if (! $row) {
@@ -315,32 +321,7 @@ sub _get_lastRank{
 
 =cut
 
-sub _getDbix {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => ['id', 'table']);
-
-    if ((! exists $args{table} or ! defined $args{table}) ||
-        (! exists $args{id} or ! defined $args{id})) {
-            $errmsg = "Administrator->_getDbix need a table and id named argument!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    my $dbix;
-    eval {
-        $dbix = $self->{db}->resultset( $args{table} )->find(  $args{id},
-                                        {'+columns' => {'entity_id' => 'entitylink.entity_id'},  
-#                                            '+columns' => [ {entity_id => "entitylink.entity_id"} ],
-                                        join => ["entitylink"] });};
-    if ($@) {
-        $errmsg = "Administrator->_getDbix error ".$@;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    return $dbix;
-}
 
 =head2 Administrator::_getDbixFromHash(%args)
 
@@ -362,30 +343,16 @@ sub _getDbixFromHash {
     General::checkParams(args => \%args, required => ['table', 'hash']);
 
     my $dbix;
-    my $entitylink = lc($args{table})."_entity";
     eval {
         my $hash = $args{hash};
-        if (keys(%$hash)){
-
-            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash},
-                                        {'+columns' => {'entity_id' => "$entitylink.entity_id"},
-                                         join => ["$entitylink"] });
-#                                                 '+columns' => [ "$entitylink.entity_id" ],
-#                                        join => ["$entitylink"] });
+        if (keys(%$hash)) {
+            $dbix = $self->{db}->resultset( $args{table} )->search( $args{hash} );
+        } else {
+            $dbix = $self->{db}->resultset( $args{table} )->search( undef );
         }
-        else {
-            $dbix = $self->{db}->resultset( $args{table} )->search( undef,
-                                            {'+columns' => {'entity_id' => "$entitylink.entity_id"},
-                                         join => ["$entitylink"] });
-#                                        {     '+columns' => [ "$entitylink.entity_id" ],
-#                                        join => ["$entitylink"] });
-        }
-#        $dbix = $self->{db}->resultset( $args{table} )->search( $search_param,
-#                                        {'+columns' => {'entity_id' => 'entitylink.entity_id'},
-#                                         join => ["entitylink"] });
     };
     if ($@) {
-        $errmsg = "Administrator->_getDbix error ".$@;
+        $errmsg = "Administrator->_getDbixFromHash error ".$@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error =>  $errmsg);
     }
@@ -411,10 +378,7 @@ sub _getAllDbix {
     General::checkParams(args => \%args, required => ['table']);
 
     my $entitylink = lc($args{table})."_entity";
-    return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => {'entity_id' => "$entitylink.entity_id"},
-        join => ["$entitylink"]});
-#    return $self->{db}->resultset( $args{table} )->search(undef, {'+columns' => [ "$entitylink.entity_id" ],
-#        join => ["$entitylink"]});
+    return $self->{db}->resultset( $args{table} )->search(undef);
 }
 
 =head2 _newDbix
@@ -437,7 +401,7 @@ sub _newDbix {
 
     General::checkParams(args => \%args, required => ['table', 'row']);
 
-    my $new_obj = $self->{db}->resultset($args{table} )->new( $args{row});
+    my $new_obj = $self->{db}->resultset($args{table})->new($args{row});
     return $new_obj;
 }
 

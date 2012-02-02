@@ -6,5 +6,5 @@
   <nas dest="lib/administrator/AdministratorDB/Schema/Result/Php5.pm" src="lib/administrator/AdministratorDB/Schema/Result/Php5.pm" />
   <nas dest="scripts/database/mysql/schemas/components/php5.sql" src="scripts/database/mysql/schemas/components/php5.sql" />
   <nas dest="lib/administrator/AdministratorDB/Component/Php5Instance.pm" src="lib/administrator/AdministratorDB/Component/Php5Instance.pm" />
-  <nas dest="ui/web/KanopyaUI/templates/Components/form_php5.tmpl" src="ui/web/KanopyaUI/templates/Components/form_php5.tmpl" />
+  <nas dest="ui/Frontend/views/components/php5.tt" src="ui/Frontend/views/components/php5.tt" />
 </info>

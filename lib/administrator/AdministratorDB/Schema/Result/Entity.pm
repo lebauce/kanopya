@@ -41,48 +41,48 @@ __PACKAGE__->set_primary_key("entity_id");
 
 =head1 RELATIONS
 
-=head2 cluster_entity
+=head2 component
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::ClusterEntity>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->might_have(
-  "cluster_entity",
-  "AdministratorDB::Schema::Result::ClusterEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "component",
+  "AdministratorDB::Schema::Result::Component",
+  { "foreign.component_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 component_instance_entity
+=head2 connector
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstanceEntity>
+Related object: L<AdministratorDB::Schema::Result::Connector>
 
 =cut
 
 __PACKAGE__->might_have(
-  "component_instance_entity",
-  "AdministratorDB::Schema::Result::ComponentInstanceEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "connector",
+  "AdministratorDB::Schema::Result::Connector",
+  { "foreign.connector_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 distribution_entity
+=head2 distribution
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::DistributionEntity>
+Related object: L<AdministratorDB::Schema::Result::Distribution>
 
 =cut
 
 __PACKAGE__->might_have(
-  "distribution_entity",
-  "AdministratorDB::Schema::Result::DistributionEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "distribution",
+  "AdministratorDB::Schema::Result::Distribution",
+  { "foreign.distribution_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -116,18 +116,63 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 gp_entity
+=head2 gp
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::GpEntity>
+Related object: L<AdministratorDB::Schema::Result::Gp>
 
 =cut
 
 __PACKAGE__->might_have(
-  "gp_entity",
-  "AdministratorDB::Schema::Result::GpEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "gp",
+  "AdministratorDB::Schema::Result::Gp",
+  { "foreign.gp_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 host
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Host>
+
+=cut
+
+__PACKAGE__->might_have(
+  "host",
+  "AdministratorDB::Schema::Result::Host",
+  { "foreign.host_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 hostmodel
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Hostmodel>
+
+=cut
+
+__PACKAGE__->might_have(
+  "hostmodel",
+  "AdministratorDB::Schema::Result::Hostmodel",
+  { "foreign.hostmodel_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 infrastructure
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Infrastructure>
+
+=cut
+
+__PACKAGE__->might_have(
+  "infrastructure",
+  "AdministratorDB::Schema::Result::Infrastructure",
+  { "foreign.infrastructure_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -146,174 +191,129 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 kernel_entity
+=head2 kernel
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::KernelEntity>
+Related object: L<AdministratorDB::Schema::Result::Kernel>
 
 =cut
 
 __PACKAGE__->might_have(
-  "kernel_entity",
-  "AdministratorDB::Schema::Result::KernelEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "kernel",
+  "AdministratorDB::Schema::Result::Kernel",
+  { "foreign.kernel_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 message_entity
+=head2 powersupplycard
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::MessageEntity>
+Related object: L<AdministratorDB::Schema::Result::Powersupplycard>
 
 =cut
 
 __PACKAGE__->might_have(
-  "message_entity",
-  "AdministratorDB::Schema::Result::MessageEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "powersupplycard",
+  "AdministratorDB::Schema::Result::Powersupplycard",
+  { "foreign.powersupplycard_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 host_entity
+=head2 powersupplycardmodel
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::HostEntity>
+Related object: L<AdministratorDB::Schema::Result::Powersupplycardmodel>
 
 =cut
 
 __PACKAGE__->might_have(
-  "host_entity",
-  "AdministratorDB::Schema::Result::HostEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "powersupplycardmodel",
+  "AdministratorDB::Schema::Result::Powersupplycardmodel",
+  { "foreign.powersupplycardmodel_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 hostmodel_entity
+=head2 processormodel
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::HostmodelEntity>
+Related object: L<AdministratorDB::Schema::Result::Processormodel>
 
 =cut
 
 __PACKAGE__->might_have(
-  "hostmodel_entity",
-  "AdministratorDB::Schema::Result::HostmodelEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "processormodel",
+  "AdministratorDB::Schema::Result::Processormodel",
+  { "foreign.processormodel_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 operation_entity
+=head2 service_provider
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::OperationEntity>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->might_have(
-  "operation_entity",
-  "AdministratorDB::Schema::Result::OperationEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { "foreign.service_provider_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 operationtype_entity
+=head2 systemimage
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::OperationtypeEntity>
+Related object: L<AdministratorDB::Schema::Result::Systemimage>
 
 =cut
 
 __PACKAGE__->might_have(
-  "operationtype_entity",
-  "AdministratorDB::Schema::Result::OperationtypeEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "systemimage",
+  "AdministratorDB::Schema::Result::Systemimage",
+  { "foreign.systemimage_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 powersupplycard_entity
+=head2 tier
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::PowersupplycardEntity>
+Related object: L<AdministratorDB::Schema::Result::Tier>
 
 =cut
 
 __PACKAGE__->might_have(
-  "powersupplycard_entity",
-  "AdministratorDB::Schema::Result::PowersupplycardEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "tier",
+  "AdministratorDB::Schema::Result::Tier",
+  { "foreign.tier_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 powersupplycardmodel_entity
+=head2 user
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::PowersupplycardmodelEntity>
+Related object: L<AdministratorDB::Schema::Result::User>
 
 =cut
 
 __PACKAGE__->might_have(
-  "powersupplycardmodel_entity",
-  "AdministratorDB::Schema::Result::PowersupplycardmodelEntity",
-  { "foreign.entity_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 processormodel_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::ProcessormodelEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "processormodel_entity",
-  "AdministratorDB::Schema::Result::ProcessormodelEntity",
-  { "foreign.entity_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 systemimage_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::SystemimageEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "systemimage_entity",
-  "AdministratorDB::Schema::Result::SystemimageEntity",
-  { "foreign.entity_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 user_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::UserEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "user_entity",
-  "AdministratorDB::Schema::Result::UserEntity",
-  { "foreign.entity_id" => "self.entity_id" },
+  "user",
+  "AdministratorDB::Schema::Result::User",
+  { "foreign.user_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ba6T8h4r+C2/B4/RwxIPlA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ibX7LuqSX+Zb5bS9pPJGkg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

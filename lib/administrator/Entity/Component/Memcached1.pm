@@ -64,37 +64,15 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of ProxyCache component and concretly Memcached1.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Memcached1 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
     my $self = shift;
 
     my $conf = { memcached1_port => "11211" };
 
-    my $confindb = $self->{_dbix}->memcached1s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         my %row = $confindb->get_columns(); 
         $conf = \%row;
@@ -108,11 +86,11 @@ sub setConf {
     my ($conf) = @_;
     
     # delete old conf        
-    my $conf_row = $self->{_dbix}->memcached1s->first();
+    my $conf_row = $self->{_dbix};
     $conf_row->delete() if (defined $conf_row); 
 
     # create
-    $conf_row = $self->{_dbix}->memcached1s->create( $conf );
+    $conf_row = $self->{_dbix}->create( $conf );
 }
 
 # Commented because we want check this component only on master node

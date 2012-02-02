@@ -262,7 +262,7 @@ sub updateClusterNodeCount {
     Desc : Aggregate and store indicators values for each set for a cluster
     
     Args :
-        cluster : Entity::Cluster
+        cluster : Entity::ServiceProvider::Inside::Cluster
         hosts_values : hash ref : indicators values of each set for each hosts
         collect_time : seconds since Epoch when hosts data have been collected 
     
@@ -356,7 +356,7 @@ sub update {
         #############################
         my %hosts_values = ();
         my %threads = ();
-        my @clusters = Entity::Cluster->getClusters( hash => { } );
+        my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
         foreach my $cluster (@clusters) {
             $log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
             # Get set to monitor for this cluster

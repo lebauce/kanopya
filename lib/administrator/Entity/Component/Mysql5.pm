@@ -63,72 +63,32 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 get
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing Mysql5 component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Mysql5 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
+use constant ATTR_DEF => {
+	mysql5_port        => { pattern        => '^\d*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    mysql5_datadir     => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    mysql5_bindaddress => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+};
 
-sub get {
-    my $class = shift;
-    my %args = @_;
+sub getAttrDef { return ATTR_DEF; }
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component::Mysql5->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   return $self;
-}
-
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of DBServer component and concretly Mysql5.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Mysql5 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-        (! exists $args{component_id} or ! defined $args{component_id})){ 
-        $errmsg = "Entity::Component::Mysql5->new need a cluster_id and a component_id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
-
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my $default_conf = {
-        mysql5_id => undef,
+sub getBaseConfiguration {
+    return {
         mysql5_port => 3306,
         mysql5_datadir => "/var/lib/mysql",
         mysql5_bindaddress => '127.0.0.1'
     };
-    
-    $self->{_dbix}->create_related('mysql5', $default_conf);   
 }
 
 sub getConf {
@@ -140,7 +100,7 @@ sub getConf {
         mysql5_bindaddress => '127.0.0.1'
     };
     
-    my $confindb = $self->{_dbix}->mysql5;
+    my $confindb = $self->{_dbix};
     if($confindb) {
        $mysql5_conf = {
            mysql5_id => $confindb->get_column('mysql5_id'),
@@ -158,16 +118,16 @@ sub setConf {
         
     if(not $conf->{mysql5_id}) {
         # new configuration -> create
-        $self->{_dbix}->create_related('mysql5', $conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->mysql5->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 
 sub getNetConf {
     my $self = shift;
-    my $port = $self->{_dbix}->mysql5->get_column('mysql5_port');
+    my $port = $self->{_dbix}->get_column('mysql5_port');
     return { $port => ['tcp'] };
 }
 

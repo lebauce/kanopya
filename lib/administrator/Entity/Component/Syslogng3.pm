@@ -63,61 +63,9 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 get
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing Syslogng component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Syslogng3 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
+use constant ATTR_DEF => {};
 
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component::Syslogng3->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args );
-   return $self;
-}
-
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Logger component and concretly Syslogng.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Syslogng3 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-        (! exists $args{component_id} or ! defined $args{component_id})){ 
-        $errmsg = "Entity::Component::Syslogng3->new need a cluster_id and a component_id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
     my $self = shift;
@@ -126,7 +74,7 @@ sub getConf {
 
     my @logs = ();
     my @entries = ();
-    my $confindb = $self->{_dbix}->syslogng3s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         # Get entries
            my $entry_rs = $confindb->syslogng3_entries;
@@ -169,16 +117,14 @@ sub setConf {
     my ($conf) = @_;
     
     # delete old conf        
-    my $conf_row = $self->{_dbix}->syslogng3s->first();
-    $conf_row->delete() if (defined $conf_row); 
-
-    # create
-    $conf_row = $self->{_dbix}->syslogng3s->create( {} );
+    my $conf_row = $self->{_dbix};
+    $conf_row->syslogng3_entries->delete_all;
+    $conf_row->syslogng3_logs->delete_all;
     
     # Store entries
     foreach my $entry (@{ $conf->{entries} }) {
-        my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry->{entry_name},
-                                                                syslogng3_entry_type => $entry->{entry_type} } );
+        my $entry_row = $conf_row->syslogng3_entries->create( { syslogng3_entry_name => $entry->{name},
+                                                                syslogng3_entry_type => $entry->{type} } );
             foreach my $param (@{ $entry->{params} }) {
                 $entry_row->syslogng3_entry_params->create( { syslogng3_entry_param_content => $param->{content} } );
             }    
@@ -220,41 +166,37 @@ sub insertDefaultConfiguration {
     } 
     
     # Conf to send all node logs to admin
-    my $conf = {
-        syslogng3_logs => [ {
-            syslogng3_log_params => [
-                {
-                    syslogng3_log_param_entrytype => "source",
-                    syslogng3_log_param_entryname => "s_all_local"
+    $self->{_dbix}->syslogng3_logs->populate([ 
+		{ syslogng3_log_params => [
+                { syslogng3_log_param_entrytype => "source",
+                  syslogng3_log_param_entryname => "s_all_local"
                 },
-                {
-                    syslogng3_log_param_entrytype => "destination",
-                    syslogng3_log_param_entryname => "d_kanopya_admin"
+                { syslogng3_log_param_entrytype => "destination",
+                  syslogng3_log_param_entryname => "d_kanopya_admin"
                 },
             ],
-        } ],
-        syslogng3_entries => [ 
-            {
-                syslogng3_entry_name => 's_all_local',
-                syslogng3_entry_type => 'source',
-                syslogng3_entry_params => [
-                    { syslogng3_entry_param_content => 'internal()' },
-                    { syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
-                    
-                    # Kernel logs: this conf doesn't work for current version of syslog-ng
-                    #{ syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
-                ]
-            },
-            {
-                syslogng3_entry_name => 'd_kanopya_admin',
-                syslogng3_entry_type => 'destination',
-                syslogng3_entry_params => [{
-                      syslogng3_entry_param_content => "udp('$admin_ip')",
-                }]
-            },
-       ]
-    };
-    $self->{_dbix}->syslogng3s->create($conf);
+        }
+     ]);
+     
+     $self->{_dbix}->syslogng3_entries->populate([  
+		{ syslogng3_entry_name => 's_all_local',
+		  syslogng3_entry_type => 'source',
+		  syslogng3_entry_params => [
+				{ syslogng3_entry_param_content => 'internal()' },
+				{ syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
+				
+				# Kernel logs: this conf doesn't work for current version of syslog-ng
+				#{ syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
+			]
+		},
+		{
+			syslogng3_entry_name => 'd_kanopya_admin',
+			syslogng3_entry_type => 'destination',
+			syslogng3_entry_params => [{
+				  syslogng3_entry_param_content => "udp('$admin_ip')",
+			}]
+		},
+	]);
 }
 
 

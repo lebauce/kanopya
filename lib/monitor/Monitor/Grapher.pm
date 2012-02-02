@@ -621,7 +621,7 @@ sub graphFromConf {
     }
     my @time_laps = ('1200', 'hour', 'day');
     
-    my @clusters = Entity::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     CLUSTER:
     foreach my $cluster (@clusters) {
         eval {

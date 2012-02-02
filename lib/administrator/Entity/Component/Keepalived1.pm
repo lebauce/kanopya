@@ -62,61 +62,8 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 get
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing Keepalived component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Keepalived1 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component::Keepalived1->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   return $self;
-}
-
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of DBServer component and concretly Keepalived.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Keepalived1 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-        (! exists $args{component_id} or ! defined $args{component_id})){ 
-        $errmsg = "Entity::Component::Keepalived1->new need a cluster_id and a component_id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
 
 =head2 getVirtualservers
     
@@ -129,7 +76,7 @@ sub new {
 sub getVirtualservers {
     my $self = shift;
         
-    my $virtualserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers->search();
+    my $virtualserver_rs = $self->{_dbix}->keepalived1_virtualservers->search();
     my $result = [];
     while(my $vs = $virtualserver_rs->next) {
         my $hashvs = {};
@@ -163,7 +110,7 @@ sub getRealserverId {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $virtualserver = $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id});
+    my $virtualserver = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id});
     $log->debug("Virtualserver found with id <$args{virtualserver_id}>");
     my $realserver = $virtualserver->keepalived1_realservers->search({ realserver_ip => $args{realserver_ip} })->single;
     $log->debug("Realserver found with ip <$args{realserver_ip}>");
@@ -192,7 +139,7 @@ sub addVirtualserver {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    my $virtualserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers;
+    my $virtualserver_rs = $self->{_dbix}->keepalived1_virtualservers;
     my $row = $virtualserver_rs->create(\%args);
     $log->info("New virtualserver added with ip $args{virtualserver_ip} and port $args{virtualserver_port}");
     return $row->get_column("virtualserver_id");
@@ -224,7 +171,7 @@ sub addRealserver {
     }
     
     $log->debug("New real server try to be added on virtualserver_id <$args{virtualserver_id}>");
-    my $realserver_rs = $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
+    my $realserver_rs = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
 
     my $row = $realserver_rs->create(\%args);
     $log->info("New real server <$args{realserver_ip}> <$args{realserver_port}> added");
@@ -249,7 +196,7 @@ sub removeVirtualserver {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     $log->debug("Trying to delete virtualserver with id <$args{virtualserver_id}>");
-    return $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
+    return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
 }
 
 =head2 removeRealserver
@@ -271,7 +218,7 @@ sub removeRealserver {
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     $log->debug("Trying to delete realserver with id <$args{realserver_id}>");
-    return $self->{_dbix}->keepalived1->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
+    return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
 }
 
 =head2 getConf
@@ -283,7 +230,7 @@ sub removeRealserver {
 
 sub getConf {
     my $self = shift;
-    my $row = $self->{_dbix}->keepalived1;
+    my $row = $self->{_dbix};
     my $keepalived1_conf = {
         keepalived_id          => $row->get_column('keepalived_id'),
         daemon_method           => $row->get_column('daemon_method'),
@@ -308,12 +255,12 @@ sub setConf {
     my ($conf) = @_;
     if(not $conf->{keepalived_id}) {
          # new configuration -> create    
-         $self->{_dbix}->create_related('keepalived1', $conf);
+         $self->{_dbix}->create($conf);
          
          
     } else {
         # old configuration -> update
-         $self->{_dbix}->keepalived1->update($conf);
+         $self->{_dbix}->update($conf);
     }
 }
 
@@ -321,7 +268,7 @@ sub setConf {
 sub getTemplateDataIpvsadm {
     my $self = shift;
     my $data = {};
-    my $keepalived = $self->{_dbix}->keepalived1;
+    my $keepalived = $self->{_dbix};
     $data->{daemon_method} = $keepalived->get_column('daemon_method');
     $data->{iface} = $keepalived->get_column('iface');
     return $data;      
@@ -331,7 +278,7 @@ sub getTemplateDataIpvsadm {
 sub getTemplateDataKeepalived {
     my $self = shift;
     my $data = {};
-    my $keepalived = $self->{_dbix}->keepalived1;
+    my $keepalived = $self->{_dbix};
     $data->{notification_email} = $keepalived->get_column('notification_email');
     $data->{notification_email_from} = $keepalived->get_column('notification_email_from');
     $data->{smtp_server} = $keepalived->get_column('smtp_server');
@@ -364,11 +311,8 @@ sub getTemplateDataKeepalived {
     return $data;      
 }
 
-# Insert default configuration in db for this component 
-sub insertDefaultConfiguration() {
-    my $self = shift;
-    
-    my $default_conf = {
+sub getBaseConfiguration {
+    return {
         daemon_method           => 'both',
         iface                   => 'eth0',
         notification_email      => 'admin@mycluster.com',
@@ -377,8 +321,6 @@ sub insertDefaultConfiguration() {
         smtp_connect_timeout    => 30,
         lvs_id                  => 'MAIN_LVS' 
     };
-    
-    $self->{_dbix}->create_related('keepalived1', $default_conf);
 }
 
 =head1 DIAGNOSTICS

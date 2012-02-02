@@ -64,37 +64,15 @@ use Data::Dumper;
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Proxy component and concretly HAProxy1.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::HAProxy1 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
 
 sub getConf {
     my $self = shift;
 
     my $conf = {};
 
-    my $confindb = $self->{_dbix}->haproxy1s->first();
+    my $confindb = $self->{_dbix};
     if($confindb) {
         my %row = $confindb->get_columns(); 
         $conf = \%row;
@@ -109,10 +87,10 @@ sub setConf {
     
     if(not $conf->{haproxy1_id}) {
         # new configuration -> create
-        $self->{_dbix}->haproxy1s->create($conf);
+        $self->{_dbix}->create($conf);
     } else {
         # old configuration -> update
-        $self->{_dbix}->haproxy1s->update($conf);
+        $self->{_dbix}->update($conf);
     }
 }
 
@@ -128,25 +106,28 @@ sub getNetConf {
 
 }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    
-    # Retrieve admin ip
-    my $admin_ip = "0.0.0.0";
-    if(defined $args{internal_cluster}) {    
-        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
-    } 
-    
-    my $conf = {
+sub getBaseConfiguration {
+    return {
         haproxy1_http_frontend_port => 80,
         haproxy1_http_backend_port => 8080,
         haproxy1_https_frontend_port => 443,
         haproxy1_https_backend_port => 4443,
-        haproxy1_log_server_address => "$admin_ip:514",
+        haproxy1_log_server_address => "0.0.0.0:514",
     };
-    
-    $self->{_dbix}->haproxy1s->create($conf);    
+}
+
+sub insertDefaultConfiguration {
+    my $self = shift;
+    my %args = @_;
+
+    # Retrieve admin ip
+    my $admin_ip = "0.0.0.0";
+    if(defined $args{internal_cluster}) {
+        $admin_ip = $args{internal_cluster}->getMasterNodeIp(),
+    }
+
+    $self->setAttr(name => "haproxy1_log_server_address", value => "$admin_ip:514");
+    $self->save();
 }
 
 =head1 DIAGNOSTICS

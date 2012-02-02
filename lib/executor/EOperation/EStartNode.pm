@@ -11,7 +11,7 @@ use Date::Simple (':all');
 
 use Kanopya::Exceptions;
 use EFactory;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Template;
 use General;
@@ -62,7 +62,7 @@ sub prepare {
      # Cluster instantiation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>");
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
         my $err = $@;
@@ -86,11 +86,11 @@ sub prepare {
     #### Instanciate Clusters
     $log->info("Get Internal Clusters");
     # Instanciate nas Cluster
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 
     # Instanciate bootserver Cluster
-    $self->{bootserver}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{bootserver});
+    $self->{bootserver}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{bootserver});
     $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
 
 
@@ -133,7 +133,7 @@ sub _cancel {
     my $host = Entity::Host->get(id => $params->{host_id});
     $log->info("Cancel start node, we will try to remove node link for <" . $host->getAttr(name=>"host_mac_address") . ">");
     $host->stopToBeNode();
-    my $cluster = Entity::Cluster->get(id => $params->{cluster_id});
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     my $hosts = $cluster->getHosts();
     if (! scalar keys %$hosts) {
         $cluster->setState("down");

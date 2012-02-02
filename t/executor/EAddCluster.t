@@ -62,7 +62,7 @@ eval {
 
 	note("Get the first Cluster");
 	my @entities = $adm->getEntities(type => 'Cluster', hash=> {cluster_name => 'test1', cluster_desc => 'test cluster 1'});
-	isa_ok( $entities[0], "Entity::Cluster", $admtest);
+	isa_ok( $entities[0], "Entity::ServiceProvider::Inside::Cluster", $admtest);
 	
 	my $clustid = $entities[0]->getAttr(name => 'cluster_id');
 	is( $entities[0]->{_dbix}->in_storage , 1, $admtest ); 

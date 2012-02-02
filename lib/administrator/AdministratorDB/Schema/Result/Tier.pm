@@ -23,7 +23,7 @@ __PACKAGE__->table("tier");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 infrastructure_id
@@ -70,7 +70,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "infrastructure_id",
@@ -100,17 +100,17 @@ __PACKAGE__->set_primary_key("tier_id");
 
 =head1 RELATIONS
 
-=head2 component_instances
+=head2 components
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->has_many(
-  "component_instances",
-  "AdministratorDB::Schema::Result::ComponentInstance",
+  "components",
+  "AdministratorDB::Schema::Result::Component",
   { "foreign.tier_id" => "self.tier_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -124,10 +124,25 @@ Related object: L<AdministratorDB::Schema::Result::Ipv4Dmz>
 =cut
 
 __PACKAGE__->has_many(
-  "ipv4_dmzs",
+  "ipv4_dmzzes",
   "AdministratorDB::Schema::Result::Ipv4Dmz",
   { "foreign.tier_id" => "self.tier_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 tier
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "tier",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "tier_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 infrastructure
@@ -166,15 +181,15 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-10-01 12:16:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tYkKbycUBpYsNv4A0Rtqnw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e7DAjLigcD68l6P6vJcXtg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::TierEntity",
-    { "foreign.tier_id" => "self.tier_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.tier_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 
 1;

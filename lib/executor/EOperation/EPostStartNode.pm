@@ -41,7 +41,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use EFactory;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 
 use Log::Log4perl "get_logger";
@@ -125,7 +125,7 @@ sub prepare {
     
     #### Get instance of Cluster Entity
     $log->info("Load cluster instance");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
     #### Get cluster components Entities

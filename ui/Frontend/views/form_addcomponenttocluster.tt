@@ -2,9 +2,9 @@
 <table class="form">
 	<tr>
 		<td class="label">available components :</td>
-		<td><select name="component_id">
+		<td><select name="component_type_id">
 		<% FOREACH comp IN components_list %>
-			<option value="<% comp.component_id %>"><% comp.component_name %> <% comp.component_version %> - <% comp.component_category %></option>
+			<option value="<% comp.component_type_id %>"><% comp.component_name %> <% comp.component_version %> - <% comp.component_category %></option>
 		<% END %>
 		</select>
 		</td>

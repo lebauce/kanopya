@@ -99,12 +99,12 @@ __PACKAGE__->belongs_to(
   "iscsitarget1_target",
   "AdministratorDB::Schema::Result::Iscsitarget1Target",
   { iscsitarget1_target_id => "iscsitarget1_target_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bs4HWkc8E1Gv8+C0Y6ElPg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ExA9fFXinUxN7JUCuI/QFQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

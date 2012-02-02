@@ -24,16 +24,6 @@ use Data::Dumper;
 my $log = get_logger("executor");
 my $errmsg;
 
-# contructor
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new( %args );
-    return $self;
-}
-
 # generate configuration files on node
 sub configureNode {
     my $self = shift;

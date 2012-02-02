@@ -25,15 +25,6 @@ use base "EEntity::EComponent";
 my $log = get_logger("executor");
 my $errmsg;
 
-# contructor
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    my $self = $class->SUPER::new( %args );
-    return $self;
-}
-
 # called when a node is added to a cluster
 sub addNode {
     my $self = shift;
@@ -88,6 +79,12 @@ sub addNode {
         $self->generateIpvsadm(econtext => $args{econtext}, mount_point => $args{mount_point});
         $log->debug("generate /etc/keepalived/keepalived.conf file");
         $self->generateKeepalived(econtext => $args{econtext}, mount_point => $args{mount_point});
+        
+        $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
+                                econtext => $args{econtext}, 
+                                scriptname => 'ipvsadm', 
+                                startvalue => 19, 
+                                stopvalue => 21);
         
         $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
                                 econtext => $args{econtext}, 

@@ -67,7 +67,7 @@ __PACKAGE__->belongs_to(
   "entity",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "entity_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 gp
@@ -82,12 +82,12 @@ __PACKAGE__->belongs_to(
   "gp",
   "AdministratorDB::Schema::Result::Gp",
   { gp_id => "gp_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-27 08:08:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9LHDeNsLIiKZqIy0qW7zww
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xCyqpd/MbXfLHoY6QFwucw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

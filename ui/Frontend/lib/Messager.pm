@@ -20,7 +20,7 @@ ajax '/operation/queue' => sub {
     return to_json(@operation_queue);
 };
 
-ajax '/operationQuantity' => sub {
+ajax '/operation/quantity' => sub {
     my $adm = Administrator->new();
     my $operation_quantity = $adm->getOperationSum();
     content_type('application/json');
