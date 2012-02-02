@@ -763,6 +763,23 @@ CREATE TABLE `graph` (
 
 
 --
+-- Table structure for table `aggregate`
+--
+
+CREATE TABLE `aggregate` (
+  `aggregate_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `cluster_id` int(8) unsigned NOT NULL,
+  `indicator_id` int(8) unsigned NOT NULL,
+  `statistics_function_name` char(32) NOT NULL,
+  `window_time` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`aggregate_id`),
+  KEY `fk_aggregate_1` (`indicator_id`),
+  KEY `fk_aggregate_2` (`cluster_id`),
+  CONSTRAINT `fk_aggregate_1` FOREIGN KEY (`indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_aggregate_2` FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+--
 -- Entity tables
 --
 
@@ -1037,6 +1054,11 @@ CREATE TABLE `infrastructure_entity` (
   CONSTRAINT `fk_infrastructure_entity_1` FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_infrastructure_entity_2` FOREIGN KEY (`infrastructure_id`) REFERENCES `infrastructure` (`infrastructure_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
+
 
 SET foreign_key_checks=1;
 
