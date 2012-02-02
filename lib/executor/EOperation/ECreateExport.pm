@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Component::Iscsitarget1;
 use EFactory;
 
@@ -95,7 +95,7 @@ sub prepare {
     }
     
     my $cluster_id =$component->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
     my ($state, $timestamp) = $self->{_objs}->{cluster}->getState();
     if ($state ne 'up'){
         $errmsg = "Cluster has to be up !";
@@ -132,7 +132,7 @@ sub prepare {
         $self->{_objs}->{ecomp_nfsd} = EFactory::newEEntity(data => $component);
     }
     
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
     $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);

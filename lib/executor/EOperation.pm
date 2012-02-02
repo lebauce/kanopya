@@ -8,7 +8,7 @@ use Data::Dumper;
 
 use ERollback;
 use General;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use General;
 
 my $log = get_logger("executor");
@@ -100,11 +100,11 @@ sub loadContext {
     
     # Retrieve executor ip (used for source all context)
     if (not defined $self->{exec_cluster_ip}) {
-        my $exec_cluster = Entity::Cluster->get(id => $args{internal_cluster}->{'executor'});
+        my $exec_cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
         $self->{exec_cluster_ip} = $exec_cluster->getMasterNodeIp();
     }
     
-    my $cluster = Entity::Cluster->get(id => $args{internal_cluster}->{$args{service}});
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{$args{service}});
     $self->{$args{service}}->{ip} = $cluster->getMasterNodeIp();
     $self->{$args{service}}->{econtext} = EFactory::newEContext(ip_source => $self->{exec_cluster_ip}, ip_destination => $self->{$args{service}}->{ip});
     

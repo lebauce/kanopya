@@ -6,7 +6,7 @@
 use lib </opt/kanopya/lib/*>;
 
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Component::Logger::Syslogng3;
 
 # Initial configuration
@@ -25,7 +25,7 @@ my $conf = {
 Administrator::authenticate(login => "admin", password => "admin");
 
 # Get admin cluster
-my $cluster = Entity::Cluster->get(id => 1);
+my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => 1);
 
 # Get component instance of syslogng3
 my $comp = $cluster->getComponent( category => 'Logger', name => 'Syslogng', version => 3 );

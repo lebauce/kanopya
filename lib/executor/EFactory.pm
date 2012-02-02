@@ -46,7 +46,7 @@ use vars qw(@ISA $VERSION);
 
 use General;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Net::IP qw(:PROC);
 
 my $log = get_logger("executor");
@@ -94,7 +94,7 @@ sub newEEntity {
         $log->debug("Get a new EHost !");
         if ($data->getAttr(name=>"cloud_cluster_id")){
             $class .= "::EVirtual";
-            $params{virt_cluster} = Entity::Cluster->get(id=>$data->getAttr(name=>"cloud_cluster_id"));
+            $params{virt_cluster} = Entity::ServiceProvider::Inside::Cluster->get(id=>$data->getAttr(name=>"cloud_cluster_id"));
             $params{evirt_ecomp} = EFactory::newEEntity(data => $params{virt_cluster}->getComponent(name=>"Opennebula", version=>"3"));
         }
     }

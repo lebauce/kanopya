@@ -9,7 +9,7 @@ use Executor;
 use Administrator;
 use Entity::Systemimage;
 use Entity::Distribution;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Component::Lvm2;
 use General;
 
@@ -21,8 +21,8 @@ General::checkParams(args=>$conf->{user}, required=>["name","password"]);
 
 ########################## Here insert information on distribution inserted ##############
 my $dist_conf = {dist_name      => "Debian",
-	       dist_version   => 5,
-	       dist_desc      => "SI d openNebula",
+	       dist_version   => 6,
+	       dist_desc      => "squeeze",
 	       root_size      => "2G",
 	       filesystem     => "ext3"};
 
@@ -30,7 +30,7 @@ my $adm = Administrator::authenticate(login => $conf->{user}->{name},
 				      password => $conf->{user}->{password});
 
 
-my $nas = Entity::Cluster->get(id => $conf->{cluster}->{nas});
+my $nas = Entity::ServiceProvider::Inside::Cluster->get(id => $conf->{cluster}->{nas});
 my $lvm2 = $nas->getComponent(name=>"Lvm", version=>"2");
 my $vg_id = $lvm2->getMainVg()->{vgid};
 

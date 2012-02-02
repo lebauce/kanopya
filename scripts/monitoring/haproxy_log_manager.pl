@@ -3,7 +3,7 @@ use LogAnalyzer;
 use Data::Dumper;
 use XML::Simple;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Monitor;
 
 my $monitor = Monitor->new();
@@ -101,7 +101,7 @@ sub update {
     my $logfile_name = _logFileName( time => $args{time} );
 
     # Browse clusters to parse corresponding log file
-    my @clusters = Entity::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
     foreach my $cluster (@clusters) {
         print "Cluster : ", $cluster->toString(), "\n";
         my $master_ip =  $cluster->getMasterNodeIp();

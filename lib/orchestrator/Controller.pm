@@ -20,7 +20,7 @@ use Administrator;
 use XML::Simple;
 
 use Monitor::Retriever;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
 use MultiTuning;
@@ -1063,7 +1063,7 @@ sub update {
     my $self = shift;
     my %args = @_;
 
-    my @clusters = Entity::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
     
     
     for my $cluster (@clusters) {        

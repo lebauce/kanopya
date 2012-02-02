@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
 use String::Random;
@@ -134,7 +134,7 @@ sub prepare {
      # Cluster instantiation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>");
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
         my $err = $@;
@@ -161,13 +161,13 @@ sub prepare {
     #### Instanciate Clusters
     $log->info("Get Internal Clusters");
     # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
     # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     $log->debug("Executor Cluster get with ref : " . ref($self->{executor}->{obj}));
     # Instanciate bootserver Cluster
-    $self->{bootserver}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{bootserver});
+    $self->{bootserver}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{bootserver});
     $log->debug("Bootserver Cluster get with ref : " . ref($self->{bootserver}->{obj}));
     
     
@@ -210,7 +210,7 @@ sub execute {
     my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
     $ehost->stop();
 
-     $self->{_objs}->{host}->stopToBeNode(cluster_id => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"));
+     $self->{_objs}->{host}->stopToBeNode();
 
     ## Remove Host in the dhcp
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();

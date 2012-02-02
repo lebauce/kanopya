@@ -6,7 +6,7 @@ use General;
 use Administrator;
 use Entity::Host;
 use Entity::Kernel;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Powersupplycard;
@@ -302,7 +302,7 @@ get '/hosts/:hostid' => sub {
         ($host_state, $timestamp) = split ':', $ehost->getAttr('name' => 'host_state');
         if($host_state =~ /up|starting/) {
             eval {
-                my $ecluster = Entity::Cluster->get(id => $ehost->getClusterId());
+                my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $ehost->getClusterId());
                 $cluster_name = $ecluster->getAttr('name' => 'cluster_name');
             };
         }

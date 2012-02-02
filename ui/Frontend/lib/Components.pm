@@ -4,7 +4,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::EscapeHTML;
 
 use Entity::Component;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Data::Dumper;
 use Operation;
 
@@ -73,8 +73,8 @@ post '/components/upload' => sub {
 get '/components/:instanceid/configure' => sub {
     
     my $component = Entity::Component->getInstance(id=>param('instanceid'));
-    my $cluster_id = $component->getAttr(name=>'cluster_id');
-    my $ecluster = Entity::Cluster->get(id => $cluster_id);
+    my $cluster_id = $component->getAttr(name=>'inside_id');
+    my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
     my $componentdetail = $component->getComponentAttr();
     my $template = 'components/'.lc($componentdetail->{component_name}).$componentdetail->{component_version};
     my $template_params = {};

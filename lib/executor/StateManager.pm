@@ -50,7 +50,7 @@ use Kanopya::Exceptions;
 use Operation;
 use EFactory;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Message;
 
@@ -152,7 +152,7 @@ sub run {
 
         # Second Check clusters's nodes status
         $log->debug("<<< Clusters'nodes status changes >>>");
-        my @clusters = Entity::Cluster->getClusters(hash=>{-not => {cluster_state => {'like','down%'}}});
+        my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters(hash=>{-not => {cluster_state => {'like','down%'}}});
         foreach my $cluster (@clusters) {
                         
             $log->debug("On cluster " . $cluster->getAttr(name=>'cluster_name')." ...");
@@ -163,7 +163,7 @@ sub run {
                 eval {
                     my $srv_available = StateManager::Node::checkNodeUp(host=>$hosts->{$mb}, 
                                                     cluster=>$cluster,
-                                                    executor_ip=>Entity::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
+                                                    executor_ip=>Entity::ServiceProvider::Inside::Cluster->get(id => $self->{config}->{cluster}->{executor})->getMasterNodeIp());
                     StateManager::Node::updateNodeStatus(host=>$hosts->{$mb}, services_available => $srv_available, cluster => $cluster);
                 };
                 if($@) {

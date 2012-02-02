@@ -244,7 +244,7 @@ sub setNodeState {
     Desc : Create a new node instance in db from host linked to cluster (in params).
 
     args:
-        cluster_id : Int : Cluster identifier
+        inside_id : Int : inside identifier
         master_node : Int : 0 or 1 to say if the host is the master node
     return: Node identifier
 
@@ -254,11 +254,11 @@ sub becomeNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_id','master_node','node_number']);
+    General::checkParams(args => \%args, required => ['inside_id','master_node','node_number']);
 
     my $adm = Administrator->new();
     my $res =$adm->{db}->resultset('Node')->create(
-		{	cluster_id=>$args{cluster_id},
+		{	inside_id=>$args{inside_id},
             host_id =>$self->getAttr(name=>'host_id'),
             master_node => $args{master_node},
 			node_number => $args{node_number}

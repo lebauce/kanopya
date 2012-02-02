@@ -10,7 +10,7 @@ use Data::Dumper;
 
 use_ok ('Executor');
 use_ok ('Administrator');
-use_ok ('Entity::Cluster');
+use_ok ('Entity::ServiceProvider::Inside::Cluster');
 use_ok ('Entity::Component');
 use_ok ('Entity::Systemimage');
 use_ok ('Entity::Distribution');
@@ -23,17 +23,21 @@ eval {
     my $adm = Administrator->new;
     my $db = $adm->{db};
 
-    $db->txn_begin;
+    
 
     # Firstly manually insert a system image into database.
-    my ($dist, $sysimg);
+    my ($dist, $dist_id, $sysimg, $sysimg_id);
     lives_ok {
         $dist = Entity::Distribution->new(distribution_name    => 'disttest',
                                           distribution_version => '1');
 
+		$dist_id = $dist->getAttr(name => distribution_id);
+
         $sysimg = Entity::Systemimage->new(systemimage_name => 'test',
-                                           systemimage_desc => 'test',
+                                           systemimage_desc => 'test',        
                                            distribution_id  => $dist->getAttr(name => 'distribution_id'));
+        $sysimg_id = $sysimg->getAttr(name => systemimage_id);                                   
+                                           
     } 'Manually add dummy systemimage';
 
     # Then create a cluster to add components in.
@@ -41,7 +45,7 @@ eval {
     my $executor = new_ok('Executor', \@args, 'Instantiate an executor');
 
     lives_ok {
-        Entity::Cluster->create(
+        Entity::ServiceProvider::Inside::Cluster->create(
             cluster_name           => "foobar",
             cluster_min_node       => "1",
             cluster_max_node       => "1",
@@ -60,7 +64,7 @@ eval {
 
     my ($cluster, $cluster_id);
     lives_ok {
-        $cluster = Entity::Cluster->getCluster('hash' => { cluster_name => 'foobar' });
+        $cluster = Entity::ServiceProvider::Inside::Cluster->getCluster('hash' => { cluster_name => 'foobar' });
     } 'retrieve cluster via cluster name.';
 
 	lives_ok {
@@ -69,6 +73,9 @@ eval {
 
     # Then instanciate component of each type, add then add to the cluster.
     my $comp_types_rs = $adm->{db}->resultset('ComponentType')->search();
+    
+    $db->txn_begin;
+    
     while ( my $comp_type = $comp_types_rs->next ) {
         my $comp_name = $comp_type->get_column('component_name');
         my $comp_version = $comp_type->get_column('component_version');
@@ -100,7 +107,7 @@ eval {
 
             # Get the associated cluster id.
             lives_ok {
-                $cluster_from_comp = $comp_from_id->getAttr(name => 'cluster_id')
+                $cluster_from_comp = $comp_from_id->getAttr(name => 'inside_id')
             } $comp_class . ' get cluster id.';
 
             # Check if the cluster id is valid.
@@ -123,6 +130,9 @@ eval {
     }
 
     $db->txn_rollback;
+    $db->resultset('Entity')->find($sysimg_id)->delete;
+    $db->resultset('Entity')->find($dist_id)->delete;
+    
 };
 if($@) {
     my $error = $@;

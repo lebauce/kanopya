@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use XML::Simple;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Distribution;
 use EFactory;

@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Gp;
 
@@ -73,7 +73,7 @@ sub prepare {
     
     # Cluster instantiation
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$params);
     };
     if($@) {
         my $err = $@;

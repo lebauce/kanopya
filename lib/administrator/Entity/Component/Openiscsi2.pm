@@ -69,7 +69,7 @@ sub getConf {
     my $self = shift;
     my %conf = ( );
     
-    my $conf_rs = $self->{_dbix}->openiscsi2s;
+    my $conf_rs = $self->{_dbix}->openiscsi2_targets;
     my @imports = ();
     while (my $conf_row = $conf_rs->next) {
         my %import = $conf_row->get_columns();
@@ -86,18 +86,18 @@ sub setConf {
     my $self = shift;
     my ($conf) = @_;
     
-    $self->{_dbix}->openiscsi2s->delete_all();
+    $self->{_dbix}->openiscsi2_targets->delete_all();
     
     for my $import ( @{ $conf->{imports} } ) {
         delete $import->{openiscsi2_id};
-        $self->{_dbix}->openiscsi2s->create( $import );
+        $self->{_dbix}->openiscsi2_targets->create( $import );
     }
     
 }
 
 sub getExports {
     my $self = shift;
-    my $export_rs = $self->{_dbix}->openiscsi2s;
+    my $export_rs = $self->{_dbix}->openiscsi2_targets;
     my @tab_exports =();
     my $i =0;
     while (my $export_row = $export_rs->next){

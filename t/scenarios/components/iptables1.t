@@ -6,7 +6,7 @@ use Test::More 'no_plan';
 use EEntity::EComponent::EIptables1;
 BEGIN {
       use_ok( 'Administrator' );
-      use_ok( 'Entity::Cluster' );
+      use_ok( 'Entity::ServiceProvider::Inside::Cluster' );
       use_ok( 'Entity::Component::Iptables1' );
       use_ok( 'EEntity::EComponent::EIptables1' );
       use_ok( 'EContext::Local' );
@@ -23,7 +23,7 @@ eval {
     my $comp_id = $adm->registerComponent( component_name => 'Iptables', component_category => 'Firewall', component_version => 1 );
 
     # Get admin cluster
-    my $cluster = Entity::Cluster->get(id => 2);
+    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => 2);
 
     # Create a component instance for this cluster
 #    my $comp_inst_id = $cluster->addComponent( component_id => $comp_id );

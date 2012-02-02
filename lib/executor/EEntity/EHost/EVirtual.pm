@@ -34,7 +34,7 @@ EHost::EVirtual is the execution class for virtual host entities
 =cut
 package EEntity::EHost::EVirtual;
 use base "EEntity::EHost";
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";

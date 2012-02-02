@@ -128,7 +128,8 @@ sub checkAttrs {
     # finaly restructure the hashref with dbix relationships         
     for my $i (0..$#modules-1) {
 		my $classname = _buildClassName($modules[$i+1]);
-		my $relation = lc($classname);
+		$classname =~ s/([A-Z])/_$1/g;
+		my $relation = lc( substr($classname, 1) );
 		$final_attrs->{$modules[$i]}->{$relation} = $final_attrs->{$modules[$i+1]};
 	}
     

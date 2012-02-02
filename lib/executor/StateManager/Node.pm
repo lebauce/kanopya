@@ -50,7 +50,7 @@ use Kanopya::Exceptions;
 use Operation;
 use EFactory;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 
 use XML::Simple;

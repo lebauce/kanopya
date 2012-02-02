@@ -45,7 +45,7 @@ use Data::Dumper;
 use EFactory;
 use Kanopya::Exceptions;
 use Entity::Distribution;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EEntity::ESystemimage;
 use Entity::Gp;
@@ -131,9 +131,9 @@ sub prepare {
 
     ## Instanciate Clusters
     # Instanciate nas Cluster
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
 
     ## Get Internal IP
     # Get Internal Ip address of Master node of cluster Executor
