@@ -91,12 +91,6 @@ __PACKAGE__->table("host");
   is_nullable: 1
   size: 64
 
-=head2 host_internal_ip
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 15
-
 =head2 host_ram
 
   data_type: 'bigint'
@@ -197,8 +191,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 18 },
   "host_initiatorname",
   { data_type => "char", is_nullable => 1, size => 64 },
-  "host_internal_ip",
-  { data_type => "char", is_nullable => 1, size => 15 },
   "host_ram",
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 1 },
   "host_core",
@@ -225,8 +217,7 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("host_id");
-__PACKAGE__->add_unique_constraint("host_internal_ip_UNIQUE", ["host_internal_ip"]);
-__PACKAGE__->add_unique_constraint("host_mac_address_UNIQUE", ["host_mac_address"]);
+__PACKAGE__->add_unique_constraint("host_mac_address", ["host_mac_address"]);
 
 =head1 RELATIONS
 
@@ -395,21 +386,6 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 hostdetails
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Hostdetail>
-
-=cut
-
-__PACKAGE__->has_many(
-  "hostdetails",
-  "AdministratorDB::Schema::Result::Hostdetail",
-  { "foreign.host_id" => "self.host_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 node
 
 Type: might_have
@@ -456,8 +432,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:J1sjyjxnk3y1ciNjfzbGZg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6e3ofgDYMJXFutiEXyFzDg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

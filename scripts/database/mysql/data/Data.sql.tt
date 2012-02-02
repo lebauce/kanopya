@@ -6,8 +6,9 @@ SET @eid := 2;
 -- permanents data
 --
 
-
+--
 -- system groups
+--
 
 INSERT INTO `entity` VALUES (@eid); SET @MasterUserGroup_eid = @eid; 
 INSERT INTO `gp` VALUES(@eid,'User','User', 'User master group containing all users',1);
@@ -57,7 +58,10 @@ INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `gp` VALUES(@eid,'Gp','Gp','Groups master group containing all groups',1);
 SET @eid := @eid +1;
 
+--
 -- predefined groups
+--
+
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `gp` VALUES (@eid,'Admin','User','Privileged users for administration tasks',0);
 SET @Admin_group_id = @eid;
@@ -106,14 +110,18 @@ SET @Component_eid=@eid;
 SET @Component_group_id =@eid;
 SET @eid := @eid +1;
 
+--
 -- system user
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `user` VALUES
 (@eid,1,'executor',MD5('[% admin_password %]'),'Kanopya','Executor','dev@hederatech.com',CURRENT_DATE(),NULL,'User used by executor');
 SET @eid := @eid +1;
 
+--
 -- predefined user
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `user` VALUES
@@ -127,7 +135,9 @@ INSERT INTO `ingroups` VALUES (@Guest_group_id, @eid);
 SET @guest_user_eid = @eid;
 SET @eid := @eid +1;
 
+--
 -- processor models
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `processormodel` VALUES (@eid,'Intel','Atom 330',2,1.6,1,8,1,0);
@@ -168,14 +178,18 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `processormodel` VALUES (@eid,'AMD','G-T56N',2,1.6,1,18,1,1);
 SET @eid := @eid +1;
- 
+
+-- 
 -- powersupplycard models
+--
 
 INSERT INTO `entity` VALUES (@eid); 
 INSERT INTO `powersupplycardmodel` VALUES (@eid,'HEDERATECH','notresupermodeldecarte',12);
 SET @eid := @eid +1;
 
+--
 -- host models
+--
 
 INSERT INTO `entity` VALUES (@eid); 
 INSERT INTO `hostmodel` VALUES (@eid,'Intel','DG945GCLF2','945GC',1,42,1,1,2,@atom330);
@@ -213,7 +227,9 @@ INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `hostmodel` VALUES (@eid,'IEI','Kino HM551','Intel HM55',1,32,2,2,8,NULL);
 SET @eid := @eid +1;
 
+--
 -- operation types list
+--
 
 INSERT INTO `operationtype` VALUES
 
@@ -255,7 +271,9 @@ INSERT INTO `operationtype` VALUES
 (36,'AddVirtualHost'),
 (37,'MigrateHost');
 
--- components list
+--
+-- components type list
+--
 
 INSERT INTO `component_type` VALUES
 (1,'Lvm','2','Storage'),
@@ -273,36 +291,51 @@ INSERT INTO `component_type` VALUES
 (13,'Openldap','1','Annuary'),
 (14,'Opennebula','3','Cloudmanager');
 
+--
 -- kernels
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `kernel` VALUES (@eid,'2.6.39.3','2.6.39.3','generic kernel with lots of modules');
 SET @kernel := @eid;
 SET @eid := @eid +1;
 
+--
 -- admin cluster
+--
 
 INSERT INTO `entity` VALUES (1);
+INSERT INTO `service_provider` VALUES (1);
+INSERT INTO `inside` VALUES (1);
 INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_');
 SET @admin_cluster := 1;
 SET @eid := @eid +1;
 
+--
 -- internal ip for admin node
+--
 
 INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal_netmask %]', NULL);
 
+--
 -- admin host
+--
 
 INSERT INTO `entity` VALUES (@eid);
-INSERT INTO `host` VALUES (@eid,NULL,NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','[% ipv4_internal_ip %]', '4294967296', '4','node001',NULL,NULL, 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (@eid,NULL,NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','4294967296', '4','node001',NULL,NULL, 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 
+--
 -- admin node
+--
 
 INSERT INTO `node` VALUES (1, @admin_cluster, @admin_host,1,'in:[% tmstp %]',NULL,1);
 
+--
 -- components templates
+--
+
 INSERT INTO `component_template` VALUES (1,'defaultapache','/templates/components/apache2', 2);
 INSERT INTO `component_template` VALUES (2,'dhcpd','/templates/components/dhcpd', 5);
 INSERT INTO `component_template` VALUES (3,'snmpd','/templates/components/snmpd', 7);
@@ -312,16 +345,20 @@ INSERT INTO `component_template` VALUES (6,'nfsd','/templates/components/nfsd3',
 
 
 --
--- initial components instance for admin cluster:
+-- initial components for admin cluster:
 --
 
+--
 -- LVM2 component
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,1,NULL,NULL);
 INSERT INTO `lvm2` VALUES(@eid);
 
+--
 -- main vg storage from only one pv
+--
 
 INSERT INTO `lvm2_vg` VALUES (1,@eid,'[% kanopya_vg_name %]','[% kanopya_vg_free_space %]','[% kanopya_vg_size %]');
 SET @pvid := 1;
@@ -331,14 +368,18 @@ SET @pvid := @pvid +1;
 [% END %]
 SET @eid := @eid +1;
 
+--
 -- iscsitarget 
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,3,NULL,NULL);
 INSERT INTO `iscsitarget1` VALUES(@eid);
 SET @eid := @eid +1;
 
+--
 -- dhcpd configuration
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,5,NULL,2);
@@ -346,36 +387,46 @@ INSERT INTO `dhcpd3` VALUES (@eid,'hedera-technology.com',NULL,'node001');
 INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% ipv4_internal_netmask %]');
 SET @eid := @eid +1;
 
+--
 -- atftp configuration
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,6,NULL,NULL);
 INSERT INTO `atftpd0` VALUES (@eid,'--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5', 'FALSE', '/var/log/atftpd.log','/tftp');
 SET @eid := @eid +1;
 
+--
 --	snmpd
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,7,NULL,3);
 INSERT INTO `snmpd5` VALUES(@eid, '[% ipv4_internal_ip %]', '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid');
 SET @eid := @eid +1;
 
+--
 -- Nfsd
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,8,NULL,6);
 INSERT INTO `nfsd3` VALUES(@eid,NULL,'no',8,0,NULL,'no',NULL);
 SET @eid := @eid +1;
 
+--
 -- Syslogng
+--
 
 INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,11,NULL,NULL);
 INSERT INTO `syslogng3` VALUES(@eid);
 SET @eid := @eid +1;
 
+--
+-- Monitoring data
+--
 
--- Monitoring
 INSERT INTO `indicatorset` VALUES
 (1,'mem','SnmpProvider','GAUGE', null, 'Total', null),
 (2,'cpu','SnmpProvider','COUNTER', null, 'User+Idle+Wait+Nice+Syst+Kernel+Interrupt', null),
@@ -398,7 +449,10 @@ INSERT INTO `indicator` VALUES
 (13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4),
 (14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4);
 
+--
 -- initial permissions for user guest
+--
+
 SET @id := 1;
 INSERT INTO `entityright` VALUES (@id, @guest_user_eid, @guest_user_eid, 'get'); SET @id := @id+1;
 INSERT INTO `entityright` VALUES (@id, @guest_user_eid, @guest_user_eid, 'update');SET @id := @id+1;
@@ -425,111 +479,120 @@ SET foreign_key_checks=1;
 -- @PowersupplycarmodelGroup_eid
 -- @PowersupplycardGroup_eid
 
+--
 -- permission for Group Applimanager
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'update');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'activate');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'deactivate');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'addComponent');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'addNode');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'create');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'remove');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'forceStop');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'removeNode');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'removeComponent');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'start');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'stop');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getAttrDef');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getCluster');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getClusters');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getState');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'setperm');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Applimanager_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Applimanager_eid , 'get');SET @id:=@id+1;
+--
 
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'update');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'activate');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'deactivate');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'addComponent');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'addNode');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'create');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'remove');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'forceStop');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'removeNode');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'removeComponent');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'start');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'stop');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getAttrDef');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getCluster');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getClusters');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getState');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'setperm');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Applimanager_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Applimanager_eid , 'get');SET @id:=@id+1;
+
+--
 -- permission for Group Systemmanager
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getDistributions');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getDevices');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getProvidedComponents');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'updateProvidedComponents');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'toString');SET @id:=@id+1;
+--
 
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'update');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'activate'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'create'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'deactivate'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'clone'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'cloneComponentsInstalledFrom'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getInstalledComponents'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getSystemimages'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getSystemimage'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'installComponent'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'installedComponentLinkCreation'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'remove'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getAttrDef'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'toString'); SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid, @Systemmanager_eid , 'getKernels');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getDistributions');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getDevices');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getProvidedComponents');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'updateProvidedComponents');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'toString');SET @id:=@id+1;
 
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'update');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'activate'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'create'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'deactivate'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'clone'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'cloneComponentsInstalledFrom'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getInstalledComponents'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getSystemimages'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getSystemimage'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'installComponent'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'installedComponentLinkCreation'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'remove'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'getAttrDef'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'toString'); SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid, @Systemmanager_eid , 'getKernels');SET @id:=@id+1;
+
+--
 -- permission for Group Hardwargroup @Hardwar_eid
+--
 
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'create');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'getHostmodels');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'remove');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'toString');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'update');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'setperm');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'create');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'getHostmodels');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'remove');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'toString');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'update');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid ,@Hardwar_eid , 'setperm');SET @id:=@id+1;
 
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'update');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'activate');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'deactivate');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'toString');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getEtcName');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getMacName');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getEtcDev');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getInternalIP');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getModel');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getHarddisks');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'addHarddisk');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'removeHarddisk');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'create');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'update');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'activate');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'deactivate');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'toString');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getEtcName');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getMacName');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getEtcDev');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getInternalIP');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getModel');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'getHarddisks');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'addHarddisk');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'removeHarddisk');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid ,@Hardwar_eid , 'create');SET @id:=@id+1;
 
 
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'update');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'toString');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'remove');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'getPowersupplycardmodels');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'update');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'toString');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'remove');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'getPowersupplycardmodels');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid   ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
 
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'update');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'toString');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'remove');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'addPowerSupplyPort');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'update');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'toString');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'remove');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid  ,@Hardwar_eid , 'addPowerSupplyPort');SET @id:=@id+1;
 
-   INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'toString');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'remove');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'getKernels');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'toString');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'remove');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'getKernels');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'getAttrDef');SET @id:=@id+1;
 
--- permission for Group Hardwargroup  @Usermanager_eid
-
+--
 -- permission for Group Hardwargroup @Visitor_eid=@eid
-   INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Visitor_eid, 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @HostGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
-   INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
+--
+
+INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Visitor_eid, 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @HostGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycarmodelGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
+INSERT INTO `entityright` VALUES (@id, @PowersupplycardGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 
 
 

@@ -68,7 +68,7 @@ __PACKAGE__->add_columns(
   },
 );
 __PACKAGE__->set_primary_key("component_template_id");
-__PACKAGE__->add_unique_constraint("component_template_UNIQUE", ["component_template_name"]);
+__PACKAGE__->add_unique_constraint("component_template_name", ["component_template_name"]);
 
 =head1 RELATIONS
 
@@ -118,8 +118,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gw0sMozq6xzpAMWpsLMiDg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2CKn4OR8xcRDqYeidHGJhA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

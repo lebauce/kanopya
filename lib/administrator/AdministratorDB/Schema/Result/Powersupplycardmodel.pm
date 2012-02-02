@@ -62,10 +62,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("powersupplycardmodel_id");
-__PACKAGE__->add_unique_constraint(
-  "powersupplycardmodel_name_UNIQUE",
-  ["powersupplycardmodel_name"],
-);
+__PACKAGE__->add_unique_constraint("powersupplycardmodel_name", ["powersupplycardmodel_name"]);
 
 =head1 RELATIONS
 
@@ -102,8 +99,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eTfUzt6QXtQE9OUXBM2CMg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oHgRl3jMM4X7cTBT8xSJmg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

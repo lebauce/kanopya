@@ -26,7 +26,7 @@ __PACKAGE__->table("node");
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 cluster_id
+=head2 inside_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -74,7 +74,7 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "cluster_id",
+  "inside_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -98,25 +98,9 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("node_id");
-__PACKAGE__->add_unique_constraint("cluster_id", ["cluster_id", "host_id"]);
-__PACKAGE__->add_unique_constraint("fk_node_2", ["host_id"]);
+__PACKAGE__->add_unique_constraint("host_id", ["host_id"]);
 
 =head1 RELATIONS
-
-=head2 cluster
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Cluster>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { cluster_id => "cluster_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
 
 =head2 host
 
@@ -133,9 +117,24 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 inside
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:b5TyB+1dN4fMvA3jK9fu4A
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Inside>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "inside",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "inside_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uo82xFkBAlSSx+EHuHkVFw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

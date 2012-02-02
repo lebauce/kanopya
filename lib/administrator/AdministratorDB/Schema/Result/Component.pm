@@ -26,7 +26,7 @@ __PACKAGE__->table("component");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 cluster_id
+=head2 inside_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -64,7 +64,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "cluster_id",
+  "inside_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -142,18 +142,18 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 cluster
+=head2 inside
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Cluster>
+Related object: L<AdministratorDB::Schema::Result::Inside>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { cluster_id => "cluster_id" },
+  "inside",
+  "AdministratorDB::Schema::Result::Inside",
+  { inside_id => "inside_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -443,8 +443,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 22:41:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TzozBOstHeuUb58Z3PWf4Q
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:h+qBpMEUcTbIOgnrOZoM7g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

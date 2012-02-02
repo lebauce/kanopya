@@ -46,7 +46,7 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 64 },
 );
 __PACKAGE__->set_primary_key("operationtype_id");
-__PACKAGE__->add_unique_constraint("operationtype_name_UNIQUE", ["operationtype_name"]);
+__PACKAGE__->add_unique_constraint("operationtype_name", ["operationtype_name"]);
 
 =head1 RELATIONS
 
@@ -81,8 +81,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:A1O6mlTiZdpk8yE+ZRfLtQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Cxs4Hkd0Py3dzBid3HSaog
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -23,14 +23,7 @@ __PACKAGE__->table("mysql5");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
   is_foreign_key: 1
-  is_nullable: 0
-
-=head2 component_instance_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 mysql5_port
@@ -61,12 +54,9 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "component_instance_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "mysql5_port",
   {
     data_type => "integer",
@@ -109,8 +99,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Vn56LsOgQmrR/5RBBkcBeA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:G9fEDx1RSfm1U4MTjuxV6A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

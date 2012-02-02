@@ -75,7 +75,7 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("entityright_id");
 __PACKAGE__->add_unique_constraint(
-  "entityright_right",
+  "entityright_consumed_id",
   [
     "entityright_consumed_id",
     "entityright_consumer_id",
@@ -116,8 +116,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UvVxc7+IQBiimXPXVCs44w
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:o7mE7AD6gSOhPGj0eE7YHw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

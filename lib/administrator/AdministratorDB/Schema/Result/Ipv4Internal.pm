@@ -62,7 +62,7 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 15 },
 );
 __PACKAGE__->set_primary_key("ipv4_internal_id");
-__PACKAGE__->add_unique_constraint("ipv4_internal_address_UNIQUE", ["ipv4_internal_address"]);
+__PACKAGE__->add_unique_constraint("ipv4_internal_address", ["ipv4_internal_address"]);
 
 =head1 RELATIONS
 
@@ -97,8 +97,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e2X/k/O4TzqQXOtOtcGPlA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UWUfh9SMMFF62/TrCYvQmw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

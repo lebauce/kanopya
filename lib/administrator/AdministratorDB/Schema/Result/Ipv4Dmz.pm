@@ -68,7 +68,7 @@ __PACKAGE__->add_columns(
   },
 );
 __PACKAGE__->set_primary_key("ipv4_dmz_id");
-__PACKAGE__->add_unique_constraint("ipv4_dmz_address_UNIQUE", ["ipv4_dmz_address"]);
+__PACKAGE__->add_unique_constraint("ipv4_dmz_address", ["ipv4_dmz_address"]);
 
 =head1 RELATIONS
 
@@ -93,8 +93,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2011-10-01 12:16:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xyJOFXgmpYrc4mBNW5I67Q
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/owUxtWzJs9ohVMbZ6Y81A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

@@ -100,7 +100,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("operation_id");
-__PACKAGE__->add_unique_constraint("execution_rank_UNIQUE", ["execution_rank"]);
+__PACKAGE__->add_unique_constraint("execution_rank", ["execution_rank"]);
 
 =head1 RELATIONS
 
@@ -150,8 +150,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QwBHP4sPbYaW1w658upesw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wqindFglX/ivjG+UUL61Lg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

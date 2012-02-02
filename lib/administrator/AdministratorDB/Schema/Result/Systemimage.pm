@@ -118,7 +118,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("systemimage_id");
-__PACKAGE__->add_unique_constraint("systemimage_name_UNIQUE", ["systemimage_name"]);
+__PACKAGE__->add_unique_constraint("systemimage_name", ["systemimage_name"]);
 
 =head1 RELATIONS
 
@@ -208,8 +208,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:67Vyoo7uyPXm7kelylVwHw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tgyHGPveornbvFP6VW0G/w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

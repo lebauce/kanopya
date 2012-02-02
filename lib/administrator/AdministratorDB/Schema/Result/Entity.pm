@@ -41,21 +41,6 @@ __PACKAGE__->set_primary_key("entity_id");
 
 =head1 RELATIONS
 
-=head2 cluster
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Cluster>
-
-=cut
-
-__PACKAGE__->might_have(
-  "cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { "foreign.cluster_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 component
 
 Type: might_have
@@ -68,6 +53,21 @@ __PACKAGE__->might_have(
   "component",
   "AdministratorDB::Schema::Result::Component",
   { "foreign.component_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 connector
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Connector>
+
+=cut
+
+__PACKAGE__->might_have(
+  "connector",
+  "AdministratorDB::Schema::Result::Connector",
+  { "foreign.connector_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -251,6 +251,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->might_have(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { "foreign.service_provider_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 systemimage
 
 Type: might_have
@@ -297,8 +312,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 23:11:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mkfRwSj8qcLv0RUMw/urTA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ibX7LuqSX+Zb5bS9pPJGkg
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

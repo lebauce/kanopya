@@ -116,7 +116,7 @@ __PACKAGE__->add_columns(
   },
 );
 __PACKAGE__->set_primary_key("hostmodel_id");
-__PACKAGE__->add_unique_constraint("hostmodel_name_UNIQUE", ["hostmodel_name"]);
+__PACKAGE__->add_unique_constraint("hostmodel_name", ["hostmodel_name"]);
 
 =head1 RELATIONS
 
@@ -171,8 +171,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e+XU9dYUPN+Soo3m9AYEzA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rwZYyt4HpfcALa8l9qxh0A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
