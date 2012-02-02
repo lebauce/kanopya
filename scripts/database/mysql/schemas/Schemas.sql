@@ -205,6 +205,7 @@ CREATE TABLE `host` (
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
   `host_hostname` char(32) DEFAULT NULL,
+  `cloud_cluster_id` int(8) unsigned DEFAULT NULL,
   `etc_device_id` int(8) unsigned DEFAULT NULL,
   `host_state` char(32) NOT NULL DEFAULT 'down',
   `host_prev_state` char(32),
