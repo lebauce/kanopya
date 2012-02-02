@@ -16,46 +16,65 @@ package Aggregate;
 use strict;
 use warnings;
 use General;
-use Entity::Cluster;
-use DBI;
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-     General::checkParams args => \%args, required => [
-        'cluster',
-        'indicator',
-        'descriptive_statistics_function_name',
-        'window_time',
-    ];
-    
-    my $self = {};
-    $self->{_cluster}                              = $args{cluster};
-    $self->{_indicator}                            = $args{indicator};
-    $self->{_descriptive_statistics_function_name} = $args{descriptive_statistics_function_name};
-    $self->{_window_time}                          = $args{window_time};
-    
-    
-    my $required = 'DescriptiveStatisticsFunction/'.($self->{_descriptive_statistics_function_name}).'.pm';
-    require $required;
-    
-    bless $self, $class;
-}
+use Statistics::Descriptive;
+use base 'BaseDB';
 
-sub getCluster{
-    my $self = shift;
-    return $self->{_cluster};
-}
 
-sub callDescriptiveStatisticsFunction{
+#sub new {
+#    my $class = shift;
+#    my %args = @_;
+#    
+#     General::checkParams args => \%args, required => [
+#        'cluster',
+#        'indicator',
+#        'descriptive_statistics_function_name',
+#        'window_time',
+#    ];
+#    
+#    my $self = {};
+#    $self->{_cluster}                              = $args{cluster};
+#    $self->{_indicator}                            = $args{indicator};
+#    $self->{_descriptive_statistics_function_name} = $args{descriptive_statistics_function_name};
+#    $self->{_window_time}                          = $args{window_time};
+#
+#    bless $self, $class;
+#}
+
+use constant ATTR_DEF => {
+    cluster_id               =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0},
+    indicator_id             =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0},
+    statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min)$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0},
+    window_time              =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0},
+};
+
+sub getAttrDef { return ATTR_DEF; }
+
+sub calculate{
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams args => \%args, required => [
         'values',
     ];
     
     my $values  = $args{values};
-    ('DescriptiveStatisticsFunction::'.($self->{_descriptive_statistics_function_name}))->calculate(values => $values);
+    my $stat = Statistics::Descriptive::Full->new();
+    $stat->add_data($values);
+    my $funcname = $self->getAttr(name => 'statistics_function_name');
+    my $mean = $stat->$funcname();
+    return $mean;
+
 }
 1;
