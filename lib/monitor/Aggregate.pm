@@ -20,26 +20,6 @@ use Statistics::Descriptive;
 use base 'BaseDB';
 
 
-#sub new {
-#    my $class = shift;
-#    my %args = @_;
-#    
-#     General::checkParams args => \%args, required => [
-#        'cluster',
-#        'indicator',
-#        'descriptive_statistics_function_name',
-#        'window_time',
-#    ];
-#    
-#    my $self = {};
-#    $self->{_cluster}                              = $args{cluster};
-#    $self->{_indicator}                            = $args{indicator};
-#    $self->{_descriptive_statistics_function_name} = $args{descriptive_statistics_function_name};
-#    $self->{_window_time}                          = $args{window_time};
-#
-#    bless $self, $class;
-#}
-
 use constant ATTR_DEF => {
     cluster_id               =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
