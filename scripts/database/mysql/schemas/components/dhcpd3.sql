@@ -7,14 +7,12 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `dhcpd3` (
-  `dhcpd3_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `component_instance_id` int(8) unsigned NOT NULL,
+  `dhcpd3_id` int(8) unsigned NOT NULL,
   `dhcpd3_domain_name` char(128) DEFAULT NULL,
   `dhcpd3_domain_server` char(128) DEFAULT NULL,
   `dhcpd3_servername` char(128) DEFAULT NULL,
   PRIMARY KEY (`dhcpd3_id`),
-  KEY `fk_dhcpd3_1` (`component_instance_id`),
-  CONSTRAINT `fk_dhcpd3_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT FOREIGN KEY (`dhcpd3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

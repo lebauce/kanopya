@@ -28,22 +28,22 @@ __PACKAGE__->table("workload_characteristic");
 
 =head2 wc_visit_ratio
 
-  data_type: 'integer'
+  data_type: 'double precision'
   is_nullable: 0
 
 =head2 wc_service_time
 
-  data_type: 'integer'
+  data_type: 'double precision'
   is_nullable: 0
 
 =head2 wc_delay
 
-  data_type: 'integer'
+  data_type: 'double precision'
   is_nullable: 0
 
 =head2 wc_think_time
 
-  data_type: 'integer'
+  data_type: 'double precision'
   is_nullable: 0
 
 =head2 cluster_id
@@ -64,13 +64,13 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "wc_visit_ratio",
-  { data_type => "integer", is_nullable => 0 },
+  { data_type => "double precision", is_nullable => 0 },
   "wc_service_time",
-  { data_type => "integer", is_nullable => 0 },
+  { data_type => "double precision", is_nullable => 0 },
   "wc_delay",
-  { data_type => "integer", is_nullable => 0 },
+  { data_type => "double precision", is_nullable => 0 },
   "wc_think_time",
-  { data_type => "integer", is_nullable => 0 },
+  { data_type => "double precision", is_nullable => 0 },
   "cluster_id",
   {
     data_type => "integer",
@@ -95,12 +95,17 @@ __PACKAGE__->belongs_to(
   "cluster",
   "AdministratorDB::Schema::Result::Cluster",
   { cluster_id => "cluster_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-26 14:21:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XKQw9w1JIE3WLMnG+3XXAw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3YbHJaznSb28QZ9i776Adw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

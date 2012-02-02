@@ -22,99 +22,64 @@ __PACKAGE__->table("openiscsi2");
 =head2 openiscsi2_id
 
   data_type: 'integer'
-  is_auto_increment: 1
-  is_nullable: 0
-
-=head2 component_instance_id
-
-  data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
-
-=head2 openiscsi2_target
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 64
-
-=head2 openiscsi2_server
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
-
-=head2 openiscsi2_port
-
-  data_type: 'integer'
-  is_nullable: 1
-
-=head2 openiscsi2_mount_point
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 64
-
-=head2 openiscsi2_mount_options
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 64
-
-=head2 openiscsi2_filesystem
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 32
 
 =cut
 
 __PACKAGE__->add_columns(
   "openiscsi2_id",
-  { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
-  "component_instance_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "openiscsi2_target",
-  { data_type => "char", is_nullable => 0, size => 64 },
-  "openiscsi2_server",
-  { data_type => "char", is_nullable => 0, size => 32 },
-  "openiscsi2_port",
-  { data_type => "integer", is_nullable => 1 },
-  "openiscsi2_mount_point",
-  { data_type => "char", is_nullable => 1, size => 64 },
-  "openiscsi2_mount_options",
-  { data_type => "char", is_nullable => 1, size => 64 },
-  "openiscsi2_filesystem",
-  { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("openiscsi2_id");
 
 =head1 RELATIONS
 
-=head2 component_instance
+=head2 openiscsi2
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "component_instance",
-  "AdministratorDB::Schema::Result::ComponentInstance",
-  { component_instance_id => "component_instance_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  "openiscsi2",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "openiscsi2_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 openiscsi2_targets
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Openiscsi2Target>
+
+=cut
+
+__PACKAGE__->has_many(
+  "openiscsi2_targets",
+  "AdministratorDB::Schema::Result::Openiscsi2Target",
+  { "foreign.openiscsi2_id" => "self.openiscsi2_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xc1H+FTZbXPkSXZ5ulje7g
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vGLj9tlKi90etRmvjVN/Dw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Component",
+    { "foreign.component_id" => "self.openiscsi2_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

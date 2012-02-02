@@ -11,7 +11,7 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/test.log', layout=>'%F %L 
 BEGIN{
     use_ok ('Administrator');
     use_ok ('Executor');
-    use_ok('Entity::Cluster');
+    use_ok('Entity::ServiceProvider::Inside::Cluster');
     use_ok('Entity::Motherboard');
     use_ok('Entity::Systemimage');
 }
@@ -60,23 +60,23 @@ eval {
 
     # Test Cluster Creation
     note("Test Cluster Creation");
-    my $c1 = Entity::Cluster->new(cluster_name => "foobar", 
+    my $c1 = Entity::ServiceProvider::Inside::Cluster->new(cluster_name => "foobar", 
                                   cluster_min_node => "1",
 				  cluster_max_node => "2",
 			  cluster_priority => "100",
 				  systemimage_id => $s2->getAttr(name=>"systemimage_id"));
 
-   isa_ok($c1, "Entity::Cluster", $test_instantiation);
+   isa_ok($c1, "Entity::ServiceProvider::Inside::Cluster", $test_instantiation);
    $c1->create();
     $executor->execnround(run => 1);
-   my $c2 = Entity::Cluster->getCluster(hash => {'cluster_name'=>'foobar'});
-    isa_ok($c2, "Entity::Cluster", "Cluster creation");
+   my $c2 = Entity::ServiceProvider::Inside::Cluster->getCluster(hash => {'cluster_name'=>'foobar'});
+    isa_ok($c2, "Entity::ServiceProvider::Inside::Cluster", "Cluster creation");
 
     # Test Cluster Activation
     note( "Test Cluster Activation");
     $c2->activate();
     $executor->execnround(run => 1);
-    $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
+    $c2 = Entity::ServiceProvider::Inside::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
     is ($c2->getAttr(name=>'active'), 1, "Activate Cluster");
 
     # Test Motherboard Activation
@@ -103,7 +103,7 @@ eval {
 #    note( "Test Cluster Deactivation");
 #    $c2->deactivate();
 #    $executor->execnround(run => 1);
-#    $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
+#    $c2 = Entity::ServiceProvider::Inside::Cluster->get(id => $c2->getAttr(name=>'cluster_id'));
 #    is ($c2->getAttr(name=>'active'), 0, "Deactivate Cluster");
 #
 #    # Test Systemimage Deactivation
@@ -117,7 +117,7 @@ eval {
 #    note( "Test Cluster Deletion");
 #    $c2->remove();
 #    $executor->execnround(run => 1);
-#    throws_ok { $c2 = Entity::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
+#    throws_ok { $c2 = Entity::ServiceProvider::Inside::Cluster->get(id => $c2->getAttr(name=>'cluster_id'))} 'Kanopya::Exception::Internal',
 #      "Try to get a deleted Cluster";
 #
 #    # Motherboard delete

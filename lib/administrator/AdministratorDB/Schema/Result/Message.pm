@@ -42,6 +42,7 @@ __PACKAGE__->table("message");
 =head2 message_creationdate
 
   data_type: 'date'
+  datetime_undef_if_invalid: 1
   is_nullable: 0
 
 =head2 message_creationtime
@@ -80,7 +81,7 @@ __PACKAGE__->add_columns(
   "message_from",
   { data_type => "char", is_nullable => 0, size => 32 },
   "message_creationdate",
-  { data_type => "date", is_nullable => 0 },
+  { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 0 },
   "message_creationtime",
   { data_type => "time", is_nullable => 0 },
   "message_level",
@@ -104,33 +105,23 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 message_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::MessageEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "message_entity",
-  "AdministratorDB::Schema::Result::MessageEntity",
-  { "foreign.message_id" => "self.message_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Yq27xSQG+A5q6ioXicxBvA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Hcp5tV6Yg7oYSMITG5+w5A
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::MessageEntity",
-    { "foreign.message_id" => "self.message_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.message_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

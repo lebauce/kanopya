@@ -62,7 +62,7 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 15 },
 );
 __PACKAGE__->set_primary_key("ipv4_internal_id");
-__PACKAGE__->add_unique_constraint("ipv4_internal_address_UNIQUE", ["ipv4_internal_address"]);
+__PACKAGE__->add_unique_constraint("ipv4_internal_address", ["ipv4_internal_address"]);
 
 =head1 RELATIONS
 
@@ -77,9 +77,7 @@ Related object: L<AdministratorDB::Schema::Result::Host>
 __PACKAGE__->has_many(
   "hosts",
   "AdministratorDB::Schema::Result::Host",
-  {
-    "foreign.host_ipv4_internal_id" => "self.ipv4_internal_id",
-  },
+  { "foreign.host_ipv4_internal_id" => "self.ipv4_internal_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -99,8 +97,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-07 12:42:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GDk8/9n+NAbQs1fB/qTiZA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UWUfh9SMMFF62/TrCYvQmw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

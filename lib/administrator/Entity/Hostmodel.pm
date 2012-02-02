@@ -60,32 +60,6 @@ sub methods {
     }; 
 }
 
-=head2 get
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-    
-    my $adm = Administrator->new();
-    my $hostmodel = $adm->{db}->resultset('Hostmodel')->find($args{id});
-    if(not defined $hostmodel) {
-        $errmsg = "Entity::Hostmodel->get : id <$args{id}> not found !";    
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    } 
-    my $entity_id = $hostmodel->entitylink->get_column('entity_id');
-    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get host model with id $args{id}");
-    }
-    my $self = $class->SUPER::get( %args,  table => "Hostmodel");
-    return $self;
-}
-
 =head2 getHostmodels
 
 =cut
@@ -95,29 +69,8 @@ sub getHostmodels {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['hash']);
-    
-    my $adm = Administrator->new();
-    return $class->SUPER::getEntities( %args,  type => "Hostmodel");
-}
 
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-    
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Hostmodel");
-    
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
+    return $class->search(%args);
 }
 
 =head2 create

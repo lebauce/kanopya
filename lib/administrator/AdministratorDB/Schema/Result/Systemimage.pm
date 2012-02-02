@@ -23,7 +23,7 @@ __PACKAGE__->table("systemimage");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 systemimage_name
@@ -79,7 +79,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "systemimage_name",
@@ -118,7 +118,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("systemimage_id");
-__PACKAGE__->add_unique_constraint("systemimage_name_UNIQUE", ["systemimage_name"]);
+__PACKAGE__->add_unique_constraint("systemimage_name", ["systemimage_name"]);
 
 =head1 RELATIONS
 
@@ -137,6 +137,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 systemimage
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "systemimage",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "systemimage_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 distribution
 
 Type: belongs_to
@@ -149,7 +164,7 @@ __PACKAGE__->belongs_to(
   "distribution",
   "AdministratorDB::Schema::Result::Distribution",
   { distribution_id => "distribution_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 etc_device
@@ -164,7 +179,12 @@ __PACKAGE__->belongs_to(
   "etc_device",
   "AdministratorDB::Schema::Result::Lvm2Lv",
   { lvm2_lv_id => "etc_device_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 root_device
@@ -179,33 +199,23 @@ __PACKAGE__->belongs_to(
   "root_device",
   "AdministratorDB::Schema::Result::Lvm2Lv",
   { lvm2_lv_id => "root_device_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 systemimage_entity
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::SystemimageEntity>
-
-=cut
-
-__PACKAGE__->might_have(
-  "systemimage_entity",
-  "AdministratorDB::Schema::Result::SystemimageEntity",
-  { "foreign.systemimage_id" => "self.systemimage_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-12 15:20:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GugKYaadEHYSYqSFdtET2Q
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tgyHGPveornbvFP6VW0G/w
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
-__PACKAGE__->has_one(
-  "entitylink",
-  "AdministratorDB::Schema::Result::SystemimageEntity",
-    { "foreign.systemimage_id" => "self.systemimage_id" },
-    { cascade_copy => 0, cascade_delete => 0 });
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.systemimage_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

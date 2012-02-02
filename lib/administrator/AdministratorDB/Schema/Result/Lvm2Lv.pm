@@ -41,13 +41,14 @@ __PACKAGE__->table("lvm2_lv");
 
 =head2 lvm2_lv_size
 
-  data_type: 'integer'
+  data_type: 'bigint'
   extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 lvm2_lv_freespace
 
-  data_type: 'integer'
+  data_type: 'bigint'
+  extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 lvm2_lv_filesystem
@@ -76,9 +77,9 @@ __PACKAGE__->add_columns(
   "lvm2_lv_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "lvm2_lv_size",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
   "lvm2_lv_freespace",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
   "lvm2_lv_filesystem",
   { data_type => "char", is_nullable => 0, size => 10 },
 );
@@ -116,21 +117,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 lvm2_vg
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Lvm2Vg>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "lvm2_vg",
-  "AdministratorDB::Schema::Result::Lvm2Vg",
-  { lvm2_vg_id => "lvm2_vg_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 hosts
 
 Type: has_many
@@ -144,6 +130,21 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::Host",
   { "foreign.etc_device_id" => "self.lvm2_lv_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 lvm2_vg
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Lvm2Vg>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "lvm2_vg",
+  "AdministratorDB::Schema::Result::Lvm2Vg",
+  { lvm2_vg_id => "lvm2_vg_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 systemimage_etc_devices
@@ -177,8 +178,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:q5Vp+30Czh6newPiyZoXLA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NshNk8gfad41+xksjq4KpA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

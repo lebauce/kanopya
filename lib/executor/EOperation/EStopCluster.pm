@@ -39,7 +39,7 @@ use base "EOperation";
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 my $log = get_logger("executor");
 my $errmsg;
 
@@ -92,7 +92,7 @@ sub prepare {
     $self->{_objs} = {};
     
     # Get cluster to start from param
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
         
 }
 

@@ -2,7 +2,7 @@
 <h2>Cluster <% cluster_name %> - Mysql5 Configuration</h2>
 <hr />
 <form method="POST" action="/components/process_configurecomponent">
-<input type="hidden" name="component_instance_id" value="<% component_instance_id %>"/>
+<input type="hidden" name="component_id" value="<% component_instance_id %>"/>
 <input type="hidden" name="mysql5_id" value="<% mysql5_id %>"/>
 <input type="hidden" name="component_name" value="Mysql5"/>
 <input type="hidden" name="cluster_id" value="<% cluster_id %>"/>

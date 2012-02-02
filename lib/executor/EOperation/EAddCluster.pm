@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Gp;
 
@@ -52,36 +52,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
-
-    my $op = EEntity::EOperation::EAddHost->new();
-
-EEntity::Operation::EAddHost->new creates a new AddMotheboard operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
 
 =head2 prepare
 
@@ -103,7 +73,7 @@ sub prepare {
     
     # Cluster instantiation
     eval {
-        $self->{_objs}->{cluster} = Entity::Cluster->new(%$params);
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$params);
     };
     if($@) {
         my $err = $@;

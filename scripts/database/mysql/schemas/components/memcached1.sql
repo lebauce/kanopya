@@ -7,12 +7,10 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `memcached1` (
-  `memcached1_id` int(8) unsigned NOT NULL AUTO_INCREMENT,  
-  `component_instance_id` int(8) unsigned NOT NULL,
+  `memcached1_id` int(8) unsigned NOT NULL,
   `memcached1_port` int(8) unsigned NOT NULL,
   PRIMARY KEY (`memcached1_id`),
-  KEY `fk_memcached1_1` (`component_instance_id`),
-  CONSTRAINT `fk_memcached1_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT `fk_memcached1_1` FOREIGN KEY (`memcached1_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

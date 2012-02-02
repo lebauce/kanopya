@@ -7,11 +7,9 @@ SET foreign_key_checks=0;
 --
 
 CREATE TABLE `syslogng3` (
-  `syslogng3_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `component_instance_id` int(8) unsigned NOT NULL,
+  `syslogng3_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`syslogng3_id`),
-  KEY `fk_syslogng3_1` (`component_instance_id`),
-  CONSTRAINT `fk_syslogng3_1` FOREIGN KEY (`component_instance_id`) REFERENCES `component_instance` (`component_instance_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT FOREIGN KEY (`syslogng3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

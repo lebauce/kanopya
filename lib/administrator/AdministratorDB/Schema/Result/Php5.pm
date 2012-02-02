@@ -23,13 +23,6 @@ __PACKAGE__->table("php5");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
-  is_nullable: 0
-
-=head2 component_instance_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
@@ -53,13 +46,6 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
-    is_nullable => 0,
-  },
-  "component_instance_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
@@ -77,25 +63,30 @@ __PACKAGE__->set_primary_key("php5_id");
 
 =head1 RELATIONS
 
-=head2 component_instance
+=head2 php5
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "component_instance",
-  "AdministratorDB::Schema::Result::ComponentInstance",
-  { component_instance_id => "component_instance_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  "php5",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "php5_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-26 14:21:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Bja0kSjHg6GBj0vb2dY8nw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 17:01:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VAGmkkXNkHgY5ynkA/wriQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Component",
+    { "foreign.component_id" => "self.php5_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

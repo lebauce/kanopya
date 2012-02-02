@@ -11,7 +11,7 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::OperationParameter
+AdministratorDB::Schema::Result::OldOperationParameter
 
 =cut
 
@@ -71,24 +71,24 @@ __PACKAGE__->set_primary_key("old_operation_param_id");
 
 =head1 RELATIONS
 
-=head2 operation
+=head2 old_operation
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Operation>
+Related object: L<AdministratorDB::Schema::Result::OldOperation>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "operation",
+  "old_operation",
   "AdministratorDB::Schema::Result::OldOperation",
   { old_operation_id => "old_operation_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:O5vFNRBuDa4B79/XXV2Beg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mlhO3MxTlyqYNCtAz/rMCA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

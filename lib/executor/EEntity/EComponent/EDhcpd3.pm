@@ -24,16 +24,6 @@ use General;
 my $log = get_logger("executor");
 my $errmsg;
 
-# contructor
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new( %args );
-    return $self;
-}
-
 sub addHost {
     my $self = shift;
     my %args = @_;

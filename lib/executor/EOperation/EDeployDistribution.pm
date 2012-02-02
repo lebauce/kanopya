@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use XML::Simple;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Distribution;
 use Entity::Gp;
@@ -155,7 +155,7 @@ sub prepare {
     # Get contexts
     $self->{executor}->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
     $self->loadContext( internal_cluster => $args{internal_cluster}, service => 'nas' );
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     my $tmp = $self->{nas}->{obj}->getComponent(name       => "Lvm",
                                                 version    => "2");
     $log->debug("Value return by getcomponent ". ref($tmp));

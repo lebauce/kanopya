@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EFactory;
 
@@ -130,7 +130,7 @@ sub prepare {
     }
     $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
-    $self->{_objs}->{component_id} = $params->{component_id};
+    $self->{_objs}->{component_type_id} = $params->{component_type_id};
 
     eval {
         $self->checkOp(params => $params);
@@ -143,7 +143,7 @@ sub prepare {
     }
     #### Instanciate Clusters
     # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 
     # Load NAS Econtext
@@ -160,7 +160,7 @@ sub prepare {
 sub execute{
     my $self = shift;
     
-    $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_id => $self->{_objs}->{component_id});
+    $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_type_id => $self->{_objs}->{component_type_id});
     
 }
 

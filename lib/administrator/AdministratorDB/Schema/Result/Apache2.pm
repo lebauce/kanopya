@@ -19,7 +19,7 @@ __PACKAGE__->table("apache2");
 
 =head1 ACCESSORS
 
-=head2 component_instance_id
+=head2 apache2_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -50,17 +50,10 @@ __PACKAGE__->table("apache2");
   is_nullable: 0
   size: 32
 
-=head2 apache2_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_auto_increment: 1
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
-  "component_instance_id",
+  "apache2_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -75,31 +68,24 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "apache2_sslports",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "apache2_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_auto_increment => 1,
-    is_nullable => 0,
-  },
 );
 __PACKAGE__->set_primary_key("apache2_id");
 
 =head1 RELATIONS
 
-=head2 component_instance
+=head2 apache2
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ComponentInstance>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "component_instance",
-  "AdministratorDB::Schema::Result::ComponentInstance",
-  { component_instance_id => "component_instance_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  "apache2",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "apache2_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 apache2_virtualhosts
@@ -118,9 +104,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-28 14:30:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ksOwNyzm5z+k+/bVSYLviQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZdZnsO1ws+CGGfIj6+7/fA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Component",
+    { "foreign.component_id" => "self.apache2_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;

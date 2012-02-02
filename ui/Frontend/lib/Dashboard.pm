@@ -4,7 +4,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Dancer::Plugin::EscapeHTML;
 
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Component;
 
 use Log::Log4perl "get_logger";
@@ -79,7 +79,7 @@ get '/xml_admin_status' => sub {
 
 get '/logs' => sub {
     my @dirs_info     = ();
-    my $admin_cluster = Entity::Cluster->get( id => 1 );
+    my $admin_cluster = Entity::ServiceProvider::Inside::Cluster->get( id => 1 );
     my $error_msg;
     my $logger_comp;
 
@@ -148,7 +148,7 @@ ajax '/logs' => sub {
 get '/logs/:nodeip' => sub {
     my $nodeip = params->{nodeip};
     my @dirs_info     = ();
-    my $admin_cluster = Entity::Cluster->get( id => 1 );
+    my $admin_cluster = Entity::ServiceProvider::Inside::Cluster->get( id => 1 );
     my $error_msg;
     my $logger_comp;
 

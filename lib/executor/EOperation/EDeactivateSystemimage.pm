@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 use Template;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use General;
 
 my $log = get_logger("executor");
@@ -99,7 +99,7 @@ sub checkOp {
     }
     
     # check if no active cluster is using this systemimage
-    my @clusters = Entity::Cluster->getClusters(hash => {
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters(hash => {
         systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id'),
         active => 1,
     });
@@ -143,7 +143,7 @@ sub prepare {
     
     #### Instanciate Clusters
     # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{nas});
+    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 
     # Load NAS Econtext

@@ -29,8 +29,8 @@ eval {
 
     $tier->save();
     # Test cluster->get
-#    my $c2 = Entity::Cluster->getCluster(hash => {'cluster_name'=>'foobare'});
-#    isa_ok($c2,Entity::Cluster,"l\'objet est bien un cluster");
+#    my $c2 = Entity::ServiceProvider::Inside::Cluster->getCluster(hash => {'cluster_name'=>'foobare'});
+#    isa_ok($c2,Entity::ServiceProvider::Inside::Cluster,"l\'objet est bien un cluster");
 
 
 };

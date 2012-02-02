@@ -37,6 +37,9 @@ use constant ATTR_DEF => {
     etc_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0},
     root_device_id => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0}
 };
+
+sub primarykey { return 'distribution_id'; }
+
 sub getAttrDef{
     return ATTR_DEF;
 }
@@ -52,36 +55,6 @@ sub methods {
     };
 }
 
-=head2 get
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-   
-    my $adm = Administrator->new();
-    my $dbix_distribution = $adm->{db}->resultset('Distribution')->find($args{id});
-    if(not defined $dbix_distribution) {
-        $errmsg = "Entity::Distribution->get : id <$args{id}> not found !";    
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }       
-       
-       my $entity_id = $dbix_distribution->entitylink->get_column('entity_id');
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-       if(not $granted) {
-           $errmsg = "Permission denied to get distribution with id $args{id}";
-           $log->error($errmsg);
-           throw Kanopya::Exception::Permission::Denied(error => $errmsg);
-       }
-       
-       my $self = $class->SUPER::get( %args,  table => "Distribution");
-       return $self;
-}
-
 =head2 getDistributions
 
 =cut
@@ -89,34 +62,10 @@ sub get {
 sub getDistributions {
     my $class = shift;
     my %args = @_;
-    my @objs = ();
-    my ($rs, $entity_class);
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my $adm = Administrator->new();
-    return $class->SUPER::getEntities( %args,  type => "Distribution");
-}
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-    
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Distribution");
-    
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-
-    return $self;
-
+    return $class->search(%args);
 }
 
 =head getDevices 
@@ -177,14 +126,14 @@ sub getProvidedComponents {
     }
     my $components = [];
     my $search = $self->{_dbix}->components_provided->search(undef, 
-        { '+columns' => {'component_name' => 'component.component_name', 
-                         'component_version' => 'component.component_version', 
-                         'component_category' => 'component.component_category' },
-            join => ['component'] } 
+        { '+columns' => {'component_name' => 'component_type.component_name', 
+                         'component_version' => 'component_type.component_version', 
+                         'component_category' => 'component_type.component_category' },
+            join => ['component_type'] } 
     );
     while (my $row = $search->next) {
         my $tmp = {};
-        $tmp->{component_id} = $row->get_column('component_id');
+        $tmp->{component_type_id} = $row->get_column('component_type_id');
         $tmp->{component_name} = $row->get_column('component_name');
         $tmp->{component_version} = $row->get_column('component_version');
         $tmp->{component_category} = $row->get_column('component_category');
@@ -208,7 +157,7 @@ sub updateProvidedComponents {
     }
     my $components = Entity::Component->getComponents();
     foreach my $c (@$components) {
-		$self->{_dbix}->components_provided->find_or_create({component_id => $c->{component_id}});
+		$self->{_dbix}->components_provided->find_or_create({component_type_id => $c->{component_type_id}});
 	}
 }
 

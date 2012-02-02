@@ -63,62 +63,31 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
-=head2 get
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing apache2 component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Apache2 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
+use constant ATTR_DEF => {
+    apache2_loglevel   => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
 
-sub get {
-    my $class = shift;
-    my %args = @_;
+    apache2_serverroot => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                           },
+    apache2_ports      => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+    apache2_sslports   => { pattern        => '^.*$',
+                            is_mandatory   => 0,
+                            is_extended    => 0,
+                            is_editable    => 0
+                          },
+};
 
-    if ((! exists $args{id} or ! defined $args{id})) { 
-        $errmsg = "Entity::Component::Apache2->get need an id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-   my $self = $class->SUPER::get( %args);
-   return $self;
-}
-
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Webserver component.
-          This is an abstract class, DO NOT instantiate it.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Apache2 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    if ((! exists $args{cluster_id} or ! defined $args{cluster_id})||
-        (! exists $args{component_id} or ! defined $args{component_id})){ 
-        $errmsg = "Entity::Component::Apache2->new need a cluster_id and a component_id named argument!";    
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+sub getAttrDef { return ATTR_DEF; }
 
 =head2 addVirtualhost
 B<Class>   : Public
@@ -137,6 +106,7 @@ B<throws>  :
     B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
     
 =cut
+
 
 sub addVirtualhost {
     #TODO AddVirtualhost
@@ -167,7 +137,7 @@ sub getVirtualhostConf{
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
-    my $virtualhost_rs = $self->{_dbix}->apache2s->first->apache2_virtualhosts;
+    my $virtualhost_rs = $self->{_dbix}->apache2_virtualhosts;
     my @tab_virtualhosts = ();
     while (my $virtualhost_row = $virtualhost_rs->next){
         my %virtualhost = $virtualhost_row->get_columns();
@@ -200,7 +170,7 @@ sub getGeneralConf{
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
-    my %apache2_conf = $self->{_dbix}->apache2s->first->get_columns();
+    my %apache2_conf = $self->{_dbix}->get_columns();
     $log->debug("Apache2 conf return is : " . Dumper(%apache2_conf));
     return \%apache2_conf;
 }
@@ -246,7 +216,7 @@ sub getConf {
         ]
     };
     
-    my $lineindb = $self->{_dbix}->apache2s->first;
+    my $lineindb = $self->{_dbix};
     if(defined $lineindb) {
         my %dbconf = $lineindb->get_columns();
         $apache2_conf = \%dbconf;
@@ -298,17 +268,17 @@ sub setConf {
     
     if(not $conf->{apache2_id}) {
         # new configuration -> create    
-        my $row = $self->{_dbix}->apache2s->create($conf);
-        $self->{_dbix}->apache2s->clear_cache();
+        my $row = $self->{_dbix}->create($conf);
+        $self->{_dbix}->clear_cache();
         foreach my $vh (@$virtualhosts) {
             $vh->{apache2_virtualhost_id} = undef;
-            $self->{_dbix}->apache2s->first()->apache2_virtualhosts->create($vh);
+            $self->{_dbix}->apache2_virtualhosts->create($vh);
         }
         
     } else {
         # old configuration -> update
-         $self->{_dbix}->apache2s->update($conf);
-         my $virtualhosts_indb = $self->{_dbix}->apache2s->first()->apache2_virtualhosts;
+         $self->{_dbix}->update($conf);
+         my $virtualhosts_indb = $self->{_dbix}->apache2_virtualhosts;
          
          # update existing virtual hosts
          while(my $vhost_indb = $virtualhosts_indb->next) {
@@ -338,15 +308,18 @@ sub setConf {
     }    
 }
 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    my %args = @_;
-    my $apache2_conf = {
-        apache2_loglevel => 'debug',
+sub getBaseConfiguration {
+	return {
+		apache2_loglevel => 'debug',
         apache2_serverroot => '/srv',
         apache2_ports => 80,
         apache2_sslports => 443,
-        apache2_virtualhosts => [
+    };
+}
+
+sub insertDefaultConfiguration {
+    my $self = shift;
+    $self->{_dbix}->apache2_virtualhosts->create(
             {
               apache2_virtualhost_servername => 'www.yourservername.com',
               apache2_virtualhost_sslenable => 'no',
@@ -354,16 +327,14 @@ sub insertDefaultConfiguration {
               apache2_virtualhost_documentroot => '/srv',
               apache2_virtualhost_log => '/tmp/apache_access.log',
               apache2_virtualhost_errorlog => '/tmp/apache_error.log',
-            },
-        ]
-    };
-    $self->{_dbix}->apache2s->create($apache2_conf);
+            }
+    );    
 }
 
 sub getNetConf{
     my $self = shift;
-    my $http_port = $self->{_dbix}->apache2s->first()->get_column("apache2_ports");
-    my $https_port = $self->{_dbix}->apache2s->first()->get_column("apache2_sslports");
+    my $http_port = $self->{_dbix}->get_column("apache2_ports");
+    my $https_port = $self->{_dbix}->get_column("apache2_sslports");
 
     my %net_conf = ($http_port  => ['tcp']);
 

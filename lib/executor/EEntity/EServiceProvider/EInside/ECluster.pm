@@ -32,10 +32,8 @@ ECluster is the execution class of cluster entities
 =head1 METHODS
 
 =cut
-package EEntity::ECluster;
-use base "EEntity";
-
-
+package EEntity::EServiceProvider::EInside::ECluster;
+use base 'EEntity';
 
 use strict;
 use warnings;
@@ -45,36 +43,6 @@ use Net::Ping;
 
 my $log = get_logger("executor");
 my $errmsg;
-
-=head2 new
-
-    my comp = ECluster->new();
-
-ECluster::new creates a new component object.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-ECluster::_init is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
 
 sub create {
     my $self = shift;
@@ -103,17 +71,23 @@ sub create {
     $self->_getEntity()->setAttr(name => 'cluster_state', value => 'down:'.time);
     
     # Save the new cluster in db
+    $log->debug("trying to update the new cluster previouly created");
     $self->_getEntity()->save();
 
     # automatically add System|Monitoragent|Logger components
+    
     if($systemimage) {
-        my $components = $systemimage->getInstalledComponents(); 
-        foreach my $comp (@$components) {
-            if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
-                $self->_getEntity()->addComponent(component_id => $comp->{component_id});
-                $log->info("Component $comp->{component_name} automatically added");
-            }
-        }
+        foreach my $compclass (qw/Entity::Component::Mounttable1
+                                  Entity::Component::Syslogng3
+                                  Entity::Component::Snmpd5/) {
+			my $location = General::getLocFromClass(entityclass => $compclass);
+			eval { require $location; };
+			$log->debug("trying to add $compclass to cluster");
+			my $comp = $compclass->new();
+			$comp->insertDefaultConfiguration();
+			$self->_getEntity()->addComponent(component => $comp);
+			$log->info("$compclass automatically added");
+		} 
     }
 }
 

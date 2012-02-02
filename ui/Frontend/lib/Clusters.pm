@@ -3,7 +3,7 @@ package Clusters;
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Administrator;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Entity::Gp;
 use Entity::Systemimage;
@@ -32,7 +32,7 @@ sub _timestamp_format {
 
 sub _clusters {
 
-    my @eclusters = Entity::Cluster->getClusters(hash => {});
+    my @eclusters = Entity::ServiceProvider::Inside::Cluster->getClusters(hash => {});
     my $clusters = [];
     my $clusters_list;
     my $can_create;
@@ -90,7 +90,7 @@ sub _clusters {
 # return an array containing running clusters with Cloudmanager component
 
 sub _virtualization_clusters {
-	my @clusters = Entity::Cluster->getClusters(hash => {});
+	my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters(hash => {});
 	my @virtualization_clusters = ();
 	foreach my $cluster (@clusters) {
 		my $components = $cluster->getComponents(category => 'Cloudmanager');
@@ -156,7 +156,7 @@ get '/clusters/users/:gpid' => sub {
 
 sub _users_list { return (); }
 get '/clusters/add' => sub {
-    my $kanopya_cluster = Entity::Cluster->getCluster(hash=>{cluster_name => 'adm'});
+    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(hash=>{cluster_name => 'adm'});
     my @ekernels = Entity::Kernel->getKernels(hash => {});
     my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
     my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
@@ -242,8 +242,7 @@ post '/clusters/add' => sub {
             user_id                => params->{'user_id'}
         };
         if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
-        my $ecluster = Entity::Cluster->new(%$params);
-        $ecluster->create();
+        Entity::ServiceProvider::Inside::Cluster->create(%$params);
     };
     if($@) {
         my $exception = $@;
@@ -265,7 +264,7 @@ post '/clusters/add' => sub {
 get '/clusters' => sub {
     my $can_create;
 
-    my $methods = Entity::Cluster->getPerms();
+    my $methods = Entity::ServiceProvider::Inside::Cluster->getPerms();
     if($methods->{'create'}->{'granted'}) {
         my @si = Entity::Systemimage->getSystemimages(hash => {});
         if (scalar @si){
@@ -287,7 +286,7 @@ get '/clusters' => sub {
 get '/clusters/:clusterid' => sub {
     my $cluster_id = params->{clusterid};
     my $can_configure;
-    my $ecluster = Entity::Cluster->get(id => $cluster_id);
+    my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
     my $methods = $ecluster->getPerms();
     my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
     my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
@@ -360,10 +359,10 @@ get '/clusters/:clusterid' => sub {
     my $components = $ecluster->getComponents(category => 'all');
     my $comps = [];
 
-    while( my ($instance_id, $comp) = each %$components) {
+    while( my ($component_id, $comp) = each %$components) {
         my $comphash = {};
         my $compAtt = $comp->getComponentAttr();
-        $comphash->{component_instance_id} = $instance_id;
+        $comphash->{component_id} = $component_id;
         $comphash->{component_name} = $compAtt->{component_name};
         $comphash->{component_version} = $compAtt->{component_version};
         $comphash->{component_category} = $compAtt->{component_category};
@@ -464,7 +463,7 @@ get '/clusters/:clusterid/activate' => sub {
     my $adm = Administrator->new;
     my $ecluster;
     eval {
-        $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->activate();
     };
     if($@) {
@@ -484,7 +483,7 @@ get '/clusters/:clusterid/activate' => sub {
 get '/clusters/:clusterid/deactivate' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->deactivate();
     };
     if($@) {
@@ -504,7 +503,7 @@ get '/clusters/:clusterid/deactivate' => sub {
 get '/clusters/:clusterid/remove' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->remove();
     };
     if($@) {
@@ -524,7 +523,7 @@ get '/clusters/:clusterid/remove' => sub {
 get '/clusters/:clusterid/start' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->start();
     };
     if($@) {
@@ -544,7 +543,7 @@ get '/clusters/:clusterid/start' => sub {
 get '/clusters/:clusterid/stop' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->stop();
     };
     if($@) {
@@ -564,7 +563,7 @@ get '/clusters/:clusterid/stop' => sub {
 get '/clusters/:clusterid/forcestop' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->forceStop();
     };
     if($@) {
@@ -587,9 +586,10 @@ get '/clusters/:clusterid/components/add' => sub {
     my ($ecluster, $esystemimage, $systemimage_components, $cluster_components);
     my $components = [];
     eval {
-        $ecluster = Entity::Cluster->get(id => $cluster_id);
+        $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
         $esystemimage = Entity::Systemimage->get(id => $ecluster->getAttr(name => 'systemimage_id'));
         $systemimage_components = $esystemimage->getInstalledComponents();
+        
         $cluster_components = $ecluster->getComponents(administrator => $adm, category => 'all');
     };
     if($@) {
@@ -603,9 +603,10 @@ get '/clusters/:clusterid/components/add' => sub {
     else {
         foreach my $c  (@$systemimage_components) {
             my $found = 0;
-            while(my ($instance_id, $component) = each %$cluster_components) {
+            
+            while(my ($component_id, $component) = each %$cluster_components) {
                 my $attrs = $component->getComponentAttr();
-                if($attrs->{component_id} eq $c->{component_id}) { $found = 1; }
+                if($attrs->{component_type_id} eq $c->{component_type_id}) { $found = 1; }
             }
             if(not $found) { push @$components, $c; };
         }
@@ -620,10 +621,10 @@ get '/clusters/:clusterid/components/add' => sub {
 
 post '/clusters/:clusterid/components/add' => sub {
     my $adm = Administrator->new;
-    my $instanceid;
+    my $component_id;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
-        $instanceid = $ecluster->addComponent(component_id => param('component_id'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
+        $component_id = $ecluster->addComponentFromType(component_type_id => param('component_type_id'));
     };
     if($@) {
         my $exception = $@;
@@ -635,14 +636,14 @@ post '/clusters/:clusterid/components/add' => sub {
     }
     else {
         $adm->addMessage(from => 'Administrator',level => 'info', content => 'Component added sucessfully');
-        redirect("/systems/components/$instanceid/configure");
+        redirect("/systems/components/$component_id/configure");
     }
 };
 
 get '/clusters/:clusterid/components/:instanceid/remove' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->removeComponent(component_instance_id => param('instanceid'));
     };
     if($@) {
@@ -754,7 +755,7 @@ post '/clusters/:clusterid/nodes/add' => sub {
     
     
     eval {
-        my $cluster = Entity::Cluster->get(id => param('clusterid'));
+        my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $cluster->addNode(%args);
         $adm->addMessage(from => 'Administrator',level => 'info', content => 'AddHostInCluster operation adding to execution queue');
     };
@@ -774,7 +775,7 @@ post '/clusters/:clusterid/nodes/add' => sub {
 get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
     my $adm = Administrator->new;
     eval {
-        my $ecluster = Entity::Cluster->get(id => param('clusterid'));
+        my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => param('clusterid'));
         $ecluster->removeNode(host_id => param('nodeid'));
     };
        if($@) {

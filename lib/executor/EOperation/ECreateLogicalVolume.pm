@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::Cluster;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Component::Lvm2;;
 use EFactory;
 
@@ -106,11 +106,11 @@ sub prepare {
     $self->{_objs} = {};
     
 
-    General::checkParams(args => $params, required => ["component_instance_id", "disk_name", "size", "filesystem", "vg_id"]);
+    General::checkParams(args => $params, required => ["component_id", "disk_name", "size", "filesystem", "vg_id"]);
 
     $self->{params} = $params;
     # Test if component instance id is really a Entity::Component::Iscsitarget
-    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_instance_id});
+    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_id});
     my $comp_desc = $comp_lvm->getComponentAttr();
     if (! $comp_desc->{component_name} eq "Lvm") {
         $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
@@ -119,7 +119,7 @@ sub prepare {
     }
     $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
     my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::Cluster->get(id => $cluster_id);
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
     my ($state, $timestamp) = $self->{_objs}->{cluster}->getState();
     if ($state ne 'up'){
         $errmsg = "Cluster has to be up !";
@@ -128,7 +128,7 @@ sub prepare {
     }
     
     # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();

@@ -62,56 +62,9 @@ use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
-# contructor
 
-=head2 get
-B<Class>   : Public
-B<Desc>    : This method allows to get an existing Dhcpd3 component.
-B<args>    : 
-    B<component_instance_id> : I<Int> : identify component instance 
-B<Return>  : a new Entity::Component::Dhcpd3 from Kanopya Database
-B<Comment>  : To modify configuration use concrete class dedicated method
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-   my $self = $class->SUPER::get( %args, table=>"ComponentInstance");
-   return $self;
-}
-
-=head2 new
-B<Class>   : Public
-B<Desc>    : This method allows to create a new instance of Dhcpd server component and concretly Dhcp3.
-B<args>    : 
-    B<component_id> : I<Int> : Identify component. Refer to component identifier table
-    B<cluster_id> : I<int> : Identify cluster owning the component instance
-B<Return>  : a new Entity::Component::Dhcpd3 from parameters.
-B<Comment>  : Like all component, instantiate it creates a new empty component instance.
-        You have to populate it with dedicated methods.
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-    
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['cluster_id','component_id']);
-    
-    # We create a new DBIx containing new entity
-    my $self = $class->SUPER::new( %args);
-
-    return $self;
-
-}
+use constant ATTR_DEF => {};
+sub getAttrDef { return ATTR_DEF; }
 
 =head2 getInternalSubNetId
 B<Class>   : Public
@@ -137,7 +90,7 @@ sub getSubNet {
 
     General::checkParams(args => \%args, required => ['dhcpd3_subnet_id']);
     
-    my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id});
+    my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id});
     return $dhcpd3_subnet->get_columns();
 }
 
@@ -167,8 +120,8 @@ B<throws>  : None
 # return a data structure to pass to the template processor 
 sub getConf {
     my $self = shift;
-    my $cluster = $self->{_dbix}->cluster;
-    my $dhcpd3 =  $self->{_dbix}->dhcpd3s->first();
+    my $cluster = $self->{_dbix}->parent->cluster;
+    my $dhcpd3 =  $self->{_dbix};
     my $data = {};
     my $adm = Administrator->new();
     $data->{domain_name} = $dhcpd3->get_column('dhcpd3_domain_name');
@@ -230,7 +183,7 @@ sub addHost {
                                       'kernel_id', "dhcpd3_hosts_ntp_server",
                                       'dhcpd3_hosts_domain_name', 'dhcpd3_hosts_domain_name_server']);
 
-    my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
+    my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
     my $res = $dhcpd3_hosts_rs->create(\%args);
     return $res->get_column('dhcpd3_hosts_id');
 }
@@ -241,7 +194,7 @@ sub getHost {
 
     General::checkParams(args => \%args, required => ['dhcpd3_hosts_id','dhcpd3_subnet_id']);
     
-    my $dhcpd3_hosts_row = $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find($args{dhcpd3_hosts_id});
+    my $dhcpd3_hosts_row = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find($args{dhcpd3_hosts_id});
     my %host = $dhcpd3_hosts_row->get_columns();
     return \%host;
 }
@@ -264,7 +217,7 @@ sub getHostId {
 
     General::checkParams(args => \%args, required => ['dhcpd3_hosts_mac_address','dhcpd3_subnet_id']);
     
-    return $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->search({ dhcpd3_hosts_mac_address=> $args{dhcpd3_hosts_mac_address}})->first()->get_column('dhcpd3_hosts_id');
+    return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->search({ dhcpd3_hosts_mac_address=> $args{dhcpd3_hosts_mac_address}})->first()->get_column('dhcpd3_hosts_id');
     
 }
 
@@ -286,7 +239,7 @@ sub removeHost{
     
     General::checkParams(args => \%args, required => ['dhcpd3_hosts_id','dhcpd3_subnet_id']);
 
-    return $self->{_dbix}->dhcpd3s->first()->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find( $args{dhcpd3_hosts_id})->delete();
+    return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find( $args{dhcpd3_hosts_id})->delete();
 }
 
 =head2 getNetConf

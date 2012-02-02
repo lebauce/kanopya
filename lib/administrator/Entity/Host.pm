@@ -123,9 +123,8 @@ use constant ATTR_DEF => {
                                             is_extended     => 1}
             };
 
-sub getAttrDef{
-    return ATTR_DEF;
-}
+sub getAttrDef { return ATTR_DEF; }
+
 sub methods {
     return {
         'create'    => {'description' => 'create a new host',
@@ -157,34 +156,6 @@ sub methods {
                         'perm_holder' => 'entity',
         },
     };
-}
-
-=head2 get
-
-=cut
-
-sub get {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['id']);
-
-    my $admin = Administrator->new();
-    my $host = $admin->{db}->resultset('Host')->find($args{id});
-    if(not defined $host) {
-        $errmsg = "Entity::Host->get : id <$args{id}> not found !";
-     $log->error($errmsg);
-     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    my $entity_id = $host->entitylink->get_column('entity_id');
-    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $entity_id, method => 'get');
-    if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to get host with id $args{id}");
-    }
-
-    my $self = $class->SUPER::get( %args, table=>"Host");
-    $self->{_ext_attrs} = $self->getExtendedAttrs(ext_table => "hostdetails");
-    return $self;
 }
 
 =head2 getState
@@ -250,7 +221,7 @@ sub getHostCORE {
     return $host_core;
 }
 
-sub setNodeNumber{
+sub setNodeNumber {
     my $self = shift;
     my %args = @_;
 
@@ -287,7 +258,7 @@ sub setNodeState {
     Desc : Create a new node instance in db from host linked to cluster (in params).
 
     args:
-        cluster_id : Int : Cluster identifier
+        inside_id : Int : inside identifier
         master_node : Int : 0 or 1 to say if the host is the master node
     return: Node identifier
 
@@ -297,11 +268,11 @@ sub becomeNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_id','master_node','node_number']);
+    General::checkParams(args => \%args, required => ['inside_id','master_node','node_number']);
 
     my $adm = Administrator->new();
     my $res =$adm->{db}->resultset('Node')->create(
-		{	cluster_id=>$args{cluster_id},
+		{	inside_id=>$args{inside_id},
             host_id =>$self->getAttr(name=>'host_id'),
             master_node => $args{master_node},
 			node_number => $args{node_number}
@@ -357,7 +328,7 @@ sub getHosts {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    return $class->SUPER::getEntities( %args,  type => "Host");
+    return $class->search(%args);
 }
 
 sub getHost {
@@ -366,7 +337,7 @@ sub getHost {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @Hosts = $class->SUPER::getEntities( %args,  type => "Host");
+    my @Hosts = $class->search(%args);
     return pop @Hosts;
 }
 
@@ -393,37 +364,19 @@ sub getFreeHosts {
     return @free;
 }
 
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    # Check attrs ad throw exception if attrs missed or incorrect
-    my $attrs = $class->checkAttrs(attrs => \%args);
-
-    # We create a new DBIx containing new entity (only global attrs)
-    my $self = $class->SUPER::new( attrs => $attrs->{global},  table => "Host");
-
-    # Set the extended parameters
-    $self->{_ext_attrs} = $attrs->{extended};
-    return $self;
-}
-
 =head2 create
 
 =cut
 
 sub create {
-    my $self = shift;
+    my ($class, %params) = @_;
 
-    my %params = $self->getAttrs();
+	$class->checkAttrs(attrs => \%params);
+
     $log->debug("New Operation AddHost with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
-                   type     => 'AddHost',
-                   params   => \%params);
+                       type     => 'AddHost',
+                       params   => \%params);
 }
 
 =head2 update
@@ -590,7 +543,7 @@ sub getInternalIP {
 
 }
 
-sub setInternalIP{
+sub setInternalIP {
     my $self = shift;
     my %args = @_;
 
@@ -602,7 +555,7 @@ sub setInternalIP{
     return $net_id;
 }
 
-sub removeInternalIP{
+sub removeInternalIP {
     my $self = shift;
 
     my $internal_net_id = $self->getAttr(name =>"host_ipv4_internal_id");

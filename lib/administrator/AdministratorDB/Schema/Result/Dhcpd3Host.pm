@@ -132,7 +132,7 @@ __PACKAGE__->belongs_to(
   "dhcpd3_subnet",
   "AdministratorDB::Schema::Result::Dhcpd3Subnet",
   { dhcpd3_subnet_id => "dhcpd3_subnet_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 kernel
@@ -147,12 +147,12 @@ __PACKAGE__->belongs_to(
   "kernel",
   "AdministratorDB::Schema::Result::Kernel",
   { kernel_id => "kernel_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-13 10:05:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8k8JM1l4acMdPpZZ36NcMA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wkLItcTTcaxK9WXQve+IMQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

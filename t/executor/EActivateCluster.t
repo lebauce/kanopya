@@ -9,7 +9,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/test.log', layout=>'%F %L %p %m%n'});
 
 use_ok ('Administrator');
-use_ok('Entity::Cluster');
+use_ok('Entity::ServiceProvider::Inside::Cluster');
 use_ok('Executor');
 use Data::Dumper;
 my $test_instantiation = "Instantiation test";
@@ -19,12 +19,12 @@ eval {
     
     ########################### Test cluster extended
     note("Test Cluster extended");
-    my $c1 = Entity::Cluster->new(cluster_name => "foobar", 
+    my $c1 = Entity::ServiceProvider::Inside::Cluster->new(cluster_name => "foobar", 
 			 cluster_min_node => "1", 
 			 cluster_max_node => "2", 
 			 cluster_priority => "100", 
 			 systemimage_id => "1");
-    isa_ok($c1, "Entity::Cluster", $test_instantiation);
+    isa_ok($c1, "Entity::ServiceProvider::Inside::Cluster", $test_instantiation);
     $c1->save();
     # Test cluster->get
     note( "Test Cluster management");
@@ -43,9 +43,9 @@ eval {
 
 
 
-#    my $cluster = Entity::Cluster->get(id => "1");
+#    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => "1");
 #    print "Admin cluster has a id : <" . $cluster->getAttr(name => "cluster_id") . ">\n";
-#    my $cluster2 = Entity::Cluster->new(cluster_name => "toto", cluster_min_node => "1", cluster_max_node => "2", cluster_priority => "100", systemimage_id => "1");
+#    my $cluster2 = Entity::ServiceProvider::Inside::Cluster->new(cluster_name => "toto", cluster_min_node => "1", cluster_max_node => "2", cluster_priority => "100", systemimage_id => "1");
 #    print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . ">\n";
 #    $cluster2->save();
  #   print "New cluster has a name : <" . $cluster2->getAttr(name => "cluster_name") . "> and its id is". $cluster2->getAttr(name => "cluster_id") ."\n";
