@@ -52,9 +52,36 @@ sub calculate{
     my $values  = $args{values};
     my $stat = Statistics::Descriptive::Full->new();
     $stat->add_data($values);
+    
     my $funcname = $self->getAttr(name => 'statistics_function_name');
     my $mean = $stat->$funcname();
     return $mean;
 
 }
+
+=head2 toString
+
+    desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+    my $self = shift;
+
+    my $aggregate_id = $self->getAttr(name => 'aggregate_id');
+    my $cluster_id   = $self->getAttr(name => 'cluster_id');
+    my $indicator_id = $self->getAttr(name => 'indicator_id');
+    my $sfn          = $self->getAttr(name => 'statistics_function_name');
+    my $w_time       = $self->getAttr(name => 'window_time');
+
+    return   'id = '              . $aggregate_id
+           . ' ; cluster_id = '   . $cluster_id
+           . ' ; indicator_id = ' . $indicator_id
+           . ' ; function = '      . $sfn
+           . ' ; w_time = '        . $w_time ."\n"
+          ;
+}
+
+
+
 1;
