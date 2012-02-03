@@ -19,14 +19,41 @@ use General;
 use Data::Dumper;
 use BaseDB;
 use Entity::ServiceProvider::Inside::Cluster;
+use XML::Simple;
+
+
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("aggregator");
+
+# Constructor
 
 sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
     bless $self, $class;
+    
+    # Load conf
+    my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
+    $self->{_time_step} = $conf->{time_step};
+        # Get Administrator
+    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+    Administrator::authenticate( login => $login, password => $password );
+    $self->{_admin} = Administrator->new();
+    
+    return $self;
 };
 
+# 
+
+=head2 getHostAndIndicatorHash
+    
+    Class : Public
+    
+    Desc : Generate hash table of hosts to monitor and the indicator id to the Retriever
+    
+=cut
 sub getHostAndIndicatorHash {
     my @aggregates = Aggregate->search(hash => {});
     
@@ -57,6 +84,15 @@ sub getHostAndIndicatorHash {
     return $rep;
 };
 
+=head2 computeAggregates
+    
+    Class : Public
+    
+    Desc : Compute all the aggregates according to the retrieved values received from Retriever
+    
+=cut
+
+ 
 sub computeAggregates{
     my $self = shift;
     my %args = @_;
@@ -89,10 +125,56 @@ sub computeAggregates{
             
             push(@values,$indicator_value);
         }
-        #print "@values \n";
         $rep->{$aggregate->getAttr(name => 'aggregate_id')} = $aggregate->calculate(values => \@values);
     }
     return $rep;
 };
+
+sub update() {
+    print "launched !\n";
+    $log->info("launched !");
+}
+
+=head2 run
+    
+    Class : Public
+    
+    Desc : Retrieve indicator values for all the aggregates, compute the 
+    aggregation statistics function and store them in TimeDb 
+    every time_step (configuration)
+    
+=cut
+
+sub run {
+    my $self = shift;
+    my $running = shift;
+    
+    $self->{_admin}->addMessage(from    => 'Aggregator', 
+                                level   => 'info', 
+                                content => "Kanopya Aggregator started."
+                                );
+    
+    while ( $$running ) {
+
+        my $start_time = time();
+
+        $self->update();
+
+        my $update_duration = time() - $start_time;
+        $log->info( "Manage duration : $update_duration seconds" );
+        if ( $update_duration > $self->{_time_step} ) {
+            $log->warn("aggregator duration > aggregator time step (conf)");
+        } else {
+            sleep( $self->{_time_step} - $update_duration );
+        }
+
+    }
+    
+    $self->{_admin}->addMessage(
+        from    => 'Aggregator', 
+        level   => 'warning', 
+        content => "Kanopya Aggregator stopped"
+        );
+}
 
 1;
