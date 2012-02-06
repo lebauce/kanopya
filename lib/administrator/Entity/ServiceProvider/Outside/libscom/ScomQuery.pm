@@ -12,13 +12,13 @@ sub new {
     my $self = {};
     bless $self, $class;
     
-    $self->{_server_name} = $args{server_name};
+    $self->{_management_server_name} = $args{server_name};
 	$self->{_set_execution_policy_cmd} = 'set-executionPolicy unrestricted'; ## WARNING to study
 	$self->{_scom_modules} = [
 		'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.dll',
 		'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.Functions.ps1',	
 	];
-	$self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_server_name} . ' -persistConnection: $false -interactive: $false';
+	$self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_management_server_name} . ' -persistConnection: $false -interactive: $false';
     
     return $self;
 }
@@ -28,7 +28,7 @@ sub getPerformance {
     my %args = @_;
 	
 	my $wanted_attrs = 	defined $args{want_attrs} ? $args{want_attrs} 
-						                          : ['$pc.MonitoringObjectFullName','$pc.ObjectName','$pc.CounterName','$pv.TimeSampled','$pv.SampleValue'];
+						                          : ['$pc.MonitoringObjectPath','$pc.ObjectName','$pc.CounterName','$pv.TimeSampled','$pv.SampleValue'];
 	
 	my $cmd = $self->_buildGetPerformanceCmd(
 				counters 	=> $args{counters},
@@ -73,7 +73,13 @@ sub _execCmd {
 	);
 	
 	my $full_cmd = join(';', @cmd_list) . ";";
-	my $cmd_res = `powershell $full_cmd`;
+	
+	# If full_cmd use scom snap-in
+	#my $cmd_res = `powershell $full_cmd`;
+	
+	# Else use remote snap-in
+	my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name}`;
+	
 	return $cmd_res;
 }
 
@@ -93,8 +99,8 @@ sub _buildGetPerformanceCmd {
 	my $format_str = join ',', map { "{$_}" } (0..$#want_attrs);
 
 	# TODO study better way: ps script template...	
-	#my $cmd  = 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
-	my $cmd  = 'foreach ($pc in Get-PerformanceCounter )';
+	my $cmd  = 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
+	#my $cmd  = 'foreach ($pc in Get-PerformanceCounter )';
 	$cmd 	.= '{ foreach ($pv in Get-PerformanceCounterValue -startTime \''. $start_time .'\' -endTime \''. $end_time .'\' $pc)';
 	$cmd	.= '{ \"DATARAW' . $format_str . '\" -f ' . $want_attrs_str . '; } }';
 
