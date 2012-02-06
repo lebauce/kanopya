@@ -40,7 +40,7 @@ __PACKAGE__->table("aggregate_rule");
 
 =head2 threshold
 
-  data_type: 'integer'
+  data_type: 'double'
   extra: {unsigned => 1}
   is_nullable: 0
 
@@ -71,7 +71,7 @@ __PACKAGE__->add_columns(
   "comparator",
   { data_type => "char", is_nullable => 0, size => 32 },
   "threshold",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "double", extra => { unsigned => 1 }, is_nullable => 0 },
   "state",
   { data_type => "char", is_nullable => 0, size => 32 },
   "time_limit",
