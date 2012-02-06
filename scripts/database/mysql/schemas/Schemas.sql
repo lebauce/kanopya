@@ -71,8 +71,11 @@ CREATE TABLE `cluster` (
   `cluster_state` char(32) NOT NULL DEFAULT 'down',
   `cluster_prev_state` char(32),
   `cluster_basehostname` char(64) NOT NULL,
+  `user_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`cluster_id`),
   FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`user_id`),
+  FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
 --  KEY `fk_cluster_1` (`infrastructure_id`),
   UNIQUE KEY (`cluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -304,6 +307,7 @@ CREATE TABLE `node` (
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(32),
   `node_prev_state` char(32),
+  `node_number` int(8) unsigned NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
