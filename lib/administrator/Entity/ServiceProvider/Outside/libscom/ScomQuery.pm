@@ -59,7 +59,7 @@ sub new {
     bless $self, $class;
     
     $self->{_management_server_name} = $args{server_name};
-    $self->{_set_execution_policy_cmd} = 'set-executionPolicy unrestricted'; ## WARNING to study
+    #$self->{_set_execution_policy_cmd} = 'set-executionPolicy unrestricted'; ## WARNING to study
     $self->{_scom_modules} = [
         'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.dll',
         'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.Functions.ps1',
@@ -111,7 +111,7 @@ sub _execCmd {
     my %args = @_;
     
     my @cmd_list = (
-        $self->{_set_execution_policy_cmd},                         # allow script execution
+        #$self->{_set_execution_policy_cmd},                         # allow script execution
         map({ "import-module '$_'" } @{$self->{_scom_modules}}),    # import modules
         $self->{_scom_shell_cmd},                                   # connect to scom shell on management server
         $args{cmd},                                                 # SCOM cmd to execute (double quote must be escaped)
