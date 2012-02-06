@@ -307,6 +307,7 @@ CREATE TABLE `node` (
   `master_node` int(1) unsigned DEFAULT NULL,
   `node_state` char(32),
   `node_prev_state` char(32),
+  `node_number` int(8) unsigned NOT NULL,
   PRIMARY KEY (`node_id`),
   UNIQUE KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
