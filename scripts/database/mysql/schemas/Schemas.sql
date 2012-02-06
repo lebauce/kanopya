@@ -17,7 +17,7 @@ DROP DATABASE IF EXISTS `administrator`;
 CREATE DATABASE `administrator`;
 USE `administrator`;
 
-SET foreign_key_checks=0;
+ET foreign_key_checks=0;
 
 --
 -- Table structure for table `entity`
@@ -870,6 +870,24 @@ CREATE TABLE `aggregate` (
   KEY (`cluster_id`),
   FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `aggregate_rule`
+--
+
+CREATE TABLE `aggregate_rule` (
+  `rule_id` int(8) NOT NULL AUTO_INCREMENT,
+  `aggregate_id` int(8) unsigned NOT NULL,
+  `comparator` char(32) NOT NULL,
+  `threshold` int(8) unsigned NOT NULL,
+  `state` char(32) NOT NULL,
+  `time_limit` char(32),
+  PRIMARY KEY (`rule_id`),
+  KEY (`aggregate_id`),
+  FOREIGN KEY (`aggregate_id`) REFERENCES `aggregate` (`aggregate_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 
 --
 -- Table structure for table `ingroups`
