@@ -883,7 +883,7 @@ CREATE TABLE `aggregate_rule` (
   `rule_id` int(8) NOT NULL AUTO_INCREMENT,
   `aggregate_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
-  `threshold` int(8) unsigned NOT NULL,
+  `threshold` double NOT NULL,
   `state` char(32) NOT NULL,
   `time_limit` char(32),
   PRIMARY KEY (`rule_id`),
