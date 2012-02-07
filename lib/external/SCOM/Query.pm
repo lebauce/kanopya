@@ -1,4 +1,3 @@
-# ScomQuery.pm - This object allows to  get performance counters values from a remote management server
 #    Copyright 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -18,7 +17,7 @@
 
 =head1 NAME
 
-ScomQuery - get performance counters values from a remote management server
+SCOM::Query - get performance counters values from a remote management server
 
 =head1 SYNOPSIS
 
@@ -27,7 +26,7 @@ ScomQuery - get performance counters values from a remote management server
         'Processor' => ['% Processor Time'],
     );
     
-    my $scom = ScomQuery->new( server_name => $management_server_name );
+    my $scom = SCOM::Query->new( server_name => $management_server_name );
     
     my $res = $scom->getPerformance(
         counters    => \%counters,
@@ -44,7 +43,7 @@ Output hash is fashionable.
 
 =cut
 
-package ScomQuery;
+package SCOM::Query;
 
 use strict;
 use warnings;
@@ -77,10 +76,11 @@ sub getPerformance {
                                                  : ['$pc.MonitoringObjectPath','$pc.ObjectName','$pc.CounterName','$pv.TimeSampled','$pv.SampleValue'];
 
     my $cmd = $self->_buildGetPerformanceCmd(
-                counters    => $args{counters},
-                start_time  => $args{start_time},
-                end_time    => $args{end_time},
-                want_attrs  => $wanted_attrs,
+                counters            => $args{counters},
+                monitoring_object   => $args{monitoring_object}, # optional
+                start_time          => $args{start_time},
+                end_time            => $args{end_time},
+                want_attrs          => $wanted_attrs,
     );
 
 
@@ -140,6 +140,12 @@ sub _buildGetPerformanceCmd {
     my $object_criteria     = join ' or ', map { "ObjectName='$_'" } keys %counters;
     my $counter_criteria     = join ' or ', map { "CounterName='$_'" } map { @$_ } values %counters;
     my $criteria = "($object_criteria) and ($counter_criteria)";
+    
+    if (defined $args{monitoring_object}) {
+        my $target_criteria = join ' or ', map { "MonitoringObjectPath='$_'" } @{$args{monitoring_object}};
+        $criteria .= " and ($target_criteria)";
+    }
+    
     my $want_attrs_str = join ',', @want_attrs;
     my $format_str = join ',', map { "{$_}" } (0..$#want_attrs);
 
