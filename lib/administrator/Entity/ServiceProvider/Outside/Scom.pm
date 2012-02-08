@@ -18,10 +18,13 @@
 package Entity::ServiceProvider::Outside::Scom;
 use base 'Entity::ServiceProvider::Outside';
 
+use strict;
+use warnings;
 use General;
 use Kanopya::Exceptions;
 use SCOM::Query;
-use DateTime;
+use DateTime::Format::Strptime;
+use List::Util 'sum';
 
 use constant ATTR_DEF => {};
 
@@ -53,9 +56,10 @@ sub retrieveData {
     #use Data::Dumper;
     #print Dumper \%counters;
     
+    my $global_time_laps = 7200;
     my $time_zone = 'local';
     my $end_dt   = DateTime->now->set_time_zone($time_zone);
-    my $start_dt = DateTime->now->subtract( seconds => $args{time_span} )->set_time_zone($time_zone);
+    my $start_dt = DateTime->now->subtract( seconds => $global_time_laps )->set_time_zone($time_zone);
     
     my $scom = SCOM::Query->new( server_name => $management_server_name );
 
@@ -66,16 +70,60 @@ sub retrieveData {
         end_time            => _format_dt(dt => $end_dt),
     );
     
+    my $res = _format_data(
+        data        => $all_perfs,
+        end_dt      => $end_dt,
+        time_span   => $args{time_span},
+        time_zone   => $time_zone,
+    );
+    
+    return $res;
+}
+
+# Computes mean value for each metric from scom query res
+# Mean on last <time_span> seconds, if no value during this laps, then take the last value (handle scom db optimization)
+# Builds retriever resulting hash
+sub _format_data {
+    my %args = @_;
+    my $data = $args{data};
+    my $end_dt = $args{end_dt};
+    my $time_span = $args{time_span};
+    my $time_zone = $args{time_zone};
+    
+    my $date_parser = DateTime::Format::Strptime->new( pattern => '%d/%m/%Y %H:%M:%S' );
+    
     # Compute mean value for each metrics 
     my %res;
-    while (my ($monit_object_path, $metrics) = each %$all_perfs) {
+    while (my ($monit_object_path, $metrics) = each %$data) {
         while (my ($object_name, $counters) = each %$metrics) {
             while (my ($counter_name, $values) = each %$counters) {
-                my @values = values %$values;
-                $res{$monit_object_path}{"$object_name/$counter_name"} = (0 == @values) ? sum(@values) / @values : undef;
+                my ($last_time, $last_value);
+                my @values;
+                while (my ($timestamp, $value) = each %$values) {
+                    my $dt = $date_parser->parse_datetime( $timestamp )->set_time_zone( $time_zone );
+                    
+                    # Keep values in time span
+                    if ($end_dt->epoch - $dt->epoch <= $time_span) {
+                        push @values, $value;
+                    }
+                    
+                    # Keep last value
+                    if (not defined $last_time || $last_time < $dt) {($last_time, $last_value) = ($dt, $value)};
+                }
+                
+                my $value;
+                if (0 == @values) {
+                    $value = sum(@values) / @values;
+                } else {
+                    $value = $last_value;
+                    print "Info: take last counter value\n";
+                }
+                
+                $res{$monit_object_path}{"$object_name/$counter_name"} = $value;
             }
         }
     }
+    
     return \%res;
 }
 
