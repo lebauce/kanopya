@@ -163,7 +163,7 @@ sub _updateTimeDataStore {
 	my $time = $args{'time'};
 	my $value = $args{'value'};
 	
-	my $cmd = 'rrdtool.exe update '.$name.' -t '.$datasource.' '.$time.':'.$value;
+	my $cmd = 'rrdtool.exe updatev '.$name.' -t '.$datasource.' '.$time.':'.$value;
 	print $cmd.": \n";
 	
 	system ($cmd);
