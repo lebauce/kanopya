@@ -72,11 +72,11 @@ sub retrieveData {
         while (my ($object_name, $counters) = each %$metrics) {
             while (my ($counter_name, $values) = each %$counters) {
                 my @values = values %$values;
-                $res{$monit_object_path}{$object_name}{$counter_name} = (0 == @values) ? sum(@values) / @values : undef;
+                $res{$monit_object_path}{"$object_name/$counter_name"} = (0 == @values) ? sum(@values) / @values : undef;
             }
         }
     }
-    return $res;
+    return \%res;
 }
 
 sub _format_dt {
