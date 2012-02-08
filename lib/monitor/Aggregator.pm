@@ -224,11 +224,33 @@ sub _update() {
     $log->info("launched !");
     my $host_indicator_for_retriever = $self->_contructRetrieverOutput();
     print Dumper $host_indicator_for_retriever;
-    
     my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
+    print Dumper $monitored_values; 
+    $self->_updateTimeDB($monitored_values);
     
     print Dumper $monitored_values;
 }
+
+sub _updateTimeDB{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['values']);
+    my $values = $args{values};
+    
+    my @aggregates = Aggregate->search(hash => {});
+    for my $aggregate (@aggregates){
+        print "up up up \n";
+        print Dumper $values;    
+        my $time = time();
+        TimeData::RRDTimeData::updateTimeDataStore(
+            aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
+            time          => $time, 
+            value         => '666',
+            );
+    }
+}
+
 
 =head2 run
     
