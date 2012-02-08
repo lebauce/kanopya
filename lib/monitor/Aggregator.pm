@@ -107,7 +107,7 @@ sub _contructRetrieverOutput {
     my $indicators             = undef;
     my @indicators_array       = undef;
     my $aggregate_time_span    = undef;
-    my $time_span              = -1;
+    my $time_span              = undef;
     # HARCODE hosts name
     my $hosts_names = $self->_getHostNamesFromIDs();
     $rep->{nodes} = $hosts_names;
@@ -117,10 +117,16 @@ sub _contructRetrieverOutput {
         $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
         $aggregate_time_span = $aggregate->getAttr(name => 'window_time');
         $indicators->{$aggregate_indicator_id} = undef;
-        if($time_span != $aggregate_time_span)
+        if(! defined $time_span)
         {
-            $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
-            print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
+            $time_span = $aggregate_time_span
+        } else
+        {
+            if($time_span != $aggregate_time_span)
+            {
+                $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
+                print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span vs $aggregate_time_span)\n");
+            }
         }
         $time_span = ($aggregate_time_span > $time_span)?$aggregate_time_span:$time_span;
         
