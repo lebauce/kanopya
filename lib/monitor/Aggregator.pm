@@ -22,6 +22,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 use XML::Simple;
 use Entity::ServiceProvider::Outside::Scom;
 use Indicator;
+use TimeData::RRDTimeData;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -193,6 +194,30 @@ sub _computeAggregates{
     return $rep;
 };
 
+sub _create_aggregates_db{
+    my $self = shift;
+    my @aggregates = Aggregate->search(hash => {});
+    for my $aggregate (@aggregates){
+        my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');
+        my $name         = 'timeDB'.$aggregate_id.'.rrd';
+        my $time         = time();
+        my %options      = (step => '60', start => $time);
+        my %DS           = (
+            name      => $aggregate_id,
+            type      => 'GAUGE',
+            heartbeat => '60',
+            min       => '0',
+            max       => 'U',
+            rpn       => 'exp'
+        );
+        my %RRA = (function => 'LAST', XFF => '0.9', PDPnb => 1, CPDnb => 30);
+        
+        RRDTimeData::createTimeDataStore(name => $name , options => \%options , DS => \%DS, RRA => \%RRA);
+    }
+    
+
+    
+}
 sub _update() {
     my $self = shift;
     print "launched !\n";
