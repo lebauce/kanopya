@@ -11,7 +11,7 @@ my $adm = Administrator->new();
 
 my $aggregator = Aggregator->new();
 
-my $host_indicator_for_retriever = $aggregator->getHostAndIndicatorHash();
+my $host_indicator_for_retriever = $aggregator->_contructRetrieverOutput();
 
 print Dumper $host_indicator_for_retriever;
 
@@ -26,5 +26,5 @@ my $answer_from_retriever = {
                   }
 };
 
-my $aggregates_for_timedb = $aggregator->computeAggregates(indicators => $answer_from_retriever);
+my $aggregates_for_timedb = $aggregator->_computeAggregates(indicators => $answer_from_retriever);
 print Dumper $aggregates_for_timedb;
