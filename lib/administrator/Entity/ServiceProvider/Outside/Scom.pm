@@ -66,13 +66,13 @@ sub retrieveData {
         end_time            => _format_dt(dt => $end_dt),
     );
     
-    #TODO moyenne des valeurs pour chaque métrique
+    # Compute mean value for each metrics 
     my %res;
     while (my ($monit_object_path, $metrics) = each %$all_perfs) {
         while (my ($object_name, $counters) = each %$metrics) {
             while (my ($counter_name, $values) = each %$counters) {
                 my @values = values %$values;
-                $res{$monit_object_path}{$object_name}{$counter_name} = (0 == @values) ? sum(@values) / @values : undef);
+                $res{$monit_object_path}{$object_name}{$counter_name} = (0 == @values) ? sum(@values) / @values : undef;
             }
         }
     }
