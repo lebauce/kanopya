@@ -104,6 +104,26 @@ sub new {
     return $self;
 }
 
+
+=head2 manage_aggregate
+    
+    Class : Public
+    
+    Desc :     New manager for aggregates
+    
+=cut
+
+sub manage_aggregates {
+    my $self = shift;
+    
+    my @aggregate_rules = AggregateRule->search(hash => {});
+    
+    for my $aggregate_rule (@aggregate_rules){
+        
+    }
+    
+}
+
 =head2 manage
     
     Class : Public
