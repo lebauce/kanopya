@@ -199,7 +199,7 @@ sub _create_aggregates_db{
     my @aggregates = Aggregate->search(hash => {});
     for my $aggregate (@aggregates){
         my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');
-        my $name         = 'timeDB'.$aggregate_id.'.rrd';
+        my $name         = 'timeDB_'.$aggregate_id.'.rrd';
         my $time         = time();
         my %options      = (step => '60', start => $time);
         my %DS           = (
@@ -226,7 +226,7 @@ sub _update() {
     print Dumper $host_indicator_for_retriever;
     my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
     print Dumper $monitored_values; 
-    $self->_updateTimeDB($monitored_values);
+    $self->_updateTimeDB(values=>$monitored_values);
     
     print Dumper $monitored_values;
 }
@@ -243,7 +243,7 @@ sub _updateTimeDB{
         print "up up up \n";
         print Dumper $values;    
         my $time = time();
-        TimeData::RRDTimeData::updateTimeDataStore(
+        RRDTimeData::updateTimeDataStore(
             aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
             time          => $time, 
             value         => '666',
