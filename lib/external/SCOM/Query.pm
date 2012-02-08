@@ -178,7 +178,7 @@ sub _formatToHash {
     my %h_res;
     LINE:
     foreach my $line (split $args{line_sep}, $input) {
-        my @items = split ',', $line;
+        my @items = split $args{item_sep}, $line;
         if ($args{items_per_line} != @items) {
             # TODO LOG WARNING !!
             next LINE;
