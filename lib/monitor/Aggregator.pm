@@ -20,7 +20,7 @@ use Data::Dumper;
 use BaseDB;
 use Entity::ServiceProvider::Inside::Cluster;
 use XML::Simple;
-
+use Entity::ServiceProvider::Outside::Scom;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -54,16 +54,17 @@ sub new {
     Desc : Generate hash table of hosts to monitor and the indicator id to the Retriever
     
 =cut
-sub getHostAndIndicatorHash {
+sub _getHostAndIndicatorHash {
+    my $self = shift;
     my @aggregates = Aggregate->search(hash => {});
     
     my $aggregate_cluster_id   = 0;
     my $aggregate_indicator_id = 0;
     
-    my $cluster              = undef;
-    my $hosts                = undef;
-    my $rep                  = undef;
-    my $host_id              = undef;
+    my $cluster                = undef;
+    my $hosts                  = undef;
+    my $rep                    = undef;
+    my $host_id                = undef;
     
     for my $aggregate (@aggregates){
         $aggregate_cluster_id   = $aggregate->getAttr(name => 'cluster_id');
@@ -84,6 +85,55 @@ sub getHostAndIndicatorHash {
     return $rep;
 };
 
+
+=head2 getHostAndIndicatorHash
+    
+    Class : Public
+    
+    Desc : Generate hash table of hosts to monitor and the indicator id to the Retriever
+    
+=cut
+sub _contructRetrieverOutput {
+    my $self = shift;
+    my @aggregates = Aggregate->search(hash => {});
+    
+    my $aggregate_cluster_id   = 0;
+    my $aggregate_indicator_id = 0;
+    
+    my $cluster                = undef;
+    my $hosts                  = undef;
+    my $rep                    = undef;
+    my $host_id                = undef;
+    my $indicators             = undef;
+    my @indicators_array       = undef;
+    my $aggregate_time_span    = undef;
+    my $time_span              = -1;
+    # HARCODE hosts name
+    my $hosts_names = $self->_getHostNamesFromIDs();
+    $rep->{nodes} = $hosts_names;
+    
+    
+    for my $aggregate (@aggregates){
+        $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
+        $aggregate_time_span = $aggregate->getAttr(name => 'window_time');
+        $indicators->{$aggregate_indicator_id} = undef;
+        if($time_span != $aggregate_time_span)
+        {
+            $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
+            print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
+        }
+        $time_span = ($aggregate_time_span > $time_span)?$aggregate_time_span:$time_span;
+        
+    }
+    @indicators_array = keys(%$indicators);
+    $rep->{indicators} = \@indicators_array;
+    $rep->{time_span}  = $time_span;
+    return $rep;
+};
+
+sub _getHostNamesFromIDs{
+    return ['WKANOPYA.hedera.forest'];
+}
 =head2 computeAggregates
     
     Class : Public
@@ -93,7 +143,7 @@ sub getHostAndIndicatorHash {
 =cut
 
  
-sub computeAggregates{
+sub _computeAggregates{
     my $self = shift;
     my %args = @_;
 
@@ -130,7 +180,7 @@ sub computeAggregates{
     return $rep;
 };
 
-sub update() {
+sub _update() {
     print "launched !\n";
     $log->info("launched !");
 }
