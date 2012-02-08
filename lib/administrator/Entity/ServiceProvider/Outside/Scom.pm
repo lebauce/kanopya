@@ -29,6 +29,9 @@ sub getAttrDef { return ATTR_DEF; }
 
 # Retriever interface method implementation
 # args: nodes => [<node_id>], indicators => [<indicator_id>], time_span => <seconds>
+# with:
+#     <node_id> : scom MonitoringObjectPath
+#     <indicator_id> : ObjectName/CounterName
 # return: { <node_id> => { <counter_id> => <mean value for last <time_span> seconds> } }
 sub retrieveData {
     my $self = shift;
@@ -38,11 +41,16 @@ sub retrieveData {
     
     my $management_server_name = "WIN-09DSUKS61DT.hedera.forest";
 
-    my %counters = (
-        'Memory'    => ['Available MBytes','PercentMemoryUsed'],
-        'Process'   => ['% Processor Time'],
-        'Processor' => ['% Processor Time'],
-    );
+    # Transform array of ObjectName/CounterName into hash {ObjectName => [CounterName]}
+    my %counters;
+    foreach my $indic (@{$args{indicators}}) {
+        # TODO check indic format
+        my ($object_name, $counter_name) = split '/', $indic;
+        push @{$counters{$object_name}}, $counter_name;
+    }
+    
+    #use Data::Dumper;
+    #print Dumper \%counters;
     
     my $end_dt   = DateTime->now->set_time_zone('local');
     my $start_dt = DateTime->now->subtract( seconds => $args{time_span} )->set_time_zone('local');
@@ -55,6 +63,9 @@ sub retrieveData {
         start_time          => _format_dt(dt => $start_dt),
         end_time            => _format_dt(dt => $end_dt),
     );
+    
+    #TODO moyenne des valeurs pour chaque métrique
+    
 }
 
 sub _format_dt {
