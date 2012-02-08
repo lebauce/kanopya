@@ -53,12 +53,13 @@ sub retrieveData {
     #use Data::Dumper;
     #print Dumper \%counters;
     
-    my $end_dt   = DateTime->now->set_time_zone('local');
-    my $start_dt = DateTime->now->subtract( seconds => $args{time_span} )->set_time_zone('local');
+    my $time_zone = 'local';
+    my $end_dt   = DateTime->now->set_time_zone($time_zone);
+    my $start_dt = DateTime->now->subtract( seconds => $args{time_span} )->set_time_zone($time_zone);
     
     my $scom = SCOM::Query->new( server_name => $management_server_name );
 
-    my $res = $scom->getPerformance(
+    my $all_perfs = $scom->getPerformance(
         counters            => \%counters,
         monitoring_object   => $args{nodes},
         start_time          => _format_dt(dt => $start_dt),
@@ -66,7 +67,15 @@ sub retrieveData {
     );
     
     #TODO moyenne des valeurs pour chaque métrique
-    
+    my %res;
+    while (my ($monit_object_path, $metrics) = each %$all_perfs) {
+        while (my ($object_name, $counters) = each %$metrics) {
+            while (my ($counter_name, $values) = each %$counters) {
+                my @values = values %$values;
+                $res{$monit_object_path}{$object_name}{$counter_name} = (0 == @values) ? sum(@values) / @values : undef);
+            }
+        }
+    }
     return $res;
 }
 
