@@ -74,13 +74,16 @@ sub getPerformance {
     
     my $wanted_attrs = defined $args{want_attrs} ? $args{want_attrs} 
                                                  : ['$pc.MonitoringObjectPath','$pc.ObjectName','$pc.CounterName','$pv.TimeSampled','$pv.SampleValue'];
-
+    my ($line_sep, $item_sep) = ('DATARAW', '###');
+    
     my $cmd = $self->_buildGetPerformanceCmd(
                 counters            => $args{counters},
                 monitoring_object   => $args{monitoring_object}, # optional
                 start_time          => $args{start_time},
                 end_time            => $args{end_time},
                 want_attrs          => $wanted_attrs,
+                line_sep            => $line_sep,
+                item_sep            => $item_sep,
     );
 
 
@@ -91,11 +94,11 @@ sub getPerformance {
 
     # Build resulting data hash from cmd output
     my $h_res    = $self->_formatToHash( 
-                                input => $cmd_res,
-                                line_sep => 'DATARAW',
-                                item_sep => ',',
-                                items_per_line => scalar(@$wanted_attrs),
-                                #index_order => [0,1,2,3,4],
+                                input           => $cmd_res,
+                                line_sep        => $line_sep,
+                                item_sep        => $item_sep,
+                                items_per_line  => scalar(@$wanted_attrs),
+                                #index_order    => [0,1,2,3,4],
     );
     
     return $h_res;
@@ -119,7 +122,7 @@ sub _execCmd {
     
     my $full_cmd = join(';', @cmd_list) . ";";
     
-    # If full_cmd use scom snap-in
+    # If full_cmd use scom snap-in (need scom skd on local)
     #my $cmd_res = `powershell $full_cmd`;
     
     # Else use remote snap-in
@@ -147,13 +150,13 @@ sub _buildGetPerformanceCmd {
     }
     
     my $want_attrs_str = join ',', @want_attrs;
-    my $format_str = join ',', map { "{$_}" } (0..$#want_attrs);
+    my $format_str = join $args{item_sep}, map { "{$_}" } (0..$#want_attrs);
 
     # TODO study better way: ps script template...    
-    my $cmd  = 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
+    my $cmd   = 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
     #my $cmd  = 'foreach ($pc in Get-PerformanceCounter )';
     $cmd     .= '{ foreach ($pv in Get-PerformanceCounterValue -startTime \''. $start_time .'\' -endTime \''. $end_time .'\' $pc)';
-    $cmd    .= '{ \"DATARAW' . $format_str . '\" -f ' . $want_attrs_str . '; } }';
+    $cmd     .= '{ \"' . $args{line_sep} . $format_str . '\" -f ' . $want_attrs_str . '; } }';
 
     return $cmd;
 }
@@ -176,7 +179,10 @@ sub _formatToHash {
     LINE:
     foreach my $line (split $args{line_sep}, $input) {
         my @items = split ',', $line;
-        next LINE if ($args{items_per_line} != @items);
+        if ($args{items_per_line} != @items) {
+            # TODO LOG WARNING !!
+            next LINE;
+        }
         my $h_update_str =     '$h_res' .
                             (join '', map { "{'$items[$_]'}" } @key_idx_order) .
                             "= '$items[$value_idx]';";
