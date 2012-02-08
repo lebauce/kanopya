@@ -39,6 +39,7 @@ sub retrieveData {
     
     General::checkParams(args => \%args, required => ['nodes', 'indicators', 'time_span']);
     
+    # TODO retrieve server name from scom conf in db
     my $management_server_name = "WIN-09DSUKS61DT.hedera.forest";
 
     # Transform array of ObjectName/CounterName into hash {ObjectName => [CounterName]}
@@ -66,6 +67,7 @@ sub retrieveData {
     
     #TODO moyenne des valeurs pour chaque métrique
     
+    return $res;
 }
 
 sub _format_dt {
