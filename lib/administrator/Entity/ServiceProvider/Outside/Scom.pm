@@ -108,11 +108,13 @@ sub _format_data {
                     }
                     
                     # Keep last value
-                    if (not defined $last_time || $last_time < $dt) {($last_time, $last_value) = ($dt, $value)};
+                    if ((not defined $last_time) || ($last_time < $dt)) {($last_time, $last_value) = ($dt, $value)};
                 }
                 
                 my $value;
-                if (0 == @values) {
+                if (0 != @values) {
+                    # WARNING !!! summed values are truncated because number format is "1,0" instead of "1.0"
+                    # TODO manage this! 
                     $value = sum(@values) / @values;
                 } else {
                     $value = $last_value;
