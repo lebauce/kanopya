@@ -67,10 +67,13 @@ sub createTimeDataStore{
 
 	#final command
 	my $cmd = 'rrdtool.exe create '.$name.' '.$opts.' '.$DSchain.' '.$RRAchain;
-	print $cmd."\n";
+	print $cmd." :\n";
 	
 	#execution of the command
-	(system($cmd) == 0);
+	my $exec = `$cmd 2>&1`;
+	if ($exec =~ m/^ERROR.*/){
+		throw Kanopya::Exception::Internal(error => 'RRD creation failed: '.$exec);
+	}		
 #	or die "an error occured while trying to create the RRD: $?:$!";
 }
 
@@ -118,11 +121,14 @@ sub fetchTimeDataStore {
 		$cmd .= ' -e '.$end;
 	}
 	
-	print $cmd."\n";
+	print $cmd.": \n";
 	
 	#we store the ouput of the command into a string
 	my $return = `$cmd`;
 	#print "back quotes output:\n ".$return;
+	if ($exec =~ m/^ERROR.*/){
+		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+	}
 	
 	#clean the string of unwanted ":"
 	$return =~ s/://g;
@@ -149,7 +155,11 @@ sub updateTimeDataStore {
 	my $value = $args{'value'};
 	
 	my $cmd = 'rrdtool.exe update '.$name.' -t '.$datasource.' '.$time.':'.$value;
-	#print $cmd."\n";
+	print $cmd.": \n";
+	
 	system ($cmd);
+	if ($exec =~ m/^ERROR.*/){
+		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+	}
 }
 1;
