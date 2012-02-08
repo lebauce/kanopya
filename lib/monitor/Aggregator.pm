@@ -21,6 +21,7 @@ use BaseDB;
 use Entity::ServiceProvider::Inside::Cluster;
 use XML::Simple;
 use Entity::ServiceProvider::Outside::Scom;
+use Indicator;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -104,7 +105,8 @@ sub _contructRetrieverOutput {
     my $hosts                  = undef;
     my $rep                    = undef;
     my $host_id                = undef;
-    my $indicators             = undef;
+    my $indicator              = undef; 
+    my $indicators_name             = undef;
     my @indicators_array       = undef;
     my $aggregate_time_span    = undef;
     my $time_span              = undef;
@@ -116,7 +118,12 @@ sub _contructRetrieverOutput {
     for my $aggregate (@aggregates){
         $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
         $aggregate_time_span = $aggregate->getAttr(name => 'window_time');
-        $indicators->{$aggregate_indicator_id} = undef;
+        
+        $indicator = Indicator->get('id' => $aggregate_indicator_id);
+        
+        $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+        
+        
         if(! defined $time_span)
         {
             $time_span = $aggregate_time_span
@@ -131,7 +138,7 @@ sub _contructRetrieverOutput {
         $time_span = ($aggregate_time_span > $time_span)?$aggregate_time_span:$time_span;
         
     }
-    @indicators_array = keys(%$indicators);
+    @indicators_array = keys(%$indicators_name);
     $rep->{indicators} = \@indicators_array;
     $rep->{time_span}  = $time_span;
     return $rep;
@@ -187,8 +194,15 @@ sub _computeAggregates{
 };
 
 sub _update() {
+    my $self = shift;
     print "launched !\n";
     $log->info("launched !");
+    my $host_indicator_for_retriever = $self->_contructRetrieverOutput();
+    print Dumper $host_indicator_for_retriever;
+    
+    my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
+    
+    print Dumper $monitored_values;
 }
 
 =head2 run
