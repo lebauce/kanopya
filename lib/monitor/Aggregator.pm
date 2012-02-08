@@ -23,7 +23,7 @@ use XML::Simple;
 use Entity::ServiceProvider::Outside::Scom;
 use Indicator;
 use TimeData::RRDTimeData;
-
+use Aggregate;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
@@ -218,7 +218,7 @@ sub _create_aggregates_db{
 
     
 }
-sub _update() {
+sub update() {
     my $self = shift;
     print "launched !\n";
     $log->info("launched !");

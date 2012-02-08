@@ -150,7 +150,12 @@ sub fetchTimeDataStore {
 sub updateTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
-    _updateTimeDataStore (name => 'timeDB_'.$args{aggregator_id}.'.rrd', datasource => $args{aggregator_id}, time => $args{time}, value =>$args{value})
+    _updateTimeDataStore (
+        name       => 'timeDB_'.$args{aggregator_id}.'.rrd', 
+        datasource => $args{aggregator_id}, 
+        time       => $args{time}, 
+        value      =>$args{value},
+        )
 }
 
 #Feed a rrd.
@@ -158,13 +163,16 @@ sub _updateTimeDataStore {
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['name', 'datasource', 'time', 'value']); 
 	
+	
 	my $name = $args{'name'};
 	my $datasource = $args{'datasource'};
 	my $time = $args{'time'};
 	my $value = $args{'value'};
 	
-	my $cmd = 'rrdtool.exe updatev '.$name.' -t '.$datasource.' '.$time.':'.$value;
-	print $cmd.": \n";
+	my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
+	
+	my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
+	print $cmd."\n";
 	
 	system ($cmd);
 	print "WARNING ERRORS NOT CHECKED \n";
