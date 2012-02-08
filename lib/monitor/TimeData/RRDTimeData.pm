@@ -1,6 +1,6 @@
 # RRDTimeData.pm - Monitor object to store Time based values through RRD database
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright  Â© 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -19,7 +19,7 @@
 
 package RRDTimeData;
 
-use TimeData;
+use base TimeData;
 use strict;
 use warnings;
 use General;
@@ -126,9 +126,12 @@ sub fetchTimeDataStore {
 	#we store the ouput of the command into a string
 	my $return = `$cmd`;
 	#print "back quotes output:\n ".$return;
-	if ($exec =~ m/^ERROR.*/){
-		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
-	}
+
+    print "WARNING ERRORS NOT CHECKED \n"; 
+    #TODO
+#	if ($exec =~ m/^ERROR.*/){
+#		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+#	}
 	
 	#clean the string of unwanted ":"
 	$return =~ s/://g;
@@ -144,22 +147,38 @@ sub fetchTimeDataStore {
 	#print Dumper(\%values);
 }
 
-#Feed a rrd.
 sub updateTimeDataStore {
+    my %args = @_;
+    General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
+    _updateTimeDataStore (
+        name       => 'timeDB_'.$args{aggregator_id}.'.rrd', 
+        datasource => $args{aggregator_id}, 
+        time       => $args{time}, 
+        value      =>$args{value},
+        )
+}
+
+#Feed a rrd.
+sub _updateTimeDataStore {
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['name', 'datasource', 'time', 'value']); 
+	
 	
 	my $name = $args{'name'};
 	my $datasource = $args{'datasource'};
 	my $time = $args{'time'};
 	my $value = $args{'value'};
 	
-	my $cmd = 'rrdtool.exe update '.$name.' -t '.$datasource.' '.$time.':'.$value;
-	print $cmd.": \n";
+	my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
+	
+	my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
+	print $cmd."\n";
 	
 	system ($cmd);
-	if ($exec =~ m/^ERROR.*/){
-		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
-	}
+	print "WARNING ERRORS NOT CHECKED \n";
+    #TODO
+#	if ($exec =~ m/^ERROR.*/){
+#		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+#	}
 }
 1;

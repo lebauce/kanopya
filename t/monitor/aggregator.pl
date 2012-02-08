@@ -11,6 +11,7 @@ my $adm = Administrator->new();
 
 my $aggregator = Aggregator->new();
 
+#$aggregator->_create_aggregates_db();
 $aggregator->_update();
 #my $host_indicator_for_retriever = $aggregator->_contructRetrieverOutput();
 #

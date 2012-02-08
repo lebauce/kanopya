@@ -22,7 +22,8 @@ use Entity::ServiceProvider::Inside::Cluster;
 use XML::Simple;
 use Entity::ServiceProvider::Outside::Scom;
 use Indicator;
-
+use TimeData::RRDTimeData;
+use Aggregate;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
@@ -193,17 +194,63 @@ sub _computeAggregates{
     return $rep;
 };
 
-sub _update() {
+sub _create_aggregates_db{
+    my $self = shift;
+    my @aggregates = Aggregate->search(hash => {});
+    for my $aggregate (@aggregates){
+        my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');
+        my $name         = 'timeDB_'.$aggregate_id.'.rrd';
+        my $time         = time();
+        my %options      = (step => '60', start => $time);
+        my %DS           = (
+            name      => $aggregate_id,
+            type      => 'GAUGE',
+            heartbeat => '60',
+            min       => '0',
+            max       => 'U',
+            rpn       => 'exp'
+        );
+        my %RRA = (function => 'LAST', XFF => '0.9', PDPnb => 1, CPDnb => 30);
+        
+        RRDTimeData::createTimeDataStore(name => $name , options => \%options , DS => \%DS, RRA => \%RRA);
+    }
+    
+
+    
+}
+sub update() {
     my $self = shift;
     print "launched !\n";
     $log->info("launched !");
     my $host_indicator_for_retriever = $self->_contructRetrieverOutput();
     print Dumper $host_indicator_for_retriever;
-    
     my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
+    print Dumper $monitored_values; 
+    $self->_updateTimeDB(values=>$monitored_values);
     
     print Dumper $monitored_values;
 }
+
+sub _updateTimeDB{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['values']);
+    my $values = $args{values};
+    
+    my @aggregates = Aggregate->search(hash => {});
+    for my $aggregate (@aggregates){
+        print "up up up \n";
+        print Dumper $values;    
+        my $time = time();
+        RRDTimeData::updateTimeDataStore(
+            aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
+            time          => $time, 
+            value         => '666',
+            );
+    }
+}
+
 
 =head2 run
     
