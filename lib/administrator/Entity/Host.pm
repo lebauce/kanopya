@@ -571,7 +571,7 @@ sub removeInternalIP {
 
 sub getClusterId {
     my $self = shift;
-    return $self->{_dbix}->node->cluster->get_column('cluster_id');
+    return $self->{_dbix}->node->inside->get_column('inside_id');
 }
 
 sub getPowerSupplyCardId {
