@@ -249,25 +249,27 @@ sub _updateTimeDB{
     for my $aggregate (@aggregates){
         #print Dumper $values;
         my $host_names = $self->_getHostNamesFromIDs();
+        my @dataStored = (); 
         for my $host_name (@$host_names){
             
-            print "HN $host_name \n";
             
             $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
             $indicator = Indicator->get('id' => $aggregate_indicator_id);
             
             my $the_value = $values->{$host_name}->{$indicator->getAttr(name=>'indicator_oid')};
             
-            print "Val $the_value \n";
-            
-            my $time = time();
-            
-            RRDTimeData::updateTimeDataStore(
-                aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
-                time          => $time, 
-                value         => '',
-                );
+            push(@dataStored,$the_value); 
         }
+        print "DS @dataStored \n";
+        
+        my $time = time();
+        
+        RRDTimeData::updateTimeDataStore(
+            aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
+            time          => $time, 
+            value         => '',
+            );
+        
     }
 }
 
