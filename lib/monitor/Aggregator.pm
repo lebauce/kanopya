@@ -146,8 +146,10 @@ sub _contructRetrieverOutput {
 };
 
 sub _getHostNamesFromIDs{
-    return ['WKANOPYA.hedera.forest'];
+    return ['WKANOPYA.hedera.forest', 'WIN-09DSUKS61DT.hedera.forest'];
 }
+
+
 =head2 computeAggregates
     
     Class : Public
@@ -226,6 +228,8 @@ sub update() {
     print Dumper $host_indicator_for_retriever;
     my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
     print Dumper $monitored_values; 
+    
+    
     $self->_updateTimeDB(values=>$monitored_values);
     
     print Dumper $monitored_values;
@@ -237,17 +241,36 @@ sub _updateTimeDB{
 
     General::checkParams(args => \%args, required => ['values']);
     my $values = $args{values};
-    
     my @aggregates = Aggregate->search(hash => {});
+    
+    my $aggregate_indicator_id;
+    my $indicator;
+    my $indicators_name; 
     for my $aggregate (@aggregates){
-        print "up up up \n";
-        print Dumper $values;    
+        #print Dumper $values;
+        my $host_names = $self->_getHostNamesFromIDs();
+        my @dataStored = (); 
+        for my $host_name (@$host_names){
+            
+            
+            $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
+            $indicator = Indicator->get('id' => $aggregate_indicator_id);
+            
+            my $the_value = $values->{$host_name}->{$indicator->getAttr(name=>'indicator_oid')};
+            
+            push(@dataStored,$the_value); 
+        }
+        
+        my $statValue = $aggregate->calculate(values => \@dataStored);
+        
         my $time = time();
+        
         RRDTimeData::updateTimeDataStore(
             aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
             time          => $time, 
-            value         => '666',
+            value         => $statValue,
             );
+        
     }
 }
 
