@@ -171,10 +171,10 @@ sub _updateTimeDataStore {
 	
 	my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
 	
-	my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
+	my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
 	print $cmd."\n";
 	
-	system ($cmd);
+	#system ($cmd);
 	print "WARNING ERRORS NOT CHECKED \n";
     #TODO
 #	if ($exec =~ m/^ERROR.*/){
