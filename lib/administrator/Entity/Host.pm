@@ -151,6 +151,12 @@ sub methods {
         'removeHarddisk'=> {'description' => 'remove a hard disk from this host',
                         'perm_holder' => 'entity',
         },
+        'removeInterface'=> {'description' => 'remove an interface from this host',
+                        'perm_holder' => 'entity',
+        },
+        'addIface'=> {'description' => 'add one or more interface to  this host',
+                        'perm_holder' => 'entity',
+        },
 
         'setperm'    => {'description' => 'set permissions on this host',
                         'perm_holder' => 'entity',
@@ -282,6 +288,80 @@ sub becomeNode {
     return $res->get_column("node_id");
 }
 
+=head2 Entity::Host->addIface (%args)
+
+    Class : Public
+
+    Desc : Create a new iface instance in db.
+
+    args:
+        iface_name : Char : interface identifier
+        iface_mac_addr : Char : the mac address linked to iface
+        iface_pxe:Int :0 or 1 
+        host_id: Int 
+        
+    return: iface identifier
+
+=cut
+
+sub addIface {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['iface_name','iface_mac_addr','iface_pxe','host_id']);
+
+    my $adm = Administrator->new();
+     my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addIface');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add an interface to this host");
+    }
+    my $res =$adm->{db}->resultset('Iface')->create(
+		{	iface_name=>$args{iface_name},
+            iface_mac_addr => $args{iface_mac_addr},
+			iface_pxe => $args{iface_pxe},
+			host_id =>$self->getAttr(name=>'host_id')
+        }
+    );
+
+    return $res->get_column("iface_id");
+}
+=head2 getIfaces
+
+=cut
+
+sub getIfaces {
+    my $self = shift;
+    my $ifcs = [];
+    my $interfaces = $self->{_dbix}->ifaces;
+    while(my $ifc = $interfaces->next) {
+        my $tmp = {};
+        $tmp->{iface_id}       = $ifc->get_column('iface_id');
+        $tmp->{iface_name}     = $ifc->get_column('iface_name');
+        $tmp->{iface_mac_addr} = $ifc->get_column('iface_mac_addr');
+        $tmp->{iface_pxe}      = $ifc->get_column('iface_pxe');
+        
+        push @$ifcs, $tmp;
+    }
+    return $ifcs;
+
+}
+
+sub removeInterface {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['iface_id']);
+
+    my $adm = Administrator->new();
+    # removeInterface method concerns an existing entity so we use his entity_id
+   my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removeInterface');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove an interface from this host");
+    }
+
+    my $ifc = $self->{_dbix}->ifaces->find($args{iface_id});
+    $ifc->delete();
+}
 sub becomeMasterNode{
     my $self = shift;
 

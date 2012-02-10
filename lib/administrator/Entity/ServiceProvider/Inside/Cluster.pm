@@ -99,7 +99,7 @@ use constant ATTR_DEF => {
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 0},
-    cluster_basehostname            => {pattern         => '^[a-z_]+$',
+    cluster_basehostname            => {pattern         => '^[a-z]+$',
                                 is_mandatory    => 1,
                                 is_extended     => 0,
                                 is_editable        => 1},
