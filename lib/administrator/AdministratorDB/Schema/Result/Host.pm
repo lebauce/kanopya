@@ -235,6 +235,23 @@ __PACKAGE__->has_many(
   { "foreign.host_id" => "self.host_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
+=head2 ifaces
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Iface>
+
+=cut
+
+__PACKAGE__->has_many(
+  "ifaces",
+  "AdministratorDB::Schema::Result::Iface",
+  { "foreign.host_id" => "self.host_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+
 
 =head2 host
 

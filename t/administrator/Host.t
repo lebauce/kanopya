@@ -89,7 +89,14 @@ eval {
 		'Kanopya::Exception::DB',
 		"Host with id $host_id does not exist anymore";
     
-
+lives_ok {
+		Entity::Host->addIface(
+		    iface_name        =>'eth0',
+			iface_mac_addr    => '14:DA:E9:DD:B5:62',
+			iface_pxe         => 0,
+			host_id           => $host_id
+		);
+	} 'AddIface operation enqueue';
 
 
 };

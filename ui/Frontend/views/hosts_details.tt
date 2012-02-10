@@ -8,7 +8,11 @@
 <tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
 <td class="actions" rowspan="2">
 <% IF can_activate %>
-	<a class="imgActivate" href="/infrastructures/hosts/<% host_id %>/activate">activate</a><br />
+<% IF nbinterfaces ==1 %>
+ <a class="modal" href="/infrastructures/hosts/<% host_id %>/addinterface">activate</a><br />
+<% ELSE %>
+<a class="imgActivate" href="/infrastructures/hosts/<% host_id %>/activate">activate</a><br />
+<% END %>
 	<span class="desc">Activate this host.</span><br /><br />
 <% END %>
 <% IF can_deactivate %>
@@ -81,7 +85,7 @@
 	</td></tr>
 	<% FOREACH hd IN harddisks_list %>
 		<td class="label2">device: <% hd.harddisk_device %></td>
-		<td class="action"><% IF hd.link_removeharddisk %><a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/harddisks/<% hd.harddisk_id %>/remove">remove</a><% END %></td></tr>
+		<td class="action"><% IF hd.link_removeharddisk %><a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/removeharddisk/<% hd.harddisk_id %>">remove</a><% END %></td></tr>
 	<% END %>
 <% ELSE %>
 	<tr><td colspan="2">&nbsp;</td>
@@ -94,7 +98,29 @@
 	<tr><td>This host has no hard disk</td></tr>
 <% END %>
 </table>
-
-
-
-
+<hr />
+<span id="interface" class="title simpleexpand">Interfaces</span>
+<table id="Xinterfaces" class="detailspart list">
+<% IF interfaces_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% nbinterfaces %>">
+	<% IF can_addinterface %>
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/addinterface">add interface</a><br />
+		<span class="desc">Add an interface to this host.</span><br /><br />
+	<% END %>
+	</td></tr>
+	<% FOREACH ifc IN interfaces_list %>
+		<td class="label2"><% ifc.iface_name %>: <%ifc.iface_mac_addr%> </td>
+		<td class="action"><% IF ifc.link_removeinterface %><a class="imgRemove" href="/infrastructures/hosts/<% host_id %>/removeinterface/<% ifc.iface_id %>">remove</a><% END %></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions">
+	<% IF can_addinterface %>
+		<a class="modal" href="/infrastructures/hosts/<% host_id %>/interface/add">add interface</a><br />
+		<span class="desc">Add an interface to this host.</span>
+	<% END %>
+	</td></tr>
+	<tr><td>This host has no interface</td></tr>
+<% END %>
+</table>

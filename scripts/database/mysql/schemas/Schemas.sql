@@ -422,6 +422,21 @@ CREATE TABLE `systemimage` (
   FOREIGN KEY (`root_device_id`) REFERENCES `lvm2_lv` (`lvm2_lv_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `iface`
+-- 
+CREATE TABLE `iface` (
+  `iface_id` int(8) UNSIGNED NOT NULL AUTO_INCREMENT ,
+  `ipface_name` char(32) NOT NULL ,
+  `iface_mac_addr` char(18) NOT NULL ,
+  `iface_pxe` int(10) UNSIGNED NOT NULL,
+  `host_id` int(8) UNSIGNED NOT NULL,
+  PRIMARY KEY (`ipv4_internal_id`),
+  UNIQUE KEY (`iface_mac_addr`),
+  UNIQUE KEY (`iface_name`,`host_id`),
+  KEY (`host_id`),
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `ipv4_internal`

@@ -11,6 +11,7 @@ use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Powersupplycard;
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("webui");
 
@@ -183,10 +184,14 @@ get '/hosts/:hostid/remove' => sub {
 };
 
 get '/hosts/:hostid/activate' => sub {
-    my $adm = Administrator->new;
-    eval {
-        my $host = Entity::Host->get(id => params->{hostid});
-         $host->activate();
+     my $adm = Administrator->new;
+     my $host = Entity::Host->get(id => params->{hostid});
+     my $interfaces = $host->getIfaces();
+       if(scalar(@$interfaces)!=0)
+       {
+         eval {
+		 $host->activate();
+	  
     };
     if($@) {
         my $exception = $@;
@@ -198,8 +203,15 @@ get '/hosts/:hostid/activate' => sub {
     }
     else {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'host activation adding to execution queue');
-        redirect '/infrastructures/hosts/'.param('hostid');
-    }
+       redirect '/infrastructures/hosts/'.param('hostid');
+          }
+}
+ else
+	   {
+	  $adm->addMessage(from => 'Administrator', level => 'info', content => 'no interface defined');
+	  #redirect '/infrastructures/hosts/'.param('hostid');  
+   }
+
 };
 
 get '/hosts/:hostid/deactivate' => sub {
@@ -239,6 +251,43 @@ post '/hosts/:hostid/addharddisk' => sub {
         }
         else { $exception->rethrow(); }
     } else { redirect '/infrastructures/hosts/'.param('hostid'); }
+};
+
+get '/hosts/:hostid/addinterface' => sub {
+    template 'form_addinterface', {
+        host_id => param('hostid')
+    }, { layout => '' };
+};
+post '/hosts/:hostid/addinterface' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $host = Entity::Host->get(id => param('hostid'));
+        $host->addIface(iface_name => param('iface_name'),iface_mac_addr=>param('iface_mac_addr'),host_id=>param('hostid'),iface_pxe=>param('iface_pxe'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else { $exception->rethrow(); }
+    } else { redirect '/infrastructures/hosts/'.param('hostid'); }
+};
+get '/hosts/:hostid/removeinterface/:ifaceid' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $host = Entity::Host->get(id => param('hostid'));
+        $host->removeInterface(iface_id => param('ifaceid'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else { $exception->rethrow(); }
+    }
+    else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
 
 get '/hosts/:hostid/removeharddisk/:harddiskid' => sub {
@@ -313,6 +362,7 @@ get '/hosts/:hostid' => sub {
 
     # harddisks list
     my $harddisks = $ehost->getHarddisks();
+    
     my $hds= [];
     foreach my $hd (@$harddisks) {
         my $tmp = {};
@@ -326,6 +376,25 @@ get '/hosts/:hostid' => sub {
         push @$hds, $tmp;
     }
 
+ # interfaces list
+    my $interfaces = $ehost->getIfaces();
+    my $ifcs= [];
+    foreach my $ifc (@$interfaces) {
+        my $tmp = {};
+        $tmp->{iface_id}       = $ifc->{iface_id};
+        $tmp->{iface_name}     = $ifc->{iface_name};
+        $tmp->{host_id}        = $ehost->getAttr(name => 'host_id');
+        $tmp->{iface_mac_addr} = $ifc->{iface_mac_addr};
+        $tmp->{iface_pxe}      =$ifc->{iface_pxe};
+
+        if((not $methods->{'removeInterface'}->{'granted'}) || $active) {
+            $tmp->{link_removeinterface} = 0;
+        } else { $tmp->{link_removeinterface} = 1;}
+        push @$ifcs, $tmp;
+    }
+
+
+
     # hostram
     my $hostram = $ehost->getAttr('name' => 'host_ram');
     my $hostramConverted = General::convertFromBytes('value' => $hostram, 'units' => 'G');
@@ -337,8 +406,8 @@ get '/hosts/:hostid' => sub {
         host_mac         => $ehost->getAttr('name' => 'host_mac_address'),
         host_ip          => $ehost->getInternalIP()->{ipv4_internal_address},
         host_sn          => $ehost->getAttr('name' => 'host_serial_number'),
-	host_ram	 => $hostramConverted,
-	host_core	 => $ehost->getAttr('name' => 'host_core'),
+	    host_ram	 => $hostramConverted,
+	    host_core	 => $ehost->getAttr('name' => 'host_core'),
         host_powersupply => $ehost->getAttr('name' => 'host_powersupply_id'),
         host_model       => $host_model,
         processor_model         => $processor_model,
@@ -346,13 +415,16 @@ get '/hosts/:hostid' => sub {
         host_state       => $host_state,
         state_time              => _timestamp_format('timestamp' => $timestamp),
         nbharddisks             => scalar(@$hds)+1,
+        nbinterfaces            => scalar(@$ifcs)+1,
         harddisks_list          => $hds,
+        interfaces_list         => $ifcs,
         active                  => $active,
         can_deactivate          => $methods->{'deactivate'}->{'granted'} && $active && $host_state =~ /down/,
         can_delete              => $methods->{'remove'}->{'granted'} && !$active,
         can_activate            => $methods->{'activate'}->{'granted'} && !$active,
         can_setperm             => $methods->{'setperm'}->{'granted'},
         can_addHarddisk         => $methods->{'addHarddisk'}->{'granted'} && !$active,
+        can_addinterface         => $methods->{'addIface'}->{'granted'} && !$active,
     };
 };
 

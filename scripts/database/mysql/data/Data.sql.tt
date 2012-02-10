@@ -313,6 +313,13 @@ SET @admin_cluster := 1;
 SET @eid := @eid +1;
 
 --
+--admin iface 
+--
+INSERT INTO `iface` VALUES (1,'eth0','[% mb_hw_address %]',0,@admin_host);
+
+
+
+--
 -- internal ip for admin node
 --
 
