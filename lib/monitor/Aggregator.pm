@@ -260,14 +260,15 @@ sub _updateTimeDB{
             
             push(@dataStored,$the_value); 
         }
-        print "DS @dataStored \n";
+        
+        my $statValue = $aggregate->calculate(values => \@dataStored);
         
         my $time = time();
         
         RRDTimeData::updateTimeDataStore(
             aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
             time          => $time, 
-            value         => '',
+            value         => $statValue,
             );
         
     }

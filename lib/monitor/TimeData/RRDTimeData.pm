@@ -174,7 +174,7 @@ sub _updateTimeDataStore {
 	my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
 	print $cmd."\n";
 	
-	#system ($cmd);
+	system ($cmd);
 	print "WARNING ERRORS NOT CHECKED \n";
     #TODO
 #	if ($exec =~ m/^ERROR.*/){
