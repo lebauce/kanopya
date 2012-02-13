@@ -102,6 +102,9 @@ sub _format_data {
                 while (my ($timestamp, $value) = each %$values) {
                     my $dt = $date_parser->parse_datetime( $timestamp )->set_time_zone( $time_zone );
                     
+                    # Change float format "1,0" to "1.0"
+                    $value = s/,/./g;
+                    
                     # Keep values in time span
                     if ($end_dt->epoch - $dt->epoch <= $time_span) {
                         push @values, $value;
@@ -111,18 +114,16 @@ sub _format_data {
                     if ((not defined $last_time) || ($last_time < $dt)) {($last_time, $last_value) = ($dt, $value)};
                 }
                 
-                my $value;
+                my $consolidate_value;
                 if (0 != @values) {
-                    # Change float format "1,0" to "1.0"
-		    my @coerce_values = map { s/,/./g } @values;
-		    # compute mean value
-                    $value = sum(@coerce_values) / @values;
+                    # compute mean value
+                    $consolidate_value = sum(@values) / @values;
                 } else {
-                    $value = $last_value;
-                    print "Info: take last counter value\n";
+                    $consolidate_value = $last_value;
+                    print "Info: take last counter value for $object_name/$counter_name\n";
                 }
                 
-                $res{$monit_object_path}{"$object_name/$counter_name"} = $value;
+                $res{$monit_object_path}{"$object_name/$counter_name"} = $consolidate_value;
             }
         }
     }
