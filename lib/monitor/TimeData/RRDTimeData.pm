@@ -34,172 +34,171 @@ use Data::Dumper;
 #create RRD file. Standard is 1 RRA, and 1 DS.
 sub createTimeDataStore{
 	#rrd creation example: system ('rrdtool.exe create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
-	my %args = @_;
-	print Dumper(\%args);
+    my %args = @_;
+    print Dumper(\%args);
 	
-	General::checkParams(args => \%args, required => ['name']); 
+    General::checkParams(args => \%args, required => ['name']); 
 	
-	my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
-	my $name = $args{'name'};
-	my $RRAchain;
-	my $DSchain;
-	my $opts = '';
+    my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
+    my $name = $args{'name'};
+    my $RRA_chain;
+    my $DS_chain;
+    my $opts = '';
 	
-	if (defined $args{'options'}){
-		my $options = $args{'options'};
-		
-		#Definition of the options. Default start is (now - 10s), default step is (300s)
-		if (defined $options->{start}) {
-			$opts .= '-b '.$options->{'start'}.' ';
-		}
-		
-		if (defined $options->{step}) {
-			$opts .= '-s '.$options->{'step'};
-		}
-	}
-	
-	#default parameter for Round Robin Archive
-	my %RRAparams = (function => 'LAST', XFF => '0.9', PDPnb => '1', CDPnb => '30');
-	
-	if (defined $args{'RRA'}){
-		my $RRA = $args{'RRA'};
+    if (defined $args{'options'}){
+        my $options = $args{'options'};
 
-		while (my ($param_name, $default_value) = each %RRAparams){
-		if (defined $RRA->{$param_name}){
-			$RRAparams{$param_name} = $RRA->{$param_name};
-			}
-		}		
-	}
+        #Definition of the options. Default start is (now - 10s), default step is (300s)
+        if (defined $options->{start}) {
+            $opts .= '-b '.$options->{'start'}.' ';
+        }
+
+        if (defined $options->{step}) {
+            $opts .= '-s '.$options->{'step'};
+        }
+    }
 	
-	#definition of the RRA
-	$RRAchain = 'RRA:'.$RRAparams{function}.':'.$RRAparams{XFF}.':'.$RRAparams{PDPnb}.':'.$RRAparams{CDPnb};
+    #default parameter for Round Robin Archive
+    my %RRA_params = (function => 'LAST', XFF => '0.9', PDPnb => '1', CDPnb => '30');
+
+    if (defined $args{'RRA'}){
+        my $RRA = $args{'RRA'};
+
+        while (my ($param_name, $default_value) = each %RRA_params){
+        if (defined $RRA->{$param_name}){
+            $RRA_params{$param_name} = $RRA->{$param_name};
+            }
+        }		
+    }
 	
-	#default parameter for Data Source
-	my %DSparams = (DSname => 'aggregate', type => 'GAUGE', heartbeat => '60', min => '0', max => 'U');
+    #definition of the RRA
+    $RRA_chain = 'RRA:'.$RRA_params{'function'}.':'.$RRA_params{'XFF'}.':'.$RRA_params{'PDPnb'}.':'.$RRA_params{'CDPnb'};
+
+    #default parameter for Data Source
+    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => '60', min => '0', max => 'U');
+
+    if (defined $args{'DS'}){
+        my $DS = $args{'DS'};
+
+        while (my ($param_name, $default_value) = each %DS_params){
+        if (defined $DS->{$param_name}){
+            $DS_params{$param_name} = $DS->{$param_name};
+            }
+        }			
+        ############################################
+        #COMPUTE TYPE IS NOT HANDLED BY THIS MODULE#
+        ############################################
+        #
+        #The DS syntax is different for the COMPUTE type, that's why we're checking the type here to form the command string
+        #if ($type eq 'GAUGE' or $type eq 'COUNTER' or $type eq 'DERIVE' or $type eq 'ABSOLUTE') {
+        #	$DSchain = 'DS'.$DSname.':'.$type.':'.$heartbeat.':'.$min.':'.$max;
+        #}elsif ($type eq 'COMPUTE'){
+        #	$DSchain = 'DS:'.$DSname.':'.$type.':'.$rpn;
+        #}	
+    }
 	
-	if (defined $args{'DS'}){
-		my $DS = $args{'DS'};
-		
-		while (my ($param_name, $default_value) = each %DSparams){
-		if (defined $DS->{$param_name}){
-			$DSparams{$param_name} = $DS->{$param_name};
-			}
-		}			
-		############################################
-		#COMPUTE TYPE IS NOT HANDLED BY THIS MODULE#
-		############################################
-		#
-		#The DS syntax is different for the COMPUTE type, that's why we're checking the type here to form the command string
-		#if ($type eq 'GAUGE' or $type eq 'COUNTER' or $type eq 'DERIVE' or $type eq 'ABSOLUTE') {
-		#	$DSchain = 'DS'.$DSname.':'.$type.':'.$heartbeat.':'.$min.':'.$max;
-		#}elsif ($type eq 'COMPUTE'){
-		#	$DSchain = 'DS:'.$DSname.':'.$type.':'.$rpn;
-		#}	
-	}
-	
-	#definition of the DS
-	$DSchain = 'DS:'.$DSparams{DSname}.':'.$DSparams{type}.':'.$DSparams{heartbeat}.':'.$DSparams{min}.':'.$DSparams{max};
-	
-	#final command
-	my $cmd = 'rrdtool.exe create '.$dir.$name.' '.$opts.' '.$DSchain.' '.$RRAchain;
-	print $cmd." \n";
-	
-	#execution of the command
-	my $exec = `$cmd 2>&1`;
-	if ($exec =~ m/^ERROR.*/){
-		throw Kanopya::Exception::Internal(error => 'RRD creation failed: '.$exec);
-	}		
+    #definition of the DS
+    $DS_chain = 'DS:'.$DS_params{'DSname'}.':'.$DS_params{'type'}.':'.$DS_params{'heartbeat'}.':'.$DS_params{'min'}.':'.$DS_params{'max'};
+
+    #final command
+    my $cmd = 'rrdtool.exe create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
+    print $cmd." \n";
+
+    #execution of the command
+    my $exec = `$cmd 2>&1`;
+    if ($exec =~ m/^ERROR.*/){
+        throw Kanopya::Exception::Internal(error => 'RRD creation failed: '.$exec);
+    }		
 #	or die "an error occured while trying to create the RRD: $?:$!";
 }
 
 #delete a RRD file.
 sub deleteTimeDataStore{
-	my %args = @_;
-	
-	General::checkParams(args => \%args, required => ['name']); 
-	
-	my $name = $args{'name'};
-	my $cmd = 'del '.$name;
-	
-	system ($cmd);
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['name']); 
+
+    my $name = $args{'name'};
+    my $cmd = 'del '.$name;
+
+    system ($cmd);
 }
 
 #get info about a RRD file.
 sub getTimeDataStoreInfo {
-	my %args = @_;
-	
-	General::checkParams(args => \%args, required => ['name']); 
-	
-	my $name = $args{'name'}; 
-	my $cmd = 'rrdtool.exe info '.$name;
-	
-	system ($cmd);	
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['name']); 
+
+    my $name = $args{'name'}; 
+    my $cmd = 'rrdtool.exe info '.$name;
+
+    system ($cmd);	
 }
 
 #fetch values from a RRD file.
 sub fetchTimeDataStore {
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['name']); 
-	
-	my $name = $args{'name'};
-	my $CF = 'LAST';
-	my $start = $args{'start'};
-	my $end = $args{'end'};
-	
-	my $cmd = 'rrdtool.exe fetch '.$name.' '.$CF;
-	
-	#if not defined, start is (end - 1 day), and end is (now)
-	if (defined $start){ 
-		$cmd .= ' -s '.$start;
-	}
-	if (defined $end){ 
-		$cmd .= ' -e '.$end;
-	}
-	
-	print $cmd.": \n";
-	
-	#we store the ouput of the command into a string
-	my $exec = `$cmd 2>&1`;
-	#print "back quotes output:\n ".$return;
+    my %args = @_;
+    General::checkParams(args => \%args, required => ['name']); 
 
-	if ($exec =~ m/^ERROR.*/){
-		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
-	}
+    my $name = $args{'name'};
+    my $CF = 'LAST';
+    my $start = $args{'start'};
+    my $end = $args{'end'};
+
+    my $cmd = 'rrdtool.exe fetch '.$name.' '.$CF;
+
+    #if not defined, start is (end - 1 day), and end is (now)
+    if (defined $start){ 
+        $cmd .= ' -s '.$start;
+    }
+    if (defined $end){ 
+        $cmd .= ' -e '.$end;
+    }
 	
-	#clean the string of unwanted ":"
-	$exec =~ s/://g;
-	#we split the string into an array
-	my @values = split(' ', $exec);
-	print Dumper(\@values);
-	#The first entry is the DS' name. We remove it from the list.
-	shift (@values);
-	#print Dumper(\@values);
-	#We convert the list into the final hash that is returned to the caller.
-	my %values = @values;
-	return %values;
-	#print Dumper(\%values);
+    print $cmd.": \n";
+
+    #we store the ouput of the command into a string
+    my $exec = `$cmd 2>&1`;
+    #print "back quotes output:\n ".$return;
+
+    if ($exec =~ m/^ERROR.*/){
+        throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+    }
+	
+    #clean the string of unwanted ":"
+    $exec =~ s/://g;
+    #we split the string into an array
+    my @values = split(' ', $exec);
+    print Dumper(\@values);
+    #The first entry is the DS' name. We remove it from the list.
+    shift (@values);
+    #print Dumper(\@values);
+    #We convert the list into the final hash that is returned to the caller.
+    my %values = @values;
+    return %values;
+    #print Dumper(\%values);
 }
 
 sub updateTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
 
-	my $name = 'timeDB_'.$args{aggregator_id}.'.rrd';
-	#hardcoded generic DS name
-	my $datasource = 'aggregate';
-	my $time = $args{'time'};
-	my $value = $args{'value'};
-	
-	my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
-	
-	my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
-	print $cmd."\n";
-	
-	my $exec =`$cmd 2>&1`;
-	
-	if ($exec =~ m/^ERROR.*/){
-		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
-	}
-	
+    my $name = 'timeDB_'.$args{'aggregator_id'}.'.rrd';
+    #hardcoded generic DS name
+    my $datasource = 'aggregate';
+    my $time = $args{'time'};
+    my $value = $args{'value'};
+
+    my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
+
+    my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
+    print $cmd."\n";
+
+    my $exec =`$cmd 2>&1`;
+
+    if ($exec =~ m/^ERROR.*/){
+        throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+    }	
 }
 1;
