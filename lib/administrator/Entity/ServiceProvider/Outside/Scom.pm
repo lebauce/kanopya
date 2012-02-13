@@ -103,7 +103,7 @@ sub _format_data {
                     my $dt = $date_parser->parse_datetime( $timestamp )->set_time_zone( $time_zone );
                     
                     # Change float format "1,0" to "1.0"
-                    $value = s/,/./g;
+                    $value =~ s/,/./g;
                     
                     # Keep values in time span
                     if ($end_dt->epoch - $dt->epoch <= $time_span) {
