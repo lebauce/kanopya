@@ -5,7 +5,7 @@
 <table class="form">
 	<tr>
 	<td class="label">pxe_enabled </td>
-	<td><input type="radio" id="pxe" name="iface_pxe" value="" ></input>
+	<td><input type="checkbox" id="pxe" name="iface_pxe" value="checked" checked ></input>
     <span style="color: red"><% err_iface_pxe %></span></td>
   	</td>
   	</tr>
@@ -26,18 +26,3 @@
 <input type="hidden" name="host_id" value="<% host_id %>"/>
 </div>
 </form> 
-
-<script type="text/javascript">
-function change_pxe_value() {
-var pxeenabled=document.getElementById("pxe");
- if (pxeenabled.checked)
- {
-  pxeenabled.value="1";
- }
- else
- {
-  pxeenabled.value="0";
- }
-}
-document.getElementById("macaddr").onchange = change_pxe_value;
-</script>
