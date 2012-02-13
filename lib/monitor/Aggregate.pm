@@ -16,7 +16,8 @@ package Aggregate;
 use strict;
 use warnings;
 use General;
-use Statistics::Descriptive;
+#use Statistics::Descriptive;
+use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 
 use base 'BaseDB';
@@ -31,7 +32,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min)$',
+    statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|coefficientOfVariation|kurtosis|firstValue)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -52,7 +53,8 @@ sub calculate{
     ];
     
     my $values  = $args{values};
-    my $stat = Statistics::Descriptive::Full->new();
+    #my $stat = Statistics::Descriptive::Full->new();
+    my $stat = DescriptiveStatisticsFunction->new();
     $stat->add_data($values);
     
     my $funcname = $self->getAttr(name => 'statistics_function_name');

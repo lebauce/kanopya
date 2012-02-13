@@ -17,9 +17,34 @@ package DescriptiveStatisticsFunction;
 use strict;
 use warnings;
 
+use Statistics::Descriptive;
+use base 'Statistics::Descriptive::Full';
+
+
 # logger
 #use Log::Log4perl "get_logger";
 #my $log = get_logger("descriptiveStatisticsFunction");
 
-sub calculate {}
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+    
+    my $self = $class->SUPER::new(%args);
+    
+    return $self;    
+}
+
+sub coefficientOfVariation {
+    my $self = shift;
+    return $self->standard_deviation () / $self->mean();
+}
+
+#Method just to test how to get all the values in order to create a new function
+sub firstValue {
+    my $self = shift;
+    my $data = $self->_data();
+    return $data->[0];
+}
+
 1;
