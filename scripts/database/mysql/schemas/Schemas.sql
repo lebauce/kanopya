@@ -427,11 +427,11 @@ CREATE TABLE `systemimage` (
 -- 
 CREATE TABLE `iface` (
   `iface_id` int(8) UNSIGNED NOT NULL AUTO_INCREMENT ,
-  `ipface_name` char(32) NOT NULL ,
+  `iface_name` char(32) NOT NULL ,
   `iface_mac_addr` char(18) NOT NULL ,
   `iface_pxe` int(10) UNSIGNED NOT NULL,
   `host_id` int(8) UNSIGNED NOT NULL,
-  PRIMARY KEY (`ipv4_internal_id`),
+  PRIMARY KEY (`iface_id`),
   UNIQUE KEY (`iface_mac_addr`),
   UNIQUE KEY (`iface_name`,`host_id`),
   KEY (`host_id`),

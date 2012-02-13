@@ -312,10 +312,6 @@ INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Execu
 SET @admin_cluster := 1;
 SET @eid := @eid +1;
 
---
---admin iface 
---
-INSERT INTO `iface` VALUES (1,'eth0','[% mb_hw_address %]',0,@admin_host);
 
 
 
@@ -333,6 +329,13 @@ INSERT INTO `entity` VALUES (@eid);
 INSERT INTO `host` VALUES (@eid,NULL,NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','4294967296', '4','node001',NULL,NULL, 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
+
+
+--
+-- admin iface 
+--
+INSERT INTO `iface` VALUES (1,'eth0','[% mb_hw_address %]',0,@admin_host);
+
 
 --
 -- admin node
