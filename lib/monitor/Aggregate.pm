@@ -74,18 +74,8 @@ sub new {
     my $aggregate_id = $self->getAttr(name=>'aggregate_id');
     my $name         = 'timeDB_'.$aggregate_id.'.rrd';
     my $time         = time();
-    my %options      = (step => '60', start => $time);
-    my %DS           = (
-        name      => $aggregate_id,
-        type      => 'GAUGE',
-        heartbeat => '60',
-        min       => '0',
-        max       => 'U',
-        rpn       => 'exp'
-    );
-        my %RRA = (function => 'LAST', XFF => '0.9', PDPnb => 1, CPDnb => 30);
         
-        RRDTimeData::createTimeDataStore(name => $name , options => \%options , DS => \%DS, RRA => \%RRA);
+    RRDTimeData::createTimeDataStore(name => $name);
     return $self;
 }
 

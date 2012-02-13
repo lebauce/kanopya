@@ -37,37 +37,72 @@ sub createTimeDataStore{
 	my %args = @_;
 	print Dumper(\%args);
 	
-	General::checkParams(args => \%args, required => ['name', 'DS', 'RRA']); 
+	General::checkParams(args => \%args, required => ['name']); 
 	
+	my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
 	my $name = $args{'name'};
-	my $options = $args{'options'};
-	my $DS = $args{'DS'};
-	my $RRA = $args{'RRA'};
+	my $RRAchain;
 	my $DSchain;
 	my $opts = '';
 	
-	#The DS syntax is different for the COMPUTE type, that's why we're checking the type here to form the command string
-	if ($DS->{'type'} eq 'GAUGE' or $DS->{'type'} eq 'COUNTER' or $DS->{'type'} eq 'DERIVE' or $DS->{'type'} eq 'ABSOLUTE') {
-		$DSchain = 'DS:'.$DS->{'name'}.':'.$DS->{'type'}.':'.$DS->{'heartbeat'}.':'.$DS->{'min'}.':'.$DS->{'max'};
-	}elsif ($DS->{'type'} eq 'COMPUTE'){
-		$DSchain = 'DS:'.$DS->{'name'}.':'.$DS->{'type'}.':'.$DS->{'rpn'};
+	if (defined $args{'options'}){
+		my $options = $args{'options'};
+		
+		#Definition of the options. Default start is (now - 10s), default step is (300s)
+		if (defined $options->{start}) {
+			$opts .= '-b '.$options->{'start'}.' ';
+		}
+		
+		if (defined $options->{step}) {
+			$opts .= '-s '.$options->{'step'};
+		}
 	}
 	
-	#Definition of the options. Default start is (now - 10s), default step is (300s)
-	if (defined $options->{start}) {
-		$opts .= '-b '.$options->{'start'}.' ';
-	}
-	if (defined $options->{step}) {
-		$opts .= '-s '.$options->{'step'};
-	}
+	#default parameter for Round Robin Archive
+	my %RRAparams = (function => 'LAST', XFF => '0.9', PDPnb => '1', CDPnb => '30');
+	
+	if (defined $args{'RRA'}){
+		my $RRA = $args{'RRA'};
 
+		while (my ($param_name, $default_value) = each %RRAparams){
+		if (defined $RRA->{$param_name}){
+			$RRAparams{$param_name} = $RRA->{$param_name};
+			}
+		}		
+	}
+	
 	#definition of the RRA
-	my $RRAchain = 'RRA:'.$RRA->{'function'}.':'.$RRA->{'XFF'}.':'.$RRA->{'PDPnb'}.':'.$RRA->{'CPDnb'};
-
-
+	$RRAchain = 'RRA:'.$RRAparams{function}.':'.$RRAparams{XFF}.':'.$RRAparams{PDPnb}.':'.$RRAparams{CDPnb};
+	
+	#default parameter for Data Source
+	my %DSparams = (DSname => 'aggregate', type => 'GAUGE', heartbeat => '60', min => '0', max => 'U');
+	
+	if (defined $args{'DS'}){
+		my $DS = $args{'DS'};
+		
+		while (my ($param_name, $default_value) = each %DSparams){
+		if (defined $DS->{$param_name}){
+			$DSparams{$param_name} = $DS->{$param_name};
+			}
+		}			
+		############################################
+		#COMPUTE TYPE IS NOT HANDLED BY THIS MODULE#
+		############################################
+		#
+		#The DS syntax is different for the COMPUTE type, that's why we're checking the type here to form the command string
+		#if ($type eq 'GAUGE' or $type eq 'COUNTER' or $type eq 'DERIVE' or $type eq 'ABSOLUTE') {
+		#	$DSchain = 'DS'.$DSname.':'.$type.':'.$heartbeat.':'.$min.':'.$max;
+		#}elsif ($type eq 'COMPUTE'){
+		#	$DSchain = 'DS:'.$DSname.':'.$type.':'.$rpn;
+		#}	
+	}
+	
+	#definition of the DS
+	$DSchain = 'DS:'.$DSparams{DSname}.':'.$DSparams{type}.':'.$DSparams{heartbeat}.':'.$DSparams{min}.':'.$DSparams{max};
+	
 	#final command
-	my $cmd = 'rrdtool.exe create '.$name.' '.$opts.' '.$DSchain.' '.$RRAchain;
-	print $cmd." :\n";
+	my $cmd = 'rrdtool.exe create '.$dir.$name.' '.$opts.' '.$DSchain.' '.$RRAchain;
+	print $cmd." \n";
 	
 	#execution of the command
 	my $exec = `$cmd 2>&1`;
@@ -104,10 +139,10 @@ sub getTimeDataStoreInfo {
 #fetch values from a RRD file.
 sub fetchTimeDataStore {
 	my %args = @_;
-	General::checkParams(args => \%args, required => ['name', 'CF']); 
+	General::checkParams(args => \%args, required => ['name']); 
 	
 	my $name = $args{'name'};
-	my $CF = $args{'CF'};
+	my $CF = 'LAST';
 	my $start = $args{'start'};
 	my $end = $args{'end'};
 	
@@ -124,19 +159,17 @@ sub fetchTimeDataStore {
 	print $cmd.": \n";
 	
 	#we store the ouput of the command into a string
-	my $return = `$cmd`;
+	my $exec = `$cmd 2>&1`;
 	#print "back quotes output:\n ".$return;
 
-    print "WARNING ERRORS NOT CHECKED \n"; 
-    #TODO
-#	if ($exec =~ m/^ERROR.*/){
-#		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
-#	}
+	if ($exec =~ m/^ERROR.*/){
+		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+	}
 	
 	#clean the string of unwanted ":"
-	$return =~ s/://g;
+	$exec =~ s/://g;
 	#we split the string into an array
-	my @values = split(' ', $return);
+	my @values = split(' ', $exec);
 	print Dumper(\@values);
 	#The first entry is the DS' name. We remove it from the list.
 	shift (@values);
@@ -150,22 +183,10 @@ sub fetchTimeDataStore {
 sub updateTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
-    _updateTimeDataStore (
-        name       => 'timeDB_'.$args{aggregator_id}.'.rrd', 
-        datasource => $args{aggregator_id}, 
-        time       => $args{time}, 
-        value      =>$args{value},
-        )
-}
 
-#Feed a rrd.
-sub _updateTimeDataStore {
-	my %args = @_;
-	General::checkParams(args => \%args, required => ['name', 'datasource', 'time', 'value']); 
-	
-	
-	my $name = $args{'name'};
-	my $datasource = $args{'datasource'};
+	my $name = 'timeDB_'.$args{aggregator_id}.'.rrd';
+	#hardcoded generic DS name
+	my $datasource = 'aggregate';
 	my $time = $args{'time'};
 	my $value = $args{'value'};
 	
@@ -174,11 +195,11 @@ sub _updateTimeDataStore {
 	my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
 	print $cmd."\n";
 	
-	system ($cmd);
-	print "WARNING ERRORS NOT CHECKED \n";
-    #TODO
-#	if ($exec =~ m/^ERROR.*/){
-#		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
-#	}
+	my $exec =`$cmd 2>&1`;
+	
+	if ($exec =~ m/^ERROR.*/){
+		throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+	}
+	
 }
 1;
