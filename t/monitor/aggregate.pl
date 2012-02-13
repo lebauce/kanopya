@@ -7,16 +7,16 @@ Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 my $adm = Administrator->new();
 
 $params = {
-    cluster_id               => '1',
-    indicator_id             => '1',
-    statistics_function_name => 'standard_deviation',
-    window_time              => '0',
+    cluster_id               => '54',
+    indicator_id             => '16',
+    statistics_function_name => 'max',
+    window_time              => '1200',
 };
 
 my $aggregate = Aggregate->new(%$params);
 
 my @table = qw(2 4 4 4 5 5 7 9);
 
-my $mean = $aggregate->calculate(values => \@table);
+my $calc = $aggregate->calculate(values => \@table);
 
-print "$mean \n";
+print "calc = $calc \n";
