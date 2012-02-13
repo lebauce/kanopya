@@ -81,7 +81,7 @@ sub retrieveData {
 }
 
 # Computes mean value for each metric from scom query res
-# Mean on last <time_span> seconds, if no value during this laps, then take the last value (handle scom db optimization)
+# Mean on last <time_span> seconds, if no value during this laps then take the last value (handle scom db optimization)
 # Builds retriever resulting hash
 sub _format_data {
     my %args = @_;
@@ -113,9 +113,10 @@ sub _format_data {
                 
                 my $value;
                 if (0 != @values) {
-                    # WARNING !!! summed values are truncated because number format is "1,0" instead of "1.0"
-                    # TODO manage this! 
-                    $value = sum(@values) / @values;
+                    # Change float format "1,0" to "1.0"
+		    my @coerce_values = map { s/,/./g } @values;
+		    # compute mean value
+                    $value = sum(@coerce_values) / @values;
                 } else {
                     $value = $last_value;
                     print "Info: take last counter value\n";
