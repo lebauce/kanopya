@@ -879,14 +879,15 @@ CREATE TABLE `aggregate` (
 -- Table structure for table `aggregate_rule`
 --
 
-CREATE TABLE `aggregate_rule` (
-  `rule_id` int(8) NOT NULL AUTO_INCREMENT,
+CREATE TABLE `aggregate_condition` (
+  `aggregate_condition_id` int(8) NOT NULL AUTO_INCREMENT,
   `aggregate_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
   `threshold` double NOT NULL,
   `state` char(32) NOT NULL,
   `time_limit` char(32),
-  PRIMARY KEY (`rule_id`),
+  `last_eval` BOOLEAN DEFAULT NULL,
+  PRIMARY KEY (`aggregate_condition_id`),
   KEY (`aggregate_id`),
   FOREIGN KEY (`aggregate_id`) REFERENCES `aggregate` (`aggregate_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
