@@ -763,10 +763,10 @@ CREATE TABLE `rule` (
 
 CREATE TABLE `workload_characteristic` (
   `wc_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `wc_visit_ratio` int(8) NOT NULL,
-  `wc_service_time` int(8) NOT NULL,
-  `wc_delay` int(8) NOT NULL,
-  `wc_think_time` int(8) NOT NULL,
+  `wc_visit_ratio` double NOT NULL,
+  `wc_service_time` double NOT NULL,
+  `wc_delay` double NOT NULL,
+  `wc_think_time` double NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`wc_id`),
   KEY  (`cluster_id`),
@@ -779,8 +779,8 @@ CREATE TABLE `workload_characteristic` (
 
 CREATE TABLE `qos_constraint` (
   `constraint_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `constraint_max_latency` int(8) NOT NULL,
-  `constraint_max_abort_rate` int(8) NOT NULL,
+  `constraint_max_latency` double NOT NULL,
+  `constraint_max_abort_rate` double NOT NULL,
   `cluster_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`constraint_id`),
   KEY (`cluster_id`),
@@ -803,6 +803,7 @@ CREATE TABLE `indicatorset` (
   `indicatorset_type` char(32) NOT NULL,
   `indicatorset_component` char(32),
   `indicatorset_max` char(128),
+  `indicatorset_tableoid` char(64),
   PRIMARY KEY (`indicatorset_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
