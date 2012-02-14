@@ -16,6 +16,7 @@ package AggregateRule;
 use strict;
 use warnings;
 use General;
+use TimeData::RRDTimeData;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
@@ -73,6 +74,17 @@ sub toString {
           ;
 }
 
+sub eval{
+    my $self = shift;
+    
+    my $aggregate_id    = $self->getAttr(name => 'aggregate_id');
+    my $comparator      = $self->getAttr(name => 'comparator');
+    my $threshold       = $self->getAttr(name => 'threshold');
+
+    my $aggregatorValue = RRDTimeData::fetchTimeDataStore(name => $aggregate_id); 
+    my $evalString = $aggregatorValue.$comparator.$threshold; 
+    print $evalString."\n";
+}
 
 
 1;

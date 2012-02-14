@@ -145,7 +145,7 @@ sub fetchTimeDataStore {
     my $CF    = 'LAST';
     my $start = $args{'start'};
     my $end   = $args{'end'};
-    my $cmd   = 'rrdtool.exe fetch '.$name.'rrd '.$CF;
+    my $cmd   = 'rrdtool.exe fetch '.$name.' '.$CF;
 
     #if not defined, start is (end - 1 day), and end is (now)
     if (defined $start){ 
@@ -155,7 +155,7 @@ sub fetchTimeDataStore {
         $cmd .= ' -e '.$end;
     }
 	
-    print $cmd.": \n";
+    print $cmd."\n";
 
     #we store the ouput of the command into a string
     my $exec = `$cmd 2>&1`;
