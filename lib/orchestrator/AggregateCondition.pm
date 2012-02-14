@@ -19,7 +19,7 @@ use TimeData::RRDTimeData;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    rule_id               =>  {pattern       => '^.*$',
+    aggregate_condition_id               =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -61,7 +61,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub toString {
     my $self = shift;
 
-    my $rule_id        = $self->getAttr(name => 'rule_id');
+    my $aggregate_condition_id        = $self->getAttr(name => 'aggregate_condition_id');
     my $aggregate_id   = $self->getAttr(name => 'aggregate_id');
     my $comparator     = $self->getAttr(name => 'comparator');
     my $threshold      = $self->getAttr(name => 'threshold');
@@ -70,7 +70,7 @@ sub toString {
     my $last_eval      = $self->getAttr(name => 'last_eval');
 
 
-    return   'rule_id = '              . $rule_id
+    return   'aggregate_condition_id = '              . $aggregate_condition_id
            . ' ; aggregate_id = '   . $aggregate_id
            . ' ; comparator = ' . $comparator
            . ' ; threshold = '      . $threshold

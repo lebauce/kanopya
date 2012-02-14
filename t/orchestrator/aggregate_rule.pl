@@ -17,7 +17,7 @@ $params = {
     time_limit            => NULL,
 };
 
-#my $aggregate_rule = AggregateRule->new(%$params);
+my $aggregate_rule = AggregateCondition->new(%$params);
 
 my @aggregate_conditions = AggregateCondition->search(hash => {});
 for my $aggregate_condition (@aggregate_conditions){
