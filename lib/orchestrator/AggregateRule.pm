@@ -15,7 +15,6 @@ package AggregateRule;
 
 use strict;
 use warnings;
-use General;
 use TimeData::RRDTimeData;
 use base 'BaseDB';
 
@@ -44,6 +43,10 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
+    last_eval          =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -64,13 +67,17 @@ sub toString {
     my $threshold      = $self->getAttr(name => 'threshold');
     my $state          = $self->getAttr(name => 'state');
     my $time_limit     = $self->getAttr(name => 'time_limit');
+    my $last_eval      = $self->getAttr(name => 'last_eval');
+
 
     return   'rule_id = '              . $rule_id
            . ' ; aggregate_id = '   . $aggregate_id
            . ' ; comparator = ' . $comparator
            . ' ; threshold = '      . $threshold
            . ' ; state = '      . $state           
-           . ' ; time_limit = '        . $time_limit ."\n"
+           . ' ; time_limit = '        . $time_limit 
+           . ' ; last_eval = '        . $last_eval
+           ."\n"
           ;
 }
 

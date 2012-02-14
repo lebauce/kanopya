@@ -15,9 +15,10 @@ $params = {
     threshold             => 0.1,
     state                 => 'enabled',
     time_limit            => NULL,
+    last_eval             => NULL,
 };
 
-#my $aggregate_rule = AggregateRule->new(%$params);
+my $aggregate_rule = AggregateRule->new(%$params);
 
 my @aggregate_rules = AggregateRule->search(hash => {});
 for my $aggregate_rule (@aggregate_rules){
