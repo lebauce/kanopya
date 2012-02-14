@@ -107,7 +107,7 @@ sub _contructRetrieverOutput {
     my $rep                    = undef;
     my $host_id                = undef;
     my $indicator              = undef; 
-    my $indicators_name             = undef;
+    my $indicators_name        = undef;
     my @indicators_array       = undef;
     my $aggregate_time_span    = undef;
     my $time_span              = undef;
@@ -150,121 +150,75 @@ sub _getHostNamesFromIDs{
 }
 
 
-=head2 computeAggregates
-    
-    Class : Public
-    
-    Desc : Compute all the aggregates according to the retrieved values received from Retriever
-    
-=cut
-
- 
-sub _computeAggregates{
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['indicators']);
-    my $indicators = $args{indicators};
-    my $rep = {};
-    my $aggregate_cluster_id   = 0;
-    my $aggregate_indicator_id = 0;
-    my $cluster                = undef;
-    my $hosts                  = undef;
-    my $host_id                = undef;
-    my $indicator_value        = undef;
-    my @values                 = ();
 
 
-    my @aggregates = Aggregate->search(hash => {});
-    
-    for my $aggregate (@aggregates){
-        @values = ();
-        $aggregate_cluster_id   = $aggregate->getAttr(name => 'cluster_id');
-        $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
-
-        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $aggregate_cluster_id);
-        $hosts   = $cluster->getHosts();
-        
-        for my $host (values(%$hosts)){
-            $host_id = $host->getAttr(name => 'host_id');
-            $indicator_value = $indicators->{$host_id}->{$aggregate_indicator_id};
-            
-            push(@values,$indicator_value);
-        }
-        $rep->{$aggregate->getAttr(name => 'aggregate_id')} = $aggregate->calculate(values => \@values);
-    }
-    return $rep;
-};
-
-sub _create_aggregates_db{
-    my $self = shift;
-    my @aggregates = Aggregate->search(hash => {});
-    for my $aggregate (@aggregates){
-        my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');
-        my $name         = 'timeDB_'.$aggregate_id.'.rrd';
-        my $time         = time();
-        my %options      = (step => '60', start => $time);
-        my %DS           = (
-            name      => $aggregate_id,
-            type      => 'GAUGE',
-            heartbeat => '60',
-            min       => '0',
-            max       => 'U',
-            rpn       => 'exp'
-        );
-        my %RRA = (function => 'LAST', XFF => '0.9', PDPnb => 1, CPDnb => 30);
-        
-        RRDTimeData::createTimeDataStore(name => $name , options => \%options , DS => \%DS, RRA => \%RRA);
-    }
-    
-
-    
-}
 sub update() {
     my $self = shift;
-    print "launched !\n";
-    $log->info("launched !");
+    
+    # Construct input of the SCOM retriever
     my $host_indicator_for_retriever = $self->_contructRetrieverOutput();
     print Dumper $host_indicator_for_retriever;
+    
+    # Call the retriever to get SCOM data
     my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
     print Dumper $monitored_values; 
     
-    
-    $self->_updateTimeDB(values=>$monitored_values);
+    # Parse retriever return, compute aggregate values and store in DB 
+    $self->_calculateAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
     
     print Dumper $monitored_values;
 }
 
-sub _updateTimeDB{
+
+=head2 run
+    
+    Class : Public
+    
+    Desc : Parse the hash table received from Retriever (input), compute 
+    aggregate values and store them in DB
+    
+    Args : values : hash table from the Retriever
+=cut
+
+sub _calculateAggregateValuesAndUpdateTimeDB{
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['values']);
     my $values = $args{values};
+    # Array of all aggregates
     my @aggregates = Aggregate->search(hash => {});
     
     my $aggregate_indicator_id;
     my $indicator;
     my $indicators_name; 
+    
+    # Loop on all the aggregates
     for my $aggregate (@aggregates){
-        #print Dumper $values;
-        my $host_names = $self->_getHostNamesFromIDs();
+        
+        my $host_names = $self->_getHostNamesFromIDs(); #get all hosts name
+        #TODO : To be modified when using ServerSets
+        
+        # Array that will store all the values needed to compute $aggregate val
         my @dataStored = (); 
+
+        # Loop on all the host_name of the $aggregate
         for my $host_name (@$host_names){
-            
             
             $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
             $indicator = Indicator->get('id' => $aggregate_indicator_id);
-            
-            my $the_value = $values->{$host_name}->{$indicator->getAttr(name=>'indicator_oid')};
-            
+
+            # Parse $values to store needed value in @dataStored 
+            my $the_value = $values->{$host_name}
+                                   ->{$indicator->getAttr(name=>'indicator_oid')};
             push(@dataStored,$the_value); 
         }
         
+        #Compute the $aggregate value from all @dataStored values
         my $statValue = $aggregate->calculate(values => \@dataStored);
         
+        #Store in DB and time stamp
         my $time = time();
-        
         RRDTimeData::updateTimeDataStore(
             aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
             time          => $time, 
@@ -317,4 +271,70 @@ sub run {
         );
 }
 
+=head2 run
+    
+    Class : Public
+    
+    Desc : Recreate all the DB for all the existing aggregate
+    
+=cut
+
+sub create_aggregates_db{
+    my $self = shift;
+    my @aggregates = Aggregate->search(hash => {});
+    for my $aggregate (@aggregates){
+        my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');        
+        RRDTimeData::createTimeDataStore(name => $aggregate_id);
+    }
+}
+
+
+=head2 computeAggregates
+    
+    Class : Public
+    
+    Desc : [DEPRECTATED] Compute all the aggregates according to the retrieved values received from Retriever
+    
+=cut
+
+ 
+sub _computeAggregates{
+    my $self = shift;
+    my %args = @_;
+
+    print "THIS METHOD SEEMS DEPRECATED, please use _calculateAggregateValuesAndUpdateTimeDB";
+    $log->info("THIS METHOD SEEMS DEPRECATED, please use _calculateAggregateValuesAndUpdateTimeDB"); 
+    General::checkParams(args => \%args, required => ['indicators']);
+    my $indicators = $args{indicators};
+    my $rep = {};
+    my $aggregate_cluster_id   = 0;
+    my $aggregate_indicator_id = 0;
+    my $cluster                = undef;
+    my $hosts                  = undef;
+    my $host_id                = undef;
+    my $indicator_value        = undef;
+    my @values                 = ();
+
+    # Array to loop on all the aggregates
+    my @aggregates = Aggregate->search(hash => {});
+    for my $aggregate (@aggregates){
+        
+        @values = ();
+        
+        
+        $aggregate_cluster_id   = $aggregate->getAttr(name => 'cluster_id');
+        $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
+        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $aggregate_cluster_id);
+        $hosts   = $cluster->getHosts();
+        
+        for my $host (values(%$hosts)){
+            $host_id = $host->getAttr(name => 'host_id');
+            $indicator_value = $indicators->{$host_id}->{$aggregate_indicator_id};
+            
+            push(@values,$indicator_value);
+        }
+        $rep->{$aggregate->getAttr(name => 'aggregate_id')} = $aggregate->calculate(values => \@values);
+    }
+    return $rep;
+};
 1;

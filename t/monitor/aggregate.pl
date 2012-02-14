@@ -9,13 +9,13 @@ my $adm = Administrator->new();
 $params = {
     cluster_id               => '54',
     indicator_id             => '16',
-    statistics_function_name => 'max',
+    statistics_function_name => 'firstValue',
     window_time              => '1200',
 };
 
 my $aggregate = Aggregate->new(%$params);
 
-my @table = qw(2 4 4 4 5 5 7 9);
+my @table = qw(2.12 4 4 4 5 5 7 9);
 
 my $calc = $aggregate->calculate(values => \@table);
 

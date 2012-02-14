@@ -16,7 +16,8 @@ package Aggregate;
 use strict;
 use warnings;
 use General;
-use Statistics::Descriptive;
+#use Statistics::Descriptive;
+use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 
 use base 'BaseDB';
@@ -31,7 +32,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min)$',
+    statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|coefficientOfVariation|kurtosis|firstValue)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -52,7 +53,8 @@ sub calculate{
     ];
     
     my $values  = $args{values};
-    my $stat = Statistics::Descriptive::Full->new();
+    #my $stat = Statistics::Descriptive::Full->new();
+    my $stat = DescriptiveStatisticsFunction->new();
     $stat->add_data($values);
     
     my $funcname = $self->getAttr(name => 'statistics_function_name');
@@ -70,20 +72,7 @@ sub new {
     
     
     my $aggregate_id = $self->getAttr(name=>'aggregate_id');
-    my $name         = 'timeDB_'.$aggregate_id.'.rrd';
-    my $time         = time();
-    my %options      = (step => '60', start => $time);
-    my %DS           = (
-        name      => $aggregate_id,
-        type      => 'GAUGE',
-        heartbeat => '60',
-        min       => '0',
-        max       => 'U',
-        rpn       => 'exp'
-    );
-        my %RRA = (function => 'LAST', XFF => '0.9', PDPnb => 1, CPDnb => 30);
-        
-        RRDTimeData::createTimeDataStore(name => $name , options => \%options , DS => \%DS, RRA => \%RRA);
+    RRDTimeData::createTimeDataStore(name => $aggregate_id);
     return $self;
 }
 

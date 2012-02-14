@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Result::AggregateRule;
+package AdministratorDB::Schema::Result::AggregateCondition;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -11,15 +11,15 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::AggregateRule
+AdministratorDB::Schema::Result::AggregateCondition
 
 =cut
 
-__PACKAGE__->table("aggregate_rule");
+__PACKAGE__->table("aggregate_condition");
 
 =head1 ACCESSORS
 
-=head2 rule_id
+=head2 aggregate_condition_id
 
   data_type: 'integer'
   is_auto_increment: 1
@@ -59,7 +59,7 @@ __PACKAGE__->table("aggregate_rule");
 =cut
 
 __PACKAGE__->add_columns(
-  "rule_id",
+  "aggregate_condition_id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "aggregate_id",
   {
@@ -76,8 +76,11 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "time_limit",
   { data_type => "char", is_nullable => 1, size => 32 },
+  "last_eval",
+  { data_type => "boolean", is_nullable => 1 },
+  
 );
-__PACKAGE__->set_primary_key("rule_id");
+__PACKAGE__->set_primary_key("aggregate_condition_id");
 
 =head1 RELATIONS
 
