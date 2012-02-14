@@ -11,7 +11,7 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package AggregateRule;
+package AggregateCondition;
 
 use strict;
 use warnings;
@@ -27,7 +27,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    comparator =>  {pattern       => '^(>|<|>=|<=)$',
+    comparator =>  {pattern       => '^(>|<|>=|<=|=)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -88,12 +88,19 @@ sub eval{
     my $comparator      = $self->getAttr(name => 'comparator');
     my $threshold       = $self->getAttr(name => 'threshold');
 
-    my %aggregatorHash = RRDTimeData::fetchTimeDataStore(name => $aggregate_id);
+    #my %aggregatorHash = RRDTimeData::fetchTimeDataStore(name => $aggregate_id);
+    #my @aggregatorValues = values(%aggregatorHash); 
+    my $evalString = '0.5'.$comparator.$threshold; 
+    if(eval $evalString){
+        $self->setAttr(name => 'last_eval', value => 1);
+        $self->save();
+        return 1;
+    }else{
+        $self->setAttr(name => 'last_eval', value => 0);
+        $self->save();
+        return 0;
+    }
     
-    my @aggregatorValues = values(%aggregatorHash); 
-    
-    my $evalString = $aggregatorValues[-1].$comparator.$threshold; 
-    print $evalString."\n";
 }
 
 
