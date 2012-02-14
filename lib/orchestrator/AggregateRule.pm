@@ -20,7 +20,7 @@ use base 'BaseDB';
 
 use constant ATTR_DEF => {
     rule_id               =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
+                                 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
     aggregate_id             =>  {pattern       => '^.*$',
@@ -88,8 +88,11 @@ sub eval{
     my $comparator      = $self->getAttr(name => 'comparator');
     my $threshold       = $self->getAttr(name => 'threshold');
 
-    my $aggregatorValue = RRDTimeData::fetchTimeDataStore(name => $aggregate_id); 
-    my $evalString = $aggregatorValue.$comparator.$threshold; 
+    my %aggregatorHash = RRDTimeData::fetchTimeDataStore(name => $aggregate_id);
+    
+    my @aggregatorValues = values(%aggregatorHash); 
+    
+    my $evalString = $aggregatorValues[-1].$comparator.$threshold; 
     print $evalString."\n";
 }
 
