@@ -26,6 +26,7 @@ use General;
 use Data::Dumper;
 
 
+my $dir          = 'C:\\opt\\kanopya\\t\\monitor\\';
 
 ####################################################################################################################
 #########################################RRD MANIPULATION FUNCTIONS#################################################
@@ -39,7 +40,7 @@ sub createTimeDataStore{
 	
     General::checkParams(args => \%args, required => ['name']); 
 	
-    my $dir          = 'C:\\opt\\kanopya\\t\\monitor\\'; 
+     
     my $name         = 'timeDB_'.$args{'name'}.'.rrd';
     my $RRA_chain;
     my $DS_chain;
@@ -145,7 +146,7 @@ sub fetchTimeDataStore {
     my $CF    = 'LAST';
     my $start = $args{'start'};
     my $end   = $args{'end'};
-    my $cmd   = 'rrdtool.exe fetch '.$name.' '.$CF;
+    my $cmd   = 'rrdtool.exe fetch '.$dir.$name.' '.$CF;
 
     #if not defined, start is (end - 1 day), and end is (now)
     if (defined $start){ 
