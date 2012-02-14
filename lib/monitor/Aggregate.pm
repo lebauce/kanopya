@@ -72,10 +72,7 @@ sub new {
     
     
     my $aggregate_id = $self->getAttr(name=>'aggregate_id');
-    my $name         = 'timeDB_'.$aggregate_id.'.rrd';
-    my $time         = time();
-        
-    RRDTimeData::createTimeDataStore(name => $name);
+    RRDTimeData::createTimeDataStore(name => $aggregate_id);
     return $self;
 }
 

@@ -107,7 +107,7 @@ sub _contructRetrieverOutput {
     my $rep                    = undef;
     my $host_id                = undef;
     my $indicator              = undef; 
-    my $indicators_name             = undef;
+    my $indicators_name        = undef;
     my @indicators_array       = undef;
     my $aggregate_time_span    = undef;
     my $time_span              = undef;
@@ -283,11 +283,8 @@ sub create_aggregates_db{
     my $self = shift;
     my @aggregates = Aggregate->search(hash => {});
     for my $aggregate (@aggregates){
-        my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');
-        my $name         = 'timeDB_'.$aggregate_id.'.rrd';
-        my $time         = time();
-        
-        RRDTimeData::createTimeDataStore(name => $name);
+        my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');        
+        RRDTimeData::createTimeDataStore(name => $aggregate_id);
     }
 }
 
