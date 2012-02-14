@@ -39,8 +39,8 @@ sub createTimeDataStore{
 	
     General::checkParams(args => \%args, required => ['name']); 
 	
-    my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
-    my $name = $args{'name'};
+    my $dir          = 'C:\\opt\\kanopya\\t\\monitor\\'; 
+    my $name         = 'timeDB_'.$args{'name'}.'.rrd';
     my $RRA_chain;
     my $DS_chain;
     my $opts = '';
@@ -141,12 +141,11 @@ sub fetchTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name = $args{'name'};
-    my $CF = 'LAST';
+    my $name  = 'timeDB_'.$args{'name'}.'.rrd';
+    my $CF    = 'LAST';
     my $start = $args{'start'};
-    my $end = $args{'end'};
-
-    my $cmd = 'rrdtool.exe fetch '.$name.' '.$CF;
+    my $end   = $args{'end'};
+    my $cmd   = 'rrdtool.exe fetch '.$name.'rrd '.$CF;
 
     #if not defined, start is (end - 1 day), and end is (now)
     if (defined $start){ 
