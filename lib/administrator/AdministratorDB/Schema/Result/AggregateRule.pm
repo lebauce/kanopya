@@ -76,6 +76,9 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "time_limit",
   { data_type => "char", is_nullable => 1, size => 32 },
+  "last_eval",
+  { data_type => "boolean", is_nullable => 1 },
+  
 );
 __PACKAGE__->set_primary_key("rule_id");
 
