@@ -54,6 +54,7 @@ use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
+use AggregateCondition;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
@@ -78,28 +79,11 @@ sub new {
 
     # Load conf
     my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
-    $self->{_time_step} = $conf->{time_step};
-    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
-    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
-    
-    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
-    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
-    
-    # Create orchestrator dirs if needed
-    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
-        my @dir_path = split '/', $dir_path;
-        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
-        while (scalar @dir_path) {
-            $dir .= (shift @dir_path) . "/";
-            mkdir $dir;
-        }
-    }
-    
-    # Get Administrator
+   # Get Administrator
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
-    $self->{_monitor} = Monitor::Retriever->new( );
+    #$self->{_monitor} = Monitor::Retriever->new( );
     
     return $self;
 }
@@ -116,10 +100,28 @@ sub new {
 sub manage_aggregates {
     my $self = shift;
     
-    my @aggregate_rules = AggregateRule->search(hash => {});
+    print "## UPDATE $self->{_time_step} ##\n";
+#    my @aggregate_rules = AggregateCondition::search(hash => {});
+#    
+#    for my $aggregate_rule (@aggregate_rules){
+#        
+#    }
+    my $parser = Parse::BooleanLogic->new( operators => ['AND', 'OR'] );
     
-    for my $aggregate_rule (@aggregate_rules){
-        
+    my $logicString = '1 AND 2';
+    my $tree = $parser->as_array($logicString);    
+    
+    my $solver = sub {
+        my ($condition, $some) = @_;
+            my $ac = AggregateCondition->get('id'=>($condition->{'operand'}));
+            return $ac->eval();
+    };
+    
+    my $result = $parser->solve( $tree, $solver, undef);
+    if($result eq 1){
+        print "VRAI\n"
+    }else{
+        print "FALSE\n";
     }
     
 }
@@ -976,14 +978,17 @@ sub graph {
 sub run {
     my $self = shift;
     my $running = shift;
-    
+    # Load conf
+    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{_time_step} = $conf->{time_step};
+        
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
     
     while ( $$running ) {
 
         my $start_time = time();
 
-        $self->manage();
+        $self->manage_aggregates();
 
         my $update_duration = time() - $start_time;
         $log->info( "Manage duration : $update_duration seconds" );
@@ -996,6 +1001,41 @@ sub run {
     }
     
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+}
+
+sub new_old {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = {};
+    bless $self, $class;
+
+    # Load conf
+    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{_time_step} = $conf->{time_step};
+    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
+    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
+    
+    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
+    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
+    
+    # Create orchestrator dirs if needed
+    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
+        my @dir_path = split '/', $dir_path;
+        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
+        while (scalar @dir_path) {
+            $dir .= (shift @dir_path) . "/";
+            mkdir $dir;
+        }
+    }
+    
+    # Get Administrator
+    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+    Administrator::authenticate( login => $login, password => $password );
+    $self->{_admin} = Administrator->new();
+    $self->{_monitor} = Monitor::Retriever->new( );
+    
+    return $self;
 }
 
 1;
