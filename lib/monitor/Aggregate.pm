@@ -16,7 +16,6 @@ package Aggregate;
 use strict;
 use warnings;
 use General;
-#use Statistics::Descriptive;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 
@@ -60,7 +59,12 @@ sub calculate{
     my $funcname = $self->getAttr(name => 'statistics_function_name');
     my $mean = $stat->$funcname();
     return $mean;
+}
 
+sub getLastValueFromDB{
+    my $self = shift;
+    return 0.5;
+    #return RRDTimeData::getLastValue(aggregate_id=> $self->getAttr(name => 'aggregate_id');
 }
 
 
@@ -69,7 +73,6 @@ sub new {
     my %args = @_;
     
     my $self = $class->SUPER::new(%args);
-    
     
     my $aggregate_id = $self->getAttr(name=>'aggregate_id');
     RRDTimeData::createTimeDataStore(name => $aggregate_id);
