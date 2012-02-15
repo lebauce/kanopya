@@ -927,8 +927,35 @@ CREATE TABLE `entityright` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+--
+-- Table structure for table `externalcluster`
+--
 
+CREATE TABLE `externalcluster` (
+  `externalcluster_id` int(8) unsigned NOT NULL,
+  `externalcluster_name` char(32) NOT NULL,
+  `externalcluster_desc` char(255) DEFAULT NULL,
+  `externalcluster_state` char(32) NOT NULL DEFAULT 'down',
+  `externalcluster_prev_state` char(32),
+  PRIMARY KEY (`externalcluster_id`),
+  FOREIGN KEY (`externalcluster_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`externalcluster_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `externalnode`
+--
+
+CREATE TABLE `externalnode` (
+  `externalnode_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `externalnode_hostname` char(32) NOT NULL,
+  `outside_id` int(8) unsigned NOT NULL,
+  `externalnode_state` char(32),
+  `externalnode_prev_state` char(32),
+  PRIMARY KEY (`externalnode_id`),
+  KEY (`outside_id`),
+  FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 
