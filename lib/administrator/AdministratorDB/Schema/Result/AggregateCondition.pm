@@ -25,7 +25,7 @@ __PACKAGE__->table("aggregate_condition");
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 aggregate_id
+=head2 aggregate_combination_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -61,7 +61,7 @@ __PACKAGE__->table("aggregate_condition");
 __PACKAGE__->add_columns(
   "aggregate_condition_id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
-  "aggregate_id",
+  "aggregate_combination_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -94,8 +94,8 @@ Related object: L<AdministratorDB::Schema::Result::Aggregate>
 
 __PACKAGE__->belongs_to(
   "aggregate",
-  "AdministratorDB::Schema::Result::Aggregate",
-  { aggregate_id => "aggregate_id" },
+  "AdministratorDB::Schema::Result::AggregateCombination",
+  { aggregate_combination_id => "aggregate_combination_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
