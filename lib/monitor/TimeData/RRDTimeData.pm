@@ -46,21 +46,25 @@ sub createTimeDataStore{
     my $DS_chain;
     my $opts = '';
 	
+    #definition of the options. If unset, default rrd start is (now -10s), and step is (300s)
     if (defined $args{'options'}){
         my $options = $args{'options'};
 
-        #Definition of the options. Default start is (now - 10s), default step is (300s)
         if (defined $options->{start}) {
             $opts .= '-b '.$options->{'start'}.' ';
-        }
+        }            
 
         if (defined $options->{step}) {
             $opts .= '-s '.$options->{'step'};
+        }else{
+            $opts .= '-s 60';
         }
-    }
+    }else{
+            $opts .= '-s 60';
+        }
 	
     #default parameter for Round Robin Archive
-    my %RRA_params = (function => 'LAST', XFF => '0.9', PDPnb => '1', CDPnb => '30');
+    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '60');
 
     if (defined $args{'RRA'}){
         my $RRA = $args{'RRA'};
@@ -119,7 +123,7 @@ sub deleteTimeDataStore{
 
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name = $args{'name'};
+    my $name = 'timeDB_'.$args{'name'}.'.rrd'; 
     my $cmd = 'del '.$name;
 
     system ($cmd);
@@ -131,7 +135,7 @@ sub getTimeDataStoreInfo {
 
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name = $args{'name'}; 
+    my $name = 'timeDB_'.$args{'name'}.'.rrd'; 
     my $cmd = 'rrdtool.exe info '.$name;
 
     system ($cmd);	
@@ -170,9 +174,13 @@ sub fetchTimeDataStore {
     $exec =~ s/://g;
     #we split the string into an array
     my @values = split(' ', $exec);
-    print Dumper(\@values);
+    #print Dumper(\@values);
     #The first entry is the DS' name. We remove it from the list.
     shift (@values);
+
+    my $size = (@values / 2);
+    #print $size."\n";
+
     #print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
@@ -196,6 +204,7 @@ sub updateTimeDataStore {
     print $cmd."\n";
 
     my $exec =`$cmd 2>&1`;
+    #print $exec."\n";
 
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
