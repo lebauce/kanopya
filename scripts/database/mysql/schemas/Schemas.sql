@@ -877,7 +877,7 @@ CREATE TABLE `aggregate` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `aggregate_rule`
+-- Table structure for table `aggregate_condition`
 --
 
 CREATE TABLE `aggregate_condition` (
@@ -906,6 +906,15 @@ CREATE TABLE `aggregate_rule` (
 `aggregate_rule_state` TEXT NOT NULL ,
 `aggregate_rule_action_id` INT NOT NULL
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `aggregate_combination`
+--
+
+CREATE TABLE `aggregate_combination` (
+`aggregate_combination_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`aggregate_combination_formula` TEXT NOT NULL
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `ingroups`
