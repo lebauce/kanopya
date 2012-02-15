@@ -28,13 +28,13 @@ __PACKAGE__->table("iface");
 
 =head2 iface_name
 
-  data_type: 'varchar'
+  data_type: 'char'
   is_nullable: 0
-  size: 18
+  size: 32
 
 =head2 iface_mac_addr
 
-  data_type: 'varchar'
+  data_type: 'char'
   is_nullable: 0
   size: 18
 
@@ -51,7 +51,6 @@ __PACKAGE__->table("iface");
   is_foreign_key: 1
   is_nullable: 0
 
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -63,9 +62,9 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "iface_name",
-  { data_type => "varchar", is_nullable => 0, size => 18 },
+  { data_type => "char", is_nullable => 0, size => 32 },
   "iface_mac_addr",
-  { data_type => "varchar", is_nullable => 0, size => 18 },
+  { data_type => "char", is_nullable => 0, size => 18 },
   "iface_pxe",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "host_id",
@@ -94,12 +93,27 @@ __PACKAGE__->belongs_to(
   "host",
   "AdministratorDB::Schema::Result::Host",
   { host_id => "host_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 ips
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Ip>
+
+=cut
+
+__PACKAGE__->has_many(
+  "ips",
+  "AdministratorDB::Schema::Result::Ip",
+  { "foreign.iface_id" => "self.iface_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-08 13:50:34
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZAvfS3sXmXGeICzvBDW6Rg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-14 18:09:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wrvgk0iPLsJ0QBTWwXs0lg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

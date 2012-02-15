@@ -206,6 +206,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 poolip
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Poolip>
+
+=cut
+
+__PACKAGE__->might_have(
+  "poolip",
+  "AdministratorDB::Schema::Result::Poolip",
+  { "foreign.poolip_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 powersupplycard
 
 Type: might_have
@@ -311,10 +326,25 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vlan
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ibX7LuqSX+Zb5bS9pPJGkg
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vlan>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vlan",
+  "AdministratorDB::Schema::Result::Vlan",
+  { "foreign.vlan_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-15 09:20:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3xRCKfRFn4jKj2lQmSl/JQ
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
