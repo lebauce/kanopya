@@ -177,15 +177,19 @@ sub fetchTimeDataStore {
     #print Dumper(\@values);
     #The first entry is the DS' name. We remove it from the list.
     shift (@values);
-
-    my $size = (@values / 2);
-    #print $size."\n";
-
     #print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
+    
+    while (my ($timestamp, $value) = each %values){
+        if ($values{$timestamp} eq '-1,#IND000000e+000'){
+            delete $values{$timestamp};
+        }
+    }	
+        
+    print Dumper(\%values);
     return %values;
-    #print Dumper(\%values);
+    
 }
 
 sub updateTimeDataStore {
@@ -193,8 +197,12 @@ sub updateTimeDataStore {
     General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
 
     my $name = 'timeDB_'.$args{'aggregator_id'}.'.rrd';
-    #hardcoded generic DS name
-    my $datasource = 'aggregate';
+    my $datasource;
+    if (defined $args{'datasource'}){
+        $datasource = $args{'datasource'};
+    }else{
+        $datasource = 'aggregate';
+    }
     my $time = $args{'time'};
     my $value = $args{'value'};
 
@@ -209,5 +217,35 @@ sub updateTimeDataStore {
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
     }	
+}
+
+sub getLastUpdatedValue{
+    my %args = @_;
+    General::checkParams(args => \%args, required => ['aggregator_id']);
+
+    my $name = 'timeDB_'.$args{'aggregator_id'}.'.rrd';
+    
+    my $cmd = 'rrdtool.exe lastupdate '.$dir.$name;
+    print $cmd."\n";
+    
+    my $exec =`$cmd 2>&1`;
+    #print $exec."\n";
+
+    if ($exec =~ m/^ERROR.*/){
+        throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+    }	  
+    
+    #clean the string of unwanted ":"
+    $exec =~ s/://g;
+    #we split the string into an array
+    my @values = split(' ', $exec);
+    #print Dumper(\@values);
+    #The first entry is the DS' name. We remove it from the list.
+    shift (@values);
+    # print Dumper(\@values);
+    #We convert the list into the final hash that is returned to the caller.
+    my %values = @values;
+    print Dumper(\%values);
+    return %values;
 }
 1;
