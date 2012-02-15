@@ -894,6 +894,18 @@ CREATE TABLE `aggregate_condition` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+--
+-- Table structure for table `aggregate_rule`
+--
+
+CREATE TABLE `aggregate_rule` (
+`aggregate_rule_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`aggregate_rule_formula` TEXT NOT NULL ,
+`aggregate_rule_last_eval` INT NULL DEFAULT NULL ,
+`aggregate_rule_timestamp` INT NULL DEFAULT NULL ,
+`aggregate_rule_state` TEXT NOT NULL ,
+`aggregate_rule_action_id` INT NOT NULL
+) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `ingroups`
