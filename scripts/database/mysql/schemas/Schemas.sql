@@ -17,7 +17,7 @@ DROP DATABASE IF EXISTS `administrator`;
 CREATE DATABASE `administrator`;
 USE `administrator`;
 
-ET foreign_key_checks=0;
+SET foreign_key_checks=0;
 
 --
 -- Table structure for table `entity`
