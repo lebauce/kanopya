@@ -898,13 +898,13 @@ CREATE TABLE `aggregate_condition` (
 -- Table structure for table `aggregate_rule`
 --
 
-CREATE TABLE `administrator`.`aggregator_rule` (
-`aggregator_rule_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-`aggregator_rule_formula` TEXT NOT NULL ,
-`aggregator_rule_last_eval` INT NULL DEFAULT NULL ,
-`aggregator_rule_timestamp` INT NULL DEFAULT NULL ,
-`aggregator_rule_state` TEXT NOT NULL ,
-`aggregator_rule_action_id` INT NOT NULL
+CREATE TABLE `aggregate_rule` (
+`aggregate_rule_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`aggregate_rule_formula` TEXT NOT NULL ,
+`aggregate_rule_last_eval` INT NULL DEFAULT NULL ,
+`aggregate_rule_timestamp` INT NULL DEFAULT NULL ,
+`aggregate_rule_state` TEXT NOT NULL ,
+`aggregate_rule_action_id` INT NOT NULL
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 --
