@@ -193,6 +193,7 @@
                     <li <% menu_selection('dashboard') %>><a href="/dashboard/status">Dashboard</a></li>
                     <li <% menu_selection('rights') %>><a href="/rights/users">Rights</a></li>
                     <li <% menu_selection('infrastructures') %>><a href="/infrastructures/hosts">Infrastructures</a></li>
+                    <li <% menu_selection('networks') %>><a href="/networks/poolip">Networks</a></li>
                     <li <% menu_selection('systems') %>><a href="/systems/kernels">Systems</a></li>
                     <li <% menu_selection('architectures') %>><a href="/architectures/clusters">Architectures</a></li>
                 </ul>
