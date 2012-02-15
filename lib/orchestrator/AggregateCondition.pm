@@ -16,6 +16,8 @@ package AggregateCondition;
 use strict;
 use warnings;
 use TimeData::RRDTimeData;
+use AggregateCombination;
+
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
@@ -23,7 +25,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_id             =>  {pattern       => '^.*$',
+    aggregate_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -62,7 +64,7 @@ sub toString {
     my $self = shift;
 
     my $aggregate_condition_id        = $self->getAttr(name => 'aggregate_condition_id');
-    my $aggregate_id   = $self->getAttr(name => 'aggregate_id');
+    my $aggregate_combination_id   = $self->getAttr(name => 'aggregate_combination_id');
     my $comparator     = $self->getAttr(name => 'comparator');
     my $threshold      = $self->getAttr(name => 'threshold');
     my $state          = $self->getAttr(name => 'state');
@@ -71,7 +73,7 @@ sub toString {
 
 
     return   'aggregate_condition_id = '              . $aggregate_condition_id
-           . ' ; aggregate_id = '   . $aggregate_id
+           . ' ; aggregate_combination_id = '   . $aggregate_combination_id
            . ' ; comparator = ' . $comparator
            . ' ; threshold = '      . $threshold
            . ' ; state = '      . $state           
@@ -84,13 +86,14 @@ sub toString {
 sub eval{
     my $self = shift;
     
-    my $aggregate_id    = $self->getAttr(name => 'aggregate_id');
+    my $aggregate_combination_id    = $self->getAttr(name => 'aggregate_combination_id');
     my $comparator      = $self->getAttr(name => 'comparator');
     my $threshold       = $self->getAttr(name => 'threshold');
 
-    #my %aggregatorHash = RRDTimeData::fetchTimeDataStore(name => $aggregate_id);
-    #my @aggregatorValues = values(%aggregatorHash); 
-    my $evalString = '0.5'.$comparator.$threshold; 
+    my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
+    my $value = $agg_combination->calculate(); 
+    print "calculate combination id $aggregate_combination_id : value = $value \n";
+    my $evalString = $value.$comparator.$threshold; 
     if(eval $evalString){
         $self->setAttr(name => 'last_eval', value => 1);
         $self->save();
