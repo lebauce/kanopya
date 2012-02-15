@@ -877,21 +877,13 @@ CREATE TABLE `aggregate` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `aggregate_condition`
+-- Table structure for table `aggregate_combination`
 --
 
-CREATE TABLE `aggregate_condition` (
-  `aggregate_condition_id` int(8) NOT NULL AUTO_INCREMENT,
-  `aggregate_id` int(8) unsigned NOT NULL,
-  `comparator` char(32) NOT NULL,
-  `threshold` double NOT NULL,
-  `state` char(32) NOT NULL,
-  `time_limit` char(32),
-  `last_eval` BOOLEAN DEFAULT NULL,
-  PRIMARY KEY (`aggregate_condition_id`),
-  KEY (`aggregate_id`),
-  FOREIGN KEY (`aggregate_id`) REFERENCES `aggregate` (`aggregate_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `aggregate_combination` (
+`aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`aggregate_combination_formula` char(32) NOT NULL
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 
 --
@@ -899,22 +891,35 @@ CREATE TABLE `aggregate_condition` (
 --
 
 CREATE TABLE `aggregate_rule` (
-`aggregate_rule_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-`aggregate_rule_formula` TEXT NOT NULL ,
-`aggregate_rule_last_eval` INT NULL DEFAULT NULL ,
-`aggregate_rule_timestamp` INT NULL DEFAULT NULL ,
-`aggregate_rule_state` TEXT NOT NULL ,
-`aggregate_rule_action_id` INT NOT NULL
+`aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`aggregate_rule_formula` char(32) NOT NULL ,
+`aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
+`aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
+`aggregate_rule_state` char(32) NOT NULL ,
+`aggregate_rule_action_id` int(8) unsigned NOT NULL
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
+
 --
--- Table structure for table `aggregate_combination`
+-- Table structure for table `aggregate_condition`
 --
 
-CREATE TABLE `aggregate_combination` (
-`aggregate_combination_id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-`aggregate_combination_formula` TEXT NOT NULL
-) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `aggregate_condition` (
+  `aggregate_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `aggregate_combination_id` int(8) unsigned NOT NULL,
+  `comparator` char(32) NOT NULL,
+  `threshold` double NOT NULL,
+  `state` char(32) NOT NULL,
+  `time_limit` char(32),
+  `last_eval` BOOLEAN DEFAULT NULL,
+  PRIMARY KEY (`aggregate_condition_id`),
+  KEY (`aggregate_combination_id`),
+  FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
 
 --
 -- Table structure for table `ingroups`
