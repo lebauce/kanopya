@@ -92,13 +92,16 @@ sub eval{
 
     my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
     my $value = $agg_combination->calculate(); 
-    print "calculate combination id $aggregate_combination_id : value = $value \n";
-    my $evalString = $value.$comparator.$threshold; 
+    
+    my $evalString = $value.$comparator.$threshold;
+    
     if(eval $evalString){
+        print $evalString."=> 1\n";        
         $self->setAttr(name => 'last_eval', value => 1);
         $self->save();
         return 1;
     }else{
+        print $evalString."=> 0\n";
         $self->setAttr(name => 'last_eval', value => 0);
         $self->save();
         return 0;
