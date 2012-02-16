@@ -19,7 +19,8 @@ use TimeData::RRDTimeData;
 use base 'BaseDB';
 use AggregateCondition;
 use Data::Dumper;
-
+use Log::Log4perl "get_logger";
+my $log = get_logger("aggregator");
 use constant ATTR_DEF => {
     aggregate_rule_id        =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
@@ -48,6 +49,36 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+    
+    my $formula = (\%args)->{aggregate_rule_formula};
+    
+    _verify($formula);
+    my $self = $class->SUPER::new(%args);
+    return $self;
+}
+
+sub _verify {
+
+    my $formula = shift;
+    
+    my @array = split(/(id\d+)/,$formula);
+
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
+             my $errmsg = "Creating rule formula with an unknown aggregate condition id ($element) ";
+             $log->error($errmsg);
+             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            }
+        }
+    }
+}
 
 sub toString(){
     my $self = shift;
@@ -94,59 +125,9 @@ sub eval {
     $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
     $self->save();
     return $res;
-        
-#    eval $arrayString;
-#    
-#    print "$arrayString  => $res\n";
-    
-    #my $parser = Parse::BooleanLogic->new( operators => ['AND', 'OR', 'NOT'] );
-    
-    #my $tree = $parser->as_array($formula);
-    
-#    print Dumper $tree;
-#    
-#    my $solver = sub {
-#        my ($condition, $some) = @_;
-#            my $ac = ;
-#            return $ac->eval();
-#    };
-#    my $res = $parser->solve( $tree, $solver, undef);
-#    $self->setAttr(name => 'aggregate_rule_last_eval',value=>$res);
-#    $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
-#    $self->save();
-#    return $res;
-    
 }
 
 
-#=head2 toString
-#
-#    desc: return a string representation of the entity
-#
-#=cut
-
-#sub toString {
-#    my $self = shift;
-#
-#    my $aggregate_condition_id        = $self->getAttr(name => 'aggregate_condition_id');
-#    my $aggregate_id   = $self->getAttr(name => 'aggregate_id');
-#    my $comparator     = $self->getAttr(name => 'comparator');
-#    my $threshold      = $self->getAttr(name => 'threshold');
-#    my $state          = $self->getAttr(name => 'state');
-#    my $time_limit     = $self->getAttr(name => 'time_limit');
-#    my $last_eval      = $self->getAttr(name => 'last_eval');
-#
-#
-#    return   'aggregate_condition_id = '              . $aggregate_condition_id
-#           . ' ; aggregate_id = '   . $aggregate_id
-#           . ' ; comparator = ' . $comparator
-#           . ' ; threshold = '      . $threshold
-#           . ' ; state = '      . $state           
-#           . ' ; time_limit = '        . $time_limit 
-#           . ' ; last_eval = '        . $last_eval
-#           ."\n"
-#          ;
-#}
 
 
 

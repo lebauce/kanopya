@@ -18,7 +18,11 @@ use warnings;
 use base 'BaseDB';
 use Aggregate;
 use TimeData::RRDTimeData;
+use Kanopya::Exceptions;
 
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("aggregator");
 
 use constant ATTR_DEF => {
     aggregate_combination_id      =>  {pattern       => '^.*$',
@@ -32,6 +36,36 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+    
+    my $formula = (\%args)->{aggregate_combination_formula};
+    
+    _verify($formula);
+    my $self = $class->SUPER::new(%args);
+    return $self;
+}
+
+sub _verify {
+
+    my $formula = shift;
+    
+    my @array = split(/(id\d+)/,$formula);
+
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            if (!(Aggregate->search(hash => {'aggregate_id'=>substr($element,2)}))){
+             my $errmsg = "Creating combination formula with an unknown aggregate id ($element) ";
+             $log->error($errmsg);
+             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            }
+        }
+    }
+}
 
 
 =head2 toString
@@ -56,10 +90,8 @@ sub toString {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             $element = Aggregate->get('id'=>substr($element,2))->toString();
         }
-     }
-     
+    }
     return "@array";
-
 }
 
 sub calculate{
