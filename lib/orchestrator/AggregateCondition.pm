@@ -29,7 +29,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    comparator =>  {pattern       => '^(>|<|>=|<=|=)$',
+    comparator =>  {pattern       => '^(>|<|>=|<=|==)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
