@@ -108,7 +108,7 @@ sub manage_aggregates {
         if($result){
             print "Rule false, no action \n";
         }else{
-            print 'Rule true,  take action'.($aggregate_rule->getAttr(name=>'action_id'))."\n";
+            print 'Rule true,  take action'.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
         }
     }
 
