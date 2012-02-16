@@ -67,7 +67,7 @@ sub calculate{
 
 sub getLastValueFromDB{
     my $self = shift;
-    return RRDTimeData::getLastUpdatedValue(name => $self->getAttr(name=>'aggregate_id')); 
+    return RRDTimeData::getLastUpdatedValue(aggregate_id => $self->getAttr(name=>'aggregate_id')); 
 }
 
 
