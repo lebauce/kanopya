@@ -88,7 +88,7 @@ sub eval {
     #Evaluate the logic formula
     eval $arrayString;
     my $store = ($res)?1:0;
-    print "$arrayString => $store ($res)\n";
+    print "Evaluated Rule : $arrayString => $store ($res)\n";
      
     $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
     $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());

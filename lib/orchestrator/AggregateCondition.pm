@@ -81,13 +81,14 @@ sub eval{
     
     my $evalString = $value.$comparator.$threshold;
     
-    if(eval $evalString){
-        print $evalString."=> 1\n";        
+    print 'Evaluate condition :'.$self->toString()."\n";
+    if(eval $evalString){        
+        print 'Evaluate condition :'.$evalString."=> true\n";        
         $self->setAttr(name => 'last_eval', value => 1);
         $self->save();
         return 1;
     }else{
-        print $evalString."=> 0\n";
+        print 'Evaluate condition :'.$evalString."=> false\n";
         $self->setAttr(name => 'last_eval', value => 0);
         $self->save();
         return 0;

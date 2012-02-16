@@ -100,11 +100,16 @@ sub new {
 sub manage_aggregates {
     my $self = shift;
     
-    print "## UPDATE $self->{_time_step} ##\n";
+    print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
 
     for my $aggregate_rule (AggregateRule->search(hash=>{})){
         my $result = $aggregate_rule->eval();
-        print $aggregate_rule->toString();
+        print $aggregate_rule->toString()."\n";
+        if($result){
+            print "Rule false, no action \n";
+        }else{
+            print 'Rule true,  take action'.($aggregate_rule->getAttr(name=>'action_id'))."\n";
+        }
     }
 
     

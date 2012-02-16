@@ -82,8 +82,9 @@ sub calculate{
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula
+    print 'Evaluate combination :'.($self->toString())."\n";
     eval $arrayString;
-    #print "$arrayString \n";
+    print "Evaluate instance : $arrayString \n";
     return $res;
 }
 
