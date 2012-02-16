@@ -162,7 +162,7 @@ sub update() {
     # Call the retriever to get SCOM data
     my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
     print Dumper $monitored_values; 
-    
+        
     # Parse retriever return, compute aggregate values and store in DB 
     $self->_calculateAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
     
@@ -211,7 +211,13 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
             # Parse $values to store needed value in @dataStored 
             my $the_value = $values->{$host_name}
                                    ->{$indicator->getAttr(name=>'indicator_oid')};
-            push(@dataStored,$the_value); 
+            if($the_value){
+                push(@dataStored,$the_value);
+            }
+            else {
+                $log->info("Missing Value of indicator ".($indicator->getAttr(name=>'indicator_oid'))." for host $host_name");
+            }
+                 
         }
         
         #Compute the $aggregate value from all @dataStored values
