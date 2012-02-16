@@ -51,9 +51,19 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub toString(){
     my $self = shift;
-    my $val = ($self->getAttr(name => 'aggregate_rule_last_eval') eq 1)?'true':'false';
-    return  $self->getAttr(name => 'aggregate_rule_formula').' is '.$val."\n";
+    
+    my $formula = $self->getAttr(name => 'aggregate_rule_formula');
+    my @array = split(/(id\d+)/,$formula);
+    for my $element (@array) {
+        
+        if( $element =~ m/id(\d+)/)
+        {
+            $element = AggregateCondition->get('id'=>substr($element,2))->toString();
+        }
+     }
+     return "@array";
 }
+
 
 sub eval {
     my $self = shift;

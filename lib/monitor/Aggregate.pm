@@ -18,7 +18,7 @@ use warnings;
 use General;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
-
+use Indicator;
 
 use base 'BaseDB';
 
@@ -97,18 +97,10 @@ sub new {
 sub toString {
     my $self = shift;
 
-    my $aggregate_id = $self->getAttr(name => 'aggregate_id');
-    my $cluster_id   = $self->getAttr(name => 'cluster_id');
     my $indicator_id = $self->getAttr(name => 'indicator_id');
     my $sfn          = $self->getAttr(name => 'statistics_function_name');
-    my $w_time       = $self->getAttr(name => 'window_time');
 
-    return   'id = '              . $aggregate_id
-           . ' ; cluster_id = '   . $cluster_id
-           . ' ; indicator_id = ' . $indicator_id
-           . ' ; function = '      . $sfn
-           . ' ; w_time = '        . $w_time ."\n"
-          ;
+    return $sfn.'('.(Indicator->get('id' => $indicator_id)->getAttr(name=>'indicator_oid')).')';
 }
 
 

@@ -62,25 +62,11 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub toString {
     my $self = shift;
-
-    my $aggregate_condition_id        = $self->getAttr(name => 'aggregate_condition_id');
     my $aggregate_combination_id   = $self->getAttr(name => 'aggregate_combination_id');
-    my $comparator     = $self->getAttr(name => 'comparator');
-    my $threshold      = $self->getAttr(name => 'threshold');
-    my $state          = $self->getAttr(name => 'state');
-    my $time_limit     = $self->getAttr(name => 'time_limit');
-    my $last_eval      = $self->getAttr(name => 'last_eval');
-
-
-    return   'aggregate_condition_id = '              . $aggregate_condition_id
-           . ' ; aggregate_combination_id = '   . $aggregate_combination_id
-           . ' ; comparator = ' . $comparator
-           . ' ; threshold = '      . $threshold
-           . ' ; state = '      . $state           
-           . ' ; time_limit = '        . $time_limit 
-           . ' ; last_eval = '        . $last_eval
-           ."\n"
-          ;
+    my $comparator                 = $self->getAttr(name => 'comparator');
+    my $threshold                  = $self->getAttr(name => 'threshold');
+    
+    return AggregateCombination->get('id'=>$aggregate_combination_id)->toString().$comparator.$threshold;
 }
 
 sub eval{

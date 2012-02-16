@@ -42,12 +42,23 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub toString {
     my $self = shift;
+    #my $aggregate_combination_id       = $self->getAttr(name => 'aggregate_combination_id');
+    #my $aggregate_combination_formula  = $self->getAttr(name => 'aggregate_combination_formula');
 
-    my $aggregate_combination_id       = $self->getAttr(name => 'aggregate_combination_id');
-    my $aggregate_combination_formula  = $self->getAttr(name => 'aggregate_combination_formula');
-
-
-    return   $aggregate_combination_id." : ".$aggregate_combination_formula."\n";
+    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
+            $element = Aggregate->get('id'=>substr($element,2))->toString();
+        }
+     }
+     
+    return "@array";
 
 }
 
