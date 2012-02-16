@@ -19,8 +19,12 @@ use General;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 
+
 use base 'BaseDB';
 
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("aggregator");
 
 use constant ATTR_DEF => {
     cluster_id               =>  {pattern       => '^.*$',
@@ -74,6 +78,12 @@ sub new {
     
     my $self = $class->SUPER::new(%args);
     
+    $log->info("Warning when creating Aggregate it is useful to create a 
+                corresponding AggregateCombination");
+                
+
+    
+    #Create RRD DB
     my $aggregate_id = $self->getAttr(name=>'aggregate_id');
     RRDTimeData::createTimeDataStore(name => $aggregate_id);
     return $self;
