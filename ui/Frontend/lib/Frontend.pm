@@ -22,6 +22,7 @@ use Monitoring;
 use Orchestration;
 use Permissions;
 use Messager;
+use Poolip;
 
 use Log::Log4perl;
 
