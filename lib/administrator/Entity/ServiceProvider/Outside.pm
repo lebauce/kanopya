@@ -36,4 +36,23 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 addConnector
+
+link an existing connector with the outside service provider
+
+=cut
+
+sub addConnector {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector']);
+
+    my $connector = $args{connector};
+    $connector->setAttr(name => 'outside_id', value => $self->getAttr(name => 'outside_id'));
+    $connector->save();
+
+    return $connector->{_dbix}->id;
+}
+
 1;
