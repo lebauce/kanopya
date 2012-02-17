@@ -186,7 +186,7 @@ sub fetchTimeDataStore {
             delete $values{$timestamp};
         }
     }	
-        
+            
     print Dumper(\%values);
     return %values;
     
@@ -221,9 +221,9 @@ sub updateTimeDataStore {
 
 sub getLastUpdatedValue{
     my %args = @_;
-    General::checkParams(args => \%args, required => ['aggregator_id']);
+    General::checkParams(args => \%args, required => ['aggregate_id']);
 
-    my $name = 'timeDB_'.$args{'aggregator_id'}.'.rrd';
+    my $name = 'timeDB_'.$args{'aggregate_id'}.'.rrd';
     
     my $cmd = 'rrdtool.exe lastupdate '.$dir.$name;
     print $cmd."\n";
