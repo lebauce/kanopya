@@ -49,10 +49,10 @@ my %conf_data = (
     );
 
 #Welcome message - accepting Licence is mandatory
-#welcome();
+welcome();
 
 #generation of configuration files
-#genConf();
+genConf();
 
 
 ###########################
@@ -60,13 +60,13 @@ my %conf_data = (
 ###########################
 
 #init PERL5LIB
+print 'initialazing PERL5LIB'."\n";
 my $cmd = 'setx PERL5LIB "C:\opt\kanopya\ui\lib;C:\opt\kanopya\lib\common;C:\opt\kanopya\lib\administrator;C:\opt\kanopya\lib\executor;C:\opt\kanopya\lib\monitor;C:\opt\kanopya\lib\orchestrator;C:\opt\kanopya\lib\external"';
-# print $cmd."\n";
+print $cmd."\n";
+my $exec = `$cmd 2>&1`;
 
-# my $exec = `$cmd 2>&1`;
-
-# print $exec."\n";
-# print 'You will have to relog to your session to enjoy the configured PERL5LIB'."\n";
+print $exec."\n";
+print 'You will have to relog to your session to enjoy the configured PERL5LIB'."\n";
 
 ######################
 #Directories Creation#
@@ -74,21 +74,21 @@ my $cmd = 'setx PERL5LIB "C:\opt\kanopya\ui\lib;C:\opt\kanopya\lib\common;C:\opt
 
 print 'creating log directory'."\n";
 $cmd = 'mkdir '.$log_directory;
-# print $cmd."\n";
-# $exec = `$cmd 2>&1`;
-# print $exec."\n";
+print $cmd."\n";
+$exec = `$cmd 2>&1`;
+print $exec."\n";
 
 print 'creating monitor temp directory'."\n";
 $cmd = 'mkdir '.$tmp_monitor;
-# print $cmd."\n";
-# $exec = `$cmd 2>&1`;
-# print $exec."\n";
+print $cmd."\n";
+$exec = `$cmd 2>&1`;
+print $exec."\n";
 
 print 'creating orchestrator temp directory'."\n";
 $cmd = 'mkdir '.$tmp_orchestrator;
-# print $cmd."\n";
-# $exec = `$cmd 2>&1`;
-# print $exec."\n";
+print $cmd."\n";
+$exec = `$cmd 2>&1`;
+print $exec."\n";
 
 ################
 #Database Setup#
@@ -111,12 +111,17 @@ my %db_data = (
     admin_kernel             => '2.39',
     tmstp                    => time()
 );
+
+print 'generating Data.sql...';
+
 useTemplate(
     template => 'Data.sql.tt',
     datas    => \%db_data,
     conf     => $conf_vars->{data_sql},
     include  => $conf_vars->{data_dir}
 );
+
+print 'done'."\n";
 
 print "Please enter your root database user password :\n";
 ReadMode('noecho');
@@ -161,12 +166,12 @@ print $grant."\n";
 #We now generate the database schemas
 print "generating database schemas...";
 $cmd ="mysql -h $dbip  -P $dbport -u $db_user -p$db_pwd < $conf_vars->{schema_sql}";
-$exec =`$cmd 2>&1`;
+$exec = `$cmd 2>&1`;
 print "done\n";
 
 #We now generate the components schemas
 print "loading component DB schemas...\n";
-open ($FILE, "<","$conf_vars->{comp_conf}");
+open (my $FILE, "<","$conf_vars->{comp_conf}");
 
 my $line;
 while( defined( $line = <$FILE> ) )
@@ -188,6 +193,21 @@ print "inserting initial datas...";
 $cmd = "mysql -u $db_user -p$db_pwd < $conf_vars->{data_sql}"; 
 $exec = `$cmd 2>&1`;
 print "done\n";
+
+#######################
+#Service configuration#
+#######################
+
+# Dancer configuration
+useTemplate(
+    template => "dancer_cfg.tt",
+    datas    => {
+       log_directory => $log_directory
+    },
+    conf     => "/opt/kanopya/ui/Frontend/config.yml",
+    include  => $conf_vars->{install_template_dir}
+);
+
 
 ##########################################################################################
 ##############################FUNCTIONS DECLARATION#######################################

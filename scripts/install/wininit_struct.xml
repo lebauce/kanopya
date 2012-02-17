@@ -1,8 +1,8 @@
 <init_struct  nb="10">
   <general_conf
-    log_directory = "/var/log/kanopya/"
-    tmp_monitor = "/tmp/monitor/graph/"
-    tmp_orchestrator ="/tmp/orchestrator/graph"
+    log_directory = "C:\var\\log\\kanopya\"
+    tmp_monitor = "C:\tmp\\monitor\\graph\"
+    tmp_orchestrator ="C:\tmp\\orchestrator\\graph\"
     kanopya_dir="/opt/kanopya"
      install_template_dir="/opt/kanopya/scripts/install/templates/"
      conf_dir="/opt/kanopya/conf/"
