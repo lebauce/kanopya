@@ -974,8 +974,9 @@ CREATE TABLE `externalnode` (
   `externalnode_state` char(32),
   `externalnode_prev_state` char(32),
   PRIMARY KEY (`externalnode_id`),
+  UNIQUE KEY (`externalnode_hostname`),
   KEY (`outside_id`),
-  FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

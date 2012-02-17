@@ -299,7 +299,6 @@ sub search {
 
     while ( my $row = $rs->next ) {
         my $obj = eval { $class->get(id => $row->id); };
-        $log->debug($obj->toString);
         if($@) {
             my $exception = $@; 
             if(Kanopya::Exception::Permission::Denied->caught()) {

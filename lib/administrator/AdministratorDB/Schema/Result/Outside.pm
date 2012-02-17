@@ -101,6 +101,35 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 externalcluster
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Externalcluster>
+
+=cut
+
+__PACKAGE__->might_have(
+  "externalcluster",
+  "AdministratorDB::Schema::Result::Externalcluster",
+  { "foreign.externalcluster_id" => "self.outside_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 externalnodes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Externalnode>
+
+=cut
+
+__PACKAGE__->has_many(
+  "externalnodes",
+  "AdministratorDB::Schema::Result::Externalnode",
+  { "foreign.outside_id" => "self.outside_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 11:02:49
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d4EotSWCHCcLIjG+IhmVNw
