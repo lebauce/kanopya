@@ -27,5 +27,6 @@ sub deleteTimeDataStore;
 sub fetchTimeDataStore;
 sub updateTimeDataStore;
 sub getTimeDataStoreInfo;
+sub getLastUpdatedValue;
 
 1;

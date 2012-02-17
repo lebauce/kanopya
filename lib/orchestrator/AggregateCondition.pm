@@ -16,6 +16,8 @@ package AggregateCondition;
 use strict;
 use warnings;
 use TimeData::RRDTimeData;
+use AggregateCombination;
+
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
@@ -23,11 +25,11 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_id             =>  {pattern       => '^.*$',
+    aggregate_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    comparator =>  {pattern       => '^(>|<|>=|<=|=)$',
+    comparator =>  {pattern       => '^(>|<|>=|<=|==)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -60,42 +62,33 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub toString {
     my $self = shift;
-
-    my $aggregate_condition_id        = $self->getAttr(name => 'aggregate_condition_id');
-    my $aggregate_id   = $self->getAttr(name => 'aggregate_id');
-    my $comparator     = $self->getAttr(name => 'comparator');
-    my $threshold      = $self->getAttr(name => 'threshold');
-    my $state          = $self->getAttr(name => 'state');
-    my $time_limit     = $self->getAttr(name => 'time_limit');
-    my $last_eval      = $self->getAttr(name => 'last_eval');
-
-
-    return   'aggregate_condition_id = '              . $aggregate_condition_id
-           . ' ; aggregate_id = '   . $aggregate_id
-           . ' ; comparator = ' . $comparator
-           . ' ; threshold = '      . $threshold
-           . ' ; state = '      . $state           
-           . ' ; time_limit = '        . $time_limit 
-           . ' ; last_eval = '        . $last_eval
-           ."\n"
-          ;
+    my $aggregate_combination_id   = $self->getAttr(name => 'aggregate_combination_id');
+    my $comparator                 = $self->getAttr(name => 'comparator');
+    my $threshold                  = $self->getAttr(name => 'threshold');
+    
+    return AggregateCombination->get('id'=>$aggregate_combination_id)->toString().$comparator.$threshold;
 }
 
 sub eval{
     my $self = shift;
     
-    my $aggregate_id    = $self->getAttr(name => 'aggregate_id');
+    my $aggregate_combination_id    = $self->getAttr(name => 'aggregate_combination_id');
     my $comparator      = $self->getAttr(name => 'comparator');
     my $threshold       = $self->getAttr(name => 'threshold');
 
-    #my %aggregatorHash = RRDTimeData::fetchTimeDataStore(name => $aggregate_id);
-    #my @aggregatorValues = values(%aggregatorHash); 
-    my $evalString = '0.5'.$comparator.$threshold; 
-    if(eval $evalString){
+    my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
+    my $value = $agg_combination->calculate(); 
+    
+    my $evalString = $value.$comparator.$threshold;
+    
+    print 'Evaluate condition :'.$self->toString()."\n";
+    if(eval $evalString){        
+        print 'Evaluate condition :'.$evalString."=> true\n";        
         $self->setAttr(name => 'last_eval', value => 1);
         $self->save();
         return 1;
     }else{
+        print 'Evaluate condition :'.$evalString."=> false\n";
         $self->setAttr(name => 'last_eval', value => 0);
         $self->save();
         return 0;

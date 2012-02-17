@@ -47,14 +47,14 @@ package Orchestrator;
 
 use strict;
 use warnings;
-use Monitor::Retriever;
+#use Monitor::Retriever;
 use XML::Simple;
 use General;
 use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
-use AggregateCondition;
+use AggregateRule;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
@@ -100,29 +100,18 @@ sub new {
 sub manage_aggregates {
     my $self = shift;
     
-    print "## UPDATE $self->{_time_step} ##\n";
-#    my @aggregate_rules = AggregateCondition::search(hash => {});
-#    
-#    for my $aggregate_rule (@aggregate_rules){
-#        
-#    }
-    my $parser = Parse::BooleanLogic->new( operators => ['AND', 'OR'] );
-    
-    my $logicString = '1 AND 2';
-    my $tree = $parser->as_array($logicString);    
-    
-    my $solver = sub {
-        my ($condition, $some) = @_;
-            my $ac = AggregateCondition->get('id'=>($condition->{'operand'}));
-            return $ac->eval();
-    };
-    
-    my $result = $parser->solve( $tree, $solver, undef);
-    if($result eq 1){
-        print "VRAI\n"
-    }else{
-        print "FALSE\n";
+    print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
+
+    for my $aggregate_rule (AggregateRule->search(hash=>{})){
+        my $result = $aggregate_rule->eval();
+        print $aggregate_rule->toString()."\n";
+        if($result){
+            print "Rule false, no action \n";
+        }else{
+            print 'Rule true,  take action'.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+        }
     }
+
     
 }
 

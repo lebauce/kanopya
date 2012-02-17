@@ -16,12 +16,15 @@ package Aggregate;
 use strict;
 use warnings;
 use General;
-#use Statistics::Descriptive;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
+use Indicator;
 
 use base 'BaseDB';
 
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("aggregator");
 
 use constant ATTR_DEF => {
     cluster_id               =>  {pattern       => '^.*$',
@@ -60,7 +63,11 @@ sub calculate{
     my $funcname = $self->getAttr(name => 'statistics_function_name');
     my $mean = $stat->$funcname();
     return $mean;
+}
 
+sub getLastValueFromDB{
+    my $self = shift;
+    return RRDTimeData::getLastUpdatedValue(aggregate_id => $self->getAttr(name=>'aggregate_id')); 
 }
 
 
@@ -70,7 +77,12 @@ sub new {
     
     my $self = $class->SUPER::new(%args);
     
+    $log->info("Warning when creating Aggregate it is useful to create a 
+                corresponding AggregateCombination");
+                
+
     
+    #Create RRD DB
     my $aggregate_id = $self->getAttr(name=>'aggregate_id');
     RRDTimeData::createTimeDataStore(name => $aggregate_id);
     return $self;
@@ -85,18 +97,10 @@ sub new {
 sub toString {
     my $self = shift;
 
-    my $aggregate_id = $self->getAttr(name => 'aggregate_id');
-    my $cluster_id   = $self->getAttr(name => 'cluster_id');
     my $indicator_id = $self->getAttr(name => 'indicator_id');
     my $sfn          = $self->getAttr(name => 'statistics_function_name');
-    my $w_time       = $self->getAttr(name => 'window_time');
 
-    return   'id = '              . $aggregate_id
-           . ' ; cluster_id = '   . $cluster_id
-           . ' ; indicator_id = ' . $indicator_id
-           . ' ; function = '      . $sfn
-           . ' ; w_time = '        . $w_time ."\n"
-          ;
+    return $sfn.'('.(Indicator->get('id' => $indicator_id)->getAttr(name=>'indicator_oid')).')';
 }
 
 
