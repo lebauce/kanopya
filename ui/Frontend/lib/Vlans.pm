@@ -90,14 +90,17 @@ get '/vlans/:vlanid/remove' => sub {
 
 get '/vlans/:vlanid' => sub {
     my $vlan_id = param('vlanid');
+    
     my $evlan = eval { Entity::Vlan->get(id => $vlan_id) };
-    my @poolip = Entity::Poolip->getPoolip( hash => {} );
+       #my vlan_number = $evlan->getAttr(name => 'vlan_number') ;
+    my $poolipidassociated =$evlan->getassociatedPoolip();
     my $poolips = [];
-    foreach my $ep (@poolip)
+    foreach my $ep (@$poolipidassociated)
     {
-		my $poolip_id= $ep->getAttr(name => 'poolip_id');
+		my $poolip_id= $ep->{poolip_id};
+	    my $poolip = Entity::Poolip->get(id => $poolip_id);
 		my $tmpp = {};
-        $tmpp->{poolip_name}     = $ep->getAttr(name => 'poolip_name');
+        $tmpp->{poolip_name} = $poolip->getAttr(name => 'poolip_name');
         $tmpp->{url}        = "http://10.0.0.1:5000/network/poolip/$poolip_id";
         
          push(@$poolips, $tmpp);

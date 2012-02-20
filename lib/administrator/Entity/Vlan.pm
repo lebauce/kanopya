@@ -101,5 +101,18 @@ sub associateVlanpoolip {
 
     return $res->get_column("poolip_id");
 }
+sub getassociatedPoolip {
+    my $self = shift;
+    my $pips = [];
+    my $poolips = $self->{_dbix}->vlan_poolips;
+    while(my $pip = $poolips->next) {
+        my $tmp = {};
+        $tmp->{poolip_id}       = $pip->get_column('poolip_id');
+        
+        push @$pips, $tmp;
+    }
+    return $pips;
+
+}
 
 1;
