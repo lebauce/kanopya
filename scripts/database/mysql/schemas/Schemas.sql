@@ -873,7 +873,7 @@ CREATE TABLE `clustermetric` (
   KEY (`clustermetric_indicator_id`),
   FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
   KEY (`clustermetric_cluster_id`),
-  FOREIGN KEY (`clustermetric_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`clustermetric_cluster_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
