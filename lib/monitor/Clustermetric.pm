@@ -11,7 +11,7 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package Aggregate;
+package Clustermetric;
 
 use strict;
 use warnings;
@@ -27,19 +27,19 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
 
 use constant ATTR_DEF => {
-    cluster_id               =>  {pattern       => '^.*$',
+    clustermetric_cluster_id               =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    indicator_id             =>  {pattern       => '^.*$',
+    clustermetric_indicator_id             =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|coefficientOfVariation|kurtosis|firstValue)$',
+    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|coefficientOfVariation|kurtosis|firstValue)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    window_time              =>  {pattern       => '^.*$',
+    clustermetric_window_time              =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -60,14 +60,14 @@ sub calculate{
     my $stat = DescriptiveStatisticsFunction->new();
     $stat->add_data($values);
     
-    my $funcname = $self->getAttr(name => 'statistics_function_name');
+    my $funcname = $self->getAttr(name => 'clustermetric_statistics_function_name');
     my $mean = $stat->$funcname();
     return $mean;
 }
 
 sub getLastValueFromDB{
     my $self = shift;
-    return RRDTimeData::getLastUpdatedValue(aggregate_id => $self->getAttr(name=>'aggregate_id')); 
+    return RRDTimeData::getLastUpdatedValue(aggregate_id => $self->getAttr(name=>'clustermetric_id')); 
 }
 
 
@@ -77,14 +77,14 @@ sub new {
     
     my $self = $class->SUPER::new(%args);
     
-    $log->info("Warning when creating Aggregate it is useful to create a 
-                corresponding AggregateCombination");
+    $log->info("Warning when creating ClusterMetric it is useful to create a 
+                corresponding ClusterMetricCombination");
                 
 
     
     #Create RRD DB
-    my $aggregate_id = $self->getAttr(name=>'aggregate_id');
-    RRDTimeData::createTimeDataStore(name => $aggregate_id);
+    my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
+    RRDTimeData::createTimeDataStore(name => $clustermetric_id);
     return $self;
 }
 
@@ -97,8 +97,8 @@ sub new {
 sub toString {
     my $self = shift;
 
-    my $indicator_id = $self->getAttr(name => 'indicator_id');
-    my $sfn          = $self->getAttr(name => 'statistics_function_name');
+    my $indicator_id = $self->getAttr(name => 'clustermetric_indicator_id');
+    my $sfn          = $self->getAttr(name => 'clustermetric_statistics_function_name');
 
     return $sfn.'('.(Indicator->get('id' => $indicator_id)->getAttr(name=>'indicator_oid')).')';
 }

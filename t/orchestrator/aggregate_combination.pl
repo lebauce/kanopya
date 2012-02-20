@@ -9,14 +9,13 @@ use AggregateCombination;
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 my $adm = Administrator->new();
 
-#$params = {
-#    aggregate_combination_formula   => '2 * id1 - id2',
-#};
-#my $aggregate_combination = AggregateCombination->new(%$params);
+$params = {
+    aggregate_combination_formula   => 'id1 + id2',
+};
+my $aggregate_combination = AggregateCombination->new(%$params);
 
 for my $aggregate_combination (AggregateCombination->search(hash=>{})){
-    my $res = $aggregate_combination->calculate();
-    my $formula = $aggregate_combination->toString();
-    print "$formula = $res \n";
+    #my $res = $aggregate_combination->calculate();
+    print $aggregate_combination->toString();
 }
 
