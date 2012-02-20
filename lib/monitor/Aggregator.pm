@@ -57,7 +57,7 @@ sub _contructRetrieverOutput {
     my %args = @_;
     
     
-    #my @clustermetrics = Clustermetric->search(hash => {clustermetrics_cluster_id => });
+    #my @clustermetrics = Clustermetric->search(hash => {clustermetrics_clustermetrics_cluster_id => });
     
     my $cluster_id                 = $args{cluster_id};
     my $clustermetric_cluster_id   = 0;
@@ -82,7 +82,7 @@ sub _contructRetrieverOutput {
         
         my @clustermetrics = Clustermetric->search(
             hash => {
-                clustermetrics_cluster_id => $cluster_id
+                clustermetric_cluster_id => $cluster_id
             }
         );
         
@@ -131,7 +131,7 @@ sub update() {
     for my $externalCluster (@externalClusters){
      #TODO : Manage Cluster without clustermetrics might be bugs
      
-        my $cluster_id = $externalCluster->getAttr(name => 'cluster_id');
+        my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
         
         # Construct input of the SCOM retriever
         my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
@@ -184,7 +184,7 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
         # Loop on all the host_name of the $clustermetric
         for my $host_name (@$host_names){
             
-            $clustermetric_indicator_id = $clustermetric->getAttr(name => 'indicator_id');
+            $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
             $indicator = Indicator->get('id' => $clustermetric_indicator_id);
 
             # Parse $values to store needed value in @dataStored 
