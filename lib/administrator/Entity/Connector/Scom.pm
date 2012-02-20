@@ -1,4 +1,4 @@
-# Scom.pm - This object allows to manipulate SCOM equipment
+# Scom.pm - SCOM connector
 #    Copyright 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
-package Entity::ServiceProvider::Outside::Scom;
-use base 'Entity::ServiceProvider::Outside';
+package Entity::Connector::Scom;
+use base 'Entity::Connector';
 
 use strict;
 use warnings;
@@ -26,7 +26,14 @@ use SCOM::Query;
 use DateTime::Format::Strptime;
 use List::Util 'sum';
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+        scom_ms_name => {
+                    pattern        => '.*',
+                    is_mandatory   => 1,
+                    is_extended    => 0,
+                    is_editable    => 0
+                 },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -42,8 +49,7 @@ sub retrieveData {
     
     General::checkParams(args => \%args, required => ['nodes', 'indicators', 'time_span']);
     
-    # TODO retrieve server name from scom conf in db
-    my $management_server_name = "WIN-09DSUKS61DT.hedera.forest";
+    my $management_server_name = $self->getAttr(name => 'scom_ms_name');
 
     # Transform array of ObjectName/CounterName into hash {ObjectName => [CounterName]}
     my %counters;

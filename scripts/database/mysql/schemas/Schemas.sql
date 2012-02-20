@@ -993,9 +993,20 @@ CREATE TABLE `active_directory` (
   `ad_host` char(32) NOT NULL,
   `ad_user` char(32),
   `ad_pwd` char(32),
-  `ad_nodes_filter` text(512),
+  `ad_nodes_base_dn` text(512),
   PRIMARY KEY (`ad_id`),
   FOREIGN KEY (`ad_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for connector `scom`
+--
+
+CREATE TABLE `scom` (
+  `scom_id` int(8) unsigned NOT NULL,
+  `scom_ms_name` char(255) NOT NULL,
+  PRIMARY KEY (`scom_id`),
+  FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
