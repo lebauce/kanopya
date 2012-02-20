@@ -860,20 +860,20 @@ CREATE TABLE `graph` (
 
 
 --
--- Table structure for table `aggregate`
+-- Table structure for table `clustermetric`
 --
 
-CREATE TABLE `aggregate` (
-  `aggregate_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `cluster_id` int(8) unsigned NOT NULL,
-  `indicator_id` int(8) unsigned NOT NULL,
-  `statistics_function_name` char(32) NOT NULL,
-  `window_time` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`aggregate_id`),
-  KEY (`indicator_id`),
-  FOREIGN KEY (`indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE `clustermetric` (
+  `clustermetric_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `clustermetric_cluster_id` int(8) unsigned NOT NULL,
+  `clustermetric_indicator_id` int(8) unsigned NOT NULL,
+  `clustermetric_statistics_function_name` char(32) NOT NULL,
+  `clustermetric_window_time` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`clustermetric_id`),
+  KEY (`clustermetric_indicator_id`),
+  FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
+  KEY (`clustermetric_cluster_id`),
+  FOREIGN KEY (`clustermetric_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

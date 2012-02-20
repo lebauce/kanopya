@@ -16,7 +16,7 @@ package AggregateCombination;
 use strict;
 use warnings;
 use base 'BaseDB';
-use Aggregate;
+use ClusterMetric;
 use TimeData::RRDTimeData;
 use Kanopya::Exceptions;
 
@@ -58,8 +58,8 @@ sub _verify {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            if (!(Aggregate->search(hash => {'aggregate_id'=>substr($element,2)}))){
-             my $errmsg = "Creating combination formula with an unknown aggregate id ($element) ";
+            if (!(ClusterMetric->search(hash => {'clustermetric_id'=>substr($element,2)}))){
+             my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
              $log->error($errmsg);
              throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
             }
@@ -88,7 +88,7 @@ sub toString {
         if( $element =~ m/id\d+/)
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Aggregate->get('id'=>substr($element,2))->toString();
+            $element = ClusterMetric->get('id'=>substr($element,2))->toString();
         }
     }
     return "@array";
@@ -106,7 +106,7 @@ sub calculate{
         if( $element =~ m/id\d+/)
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Aggregate->get('id'=>substr($element,2))->getLastValueFromDB();
+            $element = ClusterMetric->get('id'=>substr($element,2))->getLastValueFromDB();
         }
      }
      
