@@ -104,11 +104,11 @@ sub manage_aggregates {
 
     for my $aggregate_rule (AggregateRule->search(hash=>{})){
         my $result = $aggregate_rule->eval();
-        print $aggregate_rule->toString()."\n";
+        print $aggregate_rule->toString()." ($result)\n";
         if($result){
-            print "Rule false, no action \n";
+            print 'Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
         }else{
-            print 'Rule true,  take action'.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+            print "Rule false, no action \n";
         }
     }
 
