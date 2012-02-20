@@ -211,7 +211,7 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
             # Parse $values to store needed value in @dataStored 
             my $the_value = $values->{$host_name}
                                    ->{$indicator->getAttr(name=>'indicator_oid')};
-            if($the_value){
+            if(defined $the_value){
                 push(@dataStored,$the_value);
             }
             else {

@@ -22,14 +22,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::Component;
-use Entity::Host;
-use Entity::Systemimage;
-use Entity::Tier;
-use Operation;
 use Administrator;
 use General;
-use DecisionMaker::HostSelector;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -128,5 +122,23 @@ sub getNodes {
     return \@nodes;
 }
 
+=head2 updateNodes
+
+    Update external nodes list using the linked DirectoryService connector
+
+=cut
+
+sub updateNodes {
+     my $self = shift;
+     
+     my $ds_connector = $self->getConnector( category => 'DirectoryService' );
+     my $nodes = $ds_connector->getNodes();
+     
+     for my $node (@$nodes) {
+         print "==> $node->{hostname}\n";
+         $self->{_dbix}->parent->externalnodes->update_or_create({externalnode_hostname => $node->{hostname}});
+     }
+     # TODO remove dead nodes from db
+}
 
 1;

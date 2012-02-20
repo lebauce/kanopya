@@ -860,20 +860,20 @@ CREATE TABLE `graph` (
 
 
 --
--- Table structure for table `aggregate`
+-- Table structure for table `clustermetric`
 --
 
-CREATE TABLE `aggregate` (
-  `aggregate_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `cluster_id` int(8) unsigned NOT NULL,
-  `indicator_id` int(8) unsigned NOT NULL,
-  `statistics_function_name` char(32) NOT NULL,
-  `window_time` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`aggregate_id`),
-  KEY (`indicator_id`),
-  FOREIGN KEY (`indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE `clustermetric` (
+  `clustermetric_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `clustermetric_cluster_id` int(8) unsigned NOT NULL,
+  `clustermetric_indicator_id` int(8) unsigned NOT NULL,
+  `clustermetric_statistics_function_name` char(32) NOT NULL,
+  `clustermetric_window_time` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`clustermetric_id`),
+  KEY (`clustermetric_indicator_id`),
+  FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
+  KEY (`clustermetric_cluster_id`),
+  FOREIGN KEY (`clustermetric_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -984,6 +984,30 @@ CREATE TABLE `externalnode` (
   FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for connector `active_directory`
+--
+
+CREATE TABLE `active_directory` (
+  `ad_id` int(8) unsigned NOT NULL,
+  `ad_host` char(32) NOT NULL,
+  `ad_user` char(32),
+  `ad_pwd` char(32),
+  `ad_nodes_base_dn` text(512),
+  PRIMARY KEY (`ad_id`),
+  FOREIGN KEY (`ad_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for connector `scom`
+--
+
+CREATE TABLE `scom` (
+  `scom_id` int(8) unsigned NOT NULL,
+  `scom_ms_name` char(255) NOT NULL,
+  PRIMARY KEY (`scom_id`),
+  FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 SET foreign_key_checks=1;
