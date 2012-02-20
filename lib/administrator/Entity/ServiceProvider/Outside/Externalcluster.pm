@@ -135,7 +135,9 @@ sub updateNodes {
      my $nodes = $ds_connector->getNodes();
      
      for my $node (@$nodes) {
-         $self->{_dbix}->parent->externalnodes->update_or_create({externalnode_hostname => $node->{hostname}});
+         if (defined $node->{hostname}) {
+            $self->{_dbix}->parent->externalnodes->update_or_create({externalnode_hostname => $node->{hostname}});
+         }
      }
      # TODO remove dead nodes from db
 }
