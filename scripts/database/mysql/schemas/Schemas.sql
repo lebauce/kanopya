@@ -984,6 +984,18 @@ CREATE TABLE `externalnode` (
   FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for connector `active_directory`
+--
+
+CREATE TABLE `active_directory` (
+  `ad_id` int(8) unsigned NOT NULL,
+  `ad_host` char(32) NOT NULL,
+  `ad_user` char(32),
+  `ad_pwd` char(32),
+  PRIMARY KEY (`ad_id`),
+  FOREIGN KEY (`ad_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 SET foreign_key_checks=1;

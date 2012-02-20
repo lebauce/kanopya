@@ -293,6 +293,13 @@ INSERT INTO `component_type` VALUES
 (14,'Opennebula','3','Cloudmanager');
 
 --
+-- connectors type list
+--
+
+INSERT INTO `connector_type` VALUES
+(1,'ActiveDirectory','1','DirectoryService');
+
+--
 -- kernels
 --
 

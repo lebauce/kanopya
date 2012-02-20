@@ -1,5 +1,4 @@
-# Entity::ServiceProvider::Outside.pm  
-
+# ActiveDirectory.pm AD connector
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,44 +14,33 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 16 july 2010
+# Created 24 july 2010
 
-=head1 NAME
+package Entity::Connector::ActiveDirectory;
+use base "Entity::Connector";
 
-Entity::ServiceProvider::Outside
+use strict;
+use warnings;
 
-=head1 SYNOPSIS
+use Kanopya::Exceptions;
+use Data::Dumper;
 
-=head1 DESCRIPTION
+use Log::Log4perl "get_logger";
+my $log = get_logger("administrator");
 
-blablabla
 
-=cut
-
-package Entity::ServiceProvider::Outside;
-use base "Entity::ServiceProvider";
-
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    ad_host => {    pattern        => '.*',
+                    is_mandatory   => 1,
+                    is_extended    => 0,
+                    is_editable    => 0
+                 },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 addConnector
-
-link an existing connector with the outside service provider
-
-=cut
-
-sub addConnector {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['connector']);
-
-    my $connector = $args{connector};
-    $connector->setAttr(name => 'outside_id', value => $self->getAttr(name => 'outside_id'));
-    $connector->save();
-
-    return $connector->{_dbix}->id;
+sub getComputers {
+    print "GET COMPUTERS\n";
 }
 
 1;

@@ -22,14 +22,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::Component;
-use Entity::Host;
-use Entity::Systemimage;
-use Entity::Tier;
-use Operation;
 use Administrator;
 use General;
-use DecisionMaker::HostSelector;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
