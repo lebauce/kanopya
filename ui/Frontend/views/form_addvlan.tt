@@ -1,0 +1,21 @@
+<h2>Create a new vlan</h2>
+
+<form id="target" method="POST" action="/network/vlans/add">
+<table class="form">
+	<tr>
+		<td class="label">Name :</td>
+		<td><input type="text" name="vlan_name" maxlength="39" size="20"/>
+		<span style="color: red"><% err_vlan_name %></span></td>
+	</tr>
+	<tr>
+		<td class="label">Number :</td>
+		<td><input type="text" name="vlan_number" maxlength="39" size="20"/>
+		<span style="color: red"><% err_vlan_number %></span></td>
+	</tr>
+	 <tr>
+        <td class="label">Description :</td>
+        <td><textarea cols="50" name="vlan_desc" value=""></textarea></td>
+    </tr>
+</table>
+</form> 
+

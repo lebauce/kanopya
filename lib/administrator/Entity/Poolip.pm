@@ -54,5 +54,17 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+sub getPoolips {
+    my $class = shift;
+    my %args = @_;
 
+    General::checkParams(args => \%args, required => ['hash']);
+
+    return $class->search(%args);
+}
+sub toString {
+    my $self = shift;
+    my $string = $self->{_dbix}->get_column('poolip_name');
+    return $string;
+}
 1;

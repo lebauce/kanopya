@@ -1,0 +1,50 @@
+<%#
+<script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Vlan : <% vlan_name %></h2>
+
+<hr/>
+<span id="settings" class="title simpleexpand">Main settings</span>
+<table id="Xsettings" class="detailspart">
+<tr><td class="italic" colspan="4"><% vlan_desc %></td>
+<td class="actions" rowspan="9">
+
+	<a class="modal" href="/network/vlans/<% vlan_id %>/edit">edit</a><br />
+	<span class="desc">Modify these global parameters.</span><br /><br />
+
+
+	<a class="imgRemove" href="/network/vlans/<% vlan_id %>/remove">remove</a><br />
+	<span class="desc">Delete this vlan.</span><br /><br />
+
+</td><tr/>
+
+</table>
+
+<hr />
+<span id="poolips" class="title simpleexpand">Pool ip</span>
+<table id="Xpoolips" class="detailspart list">
+<% IF poolips_list %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions" rowspan="<% nbpoolsips %>">
+	
+		<a class="modal" href="/network/vlans/<% vlan_id %>/addpoolip">add pool ip</a><br />
+		<span class="desc">Add a poolip to this vlan.</span><br /><br />
+	
+	</td></tr>
+	<% FOREACH pip IN poolips_list %>
+		<td class="label2">name: <% pip.poolip_name %></td>
+		<td class="action"><a class="imgManage" href="<% pip.url %>">details</a></td>
+		<td class="action"><% IF pip.link_removepoolip %><a class="imgRemove" href="/network/vlans/<% vlan_id %>/removepoolip/<% pip.poolip_id %>">remove</a><% END %></td></tr>
+	<% END %>
+<% ELSE %>
+	<tr><td colspan="2">&nbsp;</td>
+	<td class="actions">
+	
+		<a class="modal" href="/network/vlans/<% vlan_id %>/poolips/add">add pool ip</a><br />
+		<span class="desc">Add a pool ip to this vlan.</span>
+	
+	</td></tr>
+	<tr><td>This host has no poolip</td></tr>
+<% END %>
+</table>
+
