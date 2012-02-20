@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Result::ClusterMetric;
+package AdministratorDB::Schema::Result::Clustermetric;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -11,7 +11,7 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::ClusterMetric
+AdministratorDB::Schema::Result::Clustermetric
 
 =cut
 
