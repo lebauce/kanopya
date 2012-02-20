@@ -10,7 +10,7 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'STDOUT', layout=>'%F %L %p %m%n
 use_ok ('Administrator');
 use_ok('Entity::ServiceProvider::Outside::Externalcluster');
 use_ok('Entity::Connector::ActiveDirectory');
-
+use_ok('Entity::Connector::Scom');
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -30,11 +30,34 @@ eval {
     
     
     
-    my $ad_connector = Entity::Connector::ActiveDirectory->new( ad_host => "HOST");
+    my $ad_connector = Entity::Connector::ActiveDirectory->new(
+        ad_host => "WXNPINDHOST",
+        ad_user => 'administrator@hedera.forest',
+        ad_pwd  => 'Hxxxx',
+        ad_nodes_base_dn => "uc=Computers");
     
     my $connector_id = $cluster->addConnector(connector => $ad_connector);
     
-    print "==> $connector_id\n";
+    my $scom_connector = Entity::Connector::Scom->new(
+        scom_ms_name => "WXNPINDHOST.hedera.forest",
+    );
+    
+    $cluster->addConnector(connector => $scom_connector);
+    
+    
+    
+    
+    my $ds_connector = $cluster->getConnector( category => "DirectoryService");
+    isa_ok($ds_connector, 'Entity::Connector::ActiveDirectory');
+    my $ms_connector = $cluster->getConnector( category => "MonitoringService");
+    isa_ok($ms_connector, 'Entity::Connector::Scom');
+    
+    
+    #$ds_connector->getNodes();
+    
+    #$cluster->updateNodes();
+    
+    $ms_connector->retrieveData( nodes => [], indicators => [], time_span => 60);
     
 #    $cluster->delete;
 
