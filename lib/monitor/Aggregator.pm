@@ -18,12 +18,12 @@ use warnings;
 use General;
 use Data::Dumper;
 use BaseDB;
-use Entity::ServiceProvider::Inside::Cluster;
+#use Entity::ServiceProvider::Inside::Cluster;
 use XML::Simple;
-use Entity::ServiceProvider::Outside::Scom;
+use Entity::ServiceProvider::Outside::Externalcluster;
 use Indicator;
 use TimeData::RRDTimeData;
-use Aggregate;
+use Clustermetric;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
@@ -49,58 +49,19 @@ sub new {
 
 # 
 
-=head2 getHostAndIndicatorHash
-    
-    Class : Public
-    
-    Desc : Generate hash table of hosts to monitor and the indicator id to the Retriever
-    
-=cut
-sub _getHostAndIndicatorHash {
-    my $self = shift;
-    my @aggregates = Aggregate->search(hash => {});
-    
-    my $aggregate_cluster_id   = 0;
-    my $aggregate_indicator_id = 0;
-    
-    my $cluster                = undef;
-    my $hosts                  = undef;
-    my $rep                    = undef;
-    my $host_id                = undef;
-    
-    for my $aggregate (@aggregates){
-        $aggregate_cluster_id   = $aggregate->getAttr(name => 'cluster_id');
-        $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
-        
-        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $aggregate_cluster_id);
-        $hosts = $cluster->getHosts();
-        
-        for my $host (values(%$hosts)){
-            $host_id = $host->getAttr(name => 'host_id');
-                        
-            push(
-                @{$rep->{$host_id}->{$aggregate_indicator_id}},
-                $aggregate->getAttr(name => 'window_time')
-            );
-        }
-    }
-    return $rep;
-};
 
 
-=head2 getHostAndIndicatorHash
-    
-    Class : Public
-    
-    Desc : Generate hash table of hosts to monitor and the indicator id to the Retriever
-    
-=cut
+
 sub _contructRetrieverOutput {
     my $self = shift;
-    my @aggregates = Aggregate->search(hash => {});
+    my %args = @_;
     
-    my $aggregate_cluster_id   = 0;
-    my $aggregate_indicator_id = 0;
+    
+    #my @clustermetrics = Clustermetric->search(hash => {clustermetrics_cluster_id => });
+    
+    my $cluster_id                 = $args{cluster_id};
+    my $clustermetric_cluster_id   = 0;
+    my $clustermetric_indicator_id = 0;
     
     my $cluster                = undef;
     my $hosts                  = undef;
@@ -109,34 +70,44 @@ sub _contructRetrieverOutput {
     my $indicator              = undef; 
     my $indicators_name        = undef;
     my @indicators_array       = undef;
-    my $aggregate_time_span    = undef;
+    my $clustermetric_time_span    = undef;
     my $time_span              = undef;
-    # HARCODE hosts name
-    my $hosts_names = $self->_getHostNamesFromIDs();
-    $rep->{nodes} = $hosts_names;
+    
+#    # HARCODE hosts name
+#    my $hosts_names = $self->_getHostNamesFromIDs();
+#    $rep->{nodes} = $hosts_names;
     
     
-    for my $aggregate (@aggregates){
-        $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
-        $aggregate_time_span = $aggregate->getAttr(name => 'window_time');
+    
         
-        $indicator = Indicator->get('id' => $aggregate_indicator_id);
-        
-        $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
-        
-        
-        if(! defined $time_span)
-        {
-            $time_span = $aggregate_time_span
-        } else
-        {
-            if($time_span != $aggregate_time_span)
-            {
-                $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
-                print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span vs $aggregate_time_span)\n");
+        my @clustermetrics = Clustermetric->search(
+            hash => {
+                clustermetrics_cluster_id => $cluster_id
             }
-        }
-        $time_span = ($aggregate_time_span > $time_span)?$aggregate_time_span:$time_span;
+        );
+        
+        for my $clustermetric (@clustermetrics){
+        
+            $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
+            $clustermetric_time_span    = $clustermetric->getAttr(name => 'clustermetric_window_time');
+            
+            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
+            
+            $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+            
+            
+            if(! defined $time_span)
+            {
+                $time_span = $clustermetric_time_span
+            } else
+            {
+                if($time_span != $clustermetric_time_span)
+                {
+                    $log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
+                    print("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION ($time_span vs $clustermetric_time_span)\n");
+                }
+            }
+            $time_span = ($clustermetric_time_span > $time_span)?$clustermetric_time_span:$time_span;
         
     }
     @indicators_array = keys(%$indicators_name);
@@ -155,18 +126,26 @@ sub _getHostNamesFromIDs{
 sub update() {
     my $self = shift;
     
-    # Construct input of the SCOM retriever
-    my $host_indicator_for_retriever = $self->_contructRetrieverOutput();
-    print Dumper $host_indicator_for_retriever;
+    my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
     
-    # Call the retriever to get SCOM data
-    my $monitored_values = Entity::ServiceProvider::Outside::Scom->retrieveData(%$host_indicator_for_retriever);
-    print Dumper $monitored_values; 
+    for my $externalCluster (@externalClusters){
+     #TODO : Manage Cluster without clustermetrics might be bugs
+     
+        my $cluster_id = $externalCluster->getAttr(name => 'cluster_id');
         
-    # Parse retriever return, compute aggregate values and store in DB 
-    $self->_calculateAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
-    
-    print Dumper $monitored_values;
+        # Construct input of the SCOM retriever
+        my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
+        print Dumper $host_indicator_for_retriever;
+        
+        # Call the retriever to get SCOM data
+        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+        print Dumper $monitored_values; 
+            
+        # Parse retriever return, compute clustermetric values and store in DB 
+        $self->_calculateAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
+        
+        print Dumper $monitored_values;
+    }
 }
 
 
@@ -175,7 +154,7 @@ sub update() {
     Class : Public
     
     Desc : Parse the hash table received from Retriever (input), compute 
-    aggregate values and store them in DB
+    clustermetric values and store them in DB
     
     Args : values : hash table from the Retriever
 =cut
@@ -186,27 +165,27 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
 
     General::checkParams(args => \%args, required => ['values']);
     my $values = $args{values};
-    # Array of all aggregates
-    my @aggregates = Aggregate->search(hash => {});
+    # Array of all clustermetrics
+    my @clustermetrics = Clustermetric->search(hash => {});
     
-    my $aggregate_indicator_id;
+    my $clustermetric_indicator_id;
     my $indicator;
     my $indicators_name; 
     
-    # Loop on all the aggregates
-    for my $aggregate (@aggregates){
+    # Loop on all the clustermetrics
+    for my $clustermetric (@clustermetrics){
         
         my $host_names = $self->_getHostNamesFromIDs(); #get all hosts name
         #TODO : To be modified when using ServerSets
         
-        # Array that will store all the values needed to compute $aggregate val
+        # Array that will store all the values needed to compute $clustermetric val
         my @dataStored = (); 
 
-        # Loop on all the host_name of the $aggregate
+        # Loop on all the host_name of the $clustermetric
         for my $host_name (@$host_names){
             
-            $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
-            $indicator = Indicator->get('id' => $aggregate_indicator_id);
+            $clustermetric_indicator_id = $clustermetric->getAttr(name => 'indicator_id');
+            $indicator = Indicator->get('id' => $clustermetric_indicator_id);
 
             # Parse $values to store needed value in @dataStored 
             my $the_value = $values->{$host_name}
@@ -220,13 +199,13 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
                  
         }
         
-        #Compute the $aggregate value from all @dataStored values
-        my $statValue = $aggregate->calculate(values => \@dataStored);
+        #Compute the $clustermetric value from all @dataStored values
+        my $statValue = $clustermetric->calculate(values => \@dataStored);
         
         #Store in DB and time stamp
         my $time = time();
         RRDTimeData::updateTimeDataStore(
-            aggregator_id => $aggregate->getAttr(name=>'aggregate_id'), 
+            aggregator_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
             time          => $time, 
             value         => $statValue,
             );
@@ -239,7 +218,7 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
     
     Class : Public
     
-    Desc : Retrieve indicator values for all the aggregates, compute the 
+    Desc : Retrieve indicator values for all the clustermetrics, compute the 
     aggregation statistics function and store them in TimeDb 
     every time_step (configuration)
     
@@ -281,16 +260,16 @@ sub run {
     
     Class : Public
     
-    Desc : Recreate all the DB for all the existing aggregate
+    Desc : Recreate all the DB for all the existing clustermetric
     
 =cut
 
-sub create_aggregates_db{
+sub create_clustermetrics_db{
     my $self = shift;
-    my @aggregates = Aggregate->search(hash => {});
-    for my $aggregate (@aggregates){
-        my $aggregate_id = $aggregate->getAttr(name=>'aggregate_id');        
-        RRDTimeData::createTimeDataStore(name => $aggregate_id);
+    my @clustermetrics = Clustermetric->search(hash => {});
+    for my $clustermetric (@clustermetrics){
+        my $clustermetric_id = $clustermetric->getAttr(name=>'clustermetric_id');        
+        RRDTimeData::createTimeDataStore(name => $clustermetric_id);
     }
 }
 
@@ -299,7 +278,7 @@ sub create_aggregates_db{
     
     Class : Public
     
-    Desc : [DEPRECTATED] Compute all the aggregates according to the retrieved values received from Retriever
+    Desc : [DEPRECTATED] Compute all the clustermetrics according to the retrieved values received from Retriever
     
 =cut
 
@@ -313,34 +292,72 @@ sub _computeAggregates{
     General::checkParams(args => \%args, required => ['indicators']);
     my $indicators = $args{indicators};
     my $rep = {};
-    my $aggregate_cluster_id   = 0;
-    my $aggregate_indicator_id = 0;
+    my $clustermetric_cluster_id   = 0;
+    my $clustermetric_indicator_id = 0;
     my $cluster                = undef;
     my $hosts                  = undef;
     my $host_id                = undef;
     my $indicator_value        = undef;
     my @values                 = ();
 
-    # Array to loop on all the aggregates
-    my @aggregates = Aggregate->search(hash => {});
-    for my $aggregate (@aggregates){
+    # Array to loop on all the clustermetrics
+    my @clustermetrics = Clustermetric->search(hash => {});
+    for my $clustermetric (@clustermetrics){
         
         @values = ();
         
         
-        $aggregate_cluster_id   = $aggregate->getAttr(name => 'cluster_id');
-        $aggregate_indicator_id = $aggregate->getAttr(name => 'indicator_id');
-        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $aggregate_cluster_id);
+        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_cluster_id');
+        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
+        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
         $hosts   = $cluster->getHosts();
         
         for my $host (values(%$hosts)){
             $host_id = $host->getAttr(name => 'host_id');
-            $indicator_value = $indicators->{$host_id}->{$aggregate_indicator_id};
+            $indicator_value = $indicators->{$host_id}->{$clustermetric_indicator_id};
             
             push(@values,$indicator_value);
         }
-        $rep->{$aggregate->getAttr(name => 'aggregate_id')} = $aggregate->calculate(values => \@values);
+        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->calculate(values => \@values);
     }
     return $rep;
 };
+
+#=head2 constructHostAndIndicatorHash
+#    
+#    Class : Public
+#    
+#    Desc : Generate hash table of hosts to monitor and the indicator id to the Retriever
+#    
+#=cut
+#sub _constructHostAndIndicatorHash {
+#    my $self = shift;
+#    my @clustermetrics = Clustermetric->search(hash => {});
+#    
+#    my $clustermetric_cluster_id   = 0;
+#    my $clustermetric_indicator_id = 0;
+#    
+#    my $cluster                = undef;
+#    my $hosts                  = undef;
+#    my $rep                    = undef;
+#    my $host_id                = undef;
+#    
+#    for my $clustermetric (@clustermetrics){
+#        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_cluster_id');
+#        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
+#        
+#        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
+#        $hosts = $cluster->getHosts();
+#        
+#        for my $host (values(%$hosts)){
+#            $host_id = $host->getAttr(name => 'host_id');
+#                        
+#            push(
+#                @{$rep->{$host_id}->{$clustermetric_indicator_id}},
+#                $clustermetric->getAttr(name => 'clustermetric_window_time')
+#            );
+#        }
+#    }
+#    return $rep;
+#};
 1;
