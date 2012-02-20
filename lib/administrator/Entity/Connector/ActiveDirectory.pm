@@ -21,7 +21,7 @@ use base "Entity::Connector";
 
 use strict;
 use warnings;
-
+use Net::LDAP;
 use Kanopya::Exceptions;
 use Data::Dumper;
 
@@ -35,12 +35,54 @@ use constant ATTR_DEF => {
                     is_extended    => 0,
                     is_editable    => 0
                  },
+    ad_user => {    pattern        => '.*',
+                    is_mandatory   => 1,
+                    is_extended    => 0,
+                    is_editable    => 0
+             },
+    ad_pwd => {    pattern        => '.*',
+                    is_mandatory   => 1,
+                    is_extended    => 0,
+                    is_editable    => 0
+             },
+    ad_nodes_base_dn => {    pattern        => '.*',
+                    is_mandatory   => 0,
+                    is_extended    => 0,
+                    is_editable    => 0
+             },
+
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getComputers {
-    print "GET COMPUTERS\n";
+sub getNodes {
+    my $self = shift;
+    
+
+    my ($ad_host, $ad_user, $ad_pwd, $ad_nodes_base_dn) = (
+        $self->getAttr(name => 'ad_host'),
+        $self->getAttr(name => 'ad_user'),
+        $self->getAttr(name => 'ad_pwd'),
+        $self->getAttr(name => 'ad_nodes_base_dn'),
+    );
+    
+    my $ldap = Net::LDAP->new( $ad_host ) or die "$@";
+    my $mesg = $ldap->bind($ad_user, password => $ad_pwd);
+    
+    $mesg = $ldap->search(
+        base => $ad_nodes_base_dn,
+        filter => "cn=*",
+        #base => "cn=computers,dc=hedera,dc=forest",
+        #filter => "cn=*",
+    );
+    
+    $mesg->code && die $mesg->error;
+    
+    my @nodes = map { { hostname => $_->get_value('dNSHostName') } } $mesg->entries;
+    
+    $mesg = $ldap->unbind;   # take down session
+    
+    return \@nodes;
 }
 
 1;

@@ -44,6 +44,11 @@ __PACKAGE__->table("active_directory");
   is_nullable: 1
   size: 32
 
+=head2 ad_nodes_base_dn
+
+  data_type: 'text'
+  is_nullable: 1
+  
 =cut
 
 __PACKAGE__->add_columns(
@@ -60,6 +65,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
   "ad_pwd",
   { data_type => "char", is_nullable => 1, size => 32 },
+  "ad_nodes_base_dn",
+  { data_type => "text", is_nullable => 1},
 );
 __PACKAGE__->set_primary_key("ad_id");
 
