@@ -2,8 +2,11 @@ package Monitoring;
 
 use Dancer ':syntax'; 
 use Dancer::Plugin::Ajax;
+use Data::Dumper;
 
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Outside::Externalcluster;
+
 use General;
 use Log::Log4perl "get_logger";
 
@@ -221,6 +224,44 @@ get '/monitoring/browse' => sub  {
         cluster_id      => $cluster_id,
         rrd_files       => \@rrd_files,
     };
+};
+
+# ---------------------------------------------------------------------------------------------#
+# -----------------------------external cluster monitoring (poc BT)----------------------------#
+# ---------------------------------------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/monitoring' => sub {
+    my $cluster_id    = params->{extclusterid} || 0;
+   
+    my $adm    = Administrator->new();
+    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+    my @indicators;
+    
+    foreach my $indicator (@{$scom_indicatorset->{ds}}){
+        push @indicators, $indicator->{label};
+    }
+    # print Dumper (@indicators);
+
+  template 'cluster_monitor', {
+        title_page      => "Cluster Monitor Overview",
+        cluster_id      => $cluster_id,
+        indicators      => \@indicators,
+    };
+  };
+
+
+ajax '/extclusters/:extclusterid/monitoring' => sub {
+    my $cluster_id    = params->{extclusterid} || 0;
+
+    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
+    
+    # print 'cluster id: '.$extcluster;
+    
+    my @list = (10,15,20,3);
+    my @nodelist = ('node1','node2','node3','tortue');
+    # my $string ='string';
+    to_json {values => \@list, nodelist => \@nodelist};
+    # return $string;
 };
 
 1;
