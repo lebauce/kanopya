@@ -91,7 +91,7 @@ get '/vlans/:vlanid/remove' => sub {
 get '/vlans/:vlanid' => sub {
     my $vlan_id = param('vlanid');
     my $evlan = eval { Entity::Vlan->get(id => $vlan_id) };
-    my @poolip = Entity::Poolip->getPoolips( hash => {} );
+    my @poolip = Entity::Poolip->getPoolip( hash => {} );
     my $poolips = [];
     foreach my $ep (@poolip)
     {
@@ -131,7 +131,7 @@ get '/vlans/:vlanid' => sub {
     };
 };
 get '/vlans/:vlanid/addpoolip' => sub {
-	my @poolip = Entity::Poolip->getPoolips( hash => {} );
+	my @poolip = Entity::Poolip->getPoolip( hash => {} );
     my $poolips = [];
     foreach my $ep (@poolip)
     {
