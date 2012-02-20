@@ -23,6 +23,7 @@ use Orchestration;
 use Permissions;
 use Messager;
 use Vlans;
+use Poolip;
 use Log::Log4perl;
 
 our $VERSION = '0.1';

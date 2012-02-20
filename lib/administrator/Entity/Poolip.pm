@@ -15,7 +15,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 16 july 2010
+# Created 14 february 2012
 
 =head1 NAME
 
@@ -31,6 +31,7 @@ blablabla
 
 package Entity::Poolip;
 use base "Entity";
+use NetAddr::IP;
 
 use constant ATTR_DEF => {
 	poolip_name			=> { pattern      => '.*',
@@ -39,16 +40,16 @@ use constant ATTR_DEF => {
     poolip_desc			=> { pattern      => '.*',
 							 is_mandatory => 0,
                            },
-    poolip_addr			=> { pattern      => '.*',
+    poolip_addr			=> { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
 							 is_mandatory => 1,
                            },
-    poolip_mask			=> { pattern      => '\d+',
+    poolip_mask			=> { pattern      => '[0-9]{1,2}',
 							 is_mandatory => 1,
                            },
-    poolip_netmask		=> { pattern      => '.*',
+    poolip_netmask		=> { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
 							 is_mandatory => 1,
                            },
-    poolip_gateway		=> { pattern      => '.*',
+    poolip_gateway		=> { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
 							 is_mandatory => 1,
                            },                           
 };
@@ -58,13 +59,70 @@ sub getPoolips {
     my $class = shift;
     my %args = @_;
 
+<<<<<<< HEAD
+=======
+sub getPoolip {
+    my $class = shift;
+    my %args = @_;
+
+>>>>>>> d13f1035373e810bd55580117a46177e30332a5a
     General::checkParams(args => \%args, required => ['hash']);
 
     return $class->search(%args);
 }
+<<<<<<< HEAD
 sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('poolip_name');
     return $string;
 }
+=======
+
+sub create {
+    my $self = shift;
+    my %args = @_;
+
+    my $addrip = new NetAddr::IP($args{poolip_addr});
+    if(not defined $addrip) {
+        $errmsg = "Poolip->create : wrong value for address!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    my $mask = $args{poolip_mask};
+    if($mask > 32) {
+        $errmsg = "Poolip->create : wrong value for mask!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    my $ip = new NetAddr::IP($args{poolip_addr});
+    if(not defined $addrip) {
+        $errmsg = "Poolip->create : wrong value for addrip!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    my $poolip = Entity::Poolip->new(
+        poolip_name     => $args{poolip_name},
+        poolip_desc     => $args{poolip_desc},
+        poolip_addr     => $args{poolip_addr},
+        poolip_mask     => $args{poolip_mask},
+        poolip_netmask  => $args{poolip_netmask},
+        poolip_gateway  => $args{poolip_gateway},
+    );
+}
+
+sub remove {
+    my $self = shift;
+    $self->SUPER::delete(); 
+};
+
+sub toString {
+    my $self = shift;
+    my $string = $self->{_dbix}->get_column('poolip_name'). " ". $self->{_dbix}->get_column('poolip_addr');
+    return $string;
+}
+
+>>>>>>> d13f1035373e810bd55580117a46177e30332a5a
 1;
