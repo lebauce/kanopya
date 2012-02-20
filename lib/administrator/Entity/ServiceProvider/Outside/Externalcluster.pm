@@ -135,10 +135,37 @@ sub updateNodes {
      my $nodes = $ds_connector->getNodes();
      
      for my $node (@$nodes) {
-         print "==> $node->{hostname}\n";
          $self->{_dbix}->parent->externalnodes->update_or_create({externalnode_hostname => $node->{hostname}});
      }
      # TODO remove dead nodes from db
+}
+
+=head2 getNodesMetrics
+
+    Retrieve cluster nodes metrics values using the linked MonitoringService connector
+    
+    Params:
+        indicators : array ref of indicator name (eg 'ObjectName/CounterName')
+        time_span  : number of last seconds to consider when compute average on metric values
+=cut
+
+sub getNodesMetrics {
+     my $self = shift;
+     my %args = @_;
+
+     General::checkParams(args => \%args, required => ['indicators', 'time_span']);
+     
+     my $ms_connector = $self->getConnector( category => 'MonitoringService' );
+     my $nodes = $self->getNodes();
+     
+     my @hostnames = map { $_->{hostname} } @$nodes;
+     
+     my $data = $ms_connector->retrieveData(
+        nodes => \@hostnames,
+        %args,
+     );
+     
+    return $data;
 }
 
 1;
