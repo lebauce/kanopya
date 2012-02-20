@@ -993,6 +993,7 @@ CREATE TABLE `active_directory` (
   `ad_host` char(32) NOT NULL,
   `ad_user` char(32),
   `ad_pwd` char(32),
+  `ad_nodes_filter` text(512),
   PRIMARY KEY (`ad_id`),
   FOREIGN KEY (`ad_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
