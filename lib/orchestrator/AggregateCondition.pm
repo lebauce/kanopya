@@ -88,12 +88,14 @@ sub eval{
     $log->info('Evaluate condition :'.$self->toString());
     
     if(eval $evalString){        
-        print 'Evaluate condition :'.$evalString."=> true\n";        
+        print 'Evaluate condition :'.$evalString."=> true\n";
+        $log->info('Evaluate condition :'.$evalString."=> true");        
         $self->setAttr(name => 'last_eval', value => 1);
         $self->save();
         return 1;
     }else{
         print 'Evaluate condition :'.$evalString."=> false\n";
+        $log->info('Evaluate condition :'.$evalString."=> false");
         $self->setAttr(name => 'last_eval', value => 0);
         $self->save();
         return 0;
