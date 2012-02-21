@@ -1,8 +1,8 @@
-<form id="target" method="POST" action="/network/vlans/<% vlan_id %>/associate">
+<form id="target" method="POST" action="/networks/vlans/<% vlan_id %>/associate">
 <table class="form">
 
 <td><select id="ippool" name="poolipid">
-<option value="toto">toto</option>
+<option value="toto">       </option>
 <% FOREACH pip IN poolips_list %>
 <option value="<% pip.poolip_id %>"><% pip.poolip_name %></option>
 <% END %>
@@ -16,7 +16,7 @@ function sendpoolipid() {
     var poolipid=document.getElementById("ippool").value;
     var vlanid=document.getElementByName("vlanid").value;
     alert(vlanid);
-    //var url = "/network/vlans/"+ vlanid +"/" + poolipid;
+    //var url = "/networks/vlans/"+ vlanid +"/" + poolipid;
     alert (url);
     xhr.open("GET", url);
     

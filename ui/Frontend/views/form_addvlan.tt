@@ -1,6 +1,6 @@
 <h2>Create a new vlan</h2>
 
-<form id="target" method="POST" action="/network/vlans/add">
+<form id="target" method="POST" action="/networks/vlans/add">
 <table class="form">
 	<tr>
 		<td class="label">Name :</td>

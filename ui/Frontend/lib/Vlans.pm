@@ -1,14 +1,14 @@
 package Vlans;
 
 use Dancer ':syntax';
-
+use General;
 use Log::Log4perl "get_logger";
 use Administrator;
 use Entity::Vlan;
 use Entity::Poolip;
 use Data::Dumper;
 
-prefix '/network';
+prefix '/networks';
 
 my $log = get_logger('webui');
 
@@ -58,7 +58,7 @@ post '/vlans/add' => sub {
         }
         else { $exception->rethrow(); }
     }
-    else { redirect('/network/vlans'); }
+    else { redirect('/networks/vlans'); }
 };
 
 get '/vlans/:vlanid/remove' => sub {
@@ -84,7 +84,7 @@ get '/vlans/:vlanid/remove' => sub {
         }
     }
     else {
-        redirect '/network/vlans';
+        redirect '/networks/vlans';
     }
 };
 
@@ -92,7 +92,6 @@ get '/vlans/:vlanid' => sub {
     my $vlan_id = param('vlanid');
     
     my $evlan = eval { Entity::Vlan->get(id => $vlan_id) };
-       #my vlan_number = $evlan->getAttr(name => 'vlan_number') ;
     my $poolipidassociated =$evlan->getassociatedPoolip();
     my $poolips = [];
     foreach my $ep (@$poolipidassociated)
@@ -101,8 +100,8 @@ get '/vlans/:vlanid' => sub {
 	    my $poolip = Entity::Poolip->get(id => $poolip_id);
 		my $tmpp = {};
         $tmpp->{poolip_name} = $poolip->getAttr(name => 'poolip_name');
-        $tmpp->{url}        = "http://10.0.0.1:5000/network/poolip/$poolip_id";
-        
+        $tmpp->{url}        = "http://10.0.0.1:5000/networks/poolip/$poolip_id";
+        $tmpp ->{poolip_id}=$poolip_id;
          push(@$poolips, $tmpp);
 	}
     
@@ -120,17 +119,17 @@ get '/vlans/:vlanid' => sub {
     
    
     
-   # my $methods = $evlan->getPerms();
+  # my $methods = Entity::Vlan->getPerms();
     
     template 'vlans_details', {
-        vlan_id           => $evlan->getAttr('name' => 'vlan_id'),
-        vlan_desc         => $evlan->getAttr('name' => 'vlan_desc'),
-        vlan_number       => $evlan->getAttr('name' => 'vlan_number'),
-        poolips_list     => $poolips,
-        nbpoolips         => scalar(@$poolips)+1,
-        #can_update        => $methods->{'update'}->{'granted'},
-        #can_delete        => $methods->{'remove'}->{'granted'},
-        #can_setperm       => $methods->{'setperm'}->{'granted'},
+        vlan_id            => $evlan->getAttr('name' => 'vlan_id'),
+        vlan_desc          => $evlan->getAttr('name' => 'vlan_desc'),
+        vlan_number        => $evlan->getAttr('name' => 'vlan_number'),
+        poolips_list       => $poolips,
+        nbpoolips          => scalar(@$poolips)+1,
+       #can_associate      => $methods->{'associateVlanpoolip'}->{'granted'},
+       #can_delete         => $methods->{'removePoolip'}->{'granted'},
+       #can_setperm       => $methods->{'setperm'}->{'granted'},
     };
 };
 get '/vlans/:vlanid/addpoolip' => sub {
@@ -138,13 +137,11 @@ get '/vlans/:vlanid/addpoolip' => sub {
     my $poolips = [];
     foreach my $ep (@poolip)
     {
-		my $poolip_id= $ep->getAttr(name => 'poolip_id');
-		my $tmpp = {};
-        $tmpp->{poolip_name}     = $ep->getAttr(name => 'poolip_name');
-         $tmpp->{poolip_id}     = $ep->getAttr(name => 'poolip_id');
-        
-        $tmpp->{url}        = "http://10.0.0.1:5000/network/poolip/$poolip_id";
-        
+		 my $poolip_id= $ep->getAttr(name => 'poolip_id');
+		 my $tmpp = {};
+         $tmpp->{poolip_name}     = $ep->getAttr(name => 'poolip_name');
+         $tmpp->{poolip_id}       = $ep->getAttr(name => 'poolip_id');
+         $tmpp->{url}            = "http://10.0.0.1:5000/networks/poolip/$poolip_id";
          push(@$poolips, $tmpp);
 	}
 	
@@ -156,16 +153,34 @@ get '/vlans/:vlanid/addpoolip' => sub {
 post '/vlans/:vlanid/associate' => sub {
 	 my $adm = Administrator->new();
 	 eval {
-        my $host = Entity::Vlan->get(id => param('vlanid'));
-        $host->associateVlanpoolip(poolip_id => param('poolipid'),vlan_id=>param('vlanid'));
-    };
+           my $host = Entity::Vlan->get(id => param('vlanid'));
+           $host->associateVlanpoolip(poolip_id => param('poolipid'),vlan_id=>param('vlanid'));
+          };
     if($@) {
-        my $exception = $@;
-        if(Kanopya::Exception::Permission::Denied->caught()) {
+            my $exception = $@;
+            if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
             redirect '/permission_denied';
-        }
-        else { $exception->rethrow(); }
-    } else { redirect '/network/vlans/'.param('vlanid'); }
+           }
+           else { $exception->rethrow(); }
+       }  else { redirect '/networks/vlans/'.param('vlanid'); }
 };
+get '/vlans/:vlanid/removepoolip/:poolipid/remove' => sub {
+     my $adm = Administrator->new;
+       eval  {
+            my $evlan = Entity::Vlan->get(id => param('vlanid'));
+            $evlan->removePoolip(poolip_id => param('poolipid'));
+            };
+     if($@) {
+             my $exception = $@;
+             if(Kanopya::Exception::Permission::Denied->caught()) {
+             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+             redirect '/permission_denied';
+            }
+        else { $exception->rethrow(); }
+           }
+    else { redirect '/networks/vlans/'.param('vlanid'); }
+};
+
+
 1;
