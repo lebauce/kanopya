@@ -22,7 +22,7 @@ use Kanopya::Exceptions;
 
 # logger
 use Log::Log4perl "get_logger";
-my $log = get_logger("aggregator");
+my $log = get_logger("orchestrator");
 
 use constant ATTR_DEF => {
     aggregate_combination_id      =>  {pattern       => '^.*$',
@@ -115,8 +115,10 @@ sub calculate{
     
     #Evaluate the logic formula
     print 'Evaluate combination :'.($self->toString())."\n";
+    $log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
     print "Evaluate instance : $arrayString \n";
+    $log->info("Evaluate instance : $arrayString");
     return $res;
 }
 
