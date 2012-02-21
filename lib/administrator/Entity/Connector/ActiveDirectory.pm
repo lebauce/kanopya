@@ -73,12 +73,16 @@ sub getNodes {
         base => $ad_nodes_base_dn,
         filter => "cn=*",
         #base => "cn=computers,dc=hedera,dc=forest",
-        #filter => "cn=*",
     );
     
     $mesg->code && die $mesg->error;
     
-    my @nodes = map { { hostname => $_->get_value('dNSHostName') } } $mesg->entries;
+    my @nodes;
+    for my $entry ($mesg->entries) {
+        if (defined $entry->get_value('dNSHostName')) {
+            push @nodes, {hostname => $entry->get_value('dNSHostName')};
+        }
+    }
     
     $mesg = $ldap->unbind;   # take down session
     
