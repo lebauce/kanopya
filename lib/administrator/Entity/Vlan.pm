@@ -50,7 +50,26 @@ use constant ATTR_DEF => {
 							 is_editable  => 0,
 							 },
 };
-
+sub methods {
+    return {
+        'create'    => {'description' => 'create a new vlan',
+                        'perm_holder' => 'mastergroup',
+        },
+        'associateVlanpoolip'        => {'description' => 'update vlanpoolip by adding vlan_id, poolipid',
+                        'perm_holder' => 'entity',
+        },
+        'getassociatedPoolip'    => {'description' => 'return list of poolip_id soociated to vlan',
+                        'perm_holder' => 'entity',
+        },
+        'removePoolip'    => {'description' => 'dissociate a pool ip from a  vlan',
+                        'perm_holder' => 'entity',
+        },
+         'remove'    => {'description' => 'remove a vlan ',
+                        'perm_holder' => 'entity',
+        },
+       
+    };
+}
 sub getAttrDef { return ATTR_DEF; }
 sub getVlans {
     my $class = shift;
@@ -80,7 +99,9 @@ sub toString {
     my $string = $self->{_dbix}->get_column('vlan_desc');
     return $string;
 }
-
+=head2 create
+desc:associate poolip to vlan
+=cut
 
 sub associateVlanpoolip {
     my $self = shift;
@@ -89,10 +110,10 @@ sub associateVlanpoolip {
     General::checkParams(args => \%args, required => ['vlan_id','poolip_id']);
 
     my $adm = Administrator->new();
-    # my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'associateVlanpoolip');
-    #if(not $granted) {
-     #   throw Kanopya::Exception::Permission::Denied(error => "Permission denied to associate pool ip to this vlan");
-    #}
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'associateVlanpoolip');
+    if(not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to associate pool ip to this vlan");
+    }
     my $res =$adm->{db}->resultset('VlanPoolip')->create(
 		{	poolip_id=>$args{poolip_id},
             vlan_id =>$self->getAttr(name=>'vlan_id')
@@ -101,6 +122,11 @@ sub associateVlanpoolip {
 
     return $res->get_column("poolip_id");
 }
+
+=head2 create
+desc:get list of pool ip id associated to a vlan
+=cut
+
 sub getassociatedPoolip {
     my $self = shift;
     my $pips = [];
@@ -114,5 +140,25 @@ sub getassociatedPoolip {
     return $pips;
 
 }
+=head2 create
+desc:dessociate a pool ip from vlan without deleting it from pool ip list 
+=cut
+sub removePoolip {
+    my $self = shift;
+    my %args = @_;
 
+    General::checkParams(args => \%args, required => ['poolip_id']);
+
+    my $adm = Administrator->new();
+    # removePoolip method concerns an existing entity so we use his entity_id
+  # my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'removePoolip');
+   # if(not $granted) {
+    #    throw Kanopya::Exception::Permission::Denied(error => "Permission denied to remove a pool ip from this vlan");
+    #}
+  # 
+    my $pip=$adm->{db}->resultset('VlanPoolip')->search(undef, {
+    columns => [qw/poolip_id/]
+      });
+    $pip->delete();
+}
 1;
