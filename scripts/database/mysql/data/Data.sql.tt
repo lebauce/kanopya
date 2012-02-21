@@ -459,7 +459,16 @@ INSERT INTO `indicator` VALUES
 (13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4),
 (14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4),
 (15,'Memory/Available MBytes','Memory/Available MBytes',null,null,'FF000099', 5),
-(16,'Process/%Processor Time','Processor/% Processor Time',null,null,'FF000099', 5);
+(16,'Memory/Pool Paged Bytes','Memory/Pool Paged Bytes',null,null,'FF000099', 5),
+(17,'Memory/PercentMemoryUsed','Memory/PercentMemoryUsed',null,null,'FF000099', 5),
+(18,'Process/% Processor Time','Processor/% Processor Time',null,null,'FF000099', 5),
+(19,'System/Processor Queue Length','System/Processor Queue Length',null,null,'FF000099', 5),
+(20,'LogicalDisk/% Idle Time','LogicalDisk/% Idle Time',null,null,'FF000099', 5),
+(21,'LogicalDisk/% Free Space','LogicalDisk/% Free Space',null,null,'FF000099', 5),
+(22,'NetworkAdapterBandwidthUsedTotal','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5),
+(23,'TerminalServices/Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5);
+
+
 
 --
 -- initial permissions for user guest
