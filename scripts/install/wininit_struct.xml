@@ -1,6 +1,7 @@
 <init_struct  nb="10">
   <general_conf
     log_directory = "C:\var\\log\\kanopya\"
+    timedata_tmp = "C:\tmp\\monitor\\TimeData\"
     tmp_monitor = "C:\tmp\\monitor\\graph\"
     tmp_orchestrator ="C:\tmp\\orchestrator\\graph\"
     kanopya_dir="/opt/kanopya"

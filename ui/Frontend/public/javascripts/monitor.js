@@ -8,6 +8,7 @@
  	var save_monitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_monitoring_settings";
     var current_path = path;
 
+
  	commonInit();
  	
  // ------------------------------------------------------------------------------------
@@ -299,27 +300,21 @@
         // });     
    // } 
    // $('#testcall').click (test_ui);
-   
-   // function get_data(){
-           // $.getJSON(current_path, function(data) {
-			// alert ('récup data');
-            // var s1 = (data.values);
-            // alert(s1);
-            // });
-            // return s1;
-   // }
-    $.getJSON(current_path, function(data) {
+ });
+ 
+var url = window.location.href;
+var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
+var metric_view =path + '/metricview';
+
+function showMetricGraph(){
+    $.getJSON(path, function(data) {
             barGraph(data.values, data.nodelist);
             });
-        // alert('toto');
-        // document.write(s1);
-        
+}
 
-        barGraph();
 function barGraph(values, nodelist){
         $.jqplot.config.enablePlugins = true;
         plot1 = $.jqplot('chart1', [values], {
-            // Only animate if we're not using excanvas (not in IE 7 or IE 8)..
             animate: !$.jqplot.use_excanvas,
             seriesDefaults:{
                 renderer:$.jqplot.BarRenderer,
@@ -340,4 +335,4 @@ function barGraph(values, nodelist){
             }
         );
     }
- });
+ 

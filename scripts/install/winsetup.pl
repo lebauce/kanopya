@@ -32,6 +32,7 @@ my $conf_files   = $install_conf->{genfiles};
 my $log_directory = $conf_vars->{log_directory};
 my $tmp_monitor = $conf_vars->{tmp_monitor};
 my $tmp_orchestrator = $conf_vars->{tmp_orchestrator};
+my $timedata_dir = $conf_vars->{timedata_tmp};
 
 my %conf_data = (
     logdir => $log_directory,
@@ -89,6 +90,13 @@ $cmd = 'mkdir '.$tmp_orchestrator;
 print $cmd."\n";
 $exec = `$cmd 2>&1`;
 print $exec."\n";
+
+print 'creating time data temp directory'."\n";
+$cmd = 'mkdir '.$timedata_dir;
+print $cmd."\n";
+$exec = `$cmd 2>&1`;
+print $exec."\n";
+
 
 ################
 #Database Setup#

@@ -19,6 +19,9 @@ use TimeData::RRDTimeData;
 use AggregateCombination;
 
 use base 'BaseDB';
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("orchestrator");
 
 use constant ATTR_DEF => {
     aggregate_condition_id               =>  {pattern       => '^.*$',
@@ -82,13 +85,17 @@ sub eval{
     my $evalString = $value.$comparator.$threshold;
     
     print 'Evaluate condition :'.$self->toString()."\n";
+    $log->info('Evaluate condition :'.$self->toString());
+    
     if(eval $evalString){        
-        print 'Evaluate condition :'.$evalString."=> true\n";        
+        print 'Evaluate condition :'.$evalString."=> true\n";
+        $log->info('Evaluate condition :'.$evalString."=> true");        
         $self->setAttr(name => 'last_eval', value => 1);
         $self->save();
         return 1;
     }else{
         print 'Evaluate condition :'.$evalString."=> false\n";
+        $log->info('Evaluate condition :'.$evalString."=> false");
         $self->setAttr(name => 'last_eval', value => 0);
         $self->save();
         return 0;
