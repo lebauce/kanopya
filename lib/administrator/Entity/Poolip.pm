@@ -25,7 +25,7 @@ Entity::Poolip
 
 =head1 DESCRIPTION
 
-blablabla
+    desc:
 
 =cut
 

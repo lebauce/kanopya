@@ -8,7 +8,7 @@ use Entity::Vlan;
 use Entity::Poolip;
 use Data::Dumper;
 
-prefix '/network';
+prefix '/networks';
 
 my $log = get_logger('webui');
 
@@ -58,7 +58,7 @@ post '/vlans/add' => sub {
         }
         else { $exception->rethrow(); }
     }
-    else { redirect('/network/vlans'); }
+    else { redirect('/networks/vlans'); }
 };
 
 get '/vlans/:vlanid/remove' => sub {
@@ -84,7 +84,7 @@ get '/vlans/:vlanid/remove' => sub {
         }
     }
     else {
-        redirect '/network/vlans';
+        redirect '/networks/vlans';
     }
 };
 
@@ -101,7 +101,7 @@ get '/vlans/:vlanid' => sub {
 	    my $poolip = Entity::Poolip->get(id => $poolip_id);
 		my $tmpp = {};
         $tmpp->{poolip_name} = $poolip->getAttr(name => 'poolip_name');
-        $tmpp->{url}        = "http://10.0.0.1:5000/network/poolip/$poolip_id";
+        $tmpp->{url}         = "/networks/poolip/$poolip_id";
         
          push(@$poolips, $tmpp);
 	}
@@ -141,9 +141,8 @@ get '/vlans/:vlanid/addpoolip' => sub {
 		my $poolip_id= $ep->getAttr(name => 'poolip_id');
 		my $tmpp = {};
         $tmpp->{poolip_name}     = $ep->getAttr(name => 'poolip_name');
-         $tmpp->{poolip_id}     = $ep->getAttr(name => 'poolip_id');
-        
-        $tmpp->{url}        = "http://10.0.0.1:5000/network/poolip/$poolip_id";
+        $tmpp->{poolip_id}       = $ep->getAttr(name => 'poolip_id');
+        $tmpp->{url}             = "/networks/poolip/$poolip_id";
         
          push(@$poolips, $tmpp);
 	}
@@ -166,6 +165,6 @@ post '/vlans/:vlanid/associate' => sub {
             redirect '/permission_denied';
         }
         else { $exception->rethrow(); }
-    } else { redirect '/network/vlans/'.param('vlanid'); }
+    } else { redirect '/networks/vlans/'.param('vlanid'); }
 };
 1;

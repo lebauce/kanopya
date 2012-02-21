@@ -2,7 +2,7 @@
 	<table class="listing">
 	<tr><td colspan="3"><h1><% vlan.vlan_name %></h1></td></tr>
 	<tr><td><span class="label">Number</span> : <% vlan.vlan_number %></td><td class="toright">
-	<a class="imgManage" href="/network/vlans/<% vlan.vlan_id %>">details</a></td></tr>
+	<a class="imgManage" href="/networks/vlans/<% vlan.vlan_id %>">details</a></td></tr>
 	<td class="toright">
 	</td></tr>
 	 <tr><td class="italic" colspan="3"><span class="label">Description</span> : <% vlan.vlan_desc %></td></tr>
@@ -11,7 +11,7 @@
 
 <div class="actions">
 
-	<a class="action modal" href="/network/vlans/add">create a vlan</a>
+	<a class="action modal" href="/networks/vlans/add">create a vlan</a>
 	<p class="italic">Create and configure a new vlan.</p>
 
 </div>
