@@ -1,8 +1,8 @@
 use Data::Dumper;
-use 'Administrator';
-use 'Entity::ServiceProvider::Outside::Externalcluster';
-use 'Entity::Connector::ActiveDirectory';
-use 'Entity::Connector::Scom';
+use Administrator;
+use Entity::ServiceProvider::Outside::Externalcluster;
+use Entity::Connector::ActiveDirectory;
+use Entity::Connector::Scom;
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
     
