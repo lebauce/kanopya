@@ -240,8 +240,18 @@ get '/extclusters/:extclusterid/monitoring' => sub {
     foreach my $indicator (@{$scom_indicatorset->{ds}}){
         push @indicators, $indicator->{label};
     }
-    # print Dumper (@indicators);
-
+    
+    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
+    # my $nodes_metrics = $extcluster->getNodesMetrics(indicators => ['Memory/Available MBytes'], time_span => 3600);
+    # print Dumper($nodes_metrics);
+    # my @nodes;
+    # my @values;
+    # foreach my $node (keys %$nodes_metrics){
+        # print "node metric: \n";
+        # print Dumper($nodes_metrics->{$node});
+        # push @nodes, $node;
+    # }
+    
   template 'cluster_monitor', {
         title_page      => "Cluster Monitor Overview",
         cluster_id      => $cluster_id,
@@ -252,15 +262,20 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 
 ajax '/extclusters/:extclusterid/monitoring' => sub {
     my $cluster_id    = params->{extclusterid} || 0;
-
-    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
     
-    # print 'cluster id: '.$extcluster;
-    
-    my @list = (10,15,20,3);
-    my @nodelist = ('node1','node2','node3','tortue');
-    # my $string ='string';
+    my @list = (10,7,20,4);
+    my @nodelist = ('node1','node2','node3','node4');
     to_json {values => \@list, nodelist => \@nodelist};
+};
+
+ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
+    my $cluster_id    = params->{extclusterid} || 0;
+    
+    # my @list = (10,15,20,3);
+    # my @nodelist = ('node1','node2','node3','tortue');
+    # to_json {values => \@list, nodelist => \@nodelist};
+
+    # to_json {id => $cluster_id};
     # return $string;
 };
 

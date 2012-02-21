@@ -26,7 +26,7 @@ use General;
 use Data::Dumper;
 
 
-my $dir          = 'C:\\opt\\kanopya\\t\\monitor\\';
+my $dir          = 'C:\\tmp\\monitor\\TimeData\\';
 
 ####################################################################################################################
 #########################################RRD MANIPULATION FUNCTIONS#################################################
@@ -205,8 +205,6 @@ sub updateTimeDataStore {
     }
     my $time = $args{'time'};
     my $value = $args{'value'};
-
-    my $dir  = 'C:\\opt\\kanopya\\t\\monitor\\'; 
 
     my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
     print $cmd."\n";
