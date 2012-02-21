@@ -175,14 +175,15 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics){
         
-        my $host_names = $self->_getHostNamesFromIDs(); #get all hosts name
+        #my $host_names = $self->_getHostNamesFromIDs(); #get all hosts name
         #TODO : To be modified when using ServerSets
         
         # Array that will store all the values needed to compute $clustermetric val
         my @dataStored = (); 
 
         # Loop on all the host_name of the $clustermetric
-        for my $host_name (@$host_names){
+        
+        for my $host_name (keys %$values){
             
             $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
             $indicator = Indicator->get('id' => $clustermetric_indicator_id);
