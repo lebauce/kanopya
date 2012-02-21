@@ -201,16 +201,20 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
         }
         
         #Compute the $clustermetric value from all @dataStored values
+        
         my $statValue = $clustermetric->calculate(values => \@dataStored);
         
-        #Store in DB and time stamp
-        my $time = time();
-        RRDTimeData::updateTimeDataStore(
-            aggregator_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
-            time          => $time, 
-            value         => $statValue,
-            );
-        
+        if(defined $statValue){
+            #Store in DB and time stamp
+            my $time = time();
+            RRDTimeData::updateTimeDataStore(
+                aggregator_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
+                time          => $time, 
+                value         => $statValue,
+                );
+        } else {
+            $log->info("No statvalue computed for clustermetric".($clustermetric->getAttr(name=>'clustermetric_id')));
+        }
     }
 }
 
