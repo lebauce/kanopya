@@ -130,7 +130,24 @@ sub eval {
 }
 
 
+sub enable(){
+    my $self = shift;
+    $self->setAttr(name => 'aggregate_rule_state', value => 'enabled');
+    $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    $self->save();
+}
 
+sub disable(){
+    my $self = shift;
+    $self->setAttr(name => 'aggregate_rule_state', value => 'disabled');
+    $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    $self->save();
+}
+
+sub isEnabled(){
+    my $self = shift;
+    return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled'); 
+}
 
 
 1;
