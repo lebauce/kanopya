@@ -103,15 +103,21 @@ sub manage_aggregates {
     print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
 
     for my $aggregate_rule (AggregateRule->search(hash=>{})){
-        my $result = $aggregate_rule->eval();
-        print $aggregate_rule->toString()." ($result)\n";
-        $log->info($aggregate_rule->toString()." ($result)");
-        if($result){
-            print 'Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-           $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-        }else{
-            print "Rule false, no action \n";
-            $log->info("Rule false, no action");
+        
+        if ($aggregate_rule -> isEnabled()) {
+            my $result = $aggregate_rule->eval();
+            print $aggregate_rule->toString()." ($result)\n";
+            $log->info($aggregate_rule->toString()." ($result)");
+            if($result){
+               print "**************\n";
+               print 'Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+               print "**************\n";
+               $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
+               $aggregate_rule->disable();
+            }else{
+                print "Rule false, no action \n";
+                $log->info("Rule false, no action");
+            }
         }
     }
 
