@@ -263,15 +263,16 @@ INSERT INTO `operationtype` VALUES
 (27,'PostStartNode'),
 (28,'InstallComponentOnSystemImage'),
 (29,'DeployComponent'),
-(30,'CreateLogicalVolume'),
+(30,'CreateDisk'),
 (31,'CreateExport'),
 (32,'DeployDistribution'),
 (33,'ForceStopCluster'),
 (34,'KanopyaMaintenance'),
 (35,'AddInfrastructure'),
 (36,'AddVirtualHost'),
-(37,'MigrateHost');
-
+(37,'MigrateHost'),
+(38,'RemoveDisk'),
+(39,'RemoveExport');
 --
 -- components type list
 --

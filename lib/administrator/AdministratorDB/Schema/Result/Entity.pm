@@ -71,6 +71,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 container
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Container>
+
+=cut
+
+__PACKAGE__->might_have(
+  "container",
+  "AdministratorDB::Schema::Result::Container",
+  { "foreign.container_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 container_access
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
+
+=cut
+
+__PACKAGE__->might_have(
+  "container_access",
+  "AdministratorDB::Schema::Result::ContainerAccess",
+  { "foreign.container_access_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 distribution
 
 Type: might_have
@@ -312,9 +342,7 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ibX7LuqSX+Zb5bS9pPJGkg
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-09 15:01:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kiZhr+nh6o77dWFNdhv84w
 
-
-# You can replace this text with custom content, and it will be preserved on regeneration
 1;

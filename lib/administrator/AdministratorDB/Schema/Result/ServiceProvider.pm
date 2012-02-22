@@ -41,6 +41,21 @@ __PACKAGE__->set_primary_key("service_provider_id");
 
 =head1 RELATIONS
 
+=head2 containers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Container>
+
+=cut
+
+__PACKAGE__->has_many(
+  "containers",
+  "AdministratorDB::Schema::Result::Container",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 inside
 
 Type: might_have
@@ -83,17 +98,18 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zDVMgGqdOrQ3nKtSfCjSDQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-10 13:43:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rLz8vCVMY1kRRwMrt5To+Q
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.service_provider_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  { "foreign.entity_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
+);
 
 1;

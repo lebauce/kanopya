@@ -44,14 +44,14 @@ __PACKAGE__->table("distribution");
   is_nullable: 1
   size: 255
 
-=head2 etc_device_id
+=head2 etc_container_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 root_device_id
+=head2 root_container_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -74,14 +74,14 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "distribution_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "etc_device_id",
+  "etc_container_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "root_device_id",
+  "root_container_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -120,47 +120,37 @@ __PACKAGE__->belongs_to(
   "distribution",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "distribution_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 etc_device
+=head2 etc_container
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Lvm2Lv>
+Related object: L<AdministratorDB::Schema::Result::Container>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "etc_device",
-  "AdministratorDB::Schema::Result::Lvm2Lv",
-  { lvm2_lv_id => "etc_device_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  "etc_container",
+  "AdministratorDB::Schema::Result::Container",
+  { container_id => "etc_container_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 root_device
+=head2 root_container
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Lvm2Lv>
+Related object: L<AdministratorDB::Schema::Result::Container>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "root_device",
-  "AdministratorDB::Schema::Result::Lvm2Lv",
-  { lvm2_lv_id => "root_device_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  "root_container",
+  "AdministratorDB::Schema::Result::Container",
+  { container_id => "root_container_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 systemimages
@@ -179,14 +169,15 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:pg+B4q5YlcvJJUOj3fyLuQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-07 11:41:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i6aGCq+xbhpgxm6BKLiR2Q
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.distribution_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  { "foreign.entity_id" => "self.distribution_id" },
+  { cascade_copy => 0, cascade_delete => 1 });
+
 1;
