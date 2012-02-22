@@ -159,12 +159,26 @@ sub _checkNodesMetrics{
         'asked_indicators',
         'received',
     ]);
-    my $asked_indicators    = $args{asked_indicators};
-    my $received = $args{received};
-
-    print "**** \n";
-    print Dumper $asked_indicators;
-    print "**** \n";
+    my $asked_indicators = $args{asked_indicators};
+    my $received         = $args{received};
+    
+    my $num_of_nodes     = scalar (keys %$received);
+    
+    foreach my $indicator_name (@$asked_indicators) {
+        my $count = 0;
+            while( my ($node_name,$metrics) = each(%$received) ) {
+                if(defined $metrics->{$indicator_name}) {
+                $count++;
+            } else {
+                $log->debug("Metric $indicator_name undefined from node $node_name");
+            }
+        }
+        if($count eq 0){
+            $log->info("*** [WARNING] $indicator_name given by no node !");
+        } elsif(($count / $num_of_nodes) le 0.75) {
+            $log->info("*** [WARNING] $indicator_name given by less than 75% of nodes ($count / $num_of_nodes)!");
+        }
+    }
 }
 
 =head2 run
@@ -213,7 +227,7 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
                 push(@dataStored,$the_value);
             }
             else {
-                $log->info("Missing Value of indicator ".($indicator->getAttr(name=>'indicator_oid'))." for host $host_name");
+                $log->debug("Missing Value of indicator ".($indicator->getAttr(name=>'indicator_oid'))." for host $host_name");
             }
                  
         }
