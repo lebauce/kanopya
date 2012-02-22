@@ -39,7 +39,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    aggregate_rule_state     =>  {pattern       => '(enabled|disabled)$',
+    aggregate_rule_state     =>  {pattern       => '(enabled|disabled|disabled_temp)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
