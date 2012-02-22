@@ -113,7 +113,7 @@ sub manage_aggregates {
                print 'Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
                print "**************\n";
                $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-               $aggregate_rule->disable();
+               $aggregate_rule->disableTemporarily(length=>120);
             }else{
                 print "Rule false, no action \n";
                 $log->info("Rule false, no action");
