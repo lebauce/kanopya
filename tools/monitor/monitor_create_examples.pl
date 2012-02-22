@@ -112,7 +112,7 @@ if($ok eq 1){
         my $id_max = $cm_max[0]->getAttr(name=>'clustermetric_id'); 
 
         my $acf_params = {
-          aggregate_combination_formula   => 'id'.($id_max).'- id'.($id_max)
+          aggregate_combination_formula   => 'id'.($id_max).'- id'.($id_min)
         };
         
         my $aggregate_combination = AggregateCombination->new(%$acf_params);
