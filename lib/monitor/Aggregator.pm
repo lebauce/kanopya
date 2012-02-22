@@ -141,6 +141,9 @@ sub update() {
         my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
         print Dumper $monitored_values; 
             
+        # Verify answers received from SCOM to detect metrics anomalies
+        $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
+        
         # Parse retriever return, compute clustermetric values and store in DB 
         $self->_calculateAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
         
@@ -148,6 +151,21 @@ sub update() {
     }
 }
 
+sub _checkNodesMetrics{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [
+        'asked_indicators',
+        'received',
+    ]);
+    my $asked_indicators    = $args{asked_indicators};
+    my $received = $args{received};
+
+    print "**** \n";
+    print Dumper $asked_indicators;
+    print "**** \n";
+}
 
 =head2 run
     
@@ -213,8 +231,9 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
                 value         => $statValue,
                 );
         } else {
-            $log->info("No statvalue computed for clustermetric".($clustermetric->getAttr(name=>'clustermetric_id')));
-        }
+            
+            $log->info("*** [WARNING] No statvalue computed for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
+                    }
     }
 }
 
