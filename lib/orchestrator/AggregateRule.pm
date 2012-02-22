@@ -144,8 +144,29 @@ sub disable(){
     $self->save();
 }
 
+sub disableTemporarily(){
+    my $self = shift;
+    my %args = @_;
+    General::checkParams args => \%args, required => ['length'];
+    
+    my $length = $args{length};
+        
+    $self->setAttr(name => 'aggregate_rule_state', value => 'disabled_temp');
+    $self->setAttr(name => 'aggregate_rule_timestamp', value => time() + $length);
+    $self->save();
+}
+
 sub isEnabled(){
     my $self = shift;
+    
+    if ($self->getAttr(name=>'aggregate_rule_state') eq 'disabled_temp') {
+        if( $self->getAttr(name => 'aggregate_rule_timestamp') le time()) {
+            $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+            $self->setAttr(name => 'aggregate_rule_state'    , value => 'enabled');
+            $self->save();
+            return 1;
+        }
+    }
     return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled'); 
 }
 
