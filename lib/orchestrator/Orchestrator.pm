@@ -105,7 +105,7 @@ sub manage_aggregates {
     for my $aggregate_rule (AggregateRule->search(hash=>{})){
         
         if ($aggregate_rule -> isEnabled()) {
-            print "*****";
+            print "*** ";
             print 'Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
             print $aggregate_rule->toString()."\n";
             

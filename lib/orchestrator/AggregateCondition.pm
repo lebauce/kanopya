@@ -84,8 +84,6 @@ sub eval{
     
     my $evalString = $value.$comparator.$threshold;
     
-    print 'Evaluate condition :'.$self->toString()."\n";
-    $log->info('Evaluate condition :'.$self->toString());
     
     if(eval $evalString){        
         print $evalString."=> true\n";

@@ -117,7 +117,7 @@ sub calculate{
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    print "$arrayString \n";
+    print "$arrayString = ";
     $log->info("$arrayString");
     return $res;
 }
