@@ -25,6 +25,8 @@ use Kanopya::Exceptions;
 use Operation;
 use General;
 
+use Entity::Container::LvmContainer;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 my $log = get_logger("administrator");
@@ -389,9 +391,10 @@ sub stopToBeNode{
     my $self = shift;
 
     my $row = $self->{_dbix}->node;
-    $log->debug("node <".$self->getAttr(name=>"host_mac_address")."> stop to be node");
+    $log->debug("node <" . $self->getAttr(name => "host_mac_address") . "> stop to be node");
     if(not defined $row) {
-        $errmsg = "Entity::Host->stopToBeNode : node representing host ".$self->getAttr(name=>"host_mac_address")."  not found!";
+        $errmsg = "Entity::Host->stopToBeNode : node representing host " .
+                  $self->getAttr(name=>"host_mac_address") . " not found!";
         $log->error($errmsg);
         throw Kanopya::Exception::DB(error => $errmsg);
     }
@@ -585,39 +588,37 @@ sub getMacName {
     return $mac;
 }
 
-=head2 getEtcDev
+=head2 getEtcContainerAccess
 
 get etc attributes used by this host
 
 =cut
 
-sub getEtcDev {
+sub getEtcContainerAccess {
     my $self = shift;
-    if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Host->getEtcDev must be called on an already save instance";
+    if (!$self->{_dbix}->in_storage) {
+        $errmsg = "Entity::Host->getEtcContainerAccess must be called on an already save instance";
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
-    $log->info("retrieve etc attributes");
-    my $etcrow = $self->{_dbix}->etc_device;
-    my $devices = {
-        etc => { lv_id => $etcrow->get_column('lvm2_lv_id'),
-                 vg_id => $etcrow->get_column('lvm2_vg_id'),
-                 lvname => $etcrow->get_column('lvm2_lv_name'),
-                 vgname => $etcrow->lvm2_vg->get_column('lvm2_vg_name'),
-                 size => $etcrow->get_column('lvm2_lv_size'),
-                 freespace => $etcrow->get_column('lvm2_lv_freespace'),
-                 filesystem => $etcrow->get_column('lvm2_lv_filesystem')
-                }    };
-    $log->info("Host etc and root devices retrieved from database");
-    return $devices;
+
+    # TODO: Link the host to a ContainerAccess instead of a Container
+    #       For now, we just return the first ContainerAccess for this container
+    $log->info("Retrieve etc container access");
+    my $etc_accesses = Entity::Container::LvmContainer->get(
+                           id => $self->{_dbix}->etc_container_id
+                       )->getAccesses;
+
+    return pop @$etc_accesses;
 }
 
 sub getInternalIP {
     my $self = shift;
     my $adm = Administrator->new();
     if ($self->getAttr(name=>"host_ipv4_internal_id")) {
-        return $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $self->getAttr(name=>"host_ipv4_internal_id"));
+        return $adm->{manager}->{network}->getInternalIP(
+                   ipv4_internal_id => $self->getAttr(name=>"host_ipv4_internal_id")
+               );
     }
     return {};
 

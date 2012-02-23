@@ -36,4 +36,17 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 getManager
+
+=cut
+
+sub getManager {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['id']);
+
+    return Entity::Component->getInstance(id => $args{id})
+}
+
 1;
