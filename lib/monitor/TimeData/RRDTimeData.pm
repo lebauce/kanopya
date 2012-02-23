@@ -25,6 +25,9 @@ use warnings;
 use General;
 use Data::Dumper;
 
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("timedata");
 
 my $dir          = 'C:\\tmp\\monitor\\TimeData\\';
 
@@ -36,7 +39,7 @@ my $dir          = 'C:\\tmp\\monitor\\TimeData\\';
 sub createTimeDataStore{
 	#rrd creation example: system ('rrdtool.exe create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
     my %args = @_;
-    print Dumper(\%args);
+    $log->debug(Dumper(\%args));
 	
     General::checkParams(args => \%args, required => ['name']); 
 	
@@ -107,7 +110,7 @@ sub createTimeDataStore{
 
     #final command
     my $cmd = 'rrdtool.exe create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
-    print $cmd." \n";
+    $log->info($cmd);
 
     #execution of the command
     my $exec = `$cmd 2>&1`;
@@ -160,7 +163,7 @@ sub fetchTimeDataStore {
         $cmd .= ' -e '.$end;
     }
 	
-    print $cmd."\n";
+    $log->info($cmd);
 
     #we store the ouput of the command into a string
     my $exec = `$cmd 2>&1`;
@@ -187,7 +190,7 @@ sub fetchTimeDataStore {
         }
     }	
             
-    print Dumper(\%values);
+    $log->debug(Dumper(\%values));
     return %values;
     
 }
@@ -207,7 +210,7 @@ sub updateTimeDataStore {
     my $value = $args{'value'};
 
     my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
-    print $cmd."\n";
+    $log->info($cmd);
 
     my $exec =`$cmd 2>&1`;
     #print $exec."\n";
@@ -224,7 +227,7 @@ sub getLastUpdatedValue{
     my $name = 'timeDB_'.$args{'aggregate_id'}.'.rrd';
     
     my $cmd = 'rrdtool.exe lastupdate '.$dir.$name;
-    print $cmd."\n";
+    $log->info($cmd);
     
     my $exec =`$cmd 2>&1`;
     #print $exec."\n";
@@ -243,7 +246,8 @@ sub getLastUpdatedValue{
     # print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
-    print Dumper(\%values);
+    #print Dumper(\%values);
+    $log->debug(Dumper(\%values));
     return %values;
 }
 1;
