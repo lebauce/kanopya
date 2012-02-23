@@ -126,7 +126,8 @@ sub _format_data {
                     $consolidate_value = sum(@values) / @values;
                 } else {
                     $consolidate_value = $last_value;
-                    print "Info: take last counter value for $object_name/$counter_name\n";
+                    # TODO log!
+                    #print "Info: take last counter value for $object_name/$counter_name\n";
                 }
                 
                 $res{$monit_object_path}{"$object_name/$counter_name"} = $consolidate_value;
