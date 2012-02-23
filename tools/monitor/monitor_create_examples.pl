@@ -91,11 +91,26 @@ if($ok eq 1){
             
             # Special general treatment for overloaded % metrics
             if (($indicator->{unity} eq '%') and ($func eq 'mean')) {
+            
+               print "$indicator->{oid} : \n";
+               print "Comparator [>]: ";
+               my $comparator = <STDIN>;
+               
+               if ($comparator eq '') {
+                   $comparator = '>';
+               }
+               
+               print  "Threshold [80]: ";
+               my $threshold = <STDIN>;
+               
+               if ($threshold eq '') {
+                   $threshold = '80';
+               }
                
                my $condition_params = {
                     aggregate_combination_id => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
-                    comparator            => '>',
-                    threshold             => 80,
+                    comparator            => $comparator,
+                    threshold             => $threshold,
                     state                 => 'enabled',
                     time_limit            => NULL,
                 };
@@ -118,10 +133,6 @@ if($ok eq 1){
     
     
     foreach my $indicator (@indicators) {
-        
-        #Create identity rules on '%' indicators
-        
-
         
         #For each indicator id get the max aggregate and the min aggregate to compute max - min
         
@@ -213,7 +224,7 @@ if($ok eq 1){
         };
 
 
-        my $aggregate_rule = AggregateRule->new(%$params_rule);
+        #my $aggregate_rule = AggregateRule->new(%$params_rule);
                
        #Creating a condition on coefficient of variation range/std and a rule
        my $condition_params = {
@@ -233,7 +244,7 @@ if($ok eq 1){
         };
 
 
-        my $aggregate_rule = AggregateRule->new(%$params_rule);
+        #my $aggregate_rule = AggregateRule->new(%$params_rule);
        
        
     }
