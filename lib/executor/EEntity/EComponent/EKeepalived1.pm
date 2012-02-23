@@ -175,7 +175,7 @@ sub cleanNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'cluster', 'mount_point']);
+    General::checkParams(args => \%args, required => ['host', 'cluster', 'mount_point']);
     
     my $keepalived = $self->_getEntity();
     

@@ -41,118 +41,167 @@ use base "EEntity::EComponent";
 my $log = get_logger("executor");
 my $errmsg;
 
-sub generateInitiatorname{
-    my $self = shift;
-    my %args  = @_;
+=head2 createExport
 
-    General::checkParams(args => \%args, required => ['hostname']);
+    Desc : This method allow to create a new export in 1 call
 
-    my $today = today();
-    my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology." . $args{hostname};
-    $log->info("InitiatorName generated is $res");
-    return $res;
-}
-sub generateTargetname {
-    my $self = shift;
-    my %args  = @_;
+=cut
 
-    General::checkParams(args => \%args, required => ['name']);
-
-    my $today = today();
-    my $res = "iqn." . $today->year . "-" . $today->format("%m") . ".com.hedera-technology.nas:$args{name}";
-    $log->info("TargetName generated is $res");
-    return $res;
-}
-
-# This method allow to create a new export in 1 call
 sub createExport {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args,
-                         required => ['export_name','econtext',
-                                      'device_name', 'typeio',
-                                      'iomode', 'erollback']);
+    General::checkParams(args     => \%args,
+                         required => [ 'container', 'export_name', 'econtext']);
+
+    # TODO: Check if the given container is provided by the same
+    #       storage provider than the iscsi storage provider.
+
+    my $typeio = General::checkParam(args => \%args, name => 'typeio', default => 'fileio');
+    my $iomode = General::checkParam(args => \%args, name => 'iomode', default => 'wb');
 
     my $disk_targetname = $self->generateTargetname(name => $args{export_name});
+    my $device          = $args{container}->getAttr(name => 'container_device');
 
-    $self->addExport(iscsitarget1_lun_number    => 0,
-                     iscsitarget1_lun_device    => $args{device_name},
-                     iscsitarget1_lun_typeio    => $args{typeio},
-                     iscsitarget1_lun_iomode    => $args{iomode},
-                     iscsitarget1_target_name   => $disk_targetname,
-                     econtext                   => $args{econtext},
-                     erollback                  => $args{erollback});
-    my $eroll_add_export = $args{erollback}->getLastInserted();
+    my $target_id = $self->addTarget(
+                        iscsitarget1_target_name => $disk_targetname,
+                        econtext                 => $args{econtext}
+                    );
 
-    $args{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-    $self->generate(econtext  => $args{econtext},
-                    erollback => $args{erollback});
-    $log->info("Add IScsi Export of device <$self->{params}->{device}>");
-}
+    my $lun_id = $self->addLun(
+                     iscsitarget1_target_id   => $target_id,
+                     iscsitarget1_lun_device  => $device,
+                     iscsitarget1_lun_number  => 0,
+                     iscsitarget1_lun_typeio  => $typeio,
+                     iscsitarget1_lun_iomode  => $iomode,
+                     iscsitarget1_target_name => $disk_targetname,
+                     econtext                 => $args{econtext},
+                 );
 
-sub addExport {
-    my $self = shift;
-    my %args  = @_;
+    my $container_access = $self->_getEntity()->addContainerAccess(
+                               container => $args{container},
+                               target_id => $target_id,
+                               lun_id    => $lun_id,
+                           );
 
-    General::checkParams(args => \%args,
-                         required => ['iscsitarget1_lun_number','econtext',
-                                      'iscsitarget1_lun_device', 'iscsitarget1_lun_typeio',
-                                      'iscsitarget1_target_name', 'iscsitarget1_lun_iomode']);
+    $log->info("Added IScsi Export of device <$device> with target <$disk_targetname>");
 
+    if (exists $args{erollback}) {
+        my $eroll_add_export = $args{erollback}->getLastInserted();
+        $args{erollback}->insertNextErollBefore(erollback => $eroll_add_export);
+        $self->generate(econtext => $args{econtext}, erollback => $args{erollback});
 
-    my $target_id = $self->addTarget(iscsitarget1_target_name   =>$args{iscsitarget1_target_name},
-                                     econtext                   =>$args{econtext});
-
-    my $lun_id = $self->addLun(iscsitarget1_target_id    => $target_id,
-                                                iscsitarget1_lun_number    => $args{iscsitarget1_lun_number},
-                                                iscsitarget1_lun_device    => $args{iscsitarget1_lun_device},
-                                                iscsitarget1_lun_typeio    => $args{iscsitarget1_lun_typeio},
-                                                iscsitarget1_lun_iomode    => $args{iscsitarget1_lun_iomode},
-                                                iscsitarget1_target_name=> $args{iscsitarget1_target_name},
-                                                econtext                 => $args{econtext});
-    if(exists $args{erollback}) {
-        $args{erollback}->add(function   =>$self->can('removeExport'),
-                              parameters => [$self,
-                                               "iscsitarget1_lun_id", $lun_id,
-                                               "iscsitarget1_target_name", $args{iscsitarget1_target_name},
-                                               "iscsitarget1_target_id", $target_id,
-                                               "econtext", $args{econtext}]);
+        $args{erollback}->add(
+            function   => $self->can('removeExport'),
+            parameters => [ $self,
+                            "container_access", $container_access,
+                            "econtext", $args{econtext} ]
+        );
     }
+    return $container_access;
 }
+
+=head2 removeExport
+
+    Desc : This method allow to remove an export in 1 call
+
+=cut
 
 sub removeExport {
     my $self = shift;
     my %args  = @_;
-    my $lun;
-    my $log_content;
+    my ($lun, $log_content, $container);
 
-    General::checkParams(args => \%args,
-                         required => ['iscsitarget1_lun_id','econtext',
-                                      'iscsitarget1_target_name', 'iscsitarget1_target_id']);
+    General::checkParams(args     => \%args,
+                         required => [ 'container_access', 'econtext' ]);
 
-    if(exists $args{erollback}) {
-        $lun = $self->_getEntity()->getLun(  iscsitarget1_lun_id     => $args{iscsitarget1_lun_id},
-                                                iscsitarget1_target_id  => $args{iscsitarget1_target_id});
+    if (! $args{container_access}->isa("Entity::ContainerAccess::IscsiContainerAccess")) {
+        throw Kanopya::Exception::Execution(
+                  error => "ContainerAccess must be a Entity::ContainerAccess::IscsiContainerAccess"
+              );
     }
-    $self->removeLun(iscsitarget1_lun_id    => $args{iscsitarget1_lun_id},
-                    iscsitarget1_target_id  => $args{iscsitarget1_target_id});
-    $self->removeTarget(iscsitarget1_target_id      => $args{iscsitarget1_target_id},
-                        iscsitarget1_target_name    => $args{iscsitarget1_target_name},
-                        econtext                    => $args{econtext});
-    $log_content = "Remove Export with targetname <". $args{iscsitarget1_target_name}.">";
-    if(exists $args{erollback}) {
-        $args{erollback}->add(function   =>$self->can('addExport'),
-                              parameters => [$self,
-                                               "iscsitarget1_lun_number", $lun->{iscsitarget1_lun_number},
-                                               "iscsitarget1_lun_device", $lun->{iscsitarget1_lun_device},
-                                               "iscsitarget1_lun_typeio", $lun->{iscsitarget1_lun_typeio},
-                                               "iscsitarget1_lun_iomode", $lun->{iscsitarget1_lun_iomode},
-                                               "iscsitarget1_target_name", $args{iscsitarget1_target_name},
-                                               "econtext", $args{econtext}]);
-       $log_content .= " and will be rollbacked with add export of disk <" .$lun->{iscsitarget1_lun_device}.">";
+
+    my $iscsitarget1_lun_id    = $args{container_access}->getAttr(name => 'lun_id');
+    my $iscsitarget1_target_id = $args{container_access}->getAttr(name => 'target_id');
+    my $target_name = $args{container_access}->getAttr(name => 'container_access_export');
+
+    # Get required infos for erollback before deleting the access
+    if(exists $args{erollback} and defined $args{erollback}) {
+        $container = $args{container_access}->getContainer();
+        $lun = $self->_getEntity()->getLun(iscsitarget1_lun_id    => $iscsitarget1_lun_id,
+                                           iscsitarget1_target_id => $iscsitarget1_target_id);
+    }
+
+    $self->removeLun(iscsitarget1_lun_id    => $iscsitarget1_lun_id,
+                     iscsitarget1_target_id => $iscsitarget1_target_id);
+
+    $self->removeTarget(iscsitarget1_target_id => $iscsitarget1_target_id,
+                        econtext               => $args{econtext});
+
+
+    if (exists $args{host_initiatorname} and defined $args{host_initiatorname}) {
+        $self->cleanInitiatorSession(initiator => $args{host_initiatorname},
+                                     econtext  => $args{econtext});
+    }
+
+    $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
+
+    # Regenerate configuration
+    $self->generate(econtext => $args{econtext});
+
+    $log_content = "Remove Export with targetname <" . $target_name . ">";
+    if(exists $args{erollback} and defined $args{erollback}) {
+        my $export_name = $self->generateNameFromTarget(target_name => $target_name);
+        $args{erollback}->add(
+            function   => $self->can('createExport'),
+            parameters => [ $self,
+                            "container", $container,
+                            "export_name", $export_name,
+                            "typeio", $lun->{iscsitarget1_lun_typeio},
+                            "iomode", $lun->{iscsitarget1_lun_iomode},
+                            "econtext", $args{econtext} ]);
+
+       $log_content .= " and will be rollbacked with add export of disk <" .
+                       $container->getAttr(name => 'container_device') . ">";
     }
     $log->debug($log_content);
+}
+
+sub generateInitiatorname{
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'hostname' ]);
+
+    my $today = today();
+    my $res = "iqn." . $today->year . "-" . $today->format("%m") .
+              ".com.hedera-technology." . $args{hostname};
+
+    $log->info("InitiatorName generated is $res");
+    return $res;
+}
+
+sub generateTargetname {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'name' ]);
+
+    my $today = today();
+    my $res = "iqn." . $today->year . "-" . $today->format("%m") .
+              ".com.hedera-technology.nas:$args{name}";
+
+    $log->info("TargetName generated is $res");
+    return $res;
+}
+
+sub generateNameFromTarget {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'target_name' ]);
+
+    return $args{'target_name'} =~ s/.*\://g;
 }
 
 sub addTarget {
@@ -161,8 +210,10 @@ sub addTarget {
 
     General::checkParams(args => \%args, required => ['iscsitarget1_target_name']);
 
-    my $result = $args{econtext}->execute(command => "grep tid: /proc/net/iet/volume | sed 's/tid:\\(\[0-9\]\*\\) .*/\\1/'");
-     my $tid;
+    my $cmd = "grep tid: /proc/net/iet/volume | sed 's/tid:\\(\[0-9\]\*\\) .*/\\1/'";
+    my $result = $args{econtext}->execute(command => $cmd);
+
+    my $tid;
     if ($result->{stdout} eq "") {
         $tid = 0;
     }
@@ -171,9 +222,12 @@ sub addTarget {
         $tid = $tab[0];
         $tid += 1;
     }
-        # on cree le nouveau target
-    $result = $args{econtext}->execute(command => "ietadm --op new --tid=$tid --params Name=$args{iscsitarget1_target_name}");
+
+    # Create the new target
+    $cmd = "ietadm --op new --tid=$tid --params Name=$args{iscsitarget1_target_name}";
+    $result = $args{econtext}->execute(command => $cmd);
     delete $args{econtext};
+
     return $self->_getEntity()->addTarget(%args);
 }
 
@@ -183,19 +237,18 @@ sub gettid {
 
     General::checkParams(args => \%args, required => ['target_name',"econtext"]);
 
-
     my $result = $args{econtext}->execute(command =>"grep \"$args{target_name}\" /proc/net/iet/volume");
     if ($result->{stdout} eq "") {
-        $errmsg = "EComponent::EIscsitarget1->gettid : no target name found for $args{target_name}!";#
+        $errmsg = "EComponent::EIscsitarget1->gettid : no target name found for $args{target_name}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     my @t1 = split(/\s/, $result->{stdout});
     my @t2 = split(/:/, $t1[0]);
     my $tid = $t2[1];
+
     $log->debug("Tid found <$tid> for target <$args{target_name}>");
     return $tid;
-
 }
 
 sub reload {
@@ -207,15 +260,25 @@ sub addLun {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['iscsitarget1_target_id',"iscsitarget1_lun_number",
-                                                     "iscsitarget1_lun_device","iscsitarget1_lun_typeio",
-                                                     "iscsitarget1_lun_iomode","iscsitarget1_target_name",
-                                                     "econtext"]);
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_lun_device", "iscsitarget1_target_id",
+                                       "iscsitarget1_lun_number", "iscsitarget1_lun_typeio",
+                                       "iscsitarget1_lun_iomode", "iscsitarget1_target_name",
+                                       "econtext" ]);
 
-    my $tid = $self->gettid(target_name => $args{iscsitarget1_target_name}, econtext => $args{econtext});
+    my $tid = $self->gettid(target_name => $args{iscsitarget1_target_name},
+                            econtext    => $args{econtext});
     delete $args{iscsitarget1_target_name};
-    my $result =  $args{econtext}->execute(command => "ietadm --op new --tid=$tid --lun=$args{iscsitarget1_lun_number} --params Path=$args{iscsitarget1_lun_device},Type=$args{iscsitarget1_lun_typeio},IOMode=$args{iscsitarget1_lun_iomode}");
+
+    my $command = "ietadm --op new --tid=$tid " .
+                  "--lun=$args{iscsitarget1_lun_number} --params " .
+                  "Path=$args{iscsitarget1_lun_device}," .
+                  "Type=$args{iscsitarget1_lun_typeio}," .
+                  "IOMode=$args{iscsitarget1_lun_iomode}";
+
+    my $result = $args{econtext}->execute(command => $command);
     delete $args{econtext};
+
     return $self->_getEntity()->addLun(%args);
 }
 
@@ -223,7 +286,9 @@ sub removeLun {
     my $self = shift;
     my %args  = @_;
 
-    #TODO In future if need we can just remove a lun.
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_id" ]);
+
     return $self->_getEntity()->removeLun(%args);
 }
 
@@ -231,13 +296,17 @@ sub removeTarget {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['iscsitarget1_target_id',"iscsitarget1_target_name",
-                                                     "econtext"]);
+    General::checkParams(args => \%args, required => [ 'iscsitarget1_target_id',
+                                                       'econtext' ]);
 
-    $log->debug('iscsitargetname : '.$args{iscsitarget1_target_name});
+    my $iscsitarget1_target_name = $self->_getEntity()->getTargetName(
+                                       iscsitarget1_target_id => $args{iscsitarget1_target_id}
+                                   );
 
-    # first we clean sessions for this target
-    my $tid = $self->cleanTargetSession(targetname => $args{iscsitarget1_target_name}, econtext => $args{econtext});
+    # First we clean sessions for this target
+    my $tid = $self->cleanTargetSession(targetname => $iscsitarget1_target_name,
+                                        econtext   => $args{econtext});
+
 	if(defined $tid) {
 		my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
     }
@@ -292,7 +361,7 @@ sub _getIetdSessions {
 sub cleanTargetSession {
     my $self = shift;
     my %args  = @_;
-    General::checkParams(args => \%args, required => ['targetname',"econtext"]);
+    General::checkParams(args => \%args, required => [ 'targetname', 'econtext' ]);
 
     # first, we get actual sessions
     my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext});
@@ -302,7 +371,8 @@ sub cleanTargetSession {
         if($target->{targetname} eq $args{targetname}) {
             foreach my $session(@{$target->{sessions}}) {
                 for my $connection (@{$session->{connections}}) {
-                    my $command = "ietadm --op delete --tid=$target->{tid} --sid=$session->{sid} --cid=$connection->{cid}";
+                    my $command = "ietadm --op delete --tid=$target->{tid} " .
+                                  "--sid=$session->{sid} --cid=$connection->{cid}";
                     my $result = $args{econtext}->execute(command => $command);
                     #TODO tester le retour de la commande
                 }
@@ -325,7 +395,7 @@ sub cleanInitiatorSession {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['initiator',"econtext"]);
+    General::checkParams(args => \%args, required => [ 'initiator', 'econtext' ]);
 
     # first, we get actual sessions
     my $ietdsessions = $self->_getIetdSessions(econtext => $args{econtext});
@@ -334,9 +404,10 @@ sub cleanInitiatorSession {
     foreach my $target (@$ietdsessions) {
         foreach my $session(@{$target->{sessions}}) {
 			$log->info(">>>>> session initiator: $session->{initiator}");
-            if(($session->{initiator} eq $args{initiator})|| !$session->{initiator}){
+            if(($session->{initiator} eq $args{initiator}) || !$session->{initiator}){
                 for my $connection (@{$session->{connections}}) {
-                    my $command = "ietadm --op delete --tid=$target->{tid} --sid=$session->{sid} --cid=$connection->{cid}";
+                    my $command = "ietadm --op delete --tid=$target->{tid} " .
+                                  "--sid=$session->{sid} --cid=$connection->{cid}";
                     my $result = $args{econtext}->execute(command => $command);
                     #TODO tester le retour de la commande
                 }
@@ -344,7 +415,6 @@ sub cleanInitiatorSession {
         }
     }
 }
-
 
 # generate /etc/ietd.conf configuration file
 sub generate {
@@ -355,16 +425,18 @@ sub generate {
 
     my $data = $self->_getEntity()->getTemplateData();
 
-    $self->generateFile( econtext => $args{econtext},
-                         mount_point => "/etc",
-                         template_dir => "/templates/components/ietd",
-                         input_file => "ietd.conf.tt",
-                         output => "/iet/ietd.conf",
-                         data => $data);
+    $self->generateFile(econtext => $args{econtext},
+                        mount_point => "/etc",
+                        template_dir => "/templates/components/ietd",
+                        input_file => "ietd.conf.tt",
+                        output => "/iet/ietd.conf",
+                        data => $data);
+
     if(exists $args{erollback}){
-        $args{erollback}->add(function   =>$self->can('generate'),
-                              parameters => [$self,
-                                             "econtext", $args{econtext}]);
+        $args{erollback}->add(
+            function   => $self->can('generate'),
+            parameters => [$self, "econtext", $args{econtext}]
+        );
     }
 }
 
