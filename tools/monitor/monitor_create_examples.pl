@@ -90,29 +90,29 @@ if($ok eq 1){
             my $aggregate_combination = AggregateCombination->new(%$acf_params);
             
             # Special general treatment for overloaded % metrics
-            if (($indicator->{unity} eq '%') and ($func eq 'mean')) {
+            #if (($indicator->{unity} eq '%') and ($func eq 'mean')) {
             
-               print "$indicator->{oid} : \n";
-               print "Comparator [>]: ";
-               my $comparator = <STDIN>;
-               chomp $comparator;
-               if ($comparator eq '') {
-                   $comparator = '>';
-               }
-               
-               print  "Threshold [80]: ";
-               my $threshold = <STDIN>;
-               chomp $threshold; 
-               if ($threshold eq '') {
-                   $threshold = '80';
-               }
+#               print "$indicator->{oid} : \n";
+#               print "Comparator [>]: ";
+#               my $comparator = <STDIN>;
+#               chomp $comparator;
+#               if ($comparator eq '') {
+#                   $comparator = '>';
+#               }
+#               
+#               print  "Threshold [80]: ";
+#               my $threshold = <STDIN>;
+#               chomp $threshold; 
+#               if ($threshold eq '') {
+#                   $threshold = '80';
+#               }
                
                my $condition_params = {
                     aggregate_combination_id => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
-                    comparator            => $comparator,
-                    threshold             => $threshold,
+                    comparator            => '>',
+                    threshold             => '0',
                     state                 => 'enabled',
-                    time_limit            => NULL,
+                    time_limit            =>  NULL,
                 };
                my $aggregate_condition = AggregateCondition->new(%$condition_params);
             
@@ -122,8 +122,7 @@ if($ok eq 1){
                     aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
                 };
                 my $aggregate_rule = AggregateRule->new(%$params_rule);
-        
-            }
+            #}
         }
     }
     
@@ -207,41 +206,41 @@ if($ok eq 1){
         };
         my $aggregate_rule = AggregateRule->new(%$params_rule);
    
-       #Creating a condition on coefficient of variation range/mean and a rule
-       $condition_params = {
-            aggregate_combination_id => $aggregate_combination_range_over_mean->getAttr(name=>'aggregate_combination_id'),
-            comparator            => '>',
-            threshold             => 0.5,
-            state                 => 'enabled',
-            time_limit            => NULL,
-        };
-       my $aggregate_condition = AggregateCondition->new(%$condition_params);
-
-       my $params_rule = {
-            aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-            aggregate_rule_state     => 'enabled',
-            aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
-        };
+#       #Creating a condition on coefficient of variation range/mean and a rule
+#       $condition_params = {
+#            aggregate_combination_id => $aggregate_combination_range_over_mean->getAttr(name=>'aggregate_combination_id'),
+#            comparator            => '>',
+#            threshold             => 0.5,
+#            state                 => 'enabled',
+#            time_limit            => NULL,
+#        };
+#       my $aggregate_condition = AggregateCondition->new(%$condition_params);
+#
+#       my $params_rule = {
+#            aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+#            aggregate_rule_state     => 'enabled',
+#            aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+#        };
 
 
         #my $aggregate_rule = AggregateRule->new(%$params_rule);
                
        #Creating a condition on coefficient of variation range/std and a rule
-       my $condition_params = {
-            aggregate_combination_id => $aggregate_combination_range_over_std->getAttr(name=>'aggregate_combination_id'),
-            comparator            => '>',
-            threshold             => 0.5,
-            state                 => 'enabled',
-            time_limit            => NULL,
-        };
-       my $aggregate_condition = AggregateCondition->new(%$condition_params);          
-   
-       
-       my $params_rule = {
-            aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-            aggregate_rule_state     => 'enabled',
-            aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
-        };
+#       my $condition_params = {
+#            aggregate_combination_id => $aggregate_combination_range_over_std->getAttr(name=>'aggregate_combination_id'),
+#            comparator            => '>',
+#            threshold             => 0.5,
+#            state                 => 'enabled',
+#            time_limit            => NULL,
+#        };
+#       my $aggregate_condition = AggregateCondition->new(%$condition_params);          
+#   
+#       
+#       my $params_rule = {
+#            aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+#            aggregate_rule_state     => 'enabled',
+#            aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+#        };
 
 
         #my $aggregate_rule = AggregateRule->new(%$params_rule);
