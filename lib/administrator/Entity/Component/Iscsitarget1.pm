@@ -55,11 +55,16 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use General;
+use Administrator;
 use Kanopya::Exceptions;
+
+use Entity::Container::LvmContainer;
+use Entity::ContainerAccess::IscsiContainerAccess;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use Administrator;
-use General;
+
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -67,13 +72,20 @@ my $errmsg;
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
+use constant ACCESS_MODE => {
+    READ_WRITE => 'wb',
+    READ_ONLY  => 'ro',
+};
+
 sub getLun{
     my $self = shift;
     my %args = @_;
-    General::checkParams(args => \%args,
-                         required => ['iscsitarget1_lun_id','iscsitarget1_target_id']);
 
-    my $lun_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->find($args{iscsitarget1_lun_id});
+    General::checkParams(args     => \%args,
+                         required => [ 'iscsitarget1_lun_id', 'iscsitarget1_target_id' ]);
+
+    my $target_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
+    my $lun_row = $target_row->iscsitarget1_luns->find($args{iscsitarget1_lun_id});
     return {
             iscsitarget1_lun_number => $lun_row->get_column('iscsitarget1_lun_number'),
             iscsitarget1_lun_device => $lun_row->get_column('iscsitarget1_lun_device'),
@@ -99,9 +111,11 @@ sub getConf {
                 iscsitarget1_lun_iomode => $lun_row->get_column('iscsitarget1_lun_iomode'),
             }
         }
-        push @targets, {     iscsitarget1_target_name => $conf_row->get_column('iscsitarget1_target_name'),
-                            iscsitarget1_target_id => $conf_row->get_column('iscsitarget1_target_id'),
-                            luns => \@luns};
+        push @targets, {
+            iscsitarget1_target_name => $conf_row->get_column('iscsitarget1_target_name'),
+            iscsitarget1_target_id   => $conf_row->get_column('iscsitarget1_target_id'),
+            luns => \@luns
+        };
     }
     
     $conf{targets} = \@targets;
@@ -116,14 +130,48 @@ sub setConf {
     for my $target ( @{ $conf->{targets} } ) {
         LUN:
         for my $lun ( @{ $target->{luns} } ) {
-            $self->createExport(export_name => $target->{iscsitarget1_target_name},
-                                device => $lun->{iscsitarget1_lun_device},
-                                typeio => $lun->{iscsitarget1_lun_typeio},
-                                iomode => $lun->{iscsitarget1_lun_iomode});
-            last LUN; #Temporary: we can create only one lun with one target
+            # TODO: Probably need to update BaseDB::search method...
+            #my @containers = Entity::Container::LvmContainer->search(
+            #                     hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
+            #                 );
+
+            my @workaround_containers
+                = Entity::Container->search(
+                      hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
+                  );
+
+            my @containers;
+            foreach my $wa_container (@workaround_containers) {
+                push @containers, Entity::Container::LvmContainer->get(
+                                      id => $wa_container->getAttr(name => 'container_id')
+                                  );
+            }
+
+            # Check if specified device match to a registred container.
+            my $container;
+            foreach my $cont (@containers) {
+                my $device = $cont->getAttr(name => 'container_device');
+                if ("$device" eq "$lun->{iscsitarget1_lun_device}") {
+                    $container = $cont;
+                    last;
+                }
+            }
+            if (! defined $container) {
+                $errmsg = "Specified device <$lun->{iscsitarget1_lun_device}> " .
+                          "does not match to an existing container.";
+                $log->error($errmsg);
+                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            }
+
+            $self->createExport(container   => $container,
+                                export_name => $target->{iscsitarget1_target_name},
+                                typeio      => $lun->{iscsitarget1_lun_typeio},
+                                iomode      => $lun->{iscsitarget1_lun_iomode});
+
+            # Temporary: we can create only one lun with one target
+            last LUN;
         }        
     }
-
 }
 
 =head2 
@@ -150,14 +198,16 @@ sub addTarget {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name})) {
-        $errmsg = "Component::Iscsitarget1->addTarget needs a iscsitarget1_targetname named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args     => \%args,
+                         required => [ 'iscsitarget1_target_name' ]);
+
     my $iscsitarget1_rs = $self->{_dbix}->iscsitarget1_targets;
     my $res = $iscsitarget1_rs->create(\%args);
-    $log->info("New target <$args{iscsitarget1_target_name}> added and return " .$res->get_column("iscsitarget1_target_id"));
+
+    $log->info("New target <$args{iscsitarget1_target_name}> added and return " .
+               $res->get_column("iscsitarget1_target_id"));
+
+    $res->discard_changes;
     return $res->get_column("iscsitarget1_target_id");
 }
 
@@ -173,20 +223,31 @@ sub addLun {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) ||
-        (! exists $args{iscsitarget1_lun_number} or ! defined $args{iscsitarget1_lun_number}) ||
-        (! exists $args{iscsitarget1_lun_device} or ! defined $args{iscsitarget1_lun_device}) ||
-        (! exists $args{iscsitarget1_lun_typeio} or ! defined $args{iscsitarget1_lun_typeio}) ||
-        (! exists $args{iscsitarget1_lun_iomode} or ! defined $args{iscsitarget1_lun_iomode})) {
-        $errmsg = "Component::Iscsitarget1->addLun needs a iscsitarget1_target_id, iscsitarget1_lun_number, iscsitarget1_lun_device, iscsitarget1_lun_typeio and iscsitarget1_lun_iomode named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    $log->debug("New Lun try to be added with iscsitarget1_target_id $args{iscsitarget1_target_id} iscsitarget1_lun_number $args{iscsitarget1_lun_number} iscsitarget1_lun_device $args{iscsitarget1_lun_device}" );
-    my $iscsitarget1_lun_rs = $self->{_dbix}->iscsitarget1_targets->single( {iscsitarget1_target_id => $args{iscsitarget1_target_id}})->iscsitarget1_luns;
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_lun_device", "iscsitarget1_target_id",
+                                       "iscsitarget1_lun_number", "iscsitarget1_lun_typeio",
+                                       "iscsitarget1_lun_iomode" ]);
 
-    my $res = $iscsitarget1_lun_rs->create(\%args);
+    $log->debug("New Lun try to be added with iscsitarget1_target_id " .
+                "$args{iscsitarget1_target_id} iscsitarget1_lun_number " .
+                "$args{iscsitarget1_lun_number} iscsitarget1_lun_device " .
+                "$args{iscsitarget1_lun_device}");
+
+    my $iscsitarget1_lun_rs = $self->{_dbix}->iscsitarget1_targets->single(
+                                  { iscsitarget1_target_id => $args{iscsitarget1_target_id} }
+                              )->iscsitarget1_luns;
+
+    my $res = $iscsitarget1_lun_rs->create(
+                  { iscsitarget1_target_id  => $args{iscsitarget1_target_id},
+                    iscsitarget1_lun_number => $args{iscsitarget1_lun_number},
+                    iscsitarget1_lun_iomode => $args{iscsitarget1_lun_iomode},
+                    iscsitarget1_lun_typeio => $args{iscsitarget1_lun_typeio},
+                    iscsitarget1_lun_device => $args{iscsitarget1_lun_device}, }
+              );
+
     $log->info("New Lun <$args{iscsitarget1_lun_device}> added");
+
+    $res->discard_changes;
     return $res->get_column('iscsitarget1_lun_id');
 }
 
@@ -194,71 +255,66 @@ sub getTargetIdLike {
     my $self = shift;
     my %args = @_;
 
-    if (! exists $args{iscsitarget1_target_name} or ! defined $args{iscsitarget1_target_name}) {
-        $errmsg = "Component::Iscsitarget1->getTargetId needs a iscsitarget1_target_name named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    return $self->{_dbix}->iscsitarget1_targets->search({iscsitarget1_target_name => {-like => $args{iscsitarget1_target_name}}})->first()->get_column('iscsitarget1_target_id');
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_target_name" ]);
+
+    return $self->{_dbix}->iscsitarget1_targets->search(
+               { iscsitarget1_target_name => { -like => $args{iscsitarget1_target_name} } }
+           )->first()->get_column('iscsitarget1_target_id');
 }
 
 sub getFullTargetName {
     my $self = shift;
     my %args = @_;
 
-    if (! exists $args{lv_name} or ! defined $args{lv_name}) {
-        $errmsg = "Component::Iscsitarget1->getFullTargetName needs a lv_name named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    return $self->{_dbix}->iscsitarget1_targets->search({iscsitarget1_target_name => {-like => '%'.$args{lv_name}}})->first()->get_column('iscsitarget1_target_name');
+    General::checkParams(args     => \%args,
+                         required => [ "lv_name" ]);
+
+    return $self->{_dbix}->iscsitarget1_targets->search(
+               { iscsitarget1_target_name => { -like => '%'.$args{lv_name} } }
+           )->first()->get_column('iscsitarget1_target_name');
 }
 
 sub getLunId {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id})||
-        (! exists $args{iscsitarget1_lun_device} or ! defined $args{iscsitarget1_lun_device})) {
-        $errmsg = "Component::Iscsitarget1->getLun needs an iscsitarget1_target_id and an iscsitarget1_lun_device named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->first({ iscsitarget1_lun_device=> $args{iscsitarget1_lun_device}})->get_column('iscsitarget1_lun_id');
-    
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_device" ]);
+
+    my $target_row = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
+    return $target_row->iscsitarget1_luns->first(
+               { iscsitarget1_lun_device=> $args{iscsitarget1_lun_device} }
+           )->get_column('iscsitarget1_lun_id');
 }
 
 sub removeLun {
     my $self = shift;
     my %args  = @_;
-    if ((! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id})||
-        (! exists $args{iscsitarget1_lun_id} or ! defined $args{iscsitarget1_lun_id})) {
-        $errmsg = "Component::Iscsitarget1->removeLun needs an iscsitarget1_lun_id and an iscsitarget1_target_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->iscsitarget1_luns->find($args{iscsitarget1_lun_id})->delete();
+
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_id" ]);
+
+    my $target_rs = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
+    return $target_rs->iscsitarget1_luns->find($args{iscsitarget1_lun_id})->delete();
 }
 
 sub removeTarget{
     my $self = shift;
     my %args  = @_;    
-    if (! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) {
-        $errmsg = "Component::Iscsitarget1->removeTarget needs an iscsitarget1_target_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();    
+
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_target_id" ]);
+
+    return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();
 }
 
 sub getTargetName {
     my $self = shift;
     my %args  = @_;    
-    if (! exists $args{iscsitarget1_target_id} or ! defined $args{iscsitarget1_target_id}) {
-        $errmsg = "Component::Iscsitarget1->getTargetName needs an iscsitarget1_target_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args     => \%args,
+                         required => [ "iscsitarget1_target_id" ]);
     
     my $target_raw = $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id});
     return $target_raw->get_column('iscsitarget1_target_name');
@@ -268,12 +324,14 @@ sub getTargetName {
 sub getTemplateData {
     my $self = shift;
     my $data = {};
+
     my $targets = $self->{_dbix}->iscsitarget1_targets;
     $data->{targets} = [];
     while (my $onetarget = $targets->next) {
         my $record = {};
         $record->{target_name} = $onetarget->get_column('iscsitarget1_target_name');
         $record->{luns} = [];
+
         my $luns = $onetarget->iscsitarget1_luns->search();
         while(my $onelun = $luns->next) {
             push @{$record->{luns}}, { 
@@ -302,32 +360,131 @@ sub getNetConf {
     return { 3260 => ['tcp'] };
 }
 
+=head2 createExport
+
+    Desc : Implement createExport from ExportManager interface.
+           This function enqueue a ECreateExport operation.
+    args : export_name, device, typeio, iomode
+
+=cut
+
 sub createExport {
     my $self = shift;
     my %args = @_;
-    if((! exists $args{export_name} or ! defined $args{export_name})||
-       (! exists $args{device} or ! defined $args{device}) ||
-       (! exists $args{typeio} or ! defined $args{typeio}) ||
-       (! exists $args{iomode} or ! defined $args{iomode})) {
-           $errmsg = "createExport needs export_name, device, typeio and iomode named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    my $admin = Administrator->new();
-    
-    my %params = $self->getAttrs();
-    $log->debug("New Operation CreateExport with attrs : " . %params);
+
+    General::checkParams(args     => \%args,
+                         required => [ "container", "export_name", "typeio", "iomode" ]);
+
+    $log->debug("New Operation CreateExport with attrs : " . %args);
     Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            component_id => $self->getAttr(name=>'component_id'),
-            export_name => $args{export_name},
-            device => $args{device},
-            typeio => $args{typeio},
-            iomode => $args{iomode}
+            storage_provider_id => $self->getAttr(name => 'inside_id'),
+            export_manager_id   => $self->getAttr(name => 'component_id'),
+            container_id => $args{container}->getAttr(name => 'container_id'),
+            export_name  => $args{export_name},
+            typeio       => $args{typeio},
+            iomode       => $args{iomode}
         },
     );
+}
+
+=head2 removeExport
+
+    Desc : Implement createExport from ExportManager interface.
+           This function enqueue a ERemoveExport operation.
+    args : export_name
+
+=cut
+
+sub removeExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container_access" ]);
+
+    $log->debug("New Operation RemoveExport with attrs : " . %args);
+    Operation->enqueue(
+        priority => 200,
+        type     => 'RemoveExport',
+        params   => {
+            export_manager_id   => $self->getAttr(name => 'component_id'),
+            storage_provider_id => $self->getAttr(name => 'cluster_id'),
+            container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
+        },
+    );
+}
+
+=head2 getContainer
+
+    Desc : Implement getContainerAccess from ExportManager interface.
+           This function return the container access hash that match
+           identifiers given in paramters.
+    args : lun_id, target_id
+
+=cut
+
+sub getContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "lun_id", "target_id" ]);
+
+    my $target_rs = $self->{_dbix}->iscsitarget1_targets->find($args{target_id});
+    my $lun_rs = $target_rs->iscsitarget1_luns->find($args{lun_id});
+
+    my $container = {
+        container_access_export => $target_rs->get_column('iscsitarget1_target_name'),
+        container_access_ip     => '10.0.0.1',
+        container_access_port   => 3260,
+    };
+
+    return $container;
+}
+
+=head2 addContainerAccess
+
+    Desc : Implement addContainerAccess from ExportManager interface.
+           This function create a new IscsiContainerAccess into database.
+    args : container, target_id, lun_id
+
+=cut
+
+sub addContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container", "target_id", "lun_id" ]);
+
+    my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
+                     container_id      => $args{container}->getAttr(name => 'container_id'),
+                     export_manager_id => $self->getAttr(name => 'iscsitarget1_id'),
+                     target_id         => $args{target_id},
+                     lun_id            => $args{lun_id},
+                 );
+
+    my $access_id = $access->getAttr(name => 'container_access_id');
+    $log->info("Iscsitarget1 container access <$access_id> saved to database");
+
+    return $access;
+}
+
+=head2 delContainerAccess
+
+    Desc : Implement delContainerAccess from ExportManager interface.
+           This function delete a IscsiContainerAccess from database.
+    args : container_access
+
+=cut
+
+sub delContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container_access" ]);
+
+    $args{container_access}->delete();
 }
 
 =head1 DIAGNOSTICS

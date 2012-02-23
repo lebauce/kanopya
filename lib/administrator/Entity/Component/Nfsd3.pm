@@ -1,5 +1,4 @@
-# Nfsd3.pm -NFS server 3 server component (Adminstrator side)
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -27,12 +26,39 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Administrator;
 
+use Entity::ContainerAccess::NfsContainerAccess;
+use Entity::Container::LvmContainer;
+
 my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
+sub getExports {
+    my $self = shift;
+
+    if ($self->{_dbix}) {
+        my @result = ();
+        my $exports = $self->{_dbix}->nfsd3_exports;
+        while (my $export = $exports->next) {
+            my $client_rs = $export->nfsd3_exportclients;
+            my @clients = ();
+            while (my $client = $client_rs->next) {
+                push @clients, {
+                    nfsd3_exportclient_name => $client->get_column('nfsd3_exportclient_name'),
+                    nfsd3_exportclient_options => $client->get_column('nfsd3_exportclient_options'),
+                }
+            }
+            push @result, {
+                nfsd3_export_path => $export->get_column('nfsd3_export_path'),
+                clients => \@clients,
+            };
+        }
+
+		return @result;
+	}
+}
 
 sub getConf {
     my $self = shift;
@@ -48,22 +74,7 @@ sub getConf {
         $conf{nfsd3_need_svcgssd} = $conf_row->get_column('nfsd3_need_svcgssd');
         $conf{nfsd3_rpcsvcgssdopts} = $conf_row->get_column('nfsd3_rpcsvcgssdopts');
         
-        my @exports = ();
-        my $conf_exports = $conf_row->nfsd3_exports;
-        while (my $export_row = $conf_exports->next) {
-            my $client_rs = $export_row->nfsd3_exportclients;
-            my @clients = ();
-            while (my $client_row = $client_rs->next) {
-                push @clients, {
-                    nfsd3_exportclient_name => $client_row->get_column('nfsd3_exportclient_name'),
-                    nfsd3_exportclient_options => $client_row->get_column('nfsd3_exportclient_options'),
-                }
-            }
-            push @exports, { 
-                nfsd3_export_path => $export_row->get_column('nfsd3_export_path'),
-                clients => \@clients,
-            };        
-        }
+        my @exports = $self->getExports();
         $conf{exports} = \@exports;
     }
     else {
@@ -83,15 +94,48 @@ sub getConf {
 sub setConf {
     my $self = shift;
     my($conf) = @_;
-    
+
     for my $export ( @{ $conf->{exports} } ) {
-        CLIENT:
+        # TODO: Probably need to update BaseDB::search method...
+        #my @containers = Entity::Container::LvmContainer->search(
+        #                     hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
+        #                 );
+
+        my @workaround_containers
+            = Entity::Container->search(
+                  hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
+              );
+
+        my @containers;
+        foreach my $wa_container (@workaround_containers) {
+            push @containers, Entity::Container::LvmContainer->get(
+                                  id => $wa_container->getAttr(name => 'container_id')
+                              );
+        }
+
+        # Check if specified device match to a registred container.
+        my $container;
+        foreach my $cont (@containers) {
+            my $device = $cont->getAttr(name => 'container_device');
+            if ("$device" eq "$export->{nfsd3_export_path}") {
+                $container = $cont;
+                last;
+            }
+        }
+        if (! defined $container) {
+            $errmsg = "Specified device <$export->{nfsd3_export_path}> " .
+                      "does not match to an existing container.";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        }
+
         for my $client ( @{ $export->{clients} } ) {
-            $self->createExport(device => $export->{nfsd3_export_path},
-                                client_name => $client->{nfsd3_exportclient_name},
+            $self->createExport(export_name    => $export->{nfsd3_export_path},
+								container      => $container,
+                                client_name    => $client->{nfsd3_exportclient_name},
                                 client_options => $client->{nfsd3_exportclient_options});
-            last CLIENT; #Temporary: we can create only one client with one export
-        }        
+            last;
+        }
     }
 
 #    my $self = shift;
@@ -126,20 +170,23 @@ sub setConf {
 #            });
 #        }    
 #    } 
+
 }
 
 # return directory where a device will be mounted for nfs export 
 sub getMountDir {
     my $self = shift;
     my %args = @_;
-    if(! exists $args{device} or ! defined $args{device}) {
-        $errmsg = "EComponent::EExport::ENfsd3->getMountDir needs a device named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    my $dir = $args{device};
-    $dir =~ /^\/dev\/[\w-]+\/([\w-]+)$/;
-    return "/nfsexports/".$1;
+
+    General::checkParams(args => \%args, required => [ "device" ]);
+
+    #my $dir = $args{device};
+    #$dir =~ /^\/dev\/[\w-]+\/([\w-]+)$/;
+    #return "/nfsexports/" . $1;
+
+    my $dev = $args{device};
+    $dev =~ s/.*\///g;
+    return "/nfsexports/" . $dev
 }
 
 =head2 addExport
@@ -152,16 +199,17 @@ sub getMountDir {
 sub addExport {
     my $self = shift;
     my %args = @_;
-    if (! exists $args{device} or ! defined $args{device}) {
-        $errmsg = "Component::Nfsd3->addExport needs a device named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => [ "device" ]);
+
     my $component = $self->{_dbix};
-    my $export = $component->nfsd3_exports->create({
-        nfsd3_export_path => $args{device}
-    });
+    my $export = $component->nfsd3_exports->create(
+                     { nfsd3_export_path => $args{device} }
+                 );
+
+    $export->discard_changes;
     return $export->get_column('nfsd3_export_id')
+
 }
 
 =head2 addExportClient
@@ -175,39 +223,18 @@ sub addExportClient {
     my $self = shift;
     my %args = @_;
 
-    if ((! exists $args{export_id} or ! defined $args{export_id}) ||
-        (! exists $args{client_name} or ! defined $args{client_name}) ||
-        (! exists $args{client_options} or ! defined $args{client_options})) {
-        $errmsg = "Component::Nfsd3->addExportClient needs a export_id, client_name and client_options named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args     => \%args,
+                         required => [ "export_id", "client_name", "client_options" ]);
+
     my $component = $self->{_dbix};
     my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}})->nfsd3_exportclients;
-    my $exportclient = $exportclient_rs->create({
-        nfsd3_exportclient_name => $args{client_name},
-        nfsd3_exportclient_options => $args{client_options}
-    });
+    my $exportclient = $exportclient_rs->create(
+                           { nfsd3_exportclient_name => $args{client_name},
+                             nfsd3_exportclient_options => $args{client_options} }
+                       );
+
+    $exportclient->discard_changes;
     return $exportclient->get_column('nfsd3_exportclient_id')
-}
-
-=head2 removeExport
-    
-    Desc : This function delete an export and all its clients
-    args : export_id
-
-=cut
-
-sub removeExport {
-    my $self = shift;
-    my %args  = @_;
-    if (! exists $args{nfsd3_export_id} or ! defined $args{nfsd3_export_id}) {
-        $errmsg = "Component::Nfsd3->removeExport needs an nfsd3_export_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    my $component = $self->{_dbix};
-    return $component->nfsd3_exports->find($args{nfsd3_export_id})->delete();
 }
 
 =head2 removeExportClient
@@ -279,46 +306,145 @@ sub getTemplateDataNfsKernelServer {
     if(not $general_config) {
         # TODO throw exception then no configuration
     } 
-    $data->{nfsd3_rpcnfsdcount} = $general_config->get_column('nfsd3_rpcnfsdcount');
+    $data->{nfsd3_rpcnfsdcount}    = $general_config->get_column('nfsd3_rpcnfsdcount');
     $data->{nfsd3_rpcnfsdpriority} = $general_config->get_column('nfsd3_rpcnfsdpriority');
-    $data->{nfsd3_rpcmountopts} = $general_config->get_column('nfsd3_rpcmountopts');
-    $data->{nfsd3_need_svcgssd} = $general_config->get_column('nfsd3_need_svcgssd');
-    $data->{nfsd3_rpcsvcgssdopts} = $general_config->get_column('nfsd3_rpcsvcgssdopts');
+    $data->{nfsd3_rpcmountopts}    = $general_config->get_column('nfsd3_rpcmountopts');
+    $data->{nfsd3_need_svcgssd}    = $general_config->get_column('nfsd3_need_svcgssd');
+    $data->{nfsd3_rpcsvcgssdopts}  = $general_config->get_column('nfsd3_rpcsvcgssdopts');
     
     return $data;   
 }
 
 =head2 createExport
     
-    Desc : This function enqueue a ECreateExport operation
-    args : client_name, device, options
+    Desc : Implement createExport from ExportManager interface.
+           This function enqueue a ECreateExport operation.
+    args : export_name, device, client_name, client_options
     
 =cut
 
 sub createExport {
     my $self = shift;
     my %args = @_;
-    if((! exists $args{client_name} or ! defined $args{client_name})||
-       (! exists $args{device} or ! defined $args{device}) ||
-       (! exists $args{client_options} or ! defined $args{client_options})) {
-           $errmsg = "createExport needs device, client_name and client_options named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    my $admin = Administrator->new();
-    
+
+    General::checkParams(args     => \%args,
+                         required => [ "export_name", "container",
+                                       "client_name", "client_options" ]);
+
     my %params = $self->getAttrs();
-    $log->debug("New Operation CreateExport with attrs : " . %params);
+    $log->debug("New Operation CreateExport with attrs : " . %args);
     Operation->enqueue(
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            component_id => $self->getAttr(name=>'component_id'),
-            device => $args{device},
-            client_name => $args{client_name},
-            client_options => $args{client_options}
+            storage_provider_id => $self->getAttr(name => 'inside_id'),
+            export_manager_id   => $self->getAttr(name => 'component_id'),
+            container_id   => $args{container}->getAttr(name => 'container_id'),
+            export_name    => $args{export_name},
+            client_name    => $args{client_name},
+            client_options => $args{client_options},
         },
     );
+}
+
+=head2 removeExport
+
+    Desc : Implement removeExport from ExportManager interface.
+           This function enqueue a ERemoveExport operation.
+    args : export_name
+
+=cut
+
+sub removeExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container_access" ]);
+
+    $log->debug("New Operation RemoveExport with attrs : " . %args);
+    Operation->enqueue(
+        priority => 200,
+        type     => 'RemoveExport',
+        params   => {
+            export_manager_id   => $self->getAttr(name => 'component_id'),
+            storage_provider_id => $self->getAttr(name => 'cluster_id'),
+            container_access_id => $args{container_access}->getAttr(name => 'container_id'),
+        },
+    );
+}
+
+=head2 getContainer
+
+    Desc : Implement getContainerAccess from ExportManager interface.
+           This function return the container access hash that match
+           identifiers given in paramters.
+    args : export_id
+
+=cut
+
+sub getContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "export_id", "client_id" ]);
+
+    my $export_rs = $self->{_dbix}->nfsd3_exports->find($args{export_id});
+    my $client_rs = $export_rs->nfsd3_exportclients->find($args{client_id});
+
+    my $mountdir = $self->getMountDir(device => $export_rs->get_column('nfsd3_export_path'));
+    my $container = {
+        container_access_export  => $mountdir,
+        container_access_options => $client_rs->get_column('nfsd3_exportclient_options'),
+        container_access_ip      => '10.0.0.1',
+        container_access_port    => 2049
+    };
+
+    return $container;
+}
+
+=head2 addContainerAccess
+
+    Desc : Implement addContainerAccess from ExportManager interface.
+           This function create a new NfsContainerAccess into database.
+    args : container, export_id
+
+=cut
+
+sub addContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container", "export_id", "client_id" ]);
+
+    my $access = Entity::ContainerAccess::NfsContainerAccess->new(
+                     container_id      => $args{container}->getAttr(name => 'container_id'),
+                     export_manager_id => $self->getAttr(name => 'nfsd3_id'),
+                     export_id         => $args{export_id},
+                     client_id         => $args{client_id},
+                 );
+
+    my $access_id = $access->getAttr(name => 'container_access_id');
+    $log->info("Nfs container access <$access_id> saved to database");
+
+    return $access;
+}
+
+=head2 delContainerAccess
+
+    Desc : Implement delContainerAccess from ExportManager interface.
+           This function delete a NfsContainerAccess from database.
+    args : container_access
+
+=cut
+
+sub delContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container_access" ]);
+
+    $args{container_access}->delete();
 }
 
 1;
