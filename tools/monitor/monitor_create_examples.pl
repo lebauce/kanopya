@@ -7,6 +7,8 @@ use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
 
+use Log::Log4perl "get_logger";
+Log::Log4perl->init('/opt/kanopya/conf/monitor-log.conf');
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 my $adm = Administrator->new();
