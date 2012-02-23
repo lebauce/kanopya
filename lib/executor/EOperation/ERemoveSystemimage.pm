@@ -51,48 +51,19 @@ our $VERSION = '1.00';
 my $log = get_logger("executor");
 my $errmsg;
 
-
-=head2 new
-
-    my $op = EOperation::ERemoveSystemimage->new();
-
-EOperation::ERemoveSystemimage->new creates a new ERemoveSystemimage operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
-
 sub checkOp{
     my $self = shift;
     my %args = @_;
-    
-    
+
     # check if systemimage is not active
-    $log->debug("checking systemimage active value <".$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id').">");
-       if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::ERemoveSystemiamge->new : systemimage <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') ."> is already active";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    $log->debug("checking systemimage active value <" .
+                $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') . ">");
+    if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+        $errmsg = "EOperation::ERemoveSystemiamge->new : systemimage <" .
+                  $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') .
+                  "> is already active";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
@@ -107,32 +78,29 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EAddSystemimage->prepare need an internal_cluster named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
-    $self->{nas} = {};
     $self->{executor} = {};
 
-#### Get instance of Systemimage Entity
+    # Get instance of Systemimage Entity
     $log->info("Load systemimage instance");
     eval {
        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+        $errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id " .
+                  "$params->{systemimage_id} does not find\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " .
+                ref($self->{_objs}->{systemimage}));
 
-    ### Check Parameters and context
+    # Check Parameters and context
     eval {
         $self->checkOp(params => $params);
     };
@@ -143,45 +111,31 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    ## Instanciate Clusters
-    # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-
-    ## Get Internal IP
-    # Get Internal Ip address of Master node of cluster Executor
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    # Get Internal Ip address of Master node of cluster nas
-    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-    
-    ## Instanciate context 
-    # Get context for nas
-    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-        
-    ## Instanciate Component needed (here LVM on nas cluster)
-    # Instanciate Cluster Storage component.
-    my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-                                         version => "2");
-    
-    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
+    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
+                                   id => $args{internal_cluster}->{executor}
+                               );
 }
 
 sub execute{
     my $self = shift;
     $self->SUPER::execute();
-        
-    my $devs = $self->{_objs}->{systemimage}->getDevices();
-    my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-    my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-    
-    # creation of etc and root devices based on distribution devices
-    $log->info("etc device deletion for systemimage");
-    $self->{_objs}->{component_storage}->removeDisk(name => $etc_name, econtext => $self->{nas}->{econtext});
 
-    $log->info("etc device deletion for systemimage");                                                    
-    $self->{_objs}->{component_storage}->removeDisk(name => $root_name, econtext => $self->{nas}->{econtext});
-    
+    my $containers = $self->{_objs}->{systemimage}->getDevices;
+
+    # Remove system image containers.
+    for my $disk_type ('etc', 'root') {
+        $log->info("$disk_type container deletion");
+
+        # Get the disk manager of the current container
+        my $edisk_manager = EFactory::newEEntity(data => $containers->{$disk_type}->getDiskManager);
+        my $econtext = EFactory::newEContext(
+                           ip_source      => $self->{executor}->{obj}->getMasterNodeIp(),
+                           ip_destination => $containers->{$disk_type}->getServiceProvider->getMasterNodeIp()
+                       );
+
+        $edisk_manager->removeDisk(container => $containers->{$disk_type}, econtext => $econtext);
+    }
     # TODO update vg freespace
         
     $self->{_objs}->{systemimage}->delete();
