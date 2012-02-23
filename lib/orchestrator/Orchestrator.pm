@@ -105,16 +105,14 @@ sub manage_aggregates {
     for my $aggregate_rule (AggregateRule->search(hash=>{})){
         
         if ($aggregate_rule -> isEnabled()) {
-            print "*** ";
-            print 'Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
+            print "**********\, ";
+            print '* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
             print $aggregate_rule->toString()."\n";
             
             my $result = $aggregate_rule->eval();
             
             if($result){
-               print "**************\n";
-               print '* Rule '.$aggregate_rule->getAttr(name=>'aggregate_rule_id').'=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-               print "**************\n";
+               print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
                $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
                $aggregate_rule->disableTemporarily(length=>120);
             }else{
