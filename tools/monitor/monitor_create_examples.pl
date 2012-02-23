@@ -95,14 +95,14 @@ if($ok eq 1){
                print "$indicator->{oid} : \n";
                print "Comparator [>]: ";
                my $comparator = <STDIN>;
-               
+               chomp $comparator;
                if ($comparator eq '') {
                    $comparator = '>';
                }
                
                print  "Threshold [80]: ";
                my $threshold = <STDIN>;
-               
+               chomp $threshold; 
                if ($threshold eq '') {
                    $threshold = '80';
                }
