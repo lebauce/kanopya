@@ -114,11 +114,11 @@ sub calculate{
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula
-    print 'Evaluate combination :'.($self->toString())."\n";
-    $log->info('Evaluate combination :'.($self->toString()));
+    #print 'Evaluate combination :'.($self->toString())."\n";
+    #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    print "Evaluate instance : $arrayString \n";
-    $log->info("Evaluate instance : $arrayString");
+    print "$arrayString \n";
+    $log->info("$arrayString");
     return $res;
 }
 

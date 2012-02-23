@@ -22,6 +22,7 @@ use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
+
 use constant ATTR_DEF => {
     aggregate_rule_id        =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
@@ -120,8 +121,9 @@ sub eval {
     #Evaluate the logic formula
     eval $arrayString;
     my $store = ($res)?1:0;
-    print "Evaluated Rule : $arrayString => $store ($res)\n";
-    $log->info("Evaluated Rule : $arrayString => $store ($res)");
+
+    #print "Evaluated Rule : $arrayString => $store ($res)\n";
+    #$log->info("Evaluated Rule : $arrayString => $store ($res)");
      
     $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
     $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
