@@ -1,5 +1,3 @@
-# ECreateLogicalVolume.pm - Operation class implementing component installation on systemimage
-
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -14,12 +12,9 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
-
 =head1 NAME
 
-EOperation::ECreateLogicalVolume - Operation class implementing component installation on systemimage
+EOperation::ECreateDisk - Operation class implementing disk creation
 
 =head1 SYNOPSIS
 
@@ -33,57 +28,25 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
-package EOperation::ECreateLogicalVolume;
+package EOperation::ECreateDisk;
 use base "EOperation";
 
 use strict;
 use warnings;
 
+use EFactory;
+use Kanopya::Exceptions;
+
+use Entity::ServiceProvider::Inside::Cluster;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
-use Entity::Component::Lvm2;;
-use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
+
 our $VERSION = '1.00';
 
-
-=head2 new
-
-    my $op = EOperation::ECreateLogicalVolume->new();
-
-    # Operation::EInstallComponentInSystemImage->new installs component on systemimage.
-    # RETURN : EOperation::EInstallComponentInSystemImage : Operation activate cluster on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    $self->{executor} = {};
-    return;
-}
 
 =head2 prepare
 
@@ -96,58 +59,67 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
+    $self->{_objs} = {};
+    $self->{executor} = {};
+
     $log->info("Operation preparation");
 
     # Check if internal_cluster exists
     General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
+
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
-    $self->{_objs} = {};
-    
 
-    General::checkParams(args => $params, required => ["component_id", "disk_name", "size", "filesystem", "vg_id"]);
+    General::checkParams(args     => $params,
+                         required => [ "storage_provider_id", "disk_manager_id",
+                                       "disk_name", "size", "filesystem" ]);
 
     $self->{params} = $params;
-    # Test if component instance id is really a Entity::Component::Iscsitarget
-    my $comp_lvm = Entity::Component::Lvm2->get(id => $params->{component_id});
-    my $comp_desc = $comp_lvm->getComponentAttr();
-    if (! $comp_desc->{component_name} eq "Lvm") {
-        $errmsg = "ECreateLogicalVolume->prepare need id of a lvm component !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    $self->{_objs}->{ecomp_lvm} = EFactory::newEEntity(data => $comp_lvm);
-    my $cluster_id =$comp_lvm->getAttr(name => "cluster_id");
-    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
-    my ($state, $timestamp) = $self->{_objs}->{cluster}->getState();
+
+    # Instanciate the storage provider from params
+    $self->{_objs}->{storage_provider}
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{storage_provider_id});
+
+    # Instanciate the disk manager for disk creation from params
+    my $disk_manager = $self->{_objs}->{storage_provider}->getManager(
+                           id => $params->{disk_manager_id}
+                       );
+
+    $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $disk_manager);
+
+    # Check service provider state
+    my ($state, $timestamp) = $self->{_objs}->{storage_provider}->getState();
     if ($state ne 'up'){
-        $errmsg = "Cluster has to be up !";
+        $errmsg = "Service provider has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    
+
     # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{cluster}->getMasterNodeIp();
-    
-    $self->{cluster_econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $masternode_ip);
-    
+    $self->{executor} = Entity::ServiceProvider::Inside::Cluster->get(
+                            id => $args{internal_cluster}->{executor}
+                        );
+
+    my $exec_ip = $self->{executor}->getMasterNodeIp();
+    my $masternode_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
+
+    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
+                                              ip_destination => $masternode_ip);
 }
 
 sub execute{
     my $self = shift;
-    
-    my $adm = Administrator->new();
-    $self->{_objs}->{ecomp_lvm}->createDisk(name       => $self->{params}->{disk_name},
-                                            size       => $self->{params}->{size},
-                                            filesystem => $self->{params}->{filesystem},
-                                            econtext   => $self->{cluster_econtext},
-                                            erollback  => $self->{erollback});
 
-    $log->info("New Logical volume <" . $self->{params}->{disk_name} . "> created");
+    my $container = $self->{_objs}->{edisk_manager}->createDisk(
+                        name       => $self->{params}->{disk_name},
+                        size       => $self->{params}->{size},
+                        filesystem => $self->{params}->{filesystem},
+                        econtext   => $self->{econtext},
+                        erollback  => $self->{erollback},
+                        %{ $self->{params} }
+                    );
+
+    $log->info("New container <" . $container->getAttr(name => 'container_name') . "> created");
 }
 
 =head1 DIAGNOSTICS
