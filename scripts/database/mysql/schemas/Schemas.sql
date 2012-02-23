@@ -975,7 +975,7 @@ CREATE TABLE `externalcluster` (
 
 CREATE TABLE `externalnode` (
   `externalnode_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `externalnode_hostname` char(32) NOT NULL,
+  `externalnode_hostname` char(255) NOT NULL,
   `outside_id` int(8) unsigned NOT NULL,
   `externalnode_state` char(32),
   `externalnode_prev_state` char(32),
@@ -991,8 +991,8 @@ CREATE TABLE `externalnode` (
 
 CREATE TABLE `active_directory` (
   `ad_id` int(8) unsigned NOT NULL,
-  `ad_host` char(32) NOT NULL,
-  `ad_user` char(32),
+  `ad_host` char(255) NOT NULL,
+  `ad_user` char(255),
   `ad_pwd` char(32),
   `ad_nodes_base_dn` text(512),
   PRIMARY KEY (`ad_id`),
