@@ -32,7 +32,7 @@ sub getAttrDefs {
 	return $result;
 }
 
-sub _buildClassName {
+sub _buildClassNameFromString {
     my ($class) = @_;
     $class =~ s/.*\:\://g;
     return $class;
@@ -127,7 +127,7 @@ sub checkAttrs {
     my @modules = sort keys %$final_attrs;
     # finaly restructure the hashref with dbix relationships         
     for my $i (0..$#modules-1) {
-		my $classname = _buildClassName($modules[$i+1]);
+		my $classname = _buildClassNameFromString($modules[$i+1]);
 		$classname =~ s/([A-Z])/_$1/g;
 		my $relation = lc( substr($classname, 1) );
 		$final_attrs->{$modules[$i]}->{$relation} = $final_attrs->{$modules[$i+1]};
@@ -146,6 +146,21 @@ sub new {
     $log->debug('checkAttrs for root class insertion return '.Dumper($attrs));
        
     my $adm = Administrator->new();
+
+    # Get the class_type_id for class name
+    eval {
+        $rs = $adm->_getDbixFromHash(table => "ClassType",
+                                     hash  => { class_type => $class })->single;
+
+        $attrs->{class_type_id} = $rs->get_column('class_type_id');
+    };
+    if ($@) {
+        my $error = $@;
+        $errmsg = "Unregistred or bastract class name <$class>:\n $error";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
     my $dbixroot = $adm->_newDbix(table => _rootTable($class), row => $attrs);
     $dbixroot->insert;
     my $id = $dbixroot->id;
@@ -154,9 +169,11 @@ sub new {
 	}
     
     my $self = {
-        _dbix => $adm->getRow(table => _buildClassName($class), id => $id),
+        _dbix => $adm->getRow(table => _buildClassNameFromString($class),
+                              id    => $id),
         _entity_id => $id
     };
+
     $log->debug('dbix object type retrieve : '.ref($self->{_dbix}));
     bless $self, $class;
     return $self;
@@ -230,6 +247,7 @@ sub setAttr {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['name']);
+
     if(! exists $args{value}) {
 		$errmsg = ref($self) . " setAttr need a value named argument!";
 		$log->error($errmsg);
@@ -272,9 +290,24 @@ sub get {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    my $table = _buildClassName($class);
+    $log->debug('BaseDB::get: id <' . $args{id} . '>, class <' . $class . '>');
+
     my $adm = Administrator->new();
-    my $dbix = $adm->getRow(id=>$args{id}, table => $table);
+    eval {
+        my $dbix = $adm->getRow(id => $args{id}, table => _rootTable($class));
+        $class   = $dbix->class_type->get_column('class_type');
+    };
+    if ($@) {
+        $log->error("Unable to retreive concrete class name:\n $@");
+    }
+    my $table = _buildClassNameFromString($class);
+
+    $log->debug('BaseDB::get: id <' . $args{id} . '>, concrete_class <' . $class . '>');
+
+    my $location = General::getLocFromClass(entityclass => $class);
+	require $location;
+
+    my $dbix = $adm->getRow(id => $args{id}, table => $table);
     my $self = {
         _dbix => $dbix,
     };
@@ -292,7 +325,7 @@ sub search {
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my $table = _buildClassName($class);
+    my $table = _buildClassNameFromString($class);
     my $adm = Administrator->new();
     
     my $rs = $adm->_getDbixFromHash( table => $table, hash => $args{hash} );
