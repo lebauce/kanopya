@@ -23,9 +23,22 @@ SET foreign_key_checks=0;
 -- Table structure for table `entity`
 -- Entity class
 
+CREATE TABLE `class_type` (
+  `class_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `class_type` TEXT NOT NULL,
+  PRIMARY KEY (`class_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `entity`
+-- Entity class
+
 CREATE TABLE `entity` (
   `entity_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`entity_id`)
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`),
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
