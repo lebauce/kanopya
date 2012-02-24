@@ -74,7 +74,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "indicator_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_oid",
   { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_min",
