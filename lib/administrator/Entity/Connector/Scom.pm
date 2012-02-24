@@ -54,8 +54,10 @@ sub retrieveData {
     # Transform array of ObjectName/CounterName into hash {ObjectName => [CounterName]}
     my %counters;
     foreach my $indic (@{$args{indicators}}) {
+
         # TODO check indic format
-        my ($object_name, $counter_name) = split '/', $indic;
+        my ($object_name, @counter_name_tab) = split '/', $indic;
+        my $counter_name = join('/',@counter_name_tab);
         push @{$counters{$object_name}}, $counter_name;
     }
     
