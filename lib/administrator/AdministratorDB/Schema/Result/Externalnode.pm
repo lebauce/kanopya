@@ -30,7 +30,7 @@ __PACKAGE__->table("externalnode");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
 =head2 outside_id
 
@@ -62,7 +62,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "externalnode_hostname",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "outside_id",
   {
     data_type => "integer",

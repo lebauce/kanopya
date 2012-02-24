@@ -30,13 +30,13 @@ __PACKAGE__->table("active_directory");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 255
 
 =head2 ad_user
 
   data_type: 'char'
   is_nullable: 1
-  size: 32
+  size: 255
 
 =head2 ad_pwd
 
@@ -60,9 +60,9 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "ad_host",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 255 },
   "ad_user",
-  { data_type => "char", is_nullable => 1, size => 32 },
+  { data_type => "char", is_nullable => 1, size => 255 },
   "ad_pwd",
   { data_type => "char", is_nullable => 1, size => 32 },
   "ad_nodes_base_dn",
