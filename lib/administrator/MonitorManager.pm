@@ -88,7 +88,7 @@ sub getIndicatorSets {
                 'min' => $indicator->get_column( 'indicator_min' ),
                 'max' => $indicator->get_column( 'indicator_max' ),
                 'color' => $indicator->get_column( 'indicator_color' ),
-                'unity' => $indicator->get_column( 'indicator_unity' ),
+                'unit' => $indicator->get_column( 'indicator_unit' ),
             };
         }
         
