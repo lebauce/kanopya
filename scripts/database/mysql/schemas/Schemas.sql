@@ -814,7 +814,7 @@ CREATE TABLE `indicatorset` (
 
 CREATE TABLE `indicator` (
   `indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `indicator_name` char(32) NOT NULL,
+  `indicator_name` char(64) NOT NULL,
   `indicator_oid` char(64) NOT NULL,
   `indicator_min` int(8) unsigned,
   `indicator_max` int(8) unsigned,
