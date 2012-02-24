@@ -29,8 +29,8 @@ use base "Entity";
 
 use Kanopya::Exceptions;
 
-use Entity::Container::LvmContainer;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Container;
+use Entity::ServiceProvider;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
@@ -121,7 +121,7 @@ sub getServiceProvider {
 
     my $service_provider_id = $self->getExportManager->getAttr(name => 'inside_id');
 
-    return Entity::ServiceProvider::Inside::Cluster->get(id => $service_provider_id);
+    return Entity::ServiceProvider->get(id => $service_provider_id);
 }
 
 =head2 getContainer
@@ -131,9 +131,7 @@ sub getServiceProvider {
 sub getContainer {
     my $self = shift;
 
-    return Entity::Container::LvmContainer->get(
-               id => $self->getAttr(name => 'container_id')
-           );
+    return Entity::Container->get(id => $self->getAttr(name => 'container_id'));
 }
 
 =head2 getExportManager

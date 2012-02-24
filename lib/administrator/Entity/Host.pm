@@ -25,7 +25,7 @@ use Kanopya::Exceptions;
 use Operation;
 use General;
 
-use Entity::Container::LvmContainer;
+use Entity::Container;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -605,9 +605,7 @@ sub getEtcContainerAccess {
     # TODO: Link the host to a ContainerAccess instead of a Container
     #       For now, we just return the first ContainerAccess for this container
     $log->info("Retrieve etc container access");
-    my $etc_accesses = Entity::Container::LvmContainer->get(
-                           id => $self->{_dbix}->etc_container_id
-                       )->getAccesses;
+    my $etc_accesses = Entity::Container->get(id => $self->{_dbix}->etc_container_id)->getAccesses;
 
     return pop @$etc_accesses;
 }

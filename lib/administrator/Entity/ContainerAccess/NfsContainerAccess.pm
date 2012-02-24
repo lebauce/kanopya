@@ -38,7 +38,7 @@ sub getAttrDef { return ATTR_DEF; }
 =head2 getContainerAccess
 
     desc: Return a hash that match container virtual attributes with
-          Iscsitarget1 specific container attributes values.
+          Nfsd3 specific container attributes values.
 
 =cut
 

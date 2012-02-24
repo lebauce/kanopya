@@ -59,7 +59,7 @@ use General;
 use Administrator;
 use Kanopya::Exceptions;
 
-use Entity::Container::LvmContainer;
+use Entity::Container;
 use Entity::ContainerAccess::IscsiContainerAccess;
 
 use Log::Log4perl "get_logger";
@@ -130,22 +130,10 @@ sub setConf {
     for my $target ( @{ $conf->{targets} } ) {
         LUN:
         for my $lun ( @{ $target->{luns} } ) {
-            # TODO: Probably need to update BaseDB::search method...
-            #my @containers = Entity::Container::LvmContainer->search(
-            #                     hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
-            #                 );
-
-            my @workaround_containers
+            my @containers
                 = Entity::Container->search(
                       hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
                   );
-
-            my @containers;
-            foreach my $wa_container (@workaround_containers) {
-                push @containers, Entity::Container::LvmContainer->get(
-                                      id => $wa_container->getAttr(name => 'container_id')
-                                  );
-            }
 
             # Check if specified device match to a registred container.
             my $container;

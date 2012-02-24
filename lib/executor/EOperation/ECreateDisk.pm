@@ -37,7 +37,7 @@ use warnings;
 use EFactory;
 use Kanopya::Exceptions;
 
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -78,7 +78,7 @@ sub prepare {
 
     # Instanciate the storage provider from params
     $self->{_objs}->{storage_provider}
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{storage_provider_id});
+        = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
 
     # Instanciate the disk manager for disk creation from params
     my $disk_manager = $self->{_objs}->{storage_provider}->getManager(
@@ -96,7 +96,7 @@ sub prepare {
     }
 
     # Instanciate executor Cluster
-    $self->{executor} = Entity::ServiceProvider::Inside::Cluster->get(
+    $self->{executor} = Entity::ServiceProvider->get(
                             id => $args{internal_cluster}->{executor}
                         );
 

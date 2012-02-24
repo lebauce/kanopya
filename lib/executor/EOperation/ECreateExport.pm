@@ -38,8 +38,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
-use Entity::Container::LvmContainer;
+use Entity::ServiceProvider;
+use Entity::Container;
 use EFactory;
 
 use Log::Log4perl "get_logger";
@@ -86,7 +86,7 @@ sub prepare {
 
     # Instanciate the storage provider from params
     $self->{_objs}->{storage_provider}
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{storage_provider_id});
+        = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
 
     # Instanciate the export manager for export creation from params
     my $export_manager = $self->{_objs}->{storage_provider}->getManager(
@@ -106,13 +106,12 @@ sub prepare {
     $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
 
     # Instanciate container
-    $self->{_objs}->{container} = Entity::Container::LvmContainer->get(
-                                      id => $params->{container_id}
-                                  );
+    $self->{_objs}->{container} = Entity::Container->get(id => $params->{container_id});
 
     # Compute econtext
-    $self->{executor}->{obj}
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{obj} = Entity::ServiceProvider->get(
+                                   id => $args{internal_cluster}->{executor}
+                               );
 
     my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();

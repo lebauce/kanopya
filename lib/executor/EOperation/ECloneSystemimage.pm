@@ -46,6 +46,7 @@ use Date::Simple (':all');
 
 use Kanopya::Exceptions;
 use EFactory;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Template;

@@ -26,8 +26,8 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Administrator;
 
+use Entity::Container;
 use Entity::ContainerAccess::NfsContainerAccess;
-use Entity::Container::LvmContainer;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -96,22 +96,10 @@ sub setConf {
     my($conf) = @_;
 
     for my $export ( @{ $conf->{exports} } ) {
-        # TODO: Probably need to update BaseDB::search method...
-        #my @containers = Entity::Container::LvmContainer->search(
-        #                     hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
-        #                 );
-
-        my @workaround_containers
+        my @containers
             = Entity::Container->search(
                   hash => { service_provider_id => $self->getAttr(name => 'inside_id') }
               );
-
-        my @containers;
-        foreach my $wa_container (@workaround_containers) {
-            push @containers, Entity::Container::LvmContainer->get(
-                                  id => $wa_container->getAttr(name => 'container_id')
-                              );
-        }
 
         # Check if specified device match to a registred container.
         my $container;

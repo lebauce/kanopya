@@ -42,6 +42,7 @@ use warnings;
 use Data::Dumper;
 use XML::Simple;
 use Kanopya::Exceptions;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Distribution;

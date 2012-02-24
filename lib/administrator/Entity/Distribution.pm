@@ -29,8 +29,6 @@ use General;
 use Entity::Component;
 use Entity::Container;
 
-use Entity::Container::LvmContainer;
-
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -90,8 +88,8 @@ sub getDevices {
     }
 
     my $devices = {
-        etc  => Entity::Container::LvmContainer->get(id => $self->getAttr(name => 'etc_container_id')),
-        root => Entity::Container::LvmContainer->get(id => $self->getAttr(name => 'root_container_id')),
+        etc  => Entity::Container->get(id => $self->getAttr(name => 'etc_container_id')),
+        root => Entity::Container->get(id => $self->getAttr(name => 'root_container_id')),
     };
 
     $log->info("Distribution etc and root containers retrieved from database");

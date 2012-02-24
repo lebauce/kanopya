@@ -30,7 +30,6 @@ use base "Entity";
 use Kanopya::Exceptions;
 
 use Entity::ContainerAccess;
-use Entity::ContainerAccess::IscsiContainerAccess;
 
 use constant ATTR_DEF => {
     service_provider_id => {
@@ -129,13 +128,7 @@ sub getAccesses {
                               hash => { container_id => $self->getAttr(name => 'container_id') }
                           );
 
-    @concrete_accesses = ();
-    for my $access (@container_accesses) {
-        push @concrete_accesses, Entity::ContainerAccess::IscsiContainerAccess->get(
-                                     id => $access->getAttr(name => 'container_access_id')
-                                 );
-    }
-    return \@concrete_accesses;
+    return \@container_accesses;
 }
 
 =head2 getServiceProvider
@@ -150,7 +143,7 @@ sub getServiceProvider {
 
     my $service_provider_id = $self->getDiskManager->getAttr(name => 'inside_id');
 
-    return Entity::ServiceProvider::Inside::Cluster->get(id => $service_provider_id);
+    return Entity::ServiceProvider->get(id => $service_provider_id);
 }
 
 =head2 getDiskManager

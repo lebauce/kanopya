@@ -45,6 +45,7 @@ use Data::Dumper;
 use EFactory;
 use Kanopya::Exceptions;
 use Entity::Distribution;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EEntity::ESystemimage;

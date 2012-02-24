@@ -25,6 +25,7 @@ use Date::Simple (':all');
 
 use Kanopya::Exceptions;
 use EFactory;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
 use Template;
@@ -105,7 +106,7 @@ sub prepare {
     if ($@) {
         $log->info("Service provider id not defined, using default.");
         $self->{_objs}->{storage_provider}
-            = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
+            = Entity::ServiceProvider->get(id => $args{internal_cluster}->{nas});
     }
 
     # Check if a disk manager is given in parameters, use default instead.
