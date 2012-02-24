@@ -820,7 +820,7 @@ CREATE TABLE `indicator` (
   `indicator_max` int(8) unsigned,
   `indicator_color` char(8),
   `indicatorset_id` int(8) unsigned DEFAULT NULL,
-  `indicator_unity` char(32) DEFAULT NULL,
+  `indicator_unit` char(32) DEFAULT NULL,
   PRIMARY KEY (`indicator_id`),
   KEY (`indicatorset_id`),
   FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
