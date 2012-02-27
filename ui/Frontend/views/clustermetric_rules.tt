@@ -3,11 +3,12 @@
         <% CASE 'enabled' %> 
             <caption>Enabled rules</caption>
             <% FOREACH rule IN rules %>
-                <tr><td>            
+                <tr><td>
                 <% IF rule.last_eval == 0%><span class="state imgUp">  </span> 
                 <% ELSIF rule.last_eval == 1%><span class="state imgBroken">  </span> 
                 <% ELSE %><span class="state imgDown">  </span> <% END %>
                 <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
+                <td>Disabled for <% rule.time %> seconds</td>
                 <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/deactivate">deactivate</a></td>            
                 </tr>
             <% END %>
