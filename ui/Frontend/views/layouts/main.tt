@@ -220,10 +220,11 @@
                          <li <% submenu_selection('poolip') %>><a href="/networks/poolip">Pool IP</a></li>
                          <li <% submenu_selection('vlans') %>><a href="/networks/vlans">Vlan</a></li>
                     <% ELSIF is_menu_selected('systems') %>
-                        <li <% submenu_selection('kernels') %>><a href="/systems/kernels">Kernels</a></li>
                         <li <% submenu_selection('distributions') %>><a href="/systems/distributions">Distributions</a></li>
-                        <li <% submenu_selection('components') %>><a href="/systems/components">Components</a></li>
+                        <li <% submenu_selection('masterimages') %>><a href="/systems/masterimages">Master Images</a></li>
                         <li <% submenu_selection('images') %>><a href="/systems/images">System images</a></li>
+                        <li <% submenu_selection('kernels') %>><a href="/systems/kernels">Kernels</a></li>
+                        <li <% submenu_selection('components') %>><a href="/systems/components">Components</a></li>
                      <% ELSIF is_menu_selected('architectures') %>
                         <li <% submenu_selection('clusters') %>><a href="/architectures/clusters">Clusters</a></li>
                         <li <% submenu_selection('networks') %>><a href="/architectures/networks">Networks</a></li>
