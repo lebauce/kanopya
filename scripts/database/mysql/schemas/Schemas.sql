@@ -282,6 +282,8 @@ CREATE TABLE `nfs_container_access` (
 
 CREATE TABLE `host` (
   `host_id` int(8) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `host_manager_id` int(8) unsigned NOT NULL,
   `hostmodel_id` int(8) unsigned NULL DEFAULT NULL,
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
@@ -302,6 +304,8 @@ CREATE TABLE `host` (
   PRIMARY KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`host_mac_address`),
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`hostmodel_id`),
   FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`processormodel_id`),
