@@ -27,7 +27,7 @@ eval {
 		    host_mac_address => '70:71tbc:6c:2d:b1',
 		    kernel_id => 44,
 		    host_serial_number => 'serial',
-		    hostmodel_id => 7,
+		    hostmodel_id => 35,
 		    processormodel_id => 26 
 		);
 	} 	'Kanopya::Exception::Internal::WrongValue',
@@ -39,20 +39,20 @@ eval {
 		Entity::Host->create(
 		    host_mac_address => '70:71:bc:6c:2d:b1',
 		    kernel_id => 44,
-		    hostmodel_id => 7,
+		    hostmodel_id => 35,
 		    processormodel_id => 26
 		); 
 	}	'Kanopya::Exception::Internal::IncorrectParam',
 		'missing mandatory attribute';
 	$db->txn_rollback;
 
-	
+	$db->txn_begin;
 	lives_ok {
 		Entity::Host->create(
 			host_mac_address   => '00:00:00:00:00:00',
 			kernel_id          => 44,
 			host_serial_number => 'serial',
-			hostmodel_id       => 7,
+			hostmodel_id       => 35,
 			processormodel_id  => 26,
 			host_ram           => 1000000,
 			host_core          => 1
@@ -65,40 +65,43 @@ eval {
 	lives_ok { 
 		$host = Entity::Host->getHost(hash => {host_mac_address => '00:00:00:00:00:00'});
 	} 'retrieve Host via mac address';
-	
+
 	isa_ok($host, 'Entity::Host'); 	
-	
-	lives_ok { $host_id = $host->getAttr(name=>'host_id')} 'get Attribute host_id';
+
+	lives_ok { $host_id = $host->getAttr(name => 'host_id') } 'get Attribute host_id';
 	
 	isnt($host_id, undef, "host_id is defined ($host_id)");
 	
 	lives_ok { $host->activate; } 'ActivateHost operation enqueue';
 	lives_ok { $executor->execnround(run => 1); } 'ActivateHost operation execution succeed';
+
     $host = Entity::Host->get(id => $host_id);
-    is ($host->getAttr(name=>'active'), 1, 'Host successfully activated');
-        
+    is ($host->getAttr(name => 'active'), 1, 'Host successfully activated');
+
     lives_ok { $host->deactivate; } 'DeactivateHost operation enqueue';
     lives_ok { $executor->execnround(run => 1); } 'DeactivateHost operation execution succeed';
+
     $host = Entity::Host->get(id => $host_id);
+    lives_ok {
+       $host->addIface(
+            iface_name     => 'eth0',
+            iface_mac_addr => '14:DA:E9:DD:B5:62',
+            iface_pxe      => 0,
+       );
+    } 'AddIface on host <$host_id>';
+
     is ($host->getAttr(name=>'active'), 0, 'Host successfully deactivated');
-    
+
     lives_ok { $host->remove; } 'RemoveHost operation enqueue';
+
     lives_ok { $executor->execnround(run => 1); } 'RemoveHost operation execution succeed';
-    
+
     throws_ok { $host = Entity::Host->get(id => $host_id);} 
 		'Kanopya::Exception::DB',
 		"Host with id $host_id does not exist anymore";
     
-lives_ok {
-		Entity::Host->addIface(
-		    iface_name        =>'eth0',
-			iface_mac_addr    => '14:DA:E9:DD:B5:62',
-			iface_pxe         => 0,
-			host_id           => $host_id
-		);
-	} 'AddIface operation enqueue';
 
-
+    $db->txn_rollback;
 };
 if($@) {
 	my $error = $@;

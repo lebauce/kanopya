@@ -33,6 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
+
 package EOperation::EAddCluster;
 use base "EOperation";
 

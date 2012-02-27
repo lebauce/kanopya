@@ -123,10 +123,10 @@ sub prepare {
 sub execute{
     my $self = shift;
 
-    $self->{_objs}->{eexport_manager}->createExport('container'   => $self->{_objs}->{container},
-                                                    'export_name' => $self->{params}->{export_name},
-                                                    'erollback'   => $self->{erollback},
-                                                    'econtext'    => $self->{cluster_econtext},
+    $self->{_objs}->{eexport_manager}->createExport(container   => $self->{_objs}->{container},
+                                                    export_name => $self->{params}->{export_name},
+                                                    erollback   => $self->{erollback},
+                                                    econtext    => $self->{cluster_econtext},
                                                     %{$self->{params}});
 }
 

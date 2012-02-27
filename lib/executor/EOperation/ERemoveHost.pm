@@ -1,6 +1,4 @@
-# ERemoveHost.pm - Operation class implementing Host creation operation
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +13,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -44,7 +41,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider;
 use Entity::Host;
 
 my $log = get_logger("executor");
@@ -56,7 +53,6 @@ sub checkOp{
     my %args = @_;
     
     # check if host is not active
-    $log->debug("checking host active value <$args{params}->{host_id}>");
     if($self->{_objs}->{host}->getAttr(name => 'active')) {
         $errmsg = "EOperation::ERemoveHost->prepare : host $args{params}->{host_id} is still active";
         $log->error($errmsg);
@@ -75,7 +71,7 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
 
     my $params = $self->_getOperation()->getParams();
 
@@ -102,31 +98,43 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+
+    $self->{_objs}->{host_provider}
+        = Entity::ServiceProvider->get(
+              id => $self->{_objs}->{host}->getAttr(name => 'service_provider_id')
+          );
+
+    my $host_manager = $self->{_objs}->{host_provider}->getManager(
+                        id => $self->{_objs}->{host}->getAttr(name => 'host_manager_id')
+                    );
+
+    $self->{_objs}->{ehost_manager} = EFactory::newEEntity(data => $host_manager);
+
+    # Instanciate executor Cluster
+    $self->{executor} = Entity::ServiceProvider->get(
+                            id => $args{internal_cluster}->{executor}
+                        );
+
+    my $exec_ip = $self->{executor}->getMasterNodeIp();
+    my $masternode_ip = $self->{_objs}->{host_provider}->getMasterNodeIp();
+
+    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
+                                              ip_destination => $masternode_ip);
 }
 
 sub execute{
     my $self = shift;
-    $self->SUPER::execute();
-    my ($powersupplycard, $powersupplyid);
 
-    my $powersupplycard_id = $self->{_objs}->{host}->getPowerSupplyCardId();
-    if ($powersupplycard_id) {
-        $powersupplycard = Entity::Powersupplycard(id => $powersupplycard_id);
-        $powersupplyid = $self->{_objs}->{host}->getAttr(name => 'host_powersupply_id');
-    }
-    $self->{_objs}->{host}->delete();
-
-    if ($powersupplycard_id){
-        $log->debug("Deleting powersupply with id <$powersupplyid> on the card : <$powersupplycard>");
-        $powersupplycard->delPowerSupply(powersupply_id => $powersupplyid);
-    }
+    $self->{_objs}->{ehost_manager}->removeHost(host => $self->{_objs}->{host},
+                                                erollback => $self->{erollback},
+                                                econtext  => $self->{econtext});
 }
 
 __END__
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
+Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut
