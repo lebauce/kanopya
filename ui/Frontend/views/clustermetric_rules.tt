@@ -9,7 +9,8 @@
                 <% ELSE %><span class="state imgDown">  </span> <% END %>
                 <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
                 <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/tdisable">disable for 2 min</a></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/disable">disable</a></td>            
+                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/disable">disable</a></td>
+                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/edit">edit</a></td>
                 </tr>
             <% END %>
         <% CASE 'tdisabled' %>
@@ -20,6 +21,7 @@
                 <span class="bold">Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
                 <td>Disabled for <% rule.time %> seconds</td>
                 <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/enable">enable</a></td>
+                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/edit">edit</a></td>
                 </tr>
             <% END %>
         <% CASE 'disabled' %>
@@ -31,6 +33,7 @@
                 <span class="bold">Rule <% rule.id %></span>
                 <span class="italic"> <% rule.formula %></span></td>
                 <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/enable">enable</a></td>
+                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/edit">edit</a></td>
                 </tr>
             <% END %>
         <% END %>
