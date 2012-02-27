@@ -526,7 +526,7 @@ INSERT INTO `indicator` VALUES
 (20,'LogicalDisk/% Idle Time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%'),
 (21,'LogicalDisk/% Free Space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%'),
 (22,'NetworkAdapterBandwidthUsedTotal','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%'),
-(23,'TerminalServices/Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions');
+(23,'TerminalServices/Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions'),
 (24,'Memory/Pages/sec','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec');
 
 
