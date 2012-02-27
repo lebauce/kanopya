@@ -246,7 +246,13 @@ get '/extclusters/:extclusterid/monitoring' => sub {
         cluster_id      => $cluster_id,
         indicators      => \@indicators,
     };
-  };
+};
+
+# ajax '/extclusters/:extclusterid/monitoring/clustermetricview' => sub {
+	# my $cluster_id    = params->{extclusterid} || 0;   
+
+# };  
+  
 
 ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
     my $cluster_id    = params->{extclusterid} || 0;   
