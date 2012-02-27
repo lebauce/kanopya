@@ -6,7 +6,7 @@ use Data::Dumper;
 
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
-
+use AggregateRule;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -240,18 +240,7 @@ get '/extclusters/:extclusterid/monitoring' => sub {
     foreach my $indicator (@{$scom_indicatorset->{ds}}){
         push @indicators, $indicator->{label};
     }
-    
-    # my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
-    # my $nodes_metrics = $extcluster->getNodesMetrics(indicators => ['Memory/Available MBytes'], time_span => 3600);
-    # print Dumper($nodes_metrics);
-    # my @nodes;
-    # my @values;
-    # foreach my $node (keys %$nodes_metrics){
-        # print "node metric: \n";
-        # print Dumper($nodes_metrics->{$node});
-        # push @nodes, $node;
-    # }
-    
+  
   template 'cluster_monitor', {
         title_page      => "Cluster Monitor Overview",
         cluster_id      => $cluster_id,
@@ -261,22 +250,105 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 
 
 ajax '/extclusters/:extclusterid/monitoring' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;
-    
+    my $cluster_id    = params->{extclusterid} || 0;  
     my @list = (10,7,20,4);
     my @nodelist = ('node1','node2','node3','node4');
+    
     to_json {values => \@list, nodelist => \@nodelist};
 };
 
 ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;
+    my $cluster_id    = params->{extclusterid} || 0;   
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
+    my $indicator = params->{'metric'};;
+    my $nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
+    my @nodes;
+    my @values;
     
-    # my @list = (10,15,20,3);
-    # my @nodelist = ('node1','node2','node3','tortue');
-    # to_json {values => \@list, nodelist => \@nodelist};
-
-    # to_json {id => $cluster_id};
-    # return $string;
+    while (my ($node, $metric) = each %$nodes_metrics){
+        push @nodes, $node;
+        push @values, int($metric->{$indicator});
+    }
+    
+    to_json {values => \@values, nodelist => \@nodes};
 };
 
+
+get '/rules' => sub {
+  
+  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
+  my @rules;
+  foreach my $aggregate_rule (@enabled_aggregaterules) {
+    my $hash = {
+        id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+        formula   => $aggregate_rule->toString(),
+        last_eval => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
+
+    };
+    push @rules, $hash;
+  }
+  
+  template 'clustermetric_rules', {
+        title_page      => "Enabled Rules Overview",
+        rules   => \@rules,
+        status  => 'enabled',
+  };
+    
+};
+
+get '/rules/disabled' => sub {
+  my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
+  my @disabled_rules;
+  foreach my $aggregate_rule (@disabled_aggregaterules) {
+    my $hash = {
+      id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+      formula => $aggregate_rule->toString(),
+      last_eval => -1,
+    };
+    push @disabled_rules, $hash;
+  }
+  
+  template 'clustermetric_rules', {
+        title_page      => "Disabled Rules Overview",
+        rules   => \@disabled_rules,
+        status  => "disabled",
+  };
+    
+};
+
+get '/rules/tdisabled' => sub {
+  my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
+  my @tdisabled_rules;
+  foreach my $aggregate_rule (@tdisabled_aggregaterules) {
+    my $hash = {
+      id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+      formula => $aggregate_rule->toString(),
+      last_eval => -1,
+    };
+    push @tdisabled_rules, $hash;
+  }  
+  
+  template 'clustermetric_rules', {
+        title_page      => "Temporarily Disabled Rules Overview",
+        rules   => \@tdisabled_rules,
+        status  => 'tdisabled',
+  };
+    
+};
+get '/rules/enabled' => sub {
+    redirect('/architectures/rules');
+};
+
+
+get '/rules/:ruleid/activate' => sub {
+    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+    $aggregateRule->enable();
+    redirect('/architectures/rules');
+};
+
+get '/rules/:ruleid/deactivate' => sub {
+    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+    $aggregateRule->disable();
+    redirect('/architectures/rules');
+};
 1;
