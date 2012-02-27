@@ -354,7 +354,7 @@ get '/rules/:ruleid/disable' => sub {
     redirect('/architectures/rules');
 };
 
-get '/rules/<%rule.id%>/tdisable' => sub {
+get '/rules/:ruleid/tdisable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disableTemporarily(length => 120);
     redirect('/architectures/rules');
