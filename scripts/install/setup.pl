@@ -253,8 +253,8 @@ while( defined( $line = <$FILE> ) )
 close($FILE);
 print "components DB schemas loaded\n";
 #And to conclude, we insert initial datas in the DB
-print "inserting initial datas...";
-system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{data_sql}") == 0 or die "error while inserting initial datas: $!";
+print "inserting initial data...";
+system ("mysql -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{data_sql}") == 0 or die "error while inserting initial data: $!";
 print "done\n";
 #######################
 #Services manipulation#
