@@ -43,8 +43,8 @@ sub createTimeDataStore{
 	
     General::checkParams(args => \%args, required => ['name']); 
 	
-     
-    my $name         = 'timeDB_'.$args{'name'}.'.rrd';
+	my $name = formatName(name => $args{'name'});
+
     my $RRA_chain;
     my $DS_chain;
     my $opts = '';
@@ -126,7 +126,7 @@ sub deleteTimeDataStore{
 
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name = 'timeDB_'.$args{'name'}.'.rrd'; 
+    my $name = formatName(name => $args{'name'}); 
     my $cmd = 'del '.$name;
 
     system ($cmd);
@@ -138,7 +138,7 @@ sub getTimeDataStoreInfo {
 
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name = 'timeDB_'.$args{'name'}.'.rrd'; 
+	my $name = formatName(name => $args{'name'});
     my $cmd = 'rrdtool.exe info '.$name;
 
     system ($cmd);	
@@ -149,7 +149,7 @@ sub fetchTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name  = 'timeDB_'.$args{'name'}.'.rrd';
+    my $name = formatName(name => $args{'name'});
     my $CF    = 'LAST';
     my $start = $args{'start'};
     my $end   = $args{'end'};
@@ -167,7 +167,7 @@ sub fetchTimeDataStore {
 
     #we store the ouput of the command into a string
     my $exec = `$cmd 2>&1`;
-    #print "back quotes output:\n ".$return;
+    # print "back quotes output:\n ".$exec;
 
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
@@ -191,15 +191,14 @@ sub fetchTimeDataStore {
     }	
             
     $log->debug(Dumper(\%values));
-    return %values;
-    
+    return %values;   
 }
 
 sub updateTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
 
-    my $name = 'timeDB_'.$args{'aggregator_id'}.'.rrd';
+    my $name = formatName(name => $args{'aggregator_id'});
     my $datasource;
     if (defined $args{'datasource'}){
         $datasource = $args{'datasource'};
@@ -224,7 +223,7 @@ sub getLastUpdatedValue{
     my %args = @_;
     General::checkParams(args => \%args, required => ['aggregate_id']);
 
-    my $name = 'timeDB_'.$args{'aggregate_id'}.'.rrd';
+    my $name = formatName(name => $args{'aggregate_id'});
     
     my $cmd = 'rrdtool.exe lastupdate '.$dir.$name;
     $log->info($cmd);
@@ -249,5 +248,11 @@ sub getLastUpdatedValue{
     #print Dumper(\%values);
     $log->debug(Dumper(\%values));
     return %values;
+}
+
+sub formatName{
+	my %args = @_;
+	my $name = 'timeDB_'.$args{'name'}.'.rrd';
+	return $name;
 }
 1;
