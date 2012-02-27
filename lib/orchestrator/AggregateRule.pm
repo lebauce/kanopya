@@ -160,17 +160,20 @@ sub disableTemporarily(){
 
 sub isEnabled(){
     my $self = shift;
+    $self->updateState();
+    return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled'); 
+}
+
+sub updateState() {
+    my $self = shift;
     
     if ($self->getAttr(name=>'aggregate_rule_state') eq 'disabled_temp') {
         if( $self->getAttr(name => 'aggregate_rule_timestamp') le time()) {
             $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
             $self->setAttr(name => 'aggregate_rule_state'    , value => 'enabled');
             $self->save();
-            return 1;
         }
     }
-    return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled'); 
 }
-
 
 1;
