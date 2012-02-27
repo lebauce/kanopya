@@ -342,15 +342,22 @@ get '/rules/enabled' => sub {
 };
 
 
-get '/rules/:ruleid/activate' => sub {
+get '/rules/:ruleid/enable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->enable();
     redirect('/architectures/rules');
 };
 
-get '/rules/:ruleid/deactivate' => sub {
+get '/rules/:ruleid/disable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disable();
     redirect('/architectures/rules');
+};
+
+get '/rules/<%rule.id%>/tdisable' => sub {
+    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+    $aggregateRule->disableTemporarily(length => 120);
+    redirect('/architectures/rules');
+
 };
 1;
