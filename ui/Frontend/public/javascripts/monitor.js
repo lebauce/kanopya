@@ -344,13 +344,22 @@ function barGraph(values, nodelist){
 }
  
  function timedGraph(){
+     $.jqplot.config.enablePlugins = true;
      var line1=[['2012-08-02 4:00PM',4], ['2012-09-02 4:00PM',6.5], ['2012-10-02 4:00PM',5.7], ['2012-11-02 4:00PM',9], ['2012-12-02 4:00PM',8.2]];
       var plot1 = $.jqplot('timedClusterMetricView', [line1], {
         title:'Default Date Axis',
         axes:{
             xaxis:{
-                renderer:$.jqplot.DateAxisRenderer
-            }
+                renderer:$.jqplot.DateAxisRenderer,
+                rendererOptions: {
+                    tickInset: 0
+                },
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                tickOptions: {
+                  angle: -30,
+                  // formatString: '%#m-%#d %H:%M'
+                } 
+            }      
         },
         series:[{lineWidth:4, markerOptions:{style:'square'}}]
     });

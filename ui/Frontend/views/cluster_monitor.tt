@@ -1,4 +1,4 @@
-<% js_head.push('monitor.js', 'jquery.jqplot.js', 'jquery.jqplot.min.js', 'jqplot.barRenderer.js', 'jqplot.categoryAxisRenderer.js', 'jqplot.dateAxisRenderer.js') %>
+<% js_head.push('jquery.jqplot.min.js', 'jqplot.barRenderer.js', 'jqplot.categoryAxisRenderer.js', 'jqplot.dateAxisRenderer.js', 'jqplot.canvasTextRenderer.js', 'jqplot.canvasAxisTickRenderer.js', 'monitor.js') %>
 
 <h1> You are currently monitoring external cluster number <% cluster_id %> </h1>
 <div class="cluster_overview">
