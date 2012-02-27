@@ -8,7 +8,6 @@
                 <% ELSIF rule.last_eval == 1%><span class="state imgBroken">  </span> 
                 <% ELSE %><span class="state imgDown">  </span> <% END %>
                 <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
-                <td>Disabled for <% rule.time %> seconds</td>
                 <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/deactivate">deactivate</a></td>            
                 </tr>
             <% END %>
@@ -18,7 +17,8 @@
                 <tr><td>
                 <span class="state imgDown"> </span>
                 <span class="bold">Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/activate">activate</a></td>            
+                <td>Disabled for <% rule.time %> seconds</td>
+                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/activate">activate</a></td>
                 </tr>
             <% END %>
         <% CASE 'disabled' %>
