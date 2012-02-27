@@ -33,6 +33,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
+
 package EOperation::EActivateSystemimage;
 use base "EOperation";
 
@@ -80,7 +81,6 @@ sub new {
 
 sub _init {
     my $self = shift;
-    $self->{nas} = {};
     $self->{executor} = {};
     $self->{_objs} = {};
     return;
@@ -97,10 +97,12 @@ sub _checkOp {
     my %args = @_;
 
     # check if systemimage is not active
-       if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
-            $errmsg = "EOperation::EActivateSystemimage->new : systemimage <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') ."> is already active";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+   if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+        $errmsg = "EOperation::EActivateSystemimage->new : systemimage <" .
+                  $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') .
+                  "> is already active";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
 
@@ -111,25 +113,22 @@ sub _checkOp {
 =cut
 
 sub prepare {
-
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) {
-        $errmsg = "EActivateSystemimage->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
 
     my $params = $self->_getOperation()->getParams();
 
-    #### Get instance of Systemimage Entity
+    # Get instance of Systemimage Entity
     eval {
        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+        $errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id " .
+                  $params->{systemimage_id} . "does not find\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -145,82 +144,67 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # Instanciate Clusters
-    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    # Check if a service provider is given in parameters, use default instead.
+    eval {
+        General::checkParams(args => $params, required => [ "storage_provider_id" ]);
 
-    # Get Internal IP
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+        $self->{_objs}->{storage_provider}
+            = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
+    };
+    if ($@) {
+        $log->info("Service provider id not defined, using default.");
 
-    # Instanciate context
-    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
+        $self->loadContext(internal_cluster => $args{internal_cluster}, service => 'nas');
+        $self->{_objs}->{storage_provider}
+            = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
+    }
 
-    # Instanciate Export component.
-    $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-                                                                                      version=> "1"));
+    # Check if a disk manager is given in parameters, use default instead.
+    my $export_manager;
+    eval {
+        General::checkParams(args => $params, required => ["export_manager_id"]);
+
+        $export_manager
+            = $self->{_objs}->{storage_provider}->getManager(id => $params->{export_manager_id});
+    };
+    if ($@) {
+        $log->info("Export manager id not defined, using default.");
+
+        eval {
+            $export_manager
+                = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'ExportManager');
+        };
+        if ($@) {
+            my $error = $@;
+            $errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        }
+    }
+
+    # Get the disk manager for disk creation, get the export manager for copy from file.
+    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
+
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+
+    my $storage_provider_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
+    $self->{_objs}->{eexport_manager}->{econtext}
+        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                ip_destination => $storage_provider_ip);
 }
 
 sub execute {
     my $self = shift;
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-    $esystemimage->activate(econtext => $self->{nas}->{econtext},erollback => $self->{erollback},component_export=>$self->{_objs}->{component_export});
-#    my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
-#
-#    ## provide root rsa pub key to provide ssh key authentication
-#    $self->_generateAuthorizedKeys();
-#
-#    ## Update export to allow to host to boot with this systemimage
-#    my $target_name = $self->{_objs}->{component_export}->generateTargetname(name => 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name'));
-#
-#    # Get etc iscsi target information
-#    my $si_access_mode = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
-#
-#    $self->{_objs}->{component_export}->addExport(iscsitarget1_lun_number    => 0,
-#                                                iscsitarget1_lun_device    => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
-#                                                iscsitarget1_lun_typeio    => "fileio",
-#                                                iscsitarget1_lun_iomode    => $si_access_mode,
-#                                                iscsitarget1_target_name=>$target_name,
-#                                                econtext                 => $self->{nas}->{econtext},
-#                                                erollback               => $self->{erollback});
-#    my $eroll_add_export = $self->{erollback}->getLastInserted();
-#    # generate new configuration file
-#    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-#    $self->{_objs}->{component_export}->generate(econtext   => $self->{nas}->{econtext},
-#                                                 erollback  => $self->{erollback});
-#
-#    $log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now exported with target <$target_name>");
-#    # set system image active in db
-#    $self->{_objs}->{systemimage}->setAttr(name => 'active', value => 1);
-#    $self->{_objs}->{systemimage}->save();
-#    $log->info("System image <".$self->{_objs}->{systemimage}->getAttr(name=>"systemimage_name") ."> is now active");
-
+    $esystemimage->activate(eexport_manager => $self->{_objs}->{eexport_manager},
+                            econtext        => $self->{executor}->{econtext},
+                            erollback       => $self->{erollback});
 }
-
-# generate /root/.ssh/authorized_keys file with nas root rsa pub key
-
-sub _generateAuthorizedKeys {
-    my $self = shift;
-
-    # mount the root systemimage device
-    my $si_devices = $self->{_objs}->{systemimage}->getDevices();
-    my $mount_point = "/mnt/$si_devices->{root}->{lvm2_lv_name}";
-    my $mkdir_cmd = "mkdir -p $mount_point";
-    $self->{nas}->{econtext}->execute(command => $mkdir_cmd);
-
-    my $mount_cmd = "mount /dev/$si_devices->{root}->{vgname}/$si_devices->{root}->{lvname} $mount_point";
-    $self->{nas}->{econtext}->execute(command => $mount_cmd);
-
-    my $rsapubkey_cmd = "cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
-    $self->{nas}->{econtext}->execute(command => $rsapubkey_cmd);
-
-    my $sync_cmd = "sync";
-    $self->{nas}->{econtext}->execute(command => $sync_cmd);
-    my $umount_cmd = "umount $mount_point";
-    $self->{nas}->{econtext}->execute(command => $umount_cmd);
-}
-
 
 =head1 DIAGNOSTICS
 

@@ -141,20 +141,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    #### Instanciate Clusters
-    # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
-
-    # Load NAS Econtext
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
-    
-    ## Instanciate Component needed (here ISCSITARGET on nas )
-    # Instanciate Export component.
-    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Lvm",
-                                                                                      version=> "2"));
-    $log->info("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_storage}));
-
 }
 
 sub execute{

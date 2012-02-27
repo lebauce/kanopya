@@ -53,14 +53,14 @@ This Entity is empty but present methods to set configuration.
 package Entity::Component::Lvm2;
 use base "Entity::Component";
 
-
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
 use General;
-use Log::Log4perl "get_logger";
+use Kanopya::Exceptions;
+use Entity::Container::LvmContainer;
 
+use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("administrator");
@@ -69,8 +69,9 @@ my $errmsg;
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
-sub getMainVg{
+sub getMainVg {
     my $self = shift;
+
     my $vgname = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_name');
     my $vgid = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_id');
     $log->debug("Main VG founds, its id is <$vgid>");
@@ -82,7 +83,7 @@ sub getVg {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args, required=>["lvm2_vg_id"]);
+    General::checkParams(args => \%args, required => [ "lvm2_vg_id" ]);
 
     return  $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->get_column('lvm2_vg_name');
 }
@@ -91,30 +92,37 @@ sub lvCreate{
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args, required=>["lvm2_lv_name",
-                                                  "lvm2_lv_size",
-                                                  "lvm2_lv_filesystem",
-                                                  "lvm2_vg_id"]);
-    
+    General::checkParams(args     => \%args,
+                         required => [ "lvm2_lv_name", "lvm2_lv_size",
+                                       "lvm2_lv_filesystem", "lvm2_vg_id" ]);
+
     my ($value, $unit) = General::convertSizeFormat(size => $args{lvm2_lv_size});
     $args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
-    
-    $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_lv_size is $args{lvm2_lv_size}, lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, lvm2_vg_id is $args{lvm2_vg_id}");
-    my $lv_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}})->lvm2_lvs;
+
+    $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, " .
+                "lvm2_lv_size is $args{lvm2_lv_size}, " .
+                "lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, " .
+                "lvm2_vg_id is $args{lvm2_vg_id}");
+
+    my $lv_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{lvm2_vg_id} })->lvm2_lvs;
     my $res = $lv_rs->create(\%args);
-    
+
     $log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
+
+    $res->discard_changes;
     return $res->get_column("lvm2_lv_id");
 }
 
 sub vgSizeUpdate{
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args=>\%args, required=>["lvm2_vg_id", "lvm2_vg_freespace"]);
+
+    General::checkParams(args     => \%args,
+                         required => [ "lvm2_vg_id", "lvm2_vg_freespace" ]);
 
     my $vg_rs = $self->{_dbix}->lvm2_vgs->single( {lvm2_vg_id => $args{lvm2_vg_id}});
     delete $args{lvm2_vg_id};
+
     $log->debug("Volume group freespace size update");
     return $vg_rs->update(\%args);
 }
@@ -122,13 +130,16 @@ sub vgSizeUpdate{
 sub lvRemove{
     my $self = shift;
     my %args = @_;
-    
-General::checkParams(args=>\%args, required=>["lvm2_lv_name", "lvm2_vg_id"]);
 
-# ICI Recuperer le bon vg et ensuite suivre le lien lv et new dedans
+    General::checkParams(args     => \%args,
+                         required => [ "lvm2_lv_name", "lvm2_vg_id" ]);
+
     $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, lvm2_vg_id is $args{lvm2_vg_id}");
-    my $lv_row = $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->lvm2_lvs->single({lvm2_lv_name => $args{lvm2_lv_name}});
+
+    my $vg_row = $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id});
+    my $lv_row = $vg_row->lvm2_lvs->single({ lvm2_lv_name => $args{lvm2_lv_name} });
     $lv_row->delete();
+
     $log->info("lvm2 logical volume $args{lvm2_lv_name} deleted from database");
 }
 
@@ -137,20 +148,20 @@ sub getConf {
 
     my $conf = {};
     my $lineindb = $self->{_dbix}->lvm2_vgs->first;
-    if(defined $lineindb) {
+    if (defined $lineindb) {
         my %dbconf = $lineindb->get_columns();
         $conf = \%dbconf;
-        
+
         my $lv_rs = $lineindb->lvm2_lvs;
         my @tab_lv = ();
         while (my $lv_row = $lv_rs->next){
             my %lv = $lv_row->get_columns();
+
             delete $lv{'lvm2_vg_id'};
             push @tab_lv, \%lv;
         }
         $conf->{lvm2_lvs} = \@tab_lv;
     }
-    
     return $conf;
 }
 
@@ -158,36 +169,160 @@ sub setConf {
     my $self = shift;
     my ($conf) = @_;
 
-    my $vg_id = $conf->{lvm2_vg_id};
+    #my $vg_id = $conf->{lvm2_vg_id};
     for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
-        $self->createLogicalVolume( vg_id => $vg_id,
-                                    disk_name => $new_lv->{lvm2_lv_name},
-                                    size => $new_lv->{lvm2_lv_size},
-                                    filesystem => $new_lv->{lvm2_lv_filesystem});
+        $self->createDisk(disk_name  => $new_lv->{lvm2_lv_name},
+                          size       => $new_lv->{lvm2_lv_size},
+                          filesystem => $new_lv->{lvm2_lv_filesystem});
     }
-
 }
 
-sub createLogicalVolume {
+=head2 createDisk
+
+    Desc : Implement createDisk from DiskManager interface.
+           This function enqueue a ECreateDisk operation.
+    args :
+
+=cut
+
+sub createDisk {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args=>\%args, required=>["disk_name", "size", "filesystem", "vg_id"]);
-    my %params = $self->getAttrs();
-    $log->debug("New Operation CreateLogicalVolume with attrs : " . %params);
+    General::checkParams(args     => \%args,
+                         required => [ "disk_name", "size", "filesystem" ]);
+
+    $log->debug("New Operation CreateDisk with attrs : " . %args);
     Operation->enqueue(
         priority => 200,
-        type     => 'CreateLogicalVolume',
+        type     => 'CreateDisk',
         params   => {
-            component_id => $self->getAttr(name => 'lvm2_id'),
-            disk_name => $args{disk_name},
-            size => $args{size},
-            filesystem => $args{filesystem},
-            vg_id => $args{vg_id}
+            storage_provider_id => $self->getAttr(name => 'inside_id'),
+            disk_manager_id     => $self->getAttr(name => 'component_id'),
+            disk_name           => $args{disk_name},
+            size                => $args{size},
+            filesystem          => $args{filesystem},
         },
     );
 }
 
+=head2 removeDisk
+
+    Desc : Implement removeDisk from DiskManager interface.
+           This function enqueue a ERemoveDisk operation.
+    args :
+
+=cut
+
+sub removeDisk {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "disk_name" ]);
+
+    $log->debug("New Operation RemoveDisk with attrs : " . %args);
+    Operation->enqueue(
+        priority => 200,
+        type     => 'RemoveDisk',
+        params   => {
+            storage_provider_id => $self->getAttr(name => 'inside_id'),
+            disk_manager_id     => $self->getAttr(name => 'component_id'),
+            disk_name           => $args{disk_name},
+        },
+    );
+}
+
+=head2 getFreeSpace
+
+    Desc : Implement getFreeSpace from DiskManager interface.
+           This function return the free space on the volume group.
+    args :
+
+=cut
+
+sub getFreeSpace {
+    my $self = shift;
+    my %args = @_;
+
+    my $vg    = $self->getMainVg();
+    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $vg->{vgid} });
+
+    return $vg_rs->get_column('lvm2_vg_freespace');
+}
+
+=head2 getContainer
+
+    Desc : Implement getContainer from DiskManager interface.
+           This function return the container hash that match
+           identifiers given in paramters.
+    args : lv_id
+
+=cut
+
+sub getContainer {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "lv_id" ]);
+
+    my $main  = $self->getMainVg;
+    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $main->{vgid} });
+    my $lv_rs = $vg_rs->lvm2_lvs->single({ lvm2_lv_id => $args{lv_id} });
+
+    my $container = {
+        container_name       => $lv_rs->get_column('lvm2_lv_name'),
+        container_size       => $lv_rs->get_column('lvm2_lv_size'),
+        container_filesystem => $lv_rs->get_column('lvm2_lv_filesystem'),
+        container_freespace  => $lv_rs->get_column('lvm2_lv_freespace'),
+        container_device     => '/dev/' . $vg_rs->get_column('lvm2_vg_name') .
+                                '/' . $lv_rs->get_column('lvm2_lv_name'),
+    };
+
+    return $container;
+}
+
+=head2 addContainer
+
+    Desc : Implement addContainer from DiskManager interface.
+           This function create a new LvmContainer into database.
+    args : lv_id
+
+=cut
+
+sub addContainer {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "lv_id" ]);
+
+    my $container = Entity::Container::LvmContainer->new(
+                        service_provider_id => $self->getAttr(name => 'inside_id'),
+                        disk_manager_id     => $self->getAttr(name => 'lvm2_id'),
+                        lv_id               => $args{lv_id},
+                    );
+
+    my $container_id = $container->getAttr(name => 'container_id');
+    $log->info("Lvm container <$container_id> saved to database");
+
+    return $container;
+}
+
+=head2 delContainer
+
+    Desc : Implement delContainer from DiskManager interface.
+           This function delete a LvmContainer from database.
+    args : container
+
+=cut
+
+sub delContainer {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container" ]);
+
+    $args{container}->delete();
+}
 
 
 =head1 DIAGNOSTICS

@@ -32,8 +32,19 @@ blablabla
 package Entity::ServiceProvider::Outside;
 use base "Entity::ServiceProvider";
 
+use Entity::Connector;
+
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getManager {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['id']);
+
+    return Entity::Connector->get(id => $args{id})
+}
 
 1;

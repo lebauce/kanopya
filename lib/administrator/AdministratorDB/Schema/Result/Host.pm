@@ -116,7 +116,7 @@ __PACKAGE__->table("host");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 etc_device_id
+=head2 etc_container_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -204,7 +204,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "etc_device_id",
+  "etc_container_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -235,6 +235,8 @@ __PACKAGE__->has_many(
   { "foreign.host_id" => "self.host_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
+
+
 =head2 ifaces
 
 Type: has_many
@@ -251,8 +253,6 @@ __PACKAGE__->has_many(
 );
 
 
-
-
 =head2 host
 
 Type: belongs_to
@@ -265,7 +265,7 @@ __PACKAGE__->belongs_to(
   "host",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "host_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 hostmodel
@@ -280,12 +280,7 @@ __PACKAGE__->belongs_to(
   "hostmodel",
   "AdministratorDB::Schema::Result::Hostmodel",
   { hostmodel_id => "hostmodel_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 processormodel
@@ -300,12 +295,7 @@ __PACKAGE__->belongs_to(
   "processormodel",
   "AdministratorDB::Schema::Result::Processormodel",
   { processormodel_id => "processormodel_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 kernel
@@ -320,27 +310,22 @@ __PACKAGE__->belongs_to(
   "kernel",
   "AdministratorDB::Schema::Result::Kernel",
   { kernel_id => "kernel_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 etc_device
+=head2 etc_container
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Lvm2Lv>
+Related object: L<AdministratorDB::Schema::Result::Container>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "etc_device",
-  "AdministratorDB::Schema::Result::Lvm2Lv",
-  { lvm2_lv_id => "etc_device_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  "etc_container",
+  "AdministratorDB::Schema::Result::Container",
+  { container_id => "etc_container_id" },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 host_powersupply
@@ -355,12 +340,7 @@ __PACKAGE__->belongs_to(
   "host_powersupply",
   "AdministratorDB::Schema::Result::Powersupply",
   { powersupply_id => "host_powersupply_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 host_ipv4_internal
@@ -375,12 +355,7 @@ __PACKAGE__->belongs_to(
   "host_ipv4_internal",
   "AdministratorDB::Schema::Result::Ipv4Internal",
   { ipv4_internal_id => "host_ipv4_internal_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 cloud_cluster
@@ -395,12 +370,7 @@ __PACKAGE__->belongs_to(
   "cloud_cluster",
   "AdministratorDB::Schema::Result::Cluster",
   { cluster_id => "cloud_cluster_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 node
@@ -449,16 +419,15 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6e3ofgDYMJXFutiEXyFzDg
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-07 11:41:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CET4XkSn+Pa0wDpyn3rJLg
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# You can replace this text with custom content, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.host_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
-
+  { "foreign.entity_id" => "self.host_id" },
+  { cascade_copy => 0, cascade_delete => 1 });
 
 1;

@@ -50,25 +50,6 @@ use Data::Dumper;
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2 new
-
-    my $op = EEntity::EOperation::EStopNode->new();
-
-EOperation::EStopNode->new creates a new StopNode operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    #$self->_init();
-    
-    return $self;
-}
-
 =head2 prepare
 
     $op->prepare();
@@ -76,7 +57,6 @@ sub new {
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
@@ -124,7 +104,7 @@ sub execute {
     my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
     $ehost->halt(node_econtext =>$self->{node_econtext});
 
-    $self->{_objs}->{host}->setNodeState(state=>"goingout");
+    $self->{_objs}->{host}->setNodeState(state => "goingout");
     $self->{_objs}->{host}->save();
 
 }

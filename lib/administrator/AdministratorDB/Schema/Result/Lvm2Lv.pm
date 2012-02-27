@@ -87,51 +87,6 @@ __PACKAGE__->set_primary_key("lvm2_lv_id");
 
 =head1 RELATIONS
 
-=head2 distribution_etc_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Distribution>
-
-=cut
-
-__PACKAGE__->has_many(
-  "distribution_etc_devices",
-  "AdministratorDB::Schema::Result::Distribution",
-  { "foreign.etc_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 distribution_root_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Distribution>
-
-=cut
-
-__PACKAGE__->has_many(
-  "distribution_root_devices",
-  "AdministratorDB::Schema::Result::Distribution",
-  { "foreign.root_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 hosts
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Host>
-
-=cut
-
-__PACKAGE__->has_many(
-  "hosts",
-  "AdministratorDB::Schema::Result::Host",
-  { "foreign.etc_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 lvm2_vg
 
 Type: belongs_to
@@ -144,42 +99,12 @@ __PACKAGE__->belongs_to(
   "lvm2_vg",
   "AdministratorDB::Schema::Result::Lvm2Vg",
   { lvm2_vg_id => "lvm2_vg_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 systemimage_etc_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimage_etc_devices",
-  "AdministratorDB::Schema::Result::Systemimage",
-  { "foreign.etc_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 systemimage_root_devices
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimage_root_devices",
-  "AdministratorDB::Schema::Result::Systemimage",
-  { "foreign.root_device_id" => "self.lvm2_lv_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NshNk8gfad41+xksjq4KpA
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-16 20:32:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Z1miWC4OiEh0yplRBeE4lQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

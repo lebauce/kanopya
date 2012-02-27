@@ -80,7 +80,6 @@ sub new {
 
 sub _init {
     my $self = shift;
-    $self->{nas} = {};
     $self->{executor} = {};
     $self->{_objs} = {};
     return;
@@ -123,68 +122,75 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => \%args, required => ["internal_cluster"]);
+
     my $params = $self->_getOperation()->getParams();
 
-#### Get instance of Systemimage Entity
-    $log->debug("Load systemimage instance");
+    # Get instance of Systemimage Entity
+    $log->info("Load systemimage instance");
     eval {
-       $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EDeactivateSystemimage->prepare : systemimage_id $params->{systemimage_id} does not find\n" . $err;
+        $errmsg = "EOperation::EDeactivateSystemimage->prepare : " .
+                  "systemimage_id $params->{systemimage_id} does not find\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
 
-    ### Check Parameters and context
+    # Get instances of container accesses from systemimages root container
+    $log->info("Load root container accesses");
+    eval {
+         $log->info("Load root container accesses dans eval");
+        my @access_hashs = ();
+        for my $container_access (@{ $self->{_objs}->{systemimage}->getDevices()->{root}->getAccesses }) {
+            my $eexport_manager = EFactory::newEEntity(data => $container_access->getExportManager);
+            push @access_hashs, { container_access => $container_access,
+                                  eexport_manager  => $eexport_manager };
+        }
+        $self->{_objs}->{accesses} = \@access_hashs;
+    };
+    if($@) {
+        my $err = $@;
+        $errmsg = "EOperation::EDeactivateSystemimage->prepare : " . $err;
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+    # Check Parameters and context
     $self->checkOp(params => $params);
-    
-    #### Instanciate Clusters
-    # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    $log->debug("Nas Cluster get with ref : " . ref($self->{nas}->{obj}));
 
-    # Load NAS Econtext
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
-    
-    
-    ## Instanciate Component needed (here ISCSITARGET on nas )
-    # Instanciate Export component.
-    $self->{_objs}->{component_export} = EFactory::newEEntity(data => $self->{nas}->{obj}->getComponent(name=>"Iscsitarget",
-                                                                                      version=> "1"));
-    $log->debug("Load export component (iscsitarget version 1, it ref is " . ref($self->{_objs}->{component_export}));
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
 
+    for my $access_hash (@{ $self->{_objs}->{accesses} }) {
+        my $storage_provider = $access_hash->{container_access}->getServiceProvider;
+        $access_hash->{eexport_manager}->{econtext}
+            = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                    ip_destination => $storage_provider->getMasterNodeIp());
+    }
 }
 
 sub execute {
     my $self = shift;
-    my $adm = Administrator->new();
-    
-    my $sysimg_dev = $self->{_objs}->{systemimage}->getDevices();
-    
-    my $target_name = $self->{_objs}->{component_export}->_getEntity()->getFullTargetName(lv_name => $sysimg_dev->{root}->{lvname});
-    my $target_id = $self->{_objs}->{component_export}->_getEntity()->getTargetIdLike(iscsitarget1_target_name => '%'. $sysimg_dev->{root}->{lvname});
 
-    my $lun_id =  $self->{_objs}->{component_export}->_getEntity()->getLunId(iscsitarget1_target_id => $target_id,
-                                                iscsitarget1_lun_device => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}");
+    # Remove all exports of the systemimage root container
+    for my $access_hash (@{ $self->{_objs}->{accesses} }) {
+        my $container_access = $access_hash->{container_access};
+        my $eexport_manager  = $access_hash->{eexport_manager};
 
-    $self->{_objs}->{component_export}->removeExport(iscsitarget1_lun_id        => $lun_id,
-                                                     econtext                   => $self->{nas}->{econtext},
-                                                     iscsitarget1_target_name   => $target_name,
-                                                     iscsitarget1_target_id     => $target_id,
-                                                     erollback                  => $self->{erollback});
-    my $eroll_del_export = $self->{erollback}->getLastInserted();
-    # generate new configuration file
-    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_del_export);
-    $self->{_objs}->{component_export}->generate(econtext => $self->{nas}->{econtext},
-                                                 erollback  => $self->{erollback});
-        
-    # set system image active in db
+        $log->info('Removing export ' . $container_access);
+        $eexport_manager->removeExport(container_access => $container_access,
+                                       econtext         => $eexport_manager->{econtext},
+                                       erollback        => $self->{erollback});
+    }
+
+    # Set system image active in db
     $self->{_objs}->{systemimage}->setAttr(name => 'active', value => 0);
     $self->{_objs}->{systemimage}->save();
-    $log->info("System Image <". $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') ."> deactivated");
+
+    $log->info("System Image <" . $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') . "> deactivated");
 }
 
 1;

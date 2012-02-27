@@ -106,7 +106,6 @@ sub _init {
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
@@ -121,14 +120,14 @@ sub prepare {
     
     my $params = $self->_getOperation()->getParams();
 
-    #### No Cluster nor context to load 
+    # No Cluster nor context to load 
     
-    #### Get instance of Cluster Entity
+    # Get instance of Cluster Entity
     $log->info("Load cluster instance");
     $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
-    #### Get cluster components Entities
+    # Get cluster components Entities
     $log->info("Load cluster component instances");
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
@@ -137,8 +136,9 @@ sub prepare {
     $log->info("Load Host instance");
     $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
-    #Get instance of Context
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");#a voir 
+
+    # Get instance of Context
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
 }
 
 sub execute {

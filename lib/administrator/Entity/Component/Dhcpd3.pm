@@ -218,7 +218,6 @@ sub getHostId {
     General::checkParams(args => \%args, required => ['dhcpd3_hosts_mac_address','dhcpd3_subnet_id']);
     
     return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->search({ dhcpd3_hosts_mac_address=> $args{dhcpd3_hosts_mac_address}})->first()->get_column('dhcpd3_hosts_id');
-    
 }
 
 =head2 removeHost

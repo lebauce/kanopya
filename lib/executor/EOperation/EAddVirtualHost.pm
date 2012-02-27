@@ -99,12 +99,9 @@ sub prepare {
     General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     $log->debug("After Eoperation prepare and before get Administrator singleton");
-    my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
-    $self->{nas} = {};
-    $self->{executor} = {};
 	
     # Instanciate the pre created Host Entity
     eval {
@@ -119,7 +116,8 @@ sub prepare {
     
     # Instanciate target cluster
     eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id} );
+        $self->{_objs}->{cluster} =
+            Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
         my $err = $@;
@@ -127,50 +125,11 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    
-    ## Instanciate Clusters
-    # Instanciate nas Cluster 
-    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
-    
-    ## Get Internal IP
-    # Get Internal Ip address of Master node of cluster Executor
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    # Get Internal Ip address of Master node of cluster nas
-    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
-        
-    ## Instanciate context 
-    # Get context for nas
-    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
-    
-    ## Instanciate LVM Component
-    # Instanciate Cluster Storage component.
-    my $tmp = $self->{nas}->{obj}->getComponent(name       => "Lvm",
-                                                version    => "2");
-   
-    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-    $log->debug("Load Lvm component version 2, it ref is " . ref($self->{_objs}->{component_storage}));
-    
 }
 
 sub execute {
     my $self = shift;
-    my $adm = Administrator->new();
-    
-    my $etc_id = $self->{_objs}->{component_storage}->createDisk(
-		name       => $self->{_objs}->{host}->getEtcName(),
-        size       => "52M", 
-        filesystem => "ext3",
-        econtext   => $self->{nas}->{econtext},
-        erollback  => $self->{erollback}
-    );
-	$self->{_objs}->{host}->setAttr(name=>'etc_device_id', value=>$etc_id);
-	
-	$log->info("Host <".$self->{_objs}->{host}->getAttr(name=>"host_mac_address") ."> etc disk is now created");
-	
-	# AddHost finish, just save the Entity in DB
-	$self->{_objs}->{host}->save();
+
 	my @group = Entity::Gp->getGroups(hash => {gp_name=>'Host'});
 	$group[0]->appendEntity(entity => $self->{_objs}->{host});
 	$log->info("Virtual Host <".$self->{_objs}->{host}->getAttr(name=>"host_mac_address") ."> is now created");

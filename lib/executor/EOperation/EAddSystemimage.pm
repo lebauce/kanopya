@@ -45,6 +45,7 @@ use Data::Dumper;
 use EFactory;
 use Kanopya::Exceptions;
 use Entity::Distribution;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use EEntity::ESystemimage;
@@ -81,6 +82,9 @@ sub new {
 sub _init {
     my $self = shift;
 
+    $self->{_objs} = {};
+    $self->{executor} = {};
+
     return;
 }
 
@@ -98,120 +102,104 @@ sub prepare {
 
     General::checkParams(args => \%args, required => ["internal_cluster"]);
 
-    my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
 
-    $self->{_objs} = {};
-    $self->{nas} = {};
-    $self->{executor} = {};
-
-    #### Create new systemimage instance
+    # Create new systemimage instance
     $log->info("Create new systemimage instance");
     eval {
        $self->{_objs}->{systemimage} = Entity::Systemimage->new(%$params);
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EAddSystemimage->prepare : wrong param during systemimage instantiation\n" . $err;
+        $errmsg = "EOperation::EAddSystemimage->prepare : wrong param " .
+                  "during systemimage instantiation\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
+    $log->debug("get systemimage self->{_objs}->{systemimage} of type : " .
+                ref($self->{_objs}->{systemimage}));
 
-    # Get distribution from param
+    # Get distribution from params
     eval {
        $self->{_objs}->{distribution} = Entity::Distribution->get(id => $params->{distribution_id});
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EAddSystemimage->prepare : wrong wrong distribution_id <$params->{distribution_id}>\n" . $err;
+        $errmsg = "EOperation::EAddSystemimage->prepare : wrong " .
+                  "distribution_id <$params->{distribution_id}>\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    ## Instanciate Clusters
-    # Instanciate nas Cluster
-    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    # Check if a service provider is given in parameters, use default instead.
+    eval {
+        General::checkParams(args => $params, required => [ "storage_provider_id" ]);
 
-    ## Get Internal IP
-    # Get Internal Ip address of Master node of cluster Executor
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    # Get Internal Ip address of Master node of cluster nas
-    my $nas_ip = $self->{nas}->{obj}->getMasterNodeIp();
+        $self->{_objs}->{storage_provider}
+            = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
+    };
+    if ($@) {
+        $log->info("Service provider id not defined, using default.");
+        $self->{_objs}->{storage_provider}
+            = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
+    }
 
-    ## Instanciate context
-    # Get context for nas
-    $self->{nas}->{econtext} = EFactory::newEContext(ip_source => $exec_ip, ip_destination => $nas_ip);
+    # Check if a disk manager is given in parameters, use default instead.
+    my $disk_manager;
+    eval {
+        General::checkParams(args => $params, required => ["disk_manager_id"]);
 
-    ## Instanciate Component needed (here LVM on nas cluster)
-    # Instanciate Cluster Storage component.
-    my $tmp = $self->{nas}->{obj}->getComponent(name=>"Lvm",
-                                         version => "2",
-                                         administrator => $adm);
+        $disk_manager
+            = $self->{_objs}->{storage_provider}->getManager(id => $params->{disk_manager_id});
+    };
+    if ($@) {
+        $log->info("Disk manager id not defined, using default.");
+        $disk_manager
+            = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'DiskManager');
+    }
 
-    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
+    # Get the disk manager for disk creation, get the export manager for copy from file.
+    my $export_manager = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'ExportManager');
+    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
+    $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $disk_manager);
+
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+
+    my $storage_provider_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
+    $self->{_objs}->{edisk_manager}->{econtext}
+        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                ip_destination => $storage_provider_ip);
+    $self->{_objs}->{eexport_manager}->{econtext}
+        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                ip_destination => $storage_provider_ip);
 }
 
 sub execute {
     my $self = shift;
-    my $adm = Administrator->new();
-
-    my $devs = $self->{_objs}->{distribution}->getDevices();
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-    $esystemimage->create(econtext          => $self->{nas}->{econtext},
-                          erollback         => $self->{erollback},
-                          devs              => $devs,
-                          component_storage => $self->{_objs}->{component_storage});
 
+    $esystemimage->create(devs            => $self->{_objs}->{distribution}->getDevices(),
+                          edisk_manager   => $self->{_objs}->{edisk_manager},
+                          eexport_manager => $self->{_objs}->{eexport_manager},
+                          econtext        => $self->{executor}->{econtext},
+                          erollback       => $self->{erollback});
 
-#        my $etc_name = 'etc_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-#        my $root_name = 'root_'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name');
-#
-#        # creation of etc and root devices based on distribution devices
-#        $log->info('etc device creation for new systemimage');
-#        my $etc_id = $self->{_objs}->{component_storage}->createDisk(name           => $etc_name,
-#                                                                     size           => $devs->{etc}->{lvsize}."B",
-#                                                                     filesystem     => $devs->{etc}->{filesystem},
-#                                                                     econtext       => $self->{nas}->{econtext},
-#                                                                     erollback     => $self->{erollback});
-#
-#        $log->info('etc device creation for new systemimage');
-#        my $root_id = $self->{_objs}->{component_storage}->createDisk(name          => $root_name,
-#                                                                      size          => $devs->{root}->{lvsize}."B",
-#                                                                      filesystem    => $devs->{root}->{filesystem},
-#                                                                      econtext      => $self->{nas}->{econtext},
-#                                                                      erollback     => $self->{erollback});
-#
-#        # copy of distribution data to systemimage devices
-#        $log->info('etc device fill with distribution data for new systemimage');
-#        my $command = "dd if=/dev/$devs->{etc}->{vgname}/$devs->{etc}->{lvname} of=/dev/$devs->{etc}->{vgname}/$etc_name bs=1M";
-#        my $result = $self->{nas}->{econtext}->execute(command => $command);
-#        # TODO dd command execution result checking
-#
-#        $log->info('root device fill with distribution data for new systemimage');
-#        $command = "dd if=/dev/$devs->{root}->{vgname}/$devs->{root}->{lvname} of=/dev/$devs->{root}->{vgname}/$root_name bs=1M";
-#        $result = $self->{nas}->{econtext}->execute(command => $command);
-#        # TODO dd command execution result checking
-#
-#        $self->{_objs}->{systemimage}->setAttr(name => "etc_device_id", value => $etc_id);
-#        $self->{_objs}->{systemimage}->setAttr(name => "root_device_id", value => $root_id);
-#        $self->{_objs}->{systemimage}->setAttr(name => "active", value => 0);
-#
-#        $self->{_objs}->{systemimage}->save();
-#        $log->info('System image <'.$self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') .'> is added');
+    my @group = Entity::Gp->getGroups(hash => { gp_name => 'SystemImage' });
+    $group[0]->appendEntity(entity => $self->{_objs}->{systemimage});
 
-        my @group = Entity::Gp->getGroups(hash => {gp_name=>'SystemImage'});
-        $group[0]->appendEntity(entity => $self->{_objs}->{systemimage});
-
-        my $components = $self->{_objs}->{distribution}->getProvidedComponents();
-        foreach my $comp (@$components) {
-            if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
-                $self->{_objs}->{systemimage}->installedComponentLinkCreation(component_type_id => $comp->{component_type_id});
-            }
+    my $components = $self->{_objs}->{distribution}->getProvidedComponents();
+    foreach my $comp (@$components) {
+        if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
+            $self->{_objs}->{systemimage}->installedComponentLinkCreation(
+                component_type_id => $comp->{component_type_id}
+            );
         }
+    }
 }
 
 =head1 DIAGNOSTICS

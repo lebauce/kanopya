@@ -26,6 +26,13 @@ __PACKAGE__->table("entity");
   is_auto_increment: 1
   is_nullable: 0
 
+=head2 class_type_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -34,6 +41,13 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_auto_increment => 1,
+    is_nullable => 0,
+  },
+  "class_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
     is_nullable => 0,
   },
 );
@@ -71,6 +85,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 container
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Container>
+
+=cut
+
+__PACKAGE__->might_have(
+  "container",
+  "AdministratorDB::Schema::Result::Container",
+  { "foreign.container_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 container_access
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
+
+=cut
+
+__PACKAGE__->might_have(
+  "container_access",
+  "AdministratorDB::Schema::Result::ContainerAccess",
+  { "foreign.container_access_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 distribution
 
 Type: might_have
@@ -84,6 +128,21 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::Distribution",
   { "foreign.distribution_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 class_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ClassType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "class_type",
+  "AdministratorDB::Schema::Result::ClassType",
+  { class_type_id => "class_type_id" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 entityright_entityrights_consumed
@@ -312,8 +371,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ibX7LuqSX+Zb5bS9pPJGkg
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-23 16:57:03
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:J4JUDfDgVO3UEdupYhwuhA
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

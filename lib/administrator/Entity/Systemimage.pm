@@ -15,48 +15,62 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 17 july 2010
+
 package Entity::Systemimage;
 use base "Entity";
 
 use strict;
 use warnings;
+
 use Kanopya::Exceptions;
 use Administrator;
 use Operation;
+use General;
+
+use Entity::Container;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use General;
 
 my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    systemimage_name => { pattern => '^[0-9a-zA-Z_]*$',
-                          is_mandatory => 1,
-                          is_extended => 0 },
-    
-    systemimage_desc => { pattern => '^.*$',
-                          is_mandatory => 1,
-                          is_extended => 0 },
-    systemimage_dedicated => { pattern => '^(0|1)$',
-                          is_mandatory => 0,
-                          is_extended => 0 },
-    
-    distribution_id => { pattern => '^\d*$',
-                         is_mandatory => 1,
-                         is_extended => 0 },
-                         
-    etc_device_id => { pattern => '^\d*$',
-                         is_mandatory => 0,
-                         is_extended => 0 },
-    
-    root_device_id => { pattern => '^\d*$',
-                         is_mandatory => 0,
-                         is_extended => 0 },        
-                         
-    active => { pattern => '^[01]$',
-                is_mandatory => 0,
-                is_extended => 0 },        
+    systemimage_name => {
+        pattern      => '^[0-9a-zA-Z_]*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    systemimage_desc => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    systemimage_dedicated => {
+        pattern      => '^(0|1)$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    distribution_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    etc_container_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    root_container_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    active => {
+        pattern      => '^[01]$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
 };
 
 sub primarykey { return 'systemimage_id'; }
@@ -272,32 +286,14 @@ sub getDevices {
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
-    $log->info("retrieve etc and root devices attributes");
-    my $etcrow = $self->{_dbix}->etc_device;
-    my $rootrow = $self->{_dbix}->root_device;
+
+    $log->info("Retrieve etc and root containers");
     my $devices = {
-        etc => { lv_id => $etcrow->get_column('lvm2_lv_id'), 
-                 lvname => $etcrow->get_column('lvm2_lv_name'),
-                 lvsize => $etcrow->get_column('lvm2_lv_size'),
-                 lvfreespace => $etcrow->get_column('lvm2_lv_freespace'),    
-                 filesystem => $etcrow->get_column('lvm2_lv_filesystem'),
-                 vg_id => $etcrow->get_column('lvm2_vg_id'),
-                 vgname => $etcrow->lvm2_vg->get_column('lvm2_vg_name'),
-                 vgsize => $etcrow->lvm2_vg->get_column('lvm2_vg_size'),
-                 vgfreespace => $etcrow->lvm2_vg->get_column('lvm2_vg_freespace'),
-                },
-        root => { lv_id => $rootrow->get_column('lvm2_lv_id'), 
-                 lvname => $rootrow->get_column('lvm2_lv_name'),
-                 lvsize => $rootrow->get_column('lvm2_lv_size'),
-                 lvfreespace => $rootrow->get_column('lvm2_lv_freespace'),    
-                 filesystem => $rootrow->get_column('lvm2_lv_filesystem'),
-                 vg_id => $rootrow->get_column('lvm2_vg_id'),
-                 vgname => $rootrow->lvm2_vg->get_column('lvm2_vg_name'),
-                 vgsize => $rootrow->lvm2_vg->get_column('lvm2_vg_size'),
-                 vgfreespace => $rootrow->lvm2_vg->get_column('lvm2_vg_freespace'),
-        }
+        etc  => Entity::Container->get(id => $self->getAttr(name => 'etc_container_id')),
+        root => Entity::Container->get(id => $self->getAttr(name => 'root_container_id')),
     };
-    $log->info("Systemimage etc and root devices retrieved from database");
+
+    $log->info("Systemimage etc and root containers retrieved from database");
     return $devices;
 }
 

@@ -16,10 +16,12 @@ package EEntity::EComponent::ELvm2;
 use base "EEntity::EComponent";
 
 use strict;
+
+use General;
+use Kanopya::Exceptions;
+
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-use Kanopya::Exceptions;
-use General;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -37,45 +39,61 @@ createDisk ( name, size, filesystem, econtext )
         code returned by EEntity::EComponent::ELvm2->lvCreate
     
 =cut
+
 sub createDisk {
     my $self = shift;
     my %args = @_;
-    General::checkParams(args=>\%args, required=>["name", "size", "filesystem", "econtext"]);
 
-    my $vg = $self->_getEntity()->getMainVg();
-    my $lv_id = $self->lvCreate(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
-                    lvm2_lv_filesystem =>$args{filesystem}, lvm2_lv_size => $args{size},
-                    econtext => $args{econtext}, lvm2_vg_name => $vg->{vgname});
-    if (( exists $args{erollback} and defined $args{erollback})){
-           $args{erollback}->add(function   =>$self->can('removeDisk'),
-                                parameters => [$self,
-                                               "name", $args{name},
-                                               "econtext", $args{econtext}]);
+    General::checkParams(args     => \%args,
+                         required => [ "name", "size", "filesystem", "econtext" ]);
+
+    my $vg    = $self->_getEntity()->getMainVg();
+    my $lv_id = $self->lvCreate(lvm2_vg_id         => $vg->{vgid},
+                                lvm2_lv_name       => $args{name},
+                                lvm2_lv_filesystem => $args{filesystem},
+                                lvm2_lv_size       => $args{size},
+                                lvm2_vg_name       => $vg->{vgname},
+                                econtext           => $args{econtext});
+
+    my $container = $self->_getEntity()->addContainer(lv_id => $lv_id);
+
+    if (exists $args{erollback} and defined $args{erollback}){
+        $args{erollback}->add(
+            function   => $self->can('removeDisk'),
+            parameters => [ $self, "container", $container, "econtext", $args{econtext} ]
+        );
     }
-    return $lv_id;
+
+    return $container;
 }
+
 =head2 removeDisk
 
-removeDisk ( name, econtext )
-    desc: This function remove a lv using it lvname.
-    args:
-        name : string: lv name
-        econtext : Econtext : execution context on the storage server
-    return:
-        code returned by EEntity::EComponent::ELvm2->lvRemove
-
 =cut
+
 sub removeDisk{
     my $self = shift;
     my %args = @_;
-    
-    General::checkParams(args=>\%args, required=>["name", "econtext"]);
+
+    General::checkParams(args=>\%args, required=>[ "container", "econtext" ]);
+
+    if (! $args{container}->isa("Entity::Container::LvmContainer")) {
+        throw Kanopya::Exception::Execution(
+                  error => "Container must be a Entity::Container::LvmContainer"
+              );
+    }
 
     my $vg = $self->_getEntity()->getMainVg();
+    $self->lvRemove(lvm2_vg_id   => $vg->{vgid},
+                    lvm2_lv_name => $args{container}->getAttr(name => 'container_name'),
+                    lvm2_vg_name => $vg->{vgname},
+                    econtext     => $args{econtext});
 
-    return $self->lvRemove(lvm2_vg_id =>$vg->{vgid}, lvm2_lv_name => $args{name},
-                    econtext => $args{econtext}, lvm2_vg_name => $vg->{vgname});
+    $self->_getEntity()->delContainer(container => $args{container});
+
+    #TODO: insert erollback ?
 }
+
 =head2 lvCreate
 
 createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, econtext, lvm2_vg_name)
@@ -91,17 +109,21 @@ createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, econtex
         code returned by Entity::Component::Lvm2->lvCreate
     
 =cut
+
 sub lvCreate{
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args, required=>["lvm2_lv_name", "lvm2_lv_size",
-                                                  "lvm2_lv_filesystem", "econtext", 
-                                                  "lvm2_vg_id", "lvm2_vg_name"]);
+    General::checkParams(args     => \%args,
+                         required => [ "lvm2_lv_name", "lvm2_lv_size",
+                                       "lvm2_lv_filesystem", "econtext",
+                                       "lvm2_vg_id", "lvm2_vg_name" ]);
 
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
-    $log->debug("lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}");
+
     my $command = "lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}";
+    $log->debug($command);
+
     my $ret = $args{econtext}->execute(command => $command);
     if($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
@@ -115,16 +137,16 @@ sub lvCreate{
     }
     delete $args{noformat};
     
-    $self->vgSpaceUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
-                        lvm2_vg_name => $args{lvm2_vg_name});
+    $self->vgSpaceUpdate(lvm2_vg_id   => $args{lvm2_vg_id},
+                         lvm2_vg_name => $args{lvm2_vg_name},
+                         econtext     => $args{econtext});
+
     delete $args{econtext};
     delete $args{lvm2_vg_name};
     
     return $self->_getEntity()->lvCreate(%args);
-    
-    
-    
 }
+
 =head2 vgSizeUpdate
 
 vgSizeUpdate ( lvm2_vg_id, econtext, lvm2_vg_name)
@@ -140,16 +162,13 @@ vgSizeUpdate ( lvm2_vg_id, econtext, lvm2_vg_name)
 sub vgSpaceUpdate {
     my $self = shift;
     my %args = @_;
-    
-    if ((! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
-        (! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
-        $errmsg = "ELvm2->vgSpaceUpdate need a econtext, lvm2_vg_id and lvm2_vg_name named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args     => \%args,
+                         required => [ "lvm2_vg_id", "lvm2_vg_name", "econtext" ]);
+
     my $command = "vgs $args{lvm2_vg_name} --noheadings -o vg_free --nosuffix --units B --rows";
     my $ret = $args{econtext}->execute(command => $command);
+
     if($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
         $log->error($errmsg);
@@ -160,7 +179,8 @@ sub vgSpaceUpdate {
     $freespace =~ s/^[ \t]+//;
     $freespace =~ s/,\d*$//;
 
-    return $self->_getEntity()->vgSizeUpdate(lvm2_vg_freespace => $freespace, lvm2_vg_id => $args{lvm2_vg_id});
+    return $self->_getEntity()->vgSizeUpdate(lvm2_vg_freespace => $freespace,
+                                             lvm2_vg_id        => $args{lvm2_vg_id});
 }
 
 =head2 lvRemove
@@ -173,27 +193,39 @@ lvRemove ( lvm2_lv_name, lvm2_vg_id, econtext, lvm2_vg_name)
 
 
 =cut
+
 sub lvRemove{
     my $self = shift;
     my %args = @_;
-    
-    if ((! exists $args{lvm2_lv_name} or ! defined $args{lvm2_lv_name}) ||
-        (! exists $args{lvm2_vg_id} or ! defined $args{lvm2_vg_id}) ||
-        (! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{lvm2_vg_name} or ! defined $args{lvm2_vg_name})) { 
-        $errmsg = "ELvm2->removeLV need a lvm2_lv_name, lvm2_vg_id, econtext and lvm2_vg_name named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args     => \%args,
+                         required => [ "lvm2_vg_id", "lvm2_vg_name",
+                                       "lvm2_lv_name", "econtext" ]);
 
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
-    $log->debug("lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
-    my $ret = $args{econtext}->execute(command => "lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}");
-#    delete $args{econtext};
-#    delete $args{lvm2_vg_name};
+
+    my $lvchange_cmd = "lvchange -a n /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
+    $log->debug($lvchange_cmd);
+    my $ret = $args{econtext}->execute(command => $lvchange_cmd);
+
+    my $lvremove_cmd = "lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
+    $log->debug($lvremove_cmd);
+    my $ret = $args{econtext}->execute(command => $lvremove_cmd);
+
+    if($ret->{'stderr'}){
+        $errmsg = "Error with removing logical volume " .
+                  "/dev/$args{lvm2_vg_name}/$args{lvm2_lv_name} " . $ret->{'stderr'};
+        $log->error($errmsg);
+
+        # sterr is defined, but the logical volume seems to be corectly
+        # removed from vg, so do not thorw exception.
+        #throw Kanopya::Exception::Execution(error => $errmsg);
+    }
+
     $self->_getEntity()->lvRemove(%args);
-    $self->vgSpaceUpdate(econtext => $args{econtext}, lvm2_vg_id => $args{lvm2_vg_id}, 
-                        lvm2_vg_name => $args{lvm2_vg_name});
+    $self->vgSpaceUpdate(econtext     => $args{econtext},
+                         lvm2_vg_id   => $args{lvm2_vg_id}, 
+                         lvm2_vg_name => $args{lvm2_vg_name});
 }
 
 =head2 mkfs
@@ -209,19 +241,15 @@ _mkfs ( device, fstype, fsoptions, econtext)
 sub mkfs {
     my $self = shift;
     my %args = @_;
-    
-    if ((! exists $args{device} or ! defined $args{device}) ||
-        (! exists $args{fstype} or ! defined $args{fstype}) ||
-        (! exists $args{econtext} or ! defined $args{econtext})) { 
-        $errmsg = "ELvm2->_mkfs need a device, fstype and econtext named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+
+    General::checkParams(args     => \%args,
+                         required => [ "device", "fstype", "econtext" ]);
     
     my $command = "mkfs -t $args{fstype} ";
     if($args{fsoptions}) {
         $command .= "$args{fsoptions} ";
     }
+
     $command .= " $args{device}";
     my $ret = $args{econtext}->execute(command => $command);
     if($ret->{exitcode} != 0) {

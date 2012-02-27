@@ -81,9 +81,38 @@ sub checkParams {
             # TODO log in the logger corresponding to caller package;
             $log->error($errmsg);
             
-            throw Kanopya::Exception::Internal::MissingParam(sub_name => $caller_sub_name, param_name => $param );
+            throw Kanopya::Exception::Internal::MissingParam(sub_name   => $caller_sub_name,
+                                                             param_name => $param );
         }
     }
+}
+
+sub checkParam {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'args', 'name' ]);
+
+    my $caller_args = $args{args};
+    my $arg_name = $args{name};
+    my $caller_sub_name = (caller(1))[3];
+
+    my $value;
+    eval {
+        General::checkParams(args => $caller_args, required => [ $arg_name ]);
+        $value = $caller_args->{$arg_name};
+    };
+    if ($@) {
+        if (exists $args{default} and defined $args{default}) {
+            $value = $args{default};
+        }
+        else {
+            throw Kanopya::Exception::Internal::MissingParam(
+                      sub_name   => $caller_sub_name,
+                      param_name => $args{name}
+                  );
+        }
+    }
+    return $value;
 }
 
 sub getClassEEntityFromEntity{

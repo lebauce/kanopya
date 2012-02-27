@@ -42,108 +42,136 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2 new
-
-    my comp = ESystemimage->new();
-
-ESystemimage::new creates a new component object.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-ESystemimage::_init is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
-# Params :
-#  econtext : nas econtext
-# devs : definition of the 2 devices
 sub create {
     my $self = shift;
     my %args = @_;
+    my $cmd_res;
 
-    General::checkParams(args => \%args, required => ["econtext", "devs","component_storage", "erollback"]);
+    General::checkParams(args     => \%args,
+                         required => [ "edisk_manager", "eexport_manager",
+                                       "devs", "erollback", "econtext" ]);
 
-    my $adm = Administrator->new();
+    for my $disk_type ("etc", "root") {
+        my $disk_name = $disk_type . '_' . $self->_getEntity()->getAttr(name => 'systemimage_name');
 
-    my $etc_name = 'etc_'.$self->_getEntity()->getAttr(name => 'systemimage_name');
-    my $root_name = 'root_'.$self->_getEntity()->getAttr(name => 'systemimage_name');
+        # Creation of the device based on distribution device
+        $log->info($disk_type . ' device creation for new systemimage');
 
-    # creation of etc and root devices based on distribution devices
-    $log->info('etc device creation for new systemimage');
-    my $etc_id = $args{component_storage}->createDisk(name           => $etc_name,
-                                                      size           => $args{devs}->{etc}->{lvsize}."B",
-                                                      filesystem     => $args{devs}->{etc}->{filesystem},
-                                                      econtext       => $args{econtext},
-                                                      erollback     => $args{erollback});
+        my $source_name = $args{devs}->{$disk_type}->getAttr(name => 'container_name');
+        my $source_size = $args{devs}->{$disk_type}->getAttr(name => 'container_size');
+        my $source_filesystem = $args{devs}->{$disk_type}->getAttr(name => 'container_filesystem');
 
-    $log->info('etc device creation for new systemimage');
-    my $root_id = $args{component_storage}->createDisk(name          => $root_name,
-                                                       size          => $args{devs}->{root}->{lvsize}."B",
-                                                       filesystem    => $args{devs}->{root}->{filesystem},
-                                                       econtext      => $args{econtext},
-                                                       erollback     => $args{erollback});
+        my $container = $args{edisk_manager}->createDisk(
+                            name       => $disk_name,
+                            size       => $source_size . "B",
+                            filesystem => $source_filesystem,
+                            econtext   => $args{edisk_manager}->{econtext},
+                            erollback  => $args{erollback}
+                        );
 
-    # copy of distribution data to systemimage devices
-    $log->info('etc device fill with distribution data for new systemimage');
-    my $command = "dd if=/dev/$args{devs}->{etc}->{vgname}/$args{devs}->{etc}->{lvname} of=/dev/$args{devs}->{etc}->{vgname}/$etc_name bs=1M";
-    my $result = $args{econtext}->execute(command => $command);
-    # TODO dd command execution result checking
+        # Copy of distribution data to systemimage devices
+        $log->info('Fill ' . $disk_type . ' device with distribution data for new systemimage');
 
-    $log->info('root device fill with distribution data for new systemimage');
-    $command = "dd if=/dev/$args{devs}->{root}->{vgname}/$args{devs}->{root}->{lvname} of=/dev/$args{devs}->{root}->{vgname}/$root_name bs=1M";
-    $result = $args{econtext}->execute(command => $command);
-    # TODO dd command execution result checking
+		# Temporary export the containers to copy contents
+        my $source_access = $args{eexport_manager}->createExport(
+                                container   => $args{devs}->{$disk_type},
+                                export_name => $source_name,
+                                econtext    => $args{eexport_manager}->{econtext},
+                                erollback   => $args{erollback}
+                            );
+        my $dest_access = $args{eexport_manager}->createExport(
+                              container   => $container,
+                              export_name => $container->getAttr(name => 'container_name'),
+                              econtext    => $args{eexport_manager}->{econtext},
+                              erollback   => $args{erollback}
+                          );
 
-    $self->_getEntity()->setAttr(name => "etc_device_id", value => $etc_id);
-    $self->_getEntity()->setAttr(name => "root_device_id", value => $root_id);
+		# Mount the containers on the executor.
+        my $source_mountpoint = "/mnt/" . $source_name;
+        my $dest_mountpoint   = "/mnt/" . $container->getAttr(name => 'container_name');
+
+        # Get the corresponding EContainerAccess
+        my $esource_access = EFactory::newEEntity(data => $source_access);
+        my $edest_access   = EFactory::newEEntity(data => $dest_access);
+
+        $log->info('Mounting source container <' . $source_mountpoint . '>');
+		$esource_access->mount(mountpoint => $source_mountpoint, econtext => $args{econtext});
+
+        $log->info('Mounting destination container <' . $dest_mountpoint . '>');
+		$edest_access->mount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
+
+        # Copy the filesystem.
+        my $copy_fs_cmd = "cp -R --preserve=all $source_mountpoint/. $dest_mountpoint/";
+
+        $log->debug($copy_fs_cmd);
+        $cmd_res = $args{econtext}->execute(command => $copy_fs_cmd);
+
+        if($cmd_res->{'stderr'}){
+            $errmsg = "Error with copy of $source_mountpoint to $dest_mountpoint: " .
+                      $cmd_res->{'stderr'};
+            $log->error($errmsg);
+            Kanopya::Exception::Execution(error => $errmsg);
+        }
+
+        $self->_getEntity()->setAttr(name  => $disk_type . "_container_id",
+                                     value => $container->getAttr(name => 'container_id'));
+
+        # Unmount the containers, and remove the temporary exports.
+        $esource_access->umount(mountpoint => $source_mountpoint, econtext => $args{econtext});
+        $edest_access->umount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
+
+        $args{eexport_manager}->removeExport(container_access => $source_access,
+                                             econtext         => $args{eexport_manager}->{econtext},
+                                             erollback        => $args{erollback});
+        $args{eexport_manager}->removeExport(container_access => $dest_access,
+                                             econtext         => $args{eexport_manager}->{econtext},
+                                             erollback        => $args{erollback});
+    }
+
     $self->_getEntity()->setAttr(name => "active", value => 0);
-
     $self->_getEntity()->save();
-    $log->info('System image <'.$self->_getEntity()->getAttr(name => 'systemimage_name') .'> is added');
+
+    $log->info('System image <'. $self->_getEntity()->getAttr(name => 'systemimage_name') . '> is added');
 
     return $self->_getEntity()->getAttr(name => "systemimage_id");
 }
 
 sub generateAuthorizedKeys{
     my $self = shift;
-
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ["econtext"]);
+    General::checkParams(args     => \%args,
+                         required => [ "eexport_manager", "econtext" ]);
+
     # mount the root systemimage device
     my $si_devices = $self->_getEntity()->getDevices();
-    
-    my $mount_point = "/mnt/$si_devices->{root}->{lvm2_lv_name}";
-    my $mkdir_cmd = "mkdir -p $mount_point";
-    $args{econtext}->execute(command => $mkdir_cmd);
 
-    my $mount_cmd = "mount /dev/$si_devices->{root}->{vgname}/$si_devices->{root}->{lvname} $mount_point";
-    $args{econtext}->execute(command => $mount_cmd);
+    my $container_access = $args{eexport_manager}->createExport(
+                               container   => $si_devices->{root},
+                               export_name => $si_devices->{root}->getAttr(name => 'container_name'),
+                               econtext    => $args{eexport_manager}->{econtext},
+                               erollback   => $args{erollback}
+                            );
+
+    # Get the corresponding EContainerAccess
+    my $econtainer_access = EFactory::newEEntity(data => $container_access);
+
+    my $mount_point = "/mnt/" . $si_devices->{root}->getAttr(name => 'container_name');
+    $econtainer_access->mount(mountpoint => $mount_point, econtext => $args{econtext});
 
     my $rsapubkey_cmd = "cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
     $args{econtext}->execute(command => $rsapubkey_cmd);
 
     my $sync_cmd = "sync";
     $args{econtext}->execute(command => $sync_cmd);
-    my $umount_cmd = "umount $mount_point";
-    $args{econtext}->execute(command => $umount_cmd);
+
+    $econtainer_access->umount(mountpoint => $mount_point, econtext => $args{econtext});
+
+    $args{eexport_manager}->removeExport(
+        container_access => $container_access,
+        econtext         => $args{eexport_manager}->{econtext},
+        erollback        => $args{erollback}
+    );
 }
 
 sub activate {
@@ -151,37 +179,32 @@ sub activate {
 
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ["econtext" , "component_export", "erollback"]);
-    
-     my $sysimg_dev = $self->_getEntity()->getDevices();
+    General::checkParams(args     => \%args,
+                         required => [ "econtext", "eexport_manager", "erollback" ]);
 
-    ## provide root rsa pub key to provide ssh key authentication
-    $self->generateAuthorizedKeys(econtext=>$args{econtext});
+    my $sysimg_dev = $self->_getEntity()->getDevices();
 
-    ## Update export to allow to host to boot with this systemimage
-    my $target_name = $args{component_export}->generateTargetname(name => 'root_'.$self->_getEntity()->getAttr(name => 'systemimage_name'));
+    # Provide root rsa pub key to provide ssh key authentication
+    $self->generateAuthorizedKeys(eexport_manager => $args{eexport_manager},
+                                  econtext        => $args{econtext},
+                                  erollback       => $args{erollback});
 
-    # Get etc iscsi target information
+    # Get etc acontainer export information
     my $si_access_mode = $self->_getEntity()->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
+    my $export_name    = 'root_'.$self->_getEntity()->getAttr(name => 'systemimage_name');
 
-    $args{component_export}->addExport(iscsitarget1_lun_number    => 0,
-                                                iscsitarget1_lun_device    => "/dev/$sysimg_dev->{root}->{vgname}/$sysimg_dev->{root}->{lvname}",
-                                                iscsitarget1_lun_typeio    => "fileio",
-                                                iscsitarget1_lun_iomode    => $si_access_mode,
-                                                iscsitarget1_target_name   =>$target_name,
-                                                econtext                   => $args{econtext},
-                                                erollback                  => $args{erollback});
-    my $eroll_add_export = $args{erollback}->getLastInserted();
-    # generate new configuration file
-    $args{erollback}->insertNextErollBefore(erollback=>$eroll_add_export);
-    $args{component_export}->generate(econtext   => $args{econtext},
-                                      erollback  => $args{erollback});
+    $args{eexport_manager}->createExport(container   => $sysimg_dev->{root},
+                                         export_name => $export_name,
+                                         typeio      => "fileio",
+                                         iomode      => $si_access_mode,
+                                         econtext    => $args{eexport_manager}->{econtext},
+                                         erollback   => $args{erollback});
 
-    $log->info("System image <".$self->_getEntity()->getAttr(name=>"systemimage_name") ."> is now exported with target <$target_name>");
-    # set system image active in db
+    # Set system image active in db
     $self->_getEntity()->setAttr(name => 'active', value => 1);
     $self->_getEntity()->save();
-    $log->info("System image <".$self->_getEntity()->getAttr(name=>"systemimage_name") ."> is now active");
+
+    $log->info("System image <" . $self->_getEntity()->getAttr(name=>"systemimage_name") . "> is now active");
 }
 
 1;

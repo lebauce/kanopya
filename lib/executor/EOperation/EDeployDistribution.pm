@@ -39,17 +39,19 @@ use base "EOperation";
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
 use Data::Dumper;
 use XML::Simple;
 use Kanopya::Exceptions;
+use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Distribution;
 use Entity::Gp;
 use EFactory;
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
+
 my $errmsg;
 our $VERSION = '1.00';
 
@@ -77,6 +79,7 @@ sub new {
 
 sub _init {
     my $self = shift;
+    $self->{executor};
     $self->{_objs} = {};
     return;
 }
@@ -84,8 +87,6 @@ sub _init {
 sub checkOp{
     my $self = shift;
     my %args = @_;
-    
-
 }
 
 =head2 prepare
@@ -95,42 +96,39 @@ sub checkOp{
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
 
-    # Check if internal_cluster exists
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EDeployComponent->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
     
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     
     $self->{_file_path} = $params->{file_path};
-    
     $self->{_file_path} =~ /.*\/(.*)$/;
     my $file_name = $1;
     $self->{_file_name} = $file_name; 
 
-    # Check tarball name and retrieve component info from tarball name (temporary. TODO: component def xml file) 
+    # Check tarball name and retrieve component info from tarball name
+    # (temporary. TODO: component def xml file) 
     if ((not defined $file_name) || $file_name !~ /distribution_([a-zA-Z]+)_([0-9\.]+)\.tar\.bz2/) {
         $errmsg = "Incorrect component tarball name";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+
     my ($dist_name, $dist_version) = ($1, $2);
     $self->{distribution_name} = $dist_name;
     $self->{distribution_version} = $dist_version;
     
-    $log->debug("instanciate new distribution <$self->{distribution_name}> version <$self->{distribution_version}>");
+    $log->debug("Instanciate new distribution <$self->{distribution_name}> " .
+                "version <$self->{distribution_version}>");
     eval {
-       $self->{_objs}->{distribution} = Entity::Distribution->new(distribution_name     => $self->{distribution_name},
-                                                                  distribution_version  => $self->{distribution_version},
-                                                                  distribution_desc     => "Upload by Admin on Kanopya");
+        $self->{_objs}->{distribution} =
+            Entity::Distribution->new(distribution_name    => $self->{distribution_name},
+                                      distribution_version => $self->{distribution_version},
+                                      distribution_desc    => "Upload by Admin on Kanopya");
     };
     if($@) {
         my $err = $@;
@@ -139,8 +137,7 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-
-    ### Check Parameters and context
+    # Check Parameters and context
     eval {
         $self->checkOp(params => $params);
     };
@@ -151,67 +148,156 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
+    # Check if a service provider is given in parameters, use default instead.
+    eval {
+        General::checkParams(args => $params, required => ["storage_provider_id"]);
+
+        $self->{_objs}->{storage_provider}
+            = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
+    };
+    if ($@) {
+        $log->info("Service provider id not defined, using default.");
+        $self->{_objs}->{storage_provider}
+            = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
+    }
+
+    # Check if a disk manager is given in parameters, use default instead.
+    my $disk_manager;
+    eval {
+        General::checkParams(args => $params, required => ["disk_manager_id"]);
+
+        $disk_manager
+            = $self->{_objs}->{storage_provider}->getManager(id => $params->{disk_manager_id});
+    };
+    if ($@) {
+        $log->info("Disk manager id not defined, using default.");
+        $disk_manager
+            = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'DiskManager');
+    }
+
+    # Get the disk manager for disk creation, get the export manager for copy from file.
+    my $export_manager = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'ExportManager');
+    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
+    $self->{_objs}->{edisk_manager}   = EFactory::newEEntity(data => $disk_manager);
 
     # Get contexts
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-    $self->loadContext( internal_cluster => $args{internal_cluster}, service => 'nas' );
-    $self->{nas}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    my $tmp = $self->{nas}->{obj}->getComponent(name       => "Lvm",
-                                                version    => "2");
-    $log->debug("Value return by getcomponent ". ref($tmp));
-    $self->{_objs}->{component_storage} = EFactory::newEEntity(data => $tmp);
-    
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+
+    my $storage_provider_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
+    $self->{_objs}->{edisk_manager}->{econtext}
+        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                ip_destination => $storage_provider_ip);
+    $self->{_objs}->{eexport_manager}->{econtext}
+        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                ip_destination => $storage_provider_ip);
+
 }
 
 sub execute{
     my $self = shift;
     my ($cmd, $cmd_res);
-    
-    # untar component archive on local /tmp/<tar_root>
+
+    # Untar component archive on local /tmp/<tar_root>
     $log->debug("Deploy files from archive '$self->{_file_path}'");
     $cmd = "tar -jxf $self->{_file_path} -C /tmp"; 
     $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-    
-    my $vg = $self->{_objs}->{component_storage}->_getEntity()->getMainVg();
-    
+
     # Find size of root and etc
-    for my $disk_type ("etc","root") {
-        # get the file size
+    for my $disk_type ("etc", "root") {
+        # Get the file size
         my $file = "/tmp/$disk_type"."_$self->{distribution_name}_$self->{distribution_version}.img";
         $cmd = "du -s --bytes $file | awk '{print \$1}'";
+
+        $log->error($cmd);
         $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+
         if($cmd_res->{'stderr'}){
-            $errmsg = "Error with $disk_type disk acces of <$self->{distribution_name}>";
+            $errmsg = "Error with $disk_type disk access of <$self->{distribution_name}>";
             $log->error($errmsg);
-             Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            Kanopya::Exception::Internal::WrongValue(error => $errmsg);
         }
         chomp($cmd_res->{'stdout'});
-        # create a new lv with the same size
-        $self->{$disk_type} = $self->{_objs}->{component_storage}->createDisk(name => "$disk_type"."_$self->{distribution_name}_$self->{distribution_version}",
-                                                                 size        => $cmd_res->{'stdout'}."B",
-                                                                 filesystem  => "ext3",
-                                                                 econtext    => $self->{nas}->{econtext},
-                                                                 erollback   => $self->{erollback},
-                                                                 noformat    => 1);
-        
-        # duplicate file content into the new lv
-        $cmd = "dd if=$file of=/dev/$vg->{vgname}/$disk_type".
-               "_$self->{distribution_name}_$self->{distribution_version} bs=1M";
-         $log->debug($cmd);
-        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-        $self->{_objs}->{distribution}->setAttr(name => "$disk_type"."_device_id", value => $self->{$disk_type});
-    
-        # delete the file
+
+        # Create a new container with the same size
+        my $eexport_manager = $self->{_objs}->{eexport_manager};
+        my $edisk_manager   = $self->{_objs}->{edisk_manager};
+
+        my $disk_name = "$disk_type"."_$self->{distribution_name}_$self->{distribution_version}";
+        $self->{$disk_type}
+            = $edisk_manager->createDisk(name       => $disk_name,
+                                         size       => $cmd_res->{'stdout'}."B",
+                                         filesystem => "ext3",
+                                         econtext   => $self->{_objs}->{edisk_manager}->{econtext},
+                                         erollback  => $self->{erollback});
+
+		# Temporary export this container to copy the source distribution files.
+        my $container_access
+            = $eexport_manager->createExport(container   => $self->{$disk_type},
+                                             export_name => $disk_name,
+                                             econtext    => $self->{_objs}->{eexport_manager}->{econtext},
+                                             erollback   => $self->{erollback});
+
+        # Get the corresponding EContainerAccess
+        my $econtainer_access = EFactory::newEEntity(data => $container_access);
+
+		# Mount the container on the executor.
+		$econtainer_access->mount(mountpoint => "/mnt/$disk_name",
+                                  econtext   => $self->{executor}->{econtext});
+
+		# Mount source file in loop mode.
+		my $mkdir_cmd = "mkdir -p /mnt/$disk_name-source";
+		$self->{executor}->{econtext}->execute(command => $mkdir_cmd);
+
+		my $mount_cmd = "mount -o loop $file /mnt/$disk_name-source";
+		$self->{executor}->{econtext}->execute(command => $mount_cmd);
+
+        # TODO: insert an erollback to umount source file
+
+        # Copy the filesystem.
+        my $copy_fs_cmd = "cp -R --preserve=all /mnt/$disk_name-source/. /mnt/$disk_name/";
+
+        $log->debug($copy_fs_cmd);
+        $cmd_res = $self->{executor}->{econtext}->execute(command => $copy_fs_cmd);
+
+        if($cmd_res->{'stderr'}){
+            $errmsg = "Error with copy of /mnt/$disk_name-source/ to /mnt/$disk_name/: $cmd_res->{'stderr'}";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        }
+
+        $self->{_objs}->{distribution}->setAttr(name  => "$disk_type"."_container_id",
+                                                value => $self->{$disk_type}->getAttr(name => 'container_id'));
+
+        # Unmount the container, and remove the temporary export.
+        $econtainer_access->umount(mountpoint => "/mnt/$disk_name",
+                                   econtext   => $self->{executor}->{econtext});
+
+        # Delete the mountpoints.
+		my $mount_cmd = "umount /mnt/$disk_name-source";
+		$self->{executor}->{econtext}->execute(command => $mount_cmd);
+        my $mkdir_cmd = "rm -R /mnt/$disk_name-source";
+		$self->{executor}->{econtext}->execute(command => $mkdir_cmd);
+
+        # Delete the file
         $cmd = "rm $file";
         $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-    
+
+        # Remove the export at last step.
+        $eexport_manager->removeExport(container_access => $container_access,
+                                       econtext         => $self->{_objs}->{eexport_manager}->{econtext},
+                                       erollback        => $self->{erollback});
+
     }
     $self->{_objs}->{distribution}->save();
-        my @group = Entity::Gp->getGroups(hash => {gp_name=>'Distribution'});
-        $group[0]->appendEntity(entity => $self->{_objs}->{distribution});
-    # update distribution provided components list
-	$self->{_objs}->{distribution}->updateProvidedComponents();
-	
+
+    my @group = Entity::Gp->getGroups(hash => {gp_name=>'Distribution'});
+    $group[0]->appendEntity(entity => $self->{_objs}->{distribution});
+
+    # Update distribution provided components list
+    $self->{_objs}->{distribution}->updateProvidedComponents();
 }        
 
 =head1 DIAGNOSTICS

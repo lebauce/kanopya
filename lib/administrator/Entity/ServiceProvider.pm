@@ -32,8 +32,27 @@ blablabla
 package Entity::ServiceProvider;
 use base "Entity";
 
+use Kanopya::Exceptions;
+
+
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getDefaultManager {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub getManager {
+	throw Kanopya::Exception::NotImplemented();
+}
+
+sub getState {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub getMasterNodeIp {
+    throw Kanopya::Exception::NotImplemented();
+}
 
 1;

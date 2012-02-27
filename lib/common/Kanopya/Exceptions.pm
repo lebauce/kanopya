@@ -80,6 +80,10 @@ use Exception::Class (
     isa => 'Kanopya::Exception::Internal',
     description => 'Wrong Value',
     },
+    Kanopya::Exception::Internal::WrongType => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Wrong Type',
+    },
     Kanopya::Exception::Internal::IncorrectParam => {
     isa => 'Kanopya::Exception::Internal',
     description => 'Wrong attribute or parameter',
@@ -87,6 +91,11 @@ use Exception::Class (
     Kanopya::Exception::Internal::MissingParam => {
     isa => 'Kanopya::Exception::Internal',
     description => 'Parameter missing or undefined',
+    fields => [ 'sub_name', 'param_name' ],
+    },
+    Kanopya::Exception::Internal::UnknownCategory => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Unknown category type',
     fields => [ 'sub_name', 'param_name' ],
     },
     Kanopya::Exception::Execution => {
@@ -119,10 +128,12 @@ use Exception::Class (
     },
     Kanopya::Exception::OperationAlreadyEnqueued => {
     isa => 'Kanopya::Exception',
-    description => 'Operation already enqueued'     
+    description => 'Operation already enqueued'
     },
-    
-    
+    Kanopya::Exception::NotImplemented => {
+    isa => 'Kanopya::Exception',
+    description => 'Method not implemented'
+    },
 );
 
 # Force print trace when exception is stringified
