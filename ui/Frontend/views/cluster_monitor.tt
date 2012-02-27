@@ -1,9 +1,10 @@
-<% js_head.push('jquery.jqplot.min.js', 'jqplot.barRenderer.js', 'jqplot.categoryAxisRenderer.js', 'jqplot.dateAxisRenderer.js', 'jqplot.canvasTextRenderer.js', 'jqplot.canvasAxisTickRenderer.js', 'monitor.js') %>
+<% js_head.push('jquery.jqplot.js', 'jqplot.barRenderer.js', 'jqplot.categoryAxisRenderer.js', 'jqplot.dateAxisRenderer.js', 'jqplot.canvasTextRenderer.js', 'jqplot.canvasAxisTickRenderer.js', 'monitor.js') %>
 
 <h1> You are currently monitoring external cluster number <% cluster_id %> </h1>
 <div class="cluster_overview">
     <h2>cluster overview</h2>
         <div class="clustermetric_dropdown">
+			<label for="indicator_list" class="list_label">available Cluster Metrics for external cluster: </label>
         </div>
         <br />
         <div id="timedClusterMetricView" style="height:400px;width:1000px; "></div><br />
@@ -11,7 +12,7 @@
 <div class="nodes_overview">
     <h2>nodes overview</h2>
     <div class="indicator_dropdown">
-    <label for="indicator_list" class="list_label">available indicators for external cluster: </label>
+		<label for="indicator_list" class="list_label">available indicators for external cluster: </label>
         <select id="indicator_list" onchange="showMetricGraph(this,this.options[this.selectedIndex].value);" >
             <% FOREACH indicator IN indicators %>
                 <option value="<% indicator %>"><% indicator %></option>
@@ -21,4 +22,8 @@
     <br />
     <div id="nodechart" style="height:400px;width:1000px; "></div><br />
     <div><span>You Clicked: </span><span id="info1">Nothing yet</span></div>
+</div>
+
+<div class="single_node_overview">
+	<h2>Single node view</h2>
 </div>

@@ -238,7 +238,7 @@ get '/extclusters/:extclusterid/monitoring' => sub {
     my @indicators;
     
     foreach my $indicator (@{$scom_indicatorset->{ds}}){
-        push @indicators, $indicator->{label};
+        push @indicators, $indicator->{oid};
     }
   
   template 'cluster_monitor', {
@@ -248,19 +248,10 @@ get '/extclusters/:extclusterid/monitoring' => sub {
     };
   };
 
-
-ajax '/extclusters/:extclusterid/monitoring' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;  
-    my @list = (10,7,20,4);
-    my @nodelist = ('node1','node2','node3','node4');
-    
-    to_json {values => \@list, nodelist => \@nodelist};
-};
-
 ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
     my $cluster_id    = params->{extclusterid} || 0;   
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
-    my $indicator = params->{'metric'};;
+    my $indicator = params->{'metric'};
     my $nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
     my @nodes;
     my @values;
