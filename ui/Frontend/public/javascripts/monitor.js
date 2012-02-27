@@ -6,6 +6,8 @@
 	var content_link = path + '/graphs'; // remove the beginning of the url to keep only path
  	var save_clustermonitoring_settings_link = path + '/save';
  	var save_monitoring_settings_link = "/cgi/kanopya.cgi/monitoring/save_monitoring_settings";
+    var current_path = path;
+
 
  	commonInit();
  	
@@ -287,5 +289,78 @@
    
    
    //$( ".draggable" ).draggable();
-   
+    // function test_ui(){
+        // 0();
+        // alert (current_path);
+        // var s1 = 34;
+        // $.getJSON(current_path, {v1: s1}, function(data) {
+			// alert ('alert xml une fois pouet');
+            // alert(data.values);
+            // loading_stop();
+        // });     
+   // } 
+   // $('#testcall').click (test_ui);
+   timedGraph();
  });
+ 
+var url = window.location.href;
+var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
+var metric_view =path + '/metricview';
+
+
+function showMetricGraph(curobj,metric){
+    loading_start();
+    var params = {metric: metric};
+    document.getElementById('nodechart').innerHTML='';
+    $.getJSON(metric_view, params, function(data) {
+        document.getElementById('nodechart').style.display='block';
+        barGraph(data.values, data.nodelist);
+        loading_stop();
+    });
+}
+
+function barGraph(values, nodelist){
+    $.jqplot.config.enablePlugins = true;
+    plot1 = $.jqplot('nodechart', [values], {
+        animate: !$.jqplot.use_excanvas,
+        seriesDefaults:{
+            renderer:$.jqplot.BarRenderer,
+            pointLabels: { show: true }
+        },
+        axes: {
+            xaxis: {
+                renderer: $.jqplot.CategoryAxisRenderer,
+                ticks: nodelist
+            }
+        },
+        highlighter: { show: false }
+    });
+ 
+    $('#nodechart').bind('jqplotDataClick',
+        function (ev, seriesIndex, pointIndex, data) {
+            $('#info1').html('series: '+seriesIndex+', point: '+pointIndex+', data: '+data);
+        }
+    );
+}
+ 
+ function timedGraph(){
+     $.jqplot.config.enablePlugins = true;
+     var line1=[['2012-08-02 4:00PM',4], ['2012-09-02 4:00PM',6.5], ['2012-10-02 4:00PM',5.7], ['2012-11-02 4:00PM',9], ['2012-12-02 4:00PM',8.2]];
+      var plot1 = $.jqplot('timedClusterMetricView', [line1], {
+        title:'Default Date Axis',
+        axes:{
+            xaxis:{
+                renderer:$.jqplot.DateAxisRenderer,
+                rendererOptions: {
+                    tickInset: 0
+                },
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                tickOptions: {
+                  angle: -30,
+                  // formatString: '%#m-%#d %H:%M'
+                } 
+            }      
+        },
+        series:[{lineWidth:4, markerOptions:{style:'square'}}]
+    });
+}

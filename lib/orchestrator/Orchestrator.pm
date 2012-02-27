@@ -47,13 +47,14 @@ package Orchestrator;
 
 use strict;
 use warnings;
-use Monitor::Retriever;
+#use Monitor::Retriever;
 use XML::Simple;
 use General;
 use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
+use AggregateRule;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
@@ -78,30 +79,54 @@ sub new {
 
     # Load conf
     my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
-    $self->{_time_step} = $conf->{time_step};
-    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
-    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
-    
-    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
-    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
-    
-    # Create orchestrator dirs if needed
-    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
-        my @dir_path = split '/', $dir_path;
-        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
-        while (scalar @dir_path) {
-            $dir .= (shift @dir_path) . "/";
-            mkdir $dir;
-        }
-    }
-    
-    # Get Administrator
+   # Get Administrator
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
     Administrator::authenticate( login => $login, password => $password );
     $self->{_admin} = Administrator->new();
-    $self->{_monitor} = Monitor::Retriever->new( );
+    #$self->{_monitor} = Monitor::Retriever->new( );
     
     return $self;
+}
+
+
+=head2 manage_aggregate
+    
+    Class : Public
+    
+    Desc :     New manager for aggregates
+    
+=cut
+
+sub manage_aggregates {
+    my $self = shift;
+    
+    print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
+
+    for my $aggregate_rule (AggregateRule->search(hash=>{})){
+        
+        if ($aggregate_rule -> isEnabled()) {
+            print "**********\n";
+            print '* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
+            print $aggregate_rule->toString()."\n";
+
+            $log->info("**********");
+            $log->info('* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
+
+            
+            my $result = $aggregate_rule->eval();
+            
+            if($result){
+               print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+               $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
+               #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
+            }else{
+                #print "Rule false, no action \n";
+                #$log->info("Rule false, no action");
+            }
+        }
+    }
+
+    
 }
 
 =head2 manage
@@ -956,14 +981,17 @@ sub graph {
 sub run {
     my $self = shift;
     my $running = shift;
-    
+    # Load conf
+    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{_time_step} = $conf->{time_step};
+        
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'info', content => "Kanopya Orchestrator started.");
     
     while ( $$running ) {
 
         my $start_time = time();
 
-        $self->manage();
+        $self->manage_aggregates();
 
         my $update_duration = time() - $start_time;
         $log->info( "Manage duration : $update_duration seconds" );
@@ -976,6 +1004,41 @@ sub run {
     }
     
     $self->{_admin}->addMessage(from => 'Orchestrator', level => 'warning', content => "Kanopya Orchestrator stopped");
+}
+
+sub new_old {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = {};
+    bless $self, $class;
+
+    # Load conf
+    my $conf = XMLin("/opt/kanopya/conf/orchestrator.conf");
+    $self->{_time_step} = $conf->{time_step};
+    $self->{_traps} = General::getAsArrayRef( data => $conf->{add_rules}, tag => 'traps' );
+    $self->{_conditions} = General::getAsArrayRef( data => $conf->{delete_rules}, tag => 'conditions' );
+    
+    $self->{_rrd_base_dir} = $conf->{rrd_base_dir} || '/tmp/orchestrator';
+    $self->{_graph_dir} = $conf->{graph_dir} || '/tmp/orchestrator';
+    
+    # Create orchestrator dirs if needed
+    for my $dir_path ( ($self->{_graph_dir}, $self->{_rrd_base_dir}) ) { 
+        my @dir_path = split '/', $dir_path;
+        my $dir = substr($dir_path, 0, 1) eq '/' ? "/" : "";
+        while (scalar @dir_path) {
+            $dir .= (shift @dir_path) . "/";
+            mkdir $dir;
+        }
+    }
+    
+    # Get Administrator
+    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
+    Administrator::authenticate( login => $login, password => $password );
+    $self->{_admin} = Administrator->new();
+    $self->{_monitor} = Monitor::Retriever->new( );
+    
+    return $self;
 }
 
 1;

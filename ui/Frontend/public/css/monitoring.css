@@ -1,0 +1,12 @@
+.list_label{
+    font-size:20px;
+}
+#nodechart{
+    display:none;
+    position:relative; 
+    margin-left:7%;
+}
+#timedClusterMetricView{
+    position:relative; 
+    margin-left:7%;
+}

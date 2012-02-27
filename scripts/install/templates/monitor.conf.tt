@@ -1,4 +1,4 @@
-<conf graph_dir="/tmp/monitor/graph" period="86400" rrd_base_dir="/var/cache/kanopya/monitor/base" time_step="30">
+<conf graph_dir="/tmp/monitor/graph" period="86400" rrd_base_dir="/var/cache/kanopya/monitor/base" time_step="60">
   <generate_graph time_step='40' />
   <node_states starting_max_time="120" stopping_max_time="60" />
   <internalnetwork ip="[% internal_net_add %]" mask="[% internal_net_mask %]" />

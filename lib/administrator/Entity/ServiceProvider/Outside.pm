@@ -34,9 +34,14 @@ use base "Entity::ServiceProvider";
 
 use Entity::Connector;
 
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("administrator");
+
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
 
 sub getManager {
     my $class = shift;
@@ -44,7 +49,65 @@ sub getManager {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    return Entity::Connector->get(id => $args{id})
+    return Entity::Connector->get(id => $args{id});
+}
+
+=head2 addConnector
+
+link an existing connector with the outside service provider
+
+=cut
+
+sub addConnector {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector']);
+
+    my $connector = $args{connector};
+    $connector->setAttr(name => 'outside_id', value => $self->getAttr(name => 'outside_id'));
+    $connector->save();
+
+    return $connector->{_dbix}->id;
+}
+
+=head2 getConnector
+
+Get the concrete linked connector of category <category>
+
+=cut
+
+# Same behaviour than Cluster::getComponent
+# TODO factorize!
+sub getConnector {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['category']);
+    
+    # Retrieve associated connector of category
+    my $connectors_rs = $self->{_dbix}->parent->search_related(
+        "connectors",
+        { 'connector_type.connector_category' => $args{category} },
+        { join => ["connector_type"] }
+    );
+    
+    my $connector_row = $connectors_rs->next;
+    if (not defined $connector_row) {
+        throw Kanopya::Exception::Internal(error => "No linked connector of category '$args{category}'");
+    }
+    if ($connectors_rs->count > 1) {
+        $log->info("More than one connector of category '$args{category}'");
+    }
+    my $connector_name = $connector_row->connector_type->connector_name;
+    my $connector_id   = $connector_row->id;
+    $log->info("Take connector '$connector_name', id $connector_id");
+
+    # Get concrete connector
+    my $class= "Entity::Connector::" . $connector_name;
+    my $loc = General::getLocFromClass(entityclass=>$class);
+    eval { require $loc; };
+    return "$class"->get(id =>$connector_id);
 }
 
 1;

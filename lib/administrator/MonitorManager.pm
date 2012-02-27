@@ -1,6 +1,6 @@
 # MonitorManager.pm - Object class of Monitor Manager included in Administrator
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -82,11 +82,13 @@ sub getIndicatorSets {
         my @indicators = ();
         while (my $indicator = $indicator_rs->next) {
             push @indicators, {
+                'id' => $indicator->get_column( 'indicator_id' ),
                 'label' => $indicator->get_column( 'indicator_name' ),
                 'oid' => $indicator->get_column( 'indicator_oid' ),
                 'min' => $indicator->get_column( 'indicator_min' ),
                 'max' => $indicator->get_column( 'indicator_max' ),
                 'color' => $indicator->get_column( 'indicator_color' ),
+                'unit' => $indicator->get_column( 'indicator_unit' ),
             };
         }
         

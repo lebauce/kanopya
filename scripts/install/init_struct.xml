@@ -81,7 +81,6 @@
        is_searchable="1"
        search_command="domainname"
        pattern="^[a-z0-9-]+(\.[a-z0-9-]+)+$"/>
-    <!-- Kanopya config-->
     <internal_net_interface
        question="Which Kanopya server network interface will be used to administrate infrastructure"
        default=""

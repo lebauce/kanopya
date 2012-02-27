@@ -74,7 +74,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "indicator_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_oid",
   { data_type => "char", is_nullable => 0, size => 64 },
   "indicator_min",
@@ -90,6 +90,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "indicator_unit",
+  { data_type => "char", is_nullable => 0, size => 32 },
 );
 __PACKAGE__->set_primary_key("indicator_id");
 

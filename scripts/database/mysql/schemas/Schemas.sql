@@ -783,6 +783,7 @@ CREATE TABLE `infrastructure` (
 -- Table structure for `tier`
 -- Entity::Tier class
 -- #TODO Warning Here delete tier when cluster removed by when cluster will be used by tier then they will not be destroyed when cluster are.
+
 CREATE TABLE `tier` (
   `tier_id` int(8) unsigned NOT NULL,
   `infrastructure_id` int(8) unsigned NOT NULL,
@@ -1020,12 +1021,13 @@ CREATE TABLE `indicatorset` (
 
 CREATE TABLE `indicator` (
   `indicator_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `indicator_name` char(32) NOT NULL,
+  `indicator_name` char(64) NOT NULL,
   `indicator_oid` char(64) NOT NULL,
   `indicator_min` int(8) unsigned,
   `indicator_max` int(8) unsigned,
   `indicator_color` char(8),
   `indicatorset_id` int(8) unsigned DEFAULT NULL,
+  `indicator_unit` char(32) DEFAULT NULL,
   PRIMARY KEY (`indicator_id`),
   KEY (`indicatorset_id`),
   FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -1064,6 +1066,69 @@ CREATE TABLE `graph` (
   FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+--
+-- Table structure for table `clustermetric`
+--
+
+CREATE TABLE `clustermetric` (
+  `clustermetric_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `clustermetric_cluster_id` int(8) unsigned NOT NULL,
+  `clustermetric_indicator_id` int(8) unsigned NOT NULL,
+  `clustermetric_statistics_function_name` char(32) NOT NULL,
+  `clustermetric_window_time` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`clustermetric_id`),
+  KEY (`clustermetric_indicator_id`),
+  FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
+  KEY (`clustermetric_cluster_id`),
+  FOREIGN KEY (`clustermetric_cluster_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `aggregate_combination`
+--
+
+CREATE TABLE `aggregate_combination` (
+`aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`aggregate_combination_formula` char(32) NOT NULL
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `aggregate_rule`
+--
+
+CREATE TABLE `aggregate_rule` (
+`aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+`aggregate_rule_formula` char(32) NOT NULL ,
+`aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
+`aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
+`aggregate_rule_state` char(32) NOT NULL ,
+`aggregate_rule_action_id` int(8) unsigned NOT NULL
+) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `aggregate_condition`
+--
+
+CREATE TABLE `aggregate_condition` (
+  `aggregate_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `aggregate_combination_id` int(8) unsigned NOT NULL,
+  `comparator` char(32) NOT NULL,
+  `threshold` double NOT NULL,
+  `state` char(32) NOT NULL,
+  `time_limit` char(32),
+  `last_eval` BOOLEAN DEFAULT NULL,
+  PRIMARY KEY (`aggregate_condition_id`),
+  KEY (`aggregate_combination_id`),
+  FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+
+
+
 --
 -- Table structure for table `ingroups`
 --
@@ -1093,6 +1158,63 @@ CREATE TABLE `entityright` (
   FOREIGN KEY (`entityright_consumed_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`entityright_consumer_id`),
   FOREIGN KEY (`entityright_consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `externalcluster`
+--
+
+CREATE TABLE `externalcluster` (
+  `externalcluster_id` int(8) unsigned NOT NULL,
+  `externalcluster_name` char(32) NOT NULL,
+  `externalcluster_desc` char(255) DEFAULT NULL,
+  `externalcluster_state` char(32) NOT NULL DEFAULT 'down',
+  `externalcluster_prev_state` char(32),
+  PRIMARY KEY (`externalcluster_id`),
+  FOREIGN KEY (`externalcluster_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`externalcluster_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `externalnode`
+--
+
+CREATE TABLE `externalnode` (
+  `externalnode_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `externalnode_hostname` char(255) NOT NULL,
+  `outside_id` int(8) unsigned NOT NULL,
+  `externalnode_state` char(32),
+  `externalnode_prev_state` char(32),
+  PRIMARY KEY (`externalnode_id`),
+  UNIQUE KEY (`externalnode_hostname`),
+  KEY (`outside_id`),
+  FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for connector `active_directory`
+--
+
+CREATE TABLE `active_directory` (
+  `ad_id` int(8) unsigned NOT NULL,
+  `ad_host` char(255) NOT NULL,
+  `ad_user` char(255),
+  `ad_pwd` char(32),
+  `ad_nodes_base_dn` text(512),
+  PRIMARY KEY (`ad_id`),
+  FOREIGN KEY (`ad_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for connector `scom`
+--
+
+CREATE TABLE `scom` (
+  `scom_id` int(8) unsigned NOT NULL,
+  `scom_ms_name` char(255) NOT NULL,
+  PRIMARY KEY (`scom_id`),
+  FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
