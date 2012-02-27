@@ -37,7 +37,7 @@ use base "EContext";
 use strict;
 use warnings;
 use Net::Ping;
-use Net::SSH::Perl;
+use Net::OpenSSH;
 
 use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
