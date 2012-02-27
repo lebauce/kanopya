@@ -275,8 +275,8 @@ ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
 
 
 get '/rules' => sub {
-  
-  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
+  my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled'); 
+#  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
   my @rules;
   foreach my $aggregate_rule (@enabled_aggregaterules) {
     my $hash = {
@@ -297,9 +297,11 @@ get '/rules' => sub {
 };
 
 get '/rules/disabled' => sub {
-  my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
+  my @disabled_aggregaterules = AggregateRule->getRules(state => 'disabled');
+  #my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
   my @disabled_rules;
   foreach my $aggregate_rule (@disabled_aggregaterules) {
+      
     my $hash = {
       id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula => $aggregate_rule->toString(),
@@ -317,14 +319,15 @@ get '/rules/disabled' => sub {
 };
 
 get '/rules/tdisabled' => sub {
-  my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
+  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp');
+  #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
   foreach my $aggregate_rule (@tdisabled_aggregaterules) {
     my $hash = {
       id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula   => $aggregate_rule->toString(),
       last_eval => -1,
-      time      => time() - $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp'),
+      time      => $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp') - time(),
     };
     push @tdisabled_rules, $hash;
   }  

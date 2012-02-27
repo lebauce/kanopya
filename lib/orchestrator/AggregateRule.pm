@@ -19,6 +19,8 @@ use TimeData::RRDTimeData;
 use base 'BaseDB';
 use AggregateCondition;
 use Data::Dumper;
+use Switch;
+
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -164,6 +166,31 @@ sub isEnabled(){
     return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled'); 
 }
 
+sub getRules() {
+    my $class = shift;
+    my %args = @_;
+    my $state = $args{state};
+    
+    my @rules = AggregateRule->search(hash => {});
+    switch ($state){
+        case "all"{
+            return @rules; #All THE rules
+        } 
+        else {
+            my @rep;
+            foreach my $rule (@rules){
+                #update state and return $rule only if state is corresponding
+                $rule->updateState();
+                
+                if($rule->getAttr(name=>'aggregate_rule_state') eq $state){
+                    push @rep, $rule;
+                }
+            }
+            return @rep;
+        }
+    }
+}
+
 sub updateState() {
     my $self = shift;
     
@@ -175,5 +202,6 @@ sub updateState() {
         }
     }
 }
+
 
 1;
