@@ -200,6 +200,9 @@ sub getDefaultManager {
     elsif ($args{category} eq 'ExportManager') {
         return $self->getComponent(name => "Iscsitarget", version => "1");
     }
+    elsif ($args{category} eq 'HostManager') {
+        return $self->getComponent(name => "Physicalhoster", version => "0");
+    }
 
     throw Kanopya::Exception::Internal::UnknownCategory()
 }
@@ -403,29 +406,49 @@ sub getComponent{
 
     General::checkParams(args => \%args, required => ['name','version']);
 
-    my $hash = {'component_type.component_name' => $args{name}, 'component_type.component_version' => $args{version}};
-    my $components_rs = $self->{_dbix}->parent->search_related("components", $hash,
-                                            { '+columns' => {"component_name" => "component_type.component_name",
-                                                            "component_version" => "component_type.component_version",
-                                                            "component_category" => "component_type.component_category"},
-                                                    join => ["component_type"]});
+    my $hash = {
+        'component_type.component_name'    => $args{name},
+        'component_type.component_version' => $args{version}
+    };
 
-    $log->debug("name is $args{name}, version is $args{version}");
-    my $component_row = $components_rs->next;
-    if (not defined $component_row) {
-        throw Kanopya::Exception::Internal(error => "Component with name '$args{name}' version $args{version} not installed on this cluster");
+    my $component_row;
+    eval {
+        my $components_rs = $self->{_dbix}->parent->search_related(
+                                "components", $hash,
+                                { "+columns" =>
+                                    { "component_name"     => "component_type.component_name",
+                                      "component_version"  => "component_type.component_version",
+                                      "component_category" => "component_type.component_category" },
+                                  join => [ "component_type" ] }
+                            );
+
+        $log->debug("Name is $args{name}, version is $args{version}");
+
+        $component_row = $components_rs->next;
+
+        $log->debug("Comp name is " . $component_row->get_column('component_name'));
+        $log->debug("Component found with " . ref($component_row));
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal(
+                  error => "Component with name <$args{name}>, version <$args{version}> " .
+                           "not installed on this cluster:\n$@"
+              );
     }
-    $log->debug("Comp name is " . $component_row->get_column('component_name'));
-    $log->debug("Component found with " . ref($component_row));
+
     my $comp_category = $component_row->get_column('component_category');
-    my $comp_id = $component_row->id;
-    my $comp_name = $component_row->get_column('component_name');
-    my $comp_version = $component_row->get_column('component_version');
-#    my $class= "Entity::Component::" . $comp_category . "::" . $comp_name . $comp_version;
+    my $comp_id       = $component_row->id;
+    my $comp_name     = $component_row->get_column('component_name');
+    my $comp_version  = $component_row->get_column('component_version');
+
     my $class= "Entity::Component::" . $comp_name . $comp_version;
-    my $loc = General::getLocFromClass(entityclass=>$class);
+    my $loc = General::getLocFromClass(entityclass => $class);
+
     eval { require $loc; };
-    return "$class"->get(id =>$comp_id);
+    if ($@) {
+        throw Kanopya::Exception::Internal::UnknownClass(error => "Could not find $loc :\n$@");
+    }
+    return "$class"->get(id => $comp_id);
 }
 
 sub getComponentByInstanceId{

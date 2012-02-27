@@ -55,40 +55,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{executor};
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -101,7 +67,10 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-    
+
+    $self->{executor};
+    $self->{_objs} = {};
+
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     
@@ -133,17 +102,6 @@ sub prepare {
     if($@) {
         my $err = $@;
         $errmsg = "Distribution upload, maybe already exists \n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation DeployComponent failed an error occured :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }

@@ -98,6 +98,10 @@ use Exception::Class (
     description => 'Unknown category type',
     fields => [ 'sub_name', 'param_name' ],
     },
+    Kanopya::Exception::Internal::UnknownClass => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Unknown class',
+    },
     Kanopya::Exception::Execution => {
     isa => 'Kanopya::Exception',
     description => 'Command execution failed',

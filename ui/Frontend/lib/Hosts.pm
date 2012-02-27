@@ -138,12 +138,12 @@ post '/hosts/add' => sub {
     my $adm = Administrator->new;
     my %parameters = (
         host_mac_address   => params->{mac_address},
-        kernel_id                 => params->{kernel},
+        kernel_id          => params->{kernel},
         host_serial_number => params->{serial_number},
-	host_ram           => params->{ram},
-	host_core          => params->{core},
+        host_ram           => params->{ram},
+        host_core          => params->{core},
         hostmodel_id       => params->{host_model},
-        processormodel_id         => params->{cpu_model},
+        processormodel_id  => params->{cpu_model},
         host_desc          => params->{desc},
     );
     if(params->{powersupplycard_id} ne "none") {
