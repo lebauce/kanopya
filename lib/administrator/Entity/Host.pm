@@ -68,62 +68,107 @@ It could be :
 =cut
 
 use constant ATTR_DEF => {
-              hostmodel_id    =>    {pattern            => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended        => 0},
-              processormodel_id        => {pattern            => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              kernel_id                    => {pattern            => '^\d*$',
-                                            is_mandatory    => 1,
-                                            is_extended        => 0},
-              host_serial_number    => {pattern         => '^.*$',
-                                            is_mandatory    => 1,
-                                            is_extended     => 0},
-              host_powersupply_id=> {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_desc            => {pattern         => '^[\w\s]*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              active                    => {pattern         => '^[01]$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_mac_address    => {pattern         => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',  # mac address format must be lower case
-                                            is_mandatory    => 1,        # to have udev persistent net rules work
-                                            is_extended     => 0},
-              host_internal_ip    => {pattern         => '^.*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_hostname        => {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_ram        =>      {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_core        => {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-
-              host_initiatorname    => {pattern         => '^.*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              etc_device_id                => {pattern         => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              cloud_cluster_id                => {pattern         => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-            host_state                => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-            host_ipv4_internal_id     => {pattern         => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-            host_toto                => {pattern         => '^.*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 1}
-            };
+    service_provider_id => {
+        pattern => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+    host_manager_id => {
+        pattern => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+    hostmodel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    processormodel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    kernel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    host_serial_number => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    host_powersupply_id => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_desc => {
+        pattern      => '^[\w\s]*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    active => {
+        pattern      => '^[01]$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_mac_address => {
+        # mac address format must be lower case
+        pattern      => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:' .
+                        '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
+        # to have udev persistent net rules work
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    host_internal_ip => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_hostname => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_ram => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_core => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_initiatorname => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    etc_device_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    # TODO: probably remove this attr, as we can retrieve the cluster id
+    #       from service_provider_id, and whek if it is a cloud cluster.
+    cloud_cluster_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_state => {
+        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_ipv4_internal_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -310,23 +355,26 @@ sub addIface {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['iface_name','iface_mac_addr','iface_pxe','host_id']);
+    General::checkParams(args => \%args, required => [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ]);
 
     my $adm = Administrator->new();
-     my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addIface');
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
+                                                   method    => 'addIface');
     if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add an interface to this host");
+        throw Kanopya::Exception::Permission::Denied(
+                  error => "Permission denied to add an interface to this host"
+              );
     }
-    my $res =$adm->{db}->resultset('Iface')->create(
-		{	iface_name=>$args{iface_name},
-            iface_mac_addr => $args{iface_mac_addr},
-			iface_pxe => $args{iface_pxe},
-			host_id =>$self->getAttr(name=>'host_id')
-        }
-    );
+    my $res = $adm->{db}->resultset('Iface')->create(
+                  { iface_name     => $args{iface_name},
+                    iface_mac_addr => $args{iface_mac_addr},
+                    iface_pxe      => $args{iface_pxe},
+                    host_id        => $self->getAttr(name => 'host_id') }
+              );
 
     return $res->get_column("iface_id");
 }
+
 =head2 getIfaces
 
 =cut
@@ -452,9 +500,21 @@ sub getFreeHosts {
 =cut
 
 sub create {
-    my ($class, %params) = @_;
+    my $class = shift;
+    my %params = @_;
+
+    # Host must be created from component/connector that implements HostManager service.
+    # If created from this method, the default host provider is used within EAddHost operation.
+
+    # So add dummy values for service_provider_id and host_manager_id attrs check...
+    $params{service_provider_id} = 1;
+    $params{host_manager_id}     = 1;
 
 	$class->checkAttrs(attrs => \%params);
+
+    # ... add remove its to let the operation the default values.
+    delete $params{service_provider_id};
+    delete $params{host_manager_id};
 
     $log->debug("New Operation AddHost with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
@@ -475,11 +535,15 @@ sub update {}
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <".$self->getAttr(name=>"host_id").">");
+    $log->debug("New Operation RemoveHost with host_id : <" .
+                $self->getAttr(name => "host_id") . ">");
+
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveHost',
-        params   => {host_id => $self->getAttr(name=>"host_id")},
+        params   => {
+            host_id => $self->getAttr(name => "host_id")
+        },
     );
 }
 
