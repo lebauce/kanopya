@@ -1,0 +1,16 @@
+<% FOREACH poolip IN poolip_list %>
+    <table class="listing">
+    <tr><td colspan="3"><h1><% poolip.poolip_name %></h1></td></tr>
+    <tr><td class="italic" colspan="3"><span class="label">Description</span> : <% poolip.poolip_desc %></td><td class="toright">
+    <a class="imgManage" href="/networks/poolip/<% poolip.poolip_id %>">details</a></td></tr>
+    <tr><td class="italic" colspan="3"><span class="label">Mask</span> : <% poolip.poolip_mask %></td></tr>
+    <tr><td class="italic" colspan="3"><span class="label">Address</span> : <% poolip.poolip_addr %></td></tr>
+    </table>
+<% END %>
+
+<div class="actions">
+<% IF can_create %>
+    <a class="action modal" href="/networks/poolip/add">create an ip pool</a>
+    <p class="italic">Create and configure a new ip pool.</p>
+<% END %>
+</div>

@@ -1,0 +1,30 @@
+<h2>Create a new ip pool</h2>
+
+<form id="target" method="POST" action="/networks/poolip/add">
+<table class="form">
+    <tr>
+        <td class="label">Name :</td>
+        <td><input type="text" name="name" maxlength="16" size="16"/>
+    </tr>
+    <tr>
+        <td class="label">Description :</td>
+        <td><input type="text" name="desc" size="50" /></td>
+    </tr>
+    <tr>
+        <td class="label">Address :</td>
+        <td><input type="text" name="addr" size="16" /></td>
+    </tr>
+    <tr>
+        <td class="label">Mask :</td>
+        <td><input type="text" name="mask" maxlength=2" size="2" /></td>
+    </tr>
+    <tr>
+        <td class="label">Netmask :</td>
+        <td><input type="text" name="netmask" size="16" /></td>
+    </tr>
+    <tr>
+        <td class="label">Gateway :</td>
+        <td><input type="text" name="gateway" maxlength="16" size="16"/>
+    </tr>
+</table>
+</form> 

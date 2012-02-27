@@ -71,6 +71,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 interfaces
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Interface>
+
+=cut
+
+__PACKAGE__->has_many(
+  "interfaces",
+  "AdministratorDB::Schema::Result::Interface",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 outside
 
 Type: might_have
@@ -102,8 +117,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-10 13:43:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rLz8vCVMY1kRRwMrt5To+Q
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-14 18:09:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TK7HOx1bsWdOCge4hWILhA
 
 __PACKAGE__->belongs_to(
   "parent",

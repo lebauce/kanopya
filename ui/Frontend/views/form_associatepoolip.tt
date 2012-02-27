@@ -1,0 +1,42 @@
+<form id="target" method="POST" action="/networks/vlans/<% vlan_id %>/associate">
+<table class="form">
+
+<td><select id="ippool" name="poolipid">
+<% FOREACH pip IN poolips_list %>
+<option value="<% pip.poolip_id %>"><% pip.poolip_name %></option>
+<% END %>
+</select></td>
+<div class="buttons">
+<input type="hidden" name="vlanid" value="<% vlan_id %>"/>
+</div>
+<script type="text/javascript">
+function sendpoolipid() {
+    var xhr = new XMLHttpRequest();
+    var poolipid=document.getElementById("ippool").value;
+    var vlanid=document.getElementByName("vlanid").value;
+    alert(vlanid);
+    //var url = "/networks/vlans/"+ vlanid +"/" + poolipid;
+    alert (url);
+    xhr.open("GET", url);
+    
+    xhr.overrideMimeType('text/xml');
+    xhr.onreadystatechange = function() {
+		alert(xhr.readyState + ' ' + xhr.status);
+		if (xhr.readyState == 4 && xhr.status == 200) {
+			select = document.getElementById('owner');
+			select.innerHTML = xhr.responseText;		
+      }
+	}	
+    xhr.send(null);
+    //setTimeout('Updateusers()', 5000);
+}
+document.getElementById('ippool').onchange =sendpoolipid;
+function getOptions()
+{
+var x=document.getElementById("ippool");
+//type = x.options[x.options.selectedIndex].value;
+alert(x.value);
+}
+
+
+</script>
