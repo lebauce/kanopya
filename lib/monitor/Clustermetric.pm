@@ -103,7 +103,7 @@ sub toString {
     my $indicator_id = $self->getAttr(name => 'clustermetric_indicator_id');
     my $sfn          = $self->getAttr(name => 'clustermetric_statistics_function_name');
 
-    return $sfn.'('.(Indicator->get('id' => $indicator_id)->getAttr(name=>'indicator_oid')).')';
+    return $sfn.'('.(Indicator->get('id' => $indicator_id)->getAttr(name=>'indicator_name')).')';
 }
 
 

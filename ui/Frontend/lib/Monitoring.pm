@@ -266,8 +266,8 @@ ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
 
 
 get '/rules' => sub {
-  
-  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
+  my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled'); 
+#  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
   my @rules;
   foreach my $aggregate_rule (@enabled_aggregaterules) {
     my $hash = {
@@ -288,9 +288,11 @@ get '/rules' => sub {
 };
 
 get '/rules/disabled' => sub {
-  my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
+  my @disabled_aggregaterules = AggregateRule->getRules(state => 'disabled');
+  #my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
   my @disabled_rules;
   foreach my $aggregate_rule (@disabled_aggregaterules) {
+      
     my $hash = {
       id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula => $aggregate_rule->toString(),
@@ -308,21 +310,24 @@ get '/rules/disabled' => sub {
 };
 
 get '/rules/tdisabled' => sub {
-  my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
+  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp');
+  #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
   foreach my $aggregate_rule (@tdisabled_aggregaterules) {
     my $hash = {
-      id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-      formula => $aggregate_rule->toString(),
+      id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+      formula   => $aggregate_rule->toString(),
       last_eval => -1,
+      time      => $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp') - time(),
     };
     push @tdisabled_rules, $hash;
   }  
   
   template 'clustermetric_rules', {
         title_page      => "Temporarily Disabled Rules Overview",
-        rules   => \@tdisabled_rules,
-        status  => 'tdisabled',
+        rules           => \@tdisabled_rules,
+        status          => 'tdisabled',
+        
   };
     
 };
@@ -331,15 +336,22 @@ get '/rules/enabled' => sub {
 };
 
 
-get '/rules/:ruleid/activate' => sub {
+get '/rules/:ruleid/enable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->enable();
     redirect('/architectures/rules');
 };
 
-get '/rules/:ruleid/deactivate' => sub {
+get '/rules/:ruleid/disable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disable();
     redirect('/architectures/rules');
+};
+
+get '/rules/:ruleid/tdisable' => sub {
+    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+    $aggregateRule->disableTemporarily(length => 120);
+    redirect('/architectures/rules');
+
 };
 1;
