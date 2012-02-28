@@ -52,14 +52,17 @@ INSERT INTO `class_type` VALUES
 (37, 'Entity::Component::Snmpd5'),
 (38, 'Entity::Component::Syslogng3'),
 (39, 'Entity::Component::Nfsd3'),
-(40, 'Indicator'),
-(41, 'Clustermetric'),
-(42, 'AggregateCombination'),
-(43, 'AggregateCondition'),
-(44, 'AggregateRule');
-(45, 'Entity::Component::Physicalhoster0');
-(46, 'Entity::Poolip');
-(47, 'Entity::Vlan');
+(40, 'Entity::Connector::ActiveDirectory'),
+(41, 'Entity::Connector::Scom'),
+(42, 'Entity::ServiceProvider::Outside::Externalcluster'),
+(43, 'Indicator'),
+(44, 'Clustermetric'),
+(45, 'AggregateCombination'),
+(46, 'AggregateCondition'),
+(47, 'AggregateRule');
+(48, 'Entity::Component::Physicalhoster0');
+(49, 'Entity::Poolip');
+(50, 'Entity::Vlan');
 
 --
 -- system groups
@@ -514,7 +517,7 @@ SET @eid := @eid +1;
 -- Physicalhoster
 --
 
-INSERT INTO `entity` VALUES (@eid, 45);
+INSERT INTO `entity` VALUES (@eid, 48);
 INSERT INTO `component` VALUES(@eid, @admin_cluster, 15, NULL, NULL);
 INSERT INTO `physicalhoster0` VALUES(@eid);
 SET @eid := @eid +1;
@@ -531,30 +534,30 @@ INSERT INTO `indicatorset` VALUES
 (5,'scom','External','GAUGE',null,null,null);
 
 INSERT INTO `indicator` VALUES
-(1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, null,40),
-(2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1, null,40),
-(3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1, null,40),
-(4,'Cached','.1.3.6.1.4.1.2021.4.15.0',null,null,'FF000066', 1, null,40),
-(5,'User','.1.3.6.1.4.1.2021.11.50.0',null,null,'0000FF66', 2, null,40),
-(6,'Wait','.1.3.6.1.4.1.2021.11.54.0',null,null,'FF000066', 2, null,40),
-(7,'Nice','.1.3.6.1.4.1.2021.11.51.0',null,null,'FFFF0066', 2, null,40),
-(8,'Syst','.1.3.6.1.4.1.2021.11.52.0',null,null,'00FFFF66', 2, null,40),
-(9,'Kernel','.1.3.6.1.4.1.2021.11.55.0',null,null,'FF00FF66', 2, null,40),
-(10,'Interrupt','.1.3.6.1.4.1.2021.11.56.0',null,null,'66666666', 2, null,40),
-(11,'Idle','.1.3.6.1.4.1.2021.11.53.0',null,null,'00FF0066', 2, null,40),
-(12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3, null,40),
-(13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4, null,40),
-(14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4, null,40),
-(15,'RAM free','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes', 40),
-(16,'RAM pool paged','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'Bytes',40),
-(17,'RAM used','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%',40),
-(18,'CPU used','Processor/% Processor Time',null,null,'FF000099', 5, '%',40),
-(19,'CPU Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process',40),
-(20,'Disk idle time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%',40),
-(21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%',40),
-(22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%',40),
-(23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions',40),
-(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec',40);
+(1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, null,43),
+(2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1, null,43),
+(3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1, null,43),
+(4,'Cached','.1.3.6.1.4.1.2021.4.15.0',null,null,'FF000066', 1, null,43),
+(5,'User','.1.3.6.1.4.1.2021.11.50.0',null,null,'0000FF66', 2, null,43),
+(6,'Wait','.1.3.6.1.4.1.2021.11.54.0',null,null,'FF000066', 2, null,43),
+(7,'Nice','.1.3.6.1.4.1.2021.11.51.0',null,null,'FFFF0066', 2, null,43),
+(8,'Syst','.1.3.6.1.4.1.2021.11.52.0',null,null,'00FFFF66', 2, null,43),
+(9,'Kernel','.1.3.6.1.4.1.2021.11.55.0',null,null,'FF00FF66', 2, null,43),
+(10,'Interrupt','.1.3.6.1.4.1.2021.11.56.0',null,null,'66666666', 2, null,43),
+(11,'Idle','.1.3.6.1.4.1.2021.11.53.0',null,null,'00FF0066', 2, null,43),
+(12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3, null,43),
+(13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4, null,43),
+(14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4, null,43),
+(15,'RAM free','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes', 43),
+(16,'RAM pool paged','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'Bytes',43),
+(17,'RAM used','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%',43),
+(18,'CPU used','Processor/% Processor Time',null,null,'FF000099', 5, '%',43),
+(19,'CPU Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process',43),
+(20,'Disk idle time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%',43),
+(21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%',43),
+(22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%',43),
+(23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions',43),
+(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec',43);
 
 
 --
