@@ -65,6 +65,13 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "aggregate_rule_action_id",
   { data_type => "integer", is_nullable => 0 },
+      "class_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("aggregate_rule_id");
 

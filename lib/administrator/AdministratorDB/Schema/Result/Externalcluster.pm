@@ -69,6 +69,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
   "externalcluster_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
+    "class_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("externalcluster_id");
 __PACKAGE__->add_unique_constraint("externalcluster_name", ["externalcluster_name"]);
