@@ -163,7 +163,7 @@ sub compute{
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            $element = $args{$element};
+            $element = $args{substr($element,2)};
         }
      }
      
@@ -192,7 +192,7 @@ sub dependantClusterMetrics() {
     for my $element (@array) {
         if( $element =~ m/id\d+/)
         {
-            push @clusterMetricsList, $element;
+            push @clusterMetricsList, substr($element,2);
         }
      }
      return @clusterMetricsList;
@@ -211,7 +211,7 @@ sub computeFromArrays{
     
     my @requiredArgs = $self->dependantClusterMetrics();
     
-#    print "@requiredArgs \n";
+#    print "******* @requiredArgs \n";
 #    print Dumper \%args;
     
     General::checkParams args => \%args, required => \@requiredArgs;
