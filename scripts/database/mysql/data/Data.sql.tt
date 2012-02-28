@@ -53,6 +53,12 @@ INSERT INTO `class_type` VALUES
 (37, 'Entity::Component::Snmpd5'),
 (38, 'Entity::Component::Syslogng3'),
 (39, 'Entity::Component::Nfsd3');
+(40, 'Indicator');
+(41, 'Clustermetric');
+(42, 'AggregateCombination');
+(43, 'AggregateCondition');
+(44, 'AggregateRule');
+
 
 --
 -- system groups
@@ -453,7 +459,7 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 24);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,5,NULL,2);
 INSERT INTO `dhcpd3` VALUES (@eid,'hedera-technology.com',NULL,'node001');
-INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% ipv4_internal_netmask %]');
+INSERT INTO `dhcpd3_subnet` VALUES (1,@eid,'[% ipv4_internal_network_ip %]','[% ipv4_internal_netmask %c]');
 SET @eid := @eid +1;
 
 --
