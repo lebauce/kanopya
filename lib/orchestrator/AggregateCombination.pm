@@ -107,7 +107,7 @@ sub computeValues{
         my $cm = Clustermetric->get('id' => $cm_id);
         $allTheCMValues{$cm_id} = $cm -> getValuesFromDB(%args);
     }
-    return computeFromArrays(%allTheCMValues);
+    return $self->computeFromArrays(%allTheCMValues);
 }
 
 sub computeLastValue{

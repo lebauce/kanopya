@@ -73,11 +73,12 @@ sub getValuesFromDB{
     
     my $id = $self->getAttr(name=>'clustermetric_id');
     
-    return RRDTimeData::fetchTimeDataStore(
-                                            aggregate_id => $id, 
+    my %rep = RRDTimeData::fetchTimeDataStore(
+                                            name         => $id, 
                                             start        => $args{start_time},
                                             stop         => $args{stop_time}
                                           );
+    return \%rep;
 }
 sub getLastValueFromDB{
     my $self = shift;
