@@ -1032,6 +1032,9 @@ CREATE TABLE `indicator` (
   `indicator_color` char(8),
   `indicatorset_id` int(8) unsigned DEFAULT NULL,
   `indicator_unit` char(32) DEFAULT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`indicator_id`),
   KEY (`indicatorset_id`),
   FOREIGN KEY (`indicatorset_id`) REFERENCES `indicatorset` (`indicatorset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -1081,6 +1084,9 @@ CREATE TABLE `clustermetric` (
   `clustermetric_indicator_id` int(8) unsigned NOT NULL,
   `clustermetric_statistics_function_name` char(32) NOT NULL,
   `clustermetric_window_time` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`clustermetric_id`),
   KEY (`clustermetric_indicator_id`),
   FOREIGN KEY (`clustermetric_indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,  
@@ -1093,8 +1099,11 @@ CREATE TABLE `clustermetric` (
 --
 
 CREATE TABLE `aggregate_combination` (
-`aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-`aggregate_combination_formula` char(32) NOT NULL
+  `aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `aggregate_combination_formula` char(32) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1103,12 +1112,15 @@ CREATE TABLE `aggregate_combination` (
 --
 
 CREATE TABLE `aggregate_rule` (
-`aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-`aggregate_rule_formula` char(32) NOT NULL ,
-`aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
-`aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
-`aggregate_rule_state` char(32) NOT NULL ,
-`aggregate_rule_action_id` int(8) unsigned NOT NULL
+  `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  `aggregate_rule_formula` char(32) NOT NULL ,
+  `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
+  `aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
+  `aggregate_rule_state` char(32) NOT NULL ,
+  `aggregate_rule_action_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1124,6 +1136,9 @@ CREATE TABLE `aggregate_condition` (
   `state` char(32) NOT NULL,
   `time_limit` char(32),
   `last_eval` BOOLEAN DEFAULT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`aggregate_condition_id`),
   KEY (`aggregate_combination_id`),
   FOREIGN KEY (`aggregate_combination_id`) REFERENCES `aggregate_combination` (`aggregate_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
