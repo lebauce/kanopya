@@ -95,7 +95,7 @@ sub toString {
     return "@array";
 }
 
-sub computeLastValues{
+sub computeValues{
     my $self = shift;
     my %args = @_;
 
@@ -105,7 +105,7 @@ sub computeLastValues{
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Clustermetric->get('id' => $cm_id);
-        $allTheCMValues{$cm_id} = $cm -> getLastValues(%args);
+        $allTheCMValues{$cm_id} = $cm -> getValuesFromDB(%args);
     }
     return computeFromArrays(%allTheCMValues);
 }
