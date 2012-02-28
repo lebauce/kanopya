@@ -69,7 +69,7 @@ sub compute{
 sub getValuesFromDB{
     my $self = shift;
     my %args = @_;
-    General::checkParams args => \%args, required => ['start_time','stoptime'];
+    General::checkParams args => \%args, required => ['start_time','stop_time'];
     
     my $id = $self->getAttr(name=>'clustermetric_id');
     

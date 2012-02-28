@@ -99,12 +99,13 @@ sub computeLastValues{
     my $self = shift;
     my %args = @_;
 
-    General::checkParams args => \%args, required => ['startime','stoptime'];
+    General::checkParams args => \%args, required => ['start_time','stop_time'];
     
     my @cm_ids = $self->dependantClusterMetrics();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
-        $allTheCMValues{$cm_id} = $cm_id->getLastValues(%args);
+        my $cm = Clustermetric->get('id' => $cm_id);
+        $allTheCMValues{$cm_id} = $cm -> getLastValues(%args);
     }
     return computeFromArrays(%allTheCMValues);
 }
