@@ -15,6 +15,7 @@ package AggregateCombination;
 
 use strict;
 use warnings;
+use Data::Dumper;
 use base 'BaseDB';
 use Clustermetric;
 use TimeData::RRDTimeData;
@@ -94,7 +95,7 @@ sub toString {
     return "@array";
 }
 
-sub calculate{
+sub calculateLastValue{
     my $self = shift;
     
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
@@ -113,6 +114,7 @@ sub calculate{
     my $res = -1;
     my $arrayString = '$res = '."@array"; 
     
+    
     #Evaluate the logic formula
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
@@ -122,5 +124,121 @@ sub calculate{
     return $res;
 }
 
+sub calculate{
+    my $self = shift;
+    my %args = @_;
+ 
+    my @requiredArgs = $self->dependantClusterMetrics();
+    
+    checkMissingParams(args => \%args, required => \@requiredArgs);
+    
+    foreach my $cm_id (@requiredArgs){
+        if( ! defined $args{$cm_id}){
+            return undef;
+        }
+    }
+    
+    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    
+    print Dumper \%args;
+    
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            $element = $args{$element};
+        }
+     }
+     
+    my $res = -1;
+    my $arrayString = '$res = '."@array"; 
+    
+    #Evaluate the logic formula
+    #print 'Evaluate combination :'.($self->toString())."\n";
+    #$log->info('Evaluate combination :'.($self->toString()));
+    eval $arrayString;
+    print "$arrayString = $res\n";
+    $log->info("$arrayString");
+    return $res;
+}
 
+sub dependantClusterMetrics() {
+    my $self = shift;
+    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    
+    my @clusterMetricsList;
+    
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            push @clusterMetricsList, $element;
+        }
+     }
+     return @clusterMetricsList;
+}
+
+# Remove duplicate from an array, return array without doublons 
+sub uniq {
+    return keys %{{ map { $_ => 1 } @_ }};
+}
+
+sub calculateFromArrays{
+    my $self = shift;
+    my %args = @_;
+    
+    print Dumper \%args;
+    
+    my @requiredArgs = $self->dependantClusterMetrics();
+    
+#    print "@requiredArgs \n";
+#    print Dumper \%args;
+    
+    General::checkParams args => \%args, required => \@requiredArgs;
+    
+    #Merge all the timestamps keys in one arrays
+    
+    my @timestamps;
+    foreach my $cm_id (@requiredArgs){
+       @timestamps = (@timestamps, (keys %{$args{$cm_id}}));
+    }
+    @timestamps = uniq @timestamps;
+    
+    print " @timestamps \n";
+    my %rep;
+    foreach my $timestamp (@timestamps){
+        my %valuesForATimeStamp;
+        foreach my $cm_id (@requiredArgs){
+            $valuesForATimeStamp{$cm_id} = $args{$cm_id}->{$timestamp};
+        }
+        print Dumper \%valuesForATimeStamp;
+        $rep{$timestamp} = $self->calculate(%valuesForATimeStamp);
+    }
+    print Dumper \%rep;
+} 
+
+sub checkMissingParams {
+    my %args = @_;
+    
+    my $caller_args = $args{args};
+    my $required = $args{required};
+    my $caller_sub_name = (caller(1))[3];
+        
+    for my $param (@$required) {
+        if (! exists $caller_args->{$param} ) {
+            my $errmsg = "$caller_sub_name needs a '$param' named argument!";
+            
+            # Log in general logger
+            # TODO log in the logger corresponding to caller package;
+            $log->error($errmsg);
+            print "$caller_sub_name : $errmsg \n";
+            throw Kanopya::Exception::Internal::IncorrectParam();
+        }
+    }
+}
 1;
