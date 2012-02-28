@@ -80,6 +80,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "clustermetric_window_time",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+    "class_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("clustermetric_id");
 

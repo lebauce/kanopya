@@ -78,7 +78,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
   "last_eval",
   { data_type => "boolean", is_nullable => 1 },
-  
+    "class_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("aggregate_condition_id");
 
