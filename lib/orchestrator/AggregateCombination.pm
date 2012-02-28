@@ -95,7 +95,7 @@ sub toString {
     return "@array";
 }
 
-sub calculateLastValue{
+sub computeLastValue{
     my $self = shift;
     
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
@@ -124,7 +124,7 @@ sub calculateLastValue{
     return $res;
 }
 
-sub calculate{
+sub compute{
     my $self = shift;
     my %args = @_;
  
@@ -188,7 +188,7 @@ sub uniq {
     return keys %{{ map { $_ => 1 } @_ }};
 }
 
-sub calculateFromArrays{
+sub computeFromArrays{
     my $self = shift;
     my %args = @_;
     
@@ -217,7 +217,7 @@ sub calculateFromArrays{
             $valuesForATimeStamp{$cm_id} = $args{$cm_id}->{$timestamp};
         }
         print Dumper \%valuesForATimeStamp;
-        $rep{$timestamp} = $self->calculate(%valuesForATimeStamp);
+        $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
     print Dumper \%rep;
 } 
