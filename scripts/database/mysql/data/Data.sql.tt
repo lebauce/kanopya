@@ -539,16 +539,16 @@ INSERT INTO `indicator` VALUES
 (12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3, null),
 (13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4, null),
 (14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4, null),
-(15,'Memory/Available MBytes','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes'),
-(16,'Memory/Pool Paged Bytes','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'pages'),
-(17,'Memory/PercentMemoryUsed','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%'),
-(18,'Process/% Processor Time','Processor/% Processor Time',null,null,'FF000099', 5, '%'),
-(19,'System/Processor Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process'),
-(20,'LogicalDisk/% Idle Time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%'),
-(21,'LogicalDisk/% Free Space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%'),
-(22,'NetworkAdapterBandwidthUsedTotal','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%'),
-(23,'TerminalServices/Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions'),
-(24,'Memory/Pages/sec','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec');
+(15,'RAM free','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes'),
+(16,'RAM pool paged (B)','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'Bytes'),
+(17,'RAM used','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%'),
+(18,'CPU used','Processor/% Processor Time',null,null,'FF000099', 5, '%'),
+(19,'CPU Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process'),
+(20,'Disk idle time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%'),
+(21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%'),
+(22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%'),
+(23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions'),
+(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec');
 
 
 --
