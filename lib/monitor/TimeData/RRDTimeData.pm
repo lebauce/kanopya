@@ -175,6 +175,8 @@ sub fetchTimeDataStore {
 	
     #clean the string of unwanted ":"
     $exec =~ s/://g;
+	#replace the ',' by '.'
+	$exec =~ s/,/./g;
     #we split the string into an array
     my @values = split(' ', $exec);
     #print Dumper(\@values);
