@@ -122,12 +122,13 @@ sub newEContext {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['ip_source', 'ip_destination']);
+
     if (!ip_is_ipv4($args{ip_source})){
         $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-        if (!ip_is_ipv4($args{ip_destination})){
+    if (!ip_is_ipv4($args{ip_destination})){
         $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";    
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -137,11 +138,12 @@ sub newEContext {
         # EContext::Local
         $log->debug("ip_source & ip_destination are the same, using EContext::Local");
         use EContext::Local;
-        return EContext::Local->new();
+        return EContext::Local->new(local => $args{ip_source});
     } else {
         # EContext::SSH
         use EContext::SSH;
-        my $ssh = EContext::SSH->new(ip => $args{ip_destination});
+        my $ssh = EContext::SSH->new(local => $args{ip_source},
+                                     ip    => $args{ip_destination});
         return $ssh;
     }
 }
