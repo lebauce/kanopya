@@ -7,6 +7,7 @@ use Data::Dumper;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use AggregateRule;
+use Clustermetric;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -270,6 +271,24 @@ ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
     to_json {values => \@values, nodelist => \@nodes};
 };
 
+get '/clustermetrics' => sub {
+    my @clustermetrics = Clustermetric->search(hash=>{});
+    my @clustermetrics_param;
+    foreach my $clustermetric (@clustermetrics){
+        my $hash = {
+            id           => $clustermetric->getAttr(name => 'clustermetric_id'),
+            label        => $clustermetric->toString(),
+            indicator_id => $clustermetric->getAttr(name => 'clustermetric_indicator_id'),
+            function     => $clustermetric->getAttr(name => 'clustermetric_statistics_function_name'),
+            window       => $clustermetric->getAttr(name => 'clustermetric_window_time'),
+        };
+            push @clustermetrics_param, $hash;
+    }
+      template 'clustermetrics', {
+        title_page      => "Clustermetrics Overview",
+        clustermetrics  => \@clustermetrics_param,
+      };
+};
 
 get '/rules' => sub {
   my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled'); 
@@ -342,6 +361,7 @@ get '/rules/enabled' => sub {
 };
 
 
+
 get '/rules/:ruleid/enable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->enable();
@@ -358,6 +378,27 @@ get '/rules/:ruleid/tdisable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disableTemporarily(length => 120);
     redirect('/architectures/rules');
-
 };
+
+get '/rules/:ruleid/tdisable' => sub {
+    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+    $aggregateRule->disableTemporarily(length => 120);
+    redirect('/architectures/rules');
+};
+
+
+
+#get '/rules/:ruleid/details' => sub {
+#    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+#    
+#    my %rule;
+#     $rule{formula} = $aggregateRule->getAttr(name => 'aggregate_rule_formula')
+#    
+#      template 'clustermetric_rules_details', {
+#            title_page      => "Rule Details",
+#            rule            => $rule;
+#      };
+#
+#};
+
 1;

@@ -1,0 +1,13 @@
+<table class="simplelisting">
+    <caption>Clustermetrics</caption>
+    <% FOREACH clustermetric IN clustermetrics %>
+        <tr><td>
+        <span class="bold"> Metric <% clustermetric.id %></span>
+        <span class="italic"> <% clustermetric.label %> (
+        <% clustermetric.function %>,
+        <% clustermetric.indicator_id %>, 
+        <% clustermetric.window %>) </span></td>
+        </tr>
+    <% END %>
+</table>     
+
