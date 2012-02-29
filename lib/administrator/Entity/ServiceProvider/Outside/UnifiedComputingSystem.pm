@@ -14,14 +14,84 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 july 2010
+# Created 23 february 2012
 package Entity::ServiceProvider::Outside::UnifiedComputingSystem;
 use base 'Entity::ServiceProvider::Outside';
+use NetAddr::IP;
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+my $log = get_logger("administrator");
+my $errmsg;
 
-
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+	ucs_name            => { pattern      => '.*',
+							 is_mandatory => 1,
+                           },
+    ucs_desc            => { pattern      => '.*',
+							 is_mandatory => 0,
+                           },
+    ucs_addr            => { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+							 is_mandatory => 1,
+                           },
+    ucs_login           => { pattern    => '.*',
+                             is_mandatory => 1,
+                           },
+    ucs_passwd          => { pattern    => '.*',
+                             is_mandatory => 1,
+                           },
+    ucs_dataprovider    =>  { pattern   => '.*',
+                             is_mandatory => 0,
+                            },
+    ucs_ou              =>  { pattern => '.*',
+                             is_mandatory => 0,
+                            },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getUcs {
+    my $class = shift;
+    my %args = @_;
+    General::checkParams(args => \%args, required => ['hash']);
 
+    return $class->search(%args);
+}
+
+sub create {
+    my $self = shift;
+    my %args = @_;
+
+    my $addrip = new NetAddr::IP($args{ucs_addr});
+    if(not defined $addrip) {
+        $errmsg = "Ucs->create : wrong value for ip address!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    my $poolip = Entity::ServiceProvider::Outside::UnifiedComputingSystem->new(
+        ucs_name            => $args{ucs_name},
+        ucs_desc            => $args{ucs_desc},
+        ucs_addr            => $args{ucs_addr},
+        ucs_login           => $args{ucs_login},
+        ucs_passwd          => $args{ucs_passwd},
+        ucs_dataprovider    => $args{ucs_dataprovider},
+        ucs_ou              => $args{ucs_ou},
+    );
+}
+
+sub remove {
+    my $self = shift;
+    $self->SUPER::delete(); 
+};
+
+# TODO -> getState method who grab the state from XML/RPC UCS API
+#sub getState {
+#
+#}
+
+sub toString {
+    my $self = shift;
+    my $string = $self->{_dbix}->get_column('ucs_name'). " ". $self->{_dbix}->get_column('ucs_addr');
+    return $string;
+}
 1;

@@ -25,6 +25,7 @@ use Permissions;
 use Messager;
 use Vlans;
 use Poolip;
+use UnifiedComputingSystem;
 use Log::Log4perl;
 
 our $VERSION = '0.1';
@@ -42,7 +43,7 @@ hook 'before_template' => sub {
     $tokens->{js_head}   = [];
     $tokens->{username}  = session('username');
     $tokens->{menu_selection} = sub {
-        my $url = shift;
+    my $url = shift;
 
         return 'class="selected"' if ( $url eq (split '/', request->path())[1] );
     };

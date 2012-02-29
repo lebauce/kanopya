@@ -32,6 +32,10 @@ Entity::Poolip
 package Entity::Poolip;
 use base "Entity";
 use NetAddr::IP;
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+my $log = get_logger("administrator");
+my $errmsg;
 
 use constant ATTR_DEF => {
 	poolip_name			=> { pattern      => '.*',

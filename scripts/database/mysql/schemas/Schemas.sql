@@ -131,6 +131,15 @@ CREATE TABLE `netapp` (
 
 CREATE TABLE `unified_computing_system` (
   `ucs_id` int(8) unsigned NOT NULL,
+  `ucs_name` char(32) NOT NULL,
+  `ucs_desc` char(255) NULL,
+  `ucs_addr` char(15) NOT NULL,
+  `ucs_state` char(32) NOT NULL DEFAULT 'down',
+  `ucs_blade_number` int(8) NULL DEFAULT 0,
+  `ucs_login` char(32) NOT NULL,
+  `ucs_passwd` char(32) NOT NULL,
+  `ucs_dataprovider` char(32) NULL,
+  `ucs_ou` char(32) NULL,
   PRIMARY KEY (`ucs_id`),
   FOREIGN KEY (`ucs_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
