@@ -1,6 +1,7 @@
 # EContext::SSH.pm - EContext for remote execution using ssh connection
 
-#    Copyright 2011 Hedera Technology SAS
+#    Copyright 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,8 +14,8 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -60,10 +61,11 @@ constructor
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    my $self = {
-        ip => $args{ip},
-    };
+    my $self = $class->SUPER::new(%args);
+
+    General::checkParams(args => \%args, required => [ 'ip' ]);
+
+    $self->{ip} = $args{ip};
     
     # is the host available on ssh port 22
     my $p = Net::Ping->new();

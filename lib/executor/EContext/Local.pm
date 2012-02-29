@@ -1,6 +1,7 @@
 # Local.pm - EContext::Local for local execution using system buitin function
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +16,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -64,14 +64,19 @@ my $localcontext;
 
 sub new {
     my $class = shift;
+    my %args = @_;
+
     # do not reinstanciate local context, reuse 
     if(defined $localcontext) {
         $log->info("EContext::Local instance retrieved");
         return $localcontext;
     }
-    my $self = {};
+
+    my $self = $class->SUPER::new(%args);
+
     bless $self, $class;
     $localcontext = $self;
+
     $log->info("new EContext::Local instance");
     return $self;
 }
