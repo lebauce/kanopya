@@ -11,8 +11,11 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package Kanopya::Exceptions;
+
 use Data::Dumper;
+
 =head1 NAME
 
 <KanopyaExceptions> – <General class containing Kanopya exceptions>
@@ -83,6 +86,10 @@ use Exception::Class (
     Kanopya::Exception::Internal::WrongType => {
     isa => 'Kanopya::Exception::Internal',
     description => 'Wrong Type',
+    },
+    Kanopya::Exception::Internal::NotFound => {
+    isa => 'Kanopya::Exception::Internal',
+    description => 'Not found',
     },
     Kanopya::Exception::Internal::IncorrectParam => {
     isa => 'Kanopya::Exception::Internal',
