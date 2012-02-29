@@ -59,9 +59,9 @@ INSERT INTO `class_type` VALUES
 (44, 'Clustermetric'),
 (45, 'AggregateCombination'),
 (46, 'AggregateCondition'),
-(47, 'AggregateRule');
-(48, 'Entity::Component::Physicalhoster0');
-(49, 'Entity::Poolip');
+(47, 'AggregateRule'),
+(48, 'Entity::Component::Physicalhoster0'),
+(49, 'Entity::Poolip'),
 (50, 'Entity::Vlan');
 
 --
