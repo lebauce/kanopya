@@ -83,7 +83,7 @@ sub createTimeDataStore{
     $RRA_chain = 'RRA:'.$RRA_params{'function'}.':'.$RRA_params{'XFF'}.':'.$RRA_params{'PDPnb'}.':'.$RRA_params{'CDPnb'};
 
     #default parameter for Data Source
-    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => '60', min => '0', max => 'U');
+    my %DS_params = (DSname => 'aggregate', type => 'GAUGE', heartbeat => '120', min => '0', max => 'U');
 
     if (defined $args{'DS'}){
         my $DS = $args{'DS'};
@@ -210,11 +210,12 @@ sub updateTimeDataStore {
     my $time = $args{'time'};
     my $value = $args{'value'};
 
-    my $cmd = 'rrdtool.exe update '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
-    $log->info($cmd);
+    my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
+    $log->debug($cmd);
 
     my $exec =`$cmd 2>&1`;
     #print $exec."\n";
+    $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
