@@ -55,15 +55,24 @@ sub createTimeDataStore{
 
         if (defined $options->{start}) {
             $opts .= '-b '.$options->{'start'}.' ';
-        }            
+        }else{
+			my $time = time();
+			my $moduloTime = $time % 60;
+			my $finalTime = $time - $moduloTime;
+			$opts .= '-b '.$finalTime.' ';
+		}
 
         if (defined $options->{step}) {
-            $opts .= '-s '.$options->{'step'};
+            $opts .= '-s '.$options->{'step'}.' ';
         }else{
-            $opts .= '-s 60';
+            $opts .= '-s 60 ';
         }
     }else{
-            $opts .= '-s 60';
+            $opts .= '-s 60 ';
+			my $time = time();
+			my $moduloTime = $time % 60;
+			my $finalTime = $time - $moduloTime;
+			$opts .= '-b '.$finalTime.' ';
         }
 	
     #default parameter for Round Robin Archive
