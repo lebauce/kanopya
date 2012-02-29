@@ -359,6 +359,25 @@ sub search {
     return  @objs;
 }
 
+sub find {
+    my $class = shift;
+    my %args = @_;
+    my @objs = ();
+
+    General::checkParams(args => \%args, required => ['hash']);
+
+    my @objects = $class->search(%args);
+
+    my $object = pop @objects;
+    if (! defined $object) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
+              );
+    }
+    return $object;
+}
+
+
 # save : store records in database ;
 # create them in not exists, update them otherwise
 
