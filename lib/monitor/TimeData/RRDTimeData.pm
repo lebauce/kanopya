@@ -262,7 +262,7 @@ sub getLastUpdatedValue{
     return %values;
 }
 
-sub __formatName{
+sub _formatName{
 	my %args = @_;
 	my $name = 'timeDB_'.$args{'name'}.'.rrd';
 	return $name;
