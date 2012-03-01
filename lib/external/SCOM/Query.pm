@@ -117,10 +117,10 @@ sub _execCmd {
     my %args = @_;
     
     my @cmd_list = (
-        #$self->{_set_execution_policy_cmd},                         # allow script execution
-        map({ "import-module '$_'" } @{$self->{_scom_modules}}),    # import modules
-        $self->{_scom_shell_cmd},                                   # connect to scom shell on management server
-        $args{cmd},                                                 # SCOM cmd to execute (double quote must be escaped)
+        #$self->{_set_execution_policy_cmd},                                            # allow script execution
+        map({ "import-module '$_' -DisableNameChecking" } @{$self->{_scom_modules}}),   # import modules without verb warning
+        $self->{_scom_shell_cmd},                                                       # connect to scom shell on management server
+        $args{cmd},                                                                     # SCOM cmd to execute (double quote must be escaped)
     );
     
     my $full_cmd = join(';', @cmd_list) . ";";
