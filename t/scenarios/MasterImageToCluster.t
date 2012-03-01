@@ -22,7 +22,7 @@ my $dist_name    = 'Debian';
 my $dist_ver     = '6';
 my $master_image = dirname(abs_path($0)) .
                    '/distribution_' . $dist_name .
-                   '_' . $dist_ver . '.tar.bz2';
+                   '_' . $dist_ver . '.tar.bz2.tar';
 
 use_ok ('Administrator');
 use_ok ('Executor');
@@ -31,12 +31,17 @@ use_ok ('Entity::Systemimage');
 
 # Test the existance of the master image test file.
 if(! -e $master_image) {
-    ok (-e $master_image);
+    ok (-e $master_image, "Test master image required");
     
     BAIL_OUT('Cannot find test master image file: ' . $master_image);
 }
 
-# TODO: test root rigths
+# Test root access
+if ($< != 0) {
+    ok ($< == 0, "Root access required");
+
+    BAIL_OUT('You need to be root.');
+}
 
 eval {
     my @args = ();
