@@ -151,7 +151,7 @@ sub _buildGetPerformanceCmd {
     
     if (defined $args{monitoring_object}) {
         my $target_criteria = join ' or ', map { "MonitoringObjectPath='$_'" } @{$args{monitoring_object}};
-        $criteria .= " and ($target_criteria)";
+        $criteria = "($criteria) and ($target_criteria)";
     }
     
     my $want_attrs_str = join ',', @want_attrs;
