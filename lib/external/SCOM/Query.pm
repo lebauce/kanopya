@@ -139,10 +139,12 @@ sub _buildGetPerformanceCmd {
     my $start_time    = $args{start_time};
     my $end_time    = $args{end_time};
     
-    # TODO criteria "((obj and (counter or counter)) or (obj and (counter)))" intead of "((obj or obj) and (counter or counter or counter))"
-    my $object_criteria     = join ' or ', map { "ObjectName='$_'" } keys %counters;
-    my $counter_criteria     = join ' or ', map { "CounterName='$_'" } map { @$_ } values %counters;
-    my $criteria = "($object_criteria) and ($counter_criteria)";
+    my @obj_criteria;
+    while (my ($object_name, $counters_name) = each %counters) {
+        push @obj_criteria,
+            "(ObjectName='$object_name' and (" . join( ' or ', map { "CounterName='$_'" } @$counters_name) . "))";
+    }
+    my $criteria = join ' or ', @obj_criteria;
     
     if (defined $args{monitoring_object}) {
         my $target_criteria = join ' or ', map { "MonitoringObjectPath='$_'" } @{$args{monitoring_object}};
