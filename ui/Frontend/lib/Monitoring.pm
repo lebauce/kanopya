@@ -485,6 +485,24 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/:combinationid/delet
     }
 };
 
+post '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
+    my $params = {
+        aggregate_combination_formula => param('formula'),
+    };
+   my $cm = AggregateCombination->new(%$params);
+   my $var = param('extclusterid');
+   redirect("/architectures/extclusters/$var/clustermetrics/combinations");
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+   
+    template 'clustermetric_combination_new', {
+        title_page => "Clustermetric creation",
+        extcluster_id => param('extclusterid'),
+    };
+};
 # ----------------------------------------------------------------------------#
 # ----------------------------------- RULES ----------------------------------#
 #----------- -----------------------------------------------------------------#

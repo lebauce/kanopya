@@ -36,7 +36,7 @@
 
     <table><tr><td>
     <% IF cluster_id %>
-        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetric/combinations/new">Create new combination for this cluster</a>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/new">Create new combination for this cluster</a>
     <% ELSE %>
         <a class="action" href="/architectures/clustermetrics/combinations/new">Create new metric</a>
     <% END %>
