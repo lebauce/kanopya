@@ -433,9 +433,61 @@ get '/clustermetrics/:clustermetricid/delete' => sub {
     redirect('/architectures/clustermetrics');
 };
 
-# -----------------------------------------------------------------#
-# -----------------------------  RULES ----------------------------#
-# -----------------------------------------------------------------#
+# -----------------------------------------------------------------------------#
+# ------------------------- CLUSTERMETRICS COMBINATIONS------------------------#
+# -----------------------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/clustermetrics/combinations' => sub {
+    my @clustermetric_combinations = AggregateCombination->search(hash=>{});
+    my @clustermetric_combinations_param;
+    foreach my $clustermetric_combination (@clustermetric_combinations){
+        my $hash = {
+            id           => $clustermetric_combination->getAttr(name => 'aggregate_combination_id'),
+            label        => $clustermetric_combination->toString(),
+        };
+        push @clustermetric_combinations_param, $hash;
+        
+    }
+    
+    template 'clustermetric_combinations', {
+        title_page      => "ClusterMetrics Combinations Overview",
+        combinations  => \@clustermetric_combinations_param,
+        cluster_id      => params->{extclusterid},
+    };
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/:combinationid/delete' => sub {
+    
+    my $combination_id =  params->{combinationid};
+    my $cluster_id     =  params->{extclusterid};
+     
+    my $combination = AggregateCombination->get('id' => $combination_id);
+    
+    my @conditions = AggregateCondition->search(hash=>{});
+    
+    my @conditionsUsingCombination;
+    foreach my $condition (@conditions) {
+        if($condition->getAttr(name => 'aggregate_combination_id') eq $combination_id){
+            push @conditionsUsingCombination,$condition->getAttr(name => 'aggregate_condition_id');
+        }
+    }
+
+    if( (scalar @conditionsUsingCombination) eq 0) {
+        $combination->delete();
+        redirect("/architectures/extclusters/$cluster_id/clustermetrics/combinations");
+    }else{
+        template 'clustermetric_combination_deletion_forbidden', {
+            title_page          => "Clustermetric Combination Deletion Forbidden",
+            conditions         => \@conditionsUsingCombination,
+            combination_id      => $combination_id,
+            extclusterid        => $cluster_id,
+        }
+    }
+};
+
+# ----------------------------------------------------------------------------#
+# ----------------------------------- RULES ----------------------------------#
+#----------- -----------------------------------------------------------------#
 
 
 get '/rules' => sub {

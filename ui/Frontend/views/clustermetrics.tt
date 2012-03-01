@@ -25,11 +25,22 @@
 </table>     
 
 <div class="actions">
-    <table><tr><td>
+    
+    <table>
+    <tr><td>
+    <% IF cluster_id %>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations">View the clustermetrics combinations</a>
+    <% END %>
+    </td></tr>
+    </table>
+    
+    <table>
+    <tr><td>
     <% IF cluster_id %>
         <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/new">Create new metric for this cluster</a>
     <% ELSE %>
         <a class="action" href="/architectures/clustermetrics/new">Create new metric</a>
     <% END %>
-    </td></tr></table>
+    </td></tr>
+    </table>
 </div> 
