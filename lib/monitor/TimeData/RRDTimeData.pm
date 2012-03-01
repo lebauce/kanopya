@@ -29,7 +29,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("timedata");
 
-my $dir          = 'C:\\tmp\\monitor\\TimeData\\';
+my $dir = 'C:\\tmp\\monitor\\TimeData\\';
 
 ####################################################################################################################
 #########################################RRD MANIPULATION FUNCTIONS#################################################
@@ -43,7 +43,7 @@ sub createTimeDataStore{
 	
     General::checkParams(args => \%args, required => ['name']); 
 	
-	my $name = formatName(name => $args{'name'});
+	my $name = _formatName(name => $args{'name'});
 
     my $RRA_chain;
     my $DS_chain;
@@ -119,6 +119,7 @@ sub createTimeDataStore{
 
     #final command
     my $cmd = 'rrdtool.exe create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
+    # print $cmd."\n";
     $log->info($cmd);
 
     #execution of the command
@@ -126,7 +127,6 @@ sub createTimeDataStore{
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD creation failed: '.$exec);
     }		
-#	or die "an error occured while trying to create the RRD: $?:$!";
 }
 
 #delete a RRD file.
@@ -135,8 +135,8 @@ sub deleteTimeDataStore{
 
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name = formatName(name => $args{'name'}); 
-    my $cmd = 'del '.$name;
+    my $name = _formatName(name => $args{'name'}); 
+    my $cmd = 'del '.$dir.$name;
 
     system ($cmd);
 }
@@ -147,7 +147,7 @@ sub getTimeDataStoreInfo {
 
     General::checkParams(args => \%args, required => ['name']); 
 
-	my $name = formatName(name => $args{'name'});
+	my $name = _formatName(name => $args{'name'});
     my $cmd = 'rrdtool.exe info '.$dir.$name;
 
     system ($cmd);	
@@ -158,7 +158,7 @@ sub fetchTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['name']); 
 
-    my $name = formatName(name => $args{'name'});
+    my $name = _formatName(name => $args{'name'});
     my $CF    = 'LAST';
     my $start = $args{'start'};
     my $end   = $args{'end'};
@@ -195,12 +195,12 @@ sub fetchTimeDataStore {
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
     
-    while (my ($timestamp, $value) = each %values){
-        if ($values{$timestamp} eq '-1,#IND000000e+000'){
-            delete $values{$timestamp};
-        }
-    }	
-            
+    # while (my ($timestamp, $value) = each %values){
+        # if ($values{$timestamp} eq '-1.#IND000000e+000'){
+            # delete $values{$timestamp};
+        # }
+    # }	
+         
     $log->debug(Dumper(\%values));
     return %values;   
 }
@@ -209,7 +209,7 @@ sub updateTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
 
-    my $name = formatName(name => $args{'aggregator_id'});
+    my $name = _formatName(name => $args{'aggregator_id'});
     my $datasource;
     if (defined $args{'datasource'}){
         $datasource = $args{'datasource'};
@@ -235,7 +235,7 @@ sub getLastUpdatedValue{
     my %args = @_;
     General::checkParams(args => \%args, required => ['aggregate_id']);
 
-    my $name = formatName(name => $args{'aggregate_id'});
+    my $name = _formatName(name => $args{'aggregate_id'});
     
     my $cmd = 'rrdtool.exe lastupdate '.$dir.$name;
     $log->info($cmd);
@@ -262,7 +262,7 @@ sub getLastUpdatedValue{
     return %values;
 }
 
-sub formatName{
+sub __formatName{
 	my %args = @_;
 	my $name = 'timeDB_'.$args{'name'}.'.rrd';
 	return $name;
