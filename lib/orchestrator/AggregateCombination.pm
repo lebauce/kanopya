@@ -20,7 +20,7 @@ use base 'BaseDB';
 use Clustermetric;
 use TimeData::RRDTimeData;
 use Kanopya::Exceptions;
-
+use List::MoreUtils qw {any} ;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -256,4 +256,14 @@ sub checkMissingParams {
         }
     }
 }
+
+sub useClusterMetric {
+    my $self = shift;
+    my $clustermetric_id = shift;
+    
+    my @dep_cm = $self->dependantClusterMetrics();
+    my $rep = any {$_ eq $clustermetric_id} @dep_cm;
+    return $rep;
+}
+
 1;
