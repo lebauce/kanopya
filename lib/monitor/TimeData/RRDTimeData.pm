@@ -148,7 +148,7 @@ sub getTimeDataStoreInfo {
     General::checkParams(args => \%args, required => ['name']); 
 
 	my $name = formatName(name => $args{'name'});
-    my $cmd = 'rrdtool.exe info '.$name;
+    my $cmd = 'rrdtool.exe info '.$dir.$name;
 
     system ($cmd);	
 }
