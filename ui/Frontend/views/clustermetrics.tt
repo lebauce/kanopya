@@ -3,11 +3,13 @@
     <% FOREACH clustermetric IN clustermetrics %>
         <tr><td>
         <span class="bold"> Metric <% clustermetric.id %></span>
-        <span class="italic"> <% clustermetric.label %> (
-        <% clustermetric.function %>,
-        <% clustermetric.indicator_id %>, 
-        <% clustermetric.window %>) </span></td>
+        <span class="italic"> <% clustermetric.label %> 
+        </td><td> <a class="imgManage" href="/architectures/clustermetrics/<%clustermetric.id%>/delete">delete</a></td>
         </tr>
     <% END %>
 </table>     
 
+<div class="actions">
+        <table><tr><td><a class="action" href="/architectures/clustermetrics/new">Create new metric</a></td></tr>
+        </table>
+</div> 
