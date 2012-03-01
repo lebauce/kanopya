@@ -86,11 +86,14 @@ sub getPerformance {
                 item_sep            => $item_sep,
     );
 
-
+    # Execute command
     my $cmd_res = $self->_execCmd(cmd => $cmd);
 
     # remove all \n (end of line and inserted \n due to console output)
     $cmd_res =~ s/\n//g; 
+
+    # Die if something wrong
+    die $cmd_res if ($cmd_res !~ 'DATASTART');
 
     # Build resulting data hash from cmd output
     my $h_res    = $self->_formatToHash( 
@@ -134,9 +137,9 @@ sub _execCmd {
 sub _buildGetPerformanceCmd {
     my $self = shift;
     my %args = @_;
-    my @want_attrs     = @{$args{want_attrs}};
-    my %counters     = %{$args{counters}};
-    my $start_time    = $args{start_time};
+    my @want_attrs  = @{$args{want_attrs}};
+    my %counters    = %{$args{counters}};
+    my $start_time  = $args{start_time};
     my $end_time    = $args{end_time};
     
     my @obj_criteria;
@@ -154,8 +157,9 @@ sub _buildGetPerformanceCmd {
     my $want_attrs_str = join ',', @want_attrs;
     my $format_str = join $args{item_sep}, map { "{$_}" } (0..$#want_attrs);
 
-    # TODO study better way: ps script template...    
-    my $cmd   = 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
+    # TODO study better way: ps script template...
+    my $cmd   = 'echo DATASTART;';
+    $cmd     .= 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
     #my $cmd  = 'foreach ($pc in Get-PerformanceCounter )';
     $cmd     .= '{ foreach ($pv in Get-PerformanceCounterValue -startTime \''. $start_time .'\' -endTime \''. $end_time .'\' $pc)';
     $cmd     .= '{ \"' . $args{line_sep} . $format_str . '\" -f ' . $want_attrs_str . '; } }';
