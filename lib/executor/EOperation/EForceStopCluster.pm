@@ -141,7 +141,7 @@ sub execute {
         };
         if ($@) {
             my $error = $@;
-            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_hostname").
+            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_id").
                       "> during force stop cluster : $error";
             $log->info($errmsg);
         }
@@ -158,7 +158,7 @@ sub execute {
         };
         if ($@) {
             my $error = $@;
-            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_hostname").
+            $errmsg = "Problem with node <" .$node->getAttr(name=>"host_id").
                       "> during dhcp configuration update : $error";
             $log->info($errmsg);
         }
@@ -166,7 +166,7 @@ sub execute {
         # component migration
         my $components = $self->{_objs}->{components};
         $log->info('Processing cluster components quick remove for node <' .
-                   $node->getAttr(name=>'host_hostname') . '>');
+                   $node->getAttr(name => 'host_id') . '>');
 
         foreach my $i (keys %$components) {
             my $tmp = EFactory::newEEntity(data => $components->{$i});
@@ -200,7 +200,7 @@ sub execute {
         };
         if ($@) {
             my $error = $@;
-            $errmsg = "Problem with node <" . $node->getAttr(name => "host_hostname") .
+            $errmsg = "Problem with node <" . $node->getAttr(name => "host_id") .
                       "> while removing export : $error";
             $log->info($errmsg);
         }
@@ -221,7 +221,7 @@ sub execute {
     $self->{_objs}->{component_dhcpd}->generate(econtext => $self->{bootserver}->{econtext});
     $self->{_objs}->{component_dhcpd}->reload(econtext => $self->{bootserver}->{econtext});
 
-    $self->{_objs}->{service_provider}->setState(state => "down");
+    $self->{_objs}->{cluster}->setState(state => "down");
 }
 
 =head1 DIAGNOSTICS

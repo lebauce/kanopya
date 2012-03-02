@@ -1,6 +1,7 @@
-# EVirtual.pm - class of virtual EHosts object
+# EVirtualHost.pm - class of virtual EHosts object
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,11 +16,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 20 nov 2011
 
 =head1 NAME
 
-EVirtual - execution class of virtual host entities
+EVirtualHost - execution class of virtual host entities
 
 =head1 SYNOPSIS
 
@@ -27,34 +27,39 @@ EVirtual - execution class of virtual host entities
 
 =head1 DESCRIPTION
 
-EHost::EVirtual is the execution class for virtual host entities
+EHost::EVirtualHost is the execution class for virtual host entities
 
 =head1 METHODS
 
 =cut
-package EEntity::EHost::EVirtual;
+
+package EEntity::EHost::EVirtualHost;
 use base "EEntity::EHost";
-use Entity::ServiceProvider::Inside::Cluster;
+
 use strict;
 use warnings;
-use Log::Log4perl "get_logger";
-use Operation;
 
+use Operation;
+use EFactory;
+use Entity::ServiceProvider;
+
+use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
 
 sub new {
     my $class = shift;
     my %args = @_;
-    
-    my $evirtual_ecomp = $args{evirt_ecomp};
-    my $virt_cluster = $args{virt_cluster};
-    delete $args{evirt_ecomp};
-    delete $args{virt_cluster};
-    
+
     my $self = $class->SUPER::new(%args);
-    
-    $self->{ecomponent_virt} = $evirtual_ecomp;
-    $self->{virt_cluster} = $virt_cluster;
+
+    $self->{virt_cluster} = Entity::ServiceProvider->get(
+                                id => $self->_getEntity->getAttr(name => "service_provider_id")
+                            );
+
+    $self->{ecomponent_virt} = EFactory::newEEntity(data => $self->{virt_cluster}->getManager(
+                                   id => $self->_getEntity->getAttr(name => "host_manager_id")
+                               ));
+
     $log->debug("Create a Virtual Host");
     return $self;
 }
@@ -62,16 +67,18 @@ sub new {
 sub start{
     my $self = shift;
     my %args = @_;
-    
-    $self->{ecomponent_virt}->startvm(cluster=>$self->{virt_cluster}, host => $self->_getEntity());
+
+    $self->{ecomponent_virt}->startvm(cluster => $self->{virt_cluster},
+                                      host    => $self->_getEntity());
     $self->_getEntity()->setState(state => 'starting');
 }
 
 sub stop {
 	my $self = shift;
     my %args = @_;
-    
-    $self->{ecomponent_virt}->stopvm(cluster=>$self->{virt_cluster}, host => $self->_getEntity());
+
+    $self->{ecomponent_virt}->stopvm(cluster => $self->{virt_cluster},
+                                     host    => $self->_getEntity());
     $self->_getEntity()->setAttr(name => 'active', value => 0);
     $self->_getEntity()->save;
     $self->_getEntity()->remove;
@@ -79,7 +86,8 @@ sub stop {
 
 sub postStart {
 	my $self = shift;
-	$self->{ecomponent_virt}->updatevm(cluster=>$self->{virt_cluster}, host => $self->_getEntity());
+	$self->{ecomponent_virt}->updatevm(cluster => $self->{virt_cluster},
+                                       host    => $self->_getEntity());
 }
 
 1;

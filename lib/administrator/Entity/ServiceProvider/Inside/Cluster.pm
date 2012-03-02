@@ -38,75 +38,116 @@ our $VERSION = "1.00";
 
 my $log = get_logger("administrator");
 my $errmsg;
+
 use constant ATTR_DEF => {
-    cluster_name            =>  {pattern        => '^\w*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    cluster_desc            =>  {pattern        => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    cluster_type            =>  {pattern        => '^.*$',
-                                 is_mandatory    => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    cluster_si_location     =>  {pattern        => '^(diskless|local)$',
-                                 is_mandatory    => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    cluster_si_access_mode  =>  {pattern        => '^(ro|rw)$',
-                                 is_mandatory    => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    cluster_si_shared       =>  {pattern        => '^(0|1)$',
-                                 is_mandatory    => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    cluster_min_node        => {pattern         => '^\d*$',
-                                is_mandatory    => 1,
-                                is_extended     => 0,
-                                is_editable        => 1},
-    cluster_max_node        => {pattern            => '^\d*$',
-                                is_mandatory    => 1,
-                                is_extended        => 0,
-                                is_editable        => 1},
-    cluster_priority        => {pattern         => '^\d*$',
-                                is_mandatory    => 1,
-                                is_extended     => 0,
-                                is_editable        => 1},
-    active                    => {pattern            => '^[01]$',
-                                is_mandatory    => 0,
-                                is_extended        => 0,
-                                is_editable        => 0},
-    systemimage_id            => {pattern         => '\d*',
-                                is_mandatory    => 1,
-                                is_extended     => 0,
-                                is_editable        => 0},
-    kernel_id                => {pattern         => '^\d*$',
-                                is_mandatory    => 0,
-                                is_extended     => 0,
-                                is_editable        => 1},
-    cluster_state            => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
-                                is_mandatory    => 0,
-                                is_extended     => 0,
-                                is_editable        => 0},
-    cluster_domainname      => {pattern         => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
-                                is_mandatory    => 1,
-                                is_extended     => 0,
-                                is_editable        => 0},
-    cluster_nameserver        => {pattern         => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-                                is_mandatory    => 1,
-                                is_extended     => 0,
-                                is_editable        => 0},
-    cluster_basehostname            => {pattern         => '^[a-z]+$',
-                                is_mandatory    => 1,
-                                is_extended     => 0,
-                                is_editable        => 1},
-	user_id           		 => {pattern         => '^\d+$',
-                                is_mandatory    => 1,
-                                is_extended     => 0,
-                                is_editable        => 0},
+    cluster_name => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_desc => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    cluster_type => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_si_location => {
+        pattern      => '^(diskless|local)$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_si_access_mode => {
+        pattern      => '^(ro|rw)$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_si_shared => {
+        pattern      => '^(0|1)$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_min_node => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    cluster_max_node => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    cluster_priority => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    active => {
+        pattern      => '^[01]$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    systemimage_id => {
+        pattern      => '\d*',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    kernel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    cluster_state => {
+        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_domainname => {
+        pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_nameserver => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_basehostname => {
+        pattern      => '^[a-z_]+$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+	user_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    host_manager_id => {
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -220,7 +261,7 @@ sub create {
        if(not $granted) {
            throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
        }
-    
+
     $class->checkAttrs(attrs => \%params);
 
     $log->debug("New Operation Create with attrs : " . %params);
@@ -272,12 +313,13 @@ sub forceStop {
     my $self = shift;
     my $adm = Administrator->new();
     # delete method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'forceStop');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to force stop this entity");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'forceStop');
+    if (not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to force stop this entity");
+    }
     my %params;
-    $params{'cluster_id'}= $self->getAttr(name =>"cluster_id");
+    $params{'cluster_id'} = $self->getAttr(name => "cluster_id");
+
     $log->debug("New Operation Force Stop Cluster with attrs : " . %params);
     Operation->enqueue(
         priority => 200,
@@ -677,62 +719,53 @@ sub getQoSConstraints {
 sub addNode {
     my $self = shift;
     my %args = @_;
-    my %params = (cluster_id  => $self->getAttr(name =>"cluster_id"));
-    
-    # Check mandatory parameters
-#    General::checkParams(args => \%args, required => ["type"]);
+    my %params = (cluster_id  => $self->getAttr(name => "cluster_id"));
+
+    my $adm = Administrator->new();
 
     # Check Rights
-    my $adm = Administrator->new();
     # addNode method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addNode');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add a node to this cluster");
-       }
-    
-    if (($args{type} eq "physical") && (defined $args{host_id})) {
-             $params{host_id} = $args{host_id};
-        } else {
-            $args{cluster_id} = $self->getAttr(name =>"cluster_id");
-            my $cluster_constraints = $self->getHostConstraints();
-            if ($cluster_constraints && defined $args{type}){
-                if ($cluster_constraints ne $args{type}){
-                    throw Kanopya::Exception(error => "Cluster constraints ($cluster_constraints->[0]) and host type chosen by the user ($args{type}) are different");
-                }
-            }
-            $args{type} = defined $args{type} ? $args{type} : $cluster_constraints;
-            $log->debug("Cluster <$args{cluster_id}> ask for a <$args{type}> host");
-            if (!defined $args{type} || $args{type} eq "virtual") {
-                my @clusters;
-                if (defined $args{cloud_cluster_id}){
-                    push @clusters, Entity::ServiceProvider::Inside::Cluster->get( id => $args{cloud_cluster_id});
-                } else {
-                    @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { cluster_state => {-like => 'up:%'} } );
-                }
-                $args{clusters} = \@clusters;
-            }
-            $params{host_id} = DecisionMaker::HostSelector->getHost( %args );
-        }
-    
-
-
-    my $host = Entity::Host->get(id=>$params{host_id});
-    $host->setState(state=>"locked");
-    if ($host->getAttr(name => "cloud_cluster_id")) {
-    $log->debug("New Operation AddVirtualHost with attrs : " . %params);
-        Operation->enqueue(
-            priority => 200,
-            type     => 'AddVirtualHost',
-            params   => \%params);
-    } else {
-            $log->debug("New Operation PreStartNode with attrs : " . %params);
-        Operation->enqueue(
-            priority => 200,
-            type     => 'PreStartNode',
-            params   => \%params);
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
+                                                   method    => 'addNode');
+    if (not $granted) {
+        throw Kanopya::Exception::Permission::Denied(
+                  error => "Permission denied to add a node to this cluster"
+              );
     }
 
+    # Check if a host is specified.
+    if (defined $args{host_id}) {
+        my $host = Entity::Host->get(id => $args{host_id});
+        my $manager_id = $host->getAttr(name => 'host_manager_id');
+        my $cluster_host_manager_id = $self->getAttr(name => "host_manager_id");
 
+        # Check if the specified host is manager by the cluster host manager
+        if ($manager_id != $cluster_host_manager_id) {
+            $errmsg = "Specified host <" . $args{host_id} . ">, is not managed by the same " .
+                      "host manager than the cluster one (<" . $manager_id .
+                      "> ne <" . $cluster_host_manager_id . ").";
+            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg)
+        }
+
+        $params{host_id} = $args{host_id};
+    }
+    # Else lets the DesisionMaker to choose one.
+    else {
+        $args{cluster_id}      = $self->getAttr(name => "cluster_id");
+        $args{host_manager_id} = $self->getAttr(name => "host_manager_id");
+
+        $log->debug("Cluster <$args{cluster_id}> ask for a host with args:" . Dumper(%args));
+        $params{host_id} = DecisionMaker::HostSelector->getHost(%args);
+    }
+
+    Entity::Host->get(id => $params{host_id})->setState(state => "locked");
+
+    $log->debug("New Operation PreStartNode with attrs : " . %params);
+    Operation->enqueue(
+        priority => 200,
+        type     => 'PreStartNode',
+        params   => \%params
+    );
 }
 
 sub getHostConstraints {
@@ -789,10 +822,10 @@ sub start {
 
     my $adm = Administrator->new();
     # start method concerns an existing entity so we use his entity_id
-       my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
-       }
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'start');
+    if (not $granted) {
+        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to start this cluster");
+    }
 
     $self->addNode();
     $self->setState(state => 'starting');

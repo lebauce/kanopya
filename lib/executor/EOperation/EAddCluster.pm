@@ -1,6 +1,7 @@
 # EAddCluster.pm - Operation class implementing Cluster creation operation
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2009-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +16,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -65,9 +65,8 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
     
-    my $adm = Administrator->new();
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
@@ -77,17 +76,15 @@ sub prepare {
         $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$params);
     };
     if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $err;
+        $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
+    $self->{econtext} = EFactory::newEContext(ip_source      => "127.0.0.1",
+                                              ip_destination => "127.0.0.1");
 
 }
-
-
 
 sub execute {
     my $self = shift;
@@ -138,7 +135,7 @@ Patches are welcome.
 
 =head1 LICENCE AND COPYRIGHT
 
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+Kanopya Copyright (C) 2009-2012 Hedera Technology.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

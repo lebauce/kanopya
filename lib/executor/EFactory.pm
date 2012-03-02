@@ -1,6 +1,5 @@
-# EFactory.pm - Module which instanciate EEntity and EContext
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -45,6 +43,7 @@ use Log::Log4perl "get_logger";
 use vars qw(@ISA $VERSION);
 
 use General;
+use Entity;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Net::IP qw(:PROC);
@@ -84,23 +83,29 @@ sub newEEntity {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['data']);
-    my $data = $args{data};
-    my %params = (data=>$args{data});
-    my $class = General::getClassEEntityFromEntity(entity => $data);
-#    $log->debug("GetClassEEntityFromEntity return $class"); 
 
-    # Manage differences between virtual and physical hosts
+    my $data = $args{data};
+    my %params = (data => $args{data});
+
+    my $class = General::getClassEEntityFromEntity(entity => $data);
+    $log->debug("GetClassEEntityFromEntity return $class");
+
+    # Workaround to avoid to have Entity::Host sub-classes corresponding to
+    # EEntity::EHost since we dont have specific data in base for instance.
     if ($class eq "EEntity::EHost"){
         $log->debug("Get a new EHost !");
-        if ($data->getAttr(name=>"cloud_cluster_id")){
-            $class .= "::EVirtual";
-            $params{virt_cluster} = Entity::ServiceProvider::Inside::Cluster->get(id=>$data->getAttr(name=>"cloud_cluster_id"));
-            $params{evirt_ecomp} = EFactory::newEEntity(data => $params{virt_cluster}->getComponent(name=>"Opennebula", version=>"3"));
+
+        my $manager = Entity->get($data->{host_manager_id});
+        if ($manager->isa("Entity::Component::Opennebula3")) {
+            $class .= "::EVirtualHost";
+        }
+        elsif ($manager->isa("Entity::Connector::UcsManager")) {
+            $class .= "::EUcsHost";
         }
     }
 
     my $location = General::getLocFromClass(entityclass => $class);
-    
+
     eval { require $location; };
     if ($@){
         $errmsg = "EFactory->newEEntity : require locaction failed (location is $location) : $@";
@@ -156,7 +161,7 @@ __END__
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
+Copyright (c) 2011-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut

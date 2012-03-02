@@ -297,11 +297,14 @@ sub setNodeState {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['state']);
+    General::checkParams(args => \%args, required => [ 'state' ]);
+
     my $new_state = $args{state};
     my $current_state = $self->getNodeState();
-    $self->{_dbix}->node->update({'node_prev_state' => $current_state,
-                                  'node_state' => $new_state . ":" . time})->discard_changes();
+    $self->{_dbix}->node->update({
+        node_prev_state => $current_state,
+        node_state      => $new_state . ":" . time
+    })->discard_changes();
 }
 
 =head2 Entity::Host->becomeNode (%args)
@@ -324,13 +327,12 @@ sub becomeNode {
     General::checkParams(args => \%args, required => ['inside_id','master_node','node_number']);
 
     my $adm = Administrator->new();
-    my $res =$adm->{db}->resultset('Node')->create(
-		{	inside_id=>$args{inside_id},
-            host_id =>$self->getAttr(name=>'host_id'),
-            master_node => $args{master_node},
-			node_number => $args{node_number}
-        }
-    );
+    my $res = $adm->{db}->resultset('Node')->create({
+                  inside_id   => $args{inside_id},
+                  host_id     => $self->getAttr(name => 'host_id'),
+                  master_node => $args{master_node},
+			      node_number => $args{node_number}
+              });
 
     return $res->get_column("node_id");
 }
@@ -485,7 +487,15 @@ sub getHostFromIP {
 
 sub getFreeHosts {
     my $class = shift;
-    my @hosts = $class->getHosts(hash => {active => 1, host_state => {-like => 'down:%'}});
+    my %args = @_;
+
+    my $hash = {active => 1, host_state => {-like => 'down:%'}};
+
+    if (defined $args{host_manager_id}) {
+        $hash->{host_manager_id} = $args{host_manager_id}
+    }
+
+    my @hosts = $class->getHosts(hash => $hash);
     my @free;
     foreach my $m (@hosts) {
         if(not $m->{_dbix}->node) {
@@ -512,7 +522,7 @@ sub create {
 
 	$class->checkAttrs(attrs => \%params);
 
-    # ... add remove its to let the operation the default values.
+    # ... add remove its to let the operation use the default values.
     delete $params{service_provider_id};
     delete $params{host_manager_id};
 
@@ -701,16 +711,14 @@ sub setInternalIP {
 sub removeInternalIP {
     my $self = shift;
 
-    my $internal_net_id = $self->getAttr(name =>"host_ipv4_internal_id");
+    my $internal_net_id = $self->getAttr(name => "host_ipv4_internal_id");
 
-    $self->{_dbix}->update({'host_ipv4_internal_id' => undef});
-    my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_id => $internal_net_id);
-
+    if (defined $internal_net_id) {
+        $self->{_dbix}->update({'host_ipv4_internal_id' => undef});
+        my $adm = Administrator->new();
+        my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_id => $internal_net_id);
+    }
 }
-
-
-
 
 sub getClusterId {
     my $self = shift;

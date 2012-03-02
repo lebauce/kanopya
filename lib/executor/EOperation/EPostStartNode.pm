@@ -91,11 +91,7 @@ sub new {
 
 sub _init {
     my $self = shift;
-    $self->{nas} = {};
-    $self->{executor} = {};
-    $self->{bootserver} = {};
-    $self->{monitor} = {};
-    $self->{_objs} = {};
+
     return;
 }
 
@@ -112,15 +108,12 @@ sub prepare {
 
     $log->info("Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EPostStartNode->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     my $params = $self->_getOperation()->getParams();
 
-    # No Cluster nor context to load 
+    #$self->{nas}   = {};
+    $self->{_objs} = {};
     
     # Get instance of Cluster Entity
     $log->info("Load cluster instance");
@@ -138,7 +131,7 @@ sub prepare {
     $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 
     # Get instance of Context
-    $self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
+    #$self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
 }
 
 sub execute {
@@ -148,24 +141,25 @@ sub execute {
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
         $self->{_objs}->{host}->becomeMasterNode();
     }
-    
+
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
-    foreach my $i (keys %$components) 
-    {
+    foreach my $i (keys %$components) {
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->postStartNode(host => $self->{_objs}->{host}, 
-                           cluster => $self->{_objs}->{cluster});
+        $tmp->postStartNode(host    => $self->{_objs}->{host}, 
+                            cluster => $self->{_objs}->{cluster});
     }
 
     my $nodes = $self->{_objs}->{cluster}->getHosts();
-   $log->info("Generate Hosts Conf");
+    $log->info("Generate Hosts Conf");
+
     my $etc_hosts_file = $self->generateHosts(nodes => $nodes);
-    foreach my $i (keys %$nodes) 
-    {
+    foreach my $i (keys %$nodes) {
 	    my $node = $nodes->{$i};
-        my $node_econtext = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => $nodes->{$i}->getInternalIP()->{ipv4_internal_address});
+        my $node_ip = $nodes->{$i}->getInternalIP()->{ipv4_internal_address};
+        my $node_econtext = EFactory::newEContext(ip_source      => "127.0.0.1",
+                                                  ip_destination => $node_ip);
         $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
     }    
 	my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
@@ -196,7 +190,8 @@ sub generateHosts {
     my $vars = { hosts       => \@nodes_list };
     $log->debug(Dumper($vars));
     $template->process($input, $vars, "/tmp/$tmpfile") || die $template->error(), "\n";
-   return("/tmp/".$tmpfile);
+
+    return("/tmp/".$tmpfile);
    # $self->{nas}->{econtext}->send(src => "/tmp/".$tmpfile, dest => "/etc/hosts");
    # unlink     "/tmp/$tmpfile";
 }

@@ -43,23 +43,6 @@ my $config = {
     RELATIVE     => 1,               # desactive par defaut
 };
 
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-
-    return $self;
-}
-
-sub _init {
-    my $self = shift;
-    $self->{executor} = {};
-    $self->{bootserver} = {};
-    $self->{_objs} = {};
-    return;
-}
 
 sub prepare {
     my $self = shift;
@@ -69,6 +52,10 @@ sub prepare {
     General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
+
+    $self->{executor}   = {};
+    $self->{bootserver} = {};
+    $self->{_objs}      = {};
 
     # Cluster instantiation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>");

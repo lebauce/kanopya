@@ -151,6 +151,8 @@ sub prepare {
 
         $self->{_objs}->{host_provider}
             = Entity::ServiceProvider->get(id => $params->{host_provider_id});
+
+        delete $params->{host_provider_id};
     };
     if ($@) {
         $log->info("Host provider id not defined, using default.");
@@ -162,10 +164,12 @@ sub prepare {
     # Check if a host manager is given in parameters, use default instead.
     my $host_manager;
     eval {
-        General::checkParams(args => $params, required => ["host_manager_id"]);
+        General::checkParams(args => $params, required => [ "host_manager_id" ]);
 
         $host_manager
             = $self->{_objs}->{host_provider}->getManager(id => $params->{host_manager_id});
+
+        delete $params->{host_manager_id};
     };
     if ($@) {
         $log->info("Host manager id not defined, using default.");
