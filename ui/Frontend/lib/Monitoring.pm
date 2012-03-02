@@ -341,15 +341,21 @@ get '/extclusters/:extclusterid/clustermetrics/new' => sub {
 };
 
 post '/extclusters/:extclusterid/clustermetrics/new' => sub {
-        my $cm_params = {
+    my $cm_params = {
         clustermetric_cluster_id               => param('extclusterid'),
         clustermetric_indicator_id             => param('id2'),
         clustermetric_statistics_function_name => param('function'),
         clustermetric_window_time              => '1200',
     };
-   my $cm = Clustermetric->new(%$cm_params);
-   my $var = param('extclusterid');
-   redirect("/architectures/extclusters/$var/clustermetrics");
+    my $cm = Clustermetric->new(%$cm_params);
+   
+    my $comb_params = {
+        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+    };
+    AggregateCombination->new(%$comb_params);
+    
+    my $var = param('extclusterid');
+    redirect("/architectures/extclusters/$var/clustermetrics");
 };
 
 
