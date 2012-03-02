@@ -125,6 +125,10 @@ CREATE TABLE `netapp` (
   FOREIGN KEY (`netapp_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Table ucs for connector
+
+CREATE TABLE `ucs_manager` (`ucs_id`int(8) unsigned NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `ucs`
 -- Entity::ServiceProvider::Outside::Ucs class

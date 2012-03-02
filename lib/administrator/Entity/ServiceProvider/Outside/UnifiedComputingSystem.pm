@@ -68,7 +68,7 @@ sub create {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    my $poolip = Entity::ServiceProvider::Outside::UnifiedComputingSystem->new(
+    my $ucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->new(
         ucs_name            => $args{ucs_name},
         ucs_desc            => $args{ucs_desc},
         ucs_addr            => $args{ucs_addr},
@@ -77,6 +77,9 @@ sub create {
         ucs_dataprovider    => $args{ucs_dataprovider},
         ucs_ou              => $args{ucs_ou},
     );
+
+    return $ucs;
+
 }
 
 sub remove {
@@ -88,6 +91,16 @@ sub remove {
 #sub getState {
 #
 #}
+
+sub login {
+    my $ucs = Cisco::UCS->new(
+        cluster  => "89.31.149.80",
+        port     => 80, 
+        proto    => "http",
+        username => "admin",
+        passwd   => "Infidis2011"
+    ); 
+}
 
 sub toString {
     my $self = shift;

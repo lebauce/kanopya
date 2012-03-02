@@ -1,0 +1,67 @@
+<%# <script type="text/javascript" src="/js/details.js"></script>
+%>
+<h2>Ucs : <% ucs_name %></h2>
+
+<hr/>
+<span id="state" class="title simpleexpand">State</span>
+<table id="Xstate" class="detailspart">
+<tr>
+    <td>
+    <% SWITCH ucs_state %>
+        <% CASE 'up' %>
+        <span class="state imgUp">Up (<% state_time %>)</span>
+        <% CASE 'down' %>
+        <span class="state imgDown">Down</span>
+        <% CASE 'starting' %>
+        <span class="state imgDown">Starting... (<% state_time %>)</span>
+        <% CASE 'stopping' %>
+        <span class="state imgDown">Stopping... (<% state_time %>)</span>
+        <% CASE 'broken' %>
+        <span class="state imgWarning">Broken (<% state_time %>)</span>
+    <% END %>
+    </td>
+</tr>
+</table>
+
+<hr />
+<span id="mainsettings" class="title simpleexpand">Main settings</span>
+<table id="Xmainsettings" class="detailspart">
+    <tr><td class="italic" colspan="2"><% ucs_desc %></td>
+    </td>
+    
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/networks/ucs/<% ucs_id %>/remove">delete</a><br />
+        <span class="desc">Delete this ucs.</span>
+    </td>
+
+    <tr><td class="label">Address :</td><td><% ucs_addr %></td></tr>
+    <tr><td class="label">Login :</td><td><% ucs_login %></td></tr>
+    <tr><td class="label">Password :</td><td>**********</td></tr>
+    <tr><td class="label">Data Provider :</td><td><% ucs_dataprovider %></td></tr>
+    <tr><td class="label">OU :</td><td><% ucs_ou %></td></tr>
+    </tr>
+</table>
+<hr/>
+<span id="network" class="title simpleexpand">Service Profiles</span>
+<table id="Xnetwork" class="detailspart list">
+<tr><td class="italic" colspan="2"></td>
+    </td>
+
+    <td class="actions" rowspan="2">
+    </td>
+
+</table>
+
+<hr/>
+<span id="network" class="title simpleexpand">Blades</span>
+<table id="XBlades" class="detailspart">
+    <tr><td class="italic" colspan="2"></td>
+    </td>
+
+    <td class="actions" rowspan="2">
+        <span class="desc"></span>
+    </td>
+
+    <tr><td class="label">Blades number :</td><td><% ucs_blade_number %></td></tr>
+    </tr>
+</table>

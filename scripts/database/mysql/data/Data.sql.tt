@@ -65,7 +65,9 @@ INSERT INTO `class_type` VALUES
 (48, 'Entity::Component::Physicalhoster0'),
 (49, 'Entity::Poolip'),
 (50, 'Entity::Vlan'),
-(51, 'Entity::Masterimage');
+(51, 'Entity::Masterimage'),
+(52, 'Entity::Connector::UcsManager');
+
 
 --
 -- system groups
@@ -372,7 +374,8 @@ INSERT INTO `component_type` VALUES
 
 INSERT INTO `connector_type` VALUES
 (1,'ActiveDirectory','1','DirectoryService'),
-(2,'Scom','1','MonitoringService');
+(2,'Scom','1','MonitoringService'),
+(3,'UcsManager','1','HostManager');
 
 --
 -- kernels

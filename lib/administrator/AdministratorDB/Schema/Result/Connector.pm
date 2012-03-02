@@ -149,6 +149,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 ucs_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::UcsManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ucs_manager",
+  "AdministratorDB::Schema::Result::UcsManager",
+  { "foreign.ucs_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:a8lNMqe/qJO/HtHw8qoBSw
 
