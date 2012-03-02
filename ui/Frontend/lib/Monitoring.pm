@@ -406,9 +406,9 @@ get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
     }
 };
 
-# ---------------------------------------------------------------------------------#
-# ----------------------------- GENERAL CLUSTERMETRICS ----------------------------#
-# ---------------------------------------------------------------------------------#
+# -----------------------------------------------------------------------------#
+# ------------------------- GENERAL CLUSTERMETRICS ----------------------------#
+# -----------------------------------------------------------------------------#
 
 
 get '/clustermetrics/new' => sub {
@@ -445,6 +445,10 @@ post '/clustermetrics/new' => sub {
         clustermetric_window_time              => '1200',
     };
    my $cm = Clustermetric->new(%$cm_params);
+       my $comb_params = {
+        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+    };
+    AggregateCombination->new(%$comb_params);
    redirect("/architectures/clustermetrics");
 };
 
@@ -526,6 +530,81 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
         extcluster_id => param('extclusterid'),
     };
 };
+
+# -----------------------------------------------------------------------------#
+# ------------------- CLUSTERMETRIC COMBINATION CONDITIONS --------------------#
+# -----------------------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions' => sub {
+    my @clustermetric_conditions = AggregateCondition->search(hash=>{});
+    my @clustermetric_conditions_param;
+    foreach my $clustermetric_condition (@clustermetric_conditions){
+        my $hash = {
+            id           => $clustermetric_condition->getAttr(name => 'aggregate_condition_id'),
+            label        => $clustermetric_condition->toString(),
+        };
+        push @clustermetric_conditions_param, $hash;
+    }
+    
+    template 'clustermetric_combination_conditions', {
+        title_page      => "ClusterMetrics Conditions Overview",
+        conditions  => \@clustermetric_conditions_param,
+        cluster_id      => params->{extclusterid},
+    };
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditionid/delete' => sub {
+    
+    my $condition_id   =  params->{conditionid};
+    my $cluster_id     =  params->{extclusterid};
+    
+    my $condition = AggregateCondition->get('id' => $condition_id);
+    
+    my @rules = AggregateRule->search(hash=>{});
+    
+    my @rulesUsingCondition;
+    
+    # Check if the condition is not used by a role to delete it
+    foreach my $rule (@rules) {
+       
+       my $id = $rule->getAttr(name => 'aggregate_rule_id');
+       
+       if($rule->isCombinationDependant($condition_id)){
+            push @rulesUsingCondition,$id;
+        }
+    }
+    if( (scalar @rulesUsingCondition) eq 0) {
+        $condition->delete();
+        redirect("/architectures/extclusters/$cluster_id/clustermetrics/combinations/conditions");
+    }else{
+        template 'clustermetric_condition_deletion_forbidden', {
+            title_page         => "Clustermetric condition Deletion Forbidden",
+            rules              => \@rulesUsingCondition,
+            condition_id       => $condition_id,
+            extclusterid       => $cluster_id,
+        }
+    }
+};
+
+post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => sub {
+    my $params = {
+        aggregate_combination_formula => param('formula'),
+    };
+   my $cm = AggregateCombination->new(%$params);
+   my $var = param('extclusterid');
+   redirect("/architectures/extclusters/$var/clustermetrics/combinations");
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+   
+    template 'clustermetric_combination_new', {
+        title_page => "Clustermetric creation",
+        extcluster_id => param('extclusterid'),
+    };
+};
+
 # ----------------------------------------------------------------------------#
 # ----------------------------------- RULES ----------------------------------#
 #----------- -----------------------------------------------------------------#
