@@ -134,7 +134,7 @@ sub computeLastValue{
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    print "$arrayString = ";
+    # print "$arrayString = ";
     $log->info("$arrayString");
     return $res;
 }
@@ -155,7 +155,7 @@ sub compute{
     
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
     
-    print Dumper \%args;
+    # print Dumper \%args;
     
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
@@ -174,7 +174,7 @@ sub compute{
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    print "$arrayString = $res\n";
+    # print "$arrayString = $res\n";
     $log->info("$arrayString");
     return $res;
 }
@@ -217,7 +217,7 @@ sub computeFromArrays{
     my $self = shift;
     my %args = @_;
     
-    print Dumper \%args;
+    # print Dumper \%args;
     
     my @requiredArgs = $self->dependantClusterMetricIds();
     
@@ -234,17 +234,17 @@ sub computeFromArrays{
     }
     @timestamps = uniq @timestamps;
     
-    print " @timestamps \n";
+    # print " @timestamps \n";
     my %rep;
     foreach my $timestamp (@timestamps){
         my %valuesForATimeStamp;
         foreach my $cm_id (@requiredArgs){
             $valuesForATimeStamp{$cm_id} = $args{$cm_id}->{$timestamp};
         }
-        print Dumper \%valuesForATimeStamp;
+        # print Dumper \%valuesForATimeStamp;
         $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
-    print Dumper \%rep;
+    # print Dumper \%rep;
 } 
 
 sub checkMissingParams {
@@ -261,7 +261,7 @@ sub checkMissingParams {
             # Log in general logger
             # TODO log in the logger corresponding to caller package;
             $log->error($errmsg);
-            print "$caller_sub_name : $errmsg \n";
+            # print "$caller_sub_name : $errmsg \n";
             throw Kanopya::Exception::Internal::IncorrectParam();
         }
     }

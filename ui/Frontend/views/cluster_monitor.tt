@@ -4,10 +4,21 @@
 <div class="cluster_overview">
     <h2>cluster overview</h2>
         <div class="clustermetric_dropdown">
-			<label for="indicator_list" class="list_label">available Cluster Metrics for external cluster: </label>
+			<% IF errors.combinations %>
+				<p> error: <% errors.combinations %> </p><br />
+				<p>no combination could be retrieved for this external cluster</p>
+			<% ELSE %>
+			<label for="combination_list" class="list_label">available indicators for external cluster: </label>
+			<select id="combination_list" onchange="showCombinationGraph(this,this.options[this.selectedIndex].value);" >
+				<option selected="selected"> Please select a combination to monitor </option>
+				<% FOREACH combination IN combinations %>
+					<option value="<% combination.id %>"><% combination.label %></option>
+				<% END %>
+			</select>
+			<% END %>
         </div>
         <br />
-        <div id="timedClusterMetricView" style="height:400px;width:1000px; "></div><br />
+        <div id="timedCombinationView" style="height:400px;width:1000px; "></div><br />
 </div>
 <div class="nodes_overview">
     <h2>nodes overview</h2>
@@ -18,7 +29,7 @@
 		<% ELSE %>
 			<label for="indicator_list" class="list_label">available indicators for external cluster: </label>
 			<select id="indicator_list" onchange="showMetricGraph(this,this.options[this.selectedIndex].id,this.options[this.selectedIndex].value);" >
-					<option selected="selected"> Please select an indicator to monitor </option>
+				<option selected="selected"> Please select an indicator to monitor </option>
 				<% FOREACH indicator IN indicators %>
 					<option id ="<% indicator.oid %>" value="<% indicator.unit %>"><% indicator.label %></option>
 				<% END %>

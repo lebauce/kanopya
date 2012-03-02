@@ -8,6 +8,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use AggregateRule;
 use AggregateCombination;
+use Aggregator;
 use Clustermetric;
 use General;
 use Log::Log4perl "get_logger";
@@ -234,29 +235,26 @@ get '/monitoring/browse' => sub  {
 
 get '/extclusters/:extclusterid/monitoring' => sub {
     my $cluster_id = params->{extclusterid} || 0;
-   
-
 	my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
-	my %labels;
-	
+
 	# we retrieve the indicator list for this external cluster
-	_getIndicators(\%template_config);
-	# $log->error('after indicator request: '.Dumper(\%template_config));
-		
+	_getIndicators(\%template_config);		
 	#we retrieve the combination list for this external cluster
-	# _getCombinations(\%template_config);
+	_getCombinations(\%template_config);
 	
+	$log->error('get combinations: '.Dumper\%template_config);
 	
 	template 'cluster_monitor', \%template_config;
 };
 
-# ajax '/extclusters/:extclusterid/monitoring/clustermetricview' => sub {
-	# my $cluster_id    = params->{extclusterid} || 0;   
-
-# };  
+ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
+	my $cluster_id = params->{extclusterid} || 0;   
+	my $combination = params->{'id'};
+	# $log->error('login before eval, combination: '.Dumper($combination));
+};  
   
 
-ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
+ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
     my $cluster_id    = params->{extclusterid} || 0;   
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
     my $indicator = params->{'oid'};
@@ -786,17 +784,39 @@ sub _getIndicators(){
 }
 
 sub _getCombinations(){
-		# my @combinations;
+	my $template_config = shift;
+	my $cluster_id = $template_config->{'cluster_id'};
+	my %errors;
+	my @combinations;
+	my @aggregate_combinations;
 	
-	# my @clustermetrics = Clustermetric->search(
-            # hash => {
-                # clustermetric_cluster_id => $cluster_id
-            # }
-        # );
-	# for my $clustermetric (@clustermetrics){
-		# push @combinations, $clustermetric->toString();
-		# print $clustermetric->toString()."\n";
-	# }
+	eval {
+		@aggregate_combinations = AggregateCombination->search(
+				hash => {
+				}
+			);
+	};
+	if ($@) {
+		my $error = "$@";
+		$log->error($error);
+		$template_config->{'errors'}{'combinations'} = $error;
+		return %$template_config;
+	}elsif (scalar(@aggregate_combinations) == 0){
+		my $error = 'No combination could be found for this external cluster';
+		$log->error($error);
+		$template_config->{'errors'}{'combinations'} = $error;
+		return %$template_config;
+	}else{
+		 for my $combi (@aggregate_combinations){
+			my %combination;
+			$combination{'id'} = $combi->getAttr(name => 'aggregate_combination_id');
+			$combination{'label'} = $combi->toString();
+			push @combinations, \%combination;
+		}
+	$template_config->{'combinations'} = \@combinations;
+	$log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper(\$template_config->{'combinations'}));
+	return %$template_config;
+	}
 }
 
 #get '/rules/:ruleid/details' => sub {
