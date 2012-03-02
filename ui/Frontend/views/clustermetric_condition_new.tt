@@ -1,0 +1,42 @@
+    <h2>New condition for cluster <%extcluster_id%></h2>
+    <hr />
+    <form METHOD="POST" ACTION="/architectures/extclusters/<%extcluster_id%>/clustermetrics/combinations/conditions/new">
+
+    <table>
+        <tr>
+            <td>
+                Combination:
+                <select name="combinationid" >
+                    <% FOREACH combination IN combinations %>
+                        <option value="<% combination.id %>"><% combination.id %>:<% combination.label %></option>
+                    <% END %>
+                </select>
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td>
+                Function: 
+            </td>
+            <td>
+                <select name="comparator">
+                    <option value="le">&le;</option>
+                    <option value="lt">&lt;</option>
+                    <option value="eq">=</option>
+                    <option value="gt">&gt;</option>
+                    <option value="ge">&ge;</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" value ="threshold" name="threshold"/>
+            </td>
+        </tr>
+    </table>
+    
+    <br/>
+    
+    <div class="left">
+        <input type="submit" value="Create condition"/>
+    </div>
+</form>

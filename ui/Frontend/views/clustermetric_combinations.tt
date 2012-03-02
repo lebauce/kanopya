@@ -30,6 +30,13 @@
     <tr><td>
     <% IF cluster_id %>
         <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics">View the clustermetrics</a>
+        <tr><td>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions">View the conditions</a>
+        </td></tr>
+        <tr><td>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules">View the rules</a>
+        </td></tr>
+        
     <% END %>
     </td></tr>
     </table>
@@ -38,7 +45,7 @@
     <% IF cluster_id %>
         <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/new">Create new combination for this cluster</a>
     <% ELSE %>
-        <a class="action" href="/architectures/clustermetrics/combinations/new">Create new metric</a>
+        <a class="action" href="/architectures/clustermetrics/combinations/new">Create new combination</a>
     <% END %>
     </td></tr></table>
 </div> 

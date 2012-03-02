@@ -408,7 +408,7 @@ get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
 
 # -----------------------------------------------------------------------------#
 # ------------------------- GENERAL CLUSTERMETRICS ----------------------------#
-# -----------------------------------------------------------------------------#
+# ---------------------------------DEPRECATED ?--------------------------------#
 
 
 get '/clustermetrics/new' => sub {
@@ -587,20 +587,46 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditio
 };
 
 post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => sub {
-    my $params = {
-        aggregate_combination_formula => param('formula'),
+    my $comparatorHash = 
+    {
+        "le" => "<",
+        "lt" => "<=",
+        "eq" => "==",
+        "gt" => ">",
+        "ge" => ">=",
     };
-   my $cm = AggregateCombination->new(%$params);
+    
+    my $params = {
+        aggregate_combination_id => param('combinationid'),
+        comparator               => $comparatorHash->{param('comparator')},
+        threshold                => param('threshold'),
+        state                    => 'enabled',
+        time_limit               =>  'NULL',
+    };
+    
+   my $cond = AggregateCondition->new(%$params);
    my $var = param('extclusterid');
-   redirect("/architectures/extclusters/$var/clustermetrics/combinations");
+   redirect("/architectures/extclusters/$var/clustermetrics/combinations/conditions");
 };
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => sub {
     
    my $cluster_id    = params->{extclusterid} || 0;
-   
-    template 'clustermetric_combination_new', {
-        title_page => "Clustermetric creation",
+    
+    my @combinations = AggregateCombination->search(hash => {});
+    
+    my @combinationsInput;
+    
+    foreach my $combination (@combinations){
+        my $hash = {
+            id     => $combination->getAttr(name => 'aggregate_combination_id'),
+            label  => $combination->toString(),
+        };
+        push @combinationsInput, $hash;
+    }
+    template 'clustermetric_condition_new', {
+        title_page => "Condition creation",
+        combinations => \@combinationsInput,
         extcluster_id => param('extclusterid'),
     };
 };
