@@ -1,0 +1,24 @@
+
+<h2>New Cluster metric combination for Cluster <%extcluster_id%></h2>
+<hr />
+<form METHOD="POST" ACTION="/architectures/extclusters/<%extcluster_id%>/clustermetrics/combinations/new">
+
+    <table>
+        <tr><td> Please enter a well formed formula (Syntax checker not implemented)
+        </td></tr>
+        
+        <tr><td>
+        
+        <input type=test name="formula" value="(idXX + idYY) / idZZ"/>
+        
+        </td></tr>
+        
+    </table>
+    <br/>
+    
+    <div class="left">
+        <input type="submit" value="Create combination"/>
+    </div>
+</form>
+<br/>
+(TODO : INSERT LIST OF CLUSTER METRICS HERE!!!!!!!!!)

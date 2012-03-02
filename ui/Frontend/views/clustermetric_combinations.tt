@@ -1,0 +1,44 @@
+<table class="simplelisting">
+
+    <caption>
+    
+        <% IF cluster_id %> Combinations related to cluster <% cluster_id %>  
+        <% ELSE %> All the Combinations
+        <% END %>
+        
+    
+    </caption>
+
+    <% FOREACH combination IN combinations %>
+        <tr><td>
+        <span class="bold"> Combination <% combination.id %></span>
+        <span class="italic"> <% combination.label %> 
+        </td><td>
+        <% IF NOT cluster_id %>
+            <a class="imgManage" href="/architectures/clustermetrics/combinations/<%combination.id%>/delete">delete</a>
+        <% ELSE %>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/<%combination.id%>/delete">delete</a>
+        <% END %>
+        </td>
+        </tr>
+    <% END %>
+</table>     
+
+<div class="actions">
+
+    <table>
+    <tr><td>
+    <% IF cluster_id %>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics">View the clustermetrics</a>
+    <% END %>
+    </td></tr>
+    </table>
+
+    <table><tr><td>
+    <% IF cluster_id %>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/new">Create new combination for this cluster</a>
+    <% ELSE %>
+        <a class="action" href="/architectures/clustermetrics/combinations/new">Create new metric</a>
+    <% END %>
+    </td></tr></table>
+</div> 
