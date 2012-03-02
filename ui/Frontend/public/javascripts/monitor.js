@@ -305,14 +305,29 @@
  
 var url = window.location.href;
 var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
-var metric_view =path + '/metricview';
+var nodes_view = path + '/nodesview';
+var clusters_view = path  + '/clustersview';
 
+function showCombinationGraph(curobj,combi_id){
+	loading_start();
+	var params = {id:combi_id};
+	document.getElementById('timedCombinationView').innerHTML='';
+	 $.getJSON(clusters_view, params, function(data) {
+		if (data.error){alert (data.error);}
+		else{
+			document.getElementById('timedCombinationView').style.display='block';
+			alert('toto');
+			// barGraph(data.values, data.nodelist, data.unit);
+		}
+        loading_stop();
+    });
+}
 
 function showMetricGraph(curobj,metric_oid,metric_unit){
     loading_start();
     var params = {oid: metric_oid, unit: metric_unit};
     document.getElementById('nodechart').innerHTML='';
-    $.getJSON(metric_view, params, function(data) {
+    $.getJSON(nodes_view, params, function(data) {
 		if (data.error){alert (data.error);}
 		else{
 			document.getElementById('nodechart').style.display='block';
@@ -336,8 +351,9 @@ function barGraph(values, nodelist, unit){
         axes: {
             xaxis: {
                 renderer: $.jqplot.CategoryAxisRenderer,
-                ticks: nodelist
+                ticks: nodelist,
             },
+			
 			yaxis: {
 				label: unit
 			}
@@ -355,7 +371,7 @@ function barGraph(values, nodelist, unit){
  function timedGraph(){
      $.jqplot.config.enablePlugins = true;
      var line1=[['2012-08-02 4:00PM',4], ['2012-09-02 4:00PM',6.5], ['2012-10-02 4:00PM',5.7], ['2012-11-02 4:00PM',9], ['2012-12-02 4:00PM',8.2]];
-      var plot1 = $.jqplot('timedClusterMetricView', [line1], {
+      var plot1 = $.jqplot('timedCombinationView', [line1], {
         title:'Default Date Axis',
         axes:{
             xaxis:{
