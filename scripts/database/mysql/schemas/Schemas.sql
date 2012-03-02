@@ -85,6 +85,7 @@ CREATE TABLE `cluster` (
   `cluster_prev_state` char(32),
   `cluster_basehostname` char(64) NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
+  `host_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`cluster_id`),
   FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`user_id`),

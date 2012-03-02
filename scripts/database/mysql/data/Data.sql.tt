@@ -1,6 +1,8 @@
 USE `administrator`;
 SET foreign_key_checks=1;
-SET @eid := 2;
+SET @admin_cluster := 1;
+SET @physical_hoster := 2;
+SET @eid := 3;
 
 --
 -- permanents data
@@ -360,7 +362,6 @@ INSERT INTO `component_type` VALUES
 (13,'Openldap','1','Annuary'),
 (14,'Opennebula','3','Cloudmanager'),
 (15,'Physicalhoster','0','Cloudmanager');
-SET @physical_hoster := 15;
 
 --
 -- connectors type list
@@ -383,15 +384,10 @@ SET @eid := @eid +1;
 -- admin cluster
 --
 
-INSERT INTO `entity` VALUES (1, 13);
-INSERT INTO `service_provider` VALUES (1);
-INSERT INTO `inside` VALUES (1);
-INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_',@adminuserid);
-SET @admin_cluster := 1;
-SET @eid := @eid +1;
-
-
-
+INSERT INTO `entity` VALUES (@admin_cluster, 13);
+INSERT INTO `service_provider` VALUES (@admin_cluster);
+INSERT INTO `inside` VALUES (@admin_cluster);
+INSERT INTO `cluster` VALUES (@admin_cluster,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_',@adminuserid, @physical_hoster);
 
 --
 -- internal ip for admin node
@@ -525,10 +521,10 @@ SET @eid := @eid +1;
 -- Physicalhoster
 --
 
-INSERT INTO `entity` VALUES (@eid, 48);
-INSERT INTO `component` VALUES(@eid, @admin_cluster, 15, NULL, NULL);
-INSERT INTO `physicalhoster0` VALUES(@eid);
-SET @eid := @eid +1;
+INSERT INTO `entity` VALUES (@physical_hoster, 48);
+INSERT INTO `component` VALUES(@physical_hoster, @admin_cluster, 15, NULL, NULL);
+INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
+
 
 --
 -- Monitoring data
