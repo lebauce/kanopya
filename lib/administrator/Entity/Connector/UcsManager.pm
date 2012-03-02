@@ -16,6 +16,7 @@
 package Entity::Connector::UcsManager;
 use base "Entity::Connector";
 
+use strict;
 use warnings;
 
 use Cisco::UCS;
