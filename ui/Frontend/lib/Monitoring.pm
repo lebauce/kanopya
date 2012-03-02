@@ -221,7 +221,7 @@ get '/monitoring/browse' => sub  {
                     route   => $route_name,
                     name    => $_
                 } } @files;
-    
+
     template 'view_clustermonitoring_flot', {
         title_page      => "Monitor rrd plot",
         cluster_id      => $cluster_id,
@@ -241,9 +241,9 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 	_getIndicators(\%template_config);		
 	#we retrieve the combination list for this external cluster
 	_getCombinations(\%template_config);
-	
+
 	$log->error('get combinations: '.Dumper\%template_config);
-	
+
 	template 'cluster_monitor', \%template_config;
 };
 
@@ -251,6 +251,8 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	my $cluster_id = params->{extclusterid} || 0;   
 	my $combination = params->{'id'};
 	# $log->error('login before eval, combination: '.Dumper($combination));
+	
+		
 };  
   
 
