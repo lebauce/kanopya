@@ -101,7 +101,7 @@ sub computeValues{
 
     General::checkParams args => \%args, required => ['start_time','stop_time'];
     
-    my @cm_ids = $self->dependantClusterMetrics();
+    my @cm_ids = $self->dependantClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Clustermetric->get('id' => $cm_id);
@@ -143,7 +143,7 @@ sub compute{
     my $self = shift;
     my %args = @_;
  
-    my @requiredArgs = $self->dependantClusterMetrics();
+    my @requiredArgs = $self->dependantClusterMetricIds();
     
     checkMissingParams(args => \%args, required => \@requiredArgs);
     
@@ -178,8 +178,18 @@ sub compute{
     $log->info("$arrayString");
     return $res;
 }
+#sub getDependantClusterMetric() {
+#   my $self = shift;
+#   my @ids = dependantClusterMetricIds();
+#   my @rep;
+#   foreach my $id (@ids){
+#       push @rep,Clustermetric->get('id' => $id); 
+#   }
+#   return @rep;
+#};
 
-sub dependantClusterMetrics() {
+
+sub dependantClusterMetricIds() {
     my $self = shift;
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
     
@@ -209,7 +219,7 @@ sub computeFromArrays{
     
     print Dumper \%args;
     
-    my @requiredArgs = $self->dependantClusterMetrics();
+    my @requiredArgs = $self->dependantClusterMetricIds();
     
 #    print "******* @requiredArgs \n";
 #    print Dumper \%args;
@@ -261,9 +271,33 @@ sub useClusterMetric {
     my $self = shift;
     my $clustermetric_id = shift;
     
-    my @dep_cm = $self->dependantClusterMetrics();
+    my @dep_cm = $self->dependantClusterMetricIds();
     my $rep = any {$_ eq $clustermetric_id} @dep_cm;
     return $rep;
+}
+
+sub getAllTheCombinationsRelativeToAClusterId{
+    my $class      = shift;
+    my $cluster_id = shift;
+    
+    my @combinations = $class->search(hash => {});
+    my @rep;
+    
+    COMBINATION:
+    foreach my $combination (@combinations) {
+        my @dependantClusterMetricIds = $combination->dependantClusterMetricIds();
+        
+        foreach my $cm_id (@dependantClusterMetricIds){
+            my $clustermetric = Clustermetric->get('id' => $cm_id);
+            if($clustermetric->getAttr(name => 'clustermetric_cluster_id') eq $cluster_id)
+            {
+                push @rep, $combination;
+                next COMBINATION;
+            }
+        }
+    }
+    
+    return @rep; 
 }
 
 1;

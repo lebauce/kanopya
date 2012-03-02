@@ -465,7 +465,8 @@ get '/clustermetrics/:clustermetricid/delete' => sub {
 # -----------------------------------------------------------------------------#
 
 get '/extclusters/:extclusterid/clustermetrics/combinations' => sub {
-    my @clustermetric_combinations = AggregateCombination->search(hash=>{});
+    #my @clustermetric_combinations = AggregateCombination->search(hash=>{});
+    my @clustermetric_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId(param('extclusterid'));
     my @clustermetric_combinations_param;
     foreach my $clustermetric_combination (@clustermetric_combinations){
         my $hash = {
