@@ -308,18 +308,24 @@ var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var metric_view =path + '/metricview';
 
 
-function showMetricGraph(curobj,metric){
+function showMetricGraph(curobj,metric_oid,metric_unit){
     loading_start();
-    var params = {metric: metric};
+    var params = {oid: metric_oid, unit: metric_unit};
     document.getElementById('nodechart').innerHTML='';
     $.getJSON(metric_view, params, function(data) {
-        document.getElementById('nodechart').style.display='block';
-        barGraph(data.values, data.nodelist);
+		if (data.error){alert (data.error);}
+		else{
+			document.getElementById('nodechart').style.display='block';
+			barGraph(data.values, data.nodelist, data.unit);
+		}
         loading_stop();
     });
 }
 
-function barGraph(values, nodelist){
+function barGraph(values, nodelist, unit){
+	alert(values);
+	alert(nodelist);
+	alert(unit);
     $.jqplot.config.enablePlugins = true;
     plot1 = $.jqplot('nodechart', [values], {
         animate: !$.jqplot.use_excanvas,
@@ -331,7 +337,10 @@ function barGraph(values, nodelist){
             xaxis: {
                 renderer: $.jqplot.CategoryAxisRenderer,
                 ticks: nodelist
-            }
+            },
+			yaxis: {
+				label: unit
+			}
         },
         highlighter: { show: false }
     });
