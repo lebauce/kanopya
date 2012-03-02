@@ -115,7 +115,9 @@ eval {
 
     isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster'); 	
 	
-	lives_ok { $cluster_id = $cluster->getAttr(name=>'cluster_id')} 'get Attribute cluster_id';
+	lives_ok {
+        $cluster_id = $cluster->getAttr(name => 'cluster_id');
+    } 'get Attribute cluster_id';
 
 	lives_ok {
 		$cluster->start();
@@ -142,11 +144,16 @@ eval {
 
     lives_ok { $executor->oneRun; } 'ForceStopCluster operation execution succeed';
 
+	lives_ok { 
+		$cluster = Entity::ServiceProvider->get(id => $cluster_id);
+	} 'Retrieve Cluster from id after forceStopCluster';
+
     ($state, $timestemp) = $cluster->getState;
     cmp_ok ($state, 'eq', 'down', "Cluster is 'down'");
 
-    ($state, $timestemp) = $host->getNodeState;
-    cmp_ok ($state, 'eq', 'locked', "Host node state is 'pregoingin'");
+	lives_ok {
+		$host = Entity::Host->get(id => $host_id);
+	} 'Retrieve Host from id after forceStopCluster';
 
     ($state, $timestemp) = $host->getState;
     cmp_ok ($state, 'eq', 'down', "Host is 'down'");
