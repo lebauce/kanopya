@@ -86,11 +86,14 @@ sub getPerformance {
                 item_sep            => $item_sep,
     );
 
-
+    # Execute command
     my $cmd_res = $self->_execCmd(cmd => $cmd);
 
     # remove all \n (end of line and inserted \n due to console output)
     $cmd_res =~ s/\n//g; 
+
+    # Die if something wrong
+    die $cmd_res if ($cmd_res !~ 'DATASTART');
 
     # Build resulting data hash from cmd output
     my $h_res    = $self->_formatToHash( 
@@ -114,10 +117,10 @@ sub _execCmd {
     my %args = @_;
     
     my @cmd_list = (
-        #$self->{_set_execution_policy_cmd},                         # allow script execution
-        map({ "import-module '$_'" } @{$self->{_scom_modules}}),    # import modules
-        $self->{_scom_shell_cmd},                                   # connect to scom shell on management server
-        $args{cmd},                                                 # SCOM cmd to execute (double quote must be escaped)
+        #$self->{_set_execution_policy_cmd},                                            # allow script execution
+        map({ "import-module '$_' -DisableNameChecking" } @{$self->{_scom_modules}}),   # import modules without verb warning
+        $self->{_scom_shell_cmd},                                                       # connect to scom shell on management server
+        $args{cmd},                                                                     # SCOM cmd to execute (double quote must be escaped)
     );
     
     my $full_cmd = join(';', @cmd_list) . ";";
@@ -134,26 +137,29 @@ sub _execCmd {
 sub _buildGetPerformanceCmd {
     my $self = shift;
     my %args = @_;
-    my @want_attrs     = @{$args{want_attrs}};
-    my %counters     = %{$args{counters}};
-    my $start_time    = $args{start_time};
+    my @want_attrs  = @{$args{want_attrs}};
+    my %counters    = %{$args{counters}};
+    my $start_time  = $args{start_time};
     my $end_time    = $args{end_time};
     
-    # TODO criteria "((obj and (counter or counter)) or (obj and (counter)))" intead of "((obj or obj) and (counter or counter or counter))"
-    my $object_criteria     = join ' or ', map { "ObjectName='$_'" } keys %counters;
-    my $counter_criteria     = join ' or ', map { "CounterName='$_'" } map { @$_ } values %counters;
-    my $criteria = "($object_criteria) and ($counter_criteria)";
+    my @obj_criteria;
+    while (my ($object_name, $counters_name) = each %counters) {
+        push @obj_criteria,
+            "(ObjectName='$object_name' and (" . join( ' or ', map { "CounterName='$_'" } @$counters_name) . "))";
+    }
+    my $criteria = join ' or ', @obj_criteria;
     
     if (defined $args{monitoring_object}) {
         my $target_criteria = join ' or ', map { "MonitoringObjectPath='$_'" } @{$args{monitoring_object}};
-        $criteria .= " and ($target_criteria)";
+        $criteria = "($criteria) and ($target_criteria)";
     }
     
     my $want_attrs_str = join ',', @want_attrs;
     my $format_str = join $args{item_sep}, map { "{$_}" } (0..$#want_attrs);
 
-    # TODO study better way: ps script template...    
-    my $cmd   = 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
+    # TODO study better way: ps script template...
+    my $cmd   = 'echo DATASTART;';
+    $cmd     .= 'foreach ($pc in Get-PerformanceCounter -Criteria \"' . $criteria . '\")';
     #my $cmd  = 'foreach ($pc in Get-PerformanceCounter )';
     $cmd     .= '{ foreach ($pv in Get-PerformanceCounterValue -startTime \''. $start_time .'\' -endTime \''. $end_time .'\' $pc)';
     $cmd     .= '{ \"' . $args{line_sep} . $format_str . '\" -f ' . $want_attrs_str . '; } }';
