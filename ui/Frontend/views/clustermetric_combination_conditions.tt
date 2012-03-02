@@ -27,14 +27,18 @@
 <div class="actions">
 
     <table>
-    <tr><td>
-    <% IF cluster_id %>
-        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations">View the combinations</a>
         <tr><td>
-        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics">View the clustermetrics</a>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics">View the clustermetrics</a>
+        </tr></td>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations">View the combinations</a>
         </td></tr>
-    <% END %>
-    </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions">View the conditions</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules">View the rules</a>
+        </td></tr>
     </table>
 
     <table><tr><td>
