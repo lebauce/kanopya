@@ -12,12 +12,18 @@
 <div class="nodes_overview">
     <h2>nodes overview</h2>
     <div class="indicator_dropdown">
-		<label for="indicator_list" class="list_label">available indicators for external cluster: </label>
-        <select id="indicator_list" onchange="showMetricGraph(this,this.options[this.selectedIndex].value);" >
-            <% FOREACH indicator IN indicators %>
-                <option value="<% indicator %>"><% indicator %></option>
-            <% END %>
-        </select>
+		<% IF errors.indicators %>
+			<p> error: <% errors.indicators %> </p><br />
+			<p>no indicator could be retrieved for this external cluster</p>
+		<% ELSE %>
+			<label for="indicator_list" class="list_label">available indicators for external cluster: </label>
+			<select id="indicator_list" onchange="showMetricGraph(this,this.options[this.selectedIndex].id,this.options[this.selectedIndex].value);" >
+					<option selected="selected"> Please select an indicator to monitor </option>
+				<% FOREACH indicator IN indicators %>
+					<option id ="<% indicator.oid %>" value="<% indicator.unit %>"><% indicator.label %></option>
+				<% END %>
+			</select>
+		<% END %>
     </div>
     <br />
     <div id="nodechart" style="height:400px;width:1000px; "></div><br />

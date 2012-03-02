@@ -80,7 +80,7 @@ sub eval{
     my $threshold       = $self->getAttr(name => 'threshold');
 
     my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
-    my $value = $agg_combination->calculate(); 
+    my $value = $agg_combination->computeLastValue(); 
     
     my $evalString = $value.$comparator.$threshold;
     

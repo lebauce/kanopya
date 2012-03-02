@@ -1,0 +1,47 @@
+<table class="simplelisting">
+
+    <caption>
+    
+        <% IF cluster_id %> Conditions related to cluster <% cluster_id %>  
+        <% ELSE %> All the Conditions
+        <% END %>
+        
+    
+    </caption>
+
+    <% FOREACH condition IN conditions %>
+        <tr><td>
+        <span class="bold"> Condition <% condition.id %></span>
+        <span class="italic"> <% condition.label %> 
+        </td><td>
+        <% IF NOT cluster_id %>
+            <a class="imgManage" href="/architectures/clustermetrics/combinations/conditions/<%condition.id%>/delete">delete</a>
+        <% ELSE %>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/<%condition.id%>/delete">delete</a>
+        <% END %>
+        </td>
+        </tr>
+    <% END %>
+</table>     
+
+<div class="actions">
+
+    <table>
+    <tr><td>
+    <% IF cluster_id %>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations">View the combinations</a>
+        <tr><td>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics">View the clustermetrics</a>
+        </td></tr>
+    <% END %>
+    </td></tr>
+    </table>
+
+    <table><tr><td>
+    <% IF cluster_id %>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/new">Create new condition for this cluster</a>
+    <% ELSE %>
+        <a class="action" href="/architectures/clustermetrics/combinations/conditions/new">Create new condition</a>
+    <% END %>
+    </td></tr></table>
+</div> 

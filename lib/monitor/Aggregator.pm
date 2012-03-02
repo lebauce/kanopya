@@ -145,7 +145,7 @@ sub update() {
         $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
         
         # Parse retriever return, compute clustermetric values and store in DB 
-        $self->_calculateAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
+        $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
         
         print Dumper $monitored_values;
     }
@@ -191,7 +191,7 @@ sub _checkNodesMetrics{
     Args : values : hash table from the Retriever
 =cut
 
-sub _calculateAggregateValuesAndUpdateTimeDB{
+sub _computeAggregateValuesAndUpdateTimeDB{
     my $self = shift;
     my %args = @_;
 
@@ -234,7 +234,7 @@ sub _calculateAggregateValuesAndUpdateTimeDB{
         
         #Compute the $clustermetric value from all @dataStored values
         
-        my $statValue = $clustermetric->calculate(values => \@dataStored);
+        my $statValue = $clustermetric->compute(values => \@dataStored);
         
         if(defined $statValue){
             #Store in DB and time stamp
@@ -325,8 +325,8 @@ sub _computeAggregates{
     my $self = shift;
     my %args = @_;
 
-    print "THIS METHOD SEEMS DEPRECATED, please use _calculateAggregateValuesAndUpdateTimeDB";
-    $log->info("THIS METHOD SEEMS DEPRECATED, please use _calculateAggregateValuesAndUpdateTimeDB"); 
+    print "THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB";
+    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB"); 
     General::checkParams(args => \%args, required => ['indicators']);
     my $indicators = $args{indicators};
     my $rep = {};
@@ -356,7 +356,7 @@ sub _computeAggregates{
             
             push(@values,$indicator_value);
         }
-        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->calculate(values => \@values);
+        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->compute(values => \@values);
     }
     return $rep;
 };
