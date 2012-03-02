@@ -673,6 +673,7 @@ sub _getCombinations(){
 		# push @combinations, $clustermetric->toString();
 		# print $clustermetric->toString()."\n";
 	# }
+}
 
 #get '/rules/:ruleid/details' => sub {
 #    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
