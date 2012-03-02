@@ -231,21 +231,21 @@ get '/monitoring/browse' => sub  {
 # ---------------------------------------------------------------------------------------------#
 
 get '/extclusters/:extclusterid/monitoring' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;
+    my $cluster_id = params->{extclusterid} || 0;
    
-    my $adm    = Administrator->new();
-    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
-    my @indicators;
-    
-    foreach my $indicator (@{$scom_indicatorset->{ds}}){
-        push @indicators, $indicator->{oid};
-    }
-  
-  template 'cluster_monitor', {
-        title_page      => "Cluster Monitor Overview",
-        cluster_id      => $cluster_id,
-        indicators      => \@indicators,
-    };
+
+	my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
+	my %labels;
+	
+	# we retrieve the indicator list for this external cluster
+	_getIndicators(\%template_config);
+	# $log->error('after indicator request: '.Dumper(\%template_config));
+		
+	#we retrieve the combination list for this external cluster
+	# _getCombinations(\%template_config);
+	
+	
+	template 'cluster_monitor', \%template_config;
 };
 
 # ajax '/extclusters/:extclusterid/monitoring/clustermetricview' => sub {
@@ -257,17 +257,34 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
     my $cluster_id    = params->{extclusterid} || 0;   
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
-    my $indicator = params->{'metric'};
-    my $nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
-    my @nodes;
-    my @values;
-    
-    while (my ($node, $metric) = each %$nodes_metrics){
-        push @nodes, $node;
-        push @values, int($metric->{$indicator});
-    }
-    
-    to_json {values => \@values, nodelist => \@nodes};
+    my $indicator = params->{'oid'};
+	my $indicator_unit =  params->{'unit'};
+	my $nodes_metrics; 
+	my $error;
+	# $log->error('login before eval, indicator: '.Dumper($indicator));
+	# $log->error('login before eval, indicator_unit: '.Dumper($indicator_unit));
+	eval {
+		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
+		# $log->error('login from eval: '.Dumper($nodes_metrics));
+	};
+	if ($@){
+		$error="$@";
+		$log->error($error);
+		to_json {error => $error};
+	}elsif (!defined $nodes_metrics || %$nodes_metrics == ()){
+		$error='no values could be retrieved for this metric';
+		$log->error($error);
+		to_json {error => $error};
+	}else{
+		my @nodes;
+		my @values;
+		
+		while (my ($node, $metric) = each %$nodes_metrics){
+			push @nodes, $node;
+			push @values, int($metric->{$indicator});
+		}		
+		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};
+	}
 };
 
 
@@ -360,4 +377,53 @@ get '/rules/:ruleid/tdisable' => sub {
     redirect('/architectures/rules');
 
 };
+
+
+########################################
+#######INNER FUNCTION DECLARATION#######
+########################################
+
+sub _getIndicators(){
+	my $template_config = shift;
+	my %errors;
+	my $scom_indicatorset;
+	my @indicators;
+	my $hash;
+	my $adm = Administrator->new();
+	
+	eval {
+		$scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+	};
+	if ($@) {
+		my $error = "$@";
+		$log->error($error);
+		$template_config->{'errors'}{'indicators'} = $error;
+		return %$template_config;
+	}else{ 
+		foreach my $indicator (@{$scom_indicatorset->{ds}}){
+			$hash = {
+				oid => $indicator->{oid},
+				unit => $indicator->{unit},
+				label =>  $indicator->{label},
+			};
+			push @indicators, $hash;
+		}
+		$template_config->{'indicators'} = \@indicators;
+		return %$template_config;
+	}
+}
+
+sub _getCombinations(){
+		# my @combinations;
+	
+	# my @clustermetrics = Clustermetric->search(
+            # hash => {
+                # clustermetric_cluster_id => $cluster_id
+            # }
+        # );
+	# for my $clustermetric (@clustermetrics){
+		# push @combinations, $clustermetric->toString();
+		# print $clustermetric->toString()."\n";
+	# }
+}
 1;
