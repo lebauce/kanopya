@@ -300,7 +300,6 @@
         // });     
    // } 
    // $('#testcall').click (test_ui);
-   timedGraph();
  });
  
 var url = window.location.href;
@@ -308,22 +307,23 @@ var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
 var clusters_view = path  + '/clustersview';
 
-function showCombinationGraph(curobj,combi_id){
+function showCombinationGraph(curobj,combi_id,start,stop){
+	if(combi_id == 'default'){return}
 	loading_start();
-	var params = {id:combi_id};
+	var params = {id:combi_id, start:start, stop:stop};
 	document.getElementById('timedCombinationView').innerHTML='';
 	 $.getJSON(clusters_view, params, function(data) {
 		if (data.error){alert (data.error);}
 		else{
 			document.getElementById('timedCombinationView').style.display='block';
-			alert('toto');
-			// barGraph(data.values, data.nodelist, data.unit);
+			timedGraph(data.first_histovalues);
 		}
         loading_stop();
     });
 }
 
 function showMetricGraph(curobj,metric_oid,metric_unit){
+	if(metric_id == 'default'){return}
     loading_start();
     var params = {oid: metric_oid, unit: metric_unit};
     document.getElementById('nodechart').innerHTML='';
@@ -368,13 +368,17 @@ function barGraph(values, nodelist, unit){
     );
 }
  
- function timedGraph(){
+ function timedGraph(first_graph_line){
      $.jqplot.config.enablePlugins = true;
-     var line1=[['2012-08-02 4:00PM',4], ['2012-09-02 4:00PM',6.5], ['2012-10-02 4:00PM',5.7], ['2012-11-02 4:00PM',9], ['2012-12-02 4:00PM',8.2]];
-      var plot1 = $.jqplot('timedCombinationView', [line1], {
-        title:'Default Date Axis',
+	 // alert('my line '+first_graph_line);
+	 // var line2 = [[1330705020,1], [1330705080,2], [1330705140,3], [1330705200,4], [1330705260,5], [1330705300,6], [1330705360,7]]
+     // var line1=[['2012-03-02 19:19',4], ['2012-03-02 16:17',7], ['2012-03-02 23:22',3]];
+	 // alert('jqplot line '+line1);
+      var plot1 = $.jqplot('timedCombinationView', [first_graph_line], {
+        title:'Combination Historical Graph',
         axes:{
             xaxis:{
+				// pad:0,
                 renderer:$.jqplot.DateAxisRenderer,
                 rendererOptions: {
                     tickInset: 0
@@ -382,8 +386,9 @@ function barGraph(values, nodelist, unit){
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
                   angle: -30,
-                  // formatString: '%#m-%#d %H:%M'
-                } 
+                  formatString: '%#m-%#d %H:%M'
+                }
+				// tickInterval: '1 min'
             }      
         },
         series:[{lineWidth:4, markerOptions:{style:'square'}}]

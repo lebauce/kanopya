@@ -233,6 +233,11 @@ get '/monitoring/browse' => sub  {
 # -----------------------------external cluster monitoring (poc BT)----------------------------#
 # ---------------------------------------------------------------------------------------------#
 
+# --------------------------------------------------------------------#
+# -----------------------------Plots view-----------------------------#
+# --------------------------------------------------------------------#
+
+
 get '/extclusters/:extclusterid/monitoring' => sub {
     my $cluster_id = params->{extclusterid} || 0;
 	my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
@@ -250,9 +255,24 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	my $cluster_id = params->{extclusterid} || 0;   
 	my $combination = params->{'id'};
-	# $log->error('login before eval, combination: '.Dumper($combination));
+	my $start_time = params->{'start'};
+	my $stop_time = params->{'stop'};
 	
-		
+	# $log->error('login before eval, combination: '.Dumper($combination));
+	# my $aggregate_combination = AggregateCombination->computeValues(start_time => $theTime - 300, stop_time => $theTime);
+	##############replace histo values by computeValues returned hash
+	my %histovalues = (1330705020 => 1, 1330705080 => 2, 1330705140 => 3, 1330705200 => 4, 1330705260 => 5, 1330705300 => 6, 1330705360 => 7);
+	my @histovalues;
+	while (my ($date, $value) = each %histovalues){				
+			my $dt = DateTime->from_epoch(epoch => $date);
+			my $date_string = $dt->ymd('-') . ' ' .$dt->hour_1().':'.$dt->minute();
+			# my $date_string =$date;
+			push @histovalues, [$date_string,$value];
+		}		
+	$log->info('fetched values: '.Dumper \@histovalues);
+	
+	# my $chaine = "[[1330705020, 15], [1330705320, 35], [1330705140, 67] ]";
+	to_json {first_histovalues => \@histovalues};
 };  
   
 
@@ -308,9 +328,9 @@ get '/clustermetrics' => sub {
       };
 };
 
-# -----------------------------------------------------------------------------#
-# ----------------------------- RELATED TO EXTCLUSTER CLUSTERMETRICS ----------#
-# -----------------------------------------------------------------------------#
+# ------------------------------------------------------------------------------------------------#
+# ----------------------------- RELATED TO EXTCLUSTER CLUSTERMETRICS -----------------------------#
+# ------------------------------------------------------------------------------------------------#
 
 
 get '/extclusters/:extclusterid/clustermetrics' => sub {
@@ -793,10 +813,7 @@ sub _getCombinations(){
 	my @aggregate_combinations;
 	
 	eval {
-		@aggregate_combinations = AggregateCombination->search(
-				hash => {
-				}
-			);
+		@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
 	};
 	if ($@) {
 		my $error = "$@";
