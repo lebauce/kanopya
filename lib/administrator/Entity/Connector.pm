@@ -64,5 +64,35 @@ sub new {
     return $class->SUPER::new(%args, connector_type_id => $connector_type_id );
 }
 
+sub getConnectorTypes {
+    my $admin = Administrator->new();
+    
+    my $connectortype_rs = $admin->{db}->resultset('ConnectorType');
+    
+    my @connector_types;
+    while (my $ct = $connectortype_rs->next) {
+        push @connector_types, {
+            connector_name => $ct->connector_name,
+            connector_category => $ct->connector_category,
+        } 
+    }
+
+    return \@connector_types;
+}
+
+sub getConnectorType {
+    my $self = shift;
+    
+    my $admin = Administrator->new();
+    my $connector_type = $admin->{db}->resultset('ConnectorType')->search(
+        { connector_type_id  => $self->getAttr( name => 'connector_type_id') }
+    )->single;
+
+    return {
+        connector_name => $connector_type->connector_name,
+        connector_category => $connector_type->connector_category,
+    };
+
+}
 
 1;
