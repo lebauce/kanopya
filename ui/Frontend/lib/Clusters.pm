@@ -39,7 +39,8 @@ sub _clusters {
     my $can_configure;
     foreach my $n (@eclusters){
         my $tmp = {
-            link_activity => 0,
+            route_base           => 'clusters',
+            link_activity        => 0,
             cluster_id           => $n->getAttr(name => 'cluster_id'),
             cluster_name         => $n->getAttr(name => 'cluster_name'),
             cluster_basehostname => $n->getAttr(name=>'cluster_basehostname')
@@ -85,6 +86,28 @@ sub _clusters {
     #}
 
     return $clusters;
+}
+
+sub _externalclusters {
+    my @extclusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
+    
+    my @clusters;
+    foreach my $cluster (@extclusters) {
+        push @clusters, {
+            route_base      => 'extclusters',
+            link_activity   => 1,
+            type            => 'External cluster',
+            active          => 1,
+            state_up        => 1,
+            cluster_id      => $cluster->getAttr(name => 'externalcluster_id'),
+            cluster_name    => $cluster->getAttr(name => 'externalcluster_name'),
+            cluster_desc    => $cluster->getAttr(name => 'externalcluster_desc'),
+            nbnodes         => 150,
+            nbnodesup       => 149,
+        };
+    }
+    
+    return \@clusters;
 }
 
 # return an array containing running clusters with Cloudmanager component
@@ -277,7 +300,7 @@ get '/clusters' => sub {
     
     template 'clusters', {
         title_page         => 'Clusters - Clusters',
-        clusters_list => _clusters(),
+        clusters_list => [ @{_clusters()}, @{_externalclusters()} ],
         can_create => $can_create,
         
     };
