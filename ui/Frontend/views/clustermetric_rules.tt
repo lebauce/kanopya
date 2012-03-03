@@ -8,9 +8,9 @@
                 <% ELSIF rule.last_eval == 1%><span class="state imgBroken">  </span> 
                 <% ELSE %><span class="state imgDown">  </span> <% END %>
                 <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/tdisable">disable for 2 min</a></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/disable">disable</a></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/details">details</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/tdisable">disable for 2 min</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/disable">disable</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
             <% END %>
         <% CASE 'tdisabled' %>
@@ -20,8 +20,8 @@
                 <span class="state imgDown"> </span>
                 <span class="bold">Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
                 <td>Disabled for <% rule.time %> seconds</td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/enable">enable</a></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/details">details</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/enable">enable</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
             <% END %>
         <% CASE 'disabled' %>
@@ -32,8 +32,8 @@
                 <span class="state imgDown"> </span>
                 <span class="bold">Rule <% rule.id %></span>
                 <span class="italic"> <% rule.formula %></span></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/enable">enable</a></td>
-                <td><a class="imgManage" href="/architectures/rules/<%rule.id%>/details">details</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/enable">enable</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
             <% END %>
         <% END %>
@@ -41,8 +41,23 @@
 </table>     
 
 <div class="actions">
-		<table><tr><td><a class="action" href="/architectures/rules/enabled">View enabled rules</a></td></tr>
-		<tr><td><a class="action" href="/architectures/rules/disabled">View disabled rules</a></td></tr>
-        <tr><td><a class="action" href="/architectures/rules/tdisabled">View temp. dis. rules</a></td></tr>
+        <table>
+                <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics">View the clustermetrics</a>
+        </tr></td>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations">View the combinations</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions">View the conditions</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules">View the rules</a>
+        </td></tr>
+        </table>
+        
+		<table><tr><td><a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/enabled">View enabled rules</a></td></tr>
+		<tr><td><a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/disabled">View disabled rules</a></td></tr>
+        <tr><td><a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/tdisabled">View temp. dis. rules</a></td></tr>
         </table>
 </div>             

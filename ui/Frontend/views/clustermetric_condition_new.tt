@@ -33,10 +33,13 @@
             </td>
         </tr>
     </table>
-    
     <br/>
-    
+    <input type="checkbox" name="rule" value="1"/> Create the corresponding rule at the same time 
+    <br/>(Warning : A rule will be created but will be disabled. You will have to add a specific action to enable it) 
+    <br/>
+    <br/>
     <div class="left">
         <input type="submit" value="Create condition"/>
+        
     </div>
 </form>

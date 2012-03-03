@@ -101,7 +101,7 @@ sub computeValues{
 
     General::checkParams args => \%args, required => ['start_time','stop_time'];
     
-    my @cm_ids = $self->dependantClusterMetrics();
+    my @cm_ids = $self->dependantClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Clustermetric->get('id' => $cm_id);
@@ -134,7 +134,7 @@ sub computeLastValue{
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    print "$arrayString = ";
+    # print "$arrayString = ";
     $log->info("$arrayString");
     return $res;
 }
@@ -143,7 +143,7 @@ sub compute{
     my $self = shift;
     my %args = @_;
  
-    my @requiredArgs = $self->dependantClusterMetrics();
+    my @requiredArgs = $self->dependantClusterMetricIds();
     
     checkMissingParams(args => \%args, required => \@requiredArgs);
     
@@ -155,7 +155,7 @@ sub compute{
     
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
     
-    print Dumper \%args;
+    # print Dumper \%args;
     
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
@@ -174,12 +174,22 @@ sub compute{
     #print 'Evaluate combination :'.($self->toString())."\n";
     #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    print "$arrayString = $res\n";
+    # print "$arrayString = $res\n";
     $log->info("$arrayString");
     return $res;
 }
+#sub getDependantClusterMetric() {
+#   my $self = shift;
+#   my @ids = dependantClusterMetricIds();
+#   my @rep;
+#   foreach my $id (@ids){
+#       push @rep,Clustermetric->get('id' => $id); 
+#   }
+#   return @rep;
+#};
 
-sub dependantClusterMetrics() {
+
+sub dependantClusterMetricIds() {
     my $self = shift;
     my $formula = $self->getAttr(name => 'aggregate_combination_formula');
     
@@ -207,9 +217,9 @@ sub computeFromArrays{
     my $self = shift;
     my %args = @_;
     
-    print Dumper \%args;
+    # print Dumper \%args;
     
-    my @requiredArgs = $self->dependantClusterMetrics();
+    my @requiredArgs = $self->dependantClusterMetricIds();
     
 #    print "******* @requiredArgs \n";
 #    print Dumper \%args;
@@ -224,17 +234,17 @@ sub computeFromArrays{
     }
     @timestamps = uniq @timestamps;
     
-    print " @timestamps \n";
+    # print " @timestamps \n";
     my %rep;
     foreach my $timestamp (@timestamps){
         my %valuesForATimeStamp;
         foreach my $cm_id (@requiredArgs){
             $valuesForATimeStamp{$cm_id} = $args{$cm_id}->{$timestamp};
         }
-        print Dumper \%valuesForATimeStamp;
+        # print Dumper \%valuesForATimeStamp;
         $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
-    print Dumper \%rep;
+    # print Dumper \%rep;
 } 
 
 sub checkMissingParams {
@@ -251,7 +261,7 @@ sub checkMissingParams {
             # Log in general logger
             # TODO log in the logger corresponding to caller package;
             $log->error($errmsg);
-            print "$caller_sub_name : $errmsg \n";
+            # print "$caller_sub_name : $errmsg \n";
             throw Kanopya::Exception::Internal::IncorrectParam();
         }
     }
@@ -261,9 +271,33 @@ sub useClusterMetric {
     my $self = shift;
     my $clustermetric_id = shift;
     
-    my @dep_cm = $self->dependantClusterMetrics();
+    my @dep_cm = $self->dependantClusterMetricIds();
     my $rep = any {$_ eq $clustermetric_id} @dep_cm;
     return $rep;
+}
+
+sub getAllTheCombinationsRelativeToAClusterId{
+    my $class      = shift;
+    my $cluster_id = shift;
+    
+    my @combinations = $class->search(hash => {});
+    my @rep;
+    
+    COMBINATION:
+    foreach my $combination (@combinations) {
+        my @dependantClusterMetricIds = $combination->dependantClusterMetricIds();
+        
+        foreach my $cm_id (@dependantClusterMetricIds){
+            my $clustermetric = Clustermetric->get('id' => $cm_id);
+            if($clustermetric->getAttr(name => 'clustermetric_cluster_id') eq $cluster_id)
+            {
+                push @rep, $combination;
+                next COMBINATION;
+            }
+        }
+    }
+    
+    return @rep; 
 }
 
 1;
