@@ -93,6 +93,10 @@ sub _externalclusters {
     
     my @clusters;
     foreach my $cluster (@extclusters) {
+        
+        my $nodes = $cluster->getNodes();
+        my $nbnodes = scalar(@$nodes);
+        
         push @clusters, {
             route_base      => 'extclusters',
             link_activity   => 1,
@@ -102,8 +106,8 @@ sub _externalclusters {
             cluster_id      => $cluster->getAttr(name => 'externalcluster_id'),
             cluster_name    => $cluster->getAttr(name => 'externalcluster_name'),
             cluster_desc    => $cluster->getAttr(name => 'externalcluster_desc'),
-            nbnodes         => 150,
-            nbnodesup       => 149,
+            nbnodes         => $nbnodes,
+            nbnodesup       => $nbnodes,
         };
     }
     
@@ -284,6 +288,42 @@ post '/clusters/add' => sub {
     }
 };
 
+get '/extclusters/add' => sub {
+    
+    template 'form_addexternalcluster', {
+        title_page                  => "External Clusters - Add",
+    }, { layout => '' };
+};
+
+post '/extclusters/add' => sub {
+    my $adm = Administrator->new;
+    
+    my $params = {
+        externalcluster_name           => params->{'name'},
+        externalcluster_desc           => params->{'desc'},
+    };
+    my $new_cluster_id;
+    eval {
+        my $new_extcluster = Entity::ServiceProvider::Outside::Externalcluster->new(%$params);
+        $new_cluster_id = $new_extcluster->getAttr(name => 'externalcluster_id');
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else {
+            $exception->rethrow();
+        }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'external cluster created (id:'.$new_cluster_id.')');
+        redirect "/architectures/extclusters/$new_cluster_id";
+    }
+};
+
+
 get '/clusters' => sub {
     my $can_create;
 
@@ -294,9 +334,6 @@ get '/clusters' => sub {
             $can_create = 1;
         }
     }
-    
-    #TEMPORARY testing
-    #$can_create = 1;
     
     template 'clusters', {
         title_page         => 'Clusters - Clusters',
@@ -481,6 +518,34 @@ get '/clusters/:clusterid' => sub {
                        
      };
 };
+
+get '/extclusters/:clusterid' => sub {
+    my $cluster_id = params->{clusterid};
+    
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
+    
+    # Nodes list
+    my $nodes = $extcluster->getNodes();
+    foreach my $node (@$nodes) {
+        $node->{"state_" . $node->{state}} = 1;
+    }
+    
+    # Connectors
+    my @connectors = map { $_->getConnectorType() } $extcluster->getConnectors();
+    
+    template 'extclusters_details', {
+        title_page          => "External Clusters - Cluster's overview",
+        active              => 1,
+        cluster_state       => 'up',
+        cluster_id          => $cluster_id,
+        cluster_name        => $extcluster->getAttr(name => 'externalcluster_name'),
+        nodes_list          => $nodes,
+        connectors_list     => \@connectors,
+        link_updatenodes    => 1,
+        link_addconnector   => 1,
+    };
+};
+
 
 get '/clusters/:clusterid/activate' => sub {
     my $adm = Administrator->new;
@@ -682,6 +747,22 @@ get '/clusters/:clusterid/components/:instanceid/remove' => sub {
         redirect("/architectures/clusters/".param('clusterid'));
     }
 };
+
+get '/extclusters/:clusterid/connectors/add' => sub {
+    my $adm = Administrator->new;
+    my $cluster_id = param('clusterid');
+
+    my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+
+    my $connectors = Entity::Connector->getConnectorTypes();
+
+    template 'form_addconnectortocluster', {
+        cluster_id         => $cluster_id,
+        cluster_name       => $cluster->getAttr(name => 'externalcluster_name'),
+        connectors_list    => $connectors
+    }, { layout => '' };
+};
+
 
 get '/clusters/:clusterid/ips/public/add' => sub {
     my $adm = Administrator->new;

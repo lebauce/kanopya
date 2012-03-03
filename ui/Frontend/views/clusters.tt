@@ -28,6 +28,8 @@
 	<a class="action modal" href="/architectures/clusters/add">create a cluster</a>
 	<p class="italic">Create and configure a new cluster.</p>
 <% END %>
+    <a class="action modal" href="/architectures/extclusters/add">add an external cluster</a>
+    <p class="italic">Register and manage an external cluster.</p>
 </div>
 
 

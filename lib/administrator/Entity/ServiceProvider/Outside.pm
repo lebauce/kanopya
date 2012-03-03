@@ -110,4 +110,11 @@ sub getConnector {
     return "$class"->get(id =>$connector_id);
 }
 
+sub getConnectors {
+    my $self = shift;
+    my %args = @_;
+    
+    return Entity::Connector->search(hash => {outside_id => $self->getAttr(name => 'outside_id')});
+}
+
 1;
