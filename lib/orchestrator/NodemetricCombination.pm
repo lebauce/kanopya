@@ -34,4 +34,23 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+# C/P of homonym method of AggregateCombination
+sub getDependantIndicatorIds{
+    my $self = shift;
+    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
+    
+    my @indicator_ids;
+    
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            push @indicator_ids, substr($element,2);
+        }
+     }
+     return @indicator_ids;
+}
 1;

@@ -73,7 +73,7 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
-   "nodemetric_service_provider_id",
+   "nodemetric_rule_service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },

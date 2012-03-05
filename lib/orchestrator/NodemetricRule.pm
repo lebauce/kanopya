@@ -46,8 +46,62 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
+    nodemetric_rule_service_provider_id =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
+#C/P of homonym method in AggregateRulePackage 
+sub getDependantConditionIds {
+    my $self = shift;
+    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+    my @array = split(/(id\d+)/,$formula);
+    
+    my @conditionIds;
+    
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            push @conditionIds, substr($element,2);
+        }
+    }
+    return @conditionIds;
+}
+
+
+sub eval {
+    my $self = shift;
+    
+    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+    
+    #Split nodemetric_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        
+        if( $element =~ m/id(\d+)/)
+        {
+            $element = NodemetricCondition->get('id'=>substr($element,2))->eval();
+        }
+     }
+     
+    my $res = -1;
+    my $arrayString = '$res = '."@array"; 
+    
+    #Evaluate the logic formula
+    eval $arrayString;
+    my $store = ($res)?1:0;
+
+    #print "Evaluated Rule : $arrayString => $store ($res)\n";
+    #$log->info("Evaluated Rule : $arrayString => $store ($res)");
+     
+    $self->setAttr(name => 'nodemetric_rule_last_eval',value=>$store);
+    $self->setAttr(name => 'nodemetric_rule_timestamp',value=>time());
+    $self->save();
+    return $res;
+}
 1;

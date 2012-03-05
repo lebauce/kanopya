@@ -16,7 +16,7 @@ package NodemetricCondition;
 use strict;
 use warnings;
 use base 'BaseDB';
-
+use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -36,10 +36,6 @@ use constant ATTR_DEF => {
                                  is_editable    => 1},
     nodemetric_condition_threshold =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    nodemetric_condition_last_eval =>  {pattern       => '^.*$',
-                                 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
 };
