@@ -52,10 +52,13 @@ use XML::Simple;
 use General;
 use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
 use AggregateRule;
 use NodemetricRule;
+use NodemetricCondition;
+use NodemetricCombination;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
@@ -113,8 +116,11 @@ sub nodemetricManagemement{
     
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
     
+    
     for my $externalCluster (@externalClusters){
         my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
+        print '***'.$cluster_id.'***'."\n";
+        
         my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
         
     }
@@ -136,19 +142,22 @@ sub _contructRetrieverOutput {
     #Get all the rules relative to the cluster_id 
     my @rules = NodemetricRule->search(
         hash => {
-            nodemetric_service_provider_id => $cluster_id
+            nodemetric_rule_service_provider_id => $cluster_id
         }
     );
-        
+
+    
     for my $rule (@rules){
-        my @conditions => rule->getDependantConditionIds();
-        
+        my @conditions = $rule->getDependantConditionIds();
         #Check each conditions (i.e. each Combination
-        for my $condition (@conditions) {
+        for my $condition_id (@conditions) {
             
-            # Get the related combination id (in order to parse its formula)
-            my $combination = $condition->getAttr(name => 'nodemetric_condition_combination_id');
+            my $condition = NodemetricCondition->get('id' => $condition_id);
+             
+            # Get the related combination id (in order to parse its formula)            
+            my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
             
+            my $combination = NodemetricCombination->get('id' => $combination_id);
             # get the indicator ids used in combination formula
             my @indicator_ids = $combination->getDependantIndicatorIds();
             
@@ -159,10 +168,12 @@ sub _contructRetrieverOutput {
         }
     }
     my @indicators_array = keys(%$indicators_name);
+    
     my $rep = {
         indicators => \@indicators_array,
         time_span  => 1200,
     };
+    print Dumper $rep;
     return $rep;
 };
 
