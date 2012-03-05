@@ -106,10 +106,10 @@ sub manage_aggregates {
     
     print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
     $self->clustermetricManagement();
-    $self->nodemetricManagemement();
+    $self->nodemetricManagement();
 }
 
-sub nodemetricManagemement{
+sub nodemetricManagement{
     my $self = shift;
     
     # Merge all needed indicators to consctruc only one SCOM request
@@ -122,7 +122,11 @@ sub nodemetricManagemement{
         print '***'.$cluster_id.'***'."\n";
         
         my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
-        
+
+        # Call the retriever to get SCOM data
+        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+        print Dumper $monitored_values; 
+
     }
     
 
