@@ -52,7 +52,8 @@ INSERT INTO `class_type` VALUES
 (36, 'Entity::Component::Pleskpanel10'),
 (37, 'Entity::Component::Snmpd5'),
 (38, 'Entity::Component::Syslogng3'),
-(39, 'Entity::Component::Nfsd3');
+(39, 'Entity::Component::Nfsd3'),
+(40, 'Entity::Masterimage');
 
 --
 -- system groups
@@ -100,6 +101,10 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2); SET @PowersupplycardGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'Powersupplycard','Powersupplycard','Powersupplycard master group  containing all power supply cards',1);
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 2);
+INSERT INTO `gp` VALUES(@eid,'Masterimage','Masterimage','Masterimage master group containing all master images',1);
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2);
@@ -320,7 +325,8 @@ INSERT INTO `operationtype` VALUES
 (36,'AddVirtualHost'),
 (37,'MigrateHost'),
 (38,'RemoveDisk'),
-(39,'RemoveExport');
+(39,'RemoveExport'),
+(40,'DeployMasterimage');
 
 --
 -- components type list
