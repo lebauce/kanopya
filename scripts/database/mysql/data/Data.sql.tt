@@ -59,8 +59,10 @@ INSERT INTO `class_type` VALUES
 (44, 'Clustermetric'),
 (45, 'AggregateCombination'),
 (46, 'AggregateCondition'),
-(47, 'AggregateRule');
-
+(47, 'AggregateRule'),
+(48, 'NodemetricCombination'),
+(49, 'NodemetricCondition'),
+(50, 'NodemetricRule');
 
 --
 -- system groups
