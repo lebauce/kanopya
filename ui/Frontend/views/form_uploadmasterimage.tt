@@ -1,10 +1,10 @@
-<h2>Upload a new distribution</h2>
+<h2>Upload a new master image</h2>
 
-<form id="target" method="POST" action="/systems/distributions/upload" enctype="multipart/form-data">
+<form id="target" method="POST" action="/systems/masterimages/upload" enctype="multipart/form-data">
 <table class="form">
 <tr>
-	<td><input type="file" name="distributionfile" size="32" />
-	<span style="color: red"><% err_distributionfile %></span></td>
+	<td><input type="file" name="file" size="32" />
+	<span style="color: red"><% err_masterimagefile %></span></td>
 </tr>
 </table>
 </form> 

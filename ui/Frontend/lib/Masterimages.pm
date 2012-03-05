@@ -3,7 +3,7 @@ package Masterimages;
 use Dancer ':syntax';
 
 use Administrator;
-#use Entity::Distribution;
+use Entity::Masterimage;
 use Operation;
 
 use Log::Log4perl "get_logger";
@@ -12,62 +12,65 @@ prefix '/systems';
 
 my $log = get_logger("webui");
 
-# Obtain every distributions object and attribute.
-# After that, send it to distributions template.
-#~ sub _distributions {
-    #~ my @edistributions = Entity::Distribution->getDistributions(hash => {});
-    #~ my $distributions = [];
-#~ 
-    #~ foreach my $m (@edistributions) {
-        #~ my $tmp     = {};
-        #~ my $methods = $m->getPerms();
-#~ 
-        #~ $tmp->{distribution_id}      = $m->getAttr(name => 'distribution_id');
-        #~ $tmp->{distribution_name}    = $m->getAttr(name => 'distribution_name');
-        #~ $tmp->{distribution_version} = $m->getAttr(name => 'distribution_version');
-        #~ $tmp->{distribution_desc}    = $m->getAttr(name => 'distribution_desc');
-        #~ $tmp->{'can_setperm'}        = 1 if ( $methods->{'setperm'}->{'granted'} );
-#~ 
-        #~ push (@$distributions, $tmp);
-    #~ }
-    #~ return $distributions;
-#~ }
+# Obtain every master image object and attribute.
 
-# Distributions template.
+sub _masterimages {
+    my @masterimages = Entity::Masterimage->getMasterimages(hash => {});
+    my $master_images = [];
+
+    foreach my $m (@masterimages) {
+        my $tmp     = {};
+        my $methods = $m->getPerms();
+
+        $tmp->{masterimage_id}      = $m->getAttr(name => 'masterimage_id');
+        $tmp->{masterimage_name}    = $m->getAttr(name => 'masterimage_name');
+        $tmp->{masterimage_os}      = $m->getAttr(name => 'masterimage_os');
+        $tmp->{masterimage_desc}    = $m->getAttr(name => 'masterimage_desc');
+        $tmp->{'can_setperm'}        = 1 if ( $methods->{'setperm'}->{'granted'} );
+
+        push (@$master_images, $tmp);
+    }
+    return $master_images;
+}
+
+# Master images template.
 get '/masterimages' => sub {
     template 'masterimages', {
         title_page         => 'Systems - Master Images',
-        distributions_list => [],
+        masterimages_list => _masterimages(),
     };
 };
 
-get '/distributions/upload' => sub {
+get '/masterimages/upload' => sub {
     template 'form_uploadmasterimage', {
         title_page         => 'Systems - Master Image upload',
     }, { layout => '' };
 };
 
-get '/distributions/:masterimageid' => sub {
+get '/masterimages/:masterimageid' => sub {
     # Call for Entity components for Distributions details.
-    #~ my $edistribution = Entity::Distribution->get(id => params->{distributionid});
-    #~ my $components_list = $edistribution->getProvidedComponents();
-    #~ my $nb = scalar(@$components_list);
-
+    my $masterimage = Entity::Masterimage->get(id => params->{masterimageid});
+    my $components_list = $masterimage->getProvidedComponents();
+    my $nb = scalar(@$components_list); 
+   
+    my $methods = $masterimage->getPerms();
+    
     # Ṕass the text and arrays to the Distribution template.
-    #~ template 'distributions_details', {
-        #~ title_page            => "Systems - Distribution's overview",
-        #~ distribution_id       => $edistribution->getAttr(name => 'distribution_id'),
-        #~ distribution_name     => $edistribution->getAttr(name => 'distribution_name'),
-        #~ distribution_version  => $edistribution->getAttr(name => 'distribution_version'),
-        #~ distribution_desc     => $edistribution->getAttr(name => 'distribution_desc'),
-        #~ components_list       => $components_list,
-        #~ components_count      => $nb + 1,
-    #~ };
+    template 'masterimages_details', {
+        title_page       => "Systems - Master image overview",
+        masterimage_id   => $masterimage->getAttr(name => 'masterimage_id'),
+        masterimage_name => $masterimage->getAttr(name => 'masterimage_name'),
+        masterimage_desc => $masterimage->getAttr(name => 'masterimage_desc'),
+        masterimage_file => $masterimage->getAttr(name => 'masterimage_file'),
+        masterimage_os   => $masterimage->getAttr(name => 'masterimage_os'),
+        can_setperm      => $methods->{'setperm'}->{'granted'},
+        can_delete       => $methods->{'remove'}->{'granted'},
+        components_list  => $components_list,
+        components_count => $nb + 1,
+    };
 };
 
-
-
-post '/distributions/upload' => sub {
+post '/masterimages/upload' => sub {
     my $adm = Administrator->new;
     my $file = request->uploads->{file};
     my $content  = $file->content;
@@ -94,5 +97,6 @@ post '/distributions/upload' => sub {
         redirect('/systems/masterimages');
     }
 };
+
 
 1;
