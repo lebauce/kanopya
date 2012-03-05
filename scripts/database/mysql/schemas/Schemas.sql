@@ -1141,6 +1141,53 @@ CREATE TABLE `aggregate_condition` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+--
+-- Table structure for table `nodemetric_combination`
+--
+
+CREATE TABLE `nodemetric_combination` (
+  `nodemetric_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_combination_formula` char(32) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `nodemetric_condition`
+--
+
+CREATE TABLE `nodemetric_condition` (
+  `nodemetric_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
+  `nodemetric_condition_comparator` char(32) NOT NULL,
+  `nodemetric_condition_threshold` double NOT NULL,
+  `nodemetric_condition_last_eval` BOOLEAN DEFAULT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  PRIMARY KEY (`nodemetric_condition_id`),
+  KEY (`nodemetric_condition_combination_id`),
+  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `nodemetric_rule`
+--
+
+CREATE TABLE `nodemetric_rule` (
+  `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  `nodemetric_rule_formula` char(32) NOT NULL ,
+  `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
+  `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
+  `nodemetric_rule_state` char(32) NOT NULL ,
+  `nodemetric_rule_action_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
 
