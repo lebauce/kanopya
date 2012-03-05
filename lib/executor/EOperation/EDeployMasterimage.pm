@@ -40,6 +40,7 @@ use Data::Dumper;
 use XML::Simple;
 use Kanopya::Exceptions;
 use Entity::Masterimage;
+use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Gp;
 use EFactory;
 
@@ -69,130 +70,91 @@ sub prepare {
     my $file_path = $params->{file_path}; 
     
     if(not defined $file_path) {
-        $errmsg = "Invalid operation argument ; file_path not defined !";
+        $errmsg = "Invalid operation argument ; $file_path not defined !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check tarball existence
     if(! -e $file_path) {
-        $errmsg = "Invalid operation argument ; file_path not found !";
+        $errmsg = "Invalid operation argument ; $file_path not found !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     # check tarball format
     if(`file $file_path` !~ /(bzip2|gzip) compressed data/) {
-        $errmsg = "Invalid operation argument ; file_path not found !";
+        $errmsg = "Invalid operation argument ; $file_path must be a gzip or bzip2 compressed file !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     } else {
-        
+        $self->{compress_type} = $1;
+        $self->{file} = $file_path;
     }
+    
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
-sub execute{
+sub execute {
     my $self = shift;
     my ($cmd, $cmd_res);
 
-    # Untar component archive on local /tmp/<tar_root>
-    $log->debug("Deploy files from archive '$self->{_file_path}'");
-    $cmd = "tar -jxf $self->{_file_path} -C /tmp"; 
+    # Untar master image archive on local /tmp
+    $log->debug("Unpack archive files from archive '$self->{file}' into /tmp");
+    my $compress = $self->{compress_type} eq 'bzip2' ? 'j' : 'z';
+    $cmd = "tar -x -$compress -f $self->{file} -C /tmp"; 
     $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
 
-    # Find size of root and etc
-    for my $disk_type ("etc", "root") {
-        # Get the file size
-        my $file = "/tmp/$disk_type"."_$self->{distribution_name}_$self->{distribution_version}.img";
-        $cmd = "du -s --bytes $file | awk '{print \$1}'";
-
-        $log->error($cmd);
-        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-
-        if($cmd_res->{'stderr'}){
-            $errmsg = "Error with $disk_type disk access of <$self->{distribution_name}>";
-            $log->error($errmsg);
-            Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-        chomp($cmd_res->{'stdout'});
-
-        # Create a new container with the same size
-        my $eexport_manager = $self->{_objs}->{eexport_manager};
-        my $edisk_manager   = $self->{_objs}->{edisk_manager};
-
-        my $disk_name = "$disk_type"."_$self->{distribution_name}_$self->{distribution_version}";
-        $self->{$disk_type}
-            = $edisk_manager->createDisk(name       => $disk_name,
-                                         size       => $cmd_res->{'stdout'}."B",
-                                         filesystem => "ext3",
-                                         econtext   => $self->{_objs}->{edisk_manager}->{econtext},
-                                         erollback  => $self->{erollback});
-
-		# Temporary export this container to copy the source distribution files.
-        my $container_access
-            = $eexport_manager->createExport(container   => $self->{$disk_type},
-                                             export_name => $disk_name,
-                                             econtext    => $self->{_objs}->{eexport_manager}->{econtext},
-                                             erollback   => $self->{erollback});
-
-        # Get the corresponding EContainerAccess
-        my $econtainer_access = EFactory::newEEntity(data => $container_access);
-
-		# Mount the container on the executor.
-		$econtainer_access->mount(mountpoint => "/mnt/$disk_name",
-                                  econtext   => $self->{executor}->{econtext});
-
-		# Mount source file in loop mode.
-		my $mkdir_cmd = "mkdir -p /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mkdir_cmd);
-
-		my $mount_cmd = "mount -o loop $file /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mount_cmd);
-
-        # TODO: insert an erollback to umount source file
-
-        # Copy the filesystem.
-        my $copy_fs_cmd = "cp -R --preserve=all /mnt/$disk_name-source/. /mnt/$disk_name/";
-
-        $log->debug($copy_fs_cmd);
-        $cmd_res = $self->{executor}->{econtext}->execute(command => $copy_fs_cmd);
-
-        if($cmd_res->{'stderr'}){
-            $errmsg = "Error with copy of /mnt/$disk_name-source/ to /mnt/$disk_name/: $cmd_res->{'stderr'}";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-
-        $self->{_objs}->{distribution}->setAttr(name  => "$disk_type"."_container_id",
-                                                value => $self->{$disk_type}->getAttr(name => 'container_id'));
-
-        # Unmount the container, and remove the temporary export.
-        $econtainer_access->umount(mountpoint => "/mnt/$disk_name",
-                                   econtext   => $self->{executor}->{econtext});
-
-        # Delete the mountpoints.
-		my $mount_cmd = "umount /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mount_cmd);
-        my $mkdir_cmd = "rm -R /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mkdir_cmd);
-
-        # Delete the file
-        $cmd = "rm $file";
-        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-
-        # Remove the export at last step.
-        $eexport_manager->removeExport(container_access => $container_access,
-                                       econtext         => $self->{_objs}->{eexport_manager}->{econtext},
-                                       erollback        => $self->{erollback});
-
+    # check metadata file exists
+    my $metadatafile = '/tmp/img-metadata.xml';
+    if(! -e $metadatafile) {
+        $errmsg = "File missing in archive ; $metadatafile";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    $self->{_objs}->{distribution}->save();
-
-    my @group = Entity::Gp->getGroups(hash => {gp_name=>'Distribution'});
-    $group[0]->appendEntity(entity => $self->{_objs}->{distribution});
-
-    # Update distribution provided components list
-    $self->{_objs}->{distribution}->updateProvidedComponents();
+    
+    # parse and validate metadata file
+    # TODO check metadata format and values
+    my $metadata = XMLin($metadatafile);
+    my $imagefile = $metadata->{file};
+    
+    # retrieve master images directory
+    my $config = XMLin("/opt/kanopya/conf/executor.conf");
+    $log->debug(Dumper $metadata);
+    my $directory = $config->{masterimages}->{directory};
+    $directory =~ s/\/$//g;
+    
+    my $args = {
+        masterimage_name => $metadata->{name},
+        masterimage_file => "$directory/$imagefile/$imagefile",
+        masterimage_desc => $metadata->{description},
+        masterimage_os   => $metadata->{os},
+    };
+    
+    my $masterimage = Entity::Masterimage->new(%$args);
+    
+    $cmd = "mkdir -p $directory/$imagefile";
+    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $cmd = "mv /tmp/$imagefile /tmp/img-metadata.xml $directory/$imagefile";
+    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    $cmd = "rm $self->{file}";
+    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    
+    # set components
+    foreach my $name (keys %{$metadata->{component}}) {
+        my $vers = $metadata->{component}->{$name}->{version};
+        $log->debug("component to set : $name, $vers");
+        $masterimage->setProvidedComponent(
+            component_name    => $name,
+            component_version => $vers
+        );
+    }
+    
+    
 }        
 
 =head1 DIAGNOSTICS
