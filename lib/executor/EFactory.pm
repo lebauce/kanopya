@@ -90,20 +90,6 @@ sub newEEntity {
     my $class = General::getClassEEntityFromEntity(entity => $data);
     $log->debug("GetClassEEntityFromEntity return $class");
 
-    # Workaround to avoid to have Entity::Host sub-classes corresponding to
-    # EEntity::EHost since we dont have specific data in base for instance.
-    if ($class eq "EEntity::EHost"){
-        $log->debug("Get a new EHost !");
-
-        my $manager = Entity->get($data->{host_manager_id});
-        if ($manager->isa("Entity::Component::Opennebula3")) {
-            $class .= "::EVirtualHost";
-        }
-        elsif ($manager->isa("Entity::Connector::UcsManager")) {
-            $class .= "::EUcsHost";
-        }
-    }
-
     my $location = General::getLocFromClass(entityclass => $class);
 
     eval { require $location; };
