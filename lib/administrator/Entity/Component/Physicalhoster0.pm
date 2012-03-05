@@ -26,6 +26,7 @@ use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use IO::Socket;
 
 my $log = get_logger("administrator");
 my $errmsg;
