@@ -1,5 +1,5 @@
 # UnifiedComputingSystem.pm - This object allows to manipulate cluster configuration
-#    Copyright 2011 Hedera Technology SAS
+#    Copyright 2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,13 +13,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 23 february 2012
 package Entity::ServiceProvider::Outside::UnifiedComputingSystem;
 use base 'Entity::ServiceProvider::Outside';
+
 use NetAddr::IP;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+
 my $log = get_logger("administrator");
 my $errmsg;
 

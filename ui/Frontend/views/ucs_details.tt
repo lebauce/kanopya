@@ -9,7 +9,7 @@
     <td>
     <% SWITCH ucs_state %>
         <% CASE 'up' %>
-        <span class="state imgUp">Up (<% state_time %>)</span>
+        <span class="state imgUp">Up</span>
         <% CASE 'down' %>
         <span class="state imgDown">Down</span>
         <% CASE 'starting' %>
@@ -41,27 +41,44 @@
     <tr><td class="label">OU :</td><td><% ucs_ou %></td></tr>
     </tr>
 </table>
+
 <hr/>
-<span id="network" class="title simpleexpand">Service Profiles</span>
+<span id="ucs_templates" class="title simpleexpand">Service Profiles Templates</span>
 <table id="Xnetwork" class="detailspart list">
-<tr><td class="italic" colspan="2"></td>
+<% FOREACH sp IN ucs_templates %>
+<tr>
+    <td class="italic" colspan="2"><% sp.name %> - <% sp.dn %></td>
     </td>
 
     <td class="actions" rowspan="2">
     </td>
-
+</tr>
+<% END %>
 </table>
 
 <hr/>
-<span id="network" class="title simpleexpand">Blades</span>
-<table id="XBlades" class="detailspart">
-    <tr><td class="italic" colspan="2"></td>
+<span id="ucs_serviceprofiles" class="title simpleexpand">Service Profiles</span>
+<table id="Xnetwork" class="detailspart list">
+<% FOREACH sp IN ucs_serviceprofiles %>
+<tr>
+    <td class="italic" colspan="2"><% sp.name %> - <% sp.dn %></td>
     </td>
 
     <td class="actions" rowspan="2">
-        <span class="desc"></span>
     </td>
+</tr>
+<% END %>
+</table>
 
-    <tr><td class="label">Blades number :</td><td><% ucs_blade_number %></td></tr>
+<hr/>
+<span id="ucs_blades" class="title simpleexpand">Blades</span>
+<table id="XBlades" class="detailspart">
+    <% FOREACH blade IN ucs_blades %>
+    <tr>
+        <td class="italic"><% blade.model %></td>
+        </td>
+    </tr>
+    <% END %>
+    <tr><td class="label">Blades number :</td><td><% ucs_blades.size %></td></tr>
     </tr>
 </table>
