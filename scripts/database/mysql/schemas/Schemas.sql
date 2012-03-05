@@ -242,6 +242,22 @@ CREATE TABLE `lvm_container` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `file_container`
+-- Entity::Container::FileContainer class
+
+CREATE TABLE `file_container` (
+  `file_container_id` int(8) unsigned NOT NULL,
+  `container_access_id` int(8) unsigned NOT NULL,
+  `file_name` int(8) unsigned NOT NULL,
+  `file_size` int(8) unsigned NOT NULL,
+  `file_filesystem` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`file_container_id`),
+  FOREIGN KEY (`file_container_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`container_access_id`),
+  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `container_access`
 -- Entity::ContainerAccess class
 

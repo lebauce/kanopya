@@ -66,8 +66,8 @@ INSERT INTO `class_type` VALUES
 (49, 'Entity::Poolip'),
 (50, 'Entity::Vlan'),
 (51, 'Entity::Masterimage'),
-(52, 'Entity::Connector::UcsManager');
-
+(52, 'Entity::Connector::UcsManager'),
+(53, 'Entity::Component::Fileimagemanager0');
 
 --
 -- system groups
@@ -366,7 +366,8 @@ INSERT INTO `component_type` VALUES
 (12,'Iptables','1','Firewall'),
 (13,'Openldap','1','Annuary'),
 (14,'Opennebula','3','Cloudmanager'),
-(15,'Physicalhoster','0','Cloudmanager');
+(15,'Physicalhoster','0','Cloudmanager'),
+(16,'Fileimagemanager','0','Storage');
 
 --
 -- connectors type list
@@ -531,6 +532,14 @@ INSERT INTO `entity` VALUES (@physical_hoster, 48);
 INSERT INTO `component` VALUES(@physical_hoster, @admin_cluster, 15, NULL, NULL);
 INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
 
+--
+-- Fileimagemanager
+--
+
+INSERT INTO `entity` VALUES (@eid, 53);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 16, NULL, NULL);
+INSERT INTO `fileimagemanager0` VALUES(@eid);
+SET @eid := @eid +1;
 
 --
 -- Monitoring data
