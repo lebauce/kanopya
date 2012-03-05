@@ -1163,7 +1163,6 @@ CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
   `nodemetric_condition_threshold` double NOT NULL,
-  `nodemetric_condition_last_eval` BOOLEAN DEFAULT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -1178,7 +1177,8 @@ CREATE TABLE `nodemetric_condition` (
 --
 
 CREATE TABLE `nodemetric_rule` (
-  `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(32) NOT NULL ,
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
@@ -1186,8 +1186,11 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_action_id` int(8) unsigned NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`nodemetric_rule_service_provider_id`),
+  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
+
 
 
 
