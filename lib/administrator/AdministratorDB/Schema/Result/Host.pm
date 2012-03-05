@@ -122,13 +122,6 @@ __PACKAGE__->table("host");
   is_nullable: 1
   size: 32
 
-=head2 cloud_cluster_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =head2 etc_container_id
 
   data_type: 'integer'
@@ -219,13 +212,6 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "host_hostname",
   { data_type => "char", is_nullable => 1, size => 32 },
-  "cloud_cluster_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
   "etc_container_id",
   {
     data_type => "integer",
@@ -378,21 +364,6 @@ __PACKAGE__->belongs_to(
   { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 cloud_cluster
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Cluster>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "cloud_cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { cluster_id => "cloud_cluster_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 ifaces
 
 Type: has_many
@@ -454,8 +425,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-27 16:02:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:DswOJ7QoO0nZxwsSAKP+TQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-05 11:35:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1ql9S5+xatcwf1/lsIYwPA
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
@@ -463,5 +434,4 @@ __PACKAGE__->belongs_to(
   { cascade_copy => 0, cascade_delete => 1 }
 );
 
-# You can replace this text with custom content, and it will be preserved on regeneration
 1;

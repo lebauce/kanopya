@@ -1,5 +1,7 @@
 # Host.pm - Object class of Ḿotherboard (Administrator side)
-#    Copyright © 2011 Hedera Technology SAS
+
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,7 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
+
 package Entity::Host;
 use base "Entity";
 
@@ -147,13 +149,6 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     etc_device_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
-    # TODO: probably remove this attr, as we can retrieve the cluster id
-    #       from service_provider_id, and whek if it is a cloud cluster.
-    cloud_cluster_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0

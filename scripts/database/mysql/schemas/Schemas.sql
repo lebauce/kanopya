@@ -311,7 +311,6 @@ CREATE TABLE `host` (
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
   `host_hostname` char(32) DEFAULT NULL,
-  `cloud_cluster_id` int(8) unsigned DEFAULT NULL,
   `etc_container_id` int(8) unsigned DEFAULT NULL,
   `host_state` char(32) NOT NULL DEFAULT 'down',
   `host_prev_state` char(32),
@@ -331,9 +330,7 @@ CREATE TABLE `host` (
   KEY (`host_powersupply_id`),
   FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`host_ipv4_internal_id`),
-  FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`cloud_cluster_id`),
-  FOREIGN KEY (`cloud_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

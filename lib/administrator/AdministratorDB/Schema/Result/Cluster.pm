@@ -284,21 +284,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 hosts
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Host>
-
-=cut
-
-__PACKAGE__->has_many(
-  "hosts",
-  "AdministratorDB::Schema::Result::Host",
-  { "foreign.cloud_cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 ipv4_publics
 
 Type: has_many
@@ -375,13 +360,13 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-01 17:00:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fnigz4w4Oa9BZF34nfnQ8g
-
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-05 11:35:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:viXa52S7jA6zqB6AN37xXw
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Inside",
     { "foreign.inside_id" => "self.cluster_id" },
     { cascade_copy => 0, cascade_delete => 1 }
 );
+
 1;

@@ -45,7 +45,7 @@ if (not defined $table) {
 
 # Define globals
 my $schema_class_name = 'AdministratorDB::Schema';
-my $connect_info = [ 'dbi:mysql:administrator:localhost:3306', 'root', 'Hedera@123'];
+my $connect_info = [ 'dbi:mysql:administrator:localhost:3306', 'root', 'Kevin#234'];
 my $dump_dir = '/opt/kanopya/lib/administrator';
 
 if ($table eq 'all') {  # Update all existing schema and create schema for new tables
