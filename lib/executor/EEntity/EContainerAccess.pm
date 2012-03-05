@@ -80,10 +80,10 @@ sub copy {
     # One or both container access do not support device level (e.g. Nfs)
     else {
         # Mount the containers on the executor.
-        my $source_name = $source_access->_getEntity->getAttr(name => 'container_access_name');
+        my $source_name = $source_access->_getEntity->getContainer->getAttr(name => 'container_name');
         my $source_mountpoint = "/mnt/" . $source_name;
 
-        my $dest_name = $dest_access->_getEntity->getAttr(name => 'container_access_name');
+        my $dest_name = $dest_access->_getEntity->getContainer->getAttr(name => 'container_name');
         my $dest_mountpoint = "/mnt/" . $dest_name;
 
         $log->info('Mounting source container <' . $source_mountpoint . '>');
