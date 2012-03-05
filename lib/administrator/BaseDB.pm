@@ -156,7 +156,7 @@ sub new {
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Unregistred or bastract class name <$class>:\n $error";
+        $errmsg = "Unregistred or abstract class name <$class>:\n $error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
