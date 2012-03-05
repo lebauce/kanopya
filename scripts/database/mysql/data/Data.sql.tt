@@ -62,7 +62,9 @@ INSERT INTO `class_type` VALUES
 (47, 'AggregateRule'),
 (48, 'Entity::Component::Physicalhoster0'),
 (49, 'Entity::Poolip'),
-(50, 'Entity::Vlan');
+(50, 'Entity::Vlan'),
+(51, 'Entity::Masterimage');
+
 
 --
 -- system groups
@@ -110,6 +112,10 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2); SET @PowersupplycardGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'Powersupplycard','Powersupplycard','Powersupplycard master group  containing all power supply cards',1);
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 2);
+INSERT INTO `gp` VALUES(@eid,'Masterimage','Masterimage','Masterimage master group containing all master images',1);
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2);
@@ -330,7 +336,8 @@ INSERT INTO `operationtype` VALUES
 (36,'AddVirtualHost'),
 (37,'MigrateHost'),
 (38,'RemoveDisk'),
-(39,'RemoveExport');
+(39,'RemoveExport'),
+(40,'DeployMasterimage');
 
 --
 -- components type list

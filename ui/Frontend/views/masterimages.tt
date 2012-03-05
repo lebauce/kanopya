@@ -1,0 +1,17 @@
+<% FOREACH masterimage IN masterimages_list %>
+	<table class="listing">
+	<tr><td colspan="3"><h1><% masterimage.masterimage_name %></h1></td></tr>
+	<tr><td><% masterimage.masterimage_os %></td>
+    <td class="toright">
+	<a class="imgManage" href="/systems/masterimages/<% masterimage.masterimage_id %>">details</a></td></tr>
+	<tr><td class="italic" colspan="3"><% masterimage.masterimage_desc %></td></tr>
+	</table>
+<% END %>
+
+<div class="actions">
+<p class="italic">Master images used to create system images.</p>
+<a class="action modal" href="/systems/masterimages/upload">upload new master image</a>
+<p class="italic">Upload a new master image to create system images from it.</p>
+</div>
+
+

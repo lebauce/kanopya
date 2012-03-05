@@ -12,7 +12,7 @@
     schema_sql="/opt/kanopya/scripts/database/mysql/schemas/Schemas.sql"/>
   <genfiles>
     <executor.conf template="executor.conf.tt">
-      <datas logdir="log_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
+      <datas logdir="log_directory" masterimages_dir="masterimages_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
     </executor.conf>
     <executor-log.conf template="executor-log.conf.tt">
         <datas logdir="log_directory"/>
@@ -115,6 +115,12 @@
        search_command=""
        pattern="^.*\/$"/>
     <!-- Penser a checker avec plusieurs vg -->
+    <masterimages_directory
+		question="Where will be stored master images"
+		default="/masterimages/"
+		is_searchable="0"
+		search_command=""
+		pattern="^.*\/$"/>
     <vg
        question="Which volume group will be used by Kanopya"
        default=""

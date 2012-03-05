@@ -877,12 +877,12 @@ CREATE TABLE `component_template_attr` (
 
 CREATE TABLE `component_provided` (
   `component_type_id` int(8) unsigned NOT NULL,
-  `distribution_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`component_type_id`,`distribution_id`),
+  `masterimage_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`component_type_id`,`masterimage_id`),
   KEY (`component_type_id`),
   FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`distribution_id`),
-  FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY (`masterimage_id`),
+  FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1234,6 +1234,20 @@ CREATE TABLE `scom` (
   `scom_ms_name` char(255) NOT NULL,
   PRIMARY KEY (`scom_id`),
   FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `masterimage`
+-- Entity::Masterimage class
+
+CREATE TABLE `masterimage` (
+  `masterimage_id` int(8) unsigned NOT NULL,
+  `masterimage_name` char(64) NOT NULL,
+  `masterimage_file` char(255) NOT NULL,
+  `masterimage_desc` char(255) DEFAULT NULL,
+  `masterimage_os` char(64) DEFAULT NULL,
+  PRIMARY KEY (`masterimage_id`),
+  FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

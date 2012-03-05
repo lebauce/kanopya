@@ -116,18 +116,24 @@ chomp(@kanopya_pvs);
 #########################
 #Directory manipulations#
 #########################
-#We create the logging directory and give rights
+
+# We create the logging directory and give rights
+
 print "creating the logging directory...";
 $answers->{log_directory} = $answers->{log_directory} . '/'
     if ( $answers->{log_directory} !~ /\/$/ );
-
 make_path("$answers->{log_directory}", { verbose => 1 });
-
 # Give write access to nobody /!\ TEMPORARY
 chmod 0757, $answers->{log_directory};
-
 #chownRecursif($conf_vars->{apache_user}, $answers->{log_directory});
 print "done\n";
+
+# We create the master images directory and give rights
+print "creating the master images directory...";
+$answers->{masterimages_directory} = $answers->{masterimages_directory} . '/'
+    if ( $answers->{log_directory} !~ /\/$/ );
+
+make_path("$answers->{masterimages_directory}", { verbose => 1 });
 
 
 
