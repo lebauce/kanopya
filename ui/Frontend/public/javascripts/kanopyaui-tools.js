@@ -32,6 +32,19 @@ function loading_stop() {
    	$('body').css('cursor','auto');	
    	$('.unactive_clickable').addClass('clickable').removeClass('unactive_clickable');
 }
+
+// Link must be a route witch return a JSON with one of the following keys: (error | redirect)
+function catchError(link) {
+    loading_start();
+    $.getJSON(link, function(resp) {
+            loading_stop();
+            if (resp.error != undefined) {
+                alert(resp.error);
+            } else if (resp.redirect != undefined) {
+                window.location= resp.redirect;
+             }  
+        });
+}
    
 /*********************************************
 	Initialize generic behaviors
@@ -43,3 +56,4 @@ function commonInit () {
 	$('.editable_choice').click( toggleChoiceMode ).addClass('clickable');
 
 }
+
