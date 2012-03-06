@@ -1278,6 +1278,7 @@ CREATE TABLE `active_directory` (
 CREATE TABLE `scom` (
   `scom_id` int(8) unsigned NOT NULL,
   `scom_ms_name` char(255),
+  `scom_usessl` int(1) DEFAULT NULL,
   PRIMARY KEY (`scom_id`),
   FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
