@@ -42,4 +42,12 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub evalOnOneNode{
+    my $self = shift;
+    my %args = @_;
+    
+    my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
+    
+    print Dumper $$monitored_values_for_one_node;
+}
 1;

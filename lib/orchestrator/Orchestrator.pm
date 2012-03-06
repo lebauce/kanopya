@@ -130,7 +130,7 @@ sub nodemetricManagement{
 
         # Call the retriever to get SCOM data
         my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-        print Dumper $monitored_values; 
+        $log->info(Dumper $monitored_values);
         
         # Eval the rules
         $self->_evalAllRules(
@@ -147,9 +147,9 @@ sub _evalAllRules {
    my $monitored_values = $args{monitored_values};
    my $rules            = $args{rules};
    foreach my $rule (@$rules){
-       _evalRule(
-           'rule'             =>$rule,
-            $monitored_values => $monitored_values,
+       $self->_evalRule(
+           'rule'              =>$rule,
+            'monitored_values' => $monitored_values,
        );
    }
 }

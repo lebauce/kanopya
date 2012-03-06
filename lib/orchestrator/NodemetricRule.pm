@@ -77,7 +77,29 @@ sub evalOnOneNode{
     
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
     
-    print Dumper $monitored_values_for_one_node;
+    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+
+    #Split nodemetric_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    
+    #replace each id by its evaluation
+    for my $element (@array) {
+        
+        if( $element =~ m/id(\d+)/){
+            $element = NodemetricCondition->get('id'=>substr($element,2))
+                                          ->evalOnOneNode(
+                                            'monitored_values_for_one_node' => $monitored_values_for_one_node
+                                          );
+        }
+    }
+    my $res = undef;
+    my $arrayString = '$res = '."@array"; 
+    
+    #Evaluate the logic formula
+    eval $arrayString;
+    my $store = ($res)?1:0;
+    $self->save();
+    return $res;
 };
 
 #sub eval {
