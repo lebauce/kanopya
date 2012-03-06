@@ -340,12 +340,8 @@ INSERT INTO `operationtype` VALUES
 (37,'MigrateHost'),
 (38,'RemoveDisk'),
 (39,'RemoveExport'),
-<<<<<<< HEAD
 (40,'DeployMasterimage'),
 (41,'RemoveMasterimage');
-=======
-(40,'DeployMasterimage');
->>>>>>> [core/db] Master image files created
 
 --
 -- components type list
