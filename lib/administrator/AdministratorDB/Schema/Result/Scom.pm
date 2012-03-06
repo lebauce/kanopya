@@ -43,7 +43,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "scom_ms_name",
-  { data_type => "char", is_nullable => 0, size => 255 },
+  { data_type => "char", is_nullable => 1, size => 255 },
 );
 __PACKAGE__->set_primary_key("scom_id");
 
