@@ -9,7 +9,7 @@
 <table>
 <tr><td>Domain controller name :</td><td><input type="text" size="64" class="conf_simple_value" name="ad_host" value="<% ad_host %>"/></td></tr>
 <tr><td>User :</td><td><input type="text" size="64" class="conf_simple_value" name="ad_user" value="<% ad_user %>"/></td></tr>
-<tr><td>Password :</td><td><input type="text" class="conf_simple_value" name="ad_pwd" value="<% ad_pwd %>"/></td></tr>
+<tr><td>Password :</td><td><input type="password" class="conf_simple_value" name="ad_pwd" value="<% ad_pwd %>"/></td></tr>
 <tr><td>Nodes Container DN :</td><td><input type="text" size="128" class="conf_simple_value" name="ad_nodes_base_dn" value="<% ad_nodes_base_dn %>"/></td></tr>
 </table>
 
