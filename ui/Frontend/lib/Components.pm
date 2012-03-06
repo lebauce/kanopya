@@ -28,7 +28,7 @@ sub _deepEscapeHtml {
 
 get '/components' => sub {
     my $components = Entity::Component->getComponentsByCategory();
-    template 'components', {
+    template 'component', {
         title_page       => 'Systems - Components',
         eid              => session('EID'),
         components_list  => $components,
