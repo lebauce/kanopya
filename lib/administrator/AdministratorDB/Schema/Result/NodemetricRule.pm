@@ -73,6 +73,13 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
+   "nodemetric_rule_service_provider_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "nodemetric_rule_formula",
   { data_type => "char", is_nullable => 0, size => 32 },
   "nodemetric_rule_last_eval",
@@ -110,6 +117,12 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "nodemetric_service_provider_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 # Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-05 14:43:50
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fz1b1bAooxJYw2QN/Q76Xw

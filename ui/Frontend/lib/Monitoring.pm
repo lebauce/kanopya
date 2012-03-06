@@ -255,24 +255,38 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	my $cluster_id = params->{extclusterid} || 0;   
 	my $combination = params->{'id'};
-	my $start_time = params->{'start'};
-	my $stop_time = params->{'stop'};
+	my $start = params->{'start'};
+	my $stop = params->{'stop'};	
+	
+	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
+	if ($start eq '') {
+		$start = DateTime->now;
+		$start->subtract( days => 1 );
+		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
+	}
+	if ($stop eq '') {
+		$stop = DateTime->now;
+		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
+	}
+	
+	my $start_time = "03-02-2012 16:00";
+	my $stop_time = "03-02-2012 16:30";
 	
 	# $log->error('login before eval, combination: '.Dumper($combination));
 	# my $aggregate_combination = AggregateCombination->computeValues(start_time => $theTime - 300, stop_time => $theTime);
+	
 	##############replace histo values by computeValues returned hash
 	my %histovalues = (1330705020 => 1, 1330705080 => 2, 1330705140 => 3, 1330705200 => 4, 1330705260 => 5, 1330705300 => 6, 1330705360 => 7);
 	my @histovalues;
 	while (my ($date, $value) = each %histovalues){				
 			my $dt = DateTime->from_epoch(epoch => $date);
-			my $date_string = $dt->ymd('-') . ' ' .$dt->hour_1().':'.$dt->minute();
+			my $date_string = $dt->mdy('-') . ' ' .$dt->hour_1().':'.$dt->minute();
 			# my $date_string =$date;
 			push @histovalues, [$date_string,$value];
 		}		
 	$log->info('fetched values: '.Dumper \@histovalues);
 	
-	# my $chaine = "[[1330705020, 15], [1330705320, 35], [1330705140, 67] ]";
-	to_json {first_histovalues => \@histovalues};
+	to_json {first_histovalues => \@histovalues, min => $start_time, max => $stop_time, start=> $start, stop => $stop};
 };  
   
 

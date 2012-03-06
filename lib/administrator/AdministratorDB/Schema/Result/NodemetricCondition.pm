@@ -77,8 +77,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "nodemetric_condition_threshold",
   { data_type => "double precision", is_nullable => 0 },
-  "nodemetric_condition_last_eval",
-  { data_type => "tinyint", is_nullable => 1 },
   "class_type_id",
   {
     data_type => "integer",

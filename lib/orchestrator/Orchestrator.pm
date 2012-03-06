@@ -52,9 +52,13 @@ use XML::Simple;
 use General;
 use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
 use AggregateRule;
+use NodemetricRule;
+use NodemetricCondition;
+use NodemetricCombination;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("orchestrator");
@@ -101,7 +105,120 @@ sub manage_aggregates {
     my $self = shift;
     
     print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
+    $self->clustermetricManagement();
+    $self->nodemetricManagement();
+}
 
+sub nodemetricManagement{
+    my $self = shift;
+    
+    # Merge all needed indicators to consctruc only one SCOM request
+    
+    my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
+    
+    
+    for my $externalCluster (@externalClusters){
+        my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
+        print '***'.$cluster_id.'***'."\n";
+        
+        my @rules = NodemetricRule->search(
+                hash => {
+                    nodemetric_rule_service_provider_id => $cluster_id
+                }
+        );
+        my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
+
+        # Call the retriever to get SCOM data
+        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+        $log->info(Dumper $monitored_values);
+        
+        # Eval the rules
+        $self->_evalAllRules(
+            'monitored_values' => $monitored_values,
+            'rules'            => \@rules,
+        );
+    }
+}
+
+sub _evalAllRules {
+   my $self = shift;
+   my %args = @_;
+   
+   my $monitored_values = $args{monitored_values};
+   my $rules            = $args{rules};
+   foreach my $rule (@$rules){
+       $self->_evalRule(
+           'rule'              =>$rule,
+            'monitored_values' => $monitored_values,
+       );
+   }
+}
+
+sub _evalRule {
+    my $self = shift;
+    my %args = @_;
+
+    my $monitored_values = $args{monitored_values};
+    my $rule             = $args{rule};
+    
+    while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
+        # Warning, not all the monitored values are required but we transmit 
+        # all of them
+        
+        my $rep = $rule->evalOnOneNode(
+            monitored_values_for_one_node => $monitored_values_for_one_node
+        );
+        
+        print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$rep."\n";
+    }
+}
+# Construct hash table for the service provider.
+# Inspired by eponyme aggregator method 
+
+sub _contructRetrieverOutput {
+    my $self = shift;
+    my %args = @_;
+    
+    #my $cluster_id                 = $args{cluster_id};
+    my $rules = $args{rules};
+    my $indicators_name = undef;
+    
+    #Get all the rules relative to the cluster_id 
+
+
+    
+    for my $rule (@$rules){
+        my @conditions = $rule->getDependantConditionIds();
+        #Check each conditions (i.e. each Combination
+        for my $condition_id (@conditions) {
+            
+            my $condition = NodemetricCondition->get('id' => $condition_id);
+             
+            # Get the related combination id (in order to parse its formula)            
+            my $combination_id = $condition->getAttr(name => 'nodemetric_condition_combination_id');
+            
+            my $combination = NodemetricCombination->get('id' => $combination_id);
+            # get the indicator ids used in combination formula
+            my @indicator_ids = $combination->getDependantIndicatorIds();
+            
+            for my $indicator_id (@indicator_ids){
+                my $indicator = Indicator->get('id' => $indicator_id);
+                $indicators_name->{$indicator->getAttr(name=>'indicator_oid')} = undef;
+            }
+        }
+    }
+    my @indicators_array = keys(%$indicators_name);
+    
+    my $rep = {
+        indicators => \@indicators_array,
+        time_span  => 1200,
+    };
+    print Dumper $rep;
+    return $rep;
+};
+
+sub clustermetricManagement{
+    my $self = shift;
     for my $aggregate_rule (AggregateRule->search(hash=>{})){
         
         if ($aggregate_rule -> isEnabled()) {
@@ -125,8 +242,6 @@ sub manage_aggregates {
             }
         }
     }
-
-    
 }
 
 =head2 manage
