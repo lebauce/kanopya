@@ -61,7 +61,7 @@ sub evalOnOneNode{
     
     my $evalString = $value.$comparator.$threshold;
     
-    print $evalString;
+    print $evalString."\n";
     
     if(eval $evalString){
         return 1;
