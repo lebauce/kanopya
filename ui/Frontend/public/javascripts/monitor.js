@@ -300,7 +300,7 @@
         // });     
    // } 
    // $('#testcall').click (test_ui);
-   timedGraph();
+   // timedGraph();
  });
  
 var url = window.location.href;
