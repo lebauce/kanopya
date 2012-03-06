@@ -67,8 +67,9 @@ sub getNodes {
         $self->getAttr(name => 'ad_nodes_base_dn'),
     );
     
-    my $ldap = Net::LDAP->new( $ad_host ) or die "$@";
+    my $ldap = Net::LDAP->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
     my $mesg = $ldap->bind($ad_user, password => $ad_pwd);
+    
     
     $mesg = $ldap->search(
         base => $ad_nodes_base_dn,
