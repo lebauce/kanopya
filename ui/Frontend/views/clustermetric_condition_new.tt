@@ -1,6 +1,6 @@
-    <h2>New condition for cluster <%extcluster_id%></h2>
+    <h2>New condition for cluster <%cluster_id%></h2>
     <hr />
-    <form METHOD="POST" ACTION="/architectures/extclusters/<%extcluster_id%>/clustermetrics/combinations/conditions/new">
+    <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/new">
 
     <table>
         <tr>

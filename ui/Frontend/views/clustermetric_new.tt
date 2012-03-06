@@ -1,12 +1,12 @@
 
-<% IF NOT extcluster_id %>
+<% IF NOT cluster_id %>
     <h2>New Cluster metric</h2>
     <hr />
     <form METHOD="POST" ACTION="/architectures/clustermetrics/new">
 <% ELSE %>
-    <h2>New Cluster metric for Cluster <%extcluster_id%></h2>
+    <h2>New Cluster metric for Cluster <%cluster_id%></h2>
     <hr />
-    <form METHOD="POST" ACTION="/architectures/extclusters/<%extcluster_id%>/clustermetrics/new">
+    <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/new">
 <% END %>
 
 
@@ -30,8 +30,8 @@
         
         </td></tr>
         
-        <% IF NOT extcluster_id %>
-            <select name="extcluster_id" >
+        <% IF NOT cluster_id %>
+            <select name="cluster_id" >
                 <% FOREACH extcluster IN extclusters %>
                 <option value="<% extcluster.id %>"><% extcluster.name %>(<% extcluster.id %>)</option>
                 <% END %>
