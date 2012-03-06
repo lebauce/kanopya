@@ -83,41 +83,6 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # Check if a service provider is given in parameters, use default instead.
-    eval {
-        General::checkParams(args => $params, required => ["storage_provider_id"]);
-
-        $self->{_objs}->{storage_provider}
-            = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
-    };
-    if ($@) {
-        $log->info("Service provider id not defined, using default.");
-        $self->{_objs}->{storage_provider}
-            = Entity::ServiceProvider->get(id => $args{internal_cluster}->{nas});
-    }
-
-    # Check if a disk manager is given in parameters, use default instead.
-    my $disk_manager;
-    eval {
-        General::checkParams(args => $params, required => ["disk_manager_id"]);
-
-        $disk_manager
-            = $self->{_objs}->{storage_provider}->getManager(id => $params->{disk_manager_id});
-    };
-    if ($@) {
-        $log->info("Disk manager id not defined, using default.");
-        eval {
-            $disk_manager
-                = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'DiskManager');
-        };
-        if ($@) {
-            my $error = $@;
-            $errmsg = "Operation DeployComponent failed an error occured :\n$error";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-    }
-
     # Instanciate bootserver Cluster
     $self->{bootserver}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
                                      id => $args{internal_cluster}->{bootserver}
@@ -132,34 +97,27 @@ sub prepare {
     $log->debug("Load cluster component instances");
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
 
-    # Get the disk manager for disk creation, get the export manager for copy from file.
-    my $export_manager = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'ExportManager');
-    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
-    $self->{_objs}->{edisk_manager}   = EFactory::newEEntity(data => $disk_manager);
-
     # Instanciate tftpd component.
     my $tftp_component = $self->{bootserver}->{obj}->getComponent(name => "Atftpd", version => "0");
     $self->{_objs}->{component_tftpd} = EFactory::newEEntity(data => $tftp_component);
 
-    $log->debug("Load tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
+    $log->debug("Loaded tftpd component (Atftpd version 0.7, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
     # Instanciate dhcpd component.
     my $dhcp_component = $self->{bootserver}->{obj}->getComponent(name => "Dhcpd", version => "3");
     $self->{_objs}->{component_dhcpd} = EFactory::newEEntity(data => $dhcp_component);
 
-    $log->debug("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
+    $log->debug("Loaded dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
-    # Get contexts
-    my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
+    # Get container of the system image, get the container access of the container
+    $self->{_objs}->{container} = $self->{_objs}->{cluster}->getSystemImage->getDevice;
 
-    my $storage_provider_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
-    $self->{_objs}->{edisk_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                ip_destination => $storage_provider_ip);
-    $self->{_objs}->{eexport_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                ip_destination => $storage_provider_ip);
+    # Warning:
+    # 1. Systeme image should be activated, so at least one container access exists
+    # 2. As systemimages always dedicated for instance, a system image container has
+    #    onlky one container access.
+    $self->{_objs}->{container_access} = pop @{ $self->{_objs}->{container}->getAccesses };
+
 }
 
 sub _cancel {
@@ -183,10 +141,11 @@ sub _cancel {
 sub execute {
     my $self = shift;
     my $adm = Administrator->new();
-    my $edisk_manager = $self->{_objs}->{edisk_manager};
-    my $eexport_manager = $self->{_objs}->{eexport_manager};
 
-    $log->info("Host <" . $self->{_objs}->{host}->getAttr(name => "host_mac_address") . "> etc disk is now created");
+    # Firstly compute the node configuration
+
+    $log->info("Compute node configuration for host <" . $self->{_objs}->{host}->getAttr(name => "host_mac_address"));
+
     if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard}) and
         (exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})) {
         my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(
@@ -197,70 +156,6 @@ sub execute {
                                         value => $powersupply_id);
     }
 
-    my $etc_source_container = $self->{_objs}->{cluster}->getSystemImage->getDevices->{etc};
-    my $root_source_container = $self->{_objs}->{cluster}->getSystemImage->getDevices->{root};
-
-    # Creating node etc container
-    my $etc_container = $edisk_manager->createDisk(
-                            name       => $self->{_objs}->{host}->getEtcName,
-                            size       => $etc_source_container->getAttr(name => 'container_size') . "B",
-                            filesystem => $etc_source_container->getAttr(name => 'container_filesystem'), ,
-                            econtext   => $edisk_manager->{econtext},
-                            erollback  => $self->{erollback}
-                        );
-
-    $self->{_objs}->{host}->setAttr(name  => 'etc_container_id',
-                                    value => $etc_container->getAttr(name => "container_id"));
-
-    # Temporary export the containers to copy contents
-    my $source_access = $eexport_manager->createExport(
-                            container   => $etc_source_container,
-                            export_name => $etc_source_container->getAttr(name => 'container_name'),
-                            econtext    => $eexport_manager->{econtext},
-                            erollback   => $self->{erollback}
-                        );
-
-    my $dest_access = $eexport_manager->createExport(
-                          container   => $etc_container,
-                          export_name => $etc_container->getAttr(name => 'container_name'),
-                          iomode      => "wb",
-                          econtext    => $eexport_manager->{econtext},
-                          erollback   => $self->{erollback}
-                      );
-
-    # Get the corresponding EContainerAccess
-    my $esource_access = EFactory::newEEntity(data => $source_access);
-    my $edest_access = EFactory::newEEntity(data => $dest_access);
-
-    # Mount the containers on the executor.
-    my $source_mountpoint = "/mnt/" . $etc_source_container->getAttr(name => 'container_name');
-    my $dest_mountpoint   = "/mnt/" . $etc_container->getAttr(name => 'container_name');
-
-    $log->info('Mounting source container <' . $source_mountpoint . '>');
-    $esource_access->mount(mountpoint => $source_mountpoint, econtext => $self->{executor}->{econtext});
-
-    $log->info('Mounting destination container <' . $dest_mountpoint . '>');
-    $edest_access->mount(mountpoint => $dest_mountpoint, econtext => $self->{executor}->{econtext});
-
-    # Copy the filesystem.
-    my $copy_fs_cmd = "cp -R --preserve=all $source_mountpoint/. $dest_mountpoint/";
-    $log->debug($copy_fs_cmd);
-    my $cmd_res = $self->{executor}->{econtext}->execute(command => $copy_fs_cmd);
-
-    if ($cmd_res->{'stderr'}){
-        $errmsg = "Error with copy of $source_mountpoint to $dest_mountpoint: " .
-                  $cmd_res->{'stderr'};
-        $log->error($errmsg);
-        Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Unmount the containers, and remove the temporary exports.
-    $esource_access->umount(mountpoint => $source_mountpoint, econtext => $self->{executor}->{econtext});
-
-    $eexport_manager->removeExport(container_access => $source_access,
-                                   econtext         => $eexport_manager->{econtext},
-                                   erollback        => $self->{erollback});
-
     # Add host in the dhcp
     my $subnet = $self->{_objs}->{component_dhcpd}->_getEntity()->getInternalSubNetId();
     my $host_ip = $adm->{manager}->{network}->getFreeInternalIP();
@@ -268,23 +163,14 @@ sub execute {
     # Set Hostname
     my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
     if (not $host_hostname) {
-       
         $host_hostname = $self->{_objs}->{cluster}->getAttr(name => 'cluster_basehostname');
         $host_hostname .=  $self->{_objs}->{host}->getNodeNumber();
    
         $self->{_objs}->{host}->setAttr(
-			name => "host_hostname",
+			name  => "host_hostname",
             value => $host_hostname
         );                              
     }
-
-    # Set initiatorName
-    my $initiator = $eexport_manager->generateInitiatorname(
-                        hostname => $self->{_objs}->{host}->getAttr(name=>'host_hostname')
-                    );
-
-    $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
-                                    value => $initiator);
 
     # Configure DHCP Component
     my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
@@ -309,7 +195,7 @@ sub execute {
     );
 
     my $eroll_add_dhcp_host = $self->{erollback}->getLastInserted();
-    $self->{erollback}->insertNextErollBefore(erollback=>$eroll_add_dhcp_host);
+    $self->{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
 
     # Generate new configuration file
     $self->{_objs}->{component_dhcpd}->generate(econtext    => $self->{bootserver}->{econtext},
@@ -331,64 +217,50 @@ sub execute {
         = $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
                                                 ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
 
-    # Generate Node configuration
-    my $etc_targetname = $eexport_manager->generateTargetname(
-                             name => $etc_container->getAttr(name => 'container_name')
-                         );
+    my $options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
+                      ? "ro,noatime,nodiratime" : "defaults";
 
-    # TODO: replace by a getAttr on the container_access
-    my $root_target_id = $eexport_manager->_getEntity()->getTargetIdLike(
-                             iscsitarget1_target_name => '%' . $root_source_container->getAttr(
-                                                                   name => 'container_name'
-                                                               )
-                         );
-    # TODO: replace by a getAttr on the container_access
-    my $root_targetname = $eexport_manager->_getEntity()->getTargetName(
-                              iscsitarget1_target_id => $root_target_id
-                          );
-    my $root_options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
-                           ? "ro,noatime,nodiratime" : "defaults";
+    # Get the corresponding EContainerAccess
+    my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
 
-    $self->_generateNodeConf(mount_point     => $dest_mountpoint,
-                             root_container  => $root_source_container,
-                             root_targetname => $root_targetname,
-                             root_options    => $root_options,
-                             etc_container   => $etc_container,
-                             etc_targetname  => $etc_targetname);
+    # Mount the containers on the executor.
+    my $mountpoint = "/mnt/" . $self->{_objs}->{container}->getAttr(name => 'container_name') . "_startnode";
+
+    $log->info('Mounting the container <' . $mountpoint . '>');
+    $econtainer_access->mount(mountpoint => $mountpoint, econtext => $self->{executor}->{econtext});
+
+    # Apply node etc configuration
+    $self->_generateNodeConf(etc_path   => $mountpoint . '/etc',
+                             options    => $options);
+
+    $log->info("Generate Boot Conf");
+
+    # Apply node boot configuration
+    $self->_generateBootConf(etc_path      => $mountpoint . '/etc',,
+                             filesystem    => $self->{_objs}->{container}->getAttr(
+                                                  name => 'container_filesystem'
+                                              ),
+                             options       => $options);
 
     # TODO: Component migration (node, exec context?)
     my $components = $self->{_objs}->{components};
     foreach my $i (keys %$components) {
-        my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is " . ref($tmp));
-        $tmp->addNode(host          => $self->{_objs}->{host},
-                      mount_point   => $dest_mountpoint,
-                      cluster       => $self->{_objs}->{cluster},
-                      econtext      => $self->{executor}->{econtext},
-                      erollback     => $self->{erollback});
+        my $ecomponent = EFactory::newEEntity(data => $components->{$i});
+        $log->debug("component is " . ref($ecomponent));
+        $ecomponent->addNode(host        => $self->{_objs}->{host},
+                             mount_point => $mountpoint . '/etc',
+                             cluster     => $self->{_objs}->{cluster},
+                             econtext    => $self->{executor}->{econtext},
+                             erollback   => $self->{erollback});
     }
 
-    # Umount host etc
-    $edest_access->umount(mountpoint => $dest_mountpoint,
-                          econtext   => $self->{executor}->{econtext});
-
-    $eexport_manager->removeExport(container_access => $dest_access,
-                                   econtext         => $eexport_manager->{econtext},
-                                   erollback        => $self->{erollback});
+    # Umount system image container
+    $econtainer_access->umount(mountpoint => $mountpoint,
+                               econtext   => $self->{executor}->{econtext});
 
     # Create node instance
     $self->{_objs}->{host}->setNodeState(state => "goingin");
     $self->{_objs}->{host}->save();
-
-    # Generate node etc export
-    $eexport_manager->createExport(
-        container   => $etc_container,
-        export_name => $etc_container->getAttr(name => "container_name"),
-        typeio      => "fileio",
-        iomode      => "wb",
-        econtext    => $eexport_manager->{econtext},
-        erollback   => $self->{erollback}
-    );
 
     # Finally we start the node
     my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
@@ -403,45 +275,26 @@ sub _generateNodeConf {
     my %args = @_;
 
     General::checkParams(args => \%args,
-                         required => [ "mount_point",
-                                       "root_container", "root_targetname", "root_options",
-                                       "etc_container", "etc_targetname" ]);
+                         required => [ "etc_path", "options" ]);
 
     $log->info("Generate Hostname Conf");
     my $hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
-    $self->_generateHostnameConf(hostname    => $hostname,
-                                 mount_point => $args{mount_point});
-
-    $log->info("Generate Initiator Conf");
-    my $initiatorname = $self->{_objs}->{host}->getAttr(name => "host_initiatorname");
-    $self->_generateInitiatorConf(initiatorname => $initiatorname,
-                                  mount_point   => $args{mount_point});
+    $self->_generateHostnameConf(hostname => $hostname,
+                                 etc_path => $args{etc_path});
 
     $log->info("Generate Udev Conf");
-    $self->_generateUdevConf(mount_point => $args{mount_point});
-
-    $log->info("Generate Kanopya Halt script Conf");
-    $self->_generateKanopyaHalt(mount_point    => $args{mount_point},
-                                etc_targetname => $args{etc_targetname});
+    $self->_generateUdevConf(etc_path => $args{etc_path});
 
     $log->info("Generate Network Conf");
-    $self->_generateNetConf(mount_point => $args{mount_point});
+    $self->_generateNetConf(etc_path => $args{etc_path});
 
     $log->info("Generate resolv.conf");
-    $self->_generateResolvConf(mount_point => $args{mount_point});
+    $self->_generateResolvConf(etc_path => $args{etc_path});
 
     # TODO generateRouteConf
 
-    $log->info("Generate Boot Conf");
-    $self->_generateBootConf(initiatorname   => $initiatorname,
-                             root_container  => $args{root_container},
-                             root_targetname => $args{root_targetname},
-                             root_options    => $args{root_options},
-                             etc_container   => $args{etc_container},
-                             etc_targetname  => $args{etc_targetname});
-
     $log->info("Generate ntpdate Conf");
-    $self->_generateNtpdateConf(mount_point => $args{mount_point});
+    $self->_generateNtpdateConf(etc_path => $args{etc_path});
 }
 
 sub _generateHostnameConf {
@@ -449,23 +302,10 @@ sub _generateHostnameConf {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "mount_point", "hostname" ]);
+                         required => [ "etc_path", "hostname" ]);
 
     $self->{executor}->{econtext}->execute(
-        command => "echo $args{hostname} > $args{mount_point}/hostname"
-    );
-}
-
-sub _generateInitiatorConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "mount_point", "initiatorname" ]);
-
-    $self->{executor}->{econtext}->execute(
-        command => "echo \"InitiatorName=$args{initiatorname}\" > " .
-                   "$args{mount_point}/iscsi/initiatorname.iscsi"
+        command => "echo $args{hostname} > $args{etc_path}/hostname"
     );
 }
 
@@ -474,7 +314,7 @@ sub _generateUdevConf{
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "mount_point" ]);
+                         required => [ "etc_path" ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -495,7 +335,7 @@ sub _generateUdevConf{
 
     $self->{executor}->{econtext}->send(
         src => "/tmp/$tmpfile",
-        dest => "$args{mount_point}/udev/rules.d/70-persistent-net.rules"
+        dest => "$args{etc_path}/udev/rules.d/70-persistent-net.rules"
     );
     unlink "/tmp/$tmpfile";
 }
@@ -505,7 +345,7 @@ sub _generateKanopyaHalt{
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "mount_point", "etc_targetname" ]);
+                         required => [ "etc_path", "targetname" ]);
 
     my $rand = new String::Random;
     my $template = Template->new($config);
@@ -516,9 +356,9 @@ sub _generateKanopyaHalt{
 
     #TODO: mettre en parametre le port du iscsi du nas!!
     my $vars = {
-        etc_target => $args{etc_targetname},
-        nas_ip     => $self->{_objs}->{storage_provider}->getMasterNodeIp(),
-        nas_port   => "3260"
+        target   => $args{targetname},
+        nas_ip   => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
+        nas_port => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
     };
 
     my $components = $self->{_objs}->{components};
@@ -538,14 +378,14 @@ sub _generateKanopyaHalt{
     $template->process($input, $vars, "/tmp/" . $tmpfile) or die $template->error(), "\n";
 
     $self->{executor}->{econtext}->send(src  => "/tmp/$tmpfile",
-                                        dest => "$args{mount_point}/init.d/Kanopya_halt");
+                                        dest => "$args{etc_path}/init.d/Kanopya_halt");
     unlink "/tmp/$tmpfile";
 
     $self->{executor}->{econtext}->execute(
-        command => "chmod 755 $args{mount_point}/init.d/Kanopya_halt"
+        command => "chmod 755 $args{etc_path}/init.d/Kanopya_halt"
     );
     $self->{executor}->{econtext}->execute(
-        command => "ln -sf ../init.d/Kanopya_halt $args{mount_point}/rc0.d/S89Kanopya_halt"
+        command => "ln -sf ../init.d/Kanopya_halt $args{etc_path}/rc0.d/S89Kanopya_halt"
     );
 
     $log->debug("Generate omitted file <$omitted_file>");
@@ -554,24 +394,25 @@ sub _generateKanopyaHalt{
     );
     $self->{executor}->{econtext}->send(
         src  => "/tmp/$omitted_file",
-        dest => "$args{mount_point}/init.d/Kanopya_omitted_iscsid"
+        dest => "$args{etc_path}/init.d/Kanopya_omitted_iscsid"
     );
     unlink "/tmp/$omitted_file";
 
     $self->{executor}->{econtext}->execute(
-        command => "chmod 755 $args{mount_point}/init.d/Kanopya_omitted_iscsid"
+        command => "chmod 755 $args{etc_path}/init.d/Kanopya_omitted_iscsid"
     );
     $self->{executor}->{econtext}->execute(
         command => "ln -sf ../init.d/Kanopya_omitted_iscsid " .
-                   "$args{mount_point}/rc0.d/S19Kanopya_omitted_iscsid"
+                   "$args{etc_path}/rc0.d/S19Kanopya_omitted_iscsid"
     );
 }
+
 sub _generateNetConf {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'mount_point' ]);
+                         required => [ 'etc_path' ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -641,12 +482,12 @@ sub _generateNetConf {
 
     $self->{executor}->{econtext}->send(
         src => "/tmp/$tmpfile",
-        dest => "$args{mount_point}/network/interfaces"
+        dest => "$args{etc_path}/network/interfaces"
     );
     unlink "/tmp/$tmpfile";
 
     # Disable network deconfiguration during halt
-    unlink "$args{mount_point}/rc0.d/S35networking";
+    unlink "$args{etc_path}/rc0.d/S35networking";
 }
 
 sub _generateBootConf {
@@ -654,9 +495,32 @@ sub _generateBootConf {
     my %args = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ "root_container", "root_targetname", "root_options",
-                                       "etc_container", "etc_targetname",
-                                       "initiatorname" ]);
+                         required => [ "etc_path", "filesystem", "options" ]);
+
+    # Warning: Work only when container access is a IscsiContainerAccess.
+    my $targetname = $self->{_objs}->{container_access}->getAttr(name => 'container_access_export');
+
+    $log->info("Generate Kanopya Halt script Conf");
+
+    $self->_generateKanopyaHalt(etc_path   => $args{etc_path},
+                                targetname => $args{targetname});
+
+    $log->info("Generate Initiator Conf");
+
+    # Here we compute an iscsi initiator name for the node from the target name.
+    my $initiatorname = $targetname;
+    $initiatorname =~ s/\:.*$//g;   # Remove string after the last ':'
+    $initiatorname =~ s/[^\.]+$//g; # Remove string after the last '.'
+    $initiatorname .= $self->{_objs}->{host}->getAttr(name => 'host_name');
+
+    # Set initiatorName
+    $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
+                                    value => $initiatorname);
+
+    $self->{executor}->{econtext}->execute(
+        command => "echo \"InitiatorName=$initiatorname\" > " .
+                   "$args{etc_path}/iscsi/initiatorname.iscsi"
+    );
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -666,18 +530,14 @@ sub _generateBootConf {
     my $input = "bootconf.tt";
 
     my $vars = {
-        root_fs            => $args{root_container}->getAttr(name => 'container_filesystem'),
-        etc_fs             => $args{etc_container}->getAttr(name => 'container_filesystem'),
-        initiatorname      => $args{initiatorname},
-        etc_target         => $args{etc_targetname},
-        etc_ip             => $self->{_objs}->{storage_provider}->getMasterNodeIp(),
-        etc_port           => "3260",
-        root_target        => $args{root_targetname},
-        root_ip            => $self->{_objs}->{storage_provider}->getMasterNodeIp(),
-        root_port          => "3260",
-        root_mount_opts    => $args{root_options},
-        mounts_iscsi       => [],
-        additional_devices => "etc",
+        filesystem    => $args{filesystem},
+        initiatorname => $initiatorname,
+        target        => $args{targetname},
+        ip            => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
+        port          => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
+        mount_opts    => $args{options},
+        mounts_iscsi  => [],
+        additional_devices => "",
     };
 
     my $components = $self->{_objs}->{components};
@@ -711,7 +571,7 @@ sub _generateResolvConf{
     my %args = @_;
 
     General::checkParams(args => \%args,
-                         required => [ 'mount_point' ]);
+                         required => [ 'etc_path' ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -734,7 +594,7 @@ sub _generateResolvConf{
     $template->process($input, $vars, "/tmp/".$tmpfile) or die $template->error(), "\n";
     $self->{executor}->{econtext}->send(
         src  => "/tmp/$tmpfile",
-        dest => "$args{mount_point}/resolv.conf"
+        dest => "$args{etc_path}/resolv.conf"
     );
     unlink "/tmp/$tmpfile";
 }
@@ -744,7 +604,7 @@ sub _generateNtpdateConf {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "mount_point" ]);
+                         required => [ "etc_path" ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
@@ -761,7 +621,7 @@ sub _generateNtpdateConf {
 
     $self->{executor}->{econtext}->send(
         src  => "/tmp/$tmpfile",
-        dest => "$args{mount_point}/default/ntpdate"
+        dest => "$args{etc_path}/default/ntpdate"
     );
 
     unlink "/tmp/$tmpfile";
