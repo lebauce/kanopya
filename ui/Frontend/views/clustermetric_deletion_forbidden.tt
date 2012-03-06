@@ -7,4 +7,4 @@ Clustermetric <% clustermetric_id%> of cluster <%extclusterid%> cannot be delete
 <%END%>
 <br/>
 
-<a href="/architectures/extclusters/<%extclusterid%>/clustermetrics/"> back </a> 
+<a href="/architectures/extclusters/<%extclusterid%>/clustermetrics"> back </a> 

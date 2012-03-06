@@ -66,9 +66,9 @@ activate</a><br />
 	<% FOREACH conn IN connectors_list %>
 		<tr><td class="label2"><span class="bold"><% conn.connector_name %></span> - <% conn.connector_category %></td>
 		<% IF can_configure %>
-		<td class="action"><% IF conn.link_configureconnectors %><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a> <% END %>
+		<td class="action"><% IF conn.link_configureconnector %><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a> <% END %>
 		<% END %>
-		<% IF conn.link_remove %><a class="imgRemove" href="/architectures/clusters/<% conn.cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
+		<% IF conn.link_remove %><a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
 	</td></tr>
 	<% END %>
 <% ELSE %>
@@ -89,7 +89,7 @@ activate</a><br />
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_updatenodes %>
-		<a class="imgAdding modal" href="/architectures/extclusters/<% cluster_id %>/nodes/update">update</a><br />
+		<a class="imgAdding clickable" onclick="catchError('/architectures/extclusters/<% cluster_id %>/nodes/update')">update</a><br />
 		<span class="desc">Update nodes list using linked DirectoryService.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -116,7 +116,7 @@ activate</a><br />
 <table id="Xmonitor" class="detailspart list">
 <tr>
 <td colspan="2">
-<a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>/monitoring">activity</a>
+<a class="imgMonitor" href="/architectures/extclusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
 <a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a><bd/>

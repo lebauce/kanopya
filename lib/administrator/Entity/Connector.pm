@@ -72,8 +72,9 @@ sub getConnectorTypes {
     my @connector_types;
     while (my $ct = $connectortype_rs->next) {
         push @connector_types, {
-            connector_name => $ct->connector_name,
-            connector_category => $ct->connector_category,
+            connector_type_id   => $ct->connector_type_id,
+            connector_name      => $ct->connector_name,
+            connector_category  => $ct->connector_category,
         } 
     }
 
@@ -93,6 +94,34 @@ sub getConnectorType {
         connector_category => $connector_type->connector_category,
     };
 
+}
+
+sub getConf {
+    my $self = shift;
+
+#    my $conf = { memcached1_port => "11211" };
+#
+#    my $confindb = $self->{_dbix};
+#    if($confindb) {
+#        my %row = $confindb->get_columns(); 
+#        $conf = \%row;
+#    }
+
+    my %row = $self->{_dbix}->get_columns(); 
+
+    return \%row;
+}
+
+sub setConf {
+    my $self = shift;
+    my ($conf) = @_;
+    
+#    # delete old conf        
+#    my $conf_row = $self->{_dbix};
+#    $conf_row->delete() if (defined $conf_row); 
+
+    # create
+    $self->{_dbix}->update( $conf );
 }
 
 1;

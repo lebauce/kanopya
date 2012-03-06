@@ -755,7 +755,8 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdi
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/enabled' => sub {
-    redirect('/architectures/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules');
+    
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
 
@@ -763,25 +764,25 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/ena
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/enable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->enable();
-    redirect('/architectures/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules');
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/disable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disable();
-    redirect('/architectures/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules');
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disableTemporarily(length => 120);
-    redirect('/architectures/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules');
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disableTemporarily(length => 120);
-    redirect('/architectures/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules');
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
 
