@@ -15,7 +15,6 @@ SET @eid := 3;
 -- Do not put abstract types here (eg. ServiceProvider)
 
 INSERT INTO `class_type` VALUES
-(1, 'Entity::Distribution'),
 (2, 'Entity::Gp'),
 (3, 'Entity::Host'),
 (4, 'Entity::Hostmodel'),
@@ -91,10 +90,6 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2); SET @ClusterGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'Cluster','Cluster','Cluster master group containing all clusters',1);
-SET @eid := @eid +1;
-
-INSERT INTO `entity` VALUES (@eid, 2); SET @DistributionGroup_eid = @eid;
-INSERT INTO `gp` VALUES(@eid,'Distribution','Distribution','Distribution master group all distributions',1);
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2); SET @KernelGroup_eid = @eid;
@@ -332,7 +327,6 @@ INSERT INTO `operationtype` VALUES
 (29,'DeployComponent'),
 (30,'CreateDisk'),
 (31,'CreateExport'),
-(32,'DeployDistribution'),
 (33,'ForceStopCluster'),
 (34,'KanopyaMaintenance'),
 (35,'AddInfrastructure'),
@@ -340,12 +334,8 @@ INSERT INTO `operationtype` VALUES
 (37,'MigrateHost'),
 (38,'RemoveDisk'),
 (39,'RemoveExport'),
-<<<<<<< HEAD
 (40,'DeployMasterimage'),
 (41,'RemoveMasterimage');
-=======
-(40,'DeployMasterimage');
->>>>>>> [core/db] Master image files created
 
 --
 -- components type list
@@ -602,7 +592,6 @@ SET foreign_key_checks=1;
 -- @HostmodelGroup_eid
 -- @HostGroup_eid
 -- @ClusterGroup_eid
--- @DistributionGroup_eid
 -- @KernelGroup_eid
 -- @SystemimageGroup_eid
 -- @OperationtypeGroup_eid
@@ -631,19 +620,11 @@ INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'ge
 INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getClusters');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'getState');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Applimanager_eid, 'setperm');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Applimanager_eid , 'get');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Applimanager_eid , 'get');SET @id:=@id+1;
 
 --
 -- permission for Group Systemmanager
 --
-
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getDistributions');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getDevices');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'getProvidedComponents');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'updateProvidedComponents');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid, @Systemmanager_eid , 'toString');SET @id:=@id+1;
 
 INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'get');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid, @Systemmanager_eid , 'update');SET @id:=@id+1;
@@ -717,7 +698,6 @@ INSERT INTO `entityright` VALUES (@id, @KernelGroup_eid   ,@Hardwar_eid , 'getAt
 --
 
 INSERT INTO `entityright` VALUES (@id, @ClusterGroup_eid, @Visitor_eid, 'get');SET @id:=@id+1;
-INSERT INTO `entityright` VALUES (@id, @DistributionGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @SystemimageGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @HostmodelGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;
 INSERT INTO `entityright` VALUES (@id, @HostGroup_eid , @Visitor_eid, 'get');SET @id:=@id+1;

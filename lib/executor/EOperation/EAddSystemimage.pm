@@ -44,9 +44,9 @@ use Data::Dumper;
 
 use EFactory;
 use Kanopya::Exceptions;
-use Entity::Distribution;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Masterimage;
 use Entity::Systemimage;
 use EEntity::ESystemimage;
 use Entity::Gp;
@@ -89,14 +89,14 @@ sub prepare {
     $log->debug("get systemimage self->{_objs}->{systemimage} of type : " .
                 ref($self->{_objs}->{systemimage}));
 
-    # Get distribution from params
+    # Get master image from params
     eval {
-       $self->{_objs}->{distribution} = Entity::Distribution->get(id => $params->{distribution_id});
+       $self->{_objs}->{masterimage} = Entity::Masterimage->get(id => $params->{masterimage_id});
     };
     if($@) {
         my $err = $@;
         $errmsg = "EOperation::EAddSystemimage->prepare : wrong " .
-                  "distribution_id <$params->{distribution_id}>\n" . $err;
+                  "masterimage_id <$params->{masterimage_id}>\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -149,15 +149,15 @@ sub execute {
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
 
-    $esystemimage->create(dsrc_container  => $self->{_objs}->{distribution}->getDevice,
-                          edisk_manager   => $self->{_objs}->{edisk_manager},
-                          econtext        => $self->{executor}->{econtext},
-                          erollback       => $self->{erollback});
+    #~ $esystemimage->create(dsrc_container  => $self->{_objs}->{distribution}->getDevice,
+                          #~ edisk_manager   => $self->{_objs}->{edisk_manager},
+                          #~ econtext        => $self->{executor}->{econtext},
+                          #~ erollback       => $self->{erollback});
 
     my @group = Entity::Gp->getGroups(hash => { gp_name => 'SystemImage' });
     $group[0]->appendEntity(entity => $self->{_objs}->{systemimage});
 
-    my $components = $self->{_objs}->{distribution}->getProvidedComponents();
+    my $components = $self->{_objs}->{masterimage}->getProvidedComponents();
     foreach my $comp (@$components) {
         if($comp->{component_category} =~ /(System|Monitoragent|Logger)/) {
             $self->{_objs}->{systemimage}->installedComponentLinkCreation(

@@ -45,7 +45,6 @@ use XML::Simple;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
-use Entity::Distribution;
 use EFactory;
 
 my $log = get_logger("executor");
@@ -228,14 +227,6 @@ sub execute{
 #   TODO call component data sql (for specific data insertion)
 #   create new component and call init method on it
 
-
-    # update distribution provided components list
-    my @distributions = Entity::Distribution->getDistributions(hash => {});
-    $log->info ("Go through distribution list of size <".(scalar @distributions).">");
-    foreach my $distrib (@distributions) {
-        $log->info("Update component on distribution <".$distrib->getAttr(name=>"distribution_name").">");
-		$distrib->updateProvidedComponents();
-	}
 }        
 
 =head2 _registerComponentInDB
