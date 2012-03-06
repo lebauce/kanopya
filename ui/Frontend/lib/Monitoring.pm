@@ -435,7 +435,7 @@ get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
             title_page          => "Clustermetric Deletion Forbidden",
             combinationsUsingCM => \@combinationsUsingCM,
             clustermetric_id    => $clustermetric_id,
-            extclusterid        => $cluster_id,
+            cluster_id          => $cluster_id,
         }
     }
 };
@@ -547,6 +547,31 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/:combinationid/delet
     }
 };
 
+
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+
+    my @clustermetrics = Clustermetric->search(hash=>{'clustermetric_cluster_id' => (params->{extclusterid})});
+    my @clustermetrics_param;
+    foreach my $clustermetric (@clustermetrics){
+        my $hash = {
+            id           => $clustermetric->getAttr(name => 'clustermetric_id'),
+            label        => $clustermetric->toString(),
+        };
+            push @clustermetrics_param, $hash;
+    }
+
+    template 'clustermetric_combination_new', {
+        title_page     => "Clustermetric creation",
+        cluster_id     => param('extclusterid'),
+        clustermetrics => \@clustermetrics_param,
+        
+    };
+};
+
+
 post '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
     my $params = {
         aggregate_combination_formula => param('formula'),
@@ -554,16 +579,6 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
    my $cm = AggregateCombination->new(%$params);
    my $var = param('extclusterid');
    redirect("/architectures/extclusters/$var/clustermetrics/combinations");
-};
-
-get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
-    
-   my $cluster_id    = params->{extclusterid} || 0;
-   
-    template 'clustermetric_combination_new', {
-        title_page => "Clustermetric creation",
-        cluster_id => param('extclusterid'),
-    };
 };
 
 # -----------------------------------------------------------------------------#

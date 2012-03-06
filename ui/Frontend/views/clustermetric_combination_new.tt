@@ -21,4 +21,8 @@
     </div>
 </form>
 <br/>
-(TODO : INSERT LIST OF CLUSTER METRICS HERE!!!!!!!!!)
+Memo : <br/>
+<% FOREACH clustermetric IN clustermetrics %>
+id<%clustermetric.id%> : <%clustermetric.label%> <br/>
+<% END %>
+
