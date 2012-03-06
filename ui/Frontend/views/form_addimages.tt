@@ -8,11 +8,11 @@
 	<span style="color: red"><% ERR_SYSTEMIMAGE_NAME %></span></td>
 </tr>
 <tr>
-	<td class="label">from a distribution :<input type="radio" name="source" value="distribution" checked="checked" /></td>
+	<td class="label">from a master image :<input type="radio" name="source" value="masterimage" checked="checked" /></td>
 	<td>
-	<select id="duplicate" name="distribution_id">
-	<% FOREACH distribution IN distributions_list %>
-		<option value="<% distribution.id %>"><% distribution.name %></option>
+	<select id="duplicate" name="masterimage_id">
+	<% FOREACH masterimage IN masterimages_list %>
+		<option value="<% masterimage.id %>"><% masterimage.name %></option>
 	<% END %></td>	
 	</td>
 </tr>

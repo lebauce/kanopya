@@ -70,6 +70,8 @@ sub prepare {
     General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
+    my $masterimage_id = $params->{masterimage_id};
+    delete $params->{masterimage_id};
 
     $self->{_objs} = {};
     $self->{executor} = {};
@@ -91,7 +93,7 @@ sub prepare {
 
     # Get master image from params
     eval {
-       $self->{_objs}->{masterimage} = Entity::Masterimage->get(id => $params->{masterimage_id});
+       $self->{_objs}->{masterimage} = Entity::Masterimage->get(id => $masterimage_id);
     };
     if($@) {
         my $err = $@;

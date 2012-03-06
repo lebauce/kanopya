@@ -69,7 +69,7 @@ get '/images/add' => sub {
     template 'form_addimages', {
         title_page          => 'Systems - System images creation',
         systemimages_list   => $systemimage,
-        distributions_list  => $masterimgs
+        masterimages_list  => $masterimgs
     }, { layout => '' };
 };
 
