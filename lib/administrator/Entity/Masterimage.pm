@@ -108,12 +108,13 @@ sub getMasterimage {
 
 sub remove {
     my $self = shift;
+    my $id = $self->getAttr(name=> 'masterimage_id');
     
-    $log->debug("New Operation RemoveSystemimage with systemimage_id : <".$self->getAttr(name=>"systemimage_id").">");
+    $log->debug("New Operation RemoveMasterimage with masterimage_id : <".$id.">");
     Operation->enqueue(
         priority => 200,
-        type     => 'RemoveSystemimage',
-        params   => {systemimage_id => $self->getAttr(name=>"systemimage_id")},
+        type     => 'RemoveMasterimage',
+        params   => {masterimage_id => $id},
     );
 }
 

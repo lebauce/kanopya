@@ -98,5 +98,24 @@ post '/masterimages/upload' => sub {
     }
 };
 
+get '/masterimages/:masterimageid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $masterimage = Entity::Masterimage->get(id => params->{masterimageid});
+        $masterimage->remove();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+             redirect '/permission_denied';    
+        }
+        else { $exception->rethrow(); }
+    }
+    else {    
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'master image removing adding to execution queue'); 
+        redirect '/systems/masterimages';
+    } 
+};
 
 1;

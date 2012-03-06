@@ -337,7 +337,8 @@ INSERT INTO `operationtype` VALUES
 (37,'MigrateHost'),
 (38,'RemoveDisk'),
 (39,'RemoveExport'),
-(40,'DeployMasterimage');
+(40,'DeployMasterimage'),
+(41,'RemoveMasterimage');
 
 --
 -- components type list
