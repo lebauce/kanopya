@@ -89,7 +89,7 @@ activate</a><br />
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_updatenodes %>
-		<a class="imgAdding modal" href="/architectures/extclusters/<% cluster_id %>/nodes/update">update</a><br />
+		<a class="imgAdding clickable" onclick="catchError('/architectures/extclusters/<% cluster_id %>/nodes/update')">update</a><br />
 		<span class="desc">Update nodes list using linked DirectoryService.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -116,7 +116,7 @@ activate</a><br />
 <table id="Xmonitor" class="detailspart list">
 <tr>
 <td colspan="2">
-<a class="imgMonitor" href="/architectures/clusters/<% cluster_id %>/monitoring">activity</a>
+<a class="imgMonitor" href="/architectures/extclusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
 <a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a><bd/>
