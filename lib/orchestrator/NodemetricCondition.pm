@@ -58,15 +58,18 @@ sub evalOnOneNode{
                                            monitored_values_for_one_node => $monitored_values_for_one_node
                                        ); 
 
-    
-    my $evalString = $value.$comparator.$threshold;
-    
-    print $evalString."\n";
-    
-    if(eval $evalString){
-        return 1;
-    }else{
-        return 0;
+    if(not defined $value ){
+        return undef;
+    } else {
+        my $evalString = $value.$comparator.$threshold;
+        
+        print $evalString."\n";
+        
+        if(eval $evalString){
+            return 1;
+        }else{
+            return 0;
+        }
     }
 }
 1;

@@ -121,6 +121,8 @@ activate</a><br />
 <td class="actions">
 <a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a><bd/>
 <p class="italic">Cluster collect and graph settings.</p>
+<a class="action imgSettings" href="/architectures/extclusters/<% cluster_id %>/clustermetrics">Rules settings</a><bd/>
+<p class="italic">Manage cluster metrics and node metrics rules.</p>
 </td></tr>
 </table>
 

@@ -10,7 +10,7 @@
                 <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/tdisable">disable for 2 min</a></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/disable">disable</a></td>
-                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">edit</a></td>
                 </tr>
             <% END %>
         <% CASE 'tdisabled' %>
@@ -22,7 +22,7 @@
                 <td>Disabled for <% rule.time %> seconds</td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/enable">enable</a></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/disable">disable</a></td>
-                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">edit</a></td>
                 </tr>
             <% END %>
         <% CASE 'disabled' %>
@@ -34,7 +34,7 @@
                 <span class="bold">Rule <% rule.id %></span>
                 <span class="italic"> <% rule.formula %></span></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/enable">enable</a></td>
-                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">edit</a></td>
                 </tr>
             <% END %>
         <% END %>
@@ -43,22 +43,30 @@
 
 <div class="actions">
         <table>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/enabled">View enabled rules</a>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/disabled">View disabled rules</a>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/tdisabled">View temp. dis. rules</a>
+        </td></tr>
+        </table>
+<br/>
+<br/>
+        <table>
+        <tr><td>
+                    <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/new">Create new rule [not implemented]</a>
+        </td></tr>
+        </table>
+<br/>
+<br/>
+
+        <table>
                 <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics">View the clustermetrics</a>
-        </tr></td>
-        <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations">View the combinations</a>
-        </td></tr>
-        <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions">View the conditions</a>
         </td></tr>
-        <tr><td>
-            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules">View the rules</a>
-        </td></tr>
         </table>
-        
-		<table><tr><td><a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/enabled">View enabled rules</a></td></tr>
-		<tr><td><a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/disabled">View disabled rules</a></td></tr>
-        <tr><td><a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/tdisabled">View temp. dis. rules</a></td></tr>
-        </table>
+
+
+
 </div>             
