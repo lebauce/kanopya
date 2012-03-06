@@ -300,7 +300,20 @@
         // });     
    // } 
    // $('#testcall').click (test_ui);
+   testBar();
  });
+
+
+$(function() {
+	$( "#combination_start_time" ).datetimepicker({
+		dateFormat: 'yy-mm-dd'
+	});
+});
+ $(function() {
+	$( "#combination_end_time" ).datetimepicker({
+		dateFormat: 'yy-mm-dd'
+	});
+});
  
 var url = window.location.href;
 var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
@@ -310,24 +323,24 @@ var clusters_view = path  + '/clustersview';
 function showCombinationGraph(curobj,combi_id,start,stop){
 	if(combi_id == 'default'){return}
 	loading_start();
-	var params = {id:combi_id, start:start, stop:stop};
+	var params = {id:combi_id,start:start,stop:stop};
 	document.getElementById('timedCombinationView').innerHTML='';
 	 $.getJSON(clusters_view, params, function(data) {
 		if (data.error){alert (data.error);}
 		else{
 			document.getElementById('timedCombinationView').style.display='block';
-			timedGraph(data.first_histovalues);
+			timedGraph(data.first_histovalues,data.min,data.max,data.start,data.stop);
 		}
         loading_stop();
     });
 }
 
 function showMetricGraph(curobj,metric_oid,metric_unit){
-	if(metric_id == 'default'){return}
-    loading_start();
-    var params = {oid: metric_oid, unit: metric_unit};
-    document.getElementById('nodechart').innerHTML='';
-    $.getJSON(nodes_view, params, function(data) {
+	if(metric_oid == 'default'){return}
+	loading_start();
+	var params = {oid:metric_oid,unit:metric_unit};
+	document.getElementById('nodechart').innerHTML='';
+	$.getJSON(nodes_view, params, function(data) {
 		if (data.error){alert (data.error);}
 		else{
 			document.getElementById('nodechart').style.display='block';
@@ -338,25 +351,25 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 }
 
 function barGraph(values, nodelist, unit){
-	alert(values);
-	alert(nodelist);
-	alert(unit);
-    $.jqplot.config.enablePlugins = true;
-    plot1 = $.jqplot('nodechart', [values], {
+	// alert(values);
+	// alert(nodelist);
+	// alert(unit);
+	$.jqplot.config.enablePlugins = true;
+	plot1 = $.jqplot('nodechart', [values], {
+	title:'Indicator Distributed Graph',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
-            renderer:$.jqplot.BarRenderer,
-            pointLabels: { show: true }
+		renderer:$.jqplot.BarRenderer,
+		pointLabels: { show: true }
         },
         axes: {
-            xaxis: {
-                renderer: $.jqplot.CategoryAxisRenderer,
-                ticks: nodelist,
-            },
-			
-			yaxis: {
-				label: unit
-			}
+		xaxis: {
+			renderer: $.jqplot.CategoryAxisRenderer,
+			ticks: nodelist,
+		},			
+		yaxis: {
+			label: unit
+		}
         },
         highlighter: { show: false }
     });
@@ -368,17 +381,14 @@ function barGraph(values, nodelist, unit){
     );
 }
  
- function timedGraph(first_graph_line){
-     $.jqplot.config.enablePlugins = true;
-	 // alert('my line '+first_graph_line);
-	 // var line2 = [[1330705020,1], [1330705080,2], [1330705140,3], [1330705200,4], [1330705260,5], [1330705300,6], [1330705360,7]]
-     // var line1=[['2012-03-02 19:19',4], ['2012-03-02 16:17',7], ['2012-03-02 23:22',3]];
-	 // alert('jqplot line '+line1);
-      var plot1 = $.jqplot('timedCombinationView', [first_graph_line], {
+ function timedGraph(first_graph_line, min, max, start, stop){
+	$.jqplot.config.enablePlugins = true;
+	var line1=[['2012-02-03 16:10',4], ['2012-02-03 16:13',6.5], ['2012-02-03 16:22',5.7], ['2012-02-03 16:23',9], ['2012-02-03 16:27',8.2]];
+	var plot1 = $.jqplot('timedCombinationView', [first_graph_line], {
         title:'Combination Historical Graph',
         axes:{
             xaxis:{
-				// pad:0,
+		// pad:0,
                 renderer:$.jqplot.DateAxisRenderer,
                 rendererOptions: {
                     tickInset: 0
@@ -387,10 +397,39 @@ function barGraph(values, nodelist, unit){
                 tickOptions: {
                   angle: -30,
                   formatString: '%#m-%#d %H:%M'
-                }
-				// tickInterval: '1 min'
+                },
+		min: min,
+		max: max
+		// tickInterval: '10 hours'
             }      
         },
         series:[{lineWidth:4, markerOptions:{style:'square'}}]
     });
 }
+
+
+function testBar(){
+	var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'n16', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25','n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'n16', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'plusdetroiscaractere', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25'];
+	var s1 = [200, 600, 700, 1000, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900,200, 600, 700, 1000, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900 ];
+	$.jqplot.config.enablePlugins = true;
+	plot1 = $.jqplot('testchart', [s1], {
+	title:'Indicator Distributed Graph',
+        animate: !$.jqplot.use_excanvas,
+        seriesDefaults:{
+		renderer:$.jqplot.BarRenderer,
+		pointLabels: { show: true }
+        },
+        axes: {
+		xaxis: {
+			renderer: $.jqplot.CategoryAxisRenderer,
+			ticks: ticks,
+			tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+			tickOptions: {
+				angle: -80,
+			}
+		}
+        },
+        highlighter: { show: false }
+    });
+}
+ 
