@@ -161,6 +161,7 @@ sub _evalRule {
     my $monitored_values = $args{monitored_values};
     my $rule             = $args{rule};
     
+    #Eval the rule for each node
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
         # Warning, not all the monitored values are required but we transmit 
         # all of them

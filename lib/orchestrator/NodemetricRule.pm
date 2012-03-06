@@ -90,6 +90,10 @@ sub evalOnOneNode{
                                           ->evalOnOneNode(
                                             'monitored_values_for_one_node' => $monitored_values_for_one_node
                                           );
+            if(not defined $element){
+                return undef;
+            }
+           
         }
     }
     my $res = undef;
