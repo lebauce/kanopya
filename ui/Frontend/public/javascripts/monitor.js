@@ -351,26 +351,25 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 }
 
 function barGraph(values, nodelist, unit){
-	// alert(values);
-	// alert(nodelist);
-	// alert(unit);
 	$.jqplot.config.enablePlugins = true;
 	plot1 = $.jqplot('nodechart', [values], {
-	title:'Indicator Distributed Graph',
+	title:'Indicator Distributed Graph (in '+unit+' )',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
 		renderer:$.jqplot.BarRenderer,
 		pointLabels: { show: true }
         },
         axes: {
-		xaxis: {
-			renderer: $.jqplot.CategoryAxisRenderer,
-			ticks: nodelist,
-		},			
-		yaxis: {
-			label: unit
-		}
+            xaxis: {
+                renderer: $.jqplot.CategoryAxisRenderer,
+                ticks: nodelist,
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                tickOptions: {
+                    angle: -60,
+                }
+            }
         },
+        seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { show: false }
     });
  
@@ -388,14 +387,13 @@ function barGraph(values, nodelist, unit){
         title:'Combination Historical Graph',
         axes:{
             xaxis:{
-		// pad:0,
                 renderer:$.jqplot.DateAxisRenderer,
                 rendererOptions: {
                     tickInset: 0
                 },
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
-                  angle: -30,
+                  angle: -60,
                   formatString: '%#m-%#d %H:%M'
                 },
 		min: min,
@@ -409,26 +407,28 @@ function barGraph(values, nodelist, unit){
 
 
 function testBar(){
-	var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'n16', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25','n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'n16', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'plusdetroiscaractere', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25'];
-	var s1 = [200, 600, 700, 1000, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900,200, 600, 700, 1000, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900 ];
+	var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25','n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'n16', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'plusdetroiscaractere', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25'];
+	var s1 = [ 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900,200, 600, 700, 1000, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900 ];
 	$.jqplot.config.enablePlugins = true;
 	plot1 = $.jqplot('testchart', [s1], {
 	title:'Indicator Distributed Graph',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
 		renderer:$.jqplot.BarRenderer,
+        rendererOptions:{ varyBarColor : true },
 		pointLabels: { show: true }
         },
         axes: {
-		xaxis: {
-			renderer: $.jqplot.CategoryAxisRenderer,
-			ticks: ticks,
-			tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-			tickOptions: {
-				angle: -80,
-			}
-		}
+            xaxis: {
+                renderer: $.jqplot.CategoryAxisRenderer,
+                ticks: ticks,
+                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
+                tickOptions: {
+                    angle: -80,
+                }
+            }
         },
+        seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { show: false }
     });
 }
