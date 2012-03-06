@@ -161,13 +161,15 @@ sub _evalRule {
     my $monitored_values = $args{monitored_values};
     my $rule             = $args{rule};
     
-    for my $monitored_values_for_one_node (values %$monitored_values){
+    while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
         # Warning, not all the monitored values are required but we transmit 
         # all of them
         
-        $rule->evalOnOneNode(
+        my $rep = $rule->evalOnOneNode(
             monitored_values_for_one_node => $monitored_values_for_one_node
         );
+        
+        print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$rep."\n";
     }
 }
 # Construct hash table for the service provider.
