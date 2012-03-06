@@ -16,7 +16,7 @@ package NodemetricRule;
 use strict;
 use warnings;
 use base 'BaseDB';
-
+use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -71,37 +71,45 @@ sub getDependantConditionIds {
     return @conditionIds;
 }
 
-
-sub eval {
+sub evalOnOneNode{
     my $self = shift;
+    my %args = @_;
     
-    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+    my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
     
-    #Split nodemetric_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        
-        if( $element =~ m/id(\d+)/)
-        {
-            $element = NodemetricCondition->get('id'=>substr($element,2))->eval();
-        }
-     }
-     
-    my $res = -1;
-    my $arrayString = '$res = '."@array"; 
-    
-    #Evaluate the logic formula
-    eval $arrayString;
-    my $store = ($res)?1:0;
+    print Dumper $monitored_values_for_one_node;
+};
 
-    #print "Evaluated Rule : $arrayString => $store ($res)\n";
-    #$log->info("Evaluated Rule : $arrayString => $store ($res)");
-     
-    $self->setAttr(name => 'nodemetric_rule_last_eval',value=>$store);
-    $self->setAttr(name => 'nodemetric_rule_timestamp',value=>time());
-    $self->save();
-    return $res;
-}
+#sub eval {
+#    my $self = shift;
+#    
+#    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+#    
+#    #Split nodemetric_rule id from $formula
+#    my @array = split(/(id\d+)/,$formula);
+#    
+#    #replace each rule id by its evaluation
+#    for my $element (@array) {
+#        
+#        if( $element =~ m/id(\d+)/)
+#        {
+#            $element = NodemetricCondition->get('id'=>substr($element,2))->eval();
+#        }
+#     }
+#     
+#    my $res = -1;
+#    my $arrayString = '$res = '."@array"; 
+#    
+#    #Evaluate the logic formula
+#    eval $arrayString;
+#    my $store = ($res)?1:0;
+#
+#    #print "Evaluated Rule : $arrayString => $store ($res)\n";
+#    #$log->info("Evaluated Rule : $arrayString => $store ($res)");
+#     
+#    $self->setAttr(name => 'nodemetric_rule_last_eval',value=>$store);
+#    $self->setAttr(name => 'nodemetric_rule_timestamp',value=>time());
+#    $self->save();
+#    return $res;
+#}
 1;

@@ -121,18 +121,55 @@ sub nodemetricManagement{
         my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
         print '***'.$cluster_id.'***'."\n";
         
-        my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
+        my @rules = NodemetricRule->search(
+                hash => {
+                    nodemetric_rule_service_provider_id => $cluster_id
+                }
+        );
+        my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
 
         # Call the retriever to get SCOM data
         my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
         print Dumper $monitored_values; 
-
+        
+        # Eval the rules
+        $self->_evalAllRules(
+            'monitored_values' => $monitored_values,
+            'rules'            => \@rules,
+        );
     }
-    
-
 }
 
+sub _evalAllRules {
+   my $self = shift;
+   my %args = @_;
+   
+   my $monitored_values = $args{monitored_values};
+   my $rules            = $args{rules};
+   foreach my $rule (@$rules){
+       _evalRule(
+           'rule'             =>$rule,
+            $monitored_values => $monitored_values,
+       );
+   }
+}
 
+sub _evalRule {
+    my $self = shift;
+    my %args = @_;
+
+    my $monitored_values = $args{monitored_values};
+    my $rule             = $args{rule};
+    
+    for my $monitored_values_for_one_node (values %$monitored_values){
+        # Warning, not all the monitored values are required but we transmit 
+        # all of them
+        
+        $rule->evalOnOneNode(
+            monitored_values_for_one_node => $monitored_values_for_one_node
+        );
+    }
+}
 # Construct hash table for the service provider.
 # Inspired by eponyme aggregator method 
 
@@ -140,18 +177,15 @@ sub _contructRetrieverOutput {
     my $self = shift;
     my %args = @_;
     
-    my $cluster_id                 = $args{cluster_id};
+    #my $cluster_id                 = $args{cluster_id};
+    my $rules = $args{rules};
     my $indicators_name = undef;
     
     #Get all the rules relative to the cluster_id 
-    my @rules = NodemetricRule->search(
-        hash => {
-            nodemetric_rule_service_provider_id => $cluster_id
-        }
-    );
+
 
     
-    for my $rule (@rules){
+    for my $rule (@$rules){
         my @conditions = $rule->getDependantConditionIds();
         #Check each conditions (i.e. each Combination
         for my $condition_id (@conditions) {
