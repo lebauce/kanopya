@@ -21,6 +21,7 @@
                 <span class="bold">Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
                 <td>Disabled for <% rule.time %> seconds</td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/enable">enable</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/disable">disable</a></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
             <% END %>
