@@ -1,9 +1,11 @@
+// components.js also manage connectors configuration
+
 $(document).ready(function(){
-    var regexp1 = /\/systems\/components\/\d+\/configure/g;
-    var regexp2 = /\d+/;
-    var instanceid = regexp2.exec(regexp1.exec(window.location.href));
-  	var save_component_conf_link = '/systems/components/' + instanceid + '/saveconfig';
-  	var redirect_link = "/architectures/clusters";// + instanceid;
+    //var regexp1 = /\/systems\/components\/\d+\/configure/g;
+    //var regexp2 = /\d+/;
+    //var instanceid = regexp2.exec(regexp1.exec(window.location.href));
+  	//var save_component_conf_link = '/systems/components/' + instanceid + '/saveconfig';
+  	//var redirect_link = "/architectures/clusters";// + instanceid;
   
   	// Given a jQuery object as root, build the conf struct
   	function buildConf ( root ) {
@@ -34,10 +36,28 @@ $(document).ready(function(){
 	function save () {
 		var conf = buildConf( $('.elem_root') );
         var params = { conf : JSON.stringify(conf) };
+
+        // Manage links depending of entity Components or Connectors
+        // TODO better management / unhardcode: currently target is extcluster for connector and cluster for component
+        var instanceid;        
+        var route;
+        var target;        
+        if (conf['connector_id'] != undefined) {
+            instanceid = conf['connector_id'];
+            route = 'connectors';
+            target = 'extclusters'
+        } else {
+            instanceid = conf['component_id'];
+            route = 'components';
+            target = 'clusters';
+        }
+        var save_component_conf_link = '/systems/' + route + '/' + instanceid + '/saveconfig';
+        var redirect_link            = '/architectures/' + target + '/' + conf['cluster_id'];
+
 		$.get(save_component_conf_link, params, function(resp) {
 			//loading_stop();
 			alert(resp);
-			window.location= redirect_link + "/" + conf['cluster_id'];
+			window.location= redirect_link;
 		});
 		
 	}
