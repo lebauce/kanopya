@@ -61,7 +61,7 @@ sub computeValueFromMonitoredValues {
 
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
 
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
@@ -72,8 +72,9 @@ sub computeValueFromMonitoredValues {
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             my $indicator_id  = substr($element,2);
-            my $indicator_oid = Indicator->get('id' => $indicator_id)->getAttr(name => 'oid');
-            my $element       = $monitored_values_for_one_node->{$indicator_oid};
+            my $indicator_oid = Indicator->get('id' => $indicator_id)->getAttr(name => 'indicator_oid');
+            # Replace $element by its value
+            $element       = $monitored_values_for_one_node->{$indicator_oid};
         }
      }
      

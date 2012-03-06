@@ -95,6 +95,7 @@ sub evalOnOneNode{
     my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
+    print $arrayString;
     #Evaluate the logic formula
     eval $arrayString;
     my $store = ($res)?1:0;
