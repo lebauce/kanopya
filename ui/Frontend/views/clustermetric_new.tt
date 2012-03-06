@@ -44,4 +44,6 @@
     <div class="left">
         <input type="submit" value="Create metric"/>
     </div>
+    Warning : creating a new clustermetric will automatically create the associated combination 
+    
 </form>

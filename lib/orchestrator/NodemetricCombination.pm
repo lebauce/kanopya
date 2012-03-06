@@ -75,6 +75,9 @@ sub computeValueFromMonitoredValues {
             my $indicator_oid = Indicator->get('id' => $indicator_id)->getAttr(name => 'indicator_oid');
             # Replace $element by its value
             $element       = $monitored_values_for_one_node->{$indicator_oid};
+            if(not defined $element){
+                return undef;
+            }
         }
      }
      
