@@ -327,7 +327,6 @@ CREATE TABLE `host` (
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
   `host_hostname` char(32) DEFAULT NULL,
-  `etc_container_id` int(8) unsigned DEFAULT NULL,
   `host_state` char(32) NOT NULL DEFAULT 'down',
   `host_prev_state` char(32),
   PRIMARY KEY (`host_id`),
@@ -341,8 +340,6 @@ CREATE TABLE `host` (
   FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`kernel_id`),
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`etc_container_id`),
-  FOREIGN KEY (`etc_container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
   KEY (`host_powersupply_id`),
   FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`host_ipv4_internal_id`),
@@ -420,14 +417,11 @@ CREATE TABLE `distribution` (
   `distribution_name` char(64) NOT NULL,
   `distribution_version` char(32) NOT NULL,
   `distribution_desc` char(255) DEFAULT NULL,
-  `etc_container_id` int(8) unsigned DEFAULT NULL,
-  `root_container_id` int(8) unsigned DEFAULT NULL,
+  `container_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`distribution_id`),
   FOREIGN KEY (`distribution_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`etc_container_id`),
-  FOREIGN KEY (`etc_container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`root_container_id`),
-  FOREIGN KEY (`root_container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY (`container_id`),
+  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -542,18 +536,15 @@ CREATE TABLE `systemimage` (
   `systemimage_desc` char(255) DEFAULT NULL,
   `systemimage_dedicated` int(1) unsigned NOT NULL DEFAULT 0,
   `distribution_id` int(8) unsigned NOT NULL,
-  `etc_container_id` int(8) unsigned DEFAULT NULL,
-  `root_container_id` int(8) unsigned DEFAULT NULL,
+  `container_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`systemimage_name`),
   KEY (`distribution_id`),
   FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`etc_container_id`),
-  FOREIGN KEY (`etc_container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  KEY (`root_container_id`),
-  FOREIGN KEY (`root_container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  KEY (`container_id`),
+  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -108,7 +108,7 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 distribution_etc_containers
+=head2 distributions
 
 Type: has_many
 
@@ -117,39 +117,24 @@ Related object: L<AdministratorDB::Schema::Result::Distribution>
 =cut
 
 __PACKAGE__->has_many(
-  "distribution_etc_containers",
+  "distributions",
   "AdministratorDB::Schema::Result::Distribution",
-  { "foreign.etc_container_id" => "self.container_id" },
+  { "foreign.container_id" => "self.container_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 distribution_root_containers
+=head2 file_container
 
-Type: has_many
+Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Distribution>
-
-=cut
-
-__PACKAGE__->has_many(
-  "distribution_root_containers",
-  "AdministratorDB::Schema::Result::Distribution",
-  { "foreign.root_container_id" => "self.container_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 hosts
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Host>
+Related object: L<AdministratorDB::Schema::Result::FileContainer>
 
 =cut
 
-__PACKAGE__->has_many(
-  "hosts",
-  "AdministratorDB::Schema::Result::Host",
-  { "foreign.etc_container_id" => "self.container_id" },
+__PACKAGE__->might_have(
+  "file_container",
+  "AdministratorDB::Schema::Result::FileContainer",
+  { "foreign.file_container_id" => "self.container_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -168,7 +153,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 systemimage_etc_containers
+=head2 systemimages
 
 Type: has_many
 
@@ -177,30 +162,15 @@ Related object: L<AdministratorDB::Schema::Result::Systemimage>
 =cut
 
 __PACKAGE__->has_many(
-  "systemimage_etc_containers",
+  "systemimages",
   "AdministratorDB::Schema::Result::Systemimage",
-  { "foreign.etc_container_id" => "self.container_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 systemimage_root_containers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimage_root_containers",
-  "AdministratorDB::Schema::Result::Systemimage",
-  { "foreign.root_container_id" => "self.container_id" },
+  { "foreign.container_id" => "self.container_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-16 23:52:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NiYpacHUofFVeyByMFGrYg
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-06 11:12:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UwFhMOzABsZ9/yx9xbW/sg
 
 __PACKAGE__->belongs_to(
   "parent",
