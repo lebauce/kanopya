@@ -195,12 +195,6 @@ sub fetchTimeDataStore {
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
     
-    # while (my ($timestamp, $value) = each %values){
-        # if ($values{$timestamp} eq '-1.#IND000000e+000'){
-            # delete $values{$timestamp};
-        # }
-    # }	
-         
     $log->debug(Dumper(\%values));
     return %values;   
 }
@@ -221,13 +215,14 @@ sub updateTimeDataStore {
 
     my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
     $log->debug($cmd);
+    print $cmd."\n";
 
     my $exec =`$cmd 2>&1`;
-    #print $exec."\n";
+    print $exec."\n";
     $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/){
-        throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+        throw Kanopya::Exception::Internal(error => 'RRD update failed: '.$exec);
     }	
 }
 
@@ -244,7 +239,7 @@ sub getLastUpdatedValue{
     #print $exec."\n";
 
     if ($exec =~ m/^ERROR.*/){
-        throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
+        throw Kanopya::Exception::Internal(error => 'RRD fetch failed for last updated value: '.$exec);
     }	  
     
     #clean the string of unwanted ":"
