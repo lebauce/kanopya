@@ -48,6 +48,21 @@ sub evalOnOneNode{
     
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
     
-    print Dumper $$monitored_values_for_one_node;
+    my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
+    my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
+    my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
+
+    my $combination    = RuleCombination->get('id' => $combination_id);
+    my $value          = $combination->computeLastValue(
+                                           monitored_values_for_one_node => $monitored_values_for_one_node
+                                       ); 
+
+    my $evalString = $value.$comparator.$threshold;
+
+    if(eval $evalString){
+        return 1;
+    }else{
+        return 0;
+    }
 }
 1;

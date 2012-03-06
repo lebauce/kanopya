@@ -98,7 +98,6 @@ sub evalOnOneNode{
     #Evaluate the logic formula
     eval $arrayString;
     my $store = ($res)?1:0;
-    $self->save();
     return $res;
 };
 
