@@ -54,8 +54,6 @@ host_hostname : Hostname is also internally managed. Host hostname will be gener
 It is generated when a host is added into a cluster
 host_initiatorname : This attributes is generated when a host is added in a cluster and allow to connect
 to internal storage to get the systemimage
-etc_device_id : Int : This parameter corresponding to lv storage and iscsitarget generated
-when a host is configured to be migrated into a cluster
 host_state : String : This parameter is internally managed, it allows to follow migration step.
 It could be :
 - WaitingStart
@@ -145,11 +143,6 @@ use constant ATTR_DEF => {
     },
     host_initiatorname => {
         pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
-    etc_device_id => {
-        pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
     },
@@ -637,13 +630,6 @@ sub toString {
     return $string;
 }
 
-sub getEtcName {
-    my $self = shift;
-    my $mac = $self->getAttr(name => "host_mac_address");
-    $mac =~ s/\:/\_/mg;
-    return "etc_". $mac;
-}
-
 =head2 getMacName
 
 return Mac address with separator : replaced by _
@@ -655,28 +641,6 @@ sub getMacName {
     my $mac = $self->getAttr(name => "host_mac_address");
     $mac =~ s/\:/\_/mg;
     return $mac;
-}
-
-=head2 getEtcContainerAccess
-
-get etc attributes used by this host
-
-=cut
-
-sub getEtcContainerAccess {
-    my $self = shift;
-    if (!$self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Host->getEtcContainerAccess must be called on an already save instance";
-        $log->error($errmsg);
-        throw Kanopya::Exception(error => $errmsg);
-    }
-
-    # TODO: Link the host to a ContainerAccess instead of a Container
-    #       For now, we just return the first ContainerAccess for this container
-    $log->info("Retrieve etc container access");
-    my $etc_accesses = Entity::Container->get(id => $self->{_dbix}->etc_container_id)->getAccesses;
-
-    return pop @$etc_accesses;
 }
 
 sub getInternalIP {
