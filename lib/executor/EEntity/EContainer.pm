@@ -99,8 +99,8 @@ sub copy {
 
     # Copy contents with container accesses specific protocols
     $source_access->copy(dest => $dest_access,
-                          econtext  => $args{econtext},
-                          erollback => $args{erollback});
+                         econtext  => $args{econtext},
+                         erollback => $args{erollback});
 
     # Remove temporary exports
     $source_manager->removeExport(container_access => $source_access->_getEntity,

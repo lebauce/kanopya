@@ -1,6 +1,7 @@
 # EAddSystemimage.pm - Operation class implementing System image creation operation
 
-#    Copyright 2011 Hedera Technology SAS
+#    Copyright 2010-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +16,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -67,12 +67,12 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    $self->{_objs} = {};
-    $self->{executor} = {};
-
     General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
+
+    $self->{_objs} = {};
+    $self->{executor} = {};
 
     # Create new systemimage instance
     $log->info("Create new systemimage instance");
@@ -149,7 +149,7 @@ sub execute {
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
 
-    $esystemimage->create(devs            => $self->{_objs}->{distribution}->getDevices(),
+    $esystemimage->create(dsrc_container  => $self->{_objs}->{distribution}->getDevice,
                           edisk_manager   => $self->{_objs}->{edisk_manager},
                           econtext        => $self->{executor}->{econtext},
                           erollback       => $self->{erollback});
@@ -207,7 +207,7 @@ Patches are welcome.
 
 =head1 LICENCE AND COPYRIGHT
 
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+Kanopya Copyright (C) 2010-2012 Hedera Technology.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -141,9 +141,9 @@ sub prepare {
     # Get instances of container accesses from systemimages root container
     $log->info("Load root container accesses");
     eval {
-         $log->info("Load root container accesses dans eval");
+        $log->info("Load container accesses within eval");
         my @access_hashs = ();
-        for my $container_access (@{ $self->{_objs}->{systemimage}->getDevices()->{root}->getAccesses }) {
+        for my $container_access (@{ $self->{_objs}->{systemimage}->getDevice->getAccesses }) {
             my $eexport_manager = EFactory::newEEntity(data => $container_access->getExportManager);
             push @access_hashs, { container_access => $container_access,
                                   eexport_manager  => $eexport_manager };
