@@ -66,9 +66,9 @@ activate</a><br />
 	<% FOREACH conn IN connectors_list %>
 		<tr><td class="label2"><span class="bold"><% conn.connector_name %></span> - <% conn.connector_category %></td>
 		<% IF can_configure %>
-		<td class="action"><% IF conn.link_configureconnectors %><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a> <% END %>
+		<td class="action"><% IF conn.link_configureconnector %><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a> <% END %>
 		<% END %>
-		<% IF conn.link_remove %><a class="imgRemove" href="/architectures/clusters/<% conn.cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
+		<% IF conn.link_remove %><a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
 	</td></tr>
 	<% END %>
 <% ELSE %>

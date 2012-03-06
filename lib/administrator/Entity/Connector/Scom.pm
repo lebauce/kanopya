@@ -29,7 +29,7 @@ use List::Util 'sum';
 use constant ATTR_DEF => {
         scom_ms_name => {
                     pattern        => '.*',
-                    is_mandatory   => 1,
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
                  },

@@ -531,8 +531,15 @@ get '/extclusters/:clusterid' => sub {
     }
     
     # Connectors
-    my @connectors = map { $_->getConnectorType() } $extcluster->getConnectors();
-    
+    my @connectors = map { 
+        {
+            'connector_id'              => $_->getAttr(name => 'connector_id'),
+            'link_configureconnector'   => 1,
+            'link_remove'               => 1,
+            %{$_->getConnectorType()},
+        }
+    } $extcluster->getConnectors();
+
     template 'extclusters_details', {
         title_page          => "External Clusters - Cluster's overview",
         active              => 1,
@@ -543,6 +550,7 @@ get '/extclusters/:clusterid' => sub {
         connectors_list     => \@connectors,
         link_updatenodes    => 1,
         link_addconnector   => 1,
+        can_configure       => 1,
     };
 };
 
@@ -763,6 +771,46 @@ get '/extclusters/:clusterid/connectors/add' => sub {
     }, { layout => '' };
 };
 
+post '/extclusters/:clusterid/connectors/add' => sub {
+    my $adm = Administrator->new;
+    my $connector_id;
+    eval {
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+        $connector_id = $cluster->addConnectorFromType(connector_type_id => param('connector_type_id'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'Connector added sucessfully');
+        redirect("/systems/connectors/$connector_id/configure");
+    }
+};
+
+get '/extclusters/:clusterid/connectors/:instanceid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+        $cluster->removeConnector(connector_id => param('instanceid'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'Connector removed sucessfully');
+        redirect("/architectures/extclusters/".param('clusterid'));
+    }
+};
 
 get '/clusters/:clusterid/ips/public/add' => sub {
     my $adm = Administrator->new;

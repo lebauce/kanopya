@@ -24,6 +24,7 @@ use Permissions;
 use Messager;
 use Vlans;
 use Poolip;
+use Connectors;
 use Log::Log4perl;
 
 our $VERSION = '0.1';

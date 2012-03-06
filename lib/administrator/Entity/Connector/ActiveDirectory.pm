@@ -31,21 +31,22 @@ my $log = get_logger("administrator");
 
 use constant ATTR_DEF => {
     ad_host => {    pattern        => '.*',
-                    is_mandatory   => 1,
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
                  },
     ad_user => {    pattern        => '.*',
-                    is_mandatory   => 1,
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
              },
-    ad_pwd => {    pattern        => '.*',
-                    is_mandatory   => 1,
+    ad_pwd => {     pattern        => '.*',
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
              },
-    ad_nodes_base_dn => {    pattern        => '.*',
+    ad_nodes_base_dn => {
+                    pattern        => '.*',
                     is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
