@@ -644,7 +644,7 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => 
     if(defined param('rule')){
        my $params_rule = {
             aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-            aggregate_rule_state     => 'enabled',
+            aggregate_rule_state     => 'disabled',
             aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         };
         my $aggregate_rule = AggregateRule->new(%$params_rule);
