@@ -847,7 +847,7 @@ sub _getCombinations(){
 			push @combinations, \%combination;
 		}
 	$template_config->{'combinations'} = \@combinations;
-	$log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper(\$template_config->{'combinations'}));
+	$log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
 	return %$template_config;
 	}
 }
