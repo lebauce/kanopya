@@ -1,6 +1,8 @@
 USE `administrator`;
 SET foreign_key_checks=1;
-SET @eid := 2;
+SET @admin_cluster := 1;
+SET @physical_hoster := 2;
+SET @eid := 3;
 
 --
 -- permanents data
@@ -16,7 +18,7 @@ INSERT INTO `class_type` VALUES
 (1, 'Entity::Distribution'),
 (2, 'Entity::Gp'),
 (3, 'Entity::Host'),
-(4, 'Entity::HostModel'),
+(4, 'Entity::Hostmodel'),
 (5, 'Entity::Infrastructure'),
 (6, 'Entity::Kernel'),
 (7, 'Entity::Powersupplycard'),
@@ -60,9 +62,15 @@ INSERT INTO `class_type` VALUES
 (45, 'AggregateCombination'),
 (46, 'AggregateCondition'),
 (47, 'AggregateRule'),
-(48, 'NodemetricCombination'),
-(49, 'NodemetricCondition'),
-(50, 'NodemetricRule');
+(48, 'Entity::Component::Physicalhoster0'),
+(49, 'Entity::Poolip'),
+(50, 'Entity::Vlan'),
+(51, 'Entity::Masterimage'),
+(52, 'Entity::Connector::UcsManager'),
+(53, 'Entity::Component::Fileimagemanager0'),
+(54, 'NodemetricCombination'),
+(55, 'NodemetricCondition'),
+(56, 'NodemetricRule');
 
 --
 -- system groups
@@ -110,6 +118,10 @@ SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2); SET @PowersupplycardGroup_eid = @eid;
 INSERT INTO `gp` VALUES(@eid,'Powersupplycard','Powersupplycard','Powersupplycard master group  containing all power supply cards',1);
+SET @eid := @eid +1;
+
+INSERT INTO `entity` VALUES (@eid, 2);
+INSERT INTO `gp` VALUES(@eid,'Masterimage','Masterimage','Masterimage master group containing all master images',1);
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 2);
@@ -275,7 +287,7 @@ INSERT INTO `hostmodel` VALUES (@eid,'Gigabyte','GA-D510UD','INTEL NM10',1,26,1,
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 4);
-INSERT INTO `hostmodel` VALUES (7,'Intel','D510MO','INTEL NM10',1,21,1,2,4,@atomD510);
+INSERT INTO `hostmodel` VALUES (@eid,'Intel','D510MO','INTEL NM10',1,21,1,2,4,@atomD510);
 SET @eid := @eid +1;
 
 INSERT INTO `entity` VALUES (@eid, 4);
@@ -330,7 +342,9 @@ INSERT INTO `operationtype` VALUES
 (36,'AddVirtualHost'),
 (37,'MigrateHost'),
 (38,'RemoveDisk'),
-(39,'RemoveExport');
+(39,'RemoveExport'),
+(40,'DeployMasterimage'),
+(41,'RemoveMasterimage');
 
 --
 -- components type list
@@ -350,7 +364,9 @@ INSERT INTO `component_type` VALUES
 (11,'Syslogng','3','Logger'),
 (12,'Iptables','1','Firewall'),
 (13,'Openldap','1','Annuary'),
-(14,'Opennebula','3','Cloudmanager');
+(14,'Opennebula','3','Cloudmanager'),
+(15,'Physicalhoster','0','Cloudmanager'),
+(16,'Fileimagemanager','0','Storage');
 
 --
 -- connectors type list
@@ -358,7 +374,8 @@ INSERT INTO `component_type` VALUES
 
 INSERT INTO `connector_type` VALUES
 (1,'ActiveDirectory','1','DirectoryService'),
-(2,'Scom','1','MonitoringService');
+(2,'Scom','1','MonitoringService'),
+(3,'UcsManager','1','HostManager');
 
 --
 -- kernels
@@ -373,15 +390,10 @@ SET @eid := @eid +1;
 -- admin cluster
 --
 
-INSERT INTO `entity` VALUES (1, 13);
-INSERT INTO `service_provider` VALUES (1);
-INSERT INTO `inside` VALUES (1);
-INSERT INTO `cluster` VALUES (1,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_',@adminuserid);
-SET @admin_cluster := 1;
-SET @eid := @eid +1;
-
-
-
+INSERT INTO `entity` VALUES (@admin_cluster, 13);
+INSERT INTO `service_provider` VALUES (@admin_cluster);
+INSERT INTO `inside` VALUES (@admin_cluster);
+INSERT INTO `cluster` VALUES (@admin_cluster,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_',@adminuserid, @physical_hoster);
 
 --
 -- internal ip for admin node
@@ -394,7 +406,7 @@ INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal
 --
 
 INSERT INTO `entity` VALUES (@eid, 3);
-INSERT INTO `host` VALUES (@eid,NULL,NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','4294967296', '4','node001',NULL,NULL, 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (@eid, @admin_cluster, @physical_hoster, NULL, NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 
@@ -500,6 +512,32 @@ SET @eid := @eid +1;
 INSERT INTO `entity` VALUES (@eid, 38);
 INSERT INTO `component` VALUES(@eid,@admin_cluster,11,NULL,NULL);
 INSERT INTO `syslogng3` VALUES(@eid);
+SET @eid := @eid +1;
+
+--
+-- Openiscsi
+--
+
+INSERT INTO `entity` VALUES (@eid, 31);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 4, NULL, NULL);
+INSERT INTO `openiscsi2` VALUES(@eid);
+SET @eid := @eid +1;
+
+--
+-- Physicalhoster
+--
+
+INSERT INTO `entity` VALUES (@physical_hoster, 48);
+INSERT INTO `component` VALUES(@physical_hoster, @admin_cluster, 15, NULL, NULL);
+INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
+
+--
+-- Fileimagemanager
+--
+
+INSERT INTO `entity` VALUES (@eid, 53);
+INSERT INTO `component` VALUES(@eid, @admin_cluster, 16, NULL, NULL);
+INSERT INTO `fileimagemanager0` VALUES(@eid);
 SET @eid := @eid +1;
 
 --

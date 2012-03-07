@@ -11,6 +11,8 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/Cluster.t.log', layout=>'%
 use_ok ('Administrator');
 use_ok ('Executor');
 use_ok('Entity::ServiceProvider::Inside::Cluster');
+use_ok('Entity::User');
+
 
 eval {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -19,11 +21,37 @@ eval {
     
     my @args = ();
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
-    
+
+    $db->txn_begin;
+
+    my $kanopya_cluster;
+    my $physical_hoster;
+    lives_ok {
+		$kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                               hash => {
+                                   cluster_name => 'adm'
+                               }
+                           );
+        $physical_hoster = $kanopya_cluster->getDefaultManager(category => 'HostManager');
+     } 'Retrieve the admin cluster';
+
+    isa_ok ($kanopya_cluster, 'Entity::ServiceProvider::Inside::Cluster');
+    isa_ok ($physical_hoster, 'Entity::Component::Physicalhoster0');
+
+	$db->txn_rollback;
+
+    $db->txn_begin;
+
+    my $admin_user;
+    lives_ok {
+		$admin_user = Entity::User->find(hash => { user_login => 'admin' });
+     } 'Retrieve the admin user';
+	$db->txn_rollback;
+
     $db->txn_begin;  
     throws_ok {
 		Entity::ServiceProvider::Inside::Cluster->create(
-			cluster_name => 'foo/bar',
+			cluster_name     => 'foo/bar',
 			cluster_min_node => '1',
 			cluster_max_node => '2',
 			cluster_priority => '100',
@@ -44,14 +72,15 @@ eval {
 			cluster_si_location    => 'diskless',
 			cluster_domainname     => 'my.domain',
 			cluster_nameserver     => '127.0.0.1',
-			cluster_basehostname   =>'test_',
+			cluster_basehostname   => 'test_',
 			cluster_si_shared      => '1',
 			systemimage_id         => "1"
 		); 
 	} 'Kanopya::Exception::Internal::IncorrectParam',
 	  'missing mandatory attribute';
 	$db->txn_rollback; 	
-       
+
+    $db->txn_begin; 
 	lives_ok {
 		Entity::ServiceProvider::Inside::Cluster->create(
 			cluster_name           => "foobar",
@@ -64,15 +93,18 @@ eval {
 			cluster_nameserver     => '127.0.0.1',
 			cluster_basehostname   =>'test_',
 			cluster_si_shared      => '1',
-			systemimage_id         => "1"
-		); 
+            user_id                => $admin_user->getAttr(name => 'user_id'),
+            host_manager_id        => $physical_hoster->getAttr(name => 'component_id')
+		);
 	} 'AddCluster operation enqueue';
 
-    lives_ok { $executor->execnround(run => 1); } 'AddCluster operation execution succeed';
+    lives_ok { $executor->oneRun; } 'AddCluster operation execution succeed';
 
-	my ($cluster, $cluster_id);
-	lives_ok { 
-		$cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(hash => {cluster_name => 'foobar'});
+    my ($cluster, $cluster_id);
+	lives_ok {
+		$cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(
+                       hash => { cluster_name => 'foobar'}
+                   );
 	} 'retrieve Cluster via name';
 
     isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster'); 	
@@ -81,13 +113,16 @@ eval {
 	
 	isnt($cluster_id, undef, "cluster_id is defined ($cluster_id)");
 
+	lives_ok { $executor->oneRun(); } 'AddHost operation execution succeed';
+
 	lives_ok { $cluster->remove; } 'RemoveCluster operation enqueue';
-    lives_ok { $executor->execnround(run => 1); } 'RemoveCluster operation execution succeed';
+    lives_ok { $executor->oneRun; } 'RemoveCluster operation execution succeed';
     
     throws_ok { $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);} 
 		'Kanopya::Exception::DB',
 		"Cluster with id $cluster_id does not exist anymore";
-    
+
+    $db->txn_rollback; 
 
 };
 if($@) {

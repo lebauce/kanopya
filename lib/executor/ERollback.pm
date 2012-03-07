@@ -101,7 +101,8 @@ sub add {
             } else{
                 $self=$eroll->{prev_item};
             }
-            $log->debug("Insert rollback <".$eroll->{prev_item}->{function}. "> before <".$self->{before}->{function}.">");
+            $log->debug("Insert rollback <" . $eroll->{prev_item}->{function}. "> before <".
+                        ($self->{before}->{function} ? $self->{before}->{function} : "undef" ) . ">");
             $self->{last_inserted} = $eroll->{prev_item};
             $self->{before} = undef;
             $log->debug($self->print());
@@ -117,7 +118,8 @@ sub add {
                 $tmp->{prev_item} = $eroll->{next_item};
             }
             $self->{last_inserted} = $eroll->{next_item};
-            $log->debug("Insert rollback <".$eroll->{next_item}->{function}. "> before <".$self->{after}->{function}.">");
+            $log->debug("Insert rollback <".$eroll->{next_item}->{function}. "> before <" .
+                        $self->{after}->{function} . ">");
             $self->{after} = undef;
         }else {
             my $last = $self->_last();

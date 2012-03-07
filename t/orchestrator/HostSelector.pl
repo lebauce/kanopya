@@ -14,7 +14,6 @@ my $host_id = DecisionMaker::HostSelector->getHost(
     type => ['phys','virt'],
     core => 16,
     ram => 4,
-    cloud_cluster_id => 1
 );
 
 

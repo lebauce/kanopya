@@ -36,11 +36,26 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    distribution_name    => {pattern => '^[a-zA-Z]*$', is_mandatory => 1, is_extended => 0},
-    distribution_version => {pattern => '^[0-9\.]+$', is_mandatory => 1, is_extended => 0},
-    distribution_desc    => {pattern => '^[\w\s]*$', is_mandatory => 0, is_extended => 0},
-    etc_container_id     => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0},
-    root_container_id    => {pattern => '^[0-9\.]*$', is_mandatory => 0, is_extended => 0}
+    distribution_name => {
+        pattern      => '^[a-zA-Z]*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    distribution_version => {
+        pattern      => '^[0-9\.]+$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    distribution_desc => {
+        pattern      => '^[\w\s]*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    container_id => {
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    }
 };
 
 sub primarykey { return 'distribution_id'; }
@@ -73,27 +88,25 @@ sub getDistributions {
     return $class->search(%args);
 }
 
-=head getDevices 
+=head2 getDevice
 
-get etc and root device attributes for this distribution
+get container for this distribution
 
 =cut
 
-sub getDevices {
+sub getDevice {
     my $self = shift;
     if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Distribution->getDevices must be called on an already save instance";
+        $errmsg = "Entity::Distribution->getDevice must be called on an already save instance";
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
 
-    my $devices = {
-        etc  => Entity::Container->get(id => $self->getAttr(name => 'etc_container_id')),
-        root => Entity::Container->get(id => $self->getAttr(name => 'root_container_id')),
-    };
+    $log->info("Retrieve container");
+    my $device = Entity::Container->get(id => $self->getAttr(name => 'container_id'));
 
-    $log->info("Distribution etc and root containers retrieved from database");
-    return $devices;
+    $log->info("Distribution container retrieved from database");
+    return $device;
 }
 
 =head getProvidedComponents

@@ -56,12 +56,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    etc_container_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
-    root_container_id => {
+    container_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
@@ -273,28 +268,25 @@ sub toString {
     return $string;
 }
 
-=head2 getDevices 
+=head2 getDevice
 
-get etc and root device attributes for this systemimage
+get container for this systemimage
 
 =cut
 
-sub getDevices {
+sub getDevice {
     my $self = shift;
     if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Systemimage->getDevices must be called on an already save instance";
+        $errmsg = "Entity::Systemimage->getDevice must be called on an already save instance";
         $log->error($errmsg);
         throw Kanopya::Exception(error => $errmsg);
     }
 
-    $log->info("Retrieve etc and root containers");
-    my $devices = {
-        etc  => Entity::Container->get(id => $self->getAttr(name => 'etc_container_id')),
-        root => Entity::Container->get(id => $self->getAttr(name => 'root_container_id')),
-    };
+    $log->info("Retrieve container");
+    my $device = Entity::Container->get(id => $self->getAttr(name => 'container_id'));
 
-    $log->info("Systemimage etc and root containers retrieved from database");
-    return $devices;
+    $log->info("Systemimage container retrieved from database");
+    return $device;
 }
 
 =head2 getInstalledComponents

@@ -65,44 +65,6 @@ my $config = {
     RELATIVE => 1,                   # desactive par defaut
 };
 
-
-=head2 new
-
-    my $op = EOperation::EAddHost->new();
-
-    # Operation::EAddHost->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddHost : Operation add motherboar on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{nas} = {};
-    $self->{executor} = {};
-    $self->{bootserver} = {};
-    $self->{monitor} = {};
-    $self->{_objs} = {};
-    return;
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -117,28 +79,28 @@ sub prepare {
 
     $log->info("EPreStartNode Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EPreStartNode->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+
+    $self->{_objs} = {};
 
     my $params = $self->_getOperation()->getParams();
 
-    
-    #### Get instance of Cluster Entity
+    General::checkParams(args     => $params,
+                         required => [ "cluster_id", "host_id" ]);
+
+    # Get instance of Cluster Entity
     $log->info("Load cluster instance");
     $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
-    #### Get cluster components Entities
+    # Get cluster components Entities
     $log->info("Load cluster component instances");
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
 
     # Get instance of Host Entity
     $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
-    $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
+    $log->debug("get Host $params->{host_id} of type : " . ref($self->{_objs}->{host}));
 
     my $master_node_id = $self->{_objs}->{cluster}->getMasterNodeId();
     my $node_count = $self->{_objs}->{cluster}->getCurrentNodesCount();
@@ -147,39 +109,35 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-
 }
 
 sub execute {
     my $self = shift;
-    $log->debug("Before EOperation exec");
     $self->SUPER::execute();
-    $log->debug("After EOperation exec and before new Adm");
-    my $adm = Administrator->new();
-    
+
     #TODO  component migrate (node, exec context?)
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {
-        
         my $tmp = EFactory::newEEntity(data => $components->{$i});
+
         $log->debug("component is ".ref($tmp));
-        $tmp->preStartNode(host => $self->{_objs}->{host}, 
-                            cluster => $self->{_objs}->{cluster});
+        $tmp->preStartNode(host    => $self->{_objs}->{host},
+                           cluster => $self->{_objs}->{cluster});
     }
-    
+
     my $node_number =  $self->{_objs}->{cluster}->getNewNodeNumber();
     $log->debug("Node number for this new node: $node_number");
-    
+
     $self->{_objs}->{host}->becomeNode(
-		inside_id  => $self->{_objs}->{cluster}->getAttr(name=>"cluster_id"),
+		inside_id   => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
         master_node => 0,
         node_number => $node_number,
     );
-    
-    $self->{_objs}->{host}->setNodeState(state=>"pregoingin");
+
+    $self->{_objs}->{host}->setNodeState(state => "pregoingin");
 } 
-#node_number=>0,
+
 sub _cancel {
     my $self = shift;
 

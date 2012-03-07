@@ -85,6 +85,7 @@ CREATE TABLE `cluster` (
   `cluster_prev_state` char(32),
   `cluster_basehostname` char(64) NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
+  `host_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`cluster_id`),
   FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`user_id`),
@@ -124,12 +125,25 @@ CREATE TABLE `netapp` (
   FOREIGN KEY (`netapp_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Table ucs for connector
+
+CREATE TABLE `ucs_manager` (`ucs_id`int(8) unsigned NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `ucs`
 -- Entity::ServiceProvider::Outside::Ucs class
 
 CREATE TABLE `unified_computing_system` (
   `ucs_id` int(8) unsigned NOT NULL,
+  `ucs_name` char(32) NOT NULL,
+  `ucs_desc` char(255) NULL,
+  `ucs_addr` char(15) NOT NULL,
+  `ucs_state` char(32) NOT NULL DEFAULT 'down',
+  `ucs_blade_number` int(8) NULL DEFAULT 0,
+  `ucs_login` char(32) NOT NULL,
+  `ucs_passwd` char(32) NOT NULL,
+  `ucs_dataprovider` char(32) NULL,
+  `ucs_ou` char(32) NULL,
   PRIMARY KEY (`ucs_id`),
   FOREIGN KEY (`ucs_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -228,6 +242,22 @@ CREATE TABLE `lvm_container` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `file_container`
+-- Entity::Container::FileContainer class
+
+CREATE TABLE `file_container` (
+  `file_container_id` int(8) unsigned NOT NULL,
+  `container_access_id` int(8) unsigned NOT NULL,
+  `file_name` int(8) unsigned NOT NULL,
+  `file_size` int(8) unsigned NOT NULL,
+  `file_filesystem` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`file_container_id`),
+  FOREIGN KEY (`file_container_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`container_access_id`),
+  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `container_access`
 -- Entity::ContainerAccess class
 
@@ -282,6 +312,8 @@ CREATE TABLE `nfs_container_access` (
 
 CREATE TABLE `host` (
   `host_id` int(8) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `host_manager_id` int(8) unsigned NOT NULL,
   `hostmodel_id` int(8) unsigned NULL DEFAULT NULL,
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned NOT NULL,
@@ -295,27 +327,23 @@ CREATE TABLE `host` (
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
   `host_hostname` char(32) DEFAULT NULL,
-  `cloud_cluster_id` int(8) unsigned DEFAULT NULL,
-  `etc_container_id` int(8) unsigned DEFAULT NULL,
   `host_state` char(32) NOT NULL DEFAULT 'down',
   `host_prev_state` char(32),
   PRIMARY KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`host_mac_address`),
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`hostmodel_id`),
   FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`processormodel_id`),
   FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`kernel_id`),
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`etc_container_id`),
-  FOREIGN KEY (`etc_container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
   KEY (`host_powersupply_id`),
   FOREIGN KEY (`host_powersupply_id`) REFERENCES `powersupply` (`powersupply_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`host_ipv4_internal_id`),
-  FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`cloud_cluster_id`),
-  FOREIGN KEY (`cloud_cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`host_ipv4_internal_id`) REFERENCES `ipv4_internal` (`ipv4_internal_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -389,14 +417,11 @@ CREATE TABLE `distribution` (
   `distribution_name` char(64) NOT NULL,
   `distribution_version` char(32) NOT NULL,
   `distribution_desc` char(255) DEFAULT NULL,
-  `etc_container_id` int(8) unsigned DEFAULT NULL,
-  `root_container_id` int(8) unsigned DEFAULT NULL,
+  `container_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`distribution_id`),
   FOREIGN KEY (`distribution_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`etc_container_id`),
-  FOREIGN KEY (`etc_container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`root_container_id`),
-  FOREIGN KEY (`root_container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY (`container_id`),
+  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -511,18 +536,15 @@ CREATE TABLE `systemimage` (
   `systemimage_desc` char(255) DEFAULT NULL,
   `systemimage_dedicated` int(1) unsigned NOT NULL DEFAULT 0,
   `distribution_id` int(8) unsigned NOT NULL,
-  `etc_container_id` int(8) unsigned DEFAULT NULL,
-  `root_container_id` int(8) unsigned DEFAULT NULL,
+  `container_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`systemimage_name`),
   KEY (`distribution_id`),
   FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`etc_container_id`),
-  FOREIGN KEY (`etc_container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  KEY (`root_container_id`),
-  FOREIGN KEY (`root_container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  KEY (`container_id`),
+  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -873,12 +895,12 @@ CREATE TABLE `component_template_attr` (
 
 CREATE TABLE `component_provided` (
   `component_type_id` int(8) unsigned NOT NULL,
-  `distribution_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`component_type_id`,`distribution_id`),
+  `masterimage_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`component_type_id`,`masterimage_id`),
   KEY (`component_type_id`),
   FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`distribution_id`),
-  FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  KEY (`masterimage_id`),
+  FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1267,7 +1289,7 @@ CREATE TABLE `externalnode` (
   `externalnode_state` char(32),
   `externalnode_prev_state` char(32),
   PRIMARY KEY (`externalnode_id`),
-  UNIQUE KEY (`externalnode_hostname`),
+  UNIQUE KEY (`externalnode_hostname`,`outside_id`),
   KEY (`outside_id`),
   FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1296,6 +1318,20 @@ CREATE TABLE `scom` (
   `scom_usessl` int(1) DEFAULT NULL,
   PRIMARY KEY (`scom_id`),
   FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `masterimage`
+-- Entity::Masterimage class
+
+CREATE TABLE `masterimage` (
+  `masterimage_id` int(8) unsigned NOT NULL,
+  `masterimage_name` char(64) NOT NULL,
+  `masterimage_file` char(255) NOT NULL,
+  `masterimage_desc` char(255) DEFAULT NULL,
+  `masterimage_os` char(64) DEFAULT NULL,
+  PRIMARY KEY (`masterimage_id`),
+  FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -116,17 +116,17 @@ sub prepare {
         
         # Check cloudCluster
         $self->{_objs}->{'hypervisor_cluster'} = Entity::ServiceProvider::Inside::Cluster->get(id => $self->{_objs}->{'hypervisor_dst'}->getClusterId());
-        
-        #TODO Check if a cloudmanager is in the cluster
-        # Get OpenNebula Cluster (now fix but will be configurable)
-        $self->{_objs}->{'cloudmanager_comp'} = $self->{_objs}->{'hypervisor_cluster'}->getComponent(name=>"Opennebula", version=>3);
-        $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
-        
+
         # Get the host to move
         $self->{_objs}->{'host'} = Entity::Host->get(id => $params->{host_id});
+
+        #TODO Check if a cloudmanager is in the cluster
+        # Get OpenNebula Cluster (now fix but will be configurable)
+        $self->{_objs}->{'cloudmanager_comp'} = $self->{_objs}->{'host'}->getAttr(name => 'host_manager_id');
+        $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
         
         # Check if host is on the hypervisors cluster
-        if ($self->{_objs}->{'hypervisor_dst'}->getClusterId() != $self->{_objs}->{'host'}->getAttr(name=>"cloud_cluster_id")){
+        if ($self->{_objs}->{'hypervisor_dst'}->getClusterId() != $self->{_objs}->{'host'}->getAttr(name => "service_provider_id")){
             throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisor cluster");
         }
     };

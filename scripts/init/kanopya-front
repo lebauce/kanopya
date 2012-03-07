@@ -63,6 +63,7 @@ start() {
 
 stop() {
     echo -n "Stopping $website: "
+    rm -rf $SESSIONS_DIR &> /dev/null
     if [ -f $PID ]; then
         kill `cat $PID` 2>&1 > /dev/null
         retval=$?

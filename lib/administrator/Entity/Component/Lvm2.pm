@@ -218,16 +218,14 @@ sub removeDisk {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "disk_name" ]);
+    General::checkParams(args => \%args, required => [ "container" ]);
 
     $log->debug("New Operation RemoveDisk with attrs : " . %args);
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveDisk',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'inside_id'),
-            disk_manager_id     => $self->getAttr(name => 'component_id'),
-            disk_name           => $args{disk_name},
+            container_id => $args{container}->getAttr(name => 'container_id'),
         },
     );
 }

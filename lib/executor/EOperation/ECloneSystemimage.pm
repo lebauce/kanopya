@@ -55,39 +55,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
-
-    my $op = EOperation::ECloneSystemimage->new();
-
-EOperation::ECloneSystemimage->new creates a new ECloneSystemimage operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    $self->{_objs}    = {};
-    $self->{executor} = {};
-
-    return;
-}
-
 sub checkOp{
     my $self = shift;
     my %args = @_;
@@ -112,7 +79,6 @@ sub checkOp{
               hash => { systemimage_name => $args{params}->{systemimage_name} }
           );
 
-    $log->info("otoprout: " . ref($sysimg_exists));
     if (defined $sysimg_exists){
         $errmsg = "Operation::ECloneSystemimage->prepare : systemimage_name " .
                   $args{params}->{systemimage_name} . " already exist";
@@ -131,6 +97,9 @@ sub prepare {
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
+
+    $self->{_objs}    = {};
+    $self->{executor} = {};
 
     General::checkParams(args => \%args, required => ["internal_cluster"]);
     
@@ -217,9 +186,7 @@ sub prepare {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    # Get the disk manager for disk creation, get the export manager for copy from file.
-    my $export_manager = $self->{_objs}->{service_provider}->getDefaultManager(category => 'ExportManager');
-    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
+    # Get the disk manager for disk creation.
     $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $disk_manager);
 
     # Get contexts
@@ -232,9 +199,6 @@ sub prepare {
     $self->{_objs}->{edisk_manager}->{econtext}
         = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                 ip_destination => $service_provider_ip);
-    $self->{_objs}->{eexport_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                ip_destination => $service_provider_ip);
 }
 
 sub execute {
@@ -244,7 +208,6 @@ sub execute {
 
     $esystemimage->create(devs            => $self->{_objs}->{systemimage_source}->getDevices(),
                           edisk_manager   => $self->{_objs}->{edisk_manager},
-                          eexport_manager => $self->{_objs}->{eexport_manager},
                           econtext        => $self->{executor}->{econtext},
                           erollback       => $self->{erollback});
 

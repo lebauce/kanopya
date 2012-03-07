@@ -397,8 +397,6 @@ sub removeExport {
         priority => 200,
         type     => 'RemoveExport',
         params   => {
-            export_manager_id   => $self->getAttr(name => 'component_id'),
-            storage_provider_id => $self->getAttr(name => 'cluster_id'),
             container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
         },
     );

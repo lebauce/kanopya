@@ -48,23 +48,23 @@ sub create {
     my $cmd_res;
 
     General::checkParams(args     => \%args,
-                         required => [ "edisk_manager", "eexport_manager",
-                                       "devs", "erollback", "econtext" ]);
+                         required => [ "edisk_manager", "devs",
+                                       "erollback", "econtext" ]);
 
     for my $disk_type ("etc", "root") {
         my $disk_name = $disk_type . '_' . $self->_getEntity()->getAttr(name => 'systemimage_name');
 
-        # Creation of the device based on distribution device
         $log->info($disk_type . ' device creation for new systemimage');
 
-        my $source_name = $args{devs}->{$disk_type}->getAttr(name => 'container_name');
-        my $source_size = $args{devs}->{$disk_type}->getAttr(name => 'container_size');
-        my $source_filesystem = $args{devs}->{$disk_type}->getAttr(name => 'container_filesystem');
-
+        # Creation of the device based on distribution device
         my $container = $args{edisk_manager}->createDisk(
                             name       => $disk_name,
-                            size       => $source_size . "B",
-                            filesystem => $source_filesystem,
+                            size       => $args{devs}->{$disk_type}->getAttr(
+                                              name => 'container_size'
+                                          ) . "B",
+                            filesystem => $args{devs}->{$disk_type}->getAttr(
+                                              name => 'container_filesystem'
+                                          ),
                             econtext   => $args{edisk_manager}->{econtext},
                             erollback  => $args{erollback}
                         );
@@ -72,60 +72,16 @@ sub create {
         # Copy of distribution data to systemimage devices
         $log->info('Fill ' . $disk_type . ' device with distribution data for new systemimage');
 
-		# Temporary export the containers to copy contents
-        my $source_access = $args{eexport_manager}->createExport(
-                                container   => $args{devs}->{$disk_type},
-                                export_name => $source_name,
-                                econtext    => $args{eexport_manager}->{econtext},
-                                erollback   => $args{erollback}
-                            );
-        my $dest_access = $args{eexport_manager}->createExport(
-                              container   => $container,
-                              export_name => $container->getAttr(name => 'container_name'),
-                              econtext    => $args{eexport_manager}->{econtext},
-                              erollback   => $args{erollback}
-                          );
+        # Get the corresponding EContainer
+        my $esource_container = EFactory::newEEntity(data => $args{devs}->{$disk_type});
+        my $edest_container   = EFactory::newEEntity(data => $container);
 
-		# Mount the containers on the executor.
-        my $source_mountpoint = "/mnt/" . $source_name;
-        my $dest_mountpoint   = "/mnt/" . $container->getAttr(name => 'container_name');
-
-        # Get the corresponding EContainerAccess
-        my $esource_access = EFactory::newEEntity(data => $source_access);
-        my $edest_access   = EFactory::newEEntity(data => $dest_access);
-
-        $log->info('Mounting source container <' . $source_mountpoint . '>');
-		$esource_access->mount(mountpoint => $source_mountpoint, econtext => $args{econtext});
-
-        $log->info('Mounting destination container <' . $dest_mountpoint . '>');
-		$edest_access->mount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
-
-        # Copy the filesystem.
-        my $copy_fs_cmd = "cp -R --preserve=all $source_mountpoint/. $dest_mountpoint/";
-
-        $log->debug($copy_fs_cmd);
-        $cmd_res = $args{econtext}->execute(command => $copy_fs_cmd);
-
-        if($cmd_res->{'stderr'}){
-            $errmsg = "Error with copy of $source_mountpoint to $dest_mountpoint: " .
-                      $cmd_res->{'stderr'};
-            $log->error($errmsg);
-            Kanopya::Exception::Execution(error => $errmsg);
-        }
+        $esource_container->copy(dest      => $edest_container,
+                                 econtext  => $args{econtext},
+                                 erollback => $args{erollback});
 
         $self->_getEntity()->setAttr(name  => $disk_type . "_container_id",
                                      value => $container->getAttr(name => 'container_id'));
-
-        # Unmount the containers, and remove the temporary exports.
-        $esource_access->umount(mountpoint => $source_mountpoint, econtext => $args{econtext});
-        $edest_access->umount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
-
-        $args{eexport_manager}->removeExport(container_access => $source_access,
-                                             econtext         => $args{eexport_manager}->{econtext},
-                                             erollback        => $args{erollback});
-        $args{eexport_manager}->removeExport(container_access => $dest_access,
-                                             econtext         => $args{eexport_manager}->{econtext},
-                                             erollback        => $args{erollback});
     }
 
     $self->_getEntity()->setAttr(name => "active", value => 0);

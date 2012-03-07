@@ -87,7 +87,12 @@ __PACKAGE__->belongs_to(
 
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-04-15 16:34:47
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ejsRyP78va3clME0NwE2LQ
-
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Component",
+    { "foreign.component_id" => "self.pleskpanel10_id" },
+    { cascade_copy => 0, cascade_delete => 1 }
+);
 
 # You can replace this text with custom content, and it will be preserved on regeneration
 1;

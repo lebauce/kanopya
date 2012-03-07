@@ -288,7 +288,7 @@ sub isUp {
 }
 
 # generate vm template and start a vm from the template
-sub startvm {
+sub startHost {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['cluster', 'host']);
@@ -319,7 +319,7 @@ sub startvm {
 }
 
 # delete a vm from opennebula
-sub stopvm {
+sub stopHost {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['cluster', 'host']);
@@ -334,10 +334,13 @@ sub stopvm {
 	my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
 	my $command = $self->_oneadmin_command(command => "onevm delete $id");
 	my $result = $masternode_econtext->execute(command => $command);
+
+    # In the case of OpenNebula, we delete the host once it's stopped
+    $args{host}->remove;
 }
 
 # update a vm information (hypervisor host and vnc port)
-sub updatevm {
+sub postStart {
 	my $self = shift;
 	my %args = @_;
 	General::checkParams(args => \%args, required => ['cluster', 'host']);
@@ -413,8 +416,5 @@ sub _oneadmin_command {
 	$command .= $args{command} ."'";
 	return $command;
 }
-
-
-
 
 1;
