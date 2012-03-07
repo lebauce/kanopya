@@ -15,6 +15,7 @@
 
 package Entity::Connector::UcsManager;
 use base "Entity::Connector";
+use base "Entity::HostManager";
 
 use strict;
 use warnings;
@@ -65,29 +66,6 @@ sub DESTROY {
         $self->{api}->logout();
         $self->{api} = undef;
     }
-}
-
-sub startHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-
-    my $sn = $args{host}->getAttr(name => "host_serial_number");
-    $self->{api}->start_service_profile(dn => $self->{ou} . "/" . $sn);
-}
-
-sub postStart {
-}
-
-sub stopHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-
-    my $sn = $args{host}->getAttr(name => "host_serial_number");
-    $self->{api}->stop_service_profile(dn => $self->{ou} . "/" . $sn);
 }
 
 1;
