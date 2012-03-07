@@ -40,18 +40,21 @@ use Operation;
 
 my $log = get_logger("executor");
 
-sub mount {
+=head2 connect
+
+    desc: Creating open-iscsi node, and wait for the device appeared.
+
+=cut
+
+sub connect {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     my $target = $self->_getEntity->getAttr(name => 'container_access_export');
     my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
     my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
-
-    my $mkdir_cmd = "mkdir -p $args{mountpoint}";
-    $args{econtext}->execute(command => $mkdir_cmd);
 
     $log->info("Creating open iscsi node <$target> from <$ip:$port>.");
 
@@ -79,30 +82,26 @@ sub mount {
         sleep 1;
     }
 
-    $log->info("Device found (<$device>), mounting on <$args{mountpoint}>.");
+    $log->info("Device found (<$device>).");
 
-    my $mount_cmd = "mount $device $args{mountpoint}";
-    $args{econtext}->execute(command => $mount_cmd);
-
-    # TODO: insert an eroolback with umount method.
-
-    $log->info("Device <$device> mounted on <$args{mountpoint}>.");
+    return $device;
 }
 
-sub umount {
+=head2 disconnect
+
+    desc: Deleting open-iscsi node.
+
+=cut
+
+sub disconnect {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     my $target = $self->_getEntity->getAttr(name => 'container_access_export');
     my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
     my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
-
-    $log->info("Unmonting (<$args{mountpoint}>)");
-
-    my $umount_cmd = "umount $args{mountpoint}";
-    $args{econtext}->execute(command => $umount_cmd);
 
     $log->info("Logout from node <$target>");
 
@@ -113,9 +112,6 @@ sub umount {
 
     my $delete_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o delete";
     $args{econtext}->execute(command => $delete_node_cmd);
-
-    my $mkdir_cmd = "rm -R $args{mountpoint}";
-    $args{econtext}->execute(command => $mkdir_cmd);
 
     # TODO: insert an eroolback with mount method ?
 }

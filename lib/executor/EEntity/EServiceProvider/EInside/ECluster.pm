@@ -53,13 +53,19 @@ sub create {
     my $si_location = $self->_getEntity()->getAttr(name =>"cluster_si_location");
     my $si_access_mode = $self->_getEntity()->getAttr(name =>"cluster_si_access_mode");
     my $si_shared = $self->_getEntity()->getAttr(name =>"cluster_si_shared");
-    my $systemimage = Entity::Systemimage->get(id => $self->_getEntity()->getAttr(name =>"systemimage_id"));;
-    
-    if($si_location eq 'diskless') {
-        if(not $si_shared) {
-            $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
-            $systemimage->save();
-        } 
+
+    my $systemimage;
+    my $systemimage_id = $self->_getEntity()->getAttr(name =>"systemimage_id");
+
+    if ($systemimage_id) {
+        $systemimage = Entity::Systemimage->get(id => $systemimage_id);
+
+        if($si_location eq 'diskless') {
+            if(not $si_shared) {
+                $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
+                $systemimage->save();
+            }
+        }
     }
 
     # Create cluster directory
@@ -76,7 +82,7 @@ sub create {
 
     # automatically add System|Monitoragent|Logger components
     
-    if($systemimage) {
+    if ($systemimage) {
         foreach my $compclass (qw/Entity::Component::Mounttable1
                                   Entity::Component::Syslogng3
                                   Entity::Component::Snmpd5/) {

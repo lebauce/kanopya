@@ -116,7 +116,7 @@ sub removeExport {
                          required => [ 'container_access', 'econtext' ]);
 
     if (! $args{container_access}->isa("Entity::ContainerAccess::IscsiContainerAccess")) {
-        throw Kanopya::Exception::Execution(
+        throw Kanopya::Exception::Execution::WrongType(
                   error => "ContainerAccess must be a Entity::ContainerAccess::IscsiContainerAccess"
               );
     }

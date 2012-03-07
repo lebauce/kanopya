@@ -1,6 +1,7 @@
 # HostSelector.pm - Select better fit host according to context, constraints and choice policy
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -35,11 +36,8 @@ my $log = get_logger("administrator");
     Args :  cluster_id : id of the cluster requesting a host
             
             CONSTRAINTS
-            type :  array ref of host type ordered by preference
-                    type can be 'phys' or 'virt'
             core : min number of desired core
-            ram  : min amount of desired ram                                    # TODO manage unit (M,G,..)
-            cloud_cluster_id : id of the cluster to use for virt host
+            ram  : min amount of desired ram  # TODO manage unit (M,G,..)
             
             All constraints args are optional, not defined means no constraint for this arg
             Final constraints are intersection of input constraints and cluster components contraints.
@@ -51,62 +49,54 @@ my $log = get_logger("administrator");
 sub getHost {
     my $self = shift;
     my %args = @_;
-    my ($default_core, $default_ram) = (1,"512M");
+    my ($default_core, $default_ram) = (1, "512M");
 
-    General::checkParams(args => \%args, required => ["cluster_id"]);
-    
-    my %type_handlers = ('virtual' => \&getVirtualHost,'physical' => \&getPhysicalHost );
-    my @keys = ('virtual','physical');
-    my @type_list = defined $args{type} ? ($args{type}) : @keys; 
-    delete $args{type};
-
-    $log->debug("Node type order : <" . Dumper @type_list .">");
+    General::checkParams(args => \%args, required => [ "cluster_id", "host_manager_id" ]);
 
     # Set default Ram and convert in B.
     my $ram = defined $args{ram} ? $args{ram} : $default_ram;
     my ($value, $unit) = General::convertSizeFormat(size => $ram);
     $args{ram} = General::convertToBytes(value => $value, units => $unit);
-    
+
     # Set default core
     $args{core} = $default_core if (not defined $args{core});
 
     $log->debug("Host selector search for a node with ram : <$args{ram}> and core : <$args{core}>");
-    TYPE:
-    for my $type (@type_list) {
-        unless ( exists $type_handlers{$type} ) {
-            $log->error("Unknown required host type: '$type'");
-            next TYPE;
-        }
-        my $host_id = eval {
-            return $type_handlers{$type}( $self, %args );
-        };
-        if ($@) {
-            $log->debug($@->error);
-            next TYPE;
-        }
-        return $host_id;
+
+    # Get all free hosts of the specified host manager
+    my @free_hosts = Entity::Host->getFreeHosts(host_manager_id => $args{host_manager_id});
+
+    # Keep only hosts matching constraints (cpu, mem)
+    my @valid_hosts = grep { $self->_matchHostConstraints(host => $_, %args) } @free_hosts;
+
+    if ( scalar @valid_hosts == 0) {
+        my $errmsg = "no free  host respecting constraints";
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
-    my $errmsg = "no free host respecting constraints";
-    throw Kanopya::Exception::Internal(error => $errmsg);
+
+    # Get the first valid host
+    # TODO get the better hosts according to rank (e.g min consumption, max cpu, ...)
+    my $host = $valid_hosts[0];
+
+    return $host->getAttr(name => 'host_id');
 }
 
 sub _matchHostConstraints {
     my $self = shift;
     my %args = @_;
-    
+
     my $host = $args{host};
-    
+
     for my $constraint ('core', 'ram') {
         if (defined $args{$constraint}) {
-            my $host_value = $host->getAttr( name => "host_$constraint");
+            my $host_value = $host->getAttr(name => "host_$constraint");
             $log->debug("constraint '$constraint' ($host_value) >= $args{$constraint}");
             if ($host_value < $args{$constraint}) {
                 return 0;
             }
         }
     }
-    
+
     return 1;
 }
 
@@ -114,7 +104,7 @@ sub getPhysicalHost {
     my $self = shift;
     my %args = @_;
     
-    $log->info( "Looking for a physical host" );
+    $log->info("Looking for a physical host");
     print Dumper \%args;
     
     # Get all free hosts

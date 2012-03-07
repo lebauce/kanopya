@@ -1,6 +1,7 @@
 # EStartCluster.pm - Operation class implementing cluster starting operation
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2010-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -49,35 +50,6 @@ my $errmsg;
 
 our $VERSION = "1.00";
 
-=head2 new
-
-    my $op = EOperation::EStartCluster->new();
-
-EOperation::EStartCluster->new creates a new EStartCluster operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
 
 =head2 prepare
 
@@ -90,29 +62,27 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EStartCluster->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
-    my $adm = Administrator->new();
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+
     my $params = $self->_getOperation()->getParams();
+
+    General::checkParams(args => $params, required => [ "cluster_id" ]);
 
     $self->{_objs} = {};
     
     # Get cluster to start from param
-    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
+    $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(
+                                    id => $params->{cluster_id}
+                                );
 }
 
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
-    my $adm = Administrator->new();
-        
-    $log->info('getting minimum number of nodes to start');
+
+    $log->info('Getting minimum number of nodes to start');
     my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');    
-    $log->info('getting free hosts');
+
 #    my @free_hosts = Entity::Host->getHosts(hash => { active => 1, host_state => 'down'});
 #    
 #    my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
@@ -135,7 +105,7 @@ __END__
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
+Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut

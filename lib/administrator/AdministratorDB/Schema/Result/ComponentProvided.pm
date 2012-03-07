@@ -26,7 +26,7 @@ __PACKAGE__->table("component_provided");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 distribution_id
+=head2 masterimage_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -43,7 +43,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "distribution_id",
+  "masterimage_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -51,7 +51,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
-__PACKAGE__->set_primary_key("component_type_id", "distribution_id");
+__PACKAGE__->set_primary_key("component_type_id", "masterimage_id");
 
 =head1 RELATIONS
 
@@ -70,25 +70,25 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 distribution
+=head2 masterimage
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Distribution>
+Related object: L<AdministratorDB::Schema::Result::Masterimage>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "distribution",
-  "AdministratorDB::Schema::Result::Distribution",
-  { distribution_id => "distribution_id" },
+  "masterimage",
+  "AdministratorDB::Schema::Result::Masterimage",
+  { masterimage_id => "masterimage_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+pcg1h7uStEVMmgm+xPDLQ
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-05 17:35:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:C9h5WVOwkj6ibGBVnjQVoQ
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

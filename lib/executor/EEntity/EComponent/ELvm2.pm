@@ -204,13 +204,14 @@ sub lvRemove{
 
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 
+    my $ret;
     my $lvchange_cmd = "lvchange -a n /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
     $log->debug($lvchange_cmd);
-    my $ret = $args{econtext}->execute(command => $lvchange_cmd);
+    $ret = $args{econtext}->execute(command => $lvchange_cmd);
 
     my $lvremove_cmd = "lvremove -f /dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
     $log->debug($lvremove_cmd);
-    my $ret = $args{econtext}->execute(command => $lvremove_cmd);
+    $ret = $args{econtext}->execute(command => $lvremove_cmd);
 
     if($ret->{'stderr'}){
         $errmsg = "Error with removing logical volume " .

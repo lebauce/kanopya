@@ -55,40 +55,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{executor};
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -101,7 +67,10 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => \%args, required => [ "internal_cluster" ]);
-    
+
+    $self->{executor} = {};
+    $self->{_objs} = {};
+
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     
@@ -133,17 +102,6 @@ sub prepare {
     if($@) {
         my $err = $@;
         $errmsg = "Distribution upload, maybe already exists \n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check Parameters and context
-    eval {
-        $self->checkOp(params => $params);
-    };
-    if ($@) {
-        my $error = $@;
-        $errmsg = "Operation DeployComponent failed an error occured :\n$error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -233,7 +191,7 @@ sub execute{
                                          econtext   => $self->{_objs}->{edisk_manager}->{econtext},
                                          erollback  => $self->{erollback});
 
-		# Temporary export this container to copy the source distribution files.
+        # Temporary export this container to copy the source distribution files.
         my $container_access
             = $eexport_manager->createExport(container   => $self->{$disk_type},
                                              export_name => $disk_name,
@@ -243,16 +201,16 @@ sub execute{
         # Get the corresponding EContainerAccess
         my $econtainer_access = EFactory::newEEntity(data => $container_access);
 
-		# Mount the container on the executor.
-		$econtainer_access->mount(mountpoint => "/mnt/$disk_name",
+        # Mount the container on the executor.
+        $econtainer_access->mount(mountpoint => "/mnt/$disk_name",
                                   econtext   => $self->{executor}->{econtext});
 
-		# Mount source file in loop mode.
-		my $mkdir_cmd = "mkdir -p /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mkdir_cmd);
+        # Mount source file in loop mode.
+        my $mkdir_cmd = "mkdir -p /mnt/$disk_name-source";
+        $self->{executor}->{econtext}->execute(command => $mkdir_cmd);
 
-		my $mount_cmd = "mount -o loop $file /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mount_cmd);
+        my $mount_cmd = "mount -o loop $file /mnt/$disk_name-source";
+        $self->{executor}->{econtext}->execute(command => $mount_cmd);
 
         # TODO: insert an erollback to umount source file
 
@@ -276,10 +234,10 @@ sub execute{
                                    econtext   => $self->{executor}->{econtext});
 
         # Delete the mountpoints.
-		my $mount_cmd = "umount /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mount_cmd);
-        my $mkdir_cmd = "rm -R /mnt/$disk_name-source";
-		$self->{executor}->{econtext}->execute(command => $mkdir_cmd);
+        my $umount_cmd = "umount /mnt/$disk_name-source";
+        $self->{executor}->{econtext}->execute(command => $umount_cmd);
+        my $rmdir_cmd = "rm -R /mnt/$disk_name-source";
+        $self->{executor}->{econtext}->execute(command => $rmdir_cmd);
 
         # Delete the file
         $cmd = "rm $file";

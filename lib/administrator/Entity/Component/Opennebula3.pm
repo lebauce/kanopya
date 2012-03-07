@@ -144,7 +144,6 @@ sub createVirtualHost {
             host_serial_number => "Virtual Host with mac $new_mac_address",
             host_ram => $args{ram},
             host_core => $args{core},
-            cloud_cluster_id => $args{cluster_id},
             active  => 1
             );
     $vm->save();

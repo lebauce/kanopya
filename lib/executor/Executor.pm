@@ -89,10 +89,13 @@ sub _init {
     my $self = shift;
     
     $self->{config} = XMLin("/opt/kanopya/conf/executor.conf");
-    General::checkParams(args=>$self->{config}->{user}, required=>["name","password"]);
 
-    my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name},
-                                 password => $self->{config}->{user}->{password});
+    General::checkParams(args => $self->{config}->{user}, required => [ "name","password" ]);
+
+    my $adm = Administrator::authenticate(
+                  login    => $self->{config}->{user}->{name},
+                  password => $self->{config}->{user}->{password}
+              );
     return;
 }
 
@@ -106,17 +109,30 @@ sub run {
     my $self = shift;
     my $running = shift;
     
-    Message->send(from => 'Executor', level => 'info', content => "Kanopya Executor started.");
-       while ($$running) {
-           $self->oneRun();
-       }
-       $log->debug("condition become false : $$running"); 
-       Message->send(from => 'Executor', level => 'warning', content => "Kanopya Executor stopped");
+    Message->send(
+        from    => 'Executor',
+        level   => 'info',
+        content => "Kanopya Executor started."
+    );
+
+    while ($$running) {
+       $self->execnround(run => 1);
+    }
+
+    $log->debug("condition become false : $$running");
+    Message->send(
+        from    => 'Executor',
+        level   => 'warning',
+        content => "Kanopya Executor stopped"
+    );
 }
 
 sub oneRun {
     my $self = shift;
+
     my $adm = Administrator->new();
+    my $errors;
+
     $log->debug("Try to get an operation");
     my $opdata = Operation::getNextOp();
     
@@ -127,7 +143,11 @@ sub oneRun {
         my $opclass = ref($op);
         
         $log->info("New operation (".ref($op).") retrieve ; execution processing");
-        Message->send(from => 'Executor', level => 'info', content => "Operation Processing [$opclass]...");
+        Message->send(
+            from    => 'Executor',
+            level   => 'info',
+            content => "Operation Processing [$opclass]..."
+        );
         
         $adm->{db}->txn_begin;
         eval {
@@ -135,14 +155,19 @@ sub oneRun {
             $op->process();
         };
         if ($@) {
-            my $error = $@;
-            if($error->isa('Kanopya::Exception::Execution::OperationReported')) {
+            my $err_exec = $@;
+            if($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
                 $op->report();
                 # commit transaction
                 $adm->{db}->txn_commit;
-                #Message->send(from => 'Executor', level => 'info', content => "Operation Execution Reported [$opclass]");
+                #Message->send(
+                #    from    => 'Executor',
+                #    level   => 'info',
+                #    content => "Operation Execution Reported [$opclass]"
+                #);
                 $log->debug("Operation $opclass reported");
-            } else {
+            }
+            else {
                 # rollback transaction
                 $adm->{db}->txn_rollback;
                 $log->info("Rollback, Cancel operation will be call");
@@ -151,28 +176,52 @@ sub oneRun {
                     $op->cancel();
                     $adm->{db}->txn_commit;};
                 if ($@){
-                    my $error2 = $@;
-                    $log->error("Error during operation cancel :\n$error2");
+                    my $err_rollback = $@;
+                    $log->error("Error during operation cancel :\n$err_rollback");
+
+                    $errors .= $err_rollback;
                 }
-                if (!$error->{hidden}){
-                    Message->send(from => 'Executor',level => 'error', content => "[$opclass] Execution Aborted : $error");
-                    $log->error("Error during execution : $error");} 
+                if (!$err_exec->{hidden}){
+                    Message->send(
+                        from    => 'Executor',
+                        level   => 'error',
+                        content => "[$opclass] Execution Aborted : $err_exec"
+                    );
+                    $log->error("Error during execution : $err_exec");
+                }
                 else {
-                    $log->info("Warning : $error");}
-           }
+                    $log->info("Warning : $err_exec");}
+            }
+
+            $errors .= $err_exec;
         } else {
-                   # commit transaction
-                   $op->finish();
-                   $adm->{db}->txn_commit;
-                   Message->send(from => 'Executor',level => 'info', content => "[$opclass] Execution Success");    
+            # commit transaction
+            $op->finish();
+            $adm->{db}->txn_commit;
+            Message->send(
+                from    => 'Executor',
+                level   => 'info',
+                content => "[$opclass] Execution Success"
+            );
         }
-        eval {$op->delete();};
+        eval { $op->delete(); };
         if ($@) {
-            my $error = $@;
-            $log->error("Error during operation deletion : $error"); 
-            Message->send(from => 'Executor', level => 'error', content => "[$opclass] Deletion Error : $error");}
-     }
-     else { sleep 5; }
+            my $err_delop = $@;
+            $log->error("Error during operation deletion : $err_delop");
+            Message->send(
+                from    => 'Executor',
+                level   => 'error',
+                content => "[$opclass] Deletion Error : $err_delop"
+            );
+
+            $errors .= $err_delop;
+        }
+    }
+    else { sleep 5; }
+
+    if (defined $errors) {
+        throw Kanopya::Exception::Execution(error => $errors);
+    };
 }
 
 =head2 execnrun
@@ -185,12 +234,15 @@ sub execnround {
     my $self = shift;
     my %args = @_;
 
-    my $adm = Administrator->new();
-
-       while ($args{run}) {
-           $args{run} -= 1;
-           $self->oneRun();
-       }
+    while ($args{run}) {
+        $args{run} -= 1;
+        eval {
+            $self->oneRun();
+        };
+        if ($@) {
+            $log->error($@);
+        }
+    }
 }
 
 

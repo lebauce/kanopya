@@ -65,44 +65,6 @@ my $config = {
     RELATIVE => 1,                   # desactive par defaut
 };
 
-
-=head2 new
-
-    my $op = EOperation::EPreStopNode->new();
-
-    # Operation::EAddHost->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddHost : Operation add motherboar on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{nas} = {};
-    $self->{executor} = {};
-    $self->{bootserver} = {};
-    $self->{monitor} = {};
-    $self->{_objs} = {};
-    return;
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -117,21 +79,18 @@ sub prepare {
 
     $log->info("EPreStopNode Operation preparation");
 
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EPreStopNode->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
 
+    $self->{_objs} = {};
     
-    #### Get instance of Cluster Entity
+    # Get instance of Cluster Entity
     $log->info("Load cluster instance");
     $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     $log->debug("get cluster self->{_objs}->{cluster} of type : " . ref($self->{_objs}->{cluster}));
 
-    #### Get cluster components Entities
+    # Get cluster components Entities
     $log->info("Load cluster component instances");
     $self->{_objs}->{components}= $self->{_objs}->{cluster}->getComponents(category => "all");
     $log->debug("Load all component from cluster");
@@ -146,7 +105,7 @@ sub prepare {
     if ($node_count > 1 && $master_node_id == $params->{host_id}){
         $errmsg = "Node <$params->{host_id}> is master node and not alone";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg, hidden=>1);
+        throw Kanopya::Exception::Internal(error => $errmsg, hidden => 1);
     }
 }
 

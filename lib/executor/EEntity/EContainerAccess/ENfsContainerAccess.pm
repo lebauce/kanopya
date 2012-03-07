@@ -40,6 +40,12 @@ use Operation;
 
 my $log = get_logger("executor");
 
+=head2 connect
+
+    desc: Mount the remote container acces with mount.nfs.
+
+=cut
+
 sub mount {
     my $self = shift;
     my %args = @_;
@@ -63,16 +69,30 @@ sub mount {
     # TODO: insert an erollback to umount nfs volume
 }
 
-sub umount {
+=head2 connect
+
+    desc: Not supported, returning undef.
+
+=cut
+
+sub connect {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+}
 
-    $log->info("Unmonting (<$args{mountpoint}>)");
+=head2 disconnect
 
-    my $umount_cmd = "umount $args{mountpoint}";
-    $args{econtext}->execute(command => $umount_cmd);
+    desc: Not supported, doing nothing.
+
+=cut
+
+sub disconnect {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
 }
 
 1;

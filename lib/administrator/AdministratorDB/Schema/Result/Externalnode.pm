@@ -77,6 +77,11 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key("externalnode_id");
 
+__PACKAGE__->add_unique_constraint(
+    "externalnode_hostname",
+    ["externalnode_hostname", "outside_id"],
+);
+
 =head1 RELATIONS
 
 =head2 outside

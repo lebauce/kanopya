@@ -14,22 +14,27 @@ my $errmsg;
 # in the hierarchy
 
 sub getAttrDefs {
-	my $class = shift;
-	my $result = {};
-	my @classes = split(/::/, $class);
-	while(@classes) {
-		my $currentclass = join('::', @classes);
-		my $location = $currentclass;
-		$location =~ s/\:\:/\//g;
-		$location .= '.pm';
-		eval { require $location; };
-		my $attr_def = eval { $currentclass->getAttrDef() };
-		if($attr_def) {
-			$result->{$currentclass} = $attr_def;
-		}
-		pop @classes;
-	}
-	return $result;
+    my $class = shift;
+    my $result = {};
+    my @classes = split(/::/, $class);
+    while(@classes) {
+        my $currentclass = join('::', @classes);
+        my $location = $currentclass;
+        $location =~ s/\:\:/\//g;
+        $location .= '.pm';
+        eval { require $location; };
+        if ($@) {
+            throw Kanopya::Exception::Internal::UnknownClass(
+                      error => "Could not find $location :\n$@"
+                  );
+        }
+        my $attr_def = eval { $currentclass->getAttrDef() };
+        if($attr_def) {
+            $result->{$currentclass} = $attr_def;
+        }
+        pop @classes;
+    }
+    return $result;
 }
 
 sub _buildClassNameFromString {
@@ -39,37 +44,37 @@ sub _buildClassNameFromString {
 }
 
 sub _rootTable {
-	my ($class) = @_;
-	$class =~ s/\:\:.*$//g;
-	return $class;
+    my ($class) = @_;
+    $class =~ s/\:\:.*$//g;
+    return $class;
 }
 
 # checkAttrs : check attribute validity in the class hierarchy 
 # return dbix class row where the attr is found
 
 sub checkAttr {
-	my $self = shift;
+    my $self = shift;
     my $class = ref($self) || $self;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['name']);
     if(! exists $args{value}) {
-		$errmsg = ref($self) . " checkAttr need a value named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
+        $errmsg = ref($self) . " checkAttr need a value named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
     
     my $attributes_def = $class->getAttrDefs();
     foreach my $module (keys %$attributes_def) {
-		if (exists $attributes_def->{$module}->{$args{name}} && defined $args{value}){
-			if($args{value} !~ m/($attributes_def->{$module}->{$args{name}}->{pattern})/){
-				$errmsg = "$class"."->checkAttr detect a wrong value $args{$value} for param : $args{name} on class $module";
-				$log->error($errmsg);
-				throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-			}
-			next;
-		} 
-	}
+        if (exists $attributes_def->{$module}->{$args{name}} && defined $args{value}){
+            if($args{value} !~ m/($attributes_def->{$module}->{$args{name}}->{pattern})/){
+                $errmsg = "$class"."->checkAttr detect a wrong value $args{$value} for param : $args{name} on class $module";
+                $log->error($errmsg);
+                throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            }
+            next;
+        }
+    }
 }
 
 
@@ -85,53 +90,53 @@ sub checkAttrs {
     my $attributes_def = $class->getAttrDefs();
     
     $log->debug('>>>>>>> '.Dumper $attributes_def);
-	
+
     General::checkParams(args => \%args, required => ['attrs']);  
 
-	foreach my $module (keys %$attributes_def) {
-		#$log->debug("$module added to sorted_attrs");
-		$final_attrs->{$module} = {};
-	}
+    foreach my $module (keys %$attributes_def) {
+        #$log->debug("$module added to sorted_attrs");
+        $final_attrs->{$module} = {};
+    }
 
-	my $attrs = $args{attrs};
+    my $attrs = $args{attrs};
     # search unknown attribute or invalid value attribute
     ATTRLOOP:
     foreach my $attr (keys(%$attrs)) { 
         foreach my $module (keys %$attributes_def) {
-			if (exists $attributes_def->{$module}->{$attr}){
-				my $value = $attrs->{$attr};
-				if($value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/) {
-					$errmsg = "$class"."->checkAttrs detect a wrong value ($value) for param : $attr on class $module";
-					throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-				}
-				$final_attrs->{$module}->{$attr} = $value;	
-				next ATTRLOOP;
-			} 
-		}
-		$errmsg = "$class" . "->checkAttrs detect a wrong attr $attr !";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+            if (exists $attributes_def->{$module}->{$attr}){
+                my $value = $attrs->{$attr};
+                if($value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/) {
+                    $errmsg = "$class"."->checkAttrs detect a wrong value ($value) for param : $attr on class $module";
+                    throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+                }
+                $final_attrs->{$module}->{$attr} = $value;
+                next ATTRLOOP;
+            }
+        }
+        $errmsg = "$class" . "->checkAttrs detect a wrong attr $attr !";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     
     # search for non provided mandatory attribute and set primary keys to undef
     foreach my $module (keys %$attributes_def) {
-		foreach my $attr (keys(%{$attributes_def->{$module}})) {
-			if (($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
-				$errmsg = "$class" . "->checkAttrs detect a missing attribute $attr (on $module)!";
-				$log->error($errmsg);
-				throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-			}
-		}
-	}
+        foreach my $attr (keys(%{$attributes_def->{$module}})) {
+            if (($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
+                $errmsg = "$class" . "->checkAttrs detect a missing attribute $attr (on $module)!";
+                $log->error($errmsg);
+                throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+            }
+        }
+    }
     
     my @modules = sort keys %$final_attrs;
     # finaly restructure the hashref with dbix relationships         
     for my $i (0..$#modules-1) {
-		my $classname = _buildClassNameFromString($modules[$i+1]);
-		$classname =~ s/([A-Z])/_$1/g;
-		my $relation = lc( substr($classname, 1) );
-		$final_attrs->{$modules[$i]}->{$relation} = $final_attrs->{$modules[$i+1]};
-	}
+        my $classname = _buildClassNameFromString($modules[$i+1]);
+        $classname =~ s/([A-Z])/_$1/g;
+        my $relation = lc( substr($classname, 1) );
+        $final_attrs->{$modules[$i]}->{$relation} = $final_attrs->{$modules[$i+1]};
+    }
     
     return $final_attrs->{$modules[0]};
 }
@@ -141,10 +146,10 @@ sub checkAttrs {
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     my $attrs = $class->checkAttrs(attrs => \%args);
     $log->debug('checkAttrs for root class insertion return '.Dumper($attrs));
-       
+
     my $adm = Administrator->new();
 
     # Get the class_type_id for class name
@@ -156,7 +161,7 @@ sub new {
     };
     if ($@) {
         my $error = $@;
-        $errmsg = "Unregistred or bastract class name <$class>:\n $error";
+        $errmsg = "Unregistred or abstract class name <$class>:\n $error";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
@@ -165,8 +170,8 @@ sub new {
     $dbixroot->insert;
     my $id = $dbixroot->id;
     if($id) {
-		$log->debug("$class successully inserted in database");
-	}
+        $log->debug("$class successully inserted in database");
+    }
     
     my $self = {
         _dbix => $adm->getRow(table => _buildClassNameFromString($class),
@@ -191,25 +196,25 @@ sub getAttr {
     
     General::checkParams(args => \%args, required => ['name']);
 
-	while(1) {	
-		# Search for attr in this dbix
-		if ( $dbix->has_column($args{name}) ) {
-			$value = $dbix->get_column($args{name});
-			$found = 1;
-			last;
-		} elsif($dbix->can('parent')) {
-			# go to parent dbix
-			$dbix = $dbix->parent;
-			next;
-		} else {
-			last;
-		}
-	}
+    while(1) {
+        # Search for attr in this dbix
+        if ( $dbix->has_column($args{name}) ) {
+            $value = $dbix->get_column($args{name});
+            $found = 1;
+            last;
+        } elsif($dbix->can('parent')) {
+            # go to parent dbix
+            $dbix = $dbix->parent;
+            next;
+        } else {
+            last;
+        }
+    }
 
-	if(not $found) {
-		$errmsg = ref($self) . " getAttr no attr name $args{name}!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
+    if(not $found) {
+        $errmsg = ref($self) . " getAttr no attr name $args{name}!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     } 
     return $value;
 }
@@ -217,22 +222,22 @@ sub getAttr {
 # getAttrs : retrieve all keys/values in the class hierarchy
 
 sub getAttrs {
-	my $self = shift;
+    my $self = shift;
     my $dbix = $self->{_dbix};
      
    # build hash corresponding to class table (with local changes)
    my %attrs = ();
-   	while(1) {	
-		# Search for attr in this dbix
-		my %currentattrs = $dbix->get_columns;
-		%attrs = (%attrs, %currentattrs);
-		if($dbix->can('parent')) {
-			$dbix = $dbix->parent;
-			next;
-		} else {
-			last;
-		}
-	}
+       while(1) {
+        # Search for attr in this dbix
+        my %currentattrs = $dbix->get_columns;
+        %attrs = (%attrs, %currentattrs);
+        if($dbix->can('parent')) {
+            $dbix = $dbix->parent;
+            next;
+        } else {
+            last;
+        }
+    }
     
    return %attrs;
 }
@@ -249,35 +254,35 @@ sub setAttr {
     General::checkParams(args => \%args, required => ['name']);
 
     if(! exists $args{value}) {
-		$errmsg = ref($self) . " setAttr need a value named argument!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	
-	my ($name, $value) = ($args{name}, $args{value});
+        $errmsg = ref($self) . " setAttr need a value named argument!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    my ($name, $value) = ($args{name}, $args{value});
     my $dbix = $self->{_dbix};
     $self->checkAttr(%args);
     
     my $found = 0;
-	while(1) {	
-		# Search for attr in this dbix
-		if ( $dbix->has_column($name) ) {
-			$dbix->set_column($name, $value);
-			$found = 1;
-			last;
-		} elsif($dbix->can('parent')) {
-			# go to parent dbix
-			$dbix = $dbix->parent;
-			next;
-		} else {
-			last;
-		}
-	}
+    while(1) {
+        # Search for attr in this dbix
+        if ( $dbix->has_column($name) ) {
+            $dbix->set_column($name, $value);
+            $found = 1;
+            last;
+        } elsif($dbix->can('parent')) {
+            # go to parent dbix
+            $dbix = $dbix->parent;
+            next;
+        } else {
+            last;
+        }
+    }
 
-	if(not $found) {
-		$errmsg = ref($self) . " setAttr no attr name $args{name}!";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal(error => $errmsg);
+    if(not $found) {
+        $errmsg = ref($self) . " setAttr no attr name $args{name}!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     } 
     return $value;
 }
@@ -290,7 +295,7 @@ sub get {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    $log->debug('BaseDB::get: id <' . $args{id} . '>, class <' . $class . '>');
+    $log->debug('id <' . $args{id} . '>, class <' . $class . '>');
 
     my $adm = Administrator->new();
     eval {
@@ -302,10 +307,15 @@ sub get {
     }
     my $table = _buildClassNameFromString($class);
 
-    $log->debug('BaseDB::get: id <' . $args{id} . '>, concrete_class <' . $class . '>');
+    $log->debug('id <' . $args{id} . '>, concrete_class <' . $class . '>');
 
     my $location = General::getLocFromClass(entityclass => $class);
-	require $location;
+    eval { require $location; };
+    if ($@) {
+        throw Kanopya::Exception::Internal::UnknownClass(
+                  error => "Could not find $location :\n$@"
+              );
+    }
 
     my $dbix = $adm->getRow(id => $args{id}, table => $table);
     my $self = {
@@ -340,17 +350,39 @@ sub search {
             } 
             else { $exception->rethrow(); } 
         }
-        else { push @objs, $obj; }
+        else {
+            $log->debug($obj->toString);
+            push @objs, $obj;
+        }
     }
     
     return  @objs;
 }
 
+sub find {
+    my $class = shift;
+    my %args = @_;
+    my @objs = ();
+
+    General::checkParams(args => \%args, required => ['hash']);
+
+    my @objects = $class->search(%args);
+
+    my $object = pop @objects;
+    if (! defined $object) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
+              );
+    }
+    return $object;
+}
+
+
 # save : store records in database ;
 # create them in not exists, update them otherwise
 
 sub save {
-	my $self = shift;
+    my $self = shift;
     my $dbix = $self->{_dbix};
 
     my $id;
@@ -358,19 +390,19 @@ sub save {
         $log->debug('in storage !');
         # MODIFY existing db obj
         $dbix->update;
-        while(1) {	
-			if($dbix->can('parent')) {
-				$dbix = $dbix->parent;
-				$dbix->update;				
-				next;
-			} else {
-				last;
-			}
-		}
+        while(1) {
+            if($dbix->can('parent')) {
+                $dbix = $dbix->parent;
+                $dbix->update;
+                next;
+            } else {
+                last;
+            }
+        }
     } else {
-		$errmsg = "$class" . "->save can't be called on a non saved instance! (new has not be called)";
-		$log->error($errmsg);
-		throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+        $errmsg = "$class" . "->save can't be called on a non saved instance! (new has not be called)";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         
     }
     $log->info(ref($self)." updated in database");
@@ -380,19 +412,22 @@ sub save {
 # delete : remove records from the entire class hierarchy
 
 sub delete {
-	my $self = shift;
-	my $dbix = $self->{_dbix};
-	# Search for first mother table in the hierarchy
-	while(1) {	
-		if($dbix->can('parent')) {
-			# go to parent dbix
-			$dbix = $dbix->parent;
-			next;
-		} else {
-			last;
-		}
-	}
-	$dbix->delete;
+    my $self = shift;
+    my $dbix = $self->{_dbix};
+    # Search for first mother table in the hierarchy
+    while(1) {
+        if($dbix->can('parent')) {
+            # go to parent dbix
+            $dbix = $dbix->parent;
+            next;
+        } else {
+            last;
+        }
+    }
+    $dbix->delete;
 }
 
+sub toString{
+    return "";
+}
 1;

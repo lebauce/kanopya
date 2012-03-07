@@ -1,5 +1,7 @@
 # Host.pm - Object class of Ḿotherboard (Administrator side)
-#    Copyright © 2011 Hedera Technology SAS
+
+#    Copyright © 2011-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,7 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
+
 package Entity::Host;
 use base "Entity";
 
@@ -52,8 +54,6 @@ host_hostname : Hostname is also internally managed. Host hostname will be gener
 It is generated when a host is added into a cluster
 host_initiatorname : This attributes is generated when a host is added in a cluster and allow to connect
 to internal storage to get the systemimage
-etc_device_id : Int : This parameter corresponding to lv storage and iscsitarget generated
-when a host is configured to be migrated into a cluster
 host_state : String : This parameter is internally managed, it allows to follow migration step.
 It could be :
 - WaitingStart
@@ -68,62 +68,95 @@ It could be :
 =cut
 
 use constant ATTR_DEF => {
-              hostmodel_id    =>    {pattern            => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended        => 0},
-              processormodel_id        => {pattern            => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              kernel_id                    => {pattern            => '^\d*$',
-                                            is_mandatory    => 1,
-                                            is_extended        => 0},
-              host_serial_number    => {pattern         => '^.*$',
-                                            is_mandatory    => 1,
-                                            is_extended     => 0},
-              host_powersupply_id=> {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_desc            => {pattern         => '^[\w\s]*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              active                    => {pattern         => '^[01]$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_mac_address    => {pattern         => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',  # mac address format must be lower case
-                                            is_mandatory    => 1,        # to have udev persistent net rules work
-                                            is_extended     => 0},
-              host_internal_ip    => {pattern         => '^.*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_hostname        => {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_ram        =>      {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              host_core        => {pattern         => '^\w*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-
-              host_initiatorname    => {pattern         => '^.*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              etc_device_id                => {pattern         => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-              cloud_cluster_id                => {pattern         => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-            host_state                => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-            host_ipv4_internal_id     => {pattern         => '^\d*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 0},
-            host_toto                => {pattern         => '^.*$',
-                                            is_mandatory    => 0,
-                                            is_extended     => 1}
-            };
+    service_provider_id => {
+        pattern => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+    host_manager_id => {
+        pattern => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+    hostmodel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    processormodel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    kernel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    host_serial_number => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    host_powersupply_id => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_desc => {
+        pattern      => '^[\w\s]*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    active => {
+        pattern      => '^[01]$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_mac_address => {
+        # mac address format must be lower case
+        pattern      => '^[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:' .
+                        '[0-9a-fA-F]{2}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}$',
+        # to have udev persistent net rules work
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    host_internal_ip => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_hostname => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_ram => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_core => {
+        pattern      => '^\w*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_initiatorname => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_state => {
+        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    host_ipv4_internal_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -252,11 +285,14 @@ sub setNodeState {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['state']);
+    General::checkParams(args => \%args, required => [ 'state' ]);
+
     my $new_state = $args{state};
     my $current_state = $self->getNodeState();
-    $self->{_dbix}->node->update({'node_prev_state' => $current_state,
-                                  'node_state' => $new_state . ":" . time})->discard_changes();
+    $self->{_dbix}->node->update({
+        node_prev_state => $current_state,
+        node_state      => $new_state . ":" . time
+    })->discard_changes();
 }
 
 =head2 Entity::Host->becomeNode (%args)
@@ -279,13 +315,12 @@ sub becomeNode {
     General::checkParams(args => \%args, required => ['inside_id','master_node','node_number']);
 
     my $adm = Administrator->new();
-    my $res =$adm->{db}->resultset('Node')->create(
-		{	inside_id=>$args{inside_id},
-            host_id =>$self->getAttr(name=>'host_id'),
-            master_node => $args{master_node},
-			node_number => $args{node_number}
-        }
-    );
+    my $res = $adm->{db}->resultset('Node')->create({
+                  inside_id   => $args{inside_id},
+                  host_id     => $self->getAttr(name => 'host_id'),
+                  master_node => $args{master_node},
+			      node_number => $args{node_number}
+              });
 
     return $res->get_column("node_id");
 }
@@ -310,23 +345,26 @@ sub addIface {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['iface_name','iface_mac_addr','iface_pxe','host_id']);
+    General::checkParams(args => \%args, required => [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ]);
 
     my $adm = Administrator->new();
-     my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id}, method => 'addIface');
+    my $granted = $adm->{_rightchecker}->checkPerm(entity_id => $self->{_entity_id},
+                                                   method    => 'addIface');
     if(not $granted) {
-        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to add an interface to this host");
+        throw Kanopya::Exception::Permission::Denied(
+                  error => "Permission denied to add an interface to this host"
+              );
     }
-    my $res =$adm->{db}->resultset('Iface')->create(
-		{	iface_name=>$args{iface_name},
-            iface_mac_addr => $args{iface_mac_addr},
-			iface_pxe => $args{iface_pxe},
-			host_id =>$self->getAttr(name=>'host_id')
-        }
-    );
+    my $res = $adm->{db}->resultset('Iface')->create(
+                  { iface_name     => $args{iface_name},
+                    iface_mac_addr => $args{iface_mac_addr},
+                    iface_pxe      => $args{iface_pxe},
+                    host_id        => $self->getAttr(name => 'host_id') }
+              );
 
     return $res->get_column("iface_id");
 }
+
 =head2 getIfaces
 
 =cut
@@ -437,7 +475,15 @@ sub getHostFromIP {
 
 sub getFreeHosts {
     my $class = shift;
-    my @hosts = $class->getHosts(hash => {active => 1, host_state => {-like => 'down:%'}});
+    my %args = @_;
+
+    my $hash = {active => 1, host_state => {-like => 'down:%'}};
+
+    if (defined $args{host_manager_id}) {
+        $hash->{host_manager_id} = $args{host_manager_id}
+    }
+
+    my @hosts = $class->getHosts(hash => $hash);
     my @free;
     foreach my $m (@hosts) {
         if(not $m->{_dbix}->node) {
@@ -452,9 +498,21 @@ sub getFreeHosts {
 =cut
 
 sub create {
-    my ($class, %params) = @_;
+    my $class = shift;
+    my %params = @_;
+
+    # Host must be created from component/connector that implements HostManager service.
+    # If created from this method, the default host provider is used within EAddHost operation.
+
+    # So add dummy values for service_provider_id and host_manager_id attrs check...
+    $params{service_provider_id} = 1;
+    $params{host_manager_id}     = 1;
 
 	$class->checkAttrs(attrs => \%params);
+
+    # ... add remove its to let the operation use the default values.
+    delete $params{service_provider_id};
+    delete $params{host_manager_id};
 
     $log->debug("New Operation AddHost with attrs : " . Dumper(%params));
     Operation->enqueue(priority => 200,
@@ -475,11 +533,15 @@ sub update {}
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <".$self->getAttr(name=>"host_id").">");
+    $log->debug("New Operation RemoveHost with host_id : <" .
+                $self->getAttr(name => "host_id") . ">");
+
     Operation->enqueue(
         priority => 200,
         type     => 'RemoveHost',
-        params   => {host_id => $self->getAttr(name=>"host_id")},
+        params   => {
+            host_id => $self->getAttr(name => "host_id")
+        },
     );
 }
 
@@ -568,13 +630,6 @@ sub toString {
     return $string;
 }
 
-sub getEtcName {
-    my $self = shift;
-    my $mac = $self->getAttr(name => "host_mac_address");
-    $mac =~ s/\:/\_/mg;
-    return "etc_". $mac;
-}
-
 =head2 getMacName
 
 return Mac address with separator : replaced by _
@@ -586,28 +641,6 @@ sub getMacName {
     my $mac = $self->getAttr(name => "host_mac_address");
     $mac =~ s/\:/\_/mg;
     return $mac;
-}
-
-=head2 getEtcContainerAccess
-
-get etc attributes used by this host
-
-=cut
-
-sub getEtcContainerAccess {
-    my $self = shift;
-    if (!$self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Host->getEtcContainerAccess must be called on an already save instance";
-        $log->error($errmsg);
-        throw Kanopya::Exception(error => $errmsg);
-    }
-
-    # TODO: Link the host to a ContainerAccess instead of a Container
-    #       For now, we just return the first ContainerAccess for this container
-    $log->info("Retrieve etc container access");
-    my $etc_accesses = Entity::Container->get(id => $self->{_dbix}->etc_container_id)->getAccesses;
-
-    return pop @$etc_accesses;
 }
 
 sub getInternalIP {
@@ -637,16 +670,14 @@ sub setInternalIP {
 sub removeInternalIP {
     my $self = shift;
 
-    my $internal_net_id = $self->getAttr(name =>"host_ipv4_internal_id");
+    my $internal_net_id = $self->getAttr(name => "host_ipv4_internal_id");
 
-    $self->{_dbix}->update({'host_ipv4_internal_id' => undef});
-    my $adm = Administrator->new();
-    my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_id => $internal_net_id);
-
+    if (defined $internal_net_id) {
+        $self->{_dbix}->update({'host_ipv4_internal_id' => undef});
+        my $adm = Administrator->new();
+        my $net_id = $adm->{manager}->{network}->delInternalIP(ipv4_id => $internal_net_id);
+    }
 }
-
-
-
 
 sub getClusterId {
     my $self = shift;

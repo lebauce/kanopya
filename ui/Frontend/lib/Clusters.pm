@@ -540,6 +540,17 @@ get '/extclusters/:clusterid' => sub {
         }
     } $extcluster->getConnectors();
 
+    my $num_noderule_ok    = -1337;
+    
+    my $num_clusterrule_ok = 0;
+    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled');
+    
+    foreach my $rule (@enabled_aggregaterules){
+        if($rule->getAttr(name => 'aggregate_rule_last_eval')){
+            $num_clusterrule_ok++;
+        } 
+    }
+        
     template 'extclusters_details', {
         title_page          => "External Clusters - Cluster's overview",
         active              => 1,
@@ -551,6 +562,8 @@ get '/extclusters/:clusterid' => sub {
         link_updatenodes    => 1,
         link_addconnector   => 1,
         can_configure       => 1,
+        num_noderule_ok     => $num_noderule_ok,
+        num_clusterrule_ok  => $num_clusterrule_ok,
     };
 };
 
@@ -951,6 +964,7 @@ get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
 get '/extclusters/:clusterid/nodes/update' => sub {
     my $adm = Administrator->new;
     my %res;
+
     eval {
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
         $cluster->updateNodes();
@@ -961,7 +975,7 @@ get '/extclusters/:clusterid/nodes/update' => sub {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
             $res{redirect} = '/permission_denied';
         }
-        else { $res{error} = $exception->message; }
+        else { $res{error} = "$exception"; }
     }
     else {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');

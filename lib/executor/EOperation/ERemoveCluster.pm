@@ -51,36 +51,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 new
-
-    my $op = EEntity::EOperation::ERemoveHost->new();
-
-EEntity::Operation::ERemoveHost->new creates a new RemoveMotheboard operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
 
 sub checkOp{
     my $self = shift;
@@ -106,12 +76,8 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    if ((! exists $args{internal_cluster} or ! defined $args{internal_cluster})) { 
-        $errmsg = "ERemoveCluster->prepare need an internal_cluster named argument!"; 
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    my $adm = Administrator->new();
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
@@ -130,7 +96,7 @@ sub prepare {
     
     # cluster systemimage instanciation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>"); 
-    $self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getSystemImage(); 
+    $self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getSystemImage();
 
     ### Check Parameters and context
     eval {
@@ -152,27 +118,29 @@ sub prepare {
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
-    my $adm = Administrator->new();
 
     # Remove cluster directory
-    my $command = "rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name =>"cluster_name");
+    my $command = "rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name");
     $self->{econtext}->execute(command => $command);
+
     $log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
-     # if systemimage defined (always true...?) and dedicated, back to shared state and deactivate it
-     if($self->{_objs}->{systemimage}) {
-         if($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')){
-             $self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
-             $self->{_objs}->{systemimage}->save();
-             
-             Operation->enqueue(
+    # if systemimage defined (always true...?) and dedicated, back to shared state and deactivate it
+    if ($self->{_objs}->{systemimage}) {
+        if ($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')) {
+            $self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
+            $self->{_objs}->{systemimage}->save();
+
+            Operation->enqueue(
                 priority => 2000,
                 type     => 'DeactivateSystemimage',
-                params   => {systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id')},
+                params   => { systemimage_id => $self->{_objs}->{systemimage}->getAttr(
+                                                    name => 'systemimage_id'
+                                                ) },
             );
-         }
-     }
-    
+        }
+    }
+
     $self->{_objs}->{cluster}->delete();
 }
 

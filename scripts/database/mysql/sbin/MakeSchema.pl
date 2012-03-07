@@ -43,9 +43,17 @@ if (not defined $table) {
     exit;
 }
 
+# Quick input for db user/pwd
+print "db user : ";
+my $db_user = <STDIN>;
+chomp $db_user;
+print "db pwd : ";
+my $db_pwd = <STDIN>;
+chomp $db_pwd;
+
 # Define globals
 my $schema_class_name = 'AdministratorDB::Schema';
-my $connect_info = [ 'dbi:mysql:administrator:localhost:3306', 'root', 'Hedera@123'];
+my $connect_info = [ 'dbi:mysql:administrator:localhost:3306', $db_user, $db_pwd];
 my $dump_dir = '/opt/kanopya/lib/administrator';
 
 if ($table eq 'all') {  # Update all existing schema and create schema for new tables

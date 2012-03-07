@@ -1,5 +1,3 @@
-# EAddHost.pm - Operation class implementing Host creation operation
-
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,7 +13,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -33,6 +30,7 @@ Component is an abstract class of operation objects
 =head1 METHODS
 
 =cut
+
 package EOperation::EAddHost;
 use base "EOperation";
 
@@ -63,7 +61,7 @@ sub checkOp {
     my $self = shift;
     my %args = @_;
     
-    # check if kernel_id exist
+    # Check if kernel_id exist
     $log->debug("checking kernel existence with id <$args{params}->{kernel_id}>");
     eval {
         Entity::Kernel->get(id => $self->{_objs}->{host}->getAttr(name => 'kernel_id'));
@@ -76,7 +74,7 @@ sub checkOp {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # check if host_model_id exist
+    # Check if host_model_id exist
     $log->debug("Checking host model existence with id <" .
                 $self->{_objs}->{host}->getAttr(name=>'hostmodel_id') .
                 ">");
@@ -91,7 +89,7 @@ sub checkOp {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # check if processor_model_id exist
+    # Check if processor_model_id exist
     $log->debug("Checking processor model existence with id <" .
                 $self->{_objs}->{host}->getAttr(name=>'processormodel_id') .
                 ">");
@@ -106,7 +104,7 @@ sub checkOp {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # check mac address unicity
+    # Check mac address unicity
     my $mac = $self->{_objs}->{host}->getAttr(name => 'host_mac_address');
     $log->debug("Checking unicity of mac address <$mac>");
     my $host = Entity::Host->getHost(hash => { host_mac_address => $mac });
@@ -141,82 +139,74 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
-    
-    $log->debug("After Eoperation prepare and before get Administrator singleton");
-    my $adm = Administrator->new();
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
+
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
-    
+
+    # Check if a service provider is given in parameters, use default instead.
+    eval {
+        General::checkParams(args => $params, required => [ "host_provider_id" ]);
+
+        $self->{_objs}->{host_provider}
+            = Entity::ServiceProvider->get(id => $params->{host_provider_id});
+
+        delete $params->{host_provider_id};
+    };
+    if ($@) {
+        $log->info("Host provider id not defined, using default.");
+        $self->{_objs}->{host_provider} = Entity::ServiceProvider::Inside::Cluster->get(
+                                              id => $args{internal_cluster}->{hostprovider}
+                                          );
+    }
+
+    # Check if a host manager is given in parameters, use default instead.
+    my $host_manager;
+    eval {
+        General::checkParams(args => $params, required => [ "host_manager_id" ]);
+
+        $host_manager
+            = $self->{_objs}->{host_provider}->getManager(id => $params->{host_manager_id});
+
+        delete $params->{host_manager_id};
+    };
+    if ($@) {
+        $log->info("Host manager id not defined, using default.");
+        $host_manager
+            = $self->{_objs}->{host_provider}->getDefaultManager(category => 'HostManager');
+    }
+
     # Put the MAC address in lowercase
     $params->{host_mac_address} = lc($params->{host_mac_address});
-    
-    # When powersupply is used, we save value in Operation to use %$params to instantiate host
-    if (exists $params->{powersupplycard_id} and defined $params->{powersupplycard_id} and
-        exists $params->{powersupplyport_number} and defined $params->{powersupplyport_number}) {
-        $log->debug("powersupplyport_number <$params->{powersupplyport_number}> " .
-                    "powersupplycard_id <$params->{powersupplycard_id}>");
-        $self->{_objs}->{powersupplyport_number} = $params->{powersupplyport_number};
-        eval {
-            $self->{_objs}->{powersupplycard}
-                = Entity::Powersupplycard->get(id => $params->{powersupplycard_id});
-        };
-        if($@) {
-            my $err = $@;
-            $errmsg = "EOperation::EAddHost->prepare : Wrong powersupplycard_id attribute " .
-                      "detected <$params->{powersupplycard_id}>\n" . $err;
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-        $log->debug("Power supply card instanciated with id $params->{powersupplycard_id}");
-        # We delete the host_powersupply_id entry to create properly in execute
-    }
 
-    if (defined $params->{powersupplycard_id}) { delete $params->{powersupplycard_id}; }
-    if (defined $params->{powersupplyport_number}) { delete $params->{powersupplyport_number}; }
+    # TODO: Check parameters for addHost method.
+    $self->{params} = $params;
+    $self->{_objs}->{ehost_manager} = EFactory::newEEntity(data => $host_manager);
 
-    # Instanciate new Host Entity
-    eval {
-        $self->{_objs}->{host} = Entity::Host->new(%$params);
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddHost->prepare : Wrong host attributes detected\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+    # Instanciate executor Cluster
+    $self->{executor} = Entity::ServiceProvider->get(
+                            id => $args{internal_cluster}->{executor}
+                        );
+
+    my $exec_ip = $self->{executor}->getMasterNodeIp();
+    my $masternode_ip = $self->{_objs}->{host_provider}->getMasterNodeIp();
+
+    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
+                                              ip_destination => $masternode_ip);
 }
 
 sub execute {
     my $self = shift;
-    my $adm = Administrator->new();
 
-    if (exists  $self->{_objs}->{powersupplycard} and
-        defined $self->{_objs}->{powersupplycard} and
-        exists  $self->{_objs}->{powersupplyport_number} and
-        defined $self->{_objs}->{powersupplyport_number}) {
+    my $host = $self->{_objs}->{ehost_manager}->createHost(erollback => $self->{erollback},
+                                                           econtext  => $self->{econtext},
+                                                           %{$self->{params}});
 
-        my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(
-                                 powersupplyport_number => $self->{_objs}->{powersupplyport_number}
-                             );
-
-        $self->{_objs}->{host}->setAttr(name  => 'host_powersupply_id',
-                                        value => $powersupply_id);
-    }
-
-    # Set initial state to down
-    $self->{_objs}->{host}->setAttr(name => 'host_state',
-                                    value => 'down:' . time);
-
-    # Save the Entity in DB
-    $self->{_objs}->{host}->save();
+    $log->info("Host <" . $host->getAttr(name => "host_mac_address") . "> is now created");
 
     my @group = Entity::Gp->getGroups(hash => {gp_name => 'Host'});
-    $group[0]->appendEntity(entity => $self->{_objs}->{host});
-
-    $log->info("Host <" . $self->{_objs}->{host}->getAttr(name => "host_mac_address") .
-               "> is now created");
+    $group[0]->appendEntity(entity => $host);
 }
 
 =head1 DIAGNOSTICS

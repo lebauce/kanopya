@@ -55,39 +55,6 @@ our $VERSION = '1.00';
 my $log = get_logger("executor");
 my $errmsg;
 
-=head2 new
-
-    my $op = EOperation::EAddSystemimage->new();
-
-EOperation::EAddSystemimage->new creates a new EAddSystemimage operation.
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init() is a private method used to define internal parameters.
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    $self->{_objs} = {};
-    $self->{executor} = {};
-
-    return;
-}
-
 
 =head2 prepare
 
@@ -99,6 +66,9 @@ sub prepare {
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
+
+    $self->{_objs} = {};
+    $self->{executor} = {};
 
     General::checkParams(args => \%args, required => ["internal_cluster"]);
 
@@ -158,9 +128,7 @@ sub prepare {
             = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'DiskManager');
     }
 
-    # Get the disk manager for disk creation, get the export manager for copy from file.
-    my $export_manager = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'ExportManager');
-    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
+    # Get the edisk manager for disk creation.
     $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $disk_manager);
 
     # Get contexts
@@ -173,9 +141,7 @@ sub prepare {
     $self->{_objs}->{edisk_manager}->{econtext}
         = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                 ip_destination => $storage_provider_ip);
-    $self->{_objs}->{eexport_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                ip_destination => $storage_provider_ip);
+
 }
 
 sub execute {
@@ -185,7 +151,6 @@ sub execute {
 
     $esystemimage->create(devs            => $self->{_objs}->{distribution}->getDevices(),
                           edisk_manager   => $self->{_objs}->{edisk_manager},
-                          eexport_manager => $self->{_objs}->{eexport_manager},
                           econtext        => $self->{executor}->{econtext},
                           erollback       => $self->{erollback});
 
