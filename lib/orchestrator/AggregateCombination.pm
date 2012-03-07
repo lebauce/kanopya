@@ -245,6 +245,7 @@ sub computeFromArrays{
         $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
     # print Dumper \%rep;
+    return %rep;
 } 
 
 sub checkMissingParams {
