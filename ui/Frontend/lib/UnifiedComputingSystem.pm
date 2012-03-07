@@ -100,7 +100,7 @@ get '/ucs/:ucsid/remove' => sub {
 get '/ucs/:ucsid' => sub {
     my $ucs_id = param('ucsid');
     my $eucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(id => $ucs_id);
-    my $eeucs = $eucs->getConnector(category => 'HostManager');
+    my $eeucs = $eucs->getConnector(category => 'Cloudmanager');
     my @sps = $eeucs->get_service_profiles();
     my @templates = $eeucs->get_service_profile_templates(
                         dn => $eucs->getAttr('name' => 'ucs_ou')

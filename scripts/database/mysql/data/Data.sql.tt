@@ -375,7 +375,7 @@ INSERT INTO `component_type` VALUES
 INSERT INTO `connector_type` VALUES
 (1,'ActiveDirectory','1','DirectoryService'),
 (2,'Scom','1','MonitoringService'),
-(3,'UcsManager','1','HostManager');
+(3,'UcsManager','1','Cloudmanager');
 
 --
 -- kernels
