@@ -16,6 +16,9 @@
 package Entity::ServiceProvider::Outside::UnifiedComputingSystem;
 use base 'Entity::ServiceProvider::Outside';
 
+use strict;
+use warnings;
+
 use NetAddr::IP;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -87,24 +90,15 @@ sub remove {
     $self->SUPER::delete(); 
 };
 
-# TODO -> getState method who grab the state from XML/RPC UCS API
-#sub getState {
-#
-#}
-
-sub login {
-    my $ucs = Cisco::UCS->new(
-        cluster  => "89.31.149.80",
-        port     => 80, 
-        proto    => "http",
-        username => "admin",
-        passwd   => "Infidis2011"
-    ); 
+sub getMasterNodeIp {
+    my $self = shift;
+    return $self->{_dbix}->get_column('ucs_addr');
 }
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('ucs_name'). " ". $self->{_dbix}->get_column('ucs_addr');
-    return $string;
+    return $self->{_dbix}->get_column('ucs_name') . " ".
+           $self->{_dbix}->get_column('ucs_addr');
 }
+
 1;
