@@ -306,6 +306,7 @@ post '/extclusters/add' => sub {
     eval {
         my $new_extcluster = Entity::ServiceProvider::Outside::Externalcluster->new(%$params);
         $new_cluster_id = $new_extcluster->getAttr(name => 'externalcluster_id');
+        #$new_extcluster->monitoringDefaultInit();
     };
     if($@) {
         my $exception = $@;
