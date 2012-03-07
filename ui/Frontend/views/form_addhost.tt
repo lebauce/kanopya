@@ -3,6 +3,11 @@
 <form id="target" method="POST" action="/infrastructures/hosts/add">
 <table class="form">
 	<tr>
+		<td class="label">Managed by :</td>
+		<td><% manager.name %></td>
+        <input type="hidden" name="host_manager_id" value="<% manager.id %>"/>
+	</tr>
+	<tr>
 		<td class="label">MAC address :</td>
 		<td><input type="text" name="mac_address" maxlength="17" size="17"/>
 		<span style="color: red"><% ERR_MAC_ADDRESS %></span></td>

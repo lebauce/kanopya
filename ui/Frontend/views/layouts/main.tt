@@ -213,9 +213,11 @@
                         <li <% submenu_selection('groups') %>><a href="/rights/groups">Groups</a></li>
                         <li <% submenu_selection('permissions') %>><a href="/rights/permissions">Permissions</a></li>
                     <% ELSIF is_menu_selected('infrastructures') %>
-                        <li <% submenu_selection('hosts') %>><a href="/infrastructures/hosts">Hosts</a></li>
-                        <li <% submenu_selection('vm') %>><a href="/infrastructures/vms">Vms</a></li>
-                        <li <% submenu_selection('models') %>><a href="/infrastructures/models">Models</a></li>
+                        <% FOREACH manager IN host_managers %>
+                            <li <%IF host_manager.id == manager.id %>class="selected"<% END %>>
+                                <a href="/infrastructures/hosts?manager=<% manager.id %>"><% manager.name %></a>
+                            </li>
+                        <% END %>
                     <% ELSIF is_menu_selected('networks') %>
                          <li <% submenu_selection('poolip') %>><a href="/networks/poolip">Pool IP</a></li>
                          <li <% submenu_selection('vlans') %>><a href="/networks/vlans">Vlan</a></li>
