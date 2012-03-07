@@ -223,7 +223,7 @@ sub monitoringDefaultInit {
                     comparator            => '>',
                     threshold             => '0',
                     state                 => 'enabled',
-                    time_limit            =>  undef,
+                    #time_limit            =>  undef,
                 };
                my $aggregate_condition = AggregateCondition->new(%$condition_params);
             
@@ -303,7 +303,7 @@ sub monitoringDefaultInit {
             comparator            => '>',
             threshold             => 0.5,
             state                 => 'enabled',
-            time_limit            => undef,
+            #time_limit            => undef,
         };
        my $aggregate_condition = AggregateCondition->new(%$condition_params);
 
