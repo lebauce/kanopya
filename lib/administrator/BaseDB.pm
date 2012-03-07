@@ -427,4 +427,7 @@ sub delete {
     $dbix->delete;
 }
 
+sub toString{
+    return "";
+}
 1;
