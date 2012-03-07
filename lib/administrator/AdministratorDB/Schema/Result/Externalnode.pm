@@ -76,10 +76,9 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
 );
 __PACKAGE__->set_primary_key("externalnode_id");
-
 __PACKAGE__->add_unique_constraint(
-    "externalnode_hostname",
-    ["externalnode_hostname", "outside_id"],
+  "externalnode_hostname",
+  ["externalnode_hostname", "outside_id"],
 );
 
 =head1 RELATIONS
@@ -99,9 +98,26 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 verified_noderules
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-02-15 13:58:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AC44UEMarOyOj+udffEoUA
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::VerifiedNoderule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "verified_noderules",
+  "AdministratorDB::Schema::Result::VerifiedNoderule",
+  {
+    "foreign.verified_noderule_externalnode_id" => "self.externalnode_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-07 15:46:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EXtFZxmqgho8aoY9HwmvgQ
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration
