@@ -247,46 +247,57 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 	#we retrieve the combination list for this external cluster
 	_getCombinations(\%template_config);
 
-	$log->error('get combinations: '.Dumper\%template_config);
+	# $log->error('get combinations: '.Dumper\%template_config);
 
 	template 'cluster_monitor', \%template_config;
 };
 
 ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	my $cluster_id = params->{extclusterid} || 0;   
-	my $combination = params->{'id'};
+	my $combination_id = params->{'id'};
 	my $start = params->{'start'};
+    my $start_timestamp;
+    my $stop_timestamp;
 	my $stop = params->{'stop'};	
-	
+	my $error;
+    my $combination = AggregateCombination->get('id' => $combination_id);
+    my %aggregate_combination;
+    my @histovalues;
+    
 	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
 	if ($start eq '') {
 		$start = DateTime->now;
 		$start->subtract( days => 1 );
+        $start_timestamp = $start->epoch(); 
 		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
 	}
 	if ($stop eq '') {
 		$stop = DateTime->now;
+        $stop_timestamp = $stop->epoch(); 
 		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
 	}
-	
-	my $start_time = "03-02-2012 16:00";
-	my $stop_time = "03-02-2012 16:30";
-	
-	# $log->error('login before eval, combination: '.Dumper($combination));
-	# my $aggregate_combination = AggregateCombination->computeValues(start_time => $theTime - 300, stop_time => $theTime);
-	
-	##############replace histo values by computeValues returned hash
-	my %histovalues = (1330705020 => 1, 1330705080 => 2, 1330705140 => 3, 1330705200 => 4, 1330705260 => 5, 1330705300 => 6, 1330705360 => 7);
-	my @histovalues;
-	while (my ($date, $value) = each %histovalues){				
-			my $dt = DateTime->from_epoch(epoch => $date);
-			my $date_string = $dt->mdy('-') . ' ' .$dt->hour_1().':'.$dt->minute();
-			# my $date_string =$date;
-			push @histovalues, [$date_string,$value];
-		}		
-	$log->info('fetched values: '.Dumper \@histovalues);
-	
-	to_json {first_histovalues => \@histovalues, min => $start_time, max => $stop_time, start=> $start, stop => $stop};
+    
+    eval {
+        %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
+        # $log->error('combination gathered: '.Dumper(\%aggregate_combination));
+    };
+    if ($@) {
+		$error="$@";
+		$log->error($error);
+		to_json {error => $error};
+	} elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
+		$error='no values could be computed for this combination';
+		$log->error($error);
+		to_json {error => $error};
+	} else {
+        while (my ($date, $value) = each %aggregate_combination) {				
+                my $dt = DateTime->from_epoch(epoch => $date);
+                my $date_string = $dt->mdy('-') . ' ' .$dt->hour_1().':'.$dt->minute();
+                push @histovalues, [$date_string,$value];
+            }		
+        $log->info('values sent to timed graph: '.Dumper \@histovalues);
+    }
+	to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
   
 
@@ -297,25 +308,22 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	my $indicator_unit =  params->{'unit'};
 	my $nodes_metrics; 
 	my $error;
-	# $log->error('login before eval, indicator: '.Dumper($indicator));
-	# $log->error('login before eval, indicator_unit: '.Dumper($indicator_unit));
 	eval {
 		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
-		# $log->error('login from eval: '.Dumper($nodes_metrics));
 	};
-	if ($@){
+	if ($@) {
 		$error="$@";
 		$log->error($error);
 		to_json {error => $error};
-	}elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0){
+	} elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0) {
 		$error='no values could be retrieved for this metric';
 		$log->error($error);
 		to_json {error => $error};
-	}else{
+	} else {
 		my @nodes;
 		my @values;
 		
-		while (my ($node, $metric) = each %$nodes_metrics){
+		while (my ($node, $metric) = each %$nodes_metrics) {
 			push @nodes, $node;
 			push @values, int($metric->{$indicator});
 		}		

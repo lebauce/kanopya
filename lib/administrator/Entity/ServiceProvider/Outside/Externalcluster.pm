@@ -121,10 +121,12 @@ sub getNodes {
     my $node_rs = $self->{_dbix}->parent->externalnodes;
 
     my @nodes;
-    while (my $set = $node_rs->next) {
+    while (my $node_row = $node_rs->next) {
         push @nodes, {
-            hostname    => $set->get_column('externalnode_hostname'),
-            state       => $set->get_column('externalnode_state'),
+            hostname           => $node_row->get_column('externalnode_hostname'),
+            state              => $set->get_column('externalnode_state'),
+            id                 => $node_row->get_column('externalnode_id'),
+            num_verified_rules => $node_row->verified_noderules->count(),
         };
     }
     
