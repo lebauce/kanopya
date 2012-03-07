@@ -17,7 +17,6 @@ package Entity::Connector::UcsManager;
 use base "Entity::Connector";
 use base "Entity::HostManager";
 
-use strict;
 use warnings;
 
 use Cisco::UCS;
@@ -62,6 +61,8 @@ sub AUTOLOAD {
 }
 
 sub DESTROY {
+    my $self = shift;
+
     if (defined $self->{api}) {
         $self->{api}->logout();
         $self->{api} = undef;
