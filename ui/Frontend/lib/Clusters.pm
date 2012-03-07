@@ -951,6 +951,7 @@ get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
 get '/extclusters/:clusterid/nodes/update' => sub {
     my $adm = Administrator->new;
     my %res;
+
     eval {
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
         $cluster->updateNodes();
@@ -961,7 +962,7 @@ get '/extclusters/:clusterid/nodes/update' => sub {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
             $res{redirect} = '/permission_denied';
         }
-        else { $res{error} = $exception->message; }
+        else { $res{error} = "$exception"; }
     }
     else {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');
