@@ -1217,10 +1217,10 @@ CREATE TABLE `nodemetric_rule` (
 
 
 --
--- Table structure for table `verified_rule`
+-- Table structure for table `verified_noderule`
 --
 
-CREATE TABLE `verified_rule` (
+CREATE TABLE `verified_noderule` (
   `verified_rule_externalnode_id` int(8) unsigned NOT NULL,
   `verified_rule_nodemetric_rule_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`verified_rule_externalnode_id`,`verified_rule_nodemetric_rule_id`),
