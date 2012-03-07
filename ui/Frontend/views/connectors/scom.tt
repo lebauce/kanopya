@@ -9,6 +9,15 @@
 <table>
 <tr><td>Root Management Server name :</td><td><input type="text" size="64" class="conf_simple_value" name="scom_ms_name" value="<% scom_ms_name %>"/></td></tr>
 </table>
+<h3>Remote invocation</h3>
+<table>
+<tr><td>Use ssl :
+    <select class="conf_simple_value" name="scom_usessl">
+        <option value="1" <% IF scom_usessl %>selected<% END %>>yes</option>
+        <option value="0" <% UNLESS scom_usessl %>selected<% END %>>no</option>
+    </select>
+</td></tr>
+</table>
 
 <hr />
 <div class="right">

@@ -65,6 +65,8 @@ sub new {
     ];
     $self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_management_server_name} . ' -persistConnection: $false -interactive: $false';
     
+    $self->{_remote_invocation_options} = $args{use_ssl} ? "-UseSSL" : "";
+    
     return $self;
 }
 
@@ -129,7 +131,7 @@ sub _execCmd {
     #my $cmd_res = `powershell $full_cmd`;
     
     # Else use remote snap-in
-    my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name}`;
+    my $cmd_res = `powershell invoke-command {$full_cmd} -ComputerName $self->{_management_server_name} $self->{_remote_invocation_options}`;
     
     return $cmd_res;
 }

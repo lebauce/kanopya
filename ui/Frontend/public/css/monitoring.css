@@ -1,19 +1,25 @@
 .list_label{
 
 }
+
 #nodechart{
 	display:none;
-	position:relative; 
-	margin-left:7%;
-	height:500px;
-	width:1600px; 
+    height:500px;
+    width:100%;
 }
-#timedClusterMetricView{
+#timedCombinationView{
 	display:none;
-	position:relative; 
-	margin-left:7%;
-	height:500px;
-	width:1600px; 
+    height:500px;
+    width:100%;
+}
+
+#single_node_overview{
+   	height:800px;
+	width:1600px;  
+}
+
+.jqplot-yaxis jqplot-yaxis-label{
+    bottom: -10px;
 }
 
 /*CSS fix for the Time Picker addon */

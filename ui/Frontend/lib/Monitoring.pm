@@ -307,7 +307,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 		$error="$@";
 		$log->error($error);
 		to_json {error => $error};
-	}elsif (!defined $nodes_metrics || %$nodes_metrics == ()){
+	}elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0){
 		$error='no values could be retrieved for this metric';
 		$log->error($error);
 		to_json {error => $error};
