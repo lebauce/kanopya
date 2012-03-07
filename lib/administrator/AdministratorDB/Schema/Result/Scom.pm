@@ -29,8 +29,13 @@ __PACKAGE__->table("scom");
 =head2 scom_ms_name
 
   data_type: 'char'
-  is_nullable: 0
+  is_nullable: 1
   size: 255
+
+=head2 scom_usessl
+
+  data_type: 'integer'
+  is_nullable: 1
 
 =cut
 
@@ -43,14 +48,9 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "scom_ms_name",
-  { data_type => "char", is_nullable => 0, size => 255 },
-    "class_type_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
+  { data_type => "char", is_nullable => 1, size => 255 },
+  "scom_usessl",
+  { data_type => "integer", is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("scom_id");
 

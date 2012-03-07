@@ -39,7 +39,8 @@ sub _clusters {
     my $can_configure;
     foreach my $n (@eclusters){
         my $tmp = {
-            link_activity => 0,
+            route_base           => 'clusters',
+            link_activity        => 0,
             cluster_id           => $n->getAttr(name => 'cluster_id'),
             cluster_name         => $n->getAttr(name => 'cluster_name'),
             cluster_basehostname => $n->getAttr(name=>'cluster_basehostname')
@@ -85,6 +86,32 @@ sub _clusters {
     #}
 
     return $clusters;
+}
+
+sub _externalclusters {
+    my @extclusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
+    
+    my @clusters;
+    foreach my $cluster (@extclusters) {
+        
+        my $nodes = $cluster->getNodes();
+        my $nbnodes = scalar(@$nodes);
+        
+        push @clusters, {
+            route_base      => 'extclusters',
+            link_activity   => 1,
+            type            => 'External cluster',
+            active          => 1,
+            state_up        => 1,
+            cluster_id      => $cluster->getAttr(name => 'externalcluster_id'),
+            cluster_name    => $cluster->getAttr(name => 'externalcluster_name'),
+            cluster_desc    => $cluster->getAttr(name => 'externalcluster_desc'),
+            nbnodes         => $nbnodes,
+            nbnodesup       => $nbnodes,
+        };
+    }
+    
+    return \@clusters;
 }
 
 # return an array containing running clusters with Cloudmanager component
@@ -261,6 +288,42 @@ post '/clusters/add' => sub {
     }
 };
 
+get '/extclusters/add' => sub {
+    
+    template 'form_addexternalcluster', {
+        title_page                  => "External Clusters - Add",
+    }, { layout => '' };
+};
+
+post '/extclusters/add' => sub {
+    my $adm = Administrator->new;
+    
+    my $params = {
+        externalcluster_name           => params->{'name'},
+        externalcluster_desc           => params->{'desc'},
+    };
+    my $new_cluster_id;
+    eval {
+        my $new_extcluster = Entity::ServiceProvider::Outside::Externalcluster->new(%$params);
+        $new_cluster_id = $new_extcluster->getAttr(name => 'externalcluster_id');
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect '/permission_denied';
+        }
+        else {
+            $exception->rethrow();
+        }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'external cluster created (id:'.$new_cluster_id.')');
+        redirect "/architectures/extclusters/$new_cluster_id";
+    }
+};
+
+
 get '/clusters' => sub {
     my $can_create;
 
@@ -272,12 +335,9 @@ get '/clusters' => sub {
         }
     }
     
-    #TEMPORARY testing
-    #$can_create = 1;
-    
     template 'clusters', {
         title_page         => 'Clusters - Clusters',
-        clusters_list => _clusters(),
+        clusters_list => [ @{_clusters()}, @{_externalclusters()} ],
         can_create => $can_create,
         
     };
@@ -458,6 +518,42 @@ get '/clusters/:clusterid' => sub {
                        
      };
 };
+
+get '/extclusters/:clusterid' => sub {
+    my $cluster_id = params->{clusterid};
+    
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
+    
+    # Nodes list
+    my $nodes = $extcluster->getNodes();
+    foreach my $node (@$nodes) {
+        $node->{"state_" . $node->{state}} = 1;
+    }
+    
+    # Connectors
+    my @connectors = map { 
+        {
+            'connector_id'              => $_->getAttr(name => 'connector_id'),
+            'link_configureconnector'   => 1,
+            'link_remove'               => 1,
+            %{$_->getConnectorType()},
+        }
+    } $extcluster->getConnectors();
+
+    template 'extclusters_details', {
+        title_page          => "External Clusters - Cluster's overview",
+        active              => 1,
+        cluster_state       => 'up',
+        cluster_id          => $cluster_id,
+        cluster_name        => $extcluster->getAttr(name => 'externalcluster_name'),
+        nodes_list          => $nodes,
+        connectors_list     => \@connectors,
+        link_updatenodes    => 1,
+        link_addconnector   => 1,
+        can_configure       => 1,
+    };
+};
+
 
 get '/clusters/:clusterid/activate' => sub {
     my $adm = Administrator->new;
@@ -660,6 +756,62 @@ get '/clusters/:clusterid/components/:instanceid/remove' => sub {
     }
 };
 
+get '/extclusters/:clusterid/connectors/add' => sub {
+    my $adm = Administrator->new;
+    my $cluster_id = param('clusterid');
+
+    my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+
+    my $connectors = Entity::Connector->getConnectorTypes();
+
+    template 'form_addconnectortocluster', {
+        cluster_id         => $cluster_id,
+        cluster_name       => $cluster->getAttr(name => 'externalcluster_name'),
+        connectors_list    => $connectors
+    }, { layout => '' };
+};
+
+post '/extclusters/:clusterid/connectors/add' => sub {
+    my $adm = Administrator->new;
+    my $connector_id;
+    eval {
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+        $connector_id = $cluster->addConnectorFromType(connector_type_id => param('connector_type_id'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'Connector added sucessfully');
+        redirect("/systems/connectors/$connector_id/configure");
+    }
+};
+
+get '/extclusters/:clusterid/connectors/:instanceid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+        $cluster->removeConnector(connector_id => param('instanceid'));
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator',level => 'info', content => 'Connector removed sucessfully');
+        redirect("/architectures/extclusters/".param('clusterid'));
+    }
+};
+
 get '/clusters/:clusterid/ips/public/add' => sub {
     my $adm = Administrator->new;
     my $freepublicips = $adm->{manager}->{network}->getFreePublicIPs();
@@ -790,6 +942,33 @@ get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster remove node adding to execution queue');
         redirect('/architectures/clusters/'.param('clusterid'));
     }
+};
+
+
+# 'Prototype' method for error management
+# (instead of throw exception or redirect, return a json with error or redirect key which is handled on client side)
+# handled by js method catchError
+get '/extclusters/:clusterid/nodes/update' => sub {
+    my $adm = Administrator->new;
+    my %res;
+
+    eval {
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+        $cluster->updateNodes();
+    };
+       if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            $res{redirect} = '/permission_denied';
+        }
+        else { $res{error} = "$exception"; }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');
+        $res{redirect} = '/architectures/extclusters/'.param('clusterid');
+    }
+    to_json \%res;
 };
 
 1;

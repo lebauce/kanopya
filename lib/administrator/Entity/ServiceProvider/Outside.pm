@@ -71,6 +71,48 @@ sub addConnector {
     return $connector->{_dbix}->id;
 }
 
+=head2 addConnectorFromType
+
+Create and link a connector from type to the outside service provider
+
+=cut
+
+sub addConnectorFromType {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector_type_id']);
+    my $type_id = $args{connector_type_id};
+    my $adm = Administrator->new();
+    my $row = $adm->{db}->resultset('ConnectorType')->find($type_id);
+    my $conn_name = $row->get_column('connector_name');
+    my $conn_class = 'Entity::Connector::'.$conn_name;
+    my $location = General::getLocFromClass(entityclass => $conn_class);
+    eval {require $location };
+    my $connector = $conn_class->new();
+
+    $self->addConnector( connector => $connector );
+
+    return $connector->{_dbix}->id;
+}
+
+=head2 removeConnector
+
+remove a connector from id
+
+=cut
+
+sub removeConnector {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['connector_id']);
+
+    my $connector = Entity::Connector->get(id => $args{connector_id});
+    $connector->delete;
+
+}
+
 =head2 getConnector
 
 Get the concrete linked connector of category <category>
@@ -108,6 +150,13 @@ sub getConnector {
     my $loc = General::getLocFromClass(entityclass=>$class);
     eval { require $loc; };
     return "$class"->get(id =>$connector_id);
+}
+
+sub getConnectors {
+    my $self = shift;
+    my %args = @_;
+    
+    return Entity::Connector->search(hash => {outside_id => $self->getAttr(name => 'outside_id')});
 }
 
 1;

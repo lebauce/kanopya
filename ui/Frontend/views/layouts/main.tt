@@ -11,15 +11,14 @@
         <link rel="stylesheet" href="<% request.uri_base %>/css/misc.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/modal.css" />
         <link rel="stylesheet" href="<% request.uri_base %>/css/icon.css" />
-        <link rel="stylesheet" href="<% request.uri_base %>/css/monitoring.css" />
         <% FOREACH css IN css_head %>
             <link rel="stylesheet" href="<% request.uri_base %>/css/<% css %>" />
         <% END %>
 
-        <script type="text/javascript" src="/javascripts/kanopyaui-tools.js"></script>
         <script type="text/javascript" src="/javascripts/jquery.js"></script>
         <script type="text/javascript" src="/javascripts/jquery-ui-1.8.16.custom.min.js"></script>
-
+        <script type="text/javascript" src="/javascripts/kanopyaui-tools.js"></script>
+        
         <% FOREACH js IN js_head %>
             <script type="text/javascript" src="/javascripts/<% js %>"></script>
         <% END %>
@@ -227,7 +226,7 @@
                         <li <% submenu_selection('kernels') %>><a href="/systems/kernels">Kernels</a></li>
                         <li <% submenu_selection('components') %>><a href="/systems/components">Components</a></li>
                      <% ELSIF is_menu_selected('architectures') %>
-                        <li <% submenu_selection('clusters') %>><a href="/architectures/clusters">Clusters</a></li>
+                        <li <% submenu_selection('clusters') %><% submenu_selection('extclusters') %>><a href="/architectures/clusters">Clusters</a></li>
                         <li <% submenu_selection('networks') %>><a href="/architectures/networks">Networks</a></li>
                     <% ELSIF is_menu_selected('equipments') %>
                         <li <% submenu_selection('ucs') %>><a href="/equipments/ucs">UCS</a></li>

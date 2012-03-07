@@ -7,6 +7,9 @@ use Data::Dumper;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use AggregateRule;
+use AggregateCombination;
+use Aggregator;
+use Clustermetric;
 use General;
 use Log::Log4perl "get_logger";
 
@@ -218,7 +221,7 @@ get '/monitoring/browse' => sub  {
                     route   => $route_name,
                     name    => $_
                 } } @files;
-    
+
     template 'view_clustermonitoring_flot', {
         title_page      => "Monitor rrd plot",
         cluster_id      => $cluster_id,
@@ -230,48 +233,470 @@ get '/monitoring/browse' => sub  {
 # -----------------------------external cluster monitoring (poc BT)----------------------------#
 # ---------------------------------------------------------------------------------------------#
 
+# --------------------------------------------------------------------#
+# -----------------------------Plots view-----------------------------#
+# --------------------------------------------------------------------#
+
+
 get '/extclusters/:extclusterid/monitoring' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;
+    my $cluster_id = params->{extclusterid} || 0;
+	my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
+
+	# we retrieve the indicator list for this external cluster
+	_getIndicators(\%template_config);		
+	#we retrieve the combination list for this external cluster
+	_getCombinations(\%template_config);
+
+	$log->error('get combinations: '.Dumper\%template_config);
+
+	template 'cluster_monitor', \%template_config;
+};
+
+ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
+	my $cluster_id = params->{extclusterid} || 0;   
+	my $combination = params->{'id'};
+	my $start = params->{'start'};
+	my $stop = params->{'stop'};	
+	
+	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
+	if ($start eq '') {
+		$start = DateTime->now;
+		$start->subtract( days => 1 );
+		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
+	}
+	if ($stop eq '') {
+		$stop = DateTime->now;
+		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
+	}
+	
+	my $start_time = "03-02-2012 16:00";
+	my $stop_time = "03-02-2012 16:30";
+	
+	# $log->error('login before eval, combination: '.Dumper($combination));
+	# my $aggregate_combination = AggregateCombination->computeValues(start_time => $theTime - 300, stop_time => $theTime);
+	
+	##############replace histo values by computeValues returned hash
+	my %histovalues = (1330705020 => 1, 1330705080 => 2, 1330705140 => 3, 1330705200 => 4, 1330705260 => 5, 1330705300 => 6, 1330705360 => 7);
+	my @histovalues;
+	while (my ($date, $value) = each %histovalues){				
+			my $dt = DateTime->from_epoch(epoch => $date);
+			my $date_string = $dt->mdy('-') . ' ' .$dt->hour_1().':'.$dt->minute();
+			# my $date_string =$date;
+			push @histovalues, [$date_string,$value];
+		}		
+	$log->info('fetched values: '.Dumper \@histovalues);
+	
+	to_json {first_histovalues => \@histovalues, min => $start_time, max => $stop_time, start=> $start, stop => $stop};
+};  
+  
+
+ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
+    my $cluster_id    = params->{extclusterid} || 0;   
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
+    my $indicator = params->{'oid'};
+	my $indicator_unit =  params->{'unit'};
+	my $nodes_metrics; 
+	my $error;
+	# $log->error('login before eval, indicator: '.Dumper($indicator));
+	# $log->error('login before eval, indicator_unit: '.Dumper($indicator_unit));
+	eval {
+		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
+		# $log->error('login from eval: '.Dumper($nodes_metrics));
+	};
+	if ($@){
+		$error="$@";
+		$log->error($error);
+		to_json {error => $error};
+	}elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0){
+		$error='no values could be retrieved for this metric';
+		$log->error($error);
+		to_json {error => $error};
+	}else{
+		my @nodes;
+		my @values;
+		
+		while (my ($node, $metric) = each %$nodes_metrics){
+			push @nodes, $node;
+			push @values, int($metric->{$indicator});
+		}		
+		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};
+	}
+};
+
+get '/clustermetrics' => sub {
+    my @clustermetrics = Clustermetric->search(hash=>{});
+    my @clustermetrics_param;
+    foreach my $clustermetric (@clustermetrics){
+        my $hash = {
+            id           => $clustermetric->getAttr(name => 'clustermetric_id'),
+            label        => $clustermetric->toString(),
+            indicator_id => $clustermetric->getAttr(name => 'clustermetric_indicator_id'),
+            function     => $clustermetric->getAttr(name => 'clustermetric_statistics_function_name'),
+            window       => $clustermetric->getAttr(name => 'clustermetric_window_time'),
+        };
+            push @clustermetrics_param, $hash;
+    }
+      template 'clustermetrics', {
+        title_page      => "Clustermetrics Overview",
+        clustermetrics  => \@clustermetrics_param,
+      };
+};
+
+# ------------------------------------------------------------------------------------------------#
+# ----------------------------- RELATED TO EXTCLUSTER CLUSTERMETRICS -----------------------------#
+# ------------------------------------------------------------------------------------------------#
+
+
+get '/extclusters/:extclusterid/clustermetrics' => sub {
+    my @clustermetrics = Clustermetric->search(hash=>{'clustermetric_cluster_id' => (params->{extclusterid})});
+    my @clustermetrics_param;
+    foreach my $clustermetric (@clustermetrics){
+        my $hash = {
+            id           => $clustermetric->getAttr(name => 'clustermetric_id'),
+            label        => $clustermetric->toString(),
+            indicator_id => $clustermetric->getAttr(name => 'clustermetric_indicator_id'),
+            function     => $clustermetric->getAttr(name => 'clustermetric_statistics_function_name'),
+            window       => $clustermetric->getAttr(name => 'clustermetric_window_time'),
+        };
+            push @clustermetrics_param, $hash;
+    }
+      template 'clustermetrics', {
+        title_page      => "Clustermetrics Overview",
+        clustermetrics  => \@clustermetrics_param,
+        cluster_id      => params->{extclusterid},
+      };
+
+};
+
+
+get '/extclusters/:extclusterid/clustermetrics/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
    
     my $adm    = Administrator->new();
     my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
     my @indicators;
     
     foreach my $indicator (@{$scom_indicatorset->{ds}}){
-        push @indicators, $indicator->{oid};
+        my $hash = {
+            id     => $indicator->{id},
+            label  => $indicator->{label},
+        };
+        push @indicators, $hash;
     }
-  
-  template 'cluster_monitor', {
-        title_page      => "Cluster Monitor Overview",
-        cluster_id      => $cluster_id,
-        indicators      => \@indicators,
+    template 'clustermetric_new', {
+        title_page => "Clustermetric creation",
+        indicators => \@indicators,
+        cluster_id => param('extclusterid'),
     };
 };
 
-# ajax '/extclusters/:extclusterid/monitoring/clustermetricview' => sub {
-	# my $cluster_id    = params->{extclusterid} || 0;   
-
-# };  
-  
-
-ajax '/extclusters/:extclusterid/monitoring/metricview' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;   
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
-    my $indicator = params->{'metric'};
-    my $nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
-    my @nodes;
-    my @values;
+post '/extclusters/:extclusterid/clustermetrics/new' => sub {
+    my $cm_params = {
+        clustermetric_cluster_id               => param('extclusterid'),
+        clustermetric_indicator_id             => param('id2'),
+        clustermetric_statistics_function_name => param('function'),
+        clustermetric_window_time              => '1200',
+    };
+    my $cm = Clustermetric->new(%$cm_params);
+   
+    my $comb_params = {
+        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+    };
+    AggregateCombination->new(%$comb_params);
     
-    while (my ($node, $metric) = each %$nodes_metrics){
-        push @nodes, $node;
-        push @values, int($metric->{$indicator});
-    }
-    
-    to_json {values => \@values, nodelist => \@nodes};
+    my $var = param('extclusterid');
+    redirect("/architectures/extclusters/$var/clustermetrics");
 };
 
 
-get '/rules' => sub {
+get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
+    my $clustermetric_id =  params->{clustermetricid};
+    my $cluster_id       =  params->{extclusterid};
+     
+    my $clustermetric = Clustermetric->get('id' => $clustermetric_id);
+    
+    my @combinations = AggregateCombination->search(hash=>{});
+    
+    my @combinationsUsingCM;
+    foreach my $combination (@combinations) {
+        my $id = $combination->getAttr(name => 'aggregate_combination_id');
+        
+        if($combination->useClusterMetric($clustermetric_id)){
+            push @combinationsUsingCM,$id 
+        }
+    }
+
+    if( (scalar @combinationsUsingCM) eq 0) {
+        $clustermetric->delete();
+        redirect("/architectures/extclusters/$cluster_id/clustermetrics");
+    }else{
+        template 'clustermetric_deletion_forbidden', {
+            title_page          => "Clustermetric Deletion Forbidden",
+            combinationsUsingCM => \@combinationsUsingCM,
+            clustermetric_id    => $clustermetric_id,
+            cluster_id          => $cluster_id,
+        }
+    }
+};
+
+# -----------------------------------------------------------------------------#
+# ------------------------- GENERAL CLUSTERMETRICS ----------------------------#
+# ---------------------------------DEPRECATED ?--------------------------------#
+
+
+get '/clustermetrics/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+   
+    my $adm    = Administrator->new();
+    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+    my @indicators;
+    
+    foreach my $indicator (@{$scom_indicatorset->{ds}}){
+        my $hash = {
+            id     => $indicator->{id},
+            label  => $indicator->{label},
+        };
+
+        push @indicators, $hash;
+    }
+
+   
+    template 'clustermetric_new', {
+        title_page => "Clustermetric creation",
+        indicators => \@indicators,
+    };
+};
+
+
+
+post '/clustermetrics/new' => sub {
+    my $cm_params = {
+        clustermetric_cluster_id               => '54',
+        clustermetric_indicator_id             => param('id2'),
+        clustermetric_statistics_function_name => param('function'),
+        clustermetric_window_time              => '1200',
+    };
+   my $cm = Clustermetric->new(%$cm_params);
+       my $comb_params = {
+        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+    };
+    AggregateCombination->new(%$comb_params);
+   redirect("/architectures/clustermetrics");
+};
+
+
+
+get '/clustermetrics/:clustermetricid/delete' => sub {
+    my $clustermetric = Clustermetric->get('id' => params->{clustermetricid});
+    $clustermetric->delete();
+    redirect('/architectures/clustermetrics');
+};
+
+# -----------------------------------------------------------------------------#
+# ------------------------- CLUSTERMETRICS COMBINATIONS------------------------#
+# -----------------------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/clustermetrics/combinations' => sub {
+    #my @clustermetric_combinations = AggregateCombination->search(hash=>{});
+    my @clustermetric_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId(param('extclusterid'));
+    my @clustermetric_combinations_param;
+    foreach my $clustermetric_combination (@clustermetric_combinations){
+        my $hash = {
+            id           => $clustermetric_combination->getAttr(name => 'aggregate_combination_id'),
+            label        => $clustermetric_combination->toString(),
+        };
+        push @clustermetric_combinations_param, $hash;
+        
+    }
+    
+    template 'clustermetric_combinations', {
+        title_page      => "ClusterMetrics Combinations Overview",
+        combinations  => \@clustermetric_combinations_param,
+        cluster_id      => params->{extclusterid},
+    };
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/:combinationid/delete' => sub {
+    
+    my $combination_id =  params->{combinationid};
+    my $cluster_id     =  params->{extclusterid};
+     
+    my $combination = AggregateCombination->get('id' => $combination_id);
+    
+    my @conditions = AggregateCondition->search(hash=>{});
+    
+    my @conditionsUsingCombination;
+    foreach my $condition (@conditions) {
+        if($condition->getAttr(name => 'aggregate_combination_id') eq $combination_id){
+            push @conditionsUsingCombination,$condition->getAttr(name => 'aggregate_condition_id');
+        }
+    }
+
+    if( (scalar @conditionsUsingCombination) eq 0) {
+        $combination->delete();
+        redirect("/architectures/extclusters/$cluster_id/clustermetrics/combinations");
+    }else{
+        template 'clustermetric_combination_deletion_forbidden', {
+            title_page          => "Clustermetric Combination Deletion Forbidden",
+            conditions          => \@conditionsUsingCombination,
+            combination_id      => $combination_id,
+            cluster_id          => $cluster_id,
+        }
+    }
+};
+
+
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+
+    my @clustermetrics = Clustermetric->search(hash=>{'clustermetric_cluster_id' => (params->{extclusterid})});
+    my @clustermetrics_param;
+    foreach my $clustermetric (@clustermetrics){
+        my $hash = {
+            id           => $clustermetric->getAttr(name => 'clustermetric_id'),
+            label        => $clustermetric->toString(),
+        };
+            push @clustermetrics_param, $hash;
+    }
+
+    template 'clustermetric_combination_new', {
+        title_page     => "Clustermetric creation",
+        cluster_id     => param('extclusterid'),
+        clustermetrics => \@clustermetrics_param,
+        
+    };
+};
+
+
+post '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
+    my $params = {
+        aggregate_combination_formula => param('formula'),
+    };
+   my $cm = AggregateCombination->new(%$params);
+   my $var = param('extclusterid');
+   redirect("/architectures/extclusters/$var/clustermetrics/combinations");
+};
+
+# -----------------------------------------------------------------------------#
+# ------------------- CLUSTERMETRIC COMBINATION CONDITIONS --------------------#
+# -----------------------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions' => sub {
+    my @clustermetric_conditions = AggregateCondition->search(hash=>{});
+    my @clustermetric_conditions_param;
+    foreach my $clustermetric_condition (@clustermetric_conditions){
+        my $hash = {
+            id           => $clustermetric_condition->getAttr(name => 'aggregate_condition_id'),
+            label        => $clustermetric_condition->toString(),
+        };
+        push @clustermetric_conditions_param, $hash;
+    }
+    
+    template 'clustermetric_combination_conditions', {
+        title_page      => "ClusterMetrics Conditions Overview",
+        conditions      => \@clustermetric_conditions_param,
+        cluster_id      => params->{extclusterid},
+    };
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditionid/delete' => sub {
+    
+    my $condition_id   =  params->{conditionid};
+    my $cluster_id     =  params->{extclusterid};
+    
+    my $condition = AggregateCondition->get('id' => $condition_id);
+    
+    my @rules = AggregateRule->search(hash=>{});
+    
+    my @rulesUsingCondition;
+    
+    # Check if the condition is not used by a role to delete it
+    foreach my $rule (@rules) {
+       
+       my $id = $rule->getAttr(name => 'aggregate_rule_id');
+       
+       if($rule->isCombinationDependant($condition_id)){
+            push @rulesUsingCondition,$id;
+        }
+    }
+    if( (scalar @rulesUsingCondition) eq 0) {
+        $condition->delete();
+        redirect("/architectures/extclusters/$cluster_id/clustermetrics/combinations/conditions");
+    }else{
+        template 'clustermetric_condition_deletion_forbidden', {
+            title_page         => "Clustermetric condition Deletion Forbidden",
+            rules              => \@rulesUsingCondition,
+            condition_id       => $condition_id,
+            cluster_id         => $cluster_id,
+        }
+    }
+};
+
+post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => sub {
+    my $comparatorHash = 
+    {
+        "le" => "<",
+        "lt" => "<=",
+        "eq" => "==",
+        "gt" => ">",
+        "ge" => ">=",
+    };
+    
+    my $params = {
+        aggregate_combination_id => param('combinationid'),
+        comparator               => $comparatorHash->{param('comparator')},
+        threshold                => param('threshold'),
+        state                    => 'enabled',
+        time_limit               =>  'NULL',
+    };
+    my $aggregate_condition = AggregateCondition->new(%$params);
+    my $var = param('extclusterid');    
+    
+    if(defined param('rule')){
+       my $params_rule = {
+            aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+            aggregate_rule_state     => 'disabled',
+            aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+        };
+        my $aggregate_rule = AggregateRule->new(%$params_rule);
+        redirect("/architectures/extclusters/$var/clustermetrics/combinations/conditions/rules");
+    }else{
+        redirect("/architectures/extclusters/$var/clustermetrics/combinations/conditions");
+    }
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+    
+    my @combinations = AggregateCombination->search(hash => {});
+    
+    my @combinationsInput;
+    
+    foreach my $combination (@combinations){
+        my $hash = {
+            id     => $combination->getAttr(name => 'aggregate_combination_id'),
+            label  => $combination->toString(),
+        };
+        push @combinationsInput, $hash;
+    }
+    template 'clustermetric_condition_new', {
+        title_page    => "Condition creation",
+        combinations  => \@combinationsInput,
+        cluster_id    => param('extclusterid'),
+    };
+};
+
+# ----------------------------------------------------------------------------#
+# ----------------------------------- RULES ----------------------------------#
+#----------- -----------------------------------------------------------------#
+
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' => sub {
   my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled'); 
 #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
   my @rules;
@@ -287,13 +712,15 @@ get '/rules' => sub {
   
   template 'clustermetric_rules', {
         title_page      => "Enabled Rules Overview",
-        rules   => \@rules,
-        status  => 'enabled',
+        rules      => \@rules,
+        status     => 'enabled',
+        cluster_id => param('extclusterid'),
   };
-    
 };
 
-get '/rules/disabled' => sub {
+
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/disabled' => sub {
   my @disabled_aggregaterules = AggregateRule->getRules(state => 'disabled');
   #my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
   my @disabled_rules;
@@ -311,11 +738,14 @@ get '/rules/disabled' => sub {
         title_page      => "Disabled Rules Overview",
         rules   => \@disabled_rules,
         status  => "disabled",
+        cluster_id => param('extclusterid'),
   };
     
 };
 
-get '/rules/tdisabled' => sub {
+
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdisabled' => sub {
   my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp');
   #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
@@ -333,31 +763,121 @@ get '/rules/tdisabled' => sub {
         title_page      => "Temporarily Disabled Rules Overview",
         rules           => \@tdisabled_rules,
         status          => 'tdisabled',
-        
+        cluster_id      => param('extclusterid'),
   };
+};
+
+
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/enabled' => sub {
     
-};
-get '/rules/enabled' => sub {
-    redirect('/architectures/rules');
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
 
-get '/rules/:ruleid/enable' => sub {
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/enable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->enable();
-    redirect('/architectures/rules');
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
-get '/rules/:ruleid/disable' => sub {
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/disable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disable();
-    redirect('/architectures/rules');
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
-get '/rules/:ruleid/tdisable' => sub {
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disableTemporarily(length => 120);
-    redirect('/architectures/rules');
-
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
+    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+    $aggregateRule->disableTemporarily(length => 120);
+    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
+};
+
+
+########################################
+#######INNER FUNCTION DECLARATION#######
+########################################
+
+sub _getIndicators(){
+	my $template_config = shift;
+	my %errors;
+	my $scom_indicatorset;
+	my @indicators;
+	my $hash;
+	my $adm = Administrator->new();
+	
+	eval {
+		$scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+	};
+	if ($@) {
+		my $error = "$@";
+		$log->error($error);
+		$template_config->{'errors'}{'indicators'} = $error;
+		return %$template_config;
+	}else{ 
+		foreach my $indicator (@{$scom_indicatorset->{ds}}){
+			$hash = {
+				oid => $indicator->{oid},
+				unit => $indicator->{unit},
+				label =>  $indicator->{label},
+			};
+			push @indicators, $hash;
+		}
+		$template_config->{'indicators'} = \@indicators;
+		return %$template_config;
+	}
+}
+
+sub _getCombinations(){
+	my $template_config = shift;
+	my $cluster_id = $template_config->{'cluster_id'};
+	my %errors;
+	my @combinations;
+	my @aggregate_combinations;
+	
+	eval {
+		@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
+	};
+	if ($@) {
+		my $error = "$@";
+		$log->error($error);
+		$template_config->{'errors'}{'combinations'} = $error;
+		return %$template_config;
+	}elsif (scalar(@aggregate_combinations) == 0){
+		my $error = 'No combination could be found for this external cluster';
+		$log->error($error);
+		$template_config->{'errors'}{'combinations'} = $error;
+		return %$template_config;
+	}else{
+		 for my $combi (@aggregate_combinations){
+			my %combination;
+			$combination{'id'} = $combi->getAttr(name => 'aggregate_combination_id');
+			$combination{'label'} = $combi->toString();
+			push @combinations, \%combination;
+		}
+	$template_config->{'combinations'} = \@combinations;
+	$log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
+	return %$template_config;
+	}
+}
+
+#get '/rules/:ruleid/details' => sub {
+#    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+#    
+#    my %rule;
+#     $rule{formula} = $aggregateRule->getAttr(name => 'aggregate_rule_formula')
+#    
+#      template 'clustermetric_rules_details', {
+#            title_page      => "Rule Details",
+#            rule            => $rule;
+#      };
+#
+#};
 1;

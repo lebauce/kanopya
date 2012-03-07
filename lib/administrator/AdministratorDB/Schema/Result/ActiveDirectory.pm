@@ -60,7 +60,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "ad_host",
-  { data_type => "char", is_nullable => 0, size => 255 },
+  { data_type => "char", is_nullable => 1, size => 255 },
   "ad_user",
   { data_type => "char", is_nullable => 1, size => 255 },
   "ad_pwd",

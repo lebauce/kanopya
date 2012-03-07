@@ -29,7 +29,7 @@ use List::Util 'sum';
 use constant ATTR_DEF => {
         scom_ms_name => {
                     pattern        => '.*',
-                    is_mandatory   => 1,
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
                  },
@@ -50,6 +50,7 @@ sub retrieveData {
     General::checkParams(args => \%args, required => ['nodes', 'indicators', 'time_span']);
     
     my $management_server_name = $self->getAttr(name => 'scom_ms_name');
+    my $use_ssl = $self->getAttr(name => 'scom_usessl');
 
     # Transform array of ObjectName/CounterName into hash {ObjectName => [CounterName]}
     my %counters;
@@ -69,7 +70,10 @@ sub retrieveData {
     my $end_dt   = DateTime->now->set_time_zone($time_zone);
     my $start_dt = DateTime->now->subtract( seconds => $global_time_laps )->set_time_zone($time_zone);
     
-    my $scom = SCOM::Query->new( server_name => $management_server_name );
+    my $scom = SCOM::Query->new(
+        server_name => $management_server_name,
+        use_ssl     => $use_ssl,
+    );
 
     my $all_perfs = $scom->getPerformance(
         counters            => \%counters,

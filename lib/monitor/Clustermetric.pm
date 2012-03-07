@@ -47,7 +47,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub calculate{
+sub compute{
     my $self = shift;
     my %args = @_;
 
@@ -65,6 +65,21 @@ sub calculate{
     return $mean;
 }
 
+
+sub getValuesFromDB{
+    my $self = shift;
+    my %args = @_;
+    General::checkParams args => \%args, required => ['start_time','stop_time'];
+    
+    my $id = $self->getAttr(name=>'clustermetric_id');
+    
+    my %rep = RRDTimeData::fetchTimeDataStore(
+                                            name         => $id, 
+                                            start        => $args{start_time},
+                                            stop         => $args{stop_time}
+                                          );
+    return \%rep;
+}
 sub getLastValueFromDB{
     my $self = shift;
 	my $id = $self->getAttr(name=>'clustermetric_id');

@@ -31,21 +31,22 @@ my $log = get_logger("administrator");
 
 use constant ATTR_DEF => {
     ad_host => {    pattern        => '.*',
-                    is_mandatory   => 1,
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
                  },
     ad_user => {    pattern        => '.*',
-                    is_mandatory   => 1,
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
              },
-    ad_pwd => {    pattern        => '.*',
-                    is_mandatory   => 1,
+    ad_pwd => {     pattern        => '.*',
+                    is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
              },
-    ad_nodes_base_dn => {    pattern        => '.*',
+    ad_nodes_base_dn => {
+                    pattern        => '.*',
                     is_mandatory   => 0,
                     is_extended    => 0,
                     is_editable    => 0
@@ -66,8 +67,9 @@ sub getNodes {
         $self->getAttr(name => 'ad_nodes_base_dn'),
     );
     
-    my $ldap = Net::LDAP->new( $ad_host ) or die "$@";
+    my $ldap = Net::LDAP->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
     my $mesg = $ldap->bind($ad_user, password => $ad_pwd);
+    
     
     $mesg = $ldap->search(
         base => $ad_nodes_base_dn,

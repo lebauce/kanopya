@@ -3,7 +3,7 @@
 	<tr><td colspan="3"><h1><% cluster.cluster_name %></h1></td></tr>
 	<tr><td><span class="label">Type</span> : <% cluster.type %></td><td><span class="label">Status</span> : 
 	<% IF cluster.active %>Active<% ELSE %>Deactivated<% END %></td><td class="toright">
-	<a class="imgManage" href="/architectures/clusters/<% cluster.cluster_id %>">details</a></td></tr>
+	<a class="imgManage" href="/architectures/<% cluster.route_base %>/<% cluster.cluster_id %>">details</a></td></tr>
 	<tr><td><span class="label">Size</span> : <% cluster.nbnodes %></td>
 	<% IF cluster.active %>
 		<td><span class="label">State</span> :
@@ -16,7 +16,7 @@
 	<% END %>
 	<td class="toright">
 	<% IF cluster.link_activity %>
-		<a class="imgMonitor" href="/architectures/clusters/<% cluster.cluster_id %>/monitoring">activity</a>
+		<a class="imgMonitor" href="/architectures/<% cluster.route_base %>/<% cluster.cluster_id %>/monitoring">activity</a>
 	<% END %>
 	</td></tr>
 	<tr><td class="italic" colspan="3"><span class="label">Description</span> : <% cluster.cluster_desc %></td></tr>
@@ -28,6 +28,8 @@
 	<a class="action modal" href="/architectures/clusters/add">create a cluster</a>
 	<p class="italic">Create and configure a new cluster.</p>
 <% END %>
+    <a class="action modal" href="/architectures/extclusters/add">add an external cluster</a>
+    <p class="italic">Register and manage an external cluster.</p>
 </div>
 
 

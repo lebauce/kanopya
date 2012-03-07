@@ -26,6 +26,8 @@ use Messager;
 use Vlans;
 use Poolip;
 use UnifiedComputingSystem;
+use Connectors;
+
 use Log::Log4perl;
 
 our $VERSION = '0.1';

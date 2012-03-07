@@ -1,29 +1,52 @@
-<% js_head.push('jquery.jqplot.js', 'jqplot.barRenderer.js', 'jqplot.categoryAxisRenderer.js', 'jqplot.dateAxisRenderer.js', 'jqplot.canvasTextRenderer.js', 'jqplot.canvasAxisTickRenderer.js', 'monitor.js') %>
+<% js_head.push('jqplot/jquery.jqplot.js', 'excanvas.min.js', 'jquery-ui-timepicker-addon.js', 'jqplot/jqplot.barRenderer.js', 'jqplot/jqplot.categoryAxisRenderer.js', 'jqplot/jqplot.dateAxisRenderer.js', 'jqplot/jqplot.canvasTextRenderer.js', 'jqplot/jqplot.canvasAxisTickRenderer.js', 'monitor.js') %>
+<% css_head.push('jquery-ui-1.8.18.custom.css', 'monitoring.css') %>
 
-<h1> You are currently monitoring external cluster number <% cluster_id %> </h1>
 <div class="cluster_overview">
-    <h2>cluster overview</h2>
+	<h2>cluster overview</h2>
         <div class="clustermetric_dropdown">
-			<label for="indicator_list" class="list_label">available Cluster Metrics for external cluster: </label>
+		<h3>Choose a time window to monitor: </h3>
+		<label for="combination_start_time">Start time (default is now - 1 hour) : </label>
+		<input type="text" id="combination_start_time" />
+		<label for="combination_end_time">End time (default is now): </label>
+		<input type="text" id="combination_end_time" /><br />
+		<h3>Choose a combination to monitor: </h3>
+		<% IF errors.combinations %>
+			<p> error: <% errors.combinations %> </p><br />
+			<p>no combination could be retrieved for this external cluster</p>
+		<% ELSE %>
+		<label for="combination_list" class="list_label">available indicators for external cluster: </label>
+		<select id="combination_list" onchange="showCombinationGraph(this,this.options[this.selectedIndex].id, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);" >
+			<option selected="selected" id="default"> Please select a combination to monitor </option>
+			<% FOREACH combination IN combinations %>
+				<option id="<% combination.id %>"><% combination.label %></option>
+			<% END %>
+		</select>
+		<% END %>
         </div>
         <br />
-        <div id="timedClusterMetricView" style="height:400px;width:1000px; "></div><br />
+        <div id="timedCombinationView"></div><br />
 </div>
 <div class="nodes_overview">
-    <h2>nodes overview</h2>
-    <div class="indicator_dropdown">
+	<h2>nodes overview</h2>
+	<div class="indicator_dropdown">
+	<% IF errors.indicators %>
+		<p> error: <% errors.indicators %> </p><br />
+		<p>no indicator could be retrieved for this external cluster</p>
+	<% ELSE %>
 		<label for="indicator_list" class="list_label">available indicators for external cluster: </label>
-        <select id="indicator_list" onchange="showMetricGraph(this,this.options[this.selectedIndex].value);" >
-            <% FOREACH indicator IN indicators %>
-                <option value="<% indicator %>"><% indicator %></option>
-            <% END %>
-        </select>
-    </div>
-    <br />
-    <div id="nodechart" style="height:400px;width:1000px; "></div><br />
-    <div><span>You Clicked: </span><span id="info1">Nothing yet</span></div>
+		<select id="indicator_list" onchange="showMetricGraph(this,this.options[this.selectedIndex].id,this.options[this.selectedIndex].value);" >
+			<option selected="selected" id="default"> Please select an indicator to monitor </option>
+			<% FOREACH indicator IN indicators %>
+				<option id ="<% indicator.oid %>" value="<% indicator.unit %>"><% indicator.label %></option>
+			<% END %>
+		</select>
+	<% END %>
+	</div>
+	<br />
+	<div id="nodechart"></div><br />
+	<div><span>You Clicked: </span><span id="info1">Nothing yet</span></div>
 </div>
-
 <div class="single_node_overview">
 	<h2>Single node view</h2>
+	<div id="testchart" style="height:650px;width:100%;"></div><br />
 </div>

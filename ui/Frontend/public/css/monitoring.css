@@ -1,12 +1,31 @@
 .list_label{
-    font-size:20px;
+
 }
+
 #nodechart{
-    display:none;
-    position:relative; 
-    margin-left:7%;
+	display:none;
+    height:500px;
+    width:100%;
 }
-#timedClusterMetricView{
-    position:relative; 
-    margin-left:7%;
+#timedCombinationView{
+	display:none;
+    height:500px;
+    width:100%;
 }
+
+#single_node_overview{
+   	height:800px;
+	width:1600px;  
+}
+
+.jqplot-yaxis jqplot-yaxis-label{
+    bottom: -10px;
+}
+
+/*CSS fix for the Time Picker addon */
+.ui-timepicker-div .ui-widget-header { margin-bottom: 8px; }
+.ui-timepicker-div dl { text-align: left; }
+.ui-timepicker-div dl dt { height: 25px; margin-bottom: -25px; }
+.ui-timepicker-div dl dd { margin: 0 10px 10px 65px; }
+.ui-timepicker-div td { font-size: 90%; }
+.ui-tpicker-grid-label { background: none; border: none; margin: 0; padding: 0; }

@@ -115,7 +115,8 @@ sub getNodes {
     my @nodes;
     while (my $set = $node_rs->next) {
         push @nodes, {
-            hostname => $set->get_column('externalnode_hostname'),
+            hostname    => $set->get_column('externalnode_hostname'),
+            state       => 'up',
         };
     }
     

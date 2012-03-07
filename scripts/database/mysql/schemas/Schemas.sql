@@ -1163,6 +1163,56 @@ CREATE TABLE `aggregate_condition` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+--
+-- Table structure for table `nodemetric_combination`
+--
+
+CREATE TABLE `nodemetric_combination` (
+  `nodemetric_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_combination_formula` char(32) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `nodemetric_condition`
+--
+
+CREATE TABLE `nodemetric_condition` (
+  `nodemetric_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
+  `nodemetric_condition_comparator` char(32) NOT NULL,
+  `nodemetric_condition_threshold` double NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  PRIMARY KEY (`nodemetric_condition_id`),
+  KEY (`nodemetric_condition_combination_id`),
+  FOREIGN KEY (`nodemetric_condition_combination_id`) REFERENCES `nodemetric_combination` (`nodemetric_combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION  
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `nodemetric_rule`
+--
+
+CREATE TABLE `nodemetric_rule` (
+  `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
+  `nodemetric_rule_formula` char(32) NOT NULL ,
+  `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
+  `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
+  `nodemetric_rule_state` char(32) NOT NULL ,
+  `nodemetric_rule_action_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`nodemetric_rule_service_provider_id`),
+  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
+
 
 
 
@@ -1224,7 +1274,7 @@ CREATE TABLE `externalnode` (
   `externalnode_state` char(32),
   `externalnode_prev_state` char(32),
   PRIMARY KEY (`externalnode_id`),
-  UNIQUE KEY (`externalnode_hostname`),
+  UNIQUE KEY (`externalnode_hostname`,`outside_id`),
   KEY (`outside_id`),
   FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1235,7 +1285,7 @@ CREATE TABLE `externalnode` (
 
 CREATE TABLE `active_directory` (
   `ad_id` int(8) unsigned NOT NULL,
-  `ad_host` char(255) NOT NULL,
+  `ad_host` char(255),
   `ad_user` char(255),
   `ad_pwd` char(32),
   `ad_nodes_base_dn` text(512),
@@ -1249,7 +1299,8 @@ CREATE TABLE `active_directory` (
 
 CREATE TABLE `scom` (
   `scom_id` int(8) unsigned NOT NULL,
-  `scom_ms_name` char(255) NOT NULL,
+  `scom_ms_name` char(255),
+  `scom_usessl` int(1) DEFAULT NULL,
   PRIMARY KEY (`scom_id`),
   FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

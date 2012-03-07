@@ -1,0 +1,10 @@
+<h2>CLUSTERMETRIC DELETION FORBIDDEN !</h2>
+
+Clustermetric <% clustermetric_id%> of cluster <%cluster_id%> cannot be deleted because it is used in following rules :
+
+<%FOR combinationid IN combinationsUsingCM %>
+<%combinationid%> - 
+<%END%>
+<br/>
+
+<a href="/architectures/extclusters/<%cluster_id%>/clustermetrics"> back </a> 

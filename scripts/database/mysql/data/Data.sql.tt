@@ -67,7 +67,10 @@ INSERT INTO `class_type` VALUES
 (50, 'Entity::Vlan'),
 (51, 'Entity::Masterimage'),
 (52, 'Entity::Connector::UcsManager'),
-(53, 'Entity::Component::Fileimagemanager0');
+(53, 'Entity::Component::Fileimagemanager0'),
+(54, 'NodemetricCombination'),
+(55, 'NodemetricCondition'),
+(56, 'NodemetricRule');
 
 --
 -- system groups
