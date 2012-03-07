@@ -3,6 +3,7 @@ package Masterimages;
 use Dancer ':syntax';
 
 use Administrator;
+use General;
 use Entity::Masterimage;
 use Operation;
 
@@ -55,6 +56,8 @@ get '/masterimages/:masterimageid' => sub {
    
     my $methods = $masterimage->getPerms();
     
+    my $size = sprintf("%.3f G", General::convertFromBytes(value => $masterimage->getAttr(name => 'masterimage_size'), units => 'G'));
+    
     # Ṕass the text and arrays to the Distribution template.
     template 'masterimages_details', {
         title_page       => "Systems - Master image overview",
@@ -63,6 +66,7 @@ get '/masterimages/:masterimageid' => sub {
         masterimage_desc => $masterimage->getAttr(name => 'masterimage_desc'),
         masterimage_file => $masterimage->getAttr(name => 'masterimage_file'),
         masterimage_os   => $masterimage->getAttr(name => 'masterimage_os'),
+        masterimage_size => $size,
         can_setperm      => $methods->{'setperm'}->{'granted'},
         can_delete       => $methods->{'remove'}->{'granted'},
         components_list  => $components_list,

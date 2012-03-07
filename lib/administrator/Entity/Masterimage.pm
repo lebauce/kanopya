@@ -52,6 +52,10 @@ use constant ATTR_DEF => {
         pattern      => '^.+$',
         is_mandatory => 0,
     },
+    masterimage_size => {
+        pattern      => '^[0-9]+$',
+        is_mandatory => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

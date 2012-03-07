@@ -1,6 +1,7 @@
 # ERemoveSystemimage.pm - Operation class implementing System image deletion operation
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2010-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +16,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -121,23 +121,20 @@ sub execute{
     my $self = shift;
     $self->SUPER::execute();
 
-    my $containers = $self->{_objs}->{systemimage}->getDevices;
+    my $container = $self->{_objs}->{systemimage}->getDevice;
 
-    # Remove system image containers.
-    for my $disk_type ('etc', 'root') {
-        $log->info("$disk_type container deletion");
+    # Remove system image container.
+    $log->info("$Systemimage container deletion");
 
-        # Get the disk manager of the current container
-        my $edisk_manager = EFactory::newEEntity(data => $containers->{$disk_type}->getDiskManager);
-        my $econtext = EFactory::newEContext(
-                           ip_source      => $self->{executor}->{obj}->getMasterNodeIp(),
-                           ip_destination => $containers->{$disk_type}->getServiceProvider->getMasterNodeIp()
-                       );
+    # Get the disk manager of the current container
+    my $edisk_manager = EFactory::newEEntity(data => $container->getDiskManager);
+    my $econtext = EFactory::newEContext(
+                       ip_source      => $self->{executor}->{obj}->getMasterNodeIp(),
+                       ip_destination => $container->getServiceProvider->getMasterNodeIp()
+                   );
 
-        $edisk_manager->removeDisk(container => $containers->{$disk_type}, econtext => $econtext);
-    }
-    # TODO update vg freespace
-        
+    $edisk_manager->removeDisk(container => $container, econtext => $econtext);
+
     $self->{_objs}->{systemimage}->delete();
 }
 
@@ -181,7 +178,7 @@ Patches are welcome.
 
 =head1 LICENCE AND COPYRIGHT
 
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+Kanopya Copyright (C) 2010-2012 Hedera Technology.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

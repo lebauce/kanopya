@@ -44,83 +44,105 @@ sub copy {
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
 
-    my $executor_context = $args{econtext};
+    my $source_size = $self->_getEntity->getAttr(name => 'container_size');
+    my $dest_size   = $args{dest}->_getEntity->getAttr(name => 'container_size');
 
-    # Instanciate source manager and context
-    my $source_container = $self;
-    my $source_provider  = $source_container->_getEntity->getServiceProvider;
-    my $source_manager   = EFactory::newEEntity(
-                               data => $source_provider->getDefaultManager(
+    # Check if the destination container is not to small.
+    if ($dest_size < $source_size) {
+        throw Kanopya::Exception::Execution(
+                  error => "Source container <$source_size> is larger than the dest container <$dest_size>."
+              );
+    }
+
+    # Get a container access for this container via default method.
+    my $source_access = $self->createDefaultExport(econtext  => $args{econtext},
+                                                   erollback => $args{erollback});
+    my $dest_access = $args{dest}->createDefaultExport(econtext  => $args{econtext},
+                                                       erollback => $args{erollback});
+
+    # Copy contents with container accesses specific protocols
+    $source_access->copy(dest      => $dest_access,
+                         econtext  => $args{econtext},
+                         erollback => $args{erollback});
+
+    # Check if the destination container is higher thant the source one,
+    # resize it to maximum.
+    if ($dest_size > $source_size) {
+        $dest_access->resize();
+    }
+
+    # Remove temporary default exports
+    $self->removeDefaultExport(container_access => $source_access,
+                               econtext         => $args{econtext},
+                               erollback        => $args{erollback});
+
+    $args{dest}->removeDefaultExport(container_access => $dest_access,
+                                     econtext         => $args{econtext},
+                                     erollback        => $args{erollback});
+}
+
+=head2 createDefaultExport
+
+=cut
+
+sub createDefaultExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $storage_provider = $self->_getEntity->getServiceProvider;
+    my $export_manager   = EFactory::newEEntity(
+                               data => $storage_provider->getDefaultManager(
                                            category => 'ExportManager'
                                        )
                            );
 
-    $source_manager->{econtext} = EFactory::newEContext(
-                                      ip_source      => $executor_context->getLocalIp,
-                                      ip_destination => $source_provider->getMasterNodeIp,
+    $export_manager->{econtext} = EFactory::newEContext(
+                                      ip_source      => $args{econtext}->getLocalIp,
+                                      ip_destination => $storage_provider->getMasterNodeIp,
                                   );
 
-    # Instanciate destination manager and context
-    my $dest_container = $args{dest};
-    my $dest_provider  = $source_container->_getEntity->getServiceProvider;
-    my $dest_manager   = EFactory::newEEntity(
-                             data => $dest_provider->getDefaultManager(
-                                         category => 'ExportManager'
-                                     )
-                         );
-
-    $dest_manager->{econtext} = EFactory::newEContext(
-                                    ip_source      => $executor_context->getLocalIp,
-                                    ip_destination => $dest_provider->getMasterNodeIp,
-                                );
-
     # Temporary export the containers to copy contents
-    my $source_access = EFactory::newEEntity(data =>
-                            $source_manager->createExport(
-                                container   => $source_container->_getEntity,
-                                export_name => $source_container->_getEntity->getAttr(
-                                                   name => 'container_name'
-                                               ),
-                                econtext    => $source_manager->{econtext},
-                                erollback   => $args{erollback}
-                            )
-                        );
+    my $container_access = EFactory::newEEntity(data =>
+                               $export_manager->createExport(
+                                   container   => $self->_getEntity,
+                                   export_name => $self->_getEntity->getAttr(name => 'container_name'),
+                                   econtext    => $export_manager->{econtext},
+                                   erollback   => $args{erollback}
+                               )
+                           );
 
-    my $dest_access = EFactory::newEEntity(
-                          data => $dest_manager->createExport(
-                              container   => $dest_container->_getEntity,
-                              export_name => $dest_container->_getEntity->getAttr(
-                                                 name => 'container_name'
-                                             ),
-                              econtext    => $dest_manager->{econtext},
-                              erollback   => $args{erollback}
-                          )
-                      );
-
-    # Copy contents with container accesses specific protocols
-    $source_access->copy(dest => $dest_access,
-                          econtext  => $args{econtext},
-                          erollback => $args{erollback});
-
-    # Remove temporary exports
-    $source_manager->removeExport(container_access => $source_access->_getEntity,
-                                  econtext         => $source_manager->{econtext},
-                                  erollback        => $args{erollback});
-
-    $dest_manager->removeExport(container_access => $dest_access->_getEntity,
-                                econtext         => $dest_manager->{econtext},
-                                erollback        => $args{erollback});
+    return $container_access;
 }
 
-=head2 resize
+=head2 removeDefaultExport
 
 =cut
 
-sub resize {
+sub removeDefaultExport {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'size', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'container_access', 'econtext' ]);
+
+    my $storage_provider = $self->_getEntity->getServiceProvider;
+    my $export_manager   = EFactory::newEEntity(
+                               data => $storage_provider->getDefaultManager(
+                                           category => 'ExportManager'
+                                       )
+                           );
+
+    $export_manager->{econtext} = EFactory::newEContext(
+                                      ip_source      => $args{econtext}->getLocalIp,
+                                      ip_destination => $storage_provider->getMasterNodeIp,
+                                  );
+
+    $export_manager->removeExport(container_access => $args{container_access}->_getEntity,
+                                  econtext         => $export_manager->{econtext},
+                                  erollback        => $args{erollback});
+
 }
 
 1;

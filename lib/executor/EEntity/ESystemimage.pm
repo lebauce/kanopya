@@ -1,6 +1,6 @@
 # ESystemimage.pm - Abstract class of ESystemimages object
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2010-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -48,41 +48,33 @@ sub create {
     my $cmd_res;
 
     General::checkParams(args     => \%args,
-                         required => [ "edisk_manager", "devs",
+                         required => [ "edisk_manager", "src_container",
                                        "erollback", "econtext" ]);
 
-    for my $disk_type ("etc", "root") {
-        my $disk_name = $disk_type . '_' . $self->_getEntity()->getAttr(name => 'systemimage_name');
+    $log->info('Device creation for new systemimage');
 
-        $log->info($disk_type . ' device creation for new systemimage');
+    # Creation of the device based on distribution device
+    my $container = $args{edisk_manager}->createDisk(
+                        name       => $self->_getEntity()->getAttr(name => 'systemimage_name'),
+                        size       => $args{src_container}->getAttr(name => 'container_size') . "B",
+                        filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
+                        econtext   => $args{edisk_manager}->{econtext},
+                        erollback  => $args{erollback}
+                    );
 
-        # Creation of the device based on distribution device
-        my $container = $args{edisk_manager}->createDisk(
-                            name       => $disk_name,
-                            size       => $args{devs}->{$disk_type}->getAttr(
-                                              name => 'container_size'
-                                          ) . "B",
-                            filesystem => $args{devs}->{$disk_type}->getAttr(
-                                              name => 'container_filesystem'
-                                          ),
-                            econtext   => $args{edisk_manager}->{econtext},
-                            erollback  => $args{erollback}
-                        );
+    # Copy of distribution data to systemimage devices
+    $log->info('Fill the container with source data for new systemimage');
 
-        # Copy of distribution data to systemimage devices
-        $log->info('Fill ' . $disk_type . ' device with distribution data for new systemimage');
+    # Get the corresponding EContainer
+    my $esource_container = EFactory::newEEntity(data => $args{src_container});
+    my $edest_container   = EFactory::newEEntity(data => $container);
 
-        # Get the corresponding EContainer
-        my $esource_container = EFactory::newEEntity(data => $args{devs}->{$disk_type});
-        my $edest_container   = EFactory::newEEntity(data => $container);
+    $esource_container->copy(dest      => $edest_container,
+                             econtext  => $args{econtext},
+                             erollback => $args{erollback});
 
-        $esource_container->copy(dest      => $edest_container,
-                                 econtext  => $args{econtext},
-                                 erollback => $args{erollback});
-
-        $self->_getEntity()->setAttr(name  => $disk_type . "_container_id",
-                                     value => $container->getAttr(name => 'container_id'));
-    }
+    $self->_getEntity()->setAttr(name  => "container_id",
+                                 value => $container->getAttr(name => 'container_id'));
 
     $self->_getEntity()->setAttr(name => "active", value => 0);
     $self->_getEntity()->save();
@@ -100,11 +92,11 @@ sub generateAuthorizedKeys{
                          required => [ "eexport_manager", "econtext" ]);
 
     # mount the root systemimage device
-    my $si_devices = $self->_getEntity()->getDevices();
+    my $container = $self->_getEntity()->getDevice();
 
     my $container_access = $args{eexport_manager}->createExport(
-                               container   => $si_devices->{root},
-                               export_name => $si_devices->{root}->getAttr(name => 'container_name'),
+                               container   => $container,
+                               export_name => $container->getAttr(name => 'container_name'),
                                econtext    => $args{eexport_manager}->{econtext},
                                erollback   => $args{erollback}
                             );
@@ -112,7 +104,7 @@ sub generateAuthorizedKeys{
     # Get the corresponding EContainerAccess
     my $econtainer_access = EFactory::newEEntity(data => $container_access);
 
-    my $mount_point = "/mnt/" . $si_devices->{root}->getAttr(name => 'container_name');
+    my $mount_point = "/mnt/" . $container->getAttr(name => 'container_name');
     $econtainer_access->mount(mountpoint => $mount_point, econtext => $args{econtext});
 
     my $rsapubkey_cmd = "cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
@@ -138,18 +130,18 @@ sub activate {
     General::checkParams(args     => \%args,
                          required => [ "econtext", "eexport_manager", "erollback" ]);
 
-    my $sysimg_dev = $self->_getEntity()->getDevices();
+    my $container = $self->_getEntity()->getDevice();
 
     # Provide root rsa pub key to provide ssh key authentication
     $self->generateAuthorizedKeys(eexport_manager => $args{eexport_manager},
                                   econtext        => $args{econtext},
                                   erollback       => $args{erollback});
 
-    # Get etc acontainer export information
+    # Get acontainer export information
     my $si_access_mode = $self->_getEntity()->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
-    my $export_name    = 'root_'.$self->_getEntity()->getAttr(name => 'systemimage_name');
+    my $export_name    = 'root_' . $self->_getEntity()->getAttr(name => 'systemimage_name');
 
-    $args{eexport_manager}->createExport(container   => $sysimg_dev->{root},
+    $args{eexport_manager}->createExport(container   => $container,
                                          export_name => $export_name,
                                          typeio      => "fileio",
                                          iomode      => $si_access_mode,
@@ -160,7 +152,8 @@ sub activate {
     $self->_getEntity()->setAttr(name => 'active', value => 1);
     $self->_getEntity()->save();
 
-    $log->info("System image <" . $self->_getEntity()->getAttr(name=>"systemimage_name") . "> is now active");
+    $log->info("System image <" . $self->_getEntity()->getAttr(name => "systemimage_name") .
+               "> is now active");
 }
 
 1;
@@ -169,7 +162,7 @@ __END__
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
+Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut

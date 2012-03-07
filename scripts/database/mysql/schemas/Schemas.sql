@@ -425,22 +425,6 @@ CREATE TABLE `powersupply` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `distribution`
--- Entity::Distribution class
-
-CREATE TABLE `distribution` (
-  `distribution_id` int(8) unsigned NOT NULL,
-  `distribution_name` char(64) NOT NULL,
-  `distribution_version` char(32) NOT NULL,
-  `distribution_desc` char(255) DEFAULT NULL,
-  `container_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`distribution_id`),
-  FOREIGN KEY (`distribution_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`container_id`),
-  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Table structure for table `node`
 --
 
@@ -551,14 +535,11 @@ CREATE TABLE `systemimage` (
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
   `systemimage_dedicated` int(1) unsigned NOT NULL DEFAULT 0,
-  `distribution_id` int(8) unsigned NOT NULL,
   `container_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`systemimage_name`),
-  KEY (`distribution_id`),
-  FOREIGN KEY (`distribution_id`) REFERENCES `distribution` (`distribution_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`container_id`),
   FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1331,6 +1312,7 @@ CREATE TABLE `masterimage` (
   `masterimage_file` char(255) NOT NULL,
   `masterimage_desc` char(255) DEFAULT NULL,
   `masterimage_os` char(64) DEFAULT NULL,
+  `masterimage_size` int(8) unsigned NOT NULL,
   PRIMARY KEY (`masterimage_id`),
   FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

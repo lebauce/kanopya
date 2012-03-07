@@ -19,6 +19,7 @@
 </td><tr/>
 <tr><td colspan="2">&nbsp;</td></tr>
 <tr><td class="label">File :</td><td><% masterimage_file %></td></tr>
+<tr><td class="label">Size :</td><td><% masterimage_size %></td></tr>
 <tr><td class="label">arch :</td><td><% masterimage_arch %></td></tr>
 <tr><td class="label">OS :</td><td><% masterimage_os %></td></tr>
 </table>
