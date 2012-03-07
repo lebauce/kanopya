@@ -541,30 +541,34 @@ get '/extclusters/:clusterid' => sub {
         }
     } $extcluster->getConnectors();
 
-    my $num_noderule_ok    = -1337;
-    
-    my $num_clusterrule_ok = 0;
+
+  
+
+
+    my $num_noderule_verif    = "TODO";
+        
+    my $num_clusterrule_verif = 0;
     my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled');
     
     foreach my $rule (@enabled_aggregaterules){
-        if($rule->getAttr(name => 'aggregate_rule_last_eval')){
-            $num_clusterrule_ok++;
+        if($rule->getAttr(name => 'aggregate_rule_last_eval') == 0){
+            $num_clusterrule_verif++;
         } 
     }
         
     template 'extclusters_details', {
-        title_page          => "External Clusters - Cluster's overview",
-        active              => 1,
-        cluster_state       => 'up',
-        cluster_id          => $cluster_id,
-        cluster_name        => $extcluster->getAttr(name => 'externalcluster_name'),
-        nodes_list          => $nodes,
-        connectors_list     => \@connectors,
-        link_updatenodes    => 1,
-        link_addconnector   => 1,
-        can_configure       => 1,
-        num_noderule_ok     => $num_noderule_ok,
-        num_clusterrule_ok  => $num_clusterrule_ok,
+        title_page            => "External Clusters - Cluster's overview",
+        active                => 1,
+        cluster_state         => 'up',
+        cluster_id            => $cluster_id,
+        cluster_name          => $extcluster->getAttr(name => 'externalcluster_name'),
+        nodes_list            => $nodes,
+        connectors_list       => \@connectors,
+        link_updatenodes      => 1,
+        link_addconnector     => 1,
+        can_configure         => 1,
+        num_noderule_verif    => $num_noderule_verif,
+        num_clusterrule_verif => $num_clusterrule_verif,
     };
 };
 

@@ -17,6 +17,7 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use Data::Dumper;
+use Entity::ServiceProvider::Outside::Externalcluster;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -106,36 +107,80 @@ sub evalOnOneNode{
     return $res;
 };
 
-#sub eval {
-#    my $self = shift;
-#    
-#    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
-#    
-#    #Split nodemetric_rule id from $formula
-#    my @array = split(/(id\d+)/,$formula);
-#    
-#    #replace each rule id by its evaluation
-#    for my $element (@array) {
-#        
-#        if( $element =~ m/id(\d+)/)
-#        {
-#            $element = NodemetricCondition->get('id'=>substr($element,2))->eval();
-#        }
-#     }
-#     
-#    my $res = -1;
-#    my $arrayString = '$res = '."@array"; 
-#    
-#    #Evaluate the logic formula
-#    eval $arrayString;
-#    my $store = ($res)?1:0;
-#
-#    #print "Evaluated Rule : $arrayString => $store ($res)\n";
-#    #$log->info("Evaluated Rule : $arrayString => $store ($res)");
-#     
-#    $self->setAttr(name => 'nodemetric_rule_last_eval',value=>$store);
-#    $self->setAttr(name => 'nodemetric_rule_timestamp',value=>time());
-#    $self->save();
-#    return $res;
-#}
+sub deleteVerifiedRule  {
+    my $self = shift;
+    my %args = @_;
+    
+    my $hostname   = $args{hostname};
+    my $cluster_id = $args{cluster_id};
+
+    # GET THE EXTERNAL NODE ID    
+    # note : externalcluster_name is UNIQUE !
+    
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+    
+    my $extnodes = $extcluster->getNodes();
+    
+    my $externalnode_id;
+    
+    foreach my $extnode (@$extnodes) {
+        if($extnode->{hostname} eq $hostname) {
+            $externalnode_id = $extnode->{id};
+        }
+    }
+    
+    if(not defined $externalnode_id){
+        die assert("UNKOWN node $hostname in cluster $cluster_id");
+    }else{
+        print "** try to delete $externalnode_id **\n";
+            my $verified_rule_dbix = 
+                    $self->{_dbix}
+                ->verified_noderules
+                ->find({
+                    verified_noderule_externalnode_id    => $externalnode_id,
+                });
+            if(defined $verified_rule_dbix){
+                print "** delete $externalnode_id **\n";
+                $verified_rule_dbix->delete();
+            } else {
+                print "** not here $externalnode_id **\n";
+
+            }
+    }
+}
+
+sub setVerifiedRule{
+    my $self = shift;
+    my %args = @_;
+    
+    my $hostname   = $args{hostname};
+    my $cluster_id = $args{cluster_id};
+
+    # GET THE EXTERNAL NODE ID    
+    # note : externalcluster_name is UNIQUE !
+    
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+    
+    my $extnodes = $extcluster->getNodes();
+    
+    my $externalnode_id;
+    
+    foreach my $extnode (@$extnodes) {
+        if($extnode->{hostname} eq $hostname) {
+            $externalnode_id = $extnode->{id};
+        }
+    }
+    
+    if(not defined $externalnode_id){
+        die assert("UNKOWN node $hostname in cluster $cluster_id");
+    }else{
+        print "** $externalnode_id **\n";
+        $self->{_dbix}
+                ->verified_noderules
+                ->update_or_create({
+                    verified_noderule_externalnode_id    => $externalnode_id,
+                });
+    }
+}
+
 1;
