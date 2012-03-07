@@ -1245,6 +1245,7 @@ CREATE TABLE `masterimage` (
   `masterimage_file` char(255) NOT NULL,
   `masterimage_desc` char(255) DEFAULT NULL,
   `masterimage_os` char(64) DEFAULT NULL,
+  `masterimage_size` int(8) unsigned NOT NULL,
   PRIMARY KEY (`masterimage_id`),
   FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
