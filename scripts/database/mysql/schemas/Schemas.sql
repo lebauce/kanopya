@@ -116,18 +116,35 @@ CREATE TABLE `outside` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for tables netapp_manager (conenctor)
+-- Entity::Connector::NetApp class
+
+CREATE TABLE `netapp_manager` (
+    `netapp_manager_id` int(8) unsigned NOT NULL,
+    PRIMARY KEY (`netapp_manager_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `netapp`
 -- Entity::ServiceProvider::Outside::Netapp class
 
 CREATE TABLE `netapp` (
   `netapp_id` int(8) unsigned NOT NULL,
+  `netapp_name` char(32) NOT NULL,
+  `netapp_desc` char(255) NULL,
+  `netapp_addr` char(15) NOT NULL,
+  `netapp_login` char(32) NOT NULL,
+  `netapp_passwd` char(32) NOT NULL,
   PRIMARY KEY (`netapp_id`),
   FOREIGN KEY (`netapp_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Table ucs for connector
 
-CREATE TABLE `ucs_manager` (`ucs_id`int(8) unsigned NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `ucs_manager` (
+    `ucs_manager_id`int(8) unsigned NOT NULL,
+    PRIMARY KEY (`ucs_manager_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `ucs`
@@ -139,7 +156,6 @@ CREATE TABLE `unified_computing_system` (
   `ucs_desc` char(255) NULL,
   `ucs_addr` char(15) NOT NULL,
   `ucs_state` char(32) NOT NULL DEFAULT 'down',
-  `ucs_blade_number` int(8) NULL DEFAULT 0,
   `ucs_login` char(32) NOT NULL,
   `ucs_passwd` char(32) NOT NULL,
   `ucs_dataprovider` char(32) NULL,

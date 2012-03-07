@@ -29,7 +29,7 @@ INSERT INTO `class_type` VALUES
 (12, 'Entity::User'),
 (13, 'Entity::ServiceProvider::Inside::Cluster'),
 (14, 'Entity::ServiceProvider::Inside::Server'),
-(15, 'Entity::ServiceProvider::Outside::NetApp'),
+(15, 'Entity::ServiceProvider::Outside::Netapp'),
 (16, 'Entity::ServiceProvider::Outside::UnifiedComputingSystem'),
 (17, 'Entity::ContainerAccess::IscsiContainerAccess'),
 (18, 'Entity::ContainerAccess::NfsContainerAccess'),
@@ -70,7 +70,9 @@ INSERT INTO `class_type` VALUES
 (53, 'Entity::Component::Fileimagemanager0'),
 (54, 'NodemetricCombination'),
 (55, 'NodemetricCondition'),
-(56, 'NodemetricRule');
+(56, 'NodemetricRule'),
+(57, 'Entity::Connector::NetappManager');
+
 
 --
 -- system groups
@@ -375,7 +377,9 @@ INSERT INTO `component_type` VALUES
 INSERT INTO `connector_type` VALUES
 (1,'ActiveDirectory','1','DirectoryService'),
 (2,'Scom','1','MonitoringService'),
-(3,'UcsManager','1','Cloudmanager');
+(3,'UcsManager','1','Cloudmanager'),
+(4,'NetappManager','1','Storage'),
+(5,'NetappManager','1','Export');
 
 --
 -- kernels

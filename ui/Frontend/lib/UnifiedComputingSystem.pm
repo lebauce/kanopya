@@ -112,7 +112,6 @@ get '/ucs/:ucsid' => sub {
         ucs_name            => $eucs->getAttr('name' => 'ucs_name'),
         ucs_desc            => $eucs->getAttr('name' => 'ucs_desc'),
         ucs_addr            => $eucs->getAttr('name' => 'ucs_addr'),
-        ucs_blade_number    => $eucs->getAttr('name' => 'ucs_blade_number'),
         ucs_login           => $eucs->getAttr('name' => 'ucs_login'),
         ucs_passwd          => $eucs->getAttr('name' => 'ucs_passwd'),
         ucs_dataprovider    => $eucs->getAttr('name' => 'ucs_dataprovider'),

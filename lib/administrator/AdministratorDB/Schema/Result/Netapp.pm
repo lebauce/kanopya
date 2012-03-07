@@ -26,6 +26,36 @@ __PACKAGE__->table("netapp");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 netapp_name
+ 
+   data_type: 'char'
+   is_nullable: 0
+   size: 32
+ 
+=head2 netapp_desc
+ 
+   data_type: 'char'
+   is_nullable: 1
+   size: 255
+ 
+=head2 netapp_addr
+ 
+   data_type: 'char'
+   is_nullable: 0
+   size: 15
+ 
+=head2 netapp_login
+ 
+   data_type: 'char'
+   is_nullable: 0
+   size: 32
+ 
+=head2 netapp_passwd
+ 
+   data_type: 'char'
+   is_nullable: 0
+   size: 32
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -35,6 +65,35 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "netapp_name",
+  { 
+    data_type => "char",
+    is_nullable => 0, size => 32,
+  },
+  "netapp_desc",
+  { 
+    data_type => "char", 
+    is_nullable => 1,
+    size => 255,
+  },
+  "netapp_addr",
+  { 
+    data_type => "char",
+    is_nullable => 0,
+    size => 15,
+  },
+  "netapp_login",
+  { 
+    data_type => "char",
+    is_nullable => 0,
+    size => 32,
+  },
+  "netapp_passwd",
+  {
+    data_type => "char",
+    is_nullable => 0,
+    size => 32,
   },
 );
 __PACKAGE__->set_primary_key("netapp_id");
@@ -53,7 +112,7 @@ __PACKAGE__->belongs_to(
   "netapp",
   "AdministratorDB::Schema::Result::Outside",
   { outside_id => "netapp_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
