@@ -306,7 +306,8 @@ post '/extclusters/add' => sub {
     eval {
         my $new_extcluster = Entity::ServiceProvider::Outside::Externalcluster->new(%$params);
         $new_cluster_id = $new_extcluster->getAttr(name => 'externalcluster_id');
-        #$new_extcluster->monitoringDefaultInit();
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'external cluster created. Inserting initial data...');
+        $new_extcluster->monitoringDefaultInit();
     };
     if($@) {
         my $exception = $@;
@@ -341,6 +342,15 @@ get '/clusters' => sub {
         clusters_list => [ @{_clusters()}, @{_externalclusters()} ],
         can_create => $can_create,
         
+    };
+};
+
+get '/extclusters' => sub {
+    my $can_create;
+
+    template 'clusters', {
+        title_page         => 'Clusters - External Clusters',
+        clusters_list => _externalclusters(),
     };
 };
 
