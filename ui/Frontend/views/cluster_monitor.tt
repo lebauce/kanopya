@@ -1,5 +1,5 @@
 <% js_head.push('jqplot/jquery.jqplot.js', 'excanvas.min.js', 'jquery-ui-timepicker-addon.js', 'jqplot/jqplot.barRenderer.js', 'jqplot/jqplot.categoryAxisRenderer.js', 'jqplot/jqplot.dateAxisRenderer.js', 'jqplot/jqplot.canvasTextRenderer.js', 'jqplot/jqplot.canvasAxisTickRenderer.js', 'monitor.js') %>
-<% css_head.push('jquery-ui-1.8.18.custom.css') %>
+<% css_head.push('jquery-ui-1.8.18.custom.css', 'monitoring.css') %>
 
 <div class="cluster_overview">
 	<h2>cluster overview</h2>
@@ -48,5 +48,5 @@
 </div>
 <div class="single_node_overview">
 	<h2>Single node view</h2>
-	<div id="testchart" style="height:500px;width:1600px;overflow:auto;"></div><br />
+	<div id="testchart" style="height:650px;width:100%;"></div><br />
 </div>
