@@ -5,6 +5,15 @@
 <span id="state" class="title simpleexpand">State</span>
 <table id="Xstate" class="detailspart">
 <tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
+
+<td>
+Node rules state
+</td>
+
+<td>
+Cluster rules state
+</td>
+
 <td class="actions" rowspan="2">
 <% IF link_activate %>
 	<% IF systemimage_active %>
@@ -49,6 +58,25 @@ activate</a><br />
 <% ELSE %>
 	<td></td>
 <% END %>
+<td>
+    <% IF num_noderule_ok == 0 %>
+        <span class="state imgUp">All rules are verified</span>
+    <%ELSIF num_noderule_ok == 1 %>
+        <span class="state imgBroken"><%num_noderule_ok%> rule is not verified</span>
+    <%ELSE%>
+        <span class="state imgBroken"><%num_noderule_ok%> rules are not verified</span>
+    <%END%>
+</td>
+<td>
+    <% IF num_clusterrule_ok == 0 %>
+        <span class="state imgUp">All rules are verified</span>
+    <%ELSIF num_clusterrule_ok == 1 %>
+        <span class="state imgBroken"><%num_clusterrule_ok%> rule is not verified</span>
+    <%ELSE%>
+        <span class="state imgBroken"><%num_clusterrule_ok%> rules are not verified</span>
+    <%END%>
+</td>
+
 </tr>
 </table>
 
