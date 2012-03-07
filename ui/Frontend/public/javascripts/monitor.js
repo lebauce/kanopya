@@ -303,7 +303,7 @@
 
    // timedGraph();
 
-   testBar();
+   //testBar();
 
  });
 
