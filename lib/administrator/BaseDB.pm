@@ -351,7 +351,6 @@ sub search {
             else { $exception->rethrow(); } 
         }
         else {
-            $log->debug($obj->toString);
             push @objs, $obj;
         }
     }
