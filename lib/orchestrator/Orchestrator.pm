@@ -119,25 +119,36 @@ sub nodemetricManagement{
     
     for my $externalCluster (@externalClusters){
         my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-        print '***'.$cluster_id.'***'."\n";
         
-        my @rules = NodemetricRule->search(
-                hash => {
-                    nodemetric_rule_service_provider_id => $cluster_id
-                }
-        );
-        my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
-
-        # Call the retriever to get SCOM data
-        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-        $log->info(Dumper $monitored_values);
+        eval{
+            $externalCluster->getConnector(category => 'MonitoringService');
+        };
+        if($@){
+            print '*** Orchestrator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+        }else{
         
-        # Eval the rules
-        $self->_evalAllRules(
-            'monitored_values' => $monitored_values,
-            'rules'            => \@rules,
-            'cluster_id'       => $cluster_id,
-        );
+            print '*** ClusterRules of management '.$cluster_id.'***'."\n";
+            
+            my @rules = NodemetricRule->search(
+                    hash => {
+                        nodemetric_rule_service_provider_id => $cluster_id
+                    }
+            );
+            
+            my $host_indicator_for_retriever = $self->_contructRetrieverOutput('rules' => \@rules );
+            
+            
+            # Call the retriever to get SCOM data
+            my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+            $log->info(Dumper $monitored_values);
+            
+            # Eval the rules
+            $self->_evalAllRules(
+                'monitored_values' => $monitored_values,
+                'rules'            => \@rules,
+                'cluster_id'       => $cluster_id,
+            );
+        }
     }
 }
 
