@@ -7,7 +7,7 @@
 <input class="conf_simple_value" type="hidden" name="scom_id" value="<% scom_id %>"/>
 <input class="conf_simple_value" type="hidden" name="connector_name" value="Scom"/>
 <table>
-<tr><td>Root Management Server name :</td><td><input type="text" size="64" class="conf_simple_value" name="scom_ms_name" value="<% scom_ms_name %>"/></td></tr>
+<tr><td>Root Management Server fqdn :</td><td><input type="text" size="64" class="conf_simple_value" name="scom_ms_name" value="<% scom_ms_name %>"/></td></tr>
 </table>
 <h3>Remote invocation</h3>
 <table>
