@@ -71,4 +71,24 @@ get '/connectors/:instanceid/saveconfig' => sub {
     return $msg;
 };
 
+get '/connectors/:instanceid/checkconfig' => sub {
+    my $connector_id = param('instanceid'); 
+    my $connector = Entity::Connector->get( id => $connector_id );
+    
+    my $conf_str = param('conf'); # stringified conf
+    my $conf = from_json( $conf_str );
+    foreach ('cluster_id', 'connector_name', 'connector_id') { delete $conf->{$_}; }
+    
+    my $msg;
+    eval {
+        $msg = $connector->checkConf($conf);
+    };
+    if ($@) {
+        $msg = "Fail for following reason:\n $@";
+    }
+    my %res = (msg => $msg);
+    
+    to_json( \%res );
+};
+
 1;
