@@ -468,8 +468,10 @@ get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
 # -----------------------------------------------------------------------------#
 
 get '/extclusters/:extclusterid/clustermetrics/combinations' => sub {
-    #my @clustermetric_combinations = AggregateCombination->search(hash=>{});
-    my @clustermetric_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId(param('extclusterid'));
+    
+    #my @clustermetric_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId(param('extclusterid'));
+    my @clustermetric_combinations = AggregateCombination->search(hash=>{'aggregate_combination_service_provider_id' => (params->{extclusterid})});
+    
     my @clustermetric_combinations_param;
     foreach my $clustermetric_combination (@clustermetric_combinations){
         my $hash = {
@@ -556,7 +558,9 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
 # -----------------------------------------------------------------------------#
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions' => sub {
-    my @clustermetric_conditions = AggregateCondition->search(hash=>{});
+    my @clustermetric_conditions = AggregateCondition->search(hash=>{'aggregate_condition_service_provider_id' => params->{extclusterid}});
+    
+    
     my @clustermetric_conditions_param;
     foreach my $clustermetric_condition (@clustermetric_conditions){
         my $hash = {
@@ -669,7 +673,8 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' => sub {
-  my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled'); 
+  my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
+   
 #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
   my @rules;
   foreach my $aggregate_rule (@enabled_aggregaterules) {
@@ -815,7 +820,9 @@ sub _getCombinations(){
 	my @aggregate_combinations;
 	
 	eval {
-		@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
+		#@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
+    my @clustermetric_combinations = AggregateCombination->search(hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
+
 	};
 	if ($@) {
 		my $error = "$@";

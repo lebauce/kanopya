@@ -174,9 +174,18 @@ sub isEnabled(){
 sub getRules() {
     my $class = shift;
     my %args = @_;
-    my $state = $args{state};
+
+    my $state               = $args{'state'};
+    my $service_provider_id = $args{'service_provider_id'};
     
-    my @rules = AggregateRule->search(hash => {});
+    my @rules;
+    if (defined $service_provider_id) {
+        @rules = AggregateRule->search(hash => {'aggregate_rule_service_provider_id' => $service_provider_id});
+    } else {
+        @rules = AggregateRule->search(hash => {});
+    }
+    
+    
     switch ($state){
         case "all"{
             return @rules; #All THE rules
