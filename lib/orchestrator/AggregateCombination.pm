@@ -30,7 +30,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    aggregate_combination_service_provider => {pattern       => '^.*$',
+    aggregate_combination_service_provider_id => {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -294,7 +294,7 @@ sub getAllTheCombinationsRelativeToAClusterId{
         
         foreach my $cm_id (@dependantClusterMetricIds){
             my $clustermetric = Clustermetric->get('id' => $cm_id);
-            if($clustermetric->getAttr(name => 'clustermetric_cluster_id') eq $cluster_id)
+            if($clustermetric->getAttr(name => 'clustermetric_service_provider_id') eq $cluster_id)
             {
                 push @rep, $combination;
                 next COMBINATION;

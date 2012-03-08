@@ -208,7 +208,7 @@ sub monitoringDefaultInit {
     foreach my $indicator (@{$scom_indicatorset->{ds}}) {   
         foreach my $func (@funcs) {
             my $cm_params = {
-                clustermetric_cluster_id               => $self->getAttr( name => 'outside_id' ),
+                clustermetric_service_provider_id      => $self->getAttr( name => 'outside_id' ),
                 clustermetric_indicator_id             => $indicator->{id},
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
