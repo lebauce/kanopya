@@ -786,7 +786,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
     my $externalnode_id    = param('extnodeid');
     my $externalcluster_id = param('extclusterid');
     
-    my $nodemetric_rules = NodemetricRule->search(
+    my @nodemetric_rules = NodemetricRule->search(
                                 hash => {
                                     nodemetric_rule_state => 'enabled',
                                 }
@@ -794,7 +794,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
     
     my @rules;
     
-    foreach my $rule (@rules){
+    foreach my $rule (@nodemetric_rules){
         my $isVerified = $rule->isVerifiedForANode(
             externalcluster_id => $externalcluster_id,
             externalnode_id    => $externalnode_id,
