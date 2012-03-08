@@ -41,3 +41,10 @@
     <tr><td class="label">OU :</td><td><% netapp_ou %></td></tr>
     </tr>
 </table>
+
+<hr/>
+<ul>
+<% FOREACH volume in netapp_volumes %>
+<li>Volume name : <% volume.name %></li>
+<% END %>
+</ul>

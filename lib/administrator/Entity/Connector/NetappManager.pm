@@ -1,5 +1,6 @@
-#    UCSManager.pm - Cisco UCS connector
+#    NetappManager.pm - NetApp connector
 #    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,15 +13,13 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Created on 05 March 2012
 
 package Entity::Connector::NetappManager;
 use base "Entity::Connector";
+use lib "/opt/kanopya/lib/external/NetApp";
 
 use warnings;
-
-use NetApp::Filer;
+use NetApp::API;
 
 use constant ATTR_DEF => {};
 
@@ -33,16 +32,22 @@ sub get {
     my $self = $class->SUPER::get(%args);
 
     my $netapp = Entity::ServiceProvider::Outside::Netapp->get(
-                  id => $self->getAttr(name => "outside_id")
-              );
-    $self->{api} = NetApp::Filer->new(
-                       proto    => "http",
-                       port     => 80,
-                       cluster  => $netapp->getAttr(name => "netapp_addr"),
+                     id => $self->getAttr(name => "outside_id")
+                 );
+
+    $self->{api} = NetApp::API->new(
+                       addr     => $netapp->getAttr(name => "netapp_addr"),
                        username => $netapp->getAttr(name => "netapp_login"),
                        passwd   => $netapp->getAttr(name => "netapp_passwd")
                    );
-    $self->{state} = ($self->{api}->login() ? "up" : "down");
+
+    eval {
+        $self->system_get_version();
+        $self->{state} = "up";
+    };
+    if ($@) {
+        $self->{state} = "down";
+    }
 
     return $self;
 }

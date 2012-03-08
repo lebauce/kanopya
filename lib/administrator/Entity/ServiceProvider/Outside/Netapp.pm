@@ -1,5 +1,6 @@
-# UnifiedComputingSystem.pm - This object allows to manipulate cluster configuration
+#    NetApp.pm - NetApp storage equipment
 #    Copyright 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,8 +13,6 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Created on 05 March 2012
 
 package Entity::ServiceProvider::Outside::Netapp;
 use base 'Entity::ServiceProvider::Outside';
@@ -81,26 +80,6 @@ sub remove {
     my $self = shift;
     $self->SUPER::delete();
 };
-
-sub login {
-
-    my $hostname = "89.31.149.89";
-    my $username = "kanopya";
-
-    my $netapp = NetApp::Filer->new({
-        # Required arguments
-        hostname        => $hostname,
-        # Optional arguments
-        username        => $username,
-        ssh_identify    => $ssh_identity,
-        ssh_command     => [ @ssh_command ],
-        protocol        => 'ssh' | 'telnet',
-        telnet_password => $telnet_password,
-        telnet_timeout  => $telnet_timeout,
-        cache_enabled   => 0 || 1,
-        cache_expiration => $cache_expiration,
-    });
-}
 
 sub toString {
     my $self = shift;

@@ -96,7 +96,8 @@ get '/netapp/:netappid/remove' => sub {
 get '/netapp/:netappid' => sub {
     my $netapp_id = param('netappid');
     my $enetapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
-    my $eenetapp = $enetapp->getConnector(category => 'HostManager');
+    my $eenetapp = $enetapp->getConnector(category => 'Storage');
+    my @volumes = $eenetapp->volumes;
 
     template 'netapp_details', {
         netapp_id              => $enetapp->getAttr('name' => 'netapp_id'),
@@ -105,7 +106,8 @@ get '/netapp/:netappid' => sub {
         netapp_addr            => $enetapp->getAttr('name' => 'netapp_addr'),
         netapp_login           => $enetapp->getAttr('name' => 'netapp_login'),
         netapp_passwd          => $enetapp->getAttr('name' => 'netapp_passwd'),
-#        netapp_state           => $eenetapp->{state},
+        netapp_state           => $eenetapp->{state},
+        netapp_volumes         => \@volumes
     };
 };
 
