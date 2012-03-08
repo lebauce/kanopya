@@ -26,7 +26,7 @@ __PACKAGE__->table("component");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 inside_id
+=head2 service_provider_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -64,7 +64,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "inside_id",
+  "service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -153,7 +153,7 @@ Related object: L<AdministratorDB::Schema::Result::Inside>
 __PACKAGE__->belongs_to(
   "inside",
   "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "inside_id" },
+  { inside_id => "service_provider_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
