@@ -7,14 +7,15 @@
 <input class="conf_simple_value" type="hidden" name="ad_id" value="<% ad_id %>"/>
 <input class="conf_simple_value" type="hidden" name="connector_name" value="ActiveDirectory"/>
 <table>
-<tr><td>Domain controller name :</td><td><input type="text" size="64" class="conf_simple_value" name="ad_host" value="<% ad_host %>"/></td></tr>
-<tr><td>User :</td><td><input type="text" size="64" class="conf_simple_value" name="ad_user" value="<% ad_user %>"/></td></tr>
-<tr><td>Password :</td><td><input type="password" class="conf_simple_value" name="ad_pwd" value="<% ad_pwd %>"/></td></tr>
-<tr><td>Nodes Container DN :</td><td><input type="text" size="128" class="conf_simple_value" name="ad_nodes_base_dn" value="<% ad_nodes_base_dn %>"/></td></tr>
+<tr><td>Domain controller name :</td><tr></tr><td><input type="text" size="64" class="conf_simple_value" name="ad_host" value="<% ad_host %>"/></td></tr>
+<tr><td>User@domain :</td><tr></tr><td><input type="text" size="64" class="conf_simple_value" name="ad_user" value="<% ad_user %>"/></td></tr>
+<tr><td>Password :</td><tr></tr><td><input type="password" class="conf_simple_value" name="ad_pwd" value="<% ad_pwd %>"/></td></tr>
+<tr><td>Nodes Container DN :</td><tr></tr><td><input type="text" size="64" class="conf_simple_value" name="ad_nodes_base_dn" value="<% ad_nodes_base_dn %>"/></td></tr>
 </table>
 
 <hr />
 <div class="right">
+<input id="check_button" type="button" value="check"/>
 <input id="save_button" type="button" value="ok"/>
 <input type="button" value="cancel" onclick="javascript:document.location='/architectures/extclusters/<% cluster_id %>'"/>
 </div>
