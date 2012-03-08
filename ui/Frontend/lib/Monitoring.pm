@@ -668,7 +668,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
 };
 
 # ----------------------------------------------------------------------------#
-# ----------------------------------- RULES ----------------------------------#
+# ---------------------CLUSTER METRIC RULES ----------------------------------#
 #----------- -----------------------------------------------------------------#
 
 
@@ -775,6 +775,18 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disableTemporarily(length => 120);
     redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
+};
+
+# ----------------------------------------------------------------------------#
+# ------------------------NODE METRIC RULES ----------------------------------#
+#----------- -----------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
+    my $externalnode_id    = param('extnodeid');
+    my $nodemetric_rule_id = param('nodemetricrule');
+    my $externalcluster_id = param('extclusterid');
+    
+    print "Rule $nodemetric_rule_id on node  $externalnode_id of cluster page\n"
 };
 
 
