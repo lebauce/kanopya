@@ -290,7 +290,9 @@ sub clustermetricManagement{
                         #$log->info("Rule false, no action");
                     }
                 }
-            }
+            } # for my $aggregate_rule 
+        } #end eval
+    } # end for my $externalCluster
 }
 
 =head2 manage
