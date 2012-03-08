@@ -82,7 +82,7 @@ sub _contructRetrieverOutput {
         
         my @clustermetrics = Clustermetric->search(
             hash => {
-                clustermetric_cluster_id => $cluster_id
+                clustermetric_service_provider_id => $cluster_id
             }
         );
         
