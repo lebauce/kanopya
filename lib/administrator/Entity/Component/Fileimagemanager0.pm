@@ -76,7 +76,7 @@ sub createDisk {
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'inside_id'),
+            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             disk_manager_id     => $self->getAttr(name => 'component_id'),
             container_access_id => $args{container_access}->getAttr(
                                        name => 'container_access_id'
@@ -145,7 +145,7 @@ sub addContainer {
                                        "file_size", "file_filesystem" ]);
 
     my $container = Entity::Container::FileContainer->new(
-                        service_provider_id => $self->getAttr(name => 'inside_id'),
+                        service_provider_id => $self->getAttr(name => 'service_provider_id'),
                         disk_manager_id     => $self->getAttr(name => 'lvm2_id'),
                         container_access_id => $args{container_access_id},
                         file_name           => $args{file_name},

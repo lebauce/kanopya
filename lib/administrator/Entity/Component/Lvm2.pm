@@ -197,7 +197,7 @@ sub createDisk {
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'inside_id'),
+            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             disk_manager_id     => $self->getAttr(name => 'component_id'),
             disk_name           => $args{disk_name},
             size                => $args{size},
@@ -294,7 +294,7 @@ sub addContainer {
     General::checkParams(args => \%args, required => [ "lv_id" ]);
 
     my $container = Entity::Container::LvmContainer->new(
-                        service_provider_id => $self->getAttr(name => 'inside_id'),
+                        service_provider_id => $self->getAttr(name => 'service_provider_id'),
                         disk_manager_id     => $self->getAttr(name => 'lvm2_id'),
                         lv_id               => $args{lv_id},
                     );

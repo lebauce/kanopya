@@ -27,21 +27,17 @@ sub _deepEscapeHtml {
 }
 
 get '/connectors/:instanceid/configure' => sub {
-    my $connector = Entity::Connector->get( id => param('instanceid') );
-    my $cluster_id = $connector->getAttr(name=>'outside_id');
+    my $connector = Entity::Connector->get(id => param('instanceid'));
+    my $cluster_id = $connector->getAttr(name => 'service_provider_id');
     my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
     my $connector_type = $connector->getConnectorType();
-    my $template = 'connectors/'.lc($connector_type->{connector_name});
+    my $template = 'connectors/' . lc($connector_type->{connector_name});
         
     my $config = $connector->getConf();
     _deepEscapeHtml( $config );
     
     my $template_params = $config;
     
-#    while( my ($key, $value) = each %$config) {
-#        $template_params->{$key} = $value;    
-#    }
-#    
     $template_params->{'connector_instance_id'} = param('instanceid');
     $template_params->{'cluster_id'} = $cluster_id;
     $template_params->{'cluster_name'} = $cluster->getAttr(name => 'externalcluster_name');

@@ -64,7 +64,7 @@ sub findManager {
                 "category"            => $obj->{component_category},
                 "name"                => $obj->{component_name},
                 "id"                  => $component->getAttr(name => "component_id"),
-                "service_provider_id" => $component->getAttr(name => "inside_id"),
+                "service_provider_id" => $component->getAttr(name => "service_provider_id"),
             }
         }
     }
@@ -77,7 +77,7 @@ sub findManager {
                 "category"            => $obj->{connector_category},
                 "name"                => $obj->{connector_name},
                 "id"                  => $connector->getAttr(name => "connector_id"),
-                "service_provider_id" => $connector->getAttr(name => "outside_id")
+                "service_provider_id" => $connector->getAttr(name => "service_provider_id")
             }
         }
     }

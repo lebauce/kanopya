@@ -107,7 +107,7 @@ eval {
 
             # Get the associated cluster id.
             lives_ok {
-                $cluster_from_comp = $comp_from_id->getAttr(name => 'inside_id')
+                $cluster_from_comp = $comp_from_id->getAttr(name => 'service_provider_id')
             } $comp_class . ' get cluster id.';
 
             # Check if the cluster id is valid.

@@ -32,7 +32,7 @@ sub get {
     my $self = $class->SUPER::get(%args);
 
     my $ucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(
-                  id => $self->getAttr(name => "outside_id")
+                  id => $self->getAttr(name => "service_provider_id")
               );
 
     $self->{api} = Cisco::UCS->new(
