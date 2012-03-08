@@ -698,7 +698,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/disabled' => sub {
-  my @disabled_aggregaterules = AggregateRule->getRules(state => 'disabled');
+  my @disabled_aggregaterules = AggregateRule->getRules(state => 'disabled', service_provider_id => params->{extclusterid});
   #my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
   my @disabled_rules;
   foreach my $aggregate_rule (@disabled_aggregaterules) {
@@ -723,7 +723,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdisabled' => sub {
-  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp');
+  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp', service_provider_id => params->{extclusterid});
   #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
   foreach my $aggregate_rule (@tdisabled_aggregaterules) {
