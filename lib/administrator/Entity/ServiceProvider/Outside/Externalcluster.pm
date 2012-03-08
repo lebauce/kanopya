@@ -124,7 +124,7 @@ sub getNodes {
     while (my $node_row = $node_rs->next) {
         push @nodes, {
             hostname           => $node_row->get_column('externalnode_hostname'),
-            state              => $set->get_column('externalnode_state'),
+            state              => $node_row->get_column('externalnode_state'),
             id                 => $node_row->get_column('externalnode_id'),
             num_verified_rules => $node_row->verified_noderules->count(),
         };

@@ -576,12 +576,32 @@ get '/extclusters/:clusterid' => sub {
         connectors_list       => \@connectors,
         link_updatenodes      => 1,
         link_addconnector     => 1,
+        link_delete           => 1,
         can_configure         => 1,
         num_noderule_verif    => $num_noderule_verif,
         num_clusterrule_verif => $num_clusterrule_verif,
     };
 };
 
+get '/extclusters/:clusterid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+        $cluster->delete();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster ' . param('clusterid') . ' removed.');
+        redirect('/architectures/clusters');
+    }
+};
 
 get '/clusters/:clusterid/activate' => sub {
     my $adm = Administrator->new;
