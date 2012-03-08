@@ -98,6 +98,7 @@ get '/netapp/:netappid' => sub {
     my $enetapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
     my $eenetapp = $enetapp->getConnector(category => 'Storage');
     my @volumes = $eenetapp->volumes;
+    my @aggregates = $eenetapp->aggregates;
 
     template 'netapp_details', {
         netapp_id              => $enetapp->getAttr('name' => 'netapp_id'),
@@ -107,7 +108,8 @@ get '/netapp/:netappid' => sub {
         netapp_login           => $enetapp->getAttr('name' => 'netapp_login'),
         netapp_passwd          => $enetapp->getAttr('name' => 'netapp_passwd'),
         netapp_state           => $eenetapp->{state},
-        netapp_volumes         => \@volumes
+        netapp_volumes         => \@volumes,
+        netapp_aggregates      => \@aggregates,
     };
 };
 
