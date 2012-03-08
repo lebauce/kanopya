@@ -129,25 +129,34 @@ sub update() {
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
     
     for my $externalCluster (@externalClusters){
-     #TODO : Manage Cluster without clustermetrics might be bugs
-     
         my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
         
-        # Construct input of the SCOM retriever
-        my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
-        print Dumper $host_indicator_for_retriever;
-        
-        # Call the retriever to get SCOM data
-        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-        print Dumper $monitored_values; 
+        #FILTER CLUSTERS WITH MONITORING PROVIDER
+        eval{
+            $externalCluster->getConnector(category => 'MonitoringService');
+        };
+        if($@){
+            print '*** Orchestrator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+        }else{
+     
+            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
             
-        # Verify answers received from SCOM to detect metrics anomalies
-        $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
-        
-        # Parse retriever return, compute clustermetric values and store in DB 
-        $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
-        
-        print Dumper $monitored_values;
+            # Construct input of the SCOM retriever
+            my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
+            print Dumper $host_indicator_for_retriever;
+            
+            # Call the retriever to get SCOM data
+            my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+            print Dumper $monitored_values; 
+                
+            # Verify answers received from SCOM to detect metrics anomalies
+            $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
+            
+            # Parse retriever return, compute clustermetric values and store in DB 
+            $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
+            
+            print Dumper $monitored_values;
+        }
     }
 }
 
