@@ -15,29 +15,9 @@ Cluster rules state
 </td>
 
 <td class="actions" rowspan="2">
-<% IF link_activate %>
-	<% IF systemimage_active %>
-		<a class="imgActivate" href="/architectures/clusters/<% cluster_id %>/activate">
-	<% ELSE %>
-		<a class="imgActivate" href="javascript:alert('<% systemimage_name %> used by this cluster must be active.');">
-	<% END %>
-activate</a><br />
-<span class="desc">Activate this cluster to be able to start it.</span><br /><br />
-<% ELSE %>
-	<% IF link_deactivate %>
-		<a class="imgDeactivate" href="/architectures/clusters/<% cluster_id %>/deactivate">deactivate</a><br />
-		<span class="desc">Deactivate this cluster.</span><br /><br />
-	<% END %>
-	<% IF link_start %>
-		<a class="imgStart" href="/architectures/clusters/<% cluster_id %>/start">start</a><br />
-		<span class="desc">Start this cluster.</span>
-	<% END %>
-	<% IF link_stop %>
-		<a class="imgStop" href="/architectures/clusters/<% cluster_id %>/stop">stop</a><br />
-		<span class="desc">Stop this cluster.</span><br /><br />
-		<a class="imgStop" href="/architectures/clusters/<% cluster_id %>/forcestop">force stop</a><br />
-		<span class="desc">Force this cluster to stop, to use when something went wrong.</span><br /><br />
-	<% END %>
+<% IF link_delete %>
+    <a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/remove">delete</a><br />
+    <span class="desc">Delete this cluster.</span><br /><br />
 <% END %>
 </td></tr><tr>
 <% IF active %>
