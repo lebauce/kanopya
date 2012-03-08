@@ -562,7 +562,7 @@ get '/extclusters/:clusterid' => sub {
     
     foreach my $rule (@enabled_aggregaterules){
         my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
-        if( defined $last_eval and $last_eval == 0){
+        if( defined $last_eval and $last_eval == 1){
             $num_clusterrule_verif++;
         } 
     }

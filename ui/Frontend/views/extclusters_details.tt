@@ -11,7 +11,7 @@ Node rules state
 </td>
 
 <td>
-Cluster rules state
+<a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/clustermetrics/combinations/conditions/rules">Cluster rules state</a>
 </td>
 
 <td class="actions" rowspan="2">
