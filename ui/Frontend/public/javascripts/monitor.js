@@ -305,12 +305,12 @@
 
 $(function() {
 	$( "#combination_start_time" ).datetimepicker({
-		dateFormat: 'yy-mm-dd'
+		dateFormat: 'mm-dd-yy'
 	});
 });
  $(function() {
 	$( "#combination_end_time" ).datetimepicker({
-		dateFormat: 'yy-mm-dd'
+		dateFormat: 'mm-dd-yy'
 	});
 });
  
@@ -325,10 +325,10 @@ function showCombinationGraph(curobj,combi_id,start,stop){
 	var params = {id:combi_id,start:start,stop:stop};
 	document.getElementById('timedCombinationView').innerHTML='';
 	 $.getJSON(clusters_view, params, function(data) {
-		if (data.error){ alert (data.error); }
+		if (data.error){ alert (data.error); return }
 		else{
 			document.getElementById('timedCombinationView').style.display='block';
-			timedGraph(data.first_histovalues,data.min,data.max);
+			timedGraph(data.first_histovalues, data.min, data.max);
 		}
         loading_stop();
     });
@@ -340,7 +340,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 	var params = {oid:metric_oid,unit:metric_unit};
 	document.getElementById('nodechart').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
-		if (data.error){ alert (data.error); }
+		if (data.error){ alert (data.error); return }
 		else{
 			document.getElementById('nodechart').style.display='block';
 			barGraph(data.values, data.nodelist, data.unit);
@@ -370,7 +370,12 @@ function barGraph(values, nodelist, unit){
                 tickOptions: {
                     angle: -60,
                 }
-            }
+            },
+           yaxis:{
+             label:'Y Label',
+             labelRenderer: $.jqplot.CanvasAxisLabelRenderer
+           }
+
         },
         seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { show: false }
@@ -385,8 +390,8 @@ function barGraph(values, nodelist, unit){
  
  function timedGraph(first_graph_line, min, max){
 	$.jqplot.config.enablePlugins = true;
-    alert (first_graph_line);
-	// var line1=[['02-30-2012 16:10',-1], ['02-30-2012 16:13',-1], ['02-30-2012 16:22',-1], ['02-30-2012 16:23',-1], ['02-30-2012 16:27',-1]];
+    alert ('data for selected combination: '+first_graph_line);
+	// var line1=[['03-30-2012 16:10',1], ['03-30-2012 16:13',3], ['03-30-2012 16:22',5], ['03-30-2012 16:23',7], ['03-30-2012 16:27',8]];
 	var plot1 = $.jqplot('timedCombinationView', [first_graph_line], {
         title:'Combination Historical Graph',
         axes:{
@@ -398,12 +403,12 @@ function barGraph(values, nodelist, unit){
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
                   angle: -60,
-                  formatString: '%#m-%#d %H:%M'
+                  formatString: '%y-%m-%d %H:%M'
                 },
         min:min,
         max:max,
-		// min: '02-30-2012 16:00',
-		// max: '02-30-2012 16:30'
+		// min: '03-30-2012 16:00',
+		// max: '03-30-2012 16:30'
             }      
         },
         series:[{lineWidth:4, markerOptions:{style:'square'}}]
