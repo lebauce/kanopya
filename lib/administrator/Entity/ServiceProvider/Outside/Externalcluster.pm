@@ -202,13 +202,15 @@ sub monitoringDefaultInit {
         push @indicators, $indicator->{id};
     }
 
+    my $extcluster_id = $self->getAttr( name => 'outside_id' );
+
    # Create one clustermetric for each indicator scom
     # Create 4 aggregates for each cluster metric
     # Create the corresponding combination 'identity function' for each aggregate 
     foreach my $indicator (@{$scom_indicatorset->{ds}}) {   
         foreach my $func (@funcs) {
             my $cm_params = {
-                clustermetric_service_provider_id      => $self->getAttr( name => 'outside_id' ),
+                clustermetric_service_provider_id      => $extcluster_id,
                 clustermetric_indicator_id             => $indicator->{id},
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
@@ -216,23 +218,25 @@ sub monitoringDefaultInit {
             my $cm = Clustermetric->new(%$cm_params);
            
             my $acf_params = {
-                aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+                aggregate_combination_service_provider_id   => $extcluster_id,
+                aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
             };
             my $aggregate_combination = AggregateCombination->new(%$acf_params);
                
                my $condition_params = {
-                    aggregate_combination_id => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
-                    comparator            => '>',
-                    threshold             => '0',
-                    state                 => 'enabled',
-                    #time_limit            =>  undef,
+                    aggregate_condition_service_provider_id     => $extcluster_id,
+                    aggregate_combination_id                    => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+                    comparator                                  => '>',
+                    threshold                                   => '0',
+                    state                                       => 'enabled',
                 };
                my $aggregate_condition = AggregateCondition->new(%$condition_params);
             
                my $params_rule = {
-                    aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-                    aggregate_rule_state     => 'enabled',
-                    aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+                    aggregate_rule_service_provider_id   => $extcluster_id,
+                    aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+                    aggregate_rule_state                => 'enabled',
+                    aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
                 };
                 my $aggregate_rule = AggregateRule->new(%$params_rule);
             #}
@@ -278,41 +282,35 @@ sub monitoringDefaultInit {
         my $id_mean = $cm_mean[0]->getAttr(name=>'clustermetric_id');
         my $id_std  = $cm_std[0]->getAttr(name=>'clustermetric_id'); 
         
-        my $acf_params;
-        
-        $acf_params = {
-          aggregate_combination_formula   => '(id'.($id_max).'- id'.($id_min).') / id'.($id_mean)
+        my $acf_params = {
+            aggregate_combination_service_provider_id => $extcluster_id,
         };
         
+        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_mean);
         my $aggregate_combination_range_over_mean = AggregateCombination->new(%$acf_params);
 
-        $acf_params = {
-          aggregate_combination_formula   => '(id'.($id_max).'- id'.($id_min).') / id'.($id_std)
-        };
-        
+        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_std);
         my $aggregate_combination_range_over_std = AggregateCombination->new(%$acf_params);
 
 
-        $acf_params = {
-          aggregate_combination_formula   => 'id'.($id_std).'/ id'.($id_mean)
-        };
-        
+        $acf_params->{aggregate_combination_formula} = 'id'.($id_std).'/ id'.($id_mean);
         my $aggregate_combination = AggregateCombination->new(%$acf_params);
 
        #Creating a condition on coefficient of variation std/mean and a rule
        my $condition_params = {
-            aggregate_combination_id => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
-            comparator            => '>',
-            threshold             => 0.5,
-            state                 => 'enabled',
-            #time_limit            => undef,
+            aggregate_condition_service_provider_id => $extcluster_id,
+            aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+            comparator                              => '>',
+            threshold                               => 0.5,
+            state                                   => 'enabled',
         };
        my $aggregate_condition = AggregateCondition->new(%$condition_params);
 
        my $params_rule = {
-            aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-            aggregate_rule_state     => 'enabled',
-            aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+            aggregate_rule_service_provider_id  => $extcluster_id,
+            aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+            aggregate_rule_state                => 'enabled',
+            aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         };
         my $aggregate_rule = AggregateRule->new(%$params_rule);
        
