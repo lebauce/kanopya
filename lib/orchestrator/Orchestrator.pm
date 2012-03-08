@@ -248,29 +248,49 @@ sub _contructRetrieverOutput {
 
 sub clustermetricManagement{
     my $self = shift;
-    for my $aggregate_rule (AggregateRule->search(hash=>{})){
+    
+    # FOR EACH EXT CLUSTERS
+    my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
+    
+    for my $externalCluster (@externalClusters){
+        my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
         
-        if ($aggregate_rule -> isEnabled()) {
-            print "**********\n";
-            print '* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
-            print $aggregate_rule->toString()."\n";
-
-            $log->info("**********");
-            $log->info('* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
-
+        #FILTER CLUSTERS WITH MONITORING PROVIDER
+        eval{
+            $externalCluster->getConnector(category => 'MonitoringService');
+        };
+        if($@){
+            print '*** Orchestrator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+        }else{
             
-            my $result = $aggregate_rule->eval();
+            #GET RULES RELATIVE TO A CLUSTER
+            my @rules = AggregateRule->search(hash=>{
+                service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id')
+            });
             
-            if($result){
-               print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-               $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-               #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
-            }else{
-                #print "Rule false, no action \n";
-                #$log->info("Rule false, no action");
+            for my $aggregate_rule (@rules){
+                
+                if ($aggregate_rule -> isEnabled()) {
+                    print "**********\n";
+                    print '* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
+                    print $aggregate_rule->toString()."\n";
+        
+                    $log->info("**********");
+                    $log->info('* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
+        
+                    
+                    my $result = $aggregate_rule->eval();
+                    
+                    if($result){
+                       print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+                       $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
+                       #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
+                    }else{
+                        #print "Rule false, no action \n";
+                        #$log->info("Rule false, no action");
+                    }
+                }
             }
-        }
-    }
 }
 
 =head2 manage
