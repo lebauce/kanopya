@@ -11,6 +11,7 @@ use AggregateCombination;
 use Aggregator;
 use Clustermetric;
 use General;
+use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("webui");
@@ -257,9 +258,10 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	my $combination_id = params->{'id'};
 	my $start = params->{'start'};
     my $start_timestamp;
-    my $stop_timestamp;
-	my $stop = params->{'stop'};	
+	my $stop = params->{'stop'};
+    my $stop_timestamp;	
 	my $error;
+    my $date_parser = DateTime::Format::Strptime->new( pattern => '%m-%d-%Y %H:%M' );
     my $combination = AggregateCombination->get('id' => $combination_id);
     my %aggregate_combination;
     my @histovalues;
@@ -270,12 +272,22 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 		$start->subtract( days => 1 );
         $start_timestamp = $start->epoch(); 
 		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
-	}
+	} else {
+        my $start_dt = $date_parser->parse_datetime($start);
+        # $log->error('start_dt from else: '.Dumper($start_dt));
+        $start_timestamp = $start_dt->epoch();
+    }
+        
 	if ($stop eq '') {
 		$stop = DateTime->now;
         $stop_timestamp = $stop->epoch(); 
 		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
-	}
+	} else { 
+        # $log->error('stop from else: '.Dumper($stop));
+        my $stop_dt = $date_parser->parse_datetime($stop);
+        # $log->error('stop_dt from else: '.Dumper($stop_dt));
+        $stop_timestamp = $stop_dt->epoch() ;
+    }
     
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
@@ -823,7 +835,7 @@ sub _getCombinations(){
 			push @combinations, \%combination;
 		}
 	$template_config->{'combinations'} = \@combinations;
-	$log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
+	# $log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
 	return %$template_config;
 	}
 }
