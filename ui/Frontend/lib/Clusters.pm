@@ -306,7 +306,8 @@ post '/extclusters/add' => sub {
     eval {
         my $new_extcluster = Entity::ServiceProvider::Outside::Externalcluster->new(%$params);
         $new_cluster_id = $new_extcluster->getAttr(name => 'externalcluster_id');
-        #$new_extcluster->monitoringDefaultInit();
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'external cluster created. Inserting initial data...');
+        $new_extcluster->monitoringDefaultInit();
     };
     if($@) {
         my $exception = $@;
@@ -341,6 +342,15 @@ get '/clusters' => sub {
         clusters_list => [ @{_clusters()}, @{_externalclusters()} ],
         can_create => $can_create,
         
+    };
+};
+
+get '/extclusters' => sub {
+    my $can_create;
+
+    template 'clusters', {
+        title_page         => 'Clusters - External Clusters',
+        clusters_list => _externalclusters(),
     };
 };
 
@@ -541,33 +551,57 @@ get '/extclusters/:clusterid' => sub {
         }
     } $extcluster->getConnectors();
 
-    my $num_noderule_ok    = -1337;
-    
-    my $num_clusterrule_ok = 0;
+
+  
+
+
+    my $num_noderule_verif    = "TODO";
+        
+    my $num_clusterrule_verif = 0;
     my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled');
     
     foreach my $rule (@enabled_aggregaterules){
-        if($rule->getAttr(name => 'aggregate_rule_last_eval')){
-            $num_clusterrule_ok++;
+        if($rule->getAttr(name => 'aggregate_rule_last_eval') == 0){
+            $num_clusterrule_verif++;
         } 
     }
         
     template 'extclusters_details', {
-        title_page          => "External Clusters - Cluster's overview",
-        active              => 1,
-        cluster_state       => 'up',
-        cluster_id          => $cluster_id,
-        cluster_name        => $extcluster->getAttr(name => 'externalcluster_name'),
-        nodes_list          => $nodes,
-        connectors_list     => \@connectors,
-        link_updatenodes    => 1,
-        link_addconnector   => 1,
-        can_configure       => 1,
-        num_noderule_ok     => $num_noderule_ok,
-        num_clusterrule_ok  => $num_clusterrule_ok,
+        title_page            => "External Clusters - Cluster's overview",
+        active                => 1,
+        cluster_state         => 'up',
+        cluster_id            => $cluster_id,
+        cluster_name          => $extcluster->getAttr(name => 'externalcluster_name'),
+        nodes_list            => $nodes,
+        connectors_list       => \@connectors,
+        link_updatenodes      => 1,
+        link_addconnector     => 1,
+        link_delete           => 1,
+        can_configure         => 1,
+        num_noderule_verif    => $num_noderule_verif,
+        num_clusterrule_verif => $num_clusterrule_verif,
     };
 };
 
+get '/extclusters/:clusterid/remove' => sub {
+    my $adm = Administrator->new;
+    eval {
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
+        $cluster->delete();
+    };
+    if($@) {
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
+    }
+    else {
+        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster ' . param('clusterid') . ' removed.');
+        redirect('/architectures/clusters');
+    }
+};
 
 get '/clusters/:clusterid/activate' => sub {
     my $adm = Administrator->new;

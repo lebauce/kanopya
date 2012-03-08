@@ -345,7 +345,7 @@ sub _computeAggregates{
         @values = ();
         
         
-        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_cluster_id');
+        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_service_provider_id');
         $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
         $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
         $hosts   = $cluster->getHosts();
@@ -361,41 +361,4 @@ sub _computeAggregates{
     return $rep;
 };
 
-#=head2 constructHostAndIndicatorHash
-#    
-#    Class : Public
-#    
-#    Desc : Generate hash table of hosts to monitor and the indicator id to the Retriever
-#    
-#=cut
-#sub _constructHostAndIndicatorHash {
-#    my $self = shift;
-#    my @clustermetrics = Clustermetric->search(hash => {});
-#    
-#    my $clustermetric_cluster_id   = 0;
-#    my $clustermetric_indicator_id = 0;
-#    
-#    my $cluster                = undef;
-#    my $hosts                  = undef;
-#    my $rep                    = undef;
-#    my $host_id                = undef;
-#    
-#    for my $clustermetric (@clustermetrics){
-#        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_cluster_id');
-#        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-#        
-#        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
-#        $hosts = $cluster->getHosts();
-#        
-#        for my $host (values(%$hosts)){
-#            $host_id = $host->getAttr(name => 'host_id');
-#                        
-#            push(
-#                @{$rep->{$host_id}->{$clustermetric_indicator_id}},
-#                $clustermetric->getAttr(name => 'clustermetric_window_time')
-#            );
-#        }
-#    }
-#    return $rep;
-#};
 1;

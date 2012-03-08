@@ -368,7 +368,7 @@ get '/clustermetrics' => sub {
 
 
 get '/extclusters/:extclusterid/clustermetrics' => sub {
-    my @clustermetrics = Clustermetric->search(hash=>{'clustermetric_cluster_id' => (params->{extclusterid})});
+    my @clustermetrics = Clustermetric->search(hash=>{'clustermetric_service_provider_id' => (params->{extclusterid})});
     my @clustermetrics_param;
     foreach my $clustermetric (@clustermetrics){
         my $hash = {
@@ -413,7 +413,7 @@ get '/extclusters/:extclusterid/clustermetrics/new' => sub {
 
 post '/extclusters/:extclusterid/clustermetrics/new' => sub {
     my $cm_params = {
-        clustermetric_cluster_id               => param('extclusterid'),
+        clustermetric_service_provider_id      => param('extclusterid'),
         clustermetric_indicator_id             => param('id2'),
         clustermetric_statistics_function_name => param('function'),
         clustermetric_window_time              => '1200',
@@ -421,6 +421,7 @@ post '/extclusters/:extclusterid/clustermetrics/new' => sub {
     my $cm = Clustermetric->new(%$cm_params);
    
     my $comb_params = {
+        aggregate_combination_service_provider_id =>param('extclusterid'),
         aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
     AggregateCombination->new(%$comb_params);
@@ -460,59 +461,7 @@ get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
     }
 };
 
-# -----------------------------------------------------------------------------#
-# ------------------------- GENERAL CLUSTERMETRICS ----------------------------#
-# ---------------------------------DEPRECATED ?--------------------------------#
 
-
-get '/clustermetrics/new' => sub {
-    
-   my $cluster_id    = params->{extclusterid} || 0;
-   
-    my $adm    = Administrator->new();
-    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
-    my @indicators;
-    
-    foreach my $indicator (@{$scom_indicatorset->{ds}}){
-        my $hash = {
-            id     => $indicator->{id},
-            label  => $indicator->{label},
-        };
-
-        push @indicators, $hash;
-    }
-
-   
-    template 'clustermetric_new', {
-        title_page => "Clustermetric creation",
-        indicators => \@indicators,
-    };
-};
-
-
-
-post '/clustermetrics/new' => sub {
-    my $cm_params = {
-        clustermetric_cluster_id               => '54',
-        clustermetric_indicator_id             => param('id2'),
-        clustermetric_statistics_function_name => param('function'),
-        clustermetric_window_time              => '1200',
-    };
-   my $cm = Clustermetric->new(%$cm_params);
-       my $comb_params = {
-        aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
-    };
-    AggregateCombination->new(%$comb_params);
-   redirect("/architectures/clustermetrics");
-};
-
-
-
-get '/clustermetrics/:clustermetricid/delete' => sub {
-    my $clustermetric = Clustermetric->get('id' => params->{clustermetricid});
-    $clustermetric->delete();
-    redirect('/architectures/clustermetrics');
-};
 
 # -----------------------------------------------------------------------------#
 # ------------------------- CLUSTERMETRICS COMBINATIONS------------------------#
@@ -573,7 +522,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
     
    my $cluster_id    = params->{extclusterid} || 0;
 
-    my @clustermetrics = Clustermetric->search(hash=>{'clustermetric_cluster_id' => (params->{extclusterid})});
+    my @clustermetrics = Clustermetric->search(hash=>{'clustermetric_service_provider_id' => (params->{extclusterid})});
     my @clustermetrics_param;
     foreach my $clustermetric (@clustermetrics){
         my $hash = {
@@ -594,6 +543,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
 
 post '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
     my $params = {
+        aggregate_combination_service_provider_id      => param('extclusterid'),
         aggregate_combination_formula => param('formula'),
     };
    my $cm = AggregateCombination->new(%$params);
@@ -667,6 +617,7 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => 
     };
     
     my $params = {
+        aggregate_condition_service_provider_id      => param('extclusterid'),
         aggregate_combination_id => param('combinationid'),
         comparator               => $comparatorHash->{param('comparator')},
         threshold                => param('threshold'),
@@ -678,6 +629,7 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => 
     
     if(defined param('rule')){
        my $params_rule = {
+            aggregate_rule_service_provider_id => param('extclusterid'),
             aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
             aggregate_rule_state     => 'disabled',
             aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),

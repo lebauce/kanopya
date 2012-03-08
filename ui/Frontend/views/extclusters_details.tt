@@ -59,21 +59,21 @@ activate</a><br />
 	<td></td>
 <% END %>
 <td>
-    <% IF num_noderule_ok == 0 %>
+    <% IF num_noderule_verif == 0 %>
         <span class="state imgUp">All rules are verified</span>
-    <%ELSIF num_noderule_ok == 1 %>
-        <span class="state imgBroken"><%num_noderule_ok%> rule is not verified</span>
+    <%ELSIF num_noderule_verif == 1 %>
+        <span class="state imgBroken"><%num_noderule_verif%> rule is not verified</span>
     <%ELSE%>
-        <span class="state imgBroken"><%num_noderule_ok%> rules are not verified</span>
+        <span class="state imgBroken"><%num_noderule_verif%> rules are not verified</span>
     <%END%>
 </td>
 <td>
-    <% IF num_clusterrule_ok == 0 %>
+    <% IF num_clusterrule_verif == 0 %>
         <span class="state imgUp">All rules are verified</span>
-    <%ELSIF num_clusterrule_ok == 1 %>
-        <span class="state imgBroken"><%num_clusterrule_ok%> rule is not verified</span>
+    <%ELSIF num_clusterrule_verif == 1 %>
+        <span class="state imgBroken"><%num_clusterrule_verif%> rule is not verified</span>
     <%ELSE%>
-        <span class="state imgBroken"><%num_clusterrule_ok%> rules are not verified</span>
+        <span class="state imgBroken"><%num_clusterrule_verif%> rules are not verified</span>
     <%END%>
 </td>
 
@@ -124,10 +124,13 @@ activate</a><br />
 	<% FOREACH node IN nodes_list %>
 		<tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
 		<td class="label2">
-		<% IF node.state_up %><span class="state imgUp">Up</span><% END %>
-		<% IF node.state_starting %><span class="state imgDown">Starting...</span><% END %>
-		<% IF node.state_stopping %><span class="state imgDown">Stopping...</span><% END %>
-		<% IF node.state_broken %><span class="state imgWarning">Broken</span><% END %>
+            <% IF node.num_verified_rules == 0 %>
+                <span class="state imgUp">No rules verified</span>
+            <% ELSIF node.num_verified_rules == 1 %>
+                <span class="state imgBroken"><%node.num_verified_rules%> rule verified</span>
+            <% ELSE %>
+                <span class="state imgBroken"><%node.num_verified_rules%> rules verified</span>
+            <% END %> 
 		</td>
 		<td class="action">
 		<% IF node.link_remove %>
