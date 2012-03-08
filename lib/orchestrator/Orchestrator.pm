@@ -265,7 +265,7 @@ sub clustermetricManagement{
             
             #GET RULES RELATIVE TO A CLUSTER
             my @rules = AggregateRule->search(hash=>{
-                service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id')
+                aggregate_rule_service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id')
             });
             
             for my $aggregate_rule (@rules){
