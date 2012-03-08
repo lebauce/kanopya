@@ -1,0 +1,11 @@
+<table class="simplelisting">
+<caption>Cluster metrics rules</caption>
+            <% FOREACH rule IN rules %>
+                <tr><td>
+                <% IF rule.isVerified == 0%><span class="state imgUp">  </span> 
+                <% ELSIF rule.isVerified == 1%><span class="state imgBroken">  </span> 
+                <% ELSE %><span class="state imgDown">  </span> <% END %>
+                <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
+                </tr>
+            <% END %>
+</table>

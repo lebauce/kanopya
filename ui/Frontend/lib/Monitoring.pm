@@ -10,6 +10,7 @@ use AggregateRule;
 use AggregateCombination;
 use Aggregator;
 use Clustermetric;
+use NodemetricRule;
 use General;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
@@ -783,10 +784,39 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
 
 get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
     my $externalnode_id    = param('extnodeid');
-    my $nodemetric_rule_id = param('nodemetricrule');
     my $externalcluster_id = param('extclusterid');
     
-    print "Rule $nodemetric_rule_id on node  $externalnode_id of cluster page\n"
+    my $nodemetric_rules = NodemetricRule->search(
+                                hash => {
+                                    nodemetric_rule_state => 'enabled',
+                                }
+                           );
+    
+    my @rules;
+    
+    foreach my $rule (@rules){
+        my $isVerified = $rule->isVerifiedForANode(
+            externalcluster_id => $externalcluster_id,
+            externalnode_id    => $externalnode_id,
+        );
+        
+        my $hash = {
+            id         => $rule->getAttr(name => 'nodemetric_rule_id'),
+            isVerified => $isVerified,
+            formula      => 'my formula',
+        };
+        
+        push @rules, $hash;
+    } 
+    
+
+    
+    template 'nodemetric_rules', {
+        title_page      => "Node Metric Rules Overview",
+        rules           => \@rules,
+        externalnode_id => $externalnode_id,
+        cluster_id      => $externalcluster_id,
+    };
 };
 
 
