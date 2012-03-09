@@ -1134,6 +1134,7 @@ CREATE TABLE `aggregate_combination` (
 
 CREATE TABLE `aggregate_rule` (
   `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  `aggregate_rule_label` char(32),
   `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(32) NOT NULL ,
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
@@ -1209,6 +1210,7 @@ CREATE TABLE `nodemetric_condition` (
 
 CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_rule_label` char(32),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(32) NOT NULL ,
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,

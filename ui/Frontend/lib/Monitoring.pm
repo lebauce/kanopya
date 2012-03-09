@@ -8,6 +8,7 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use AggregateRule;
 use AggregateCombination;
+use AggregateCondition;
 use Aggregator;
 use Clustermetric;
 use NodemetricRule;
@@ -674,15 +675,23 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' => sub {
-  my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
-   
+    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
+
+
 #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
   my @rules;
   foreach my $aggregate_rule (@enabled_aggregaterules) {
+    my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
+    
+    if(not defined $label) {
+        $label = $aggregate_rule->toString();
+    }
+    
     my $hash = {
         id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
         formula   => $aggregate_rule->toString(),
         last_eval => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
+        label     => $label,
 
     };
     push @rules, $hash;
@@ -693,6 +702,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
         rules      => \@rules,
         status     => 'enabled',
         cluster_id => param('extclusterid'),
+        
   };
 };
 
@@ -704,10 +714,19 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
   my @disabled_rules;
   foreach my $aggregate_rule (@disabled_aggregaterules) {
       
+    my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
+    
+    if(not defined $label) {
+        $label = $aggregate_rule->toString();
+    }
+    
+   
     my $hash = {
       id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula => $aggregate_rule->toString(),
       last_eval => -1,
+      label     => $label,
+      
     };
     push @disabled_rules, $hash;
   }
@@ -728,11 +747,19 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdi
   #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
   foreach my $aggregate_rule (@tdisabled_aggregaterules) {
+          my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
+    
+    if(not defined $label) {
+        $label = $aggregate_rule->toString();
+    }
+    
     my $hash = {
       id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula   => $aggregate_rule->toString(),
       last_eval => -1,
       time      => $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp') - time(),
+      label     => $label,
+      
     };
     push @tdisabled_rules, $hash;
   }  
@@ -820,6 +847,47 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
         cluster_name    => $extclu->getAttr(name => 'externalcluster_name'),
         host_name       => $node->{hostname},
     };
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/details' => sub {
+    my $rule = AggregateRule->get('id' => param('ruleid') );
+    my @conditions;
+
+    my @condition_insts = AggregateCondition->search(hash => {aggregate_condition_service_provider_id => param('extclusterid') });
+    
+    foreach my $condition_inst (@condition_insts){
+        my $hash = {
+            label => $condition_inst->toString(),
+            id    => $condition_inst->getAttr('name' => 'aggregate_condition_id'),
+        };
+        
+        push @conditions, $hash;
+    } 
+    template 'clustermetric_rules_details', {
+        title_page    => "Rule details",
+        cluster_id    => param('extclusterid'),
+        rule_id       => param('ruleid'),
+        rule_formula  => $rule->getAttr('name' => 'aggregate_rule_formula'),
+        rule_string   => $rule->toString(),
+        rule_state    => $rule->getAttr('name' => 'aggregate_rule_state'),
+        rule_label    => $rule->getAttr('name' => 'aggregate_rule_label'),
+        conditions    => \@conditions,
+    };
+};
+
+post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/edit' => sub {
+    my $rule = AggregateRule->get('id' => param('ruleid'));
+    my $checker = $rule->checkFormula(formula => param('formula'));
+    
+    if($checker->{value} == 1) {
+        $rule->setAttr(name => 'aggregate_rule_label',   value => param('label'));
+        $rule->setAttr(name => 'aggregate_rule_formula', value => param('formula'));
+        $rule->save();
+        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
+    }else {
+        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
+    }
+
 };
 
 
