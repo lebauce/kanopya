@@ -385,13 +385,13 @@ SET @kernel := @eid;
 SET @eid := @eid +1;
 
 --
--- admin cluster
+-- kanopya cluster
 --
 
 INSERT INTO `entity` VALUES (@admin_cluster, 13);
 INSERT INTO `service_provider` VALUES (@admin_cluster);
 INSERT INTO `inside` VALUES (@admin_cluster);
-INSERT INTO `cluster` VALUES (@admin_cluster,'adm','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_',@adminuserid, @physical_hoster);
+INSERT INTO `cluster` VALUES (@admin_cluster,'Kanopya','Main Cluster hosting Administrator, Executor, Boot server and NAS',0,1,1,500,'local','rw',0,'[% admin_domainname %]', '127.0.0.1',1,NULL,@kernel, 'up:[% tmstp %]', NULL,'test_',@adminuserid, @physical_hoster);
 
 --
 -- internal ip for admin node

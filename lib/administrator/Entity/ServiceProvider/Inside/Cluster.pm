@@ -378,7 +378,7 @@ sub getTiers {
 sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('cluster_name');
-    return $string;
+    return $string.' (Cluster)';
 }
 
 =head2 getComponents
