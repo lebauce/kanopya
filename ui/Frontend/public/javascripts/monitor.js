@@ -325,7 +325,7 @@ function showCombinationGraph(curobj,combi_id,start,stop){
 	var params = {id:combi_id,start:start,stop:stop};
 	document.getElementById('timedCombinationView').innerHTML='';
 	 $.getJSON(clusters_view, params, function(data) {
-		if (data.error){ alert (data.error); return }
+		if (data.error){ alert (data.error); }
 		else{
 			document.getElementById('timedCombinationView').style.display='block';
 			timedGraph(data.first_histovalues, data.min, data.max);
@@ -338,22 +338,36 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 	if(metric_oid == 'default'){return}
 	loading_start();
 	var params = {oid:metric_oid,unit:metric_unit};
-	document.getElementById('nodechart').innerHTML='';
+	document.getElementById('nodes_charts').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
-		if (data.error){ alert (data.error); return }
+		alert('toto');
+		if (data.error){ alert (data.error); }
 		else{
-			document.getElementById('nodechart').style.display='block';
-			barGraph(data.values, data.nodelist, data.unit);
+			document.getElementById('nodes_charts').style.display='block';
+			var max_nodes_per_graph = 100;
+			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
+			var nodes_per_graph = data.nodelist.length/graph_number;
+			for (var i = 0; i<graph_number; i++){
+				var div_id = 'nodechart_'+i;
+				var div = '<div id=\"'+div_id+'\"></div>';
+				//create the graph div container
+				$("#nodes_charts").append(div);
+				//slice the array
+				var indexOffset = nodes_per_graph*i;
+				var toElementNumber = nodes_per_graph*(i+1);
+				var sliced_values = data.values.slice(indexOffset,toElementNumber);
+				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
+				//we generate the graph
+				barGraph(sliced_values, sliced_nodelist, data.unit, div_id);
+			}
 		}
         loading_stop();
     });
 }
 
-function barGraph(values, nodelist, unit){
+function barGraph(values, nodelist, unit, div_id){
 	$.jqplot.config.enablePlugins = true;
-    var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet','plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU' ];
-	var s1 = [ 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 6000,6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000];
-	plot1 = $.jqplot('nodechart', [s1], {
+    plot1 = $.jqplot(div_id, [values], {
 	title:'Indicator Distributed Graph (in '+unit+' )',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
@@ -365,17 +379,12 @@ function barGraph(values, nodelist, unit){
             xaxis: {
                 renderer: $.jqplot.CategoryAxisRenderer,
                 showGridline: false,
-                ticks: ticks,
+                ticks: nodelist,
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
                     angle: -60,
                 }
-            },
-           yaxis:{
-             label:'Y Label',
-             labelRenderer: $.jqplot.CanvasAxisLabelRenderer
-           }
-
+            }
         },
         seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { show: false }
@@ -416,8 +425,8 @@ function barGraph(values, nodelist, unit){
 }
 
 // function testBar(){
-//	var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25','n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10', 'n11', 'n12', 'n13', 'n14', 'n15', 'n16', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'plusdetroiscaractere', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25'];
-	// var s1 = [ 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900,200, 600, 700, 1000, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 2600, 2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 1900 ];
+//var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet','plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU' ];
+	//var s1 = [ 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 6000,6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000];	
 	// $.jqplot.config.enablePlugins = true;
 	// plot1 = $.jqplot('testchart', [s1], {
 	// title:'Indicator Distributed Graph',

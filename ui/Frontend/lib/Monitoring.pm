@@ -2,6 +2,7 @@ package Monitoring;
 
 use Dancer ':syntax'; 
 use Dancer::Plugin::Ajax;
+use Dancer::Plugin::EscapeHTML;
 use Data::Dumper;
 
 use Entity::ServiceProvider::Inside::Cluster;
@@ -240,6 +241,12 @@ get '/monitoring/browse' => sub  {
 # --------------------------------------------------------------------#
 
 
+=head2 get '/extclusters/:extclusterid/monitoring'
+
+	Desc: Compute the values to be displayed on the monitoring page and create the according template
+	
+=cut
+
 get '/extclusters/:extclusterid/monitoring' => sub {
     my $cluster_id = params->{extclusterid} || 0;
 	my %template_config = (title_page => "Cluster Monitor Overview", cluster_id => $cluster_id);
@@ -253,6 +260,14 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 
 	template 'cluster_monitor', \%template_config;
 };
+
+
+=head2 ajax '/extclusters/:extclusterid/monitoring/clustersview'
+
+	Desc: Get the values corresponding to the selected combination for the currently monitored cluster,	
+	return to the monitor.js an 2D array containing the timestamped values for the combination, plus a start time and a stop time
+
+=cut
 
 ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	my $cluster_id = params->{extclusterid} || 0;   
@@ -275,7 +290,6 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
 	} else {
         my $start_dt = $date_parser->parse_datetime($start);
-        # $log->error('start_dt from else: '.Dumper($start_dt));
         $start_timestamp = $start_dt->epoch();
     }
         
@@ -283,10 +297,8 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 		$stop = DateTime->now;
         $stop_timestamp = $stop->epoch(); 
 		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
-	} else { 
-        # $log->error('stop from else: '.Dumper($stop));
+	} else {
         my $stop_dt = $date_parser->parse_datetime($stop);
-        # $log->error('stop_dt from else: '.Dumper($stop_dt));
         $stop_timestamp = $stop_dt->epoch() ;
     }
     
@@ -313,6 +325,13 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
   
+  
+=head2 ajax '/extclusters/:extclusterid/monitoring/nodesview'
+
+	Desc: Get the values corresponding to the selected nodes combination for the currently monitored cluster, 
+	return to the monitor.js an array containing the nodes names for the combination, and another one containing the values for the nodes, plus the label of the node combination unit
+
+=cut  
 
 ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
     my $cluster_id    = params->{extclusterid} || 0;   
@@ -327,20 +346,30 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	if ($@) {
 		$error="$@";
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0) {
-		$error='no values could be retrieved for this metric';
+		$error='no values available for this metric';
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} else {
-		my @nodes;
-		my @values;
-		
+		my @nodes_values_to_sort;
 		while (my ($node, $metric) = each %$nodes_metrics) {
-			push @nodes, $node;
-			push @values, int($metric->{$indicator});
-		}		
-		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};
+			push @nodes_values_to_sort, { node => $node, value => $metric };
+		}
+		my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
+	
+		my @nodes = map { $_->{node} } @sorted_nodes_values;
+		my @values = map { $_->{value} } @sorted_nodes_values;	
+		
+		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
+		# my (@test1, @test2);
+		# for (my $i = 1; $i<151; $i++){
+			# my $nde = 'node'.$i;
+			# push @test1, $i;
+			# push @test2, $nde;
+		# }
+		
+		# to_json {values => \@test1, nodelist => \@test2, unit => "unit"};
 	}
 };
 
