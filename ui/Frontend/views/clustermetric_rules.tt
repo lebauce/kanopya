@@ -7,10 +7,10 @@
                 <% IF rule.last_eval == 0%><span class="state imgUp">  </span> 
                 <% ELSIF rule.last_eval == 1%><span class="state imgBroken">  </span> 
                 <% ELSE %><span class="state imgDown">  </span> <% END %>
-                <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
+                <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.label %></span></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/tdisable">disable for 2 min</a></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/disable">disable</a></td>
-                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">edit</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
             <% END %>
         <% CASE 'tdisabled' %>
@@ -18,11 +18,11 @@
             <% FOREACH rule IN rules %>
                 <tr><td>
                 <span class="state imgDown"> </span>
-                <span class="bold">Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
+                <span class="bold">Rule <% rule.id %></span><span class="italic"> <% rule.label %></span></td>
                 <td>Disabled for <% rule.time %> seconds</td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/enable">enable</a></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/disable">disable</a></td>
-                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">edit</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
             <% END %>
         <% CASE 'disabled' %>
@@ -32,9 +32,9 @@
             <tr><td>
                 <span class="state imgDown"> </span>
                 <span class="bold">Rule <% rule.id %></span>
-                <span class="italic"> <% rule.formula %></span></td>
+                <span class="italic"> <% rule.label %></span></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/enable">enable</a></td>
-                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">edit</a></td>
+                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
             <% END %>
         <% END %>

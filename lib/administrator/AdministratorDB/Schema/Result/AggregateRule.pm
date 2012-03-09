@@ -80,6 +80,8 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
+    "aggregate_rule_label",
+  { data_type => "char", is_nullable => 1, size => 32 },
   "aggregate_rule_service_provider_id",
   {
     data_type => "integer",
