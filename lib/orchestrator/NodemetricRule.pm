@@ -111,8 +111,8 @@ sub isVerifiedForANode{
     my $self = shift;
     my %args = @_;
     
-    my $externalcluster_id  = $args{external_cluster_id};
-    my $externalnode_id     = $args{external_node_id};
+    my $externalcluster_id  = $args{externalcluster_id};
+    my $externalnode_id     = $args{externalnode_id};
     
     my $row = $self->{_dbix}
         ->verified_noderules

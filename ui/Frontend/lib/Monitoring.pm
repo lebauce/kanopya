@@ -803,7 +803,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
         my $hash = {
             id         => $rule->getAttr(name => 'nodemetric_rule_id'),
             isVerified => $isVerified,
-            formula      => 'my formula',
+            formula      => $rule->getAttr(name => 'nodemetric_rule_formula'),
         };
         
         push @rules, $hash;
