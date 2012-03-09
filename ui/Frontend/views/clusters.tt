@@ -3,7 +3,7 @@
 	<tr><td colspan="3"><h1><% cluster.cluster_name %></h1></td></tr>
 	<tr><td><span class="label">Type</span> : <% cluster.type %></td><td><span class="label">Status</span> : 
 	<% IF cluster.active %>Active<% ELSE %>Deactivated<% END %></td><td class="toright">
-	<a class="imgManage" onclick="loadLink('/architectures/<% cluster.route_base %>/<% cluster.cluster_id %>')">details</a></td></tr>
+	<a class="imgManage clickable" onclick="loadLink('/architectures/<% cluster.route_base %>/<% cluster.cluster_id %>')">details</a></td></tr>
 	<tr><td><span class="label">Size</span> : <% cluster.nbnodes %></td>
 	<% IF cluster.active %>
 		<td><span class="label">State</span> :
