@@ -1,6 +1,6 @@
 <h2>Rule <%rule_id%> details</h2>
 <hr/>
-<h4><%rule_string%></h4>
+<h4><%rule_label%> : <%rule_string%></h4>
 
     This rule is <%rule_state%> : 
     <%SWITCH rule_state%>

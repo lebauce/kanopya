@@ -870,6 +870,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
         rule_formula  => $rule->getAttr('name' => 'aggregate_rule_formula'),
         rule_string   => $rule->toString(),
         rule_state    => $rule->getAttr('name' => 'aggregate_rule_state'),
+        rule_label    => $rule->getAttr('name' => 'aggregate_rule_label'),
         conditions    => \@conditions,
     };
 };
