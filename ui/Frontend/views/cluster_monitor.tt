@@ -43,8 +43,8 @@
 	<% END %>
 	</div>
 	<br />
-	<div id="nodechart"></div><br />
-	<div><span>You Clicked: </span><span id="info1">Nothing yet</span></div>
+	<div id="nodes_charts">
+	</div>
 </div>
 <div class="single_node_overview">
 	<h2>Single node view</h2>

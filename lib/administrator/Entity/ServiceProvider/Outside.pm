@@ -65,7 +65,8 @@ sub addConnector {
     General::checkParams(args => \%args, required => ['connector']);
 
     my $connector = $args{connector};
-    $connector->setAttr(name => 'outside_id', value => $self->getAttr(name => 'outside_id'));
+    $connector->setAttr(name  => 'service_provider_id',
+                        value => $self->getAttr(name => 'outside_id'));
     $connector->save();
 
     return $connector->{_dbix}->id;
@@ -156,7 +157,9 @@ sub getConnectors {
     my $self = shift;
     my %args = @_;
     
-    return Entity::Connector->search(hash => {outside_id => $self->getAttr(name => 'outside_id')});
+    return Entity::Connector->search(
+               hash => { service_provider_id => $self->getAttr(name => 'outside_id') }
+           );
 }
 
 1;

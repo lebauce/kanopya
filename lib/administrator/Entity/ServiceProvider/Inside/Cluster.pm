@@ -581,8 +581,9 @@ sub addComponent {
 
     General::checkParams(args => \%args, required => ['component']);
 
-	my $component = $args{component};
-    $component->setAttr(name => 'inside_id', value => $self->getAttr(name => 'cluster_id'));
+    my $component = $args{component};
+    $component->setAttr(name  => 'service_provider_id',
+                        value => $self->getAttr(name => 'cluster_id'));
     $component->save();
 
     return $component->{_dbix}->id;
@@ -608,8 +609,9 @@ sub addComponentFromType {
 	my $location = General::getLocFromClass(entityclass => $comp_class);
 	eval {require $location };
 	my $component = $comp_class->new();
-	$component->setAttr(name => 'inside_id', value => $self->getAttr(name => 'cluster_id'));
-    $component->save();
+	$component->setAttr(name  => 'service_provider_id',
+	                    value => $self->getAttr(name => 'cluster_id'));
+	$component->save();
 
     return $component->{_dbix}->id;
 }

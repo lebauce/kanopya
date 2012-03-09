@@ -28,10 +28,10 @@ sub _deepEscapeHtml {
 
 get '/connectors/:instanceid/configure' => sub {
     my $connector = Entity::Connector->get( id => param('instanceid') );
-    my $serviceprovider_id = $connector->getAttr(name=>'outside_id');
+    my $serviceprovider_id = $connector->getAttr(name=>'service_provider_id');
     my $serviceprovider = Entity::ServiceProvider->get(id => $serviceprovider_id);
     my $connector_type = $connector->getConnectorType();
-    my $template = 'connectors/'.lc($connector_type->{connector_name});
+    my $template = 'connectors/' . lc($connector_type->{connector_name});
         
     my $config = $connector->getConf();
     _deepEscapeHtml( $config );
