@@ -19,11 +19,11 @@
     <table>
         <tr><td> 
         </td></tr>
-        
-        <tr><td>
-        
-        <input type=test name="formula" value="<%rule_formula%>"/>
-        
+        <tr><td>        
+            Label <input type=test name="label" value="<%rule_label%>"/>
+        </td></tr>        
+        <tr><td>        
+            Formula <input type=test name="formula" value="<%rule_formula%>"/>
         </td></tr>
         
     </table>

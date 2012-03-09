@@ -675,16 +675,23 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' => sub {
-  my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
-   
+    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
+
+
 #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
   my @rules;
   foreach my $aggregate_rule (@enabled_aggregaterules) {
+    my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
+    
+    if(not defined $label) {
+        $label = $aggregate_rule->toString();
+    }
+    
     my $hash = {
         id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
         formula   => $aggregate_rule->toString(),
         last_eval => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
-        label     => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
+        label     => $label,
 
     };
     push @rules, $hash;
@@ -695,6 +702,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
         rules      => \@rules,
         status     => 'enabled',
         cluster_id => param('extclusterid'),
+        
   };
 };
 
@@ -739,12 +747,18 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdi
   #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
   foreach my $aggregate_rule (@tdisabled_aggregaterules) {
+          my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
+    
+    if(not defined $label) {
+        $label = $aggregate_rule->toString();
+    }
+    
     my $hash = {
       id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula   => $aggregate_rule->toString(),
       last_eval => -1,
       time      => $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp') - time(),
-      label     => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
+      label     => $label,
       
     };
     push @tdisabled_rules, $hash;
@@ -865,6 +879,7 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:r
     my $checker = $rule->checkFormula(formula => param('formula'));
     
     if($checker->{value} == 1) {
+        $rule->setAttr(name => 'aggregate_rule_label',   value => param('label'));
         $rule->setAttr(name => 'aggregate_rule_formula', value => param('formula'));
         $rule->save();
         redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
