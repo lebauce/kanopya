@@ -82,7 +82,7 @@ sub methods {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('cluster_state');
+    my $state = $self->{_dbix}->get_column('externalcluster_state');
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -97,10 +97,18 @@ sub setState {
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
-    $self->{_dbix}->update({'cluster_prev_state' => $current_state,
-                            'cluster_state' => $new_state.":".time})->discard_changes();
+    $self->{_dbix}->update({'externalcluster_prev_state' => $current_state,
+                            'externalcluster_state' => $new_state.":".time})->discard_changes();
 }
 
+
+=head2 addNode
+
+Not supposed to be used (or for test purpose).
+Externalcluster nodes are updated using appropriate connector
+See updateNodes()
+
+=cut
 
 sub addNode {
     my $self = shift;
@@ -147,7 +155,10 @@ sub updateNodes {
      
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
-            $self->{_dbix}->parent->externalnodes->update_or_create({externalnode_hostname => $node->{hostname}});
+            $self->{_dbix}->parent->externalnodes->update_or_create({
+                externalnode_hostname   => $node->{hostname},
+                externalnode_state      => 'up',
+            });
          }
      }
      # TODO remove dead nodes from db
