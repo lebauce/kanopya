@@ -55,6 +55,21 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+sub toString{
+    my $self = shift;
+    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+    my @array = split(/(id\d+)/,$formula);
+    for my $element (@array) {
+        
+        if( $element =~ m/id(\d+)/)
+        {
+            $element = NodemetricCondition->get('id'=>substr($element,2))->toString();
+        }
+     }
+     return "@array";
+};
+
 #C/P of homonym method in AggregateRulePackage 
 sub getDependantConditionIds {
     my $self = shift;
