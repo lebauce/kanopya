@@ -818,7 +818,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
         externalnode_id => $externalnode_id,
         cluster_id      => $externalcluster_id,
         cluster_name    => $extclu->getAttr(name => 'externalcluster_name'),
-        node_name       => $node->{hostname},
+        host_name       => $node->{hostname},
     };
 };
 
