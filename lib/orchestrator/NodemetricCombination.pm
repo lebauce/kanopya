@@ -44,7 +44,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub toString {
     my $self = shift;
 
-    my $formula = $self->getAttr(name => 'aggregate_combination_formula');
+    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
     
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);

@@ -17,6 +17,7 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use Data::Dumper;
+use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
 # logger
 use Log::Log4perl "get_logger";
