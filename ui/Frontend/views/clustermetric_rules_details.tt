@@ -1,0 +1,40 @@
+<h2>Rule <%rule_id%> details</h2>
+<hr/>
+<h4><%rule_string%></h4>
+
+    This rule is <%rule_state%> : 
+    <%SWITCH rule_state%>
+        <%CASE 'disabled'%>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/enable"> Enable it </a>
+        <%CASE 'enabled' %>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/disable"> Disable it </a>
+        <% CASE 'disabled_temp' %>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/enable"> Enable it </a>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/disable"> Disable it </a>
+    <%END%>
+
+
+<hr/>
+<form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/edit">
+    <table>
+        <tr><td> 
+        </td></tr>
+        
+        <tr><td>
+        
+        <input type=test name="formula" value="<%rule_formula%>"/>
+        
+        </td></tr>
+        
+    </table>
+    <br/>
+    
+    <div class="left">
+        <input type="submit" value="Edit rule"/>
+    </div>
+</form>
+<hr/>
+Memo :<br/>
+<%FOREACH condition IN conditions%>
+<%condition.id%>: <%condition.label%><br/>
+<%END%>
