@@ -12,10 +12,10 @@
 --   You should have received a copy of the GNU Affero General Public License
 --   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DROP DATABASE IF EXISTS `administrator`;
+DROP DATABASE IF EXISTS `kanopya`;
 
-CREATE DATABASE `administrator`;
-USE `administrator`;
+CREATE DATABASE `kanopya`;
+USE `kanopya`;
 
 SET foreign_key_checks=0;
 
