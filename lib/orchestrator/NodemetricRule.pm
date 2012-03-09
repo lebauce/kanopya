@@ -17,6 +17,7 @@ use strict;
 use warnings;
 use base 'BaseDB';
 use Data::Dumper;
+use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
 # logger
 use Log::Log4perl "get_logger";
@@ -54,6 +55,21 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+sub toString{
+    my $self = shift;
+    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+    my @array = split(/(id\d+)/,$formula);
+    for my $element (@array) {
+        
+        if( $element =~ m/id(\d+)/)
+        {
+            $element = NodemetricCondition->get('id'=>substr($element,2))->toString();
+        }
+     }
+     return "@array";
+};
 
 #C/P of homonym method in AggregateRulePackage 
 sub getDependantConditionIds {
@@ -105,6 +121,26 @@ sub evalOnOneNode{
     eval $arrayString;
     my $store = ($res)?1:0;
     return $res;
+};
+
+sub isVerifiedForANode{
+    my $self = shift;
+    my %args = @_;
+    
+    my $externalcluster_id  = $args{externalcluster_id};
+    my $externalnode_id     = $args{externalnode_id};
+    
+    my $row = $self->{_dbix}
+        ->verified_noderules
+        ->find({
+            verified_noderule_externalnode_id    => $externalnode_id,
+        });
+    if(defined $row){
+        return 1;
+    }else{
+        return 0;
+    }
+    
 };
 
 sub deleteVerifiedRule  {

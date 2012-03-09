@@ -129,25 +129,34 @@ sub update() {
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
     
     for my $externalCluster (@externalClusters){
-     #TODO : Manage Cluster without clustermetrics might be bugs
-     
         my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
         
-        # Construct input of the SCOM retriever
-        my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
-        print Dumper $host_indicator_for_retriever;
-        
-        # Call the retriever to get SCOM data
-        my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-        print Dumper $monitored_values; 
+        #FILTER CLUSTERS WITH MONITORING PROVIDER
+        eval{
+            $externalCluster->getConnector(category => 'MonitoringService');
+        };
+        if($@){
+            print '*** Aggregator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+        }else{
+            print '*** Aggregator collecting for cluster '.$cluster_id.' ***'."\n";
+            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
             
-        # Verify answers received from SCOM to detect metrics anomalies
-        $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
-        
-        # Parse retriever return, compute clustermetric values and store in DB 
-        $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values);
-        
-        print Dumper $monitored_values;
+            # Construct input of the SCOM retriever
+            my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
+            print Dumper $host_indicator_for_retriever;
+            
+            # Call the retriever to get SCOM data
+            my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+            print Dumper $monitored_values; 
+                
+            # Verify answers received from SCOM to detect metrics anomalies
+            $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
+            
+            # Parse retriever return, compute clustermetric values and store in DB 
+            $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
+            
+            print Dumper $monitored_values;
+        }
     }
 }
 
@@ -196,9 +205,13 @@ sub _computeAggregateValuesAndUpdateTimeDB{
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['values']);
-    my $values = $args{values};
+    my $values     = $args{values};
+    my $cluster_id = $args{cluster_id};
+    
     # Array of all clustermetrics
-    my @clustermetrics = Clustermetric->search(hash => {});
+    my @clustermetrics = Clustermetric->search(            hash => {
+                clustermetric_service_provider_id => $cluster_id
+            });
     
     my $clustermetric_indicator_id;
     my $indicator;
@@ -294,71 +307,71 @@ sub run {
         );
 }
 
-=head2 run
-    
-    Class : Public
-    
-    Desc : Recreate all the DB for all the existing clustermetric
-    
-=cut
+#=head2 run
+#    
+#    Class : Public
+#    
+#    Desc : Recreate all the DB for all the existing clustermetric
+#    
+#=cut
+#
+#sub create_clustermetrics_db{
+#    my $self = shift;
+#    my @clustermetrics = Clustermetric->search(hash => {});
+#    for my $clustermetric (@clustermetrics){
+#        my $clustermetric_id = $clustermetric->getAttr(name=>'clustermetric_id');        
+#        RRDTimeData::createTimeDataStore(name => $clustermetric_id);
+#    }
+#}
 
-sub create_clustermetrics_db{
-    my $self = shift;
-    my @clustermetrics = Clustermetric->search(hash => {});
-    for my $clustermetric (@clustermetrics){
-        my $clustermetric_id = $clustermetric->getAttr(name=>'clustermetric_id');        
-        RRDTimeData::createTimeDataStore(name => $clustermetric_id);
-    }
-}
 
-
-=head2 computeAggregates
-    
-    Class : Public
-    
-    Desc : [DEPRECTATED] Compute all the clustermetrics according to the retrieved values received from Retriever
-    
-=cut
-
- 
-sub _computeAggregates{
-    my $self = shift;
-    my %args = @_;
-
-    print "THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB";
-    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB"); 
-    General::checkParams(args => \%args, required => ['indicators']);
-    my $indicators = $args{indicators};
-    my $rep = {};
-    my $clustermetric_cluster_id   = 0;
-    my $clustermetric_indicator_id = 0;
-    my $cluster                = undef;
-    my $hosts                  = undef;
-    my $host_id                = undef;
-    my $indicator_value        = undef;
-    my @values                 = ();
-
-    # Array to loop on all the clustermetrics
-    my @clustermetrics = Clustermetric->search(hash => {});
-    for my $clustermetric (@clustermetrics){
-        
-        @values = ();
-        
-        
-        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_service_provider_id');
-        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
-        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
-        $hosts   = $cluster->getHosts();
-        
-        for my $host (values(%$hosts)){
-            $host_id = $host->getAttr(name => 'host_id');
-            $indicator_value = $indicators->{$host_id}->{$clustermetric_indicator_id};
-            
-            push(@values,$indicator_value);
-        }
-        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->compute(values => \@values);
-    }
-    return $rep;
-};
+#=head2 computeAggregates
+#    
+#    Class : Public
+#    
+#    Desc : [DEPRECTATED] Compute all the clustermetrics according to the retrieved values received from Retriever
+#    
+#=cut
+#
+# 
+#sub _computeAggregates{
+#    my $self = shift;
+#    my %args = @_;
+#
+#    print "THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB";
+#    $log->info("THIS METHOD SEEMS DEPRECATED, please use _computeAggregateValuesAndUpdateTimeDB"); 
+#    General::checkParams(args => \%args, required => ['indicators']);
+#    my $indicators = $args{indicators};
+#    my $rep = {};
+#    my $clustermetric_cluster_id   = 0;
+#    my $clustermetric_indicator_id = 0;
+#    my $cluster                = undef;
+#    my $hosts                  = undef;
+#    my $host_id                = undef;
+#    my $indicator_value        = undef;
+#    my @values                 = ();
+#
+#    # Array to loop on all the clustermetrics
+#    my @clustermetrics = Clustermetric->search(hash => {});
+#    for my $clustermetric (@clustermetrics){
+#        
+#        @values = ();
+#        
+#        
+#        $clustermetric_cluster_id   = $clustermetric->getAttr(name => 'clustermetric_service_provider_id');
+#        $clustermetric_indicator_id = $clustermetric->getAttr(name => 'clustermetric_indicator_id');
+#        $cluster = Entity::ServiceProvider::Inside::Cluster->get('id' => $clustermetric_cluster_id);
+#        $hosts   = $cluster->getHosts();
+#        
+#        for my $host (values(%$hosts)){
+#            $host_id = $host->getAttr(name => 'host_id');
+#            $indicator_value = $indicators->{$host_id}->{$clustermetric_indicator_id};
+#            
+#            push(@values,$indicator_value);
+#        }
+#        $rep->{$clustermetric->getAttr(name => 'clustermetric_id')} = $clustermetric->compute(values => \@values);
+#    }
+#    return $rep;
+#};
 
 1;

@@ -16,7 +16,7 @@ package NodemetricCombination;
 use strict;
 use warnings;
 use base 'BaseDB';
-
+use Indicator;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -33,6 +33,31 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+=head2 toString
+
+    desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+    my $self = shift;
+
+    my $formula = $self->getAttr(name => 'nodemetric_combination_formula');
+    
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
+            $element = Indicator->get('id'=>substr($element,2))->getAttr(name => 'indicator_name');
+        }
+    }
+    return "@array";
+}
 
 # C/P of homonym method of AggregateCombination
 sub getDependantIndicatorIds{

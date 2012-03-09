@@ -558,11 +558,11 @@ get '/extclusters/:clusterid' => sub {
     my $num_noderule_verif    = "TODO";
         
     my $num_clusterrule_verif = 0;
-    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled');
+    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
     
     foreach my $rule (@enabled_aggregaterules){
         my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
-        if( defined $last_eval and $last_eval == 0){
+        if( defined $last_eval and $last_eval == 1){
             $num_clusterrule_verif++;
         } 
     }

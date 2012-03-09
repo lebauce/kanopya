@@ -10,6 +10,7 @@ use AggregateRule;
 use AggregateCombination;
 use Aggregator;
 use Clustermetric;
+use NodemetricRule;
 use General;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
@@ -668,7 +669,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
 };
 
 # ----------------------------------------------------------------------------#
-# ----------------------------------- RULES ----------------------------------#
+# ---------------------CLUSTER METRIC RULES ----------------------------------#
 #----------- -----------------------------------------------------------------#
 
 
@@ -698,7 +699,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/disabled' => sub {
-  my @disabled_aggregaterules = AggregateRule->getRules(state => 'disabled');
+  my @disabled_aggregaterules = AggregateRule->getRules(state => 'disabled', service_provider_id => params->{extclusterid});
   #my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
   my @disabled_rules;
   foreach my $aggregate_rule (@disabled_aggregaterules) {
@@ -723,7 +724,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdisabled' => sub {
-  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp');
+  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp', service_provider_id => params->{extclusterid});
   #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
   foreach my $aggregate_rule (@tdisabled_aggregaterules) {
@@ -775,6 +776,47 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
     $aggregateRule->disableTemporarily(length => 120);
     redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
+};
+
+# ----------------------------------------------------------------------------#
+# ------------------------NODE METRIC RULES ----------------------------------#
+#----------- -----------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
+    my $externalnode_id    = param('extnodeid');
+    my $externalcluster_id = param('extclusterid');
+    
+    my @nodemetric_rules = NodemetricRule->search(
+                                hash => {
+                                    nodemetric_rule_state => 'enabled',
+                                }
+                           );
+    
+    my @rules;
+    
+    foreach my $rule (@nodemetric_rules){
+        my $isVerified = $rule->isVerifiedForANode(
+            externalcluster_id => $externalcluster_id,
+            externalnode_id    => $externalnode_id,
+        );
+        
+        my $hash = {
+            id         => $rule->getAttr(name => 'nodemetric_rule_id'),
+            isVerified => $isVerified,
+            formula      => $rule->toString(),
+        };
+        
+        push @rules, $hash;
+    } 
+    
+
+    
+    template 'nodemetric_rules', {
+        title_page      => "Node Metric Rules Overview",
+        rules           => \@rules,
+        externalnode_id => $externalnode_id,
+        cluster_id      => $externalcluster_id,
+    };
 };
 
 
