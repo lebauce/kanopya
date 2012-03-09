@@ -1,5 +1,5 @@
 <table class="simplelisting">
-<caption>Cluster metrics rules</caption>
+<caption>Node metrics rules results of <%node node_name%>, cluster <%cluster_name%> </caption>
             <% FOREACH rule IN rules %>
                 <tr><td>
                 <% IF rule.isVerified == 0%><span class="state imgUp">  </span> 
@@ -9,3 +9,5 @@
                 </tr>
             <% END %>
 </table>
+
+<a class="imgManage" href="> Cluster details 

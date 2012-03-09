@@ -809,13 +809,15 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
         push @rules, $hash;
     } 
     
-
+    my $extclu = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$externalcluster_id);
     
     template 'nodemetric_rules', {
         title_page      => "Node Metric Rules Overview",
         rules           => \@rules,
         externalnode_id => $externalnode_id,
         cluster_id      => $externalcluster_id,
+        cluster_name    => $extclu->getAttr(name => 'externalcluster_name'),
+        node_name       => $extclu->getNode(externalnode_id=>$externalnode_id),
     };
 };
 
