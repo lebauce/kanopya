@@ -52,7 +52,7 @@ Related object: L<AdministratorDB::Schema::Result::Connector>
 __PACKAGE__->has_many(
   "connectors",
   "AdministratorDB::Schema::Result::Connector",
-  { "foreign.outside_id" => "self.outside_id" },
+  { "foreign.service_provider_id" => "self.outside_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

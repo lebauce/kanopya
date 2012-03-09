@@ -1,5 +1,6 @@
 <table class="simplelisting">
-<caption>Cluster metrics rules</caption>
+<caption>Node metrics rules results - <%cluster_name%> - <%host_name%></caption>
+</br>
             <% FOREACH rule IN rules %>
                 <tr><td>
                 <% IF rule.isVerified == 0%><span class="state imgUp">  </span> 

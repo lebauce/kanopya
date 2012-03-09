@@ -31,6 +31,10 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    aggregate_rule_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
     aggregate_rule_service_provider_id =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -242,6 +246,41 @@ sub isCombinationDependant{
     my $rep = any {$_ eq $condition_id} @dep_cond_id;
     return $rep;
 }
+
+sub checkFormula {
+    my $class = shift;
+    my %args = @_;
+    
+    my $formula = (\%args)->{formula};
+    
+    
+    my @array = split(/(id\d+)/,$formula);;
+
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
+                return {
+                    value     => '0',
+                    attribute => substr($element,2),
+                };
+            }
+        }
+    }
+    return {
+        value     => '1',
+    };
+}
+
+sub setAttr {
+    my $class = shift;
+    my %args = @_;
+    if ($args{name} eq 'aggregate_rule_formula'){
+        _verify($args{value});
+    }   
+    my $self = $class->SUPER::setAttr(%args);
+};
+
 
 1;
 

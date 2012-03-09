@@ -844,14 +844,14 @@ CREATE TABLE `component_type` (
 
 CREATE TABLE `component` (
   `component_id` int(8) unsigned NOT NULL,
-  `inside_id` int(8) unsigned,
+  `service_provider_id` int(8) unsigned,
   `component_type_id` int(8) unsigned NOT NULL,
   `tier_id` int(8) unsigned,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`component_id`),
   FOREIGN KEY (`component_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`inside_id`),
-  FOREIGN KEY (`inside_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`component_template_id`),
   FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`component_type_id`),
@@ -940,12 +940,12 @@ CREATE TABLE `connector_type` (
 
 CREATE TABLE `connector` (
   `connector_id` int(8) unsigned NOT NULL,
-  `outside_id` int(8) unsigned,
+  `service_provider_id` int(8) unsigned,
   `connector_type_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`connector_id`),
   FOREIGN KEY (`connector_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`outside_id`),
-  FOREIGN KEY (`outside_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`connector_type_id`),
   FOREIGN KEY (`connector_type_id`) REFERENCES `connector_type` (`connector_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1134,6 +1134,7 @@ CREATE TABLE `aggregate_combination` (
 
 CREATE TABLE `aggregate_rule` (
   `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+  `aggregate_rule_label` char(32),
   `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(32) NOT NULL ,
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
@@ -1209,6 +1210,7 @@ CREATE TABLE `nodemetric_condition` (
 
 CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_rule_label` char(32),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(32) NOT NULL ,
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,

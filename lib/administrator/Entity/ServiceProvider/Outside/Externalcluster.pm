@@ -74,7 +74,10 @@ sub methods {
     };
 }
 
-
+sub toString() {
+    my $self = shift;
+    return 'External Cluster ' . $self->getAttr( name => 'externalcluster_name');
+}
 
 =head2 getState
 
@@ -121,7 +124,18 @@ sub addNode {
         externalnode_state      => 'up',
     });
 }
+sub getNode {
+    my $self = shift;
+    my %args = @_;
 
+    General::checkParams(args => \%args, required => ['externalnode_id']);
+    my $repNode;
+    my $node = $self->{_dbix}->parent->externalnodes->find({
+        externalnode_id   => $args{externalnode_id},
+    });
+    $repNode->{hostname} = $node->get_column('externalnode_hostname');
+    return $repNode;
+}
 sub getNodes {
     my $self = shift;
     my %args = @_;

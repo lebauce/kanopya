@@ -72,8 +72,8 @@ post '/components/upload' => sub {
 
 get '/components/:instanceid/configure' => sub {
     
-    my $component = Entity::Component->getInstance(id=>param('instanceid'));
-    my $cluster_id = $component->getAttr(name=>'inside_id');
+    my $component = Entity::Component->getInstance(id => param('instanceid'));
+    my $cluster_id = $component->getAttr(name => 'service_provider_id');
     my $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
     my $componentdetail = $component->getComponentAttr();
     my $template = 'components/'.lc($componentdetail->{component_name}).$componentdetail->{component_version};

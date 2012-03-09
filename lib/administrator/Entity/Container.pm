@@ -141,7 +141,7 @@ sub getAccesses {
 sub getServiceProvider {
     my $self = shift;
 
-    my $service_provider_id = $self->getDiskManager->getAttr(name => 'inside_id');
+    my $service_provider_id = $self->getDiskManager->getAttr(name => 'service_provider_id');
 
     return Entity::ServiceProvider->get(id => $service_provider_id);
 }

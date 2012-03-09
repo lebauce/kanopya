@@ -16,7 +16,7 @@ Node rules state
 
 <td class="actions" rowspan="2">
 <% IF link_delete %>
-    <a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/remove">delete</a><br />
+    <a class="imgRemove  action" href="/architectures/extclusters/<% cluster_id %>/remove">delete</a><br />
     <span class="desc">Delete this cluster.</span><br /><br />
 <% END %>
 </td></tr><tr>
@@ -67,7 +67,7 @@ Node rules state
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions" rowspan="<% nbconnectors %>">
 	<% IF link_addconnector %>
-		<a class="imgAdding modal" href="/architectures/extclusters/<% cluster_id %>/connectors/add">add a connector</a><br />
+		<a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/connectors/add">add a connector</a><br />
 		<span class="desc">Add a new connector to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -79,14 +79,6 @@ Node rules state
 		<% IF conn.link_remove %><a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
 	</td></tr>
 	<% END %>
-<% ELSE %>
-	<tr><td colspan="2">no defined connector.</td>
-	<td class="actions">
-	<% IF link_addconnector %>
-		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/connectors/add">add a connector</a><br />
-		<span class="desc">Add a new connector to this cluster.</span><br /><br />
-	<% END %>
-	</td></tr>
 <% END %>
 </table>
 
@@ -97,7 +89,7 @@ Node rules state
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_updatenodes %>
-		<a class="imgAdding clickable" onclick="catchError('/architectures/extclusters/<% cluster_id %>/nodes/update')">update</a><br />
+		<a class="imgAdding clickable  action" onclick="catchError('/architectures/extclusters/<% cluster_id %>/nodes/update')">update</a><br />
 		<span class="desc">Update nodes list using linked DirectoryService.</span><br /><br />
 	<% END %>
 	</td></tr>

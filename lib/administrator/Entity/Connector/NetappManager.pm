@@ -1,5 +1,6 @@
-#    UCSManager.pm - Cisco UCS connector
+#    NetappManager.pm - NetApp connector
 #    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,12 +14,12 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Connector::UcsManager;
+package Entity::Connector::NetappManager;
 use base "Entity::Connector";
+use lib "/opt/kanopya/lib/external/NetApp";
 
 use warnings;
-
-use Cisco::UCS;
+use NetApp::API;
 
 use constant ATTR_DEF => {};
 
@@ -30,21 +31,23 @@ sub get {
 
     my $self = $class->SUPER::get(%args);
 
-    my $ucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(
-                  id => $self->getAttr(name => "service_provider_id")
-              );
+    my $netapp = Entity::ServiceProvider::Outside::Netapp->get(
+                     id => $self->getAttr(name => "service_provider_id")
+                 );
 
-    $self->{api} = Cisco::UCS->new(
-                       proto    => "http",
-                       port     => 80,
-                       cluster  => $ucs->getAttr(name => "ucs_addr"),
-                       username => $ucs->getAttr(name => "ucs_login"),
-                       passwd   => $ucs->getAttr(name => "ucs_passwd")
+    $self->{api} = NetApp::API->new(
+                       addr     => $netapp->getAttr(name => "netapp_addr"),
+                       username => $netapp->getAttr(name => "netapp_login"),
+                       passwd   => $netapp->getAttr(name => "netapp_passwd")
                    );
 
-    $self->{state} = ($self->{api}->login() ? "up" : "down");
-
-    $self->{ou} = $ucs->getAttr(name => "ucs_ou");
+    eval {
+        $self->system_get_version();
+        $self->{state} = "up";
+    };
+    if ($@) {
+        $self->{state} = "down";
+    }
 
     return $self;
 }
@@ -70,10 +73,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-
-    my $sn = $args{host}->getAttr(name => "host_serial_number");
-    $self->{api}->start_service_profile(dn => $self->{ou} . "/" . $sn);
+#    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
 }
 
 sub postStart {
@@ -83,10 +83,10 @@ sub stopHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
+#    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
 
-    my $sn = $args{host}->getAttr(name => "host_serial_number");
-    $self->{api}->stop_service_profile(dn => $self->{ou} . "/" . $sn);
+#    my $sn = $args{host}->getAttr(name => "host_serial_number");
+#    $self->{api}->stop_service_profile(dn => $self->{ou} . "/" . $sn);
 }
 
 1;
