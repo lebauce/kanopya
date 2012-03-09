@@ -536,9 +536,12 @@ get '/extclusters/:clusterid' => sub {
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
     
     # Nodes list
+    my $num_noderule_verif    = 0;
+    
     my $nodes = $extcluster->getNodes();
     foreach my $node (@$nodes) {
         $node->{"state_" . $node->{state}} = 1;
+        $num_noderule_verif += $node->{num_verified_rules};
     }
     
     # Connectors
@@ -555,8 +558,7 @@ get '/extclusters/:clusterid' => sub {
   
 
 
-    my $num_noderule_verif    = "TODO";
-        
+    
     my $num_clusterrule_verif = 0;
     my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
     
