@@ -1,11 +1,10 @@
 <% js_head.push('components.js') %>
-<h2>Cluster <% cluster_name %> - Active Directory connector configuration</h2>
+<h2><% serviceprovider_tostring %> - Active Directory connector configuration</h2>
 <hr />
 <form class="elem_root" name="conf">
 <input class="conf_simple_value" type="hidden" name="connector_id" value="<% connector_instance_id %>"/>
-<input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
+<input class="conf_simple_value" type="hidden" name="serviceprovider_id" value="<% serviceprovider_id %>"/>
 <input class="conf_simple_value" type="hidden" name="ad_id" value="<% ad_id %>"/>
-<input class="conf_simple_value" type="hidden" name="connector_name" value="ActiveDirectory"/>
 <table>
 <tr><td>Domain controller name :</td><tr></tr><td><input type="text" size="64" class="conf_simple_value" name="ad_host" value="<% ad_host %>"/></td></tr>
 <tr><td>User@domain :</td><tr></tr><td><input type="text" size="64" class="conf_simple_value" name="ad_user" value="<% ad_user %>"/></td></tr>
@@ -17,7 +16,7 @@
 <div class="right">
 <input id="check_button" type="button" value="check"/>
 <input id="save_button" type="button" value="ok"/>
-<input type="button" value="cancel" onclick="javascript:document.location='/architectures/extclusters/<% cluster_id %>'"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/architectures/extclusters/<% serviceprovider_id %>'"/>
 </div>
 </form>
 

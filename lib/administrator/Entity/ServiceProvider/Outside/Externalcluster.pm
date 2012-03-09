@@ -74,7 +74,10 @@ sub methods {
     };
 }
 
-
+sub toString() {
+    my $self = shift;
+    return 'External Cluster ' . $self->getAttr( name => 'externalcluster_name');
+}
 
 =head2 getState
 

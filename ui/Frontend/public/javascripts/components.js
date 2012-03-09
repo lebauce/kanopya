@@ -52,7 +52,7 @@ $(document).ready(function(){
             target = 'clusters';
         }
         var save_component_conf_link = '/systems/' + route + '/' + instanceid + '/saveconfig';
-        var redirect_link            = '/architectures/' + target + '/' + conf['cluster_id'];
+        var redirect_link            = '/architectures/' + target + '/' + conf['serviceprovider_id'];
 
 		$.get(save_component_conf_link, params, function(resp) {
 			//loading_stop();
