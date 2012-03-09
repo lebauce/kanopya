@@ -3,11 +3,13 @@ package Images;
 use Dancer ':syntax';
 
 use Administrator;
+use Entity::ServiceProvider;
 use Entity::Masterimage;
 use Entity::Systemimage;
 
 prefix '/systems';
 
+# retrieve systemimages list
 sub _systemimages {
 
     my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});
@@ -29,6 +31,33 @@ sub _systemimages {
 
     return $systemimages;
 }
+
+# retrieve data managers
+sub _datamanagers {
+    my @datamanagers = Entity::ServiceProvider->findManager(category => 'Storage');
+    return @datamanagers;
+}
+
+# retrieve storage providers list
+sub _storage_providers {
+    my @storages = _datamanagers();
+    my %temp;
+    foreach my $s (@storages) {
+        $temp{ $s->{service_provider_id} } = 0;
+    }
+    
+    my $sp = [];
+    foreach my $id (keys %temp) {
+        my $tmp = {};
+        my $sp_entity = Entity::ServiceProvider->get(id => $id);
+        $tmp->{id} = $id;
+        $tmp->{name} = $sp_entity->toString();
+        
+        push (@$sp, $tmp);
+    }
+    return $sp;
+}
+
 
 get '/images' => sub {
 
@@ -66,10 +95,13 @@ get '/images/add' => sub {
         push (@$masterimgs, $tmp);        
     }
     
+    my $storages = _storage_providers();
+    
     template 'form_addimages', {
-        title_page          => 'Systems - System images creation',
-        systemimages_list   => $systemimage,
-        masterimages_list  => $masterimgs
+        title_page            => 'Systems - System images creation',
+        systemimages_list     => $systemimage,
+        masterimages_list     => $masterimgs,
+        storageproviders_list => $storages
     }, { layout => '' };
 };
 
@@ -282,4 +314,19 @@ get '/images/:imageid' => sub {
         components_list       => $components_list,
         components_count      => $nb + 1,
      };
+};
+
+get '/images/diskmanagers/:storageid' => sub {
+    my $id = param('storageid');
+    my $str = '';
+    my @managers = _datamanagers();
+    foreach my $manager (@managers) {
+        if($manager->{service_provider_id} eq $id) {
+            $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
+        }
+    }
+    
+    
+    content_type('text/html');
+    return $str;
 };
