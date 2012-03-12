@@ -5,30 +5,19 @@
 <span id="state" class="title simpleexpand">State</span>
 <table id="Xstate" class="detailspart">
 <tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
+
+<td>
+Node rules state
+</td>
+
+<td>
+<a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/clustermetrics/combinations/conditions/rules">Cluster rules state</a>
+</td>
+
 <td class="actions" rowspan="2">
-<% IF link_activate %>
-	<% IF systemimage_active %>
-		<a class="imgActivate" href="/architectures/clusters/<% cluster_id %>/activate">
-	<% ELSE %>
-		<a class="imgActivate" href="javascript:alert('<% systemimage_name %> used by this cluster must be active.');">
-	<% END %>
-activate</a><br />
-<span class="desc">Activate this cluster to be able to start it.</span><br /><br />
-<% ELSE %>
-	<% IF link_deactivate %>
-		<a class="imgDeactivate" href="/architectures/clusters/<% cluster_id %>/deactivate">deactivate</a><br />
-		<span class="desc">Deactivate this cluster.</span><br /><br />
-	<% END %>
-	<% IF link_start %>
-		<a class="imgStart" href="/architectures/clusters/<% cluster_id %>/start">start</a><br />
-		<span class="desc">Start this cluster.</span>
-	<% END %>
-	<% IF link_stop %>
-		<a class="imgStop" href="/architectures/clusters/<% cluster_id %>/stop">stop</a><br />
-		<span class="desc">Stop this cluster.</span><br /><br />
-		<a class="imgStop" href="/architectures/clusters/<% cluster_id %>/forcestop">force stop</a><br />
-		<span class="desc">Force this cluster to stop, to use when something went wrong.</span><br /><br />
-	<% END %>
+<% IF link_delete %>
+    <a class="imgRemove  action" href="/architectures/extclusters/<% cluster_id %>/remove">delete</a><br />
+    <span class="desc">Delete this cluster.</span><br /><br />
 <% END %>
 </td></tr><tr>
 <% IF active %>
@@ -49,6 +38,25 @@ activate</a><br />
 <% ELSE %>
 	<td></td>
 <% END %>
+<td>
+    <% IF num_noderule_verif == 0 %>
+        <span class="state imgUp">All rules are not verified</span>
+    <%ELSIF num_noderule_verif == 1 %>
+        <span class="state imgBroken"><%num_noderule_verif%> rule is verified</span>
+    <%ELSE%>
+        <span class="state imgBroken"><%num_noderule_verif%> rules are verified</span>
+    <%END%>
+</td>
+<td>
+    <% IF num_clusterrule_verif == 0 %>
+        <span class="state imgUp">All rules are not verified</span>
+    <%ELSIF num_clusterrule_verif == 1 %>
+        <span class="state imgBroken"><%num_clusterrule_verif%> rule is verified</span>
+    <%ELSE%>
+        <span class="state imgBroken"><%num_clusterrule_verif%> rules are verified</span>
+    <%END%>
+</td>
+
 </tr>
 </table>
 
@@ -59,7 +67,7 @@ activate</a><br />
 	<tr><td colspan="2">&nbsp;</td>
 	<td class="actions" rowspan="<% nbconnectors %>">
 	<% IF link_addconnector %>
-		<a class="imgAdding modal" href="/architectures/extclusters/<% cluster_id %>/connectors/add">add a connector</a><br />
+		<a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/connectors/add">add a connector</a><br />
 		<span class="desc">Add a new connector to this cluster.</span><br /><br />
 	<% END %>
 	</td></tr>
@@ -71,14 +79,6 @@ activate</a><br />
 		<% IF conn.link_remove %><a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
 	</td></tr>
 	<% END %>
-<% ELSE %>
-	<tr><td colspan="2">no defined connector.</td>
-	<td class="actions">
-	<% IF link_addconnector %>
-		<a class="imgAdding modal" href="/architectures/clusters/<% cluster_id %>/connectors/add">add a connector</a><br />
-		<span class="desc">Add a new connector to this cluster.</span><br /><br />
-	<% END %>
-	</td></tr>
 <% END %>
 </table>
 
@@ -89,17 +89,22 @@ activate</a><br />
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_updatenodes %>
-		<a class="imgAdding clickable" onclick="catchError('/architectures/extclusters/<% cluster_id %>/nodes/update')">update</a><br />
+		<a class="imgAdding clickable  action" onclick="catchError('/architectures/extclusters/<% cluster_id %>/nodes/update')">update</a><br />
 		<span class="desc">Update nodes list using linked DirectoryService.</span><br /><br />
 	<% END %>
 	</td></tr>
 	<% FOREACH node IN nodes_list %>
 		<tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
 		<td class="label2">
-		<% IF node.state_up %><span class="state imgUp">Up</span><% END %>
-		<% IF node.state_starting %><span class="state imgDown">Starting...</span><% END %>
-		<% IF node.state_stopping %><span class="state imgDown">Stopping...</span><% END %>
-		<% IF node.state_broken %><span class="state imgWarning">Broken</span><% END %>
+        <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+            <% IF node.num_verified_rules == 0 %>
+                <span class="state imgUp">No rules verified</span>
+            <% ELSIF node.num_verified_rules == 1 %>
+                <span class="state imgBroken"><%node.num_verified_rules%> rule verified</span>
+            <% ELSE %>
+                <span class="state imgBroken"><%node.num_verified_rules%> rules verified</span>
+            <% END %>
+        </a>
 		</td>
 		<td class="action">
 		<% IF node.link_remove %>

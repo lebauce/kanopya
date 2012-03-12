@@ -52,7 +52,7 @@ $(document).ready(function(){
             target = 'clusters';
         }
         var save_component_conf_link = '/systems/' + route + '/' + instanceid + '/saveconfig';
-        var redirect_link            = '/architectures/' + target + '/' + conf['cluster_id'];
+        var redirect_link            = '/architectures/' + target + '/' + conf['serviceprovider_id'];
 
 		$.get(save_component_conf_link, params, function(resp) {
 			//loading_stop();
@@ -88,6 +88,19 @@ $(document).ready(function(){
 			} );
 	}
 	
+    // Check connector conection according to configuration
+    function check() {
+		var conf = buildConf( $('.elem_root') );
+        var params = { conf : JSON.stringify(conf) };
+        var instanceid = conf['connector_id'];
+        var check_connector_conf_link = '/systems/connectors/' + instanceid + '/checkconfig';
+
+        $.getJSON(check_connector_conf_link, params, function(resp) {
+            alert(resp.msg);
+        });
+    }
+    $('#check_button').click( check );
+
 	// Init add button links
 	$('[class$=_array_value]').each( linkAddElem );
 

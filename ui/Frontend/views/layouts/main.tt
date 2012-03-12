@@ -167,6 +167,7 @@
                             buttons: {
                                 Send: function() {
                                     $(this).find('#target').submit();
+                                    loading_start();
                                     $(this).dialog('close');
                                 },
                                 Cancel: function() {

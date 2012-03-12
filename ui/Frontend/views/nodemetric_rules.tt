@@ -1,0 +1,12 @@
+<table class="simplelisting">
+<caption>Node metrics rules results - <%cluster_name%> - <%host_name%></caption>
+</br>
+            <% FOREACH rule IN rules %>
+                <tr><td>
+                <% IF rule.isVerified == 0%><span class="state imgUp">  </span> 
+                <% ELSIF rule.isVerified == 1%><span class="state imgBroken">  </span> 
+                <% ELSE %><span class="state imgDown">  </span> <% END %>
+                <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
+                </tr>
+            <% END %>
+</table>

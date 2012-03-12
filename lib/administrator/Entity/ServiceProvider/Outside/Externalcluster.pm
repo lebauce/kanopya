@@ -25,6 +25,11 @@ use Kanopya::Exceptions;
 use Administrator;
 use General;
 
+use Clustermetric;
+use AggregateCombination;
+use AggregateCondition;
+use AggregateRule;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -69,7 +74,10 @@ sub methods {
     };
 }
 
-
+sub toString() {
+    my $self = shift;
+    return 'External Cluster ' . $self->getAttr( name => 'externalcluster_name');
+}
 
 =head2 getState
 
@@ -77,7 +85,7 @@ sub methods {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('cluster_state');
+    my $state = $self->{_dbix}->get_column('externalcluster_state');
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -92,10 +100,18 @@ sub setState {
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
-    $self->{_dbix}->update({'cluster_prev_state' => $current_state,
-                            'cluster_state' => $new_state.":".time})->discard_changes();
+    $self->{_dbix}->update({'externalcluster_prev_state' => $current_state,
+                            'externalcluster_state' => $new_state.":".time})->discard_changes();
 }
 
+
+=head2 addNode
+
+Not supposed to be used (or for test purpose).
+Externalcluster nodes are updated using appropriate connector
+See updateNodes()
+
+=cut
 
 sub addNode {
     my $self = shift;
@@ -103,9 +119,23 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['hostname']);
 
-    $self->{_dbix}->parent->externalnodes->create({externalnode_hostname => $args{hostname}});
+    $self->{_dbix}->parent->externalnodes->create({
+        externalnode_hostname   => $args{hostname},
+        externalnode_state      => 'up',
+    });
 }
+sub getNode {
+    my $self = shift;
+    my %args = @_;
 
+    General::checkParams(args => \%args, required => ['externalnode_id']);
+    my $repNode;
+    my $node = $self->{_dbix}->parent->externalnodes->find({
+        externalnode_id   => $args{externalnode_id},
+    });
+    $repNode->{hostname} = $node->get_column('externalnode_hostname');
+    return $repNode;
+}
 sub getNodes {
     my $self = shift;
     my %args = @_;
@@ -113,10 +143,12 @@ sub getNodes {
     my $node_rs = $self->{_dbix}->parent->externalnodes;
 
     my @nodes;
-    while (my $set = $node_rs->next) {
+    while (my $node_row = $node_rs->next) {
         push @nodes, {
-            hostname    => $set->get_column('externalnode_hostname'),
-            state       => 'up',
+            hostname           => $node_row->get_column('externalnode_hostname'),
+            state              => $node_row->get_column('externalnode_state'),
+            id                 => $node_row->get_column('externalnode_id'),
+            num_verified_rules => $node_row->verified_noderules->count(),
         };
     }
     
@@ -137,7 +169,10 @@ sub updateNodes {
      
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
-            $self->{_dbix}->parent->externalnodes->update_or_create({externalnode_hostname => $node->{hostname}});
+            $self->{_dbix}->parent->externalnodes->update_or_create({
+                externalnode_hostname   => $node->{hostname},
+                externalnode_state      => 'up',
+            });
          }
      }
      # TODO remove dead nodes from db
@@ -169,6 +204,143 @@ sub getNodesMetrics {
      );
      
     return $data;
+}
+
+=head2 monitoringDefaultInit
+
+    Insert some basic clustermetrics, combinations and rules for this cluster
+
+    Use SCOM indicators by default
+    TODO : more generic (unhardcode SCOM, metrics depend on monitoring service)
+
+=cut
+
+sub monitoringDefaultInit {
+    my $self = shift;
+
+    my $adm = Administrator->new();
+    
+    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' ); 
+    my @indicators;
+    my @funcs = qw(mean max min standard_deviation);
+    foreach my $indicator (@{$scom_indicatorset->{ds}}){
+        push @indicators, $indicator->{id};
+    }
+
+    my $extcluster_id = $self->getAttr( name => 'outside_id' );
+
+   # Create one clustermetric for each indicator scom
+    # Create 4 aggregates for each cluster metric
+    # Create the corresponding combination 'identity function' for each aggregate 
+    foreach my $indicator (@{$scom_indicatorset->{ds}}) {   
+        foreach my $func (@funcs) {
+            my $cm_params = {
+                clustermetric_service_provider_id      => $extcluster_id,
+                clustermetric_indicator_id             => $indicator->{id},
+                clustermetric_statistics_function_name => $func,
+                clustermetric_window_time              => '1200',
+            };
+            my $cm = Clustermetric->new(%$cm_params);
+           
+            my $acf_params = {
+                aggregate_combination_service_provider_id   => $extcluster_id,
+                aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+            };
+            my $aggregate_combination = AggregateCombination->new(%$acf_params);
+               
+               my $condition_params = {
+                    aggregate_condition_service_provider_id     => $extcluster_id,
+                    aggregate_combination_id                    => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+                    comparator                                  => '>',
+                    threshold                                   => '0',
+                    state                                       => 'enabled',
+                };
+               my $aggregate_condition = AggregateCondition->new(%$condition_params);
+            
+               my $params_rule = {
+                    aggregate_rule_service_provider_id   => $extcluster_id,
+                    aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+                    aggregate_rule_state                => 'enabled',
+                    aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+                };
+                my $aggregate_rule = AggregateRule->new(%$params_rule);
+            #}
+        }
+    }
+    
+    
+    
+    #Create example combination
+    
+    foreach my $indicator (@indicators) {
+        
+        #For each indicator id get the max aggregate and the min aggregate to compute max - min
+
+        my @cm_max = Clustermetric->search(hash => { 
+            clustermetric_indicator_id => $indicator,
+            clustermetric_statistics_function_name => 'max',
+        });
+        
+        my @cm_min = Clustermetric->search(hash => { 
+            clustermetric_indicator_id => $indicator,
+            clustermetric_statistics_function_name => 'min',
+        });
+        
+        my $id_min = $cm_min[0]->getAttr(name=>'clustermetric_id');
+        my $id_max = $cm_max[0]->getAttr(name=>'clustermetric_id'); 
+
+        
+
+        
+        #For each indicator id get the mean aggregate and the standartdev aggregate to compute mean / standard_dev
+        
+        my @cm_mean = Clustermetric->search(hash => { 
+            clustermetric_indicator_id => $indicator,
+            clustermetric_statistics_function_name => 'mean',
+        });
+        
+        my @cm_std = Clustermetric->search(hash => { 
+            clustermetric_indicator_id => $indicator,
+            clustermetric_statistics_function_name => 'standard_deviation',
+        });
+        
+        my $id_mean = $cm_mean[0]->getAttr(name=>'clustermetric_id');
+        my $id_std  = $cm_std[0]->getAttr(name=>'clustermetric_id'); 
+        
+        my $acf_params = {
+            aggregate_combination_service_provider_id => $extcluster_id,
+        };
+        
+        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_mean);
+        my $aggregate_combination_range_over_mean = AggregateCombination->new(%$acf_params);
+
+        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_std);
+        my $aggregate_combination_range_over_std = AggregateCombination->new(%$acf_params);
+
+
+        $acf_params->{aggregate_combination_formula} = 'id'.($id_std).'/ id'.($id_mean);
+        my $aggregate_combination = AggregateCombination->new(%$acf_params);
+
+       #Creating a condition on coefficient of variation std/mean and a rule
+       my $condition_params = {
+            aggregate_condition_service_provider_id => $extcluster_id,
+            aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+            comparator                              => '>',
+            threshold                               => 0.5,
+            state                                   => 'enabled',
+        };
+       my $aggregate_condition = AggregateCondition->new(%$condition_params);
+
+       my $params_rule = {
+            aggregate_rule_service_provider_id  => $extcluster_id,
+            aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+            aggregate_rule_state                => 'enabled',
+            aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+        };
+        my $aggregate_rule = AggregateRule->new(%$params_rule);
+       
+       
+    }
 }
 
 1;

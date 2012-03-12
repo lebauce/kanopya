@@ -99,14 +99,6 @@ sub getConnectorType {
 sub getConf {
     my $self = shift;
 
-#    my $conf = { memcached1_port => "11211" };
-#
-#    my $confindb = $self->{_dbix};
-#    if($confindb) {
-#        my %row = $confindb->get_columns(); 
-#        $conf = \%row;
-#    }
-
     my %row = $self->{_dbix}->get_columns(); 
 
     return \%row;
@@ -115,13 +107,23 @@ sub getConf {
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
-    
-#    # delete old conf        
-#    my $conf_row = $self->{_dbix};
-#    $conf_row->delete() if (defined $conf_row); 
 
-    # create
+    # update, assuming row is created when connector new
     $self->{_dbix}->update( $conf );
+}
+
+=head2 checkConf
+
+    Can be implemented by concrete connector
+    Allow to check configuration (connection, data retrieving)
+    Return a result message or throw exception if error
+
+=cut
+
+sub checkConf {
+    my $self = shift;
+    
+    throw Kanopya::Exception::Internal(error => "Check not implemented for " . (ref $self));
 }
 
 1;

@@ -41,6 +41,74 @@ __PACKAGE__->set_primary_key("service_provider_id");
 
 =head1 RELATIONS
 
+=head2 aggregate_combinations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::AggregateCombination>
+
+=cut
+
+__PACKAGE__->has_many(
+  "aggregate_combinations",
+  "AdministratorDB::Schema::Result::AggregateCombination",
+  {
+    "foreign.aggregate_combination_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 aggregate_conditions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::AggregateCondition>
+
+=cut
+
+__PACKAGE__->has_many(
+  "aggregate_conditions",
+  "AdministratorDB::Schema::Result::AggregateCondition",
+  {
+    "foreign.aggregate_condition_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 aggregate_rules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::AggregateRule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "aggregate_rules",
+  "AdministratorDB::Schema::Result::AggregateRule",
+  {
+    "foreign.aggregate_rule_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 clustermetrics
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Clustermetric>
+
+=cut
+
+__PACKAGE__->has_many(
+  "clustermetrics",
+  "AdministratorDB::Schema::Result::Clustermetric",
+  {
+    "foreign.clustermetric_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 containers
 
 Type: has_many
@@ -101,6 +169,23 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nodemetric_rules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NodemetricRule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodemetric_rules",
+  "AdministratorDB::Schema::Result::NodemetricRule",
+  {
+    "foreign.nodemetric_rule_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 outside
 
 Type: might_have
@@ -128,12 +213,13 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "service_provider_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-27 16:02:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FaVKqVYkf4AslpusTAZ+KQ
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-08 10:27:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7s7lniNHssg0gwBFvlObBQ
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

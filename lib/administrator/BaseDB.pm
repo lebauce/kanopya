@@ -5,6 +5,8 @@ package BaseDB;
 use Data::Dumper;
 use Administrator;
 use General;
+use strict;
+use warnings;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("administrator");
@@ -68,7 +70,7 @@ sub checkAttr {
     foreach my $module (keys %$attributes_def) {
         if (exists $attributes_def->{$module}->{$args{name}} && defined $args{value}){
             if($args{value} !~ m/($attributes_def->{$module}->{$args{name}}->{pattern})/){
-                $errmsg = "$class"."->checkAttr detect a wrong value $args{$value} for param : $args{name} on class $module";
+                $errmsg = "$class"."->checkAttr detect a wrong value $args{value} for param : $args{name} on class $module";
                 $log->error($errmsg);
                 throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
             }
@@ -89,7 +91,7 @@ sub checkAttrs {
     my $final_attrs = {};
     my $attributes_def = $class->getAttrDefs();
     
-    $log->debug('>>>>>>> '.Dumper $attributes_def);
+    #$log->debug('>>>>>>> '.Dumper $attributes_def);
 
     General::checkParams(args => \%args, required => ['attrs']);  
 
@@ -154,7 +156,7 @@ sub new {
 
     # Get the class_type_id for class name
     eval {
-        $rs = $adm->_getDbixFromHash(table => "ClassType",
+        my $rs = $adm->_getDbixFromHash(table => "ClassType",
                                      hash  => { class_type => $class })->single;
 
         $attrs->{class_type_id} = $rs->get_column('class_type_id');
@@ -399,7 +401,7 @@ sub save {
             }
         }
     } else {
-        $errmsg = "$class" . "->save can't be called on a non saved instance! (new has not be called)";
+        $errmsg = "$self" . "->save can't be called on a non saved instance! (new has not be called)";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
         
@@ -426,4 +428,7 @@ sub delete {
     $dbix->delete;
 }
 
+sub toString{
+    return "";
+}
 1;
