@@ -1,40 +1,69 @@
-<h2>Rule <%rule_id%> details</h2>
+<h2>
+    <% IF rule.id %> 
+        <%IF clustermetric == 1%>
+            Cluster Metric Details - Cluster <%cluster_name%> (<%cluster_id%>) rule <%rule.id%>
+        <%ELSE%>
+            Node Metric Details - Cluster <%cluster_name%> (<%cluster_id%>) rule <%rule.id%>
+        <%END%>
+    <% ELSE %>
+        <%IF clustermetric == 1%>
+            Cluster Metric Creation - Cluster <%cluster_name%> (<%cluster_id%>)
+        <%ELSE%>
+            Node Metric Creation - Cluster <%cluster_name%> (<%cluster_id%>)
+        <%END%>   
+    <% END %>
+</h2>
 <hr/>
-<h4><%rule_label%> : <%rule_string%></h4>
 
-    This rule is <%rule_state%> : 
-    <%SWITCH rule_state%>
-        <%CASE 'disabled'%>
-            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/enable"> Enable it </a>
-        <%CASE 'enabled' %>
-            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/disable"> Disable it </a>
-        <% CASE 'disabled_temp' %>
-            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/enable"> Enable it </a>
-            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/disable"> Disable it </a>
+<% IF rule.id %>
+    <h4><%rule.label%> : <%rule.string%></h4>
+        This rule is <%rule.state%>.
+    <hr/>
+<% END %>
+
+<% IF rule.id%>
+        <%IF clustermetric == 1%>
+            <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">
+        <%ELSE%>
+            <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/edit">
+        <%END%>
+<% ELSE %>
+        <%IF clustermetric == 1%>
+        <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/new">
+    <%ELSE %>
+        <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/new">
     <%END%>
-
-
-<hr/>
-<form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule_id%>/edit">
+<% END %>
     <table>
         <tr><td> 
         </td></tr>
         <tr><td>        
-            Label <input type=test name="label" value="<%rule_label%>"/>
+            Label: </td><td> <input type=test name="label" value="<%rule.label%>"/>
         </td></tr>        
         <tr><td>        
-            Formula <input type=test name="formula" value="<%rule_formula%>"/>
+            Formula: </td><td> <input type=test name="formula" value=<%IF rule.id%>"<%rule.formula%>"<%ELSE%>"(idXX && idYY) || idZZ"<%END%>/>
         </td></tr>
-        
+        <tr><td>        
+            Action: </td><td> <input type=test name="action" value="<%rule.action_id%>"/>
+        </td></tr>
+        <tr><td>        
+            State : </td><td> 
+            
+            <select name="state">
+                <option value="enabled" <%IF rule.state == 'enabled'%> SELECTED <%END%> > Enabled </option>
+                <option value="disabled" <%IF rule.state == 'disabled'%> SELECTED <%END%> >Disabled</option>
+            </select>
+        </td></tr>
     </table>
+    
     <br/>
     
     <div class="left">
-        <input type="submit" value="Edit rule"/>
+        <input type="submit" value="<% IF rule.id %>Edit rule<% ELSE %>New rule<% END %>"/>
     </div>
 </form>
 <hr/>
 Memo :<br/>
 <%FOREACH condition IN conditions%>
-<%condition.id%>: <%condition.label%><br/>
-<%END%>
+    id<%condition.id%>: <%condition.label%><br/>
+<% END %>
