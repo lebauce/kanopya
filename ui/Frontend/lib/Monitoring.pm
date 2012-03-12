@@ -12,6 +12,7 @@ use AggregateCombination;
 use AggregateCondition;
 use Aggregator;
 use Clustermetric;
+use NodemetricCombination;
 use NodemetricRule;
 use General;
 use DateTime::Format::Strptime;
@@ -874,7 +875,9 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/:combinationid/delete' 
      
     my $combination = NodemetricCombination->get('id' => $combination_id);
     
-    my @conditions = NodemetricCondition->search(hash=>{});
+    #When destroying a combination
+    #Check if it is not used in combinations
+    my @conditions  = NodemetricCondition->search(hash=>{});
     
     my @conditionsUsingCombination;
     foreach my $condition (@conditions) {
@@ -887,8 +890,9 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/:combinationid/delete' 
         $combination->delete();
         redirect("/architectures/extclusters/$cluster_id/nodemetrics/combinations");
     }else{
-        template 'nodemetric_combination_deletion_forbidden', {
+        template 'nodemetric_combination_error', {
             title_page          => "nodemetric Combination Deletion Forbidden",
+            error_type          =>  'DELETION',
             conditions          => \@conditionsUsingCombination,
             combination_id      => $combination_id,
             cluster_id          => $cluster_id,
@@ -922,18 +926,34 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
 
 
 post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
-    my $params = {
-        nodemetric_combination_formula => param('formula'),
+    
+    my $formula = param('formula');
+    
+    my @unknownId = NodemetricCombination->checkFormula(formula => $formula);
+
+    if (scalar @unknownId){
+        
+        template 'nodemetric_combination_error', {
+            title_page     => "Nodemetric combination creation",
+            error_type     => 'CREATION',
+            cluster_id     => param('extclusterid'),
+            indicator_ids  => \@unknownId,
+        };
+        
+    }else{
+        my $params = {
+            nodemetric_combination_formula => param('formula'),
+        };
+        my $cm = NodemetricCombination->new(%$params);
+        my $var = param('extclusterid');
+        redirect("/architectures/extclusters/$var/nodemetrics/combinations");
     };
-   my $cm = NodemetricCombination->new(%$params);
-   my $var = param('extclusterid');
-   redirect("/architectures/extclusters/$var/nodemetrics/combinations");
 };
 
 ## END CP ###
 
 # -----------------------------------------------------------------------------#
-# --------------------- NODEMETRIC COMBINATION CONcombiDITIONS ---------------------#
+# ---------------------------- NODEMETRIC CONDITIONS --------------------------#
 # -----------------------------------------------------------------------------#
 
 get '/extclusters/:extclusterid/nodemetrics/conditions' => sub {
@@ -1001,8 +1021,8 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
     
     my $params = {
         nodemetric_condition_combination_id => param('combinationid'),
-        nodemetric_condition_comparator               => $comparatorHash->{param('comparator')},
-        nodemetric_condition_threshold                => param('threshold'),
+        nodemetric_condition_comparator     => $comparatorHash->{param('comparator')},
+        nodemetric_condition_threshold      => param('threshold'),
     };
     my $nodemetric_condition = NodemetricCondition->new(%$params);
     my $var = param('extclusterid');    
