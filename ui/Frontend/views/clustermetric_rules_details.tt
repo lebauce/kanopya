@@ -19,6 +19,15 @@
     <h4><%rule.label%> : <%rule.string%></h4>
         This rule is <%rule.state%>.
     <hr/>
+    <% IF rule.id %> 
+        <%IF clustermetric == 1%>
+            <h4> <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/delete"> Delete this rule </a> </h4>
+        <%ELSE%>
+            <h4> <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/delete"> Delete this rule </a> </h4>
+        <%END%>
+    <% END %>
+    
+    <hr/>
 <% END %>
 
 <% IF rule.id%>

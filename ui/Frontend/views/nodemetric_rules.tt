@@ -21,6 +21,11 @@
                     details
                 </a>
             </td>
+            <td>
+                 <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/delete">
+                    delete
+                </a>
+            </td>
 
         </tr>
     <% END %>

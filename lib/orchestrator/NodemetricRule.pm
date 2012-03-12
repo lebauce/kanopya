@@ -225,8 +225,6 @@ sub setVerifiedRule{
     }
 }
 
-
-
 sub isCombinationDependant{
     my $self         = shift;
     my $condition_id = shift;
@@ -236,4 +234,28 @@ sub isCombinationDependant{
     return $rep;
 }
 
+
+sub checkFormula {
+    my $class = shift;
+    my %args = @_;
+    
+    my $formula = (\%args)->{formula};
+
+    my @array = split(/(id\d+)/,$formula);;
+
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            if (!(NodemetricCondition->search(hash => {'nodemetric_condition_id'=>substr($element,2)}))){
+                return {
+                    value     => '0',
+                    attribute => substr($element,2),
+                };
+            }
+        }
+    }
+    return {
+        value     => '1',
+    };
+}
 1;
