@@ -46,6 +46,7 @@ use EFactory;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
+use EEntity::EContainer::ELocalContainer;
 use Entity::Masterimage;
 use Entity::Systemimage;
 use EEntity::ESystemimage;
@@ -70,6 +71,9 @@ sub prepare {
     General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
+
+    General::checkParams(args => $params, required => [ "masterimage_id" ]);
+
     my $masterimage_id = $params->{masterimage_id};
     delete $params->{masterimage_id};
 
@@ -150,11 +154,18 @@ sub execute {
     my $self = shift;
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    my $emaster_container = EEntity::EContainer::ELocalContainer->new(
+                                path => $self->{_objs}->{masterimage}->getAttr(name => 'masterimage_file'),
+                                size => $self->{_objs}->{masterimage}->getAttr(name => 'masterimage_size'),
+                                # TODO: get this value from masterimage attrs.
+                                filesystem => 'ext3',
+                            );
 
-    #~ $esystemimage->create(dsrc_container  => $self->{_objs}->{distribution}->getDevice,
-                          #~ edisk_manager   => $self->{_objs}->{edisk_manager},
-                          #~ econtext        => $self->{executor}->{econtext},
-                          #~ erollback       => $self->{erollback});
+    # Instance a fake econtainer for the masterimage raw file.
+    $esystemimage->create(esrc_container => $emaster_container,
+                          edisk_manager  => $self->{_objs}->{edisk_manager},
+                          econtext       => $self->{executor}->{econtext},
+                          erollback      => $self->{erollback});
 
     my @group = Entity::Gp->getGroups(hash => { gp_name => 'SystemImage' });
     $group[0]->appendEntity(entity => $self->{_objs}->{systemimage});

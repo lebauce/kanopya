@@ -20,6 +20,7 @@ use Log::Log4perl "get_logger";
 use General;
 use String::Random;
 use Template;
+use EFactory;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -40,7 +41,6 @@ sub createExport {
     my $client_options = General::checkParam(args => \%args, name => 'client_options', default => 'rw,sync');
 
     my $export_id = $self->addExport(container => $args{container},
-                                     device    => $args{export_name},
                                      econtext  => $args{econtext});
 
     my $client_id = $self->addExportClient(export_id      => $export_id,
@@ -79,8 +79,9 @@ sub removeExport {
     my $device = $args{container_access}->getContainer->getAttr(name => 'container_device');
     my $mountdir = $self->_getEntity()->getMountDir(device => $device);
 
-    my $command = "umount $mountdir";
-    $args{econtext}->execute(command => $command);
+    my $econtainer = EFactory::newEEntity(data => $args{container_access}->getContainer);
+    $econtainer->umount(mountpoint => $mountdir,
+                        econtext   => $args{econtext});
 
     $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
 }
@@ -90,40 +91,23 @@ sub reload {
     $self->generateConf();
 }
 
-sub mountDevice {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['econtext', 'device']);
-
-    # create directory if necessary
-    my $dir = $self->_getEntity()->getMountDir(device => $args{device});
-
-    my $command = "mkdir -p $dir; chmod 777 $dir";
-    $args{econtext}->execute(command => $command);
-
-    # check if nothing is mounted on directory
-    $command = "mount | grep $dir";
-    my $result = $args{econtext}->execute(command => $command);
-    if($result->{stdout}) {
-        $errmsg = "EComponent::ENfsd3->mountDevice : $dir already used as mount point by \n($result->{stdout})";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    $command = "mount $args{device} $dir";
-    $args{econtext}->execute(command => $command);
-}
-
 sub addExport {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'device']);
+    General::checkParams(args => \%args, required => ['econtext', 'container']);
     
-    my $export_id = $self->_getEntity()->addExport(device => $args{device},
-                                                   container => $args{container});
-    $self->mountDevice(device => $args{device},
-                       econtext => $args{econtext});
+    my $export_id = $self->_getEntity()->addExport(
+                        device => $args{container}->getAttr(name => 'container_device')
+                    );
+
+    my $mountpoint = $self->_getEntity()->getMountDir(
+                         device => $args{container}->getAttr(name => 'container_device')
+                     );
+
+    my $econtainer = EFactory::newEEntity(data => $args{container});
+    $econtainer->mount(mountpoint => $mountpoint,
+                       econtext   => $args{econtext});
     return $export_id;
 }
 

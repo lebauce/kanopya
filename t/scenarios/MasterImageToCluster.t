@@ -18,22 +18,20 @@ Log::Log4perl->easy_init({
 use Cwd qw(abs_path);
 use File::Basename;
 
-my $dist_name    = 'Debian';
-my $dist_ver     = '6';
-my $master_image = dirname(abs_path($0)) .
-                   '/distribution_' . $dist_name .
-                   '_' . $dist_ver . '.tar.bz2.tar';
+my $master_name = 'Opennebula3';
+my $master_archive = dirname(abs_path($0)) .
+                     '/' . $master_name . '.tar.bz2';
 
 use_ok ('Administrator');
 use_ok ('Executor');
-use_ok ('Entity::Distribution');
+use_ok ('Entity::Masterimage');
 use_ok ('Entity::Systemimage');
 
 # Test the existance of the master image test file.
-if(! -e $master_image) {
-    ok (-e $master_image, "Test master image required");
+if(! -e $master_archive) {
+    ok (-e $master_archive, "Test master image required");
     
-    BAIL_OUT('Cannot find test master image file: ' . $master_image);
+    BAIL_OUT('Cannot find test master image file: ' . $master_archive);
 }
 
 # Test root access
@@ -58,19 +56,21 @@ eval {
     lives_ok {
         Operation->enqueue(
             priority => 200,
-            type     => 'DeployDistribution',
-            params   => { file_path => $master_image },
+            type     => 'DeployMasterimage',
+            params   => {
+                file_path => $master_archive,
+                keep_file => 1,
+            },
         );
-    } 'DeployDistribution operation enqueue';
+    } 'DeployMasterimage operation enqueue';
 
-    lives_ok { $executor->oneRun(); } 'DeployDistribution operation execution succeed';
+    lives_ok { $executor->oneRun(); } 'DeployMasterimage operation execution succeed';
 
-	my $distribution;
+	my $master_image;
 	lives_ok { 
-		$distribution = Entity::Distribution->find(
+		$master_image = Entity::Masterimage->find(
                             hash => {
-                                distribution_name => $dist_name,
-                                distribution_version => $dist_ver
+                                masterimage_name => $master_name,
                             }
                         );
 	} 'Retrieve master image';
@@ -81,7 +81,7 @@ eval {
         Entity::Systemimage->create(
 			systemimage_name => $systemimage_name,
 			systemimage_desc => 'System image for test scenario MasterImageToCluster.',
-            distribution_id  => $distribution->getAttr(name => 'distribution_id'),
+            masterimage_id   => $master_image->getAttr(name => 'masterimage_id'),
         );
     } 'AddSytemImage operation enqueue';
     
@@ -134,7 +134,7 @@ eval {
     } 'RemoveSystemImage (clone) operation enqueue';
     
     lives_ok { $executor->oneRun(); } 'RemoveSystemImage operation execution succeed';
-    
+
     # Remove system image
     lives_ok {
         Operation->enqueue(
@@ -152,11 +152,6 @@ eval {
 		Entity::Systemimage->get(id => $systemimage_id);
 	} 'Kanopya::Exception::DB',
       'Systemimage removed ' . $systemimage_name . ', id ' . $systemimage_id;
-
-    # Manualy remove distribution containers
-    my $econtext = EContext::Local->new();
-    $econtext->execute(command => 'lvremove -f vhd1/etc_' . $dist_name . '_' . $dist_ver);
-    $econtext->execute(command => 'lvremove -f vhd1/root_' . $dist_name . '_' . $dist_ver);
 
     $db->txn_rollback;
 

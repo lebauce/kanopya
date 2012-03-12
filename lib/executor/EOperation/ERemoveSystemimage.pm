@@ -82,6 +82,8 @@ sub prepare {
     
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "systemimage_id" ]);
+
     $self->{_objs} = {};
     $self->{executor} = {};
 
@@ -124,7 +126,7 @@ sub execute{
     my $container = $self->{_objs}->{systemimage}->getDevice;
 
     # Remove system image container.
-    $log->info("$Systemimage container deletion");
+    $log->info("Systemimage container deletion");
 
     # Get the disk manager of the current container
     my $edisk_manager = EFactory::newEEntity(data => $container->getDiskManager);

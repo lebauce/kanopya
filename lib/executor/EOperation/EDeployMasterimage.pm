@@ -65,25 +65,37 @@ sub prepare {
     
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
-    
+
+    General::checkParams(args => $params, required => [ "file_path" ]);
+
+    # Check for the keep_file param
+    eval {
+        General::checkParams(args => $params, required => [ "keep_file" ]);
+
+        $self->{keep_file} = $params->{keep_file};
+    };
+    if ($@) {
+        $self->{keep_file} = 0;
+    }
+
     # check file_path set
-    my $file_path = $params->{file_path}; 
+    my $file_path = $params->{file_path};
     
-    if(not defined $file_path) {
+    if (not defined $file_path) {
         $errmsg = "Invalid operation argument ; $file_path not defined !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     
     # check tarball existence
-    if(! -e $file_path) {
+    if (! -e $file_path) {
         $errmsg = "Invalid operation argument ; $file_path not found !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     # check tarball format
-    if(`file $file_path` !~ /(bzip2|gzip) compressed data/) {
+    if (`file $file_path` !~ /(bzip2|gzip) compressed data/) {
         $errmsg = "Invalid operation argument ; $file_path must be a gzip or bzip2 compressed file !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -142,9 +154,11 @@ sub execute {
     $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
     
     # delete uploaded archive
-    $cmd = "rm $self->{file}";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-    
+    if (! $self->{keep_file}) {
+        $cmd = "rm $self->{file}";
+        $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    }
+
     my $args = {
         masterimage_name => $metadata->{name},
         masterimage_file => "$directory/$imagefile/$imagefile",

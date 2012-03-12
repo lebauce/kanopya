@@ -145,6 +145,72 @@ sub removeDefaultExport {
 
 }
 
+
+sub mount {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+
+    my $device = $self->_getEntity->getAttr(name => 'container_device');
+
+    my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
+    $args{econtext}->execute(command => $mkdir_cmd);
+
+    # Check if nothing is mounted on directory
+    my $command = "mount | grep $args{mountpoint}";
+    my $result = $args{econtext}->execute(command => $command);
+    if($result->{stdout}) {
+        $errmsg = "$args{mountpoint} already used as mount point by \n($result->{stdout})";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+
+    $log->info("Mounting <$device> on <$args{mountpoint}>.");
+
+    $command = "kpartx -a $device";
+    $result = $args{econtext}->execute(command => $command);
+
+    # Check if gte device is partitioned
+    $command = "kpartx -l $device";
+    $result = $args{econtext}->execute(command => $command);
+    if($result->{stdout}) {
+        # The device is partitioned, mount the one (...)
+        $device = $result->{stdout};
+
+        # Cut the stdout after first ocurence of ' : ' to get the
+        # device within /dev/mapper directory.
+        $device =~ s/ :.*$//g;
+        $device = '/dev/mapper/' . $device;
+    }
+
+    $log->info("mount $device $args{mountpoint}");
+
+    my $mount_cmd = "mount $device $args{mountpoint}";
+    $args{econtext}->execute(command => $mount_cmd);
+
+    # TODO: insert an eroolback with umount method.
+
+    $log->info("Device <$device> mounted on <$args{mountpoint}>.");
+}
+
+sub umount {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+
+    $log->info("Unmonting (<$args{mountpoint}>)");
+
+    my $umount_cmd = "umount $args{mountpoint}";
+    $args{econtext}->execute(command => $umount_cmd);
+
+    my $mkdir_cmd = "rm -R $args{mountpoint}";
+    $args{econtext}->execute(command => $mkdir_cmd);
+
+    # TODO: insert an eroolback with mount method ?
+}
+
 1;
 
 __END__

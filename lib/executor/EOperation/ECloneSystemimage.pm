@@ -104,6 +104,8 @@ sub prepare {
     
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "systemimage_id" ]);
+
     # Get instance of Systemimage Entity
     $log->debug("Load systemimage instance");
     eval {
@@ -119,7 +121,6 @@ sub prepare {
 
     $log->debug("Get systemimage self->{_objs}->{systemimage} of type : " . ref($self->{_objs}->{systemimage}));
     delete $params->{systemimage_id};
-    $params->{distribution_id} = $self->{_objs}->{systemimage_source}->getAttr(name => 'distribution_id');
 
     # Check Parameters and context
     eval {
@@ -202,11 +203,12 @@ sub execute {
     my $self = shift;
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    my $esrc_container = EFactory::newEEntity(data => $self->{_objs}->{systemimage_source}->getDevice);
 
-    $esystemimage->create(src_container => $self->{_objs}->{systemimage_source}->getDevice,
-                          edisk_manager => $self->{_objs}->{edisk_manager},
-                          econtext      => $self->{executor}->{econtext},
-                          erollback     => $self->{erollback});
+    $esystemimage->create(esrc_container => $esrc_container,
+                          edisk_manager  => $self->{_objs}->{edisk_manager},
+                          econtext       => $self->{executor}->{econtext},
+                          erollback      => $self->{erollback});
 
     $self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(
         systemimage_source_id => $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id')
