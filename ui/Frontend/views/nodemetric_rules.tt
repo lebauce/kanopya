@@ -1,12 +1,50 @@
 <table class="simplelisting">
-<caption>Node metrics rules results - <%cluster_name%> - <%host_name%></caption>
-</br>
-            <% FOREACH rule IN rules %>
-                <tr><td>
-                <% IF rule.isVerified == 0%><span class="state imgUp">  </span> 
-                <% ELSIF rule.isVerified == 1%><span class="state imgBroken">  </span> 
-                <% ELSE %><span class="state imgDown">  </span> <% END %>
-                <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.formula %></span></td>
-                </tr>
-            <% END %>
+ 
+    <caption>Node metrics rules results 
+    <%IF  host_name%>
+     - <%cluster_name%> - <%host_name%> 
+    <%END%> 
+    </caption>
+    </br>
+    <% FOREACH rule IN rules %>
+        <tr>
+            <td>
+                <%IF host_name%>
+                    <% IF rule.isVerified == 0%><span class="state imgUp">  </span> 
+                    <% ELSIF rule.isVerified == 1%><span class="state imgBroken">  </span> 
+                    <% ELSE %><span class="state imgDown">  </span> <% END %>
+                <% END %>
+               <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.label %></span>
+            </td>
+            <td>
+                <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/details">
+                    details
+                </a>
+            </td>
+
+        </tr>
+    <% END %>
 </table>
+    
+<div class="actions">
+
+    <table>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions">View the conditions</a>
+        </td></tr>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View the rules</a>
+        </td></tr>
+    </table>
+    
+    <table><tr><td>
+        <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/new">Create new rule for this cluster</a>
+    </td></tr></table>
+</div> 
+
+
+
+

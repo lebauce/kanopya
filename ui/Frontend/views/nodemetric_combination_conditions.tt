@@ -33,7 +33,7 @@
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions">View the conditions</a>
         </td></tr>
         <tr><td>
-            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations/conditions/rules">View the rules</a>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View the rules</a>
         </td></tr>
     </table>
 

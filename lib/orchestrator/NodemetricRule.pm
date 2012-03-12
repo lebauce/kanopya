@@ -19,6 +19,8 @@ use base 'BaseDB';
 use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
+use List::MoreUtils qw {any} ;
+
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -224,5 +226,14 @@ sub setVerifiedRule{
 }
 
 
+
+sub isCombinationDependant{
+    my $self         = shift;
+    my $condition_id = shift;
+    
+    my @dep_cond_id = $self->getDependantConditionIds();
+    my $rep = any {$_ eq $condition_id} @dep_cond_id;
+    return $rep;
+}
 
 1;
