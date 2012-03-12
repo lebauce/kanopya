@@ -335,9 +335,9 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 =cut  
 
 ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
-    my $cluster_id    = params->{extclusterid} || 0;   
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
-    my $indicator = params->{'oid'};
+	my $cluster_id    = params->{extclusterid} || 0;   
+	my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
+	my $indicator = params->{'oid'};
 	my $indicator_unit =  params->{'unit'};
 	my $nodes_metrics; 
 	my $error;
@@ -364,12 +364,17 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 		
 		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
 		# my (@test1, @test2);
-		# for (my $i = 1; $i<151; $i++){
+        
+		# for (my $i = 1; $i<51; $i++){
 			# my $nde = 'node'.$i;
-			# push @test1, $i;
 			# push @test2, $nde;
 		# }
-		
+        # for (my $y = 1; $y<1500; $y+=37){
+			# push @test1, $y;
+		# }
+        # $log->error('node list: '.Dumper @test2);
+        # $log->error('values: '.Dumper @test1);
+        
 		# to_json {values => \@test1, nodelist => \@test2, unit => "unit"};
 	}
 };

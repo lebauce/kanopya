@@ -340,9 +340,14 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 	var params = {oid:metric_oid,unit:metric_unit};
 	document.getElementById('nodes_charts').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
-		if (data.error){ alert (data.error); }
+        if (data.error){ alert (data.error); }
 		else{
 			document.getElementById('nodes_charts').style.display='block';
+            var min = data.values[0];
+            data.values.reverse();
+            var max = data.values[0];
+            data.values.reverse();
+            // alert('min: '+min+ ' max: '+max); 
 			var max_nodes_per_graph = 100;
 			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
 			var nodes_per_graph = data.nodelist.length/graph_number;
@@ -357,14 +362,14 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 				var sliced_values = data.values.slice(indexOffset,toElementNumber);
 				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
 				//we generate the graph
-				barGraph(sliced_values, sliced_nodelist, data.unit, div_id);
+				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max);
 			}
 		}
         loading_stop();
     });
 }
 
-function barGraph(values, nodelist, unit, div_id){
+function barGraph(values, nodelist, unit, div_id, min, max){
 	$.jqplot.config.enablePlugins = true;
     plot1 = $.jqplot(div_id, [values], {
 	title:'Indicator Distributed Graph (in '+unit+' )',
@@ -383,7 +388,11 @@ function barGraph(values, nodelist, unit, div_id){
                 tickOptions: {
                     angle: -60,
                 }
-            }
+            },
+            yaxis:{
+                min:0,
+                max:max
+            },
         },
         seriesColors: ["#D4D4D4" ,"#999999"],
         highlighter: { show: false }
