@@ -7,11 +7,15 @@
 <tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
 
 <td>
-Node rules state
+    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/nodemetrics/rules">
+        Node rules state
+    </a>
 </td>
 
 <td>
-<a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/clustermetrics/combinations/conditions/rules">Cluster rules state</a>
+    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/clustermetrics/combinations/conditions/rules">
+        Cluster rules state
+    </a>
 </td>
 
 <td class="actions" rowspan="2">

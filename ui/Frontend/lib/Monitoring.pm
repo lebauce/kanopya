@@ -957,7 +957,6 @@ post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
 # -----------------------------------------------------------------------------#
 
 get '/extclusters/:extclusterid/nodemetrics/conditions' => sub {
-    #my @nodemetric_conditions = NodemetricCondition->search(hash=>{'nodemetric_condition_service_provider_id' => params->{extclusterid}});
     my @nodemetric_conditions = NodemetricCondition->search(hash=>{});
     
     my @nodemetric_conditions_param;
@@ -1067,6 +1066,30 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
 # ------------------------NODE METRIC RULES ----------------------------------#
 #----------- -----------------------------------------------------------------#
 
+get '/extclusters/:extclusterid/nodemetrics/rules' => sub {
+    my $externalcluster_id = param('extclusterid');
+    my @nodemetric_rules   = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $externalcluster_id});
+    
+    my @rules;
+    
+    foreach my $rule (@nodemetric_rules){
+        my $hash = {
+            id         => $rule->getAttr(name => 'nodemetric_rule_id'),
+            formula    => $rule->toString(),
+            label      => $rule->getAttr(name => 'nodemetric_rule_label'),
+        };
+        push @rules, $hash;
+    } 
+    
+    my $extclu = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$externalcluster_id);
+    template 'nodemetric_rules', {
+        title_page      => "Node Metric Rules Overview",
+        rules           => \@rules,
+        cluster_id      => $externalcluster_id,
+        cluster_name    => $extclu->getAttr(name => 'externalcluster_name'),
+    };
+};
+
 get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
     my $externalnode_id    = param('extnodeid');
     my $externalcluster_id = param('extclusterid');
@@ -1107,46 +1130,105 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
     };
 };
 
-get '/extclusters/:extclusterid/nodemetrics/combinations/conditions/rules/:ruleid/details' => sub {
-    my $rule = AggregateRule->get('id' => param('ruleid') );
+
+get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
+    
+    my $cluster_id   = params->{extclusterid} || 0;
+    my $cluster      = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$cluster_id);
+    my $cluster_name = $cluster->getAttr(name => 'externalcluster_name');
+    
+    my @conditions = NodemetricCondition->search(hash=>{});
+    my @condition_params;
+    foreach my $condition (@conditions){
+        my $hash = {
+            id           => $condition->getAttr(name => 'nodemetric_condition_id'),
+            label        => $condition->toString(),
+        };
+            push @condition_params, $hash;
+    }
+    
+    template 'clustermetric_rules_details', {
+        title_page    => "Rule creation",
+        cluster_id    => $cluster_id,
+        cluster_name  => $cluster_name,    
+        conditions    => \@condition_params,
+    };
+};
+
+
+post '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
+    my $params = {
+        nodemetric_rule_service_provider_id => param('extclusterid'),
+        nodemetric_rule_formula             => param('formula'),
+        nodemetric_rule_action_id           => param('action'),
+        nodemetric_rule_state               => param('state'),
+        nodemetric_rule_label               => param('label'),
+    };
+    my $cm = NodemetricRule->new(%$params);
+    
+    redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules');
+};
+
+
+get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
+    my $rule_id      = param('ruleid');
+    my $rule         = NodemetricRule->get('id' => $rule_id);
+    my $cluster_id   = params->{extclusterid} || 0;
+    my $cluster      = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$cluster_id);
+    #my $cluster_name = $cluster->getNode(externalnode_id=>$cluster_id);
+    my $cluster_name = $cluster->getAttr(name => 'externalcluster_name');
+    
     my @conditions;
 
-    my @condition_insts = AggregateCondition->search(hash => {aggregate_condition_service_provider_id => param('extclusterid') });
+    my @condition_insts = NodemetricCondition->search(hash => {});
     
     foreach my $condition_inst (@condition_insts){
         my $hash = {
             label => $condition_inst->toString(),
-            id    => $condition_inst->getAttr('name' => 'aggregate_condition_id'),
+            id    => $condition_inst->getAttr('name' => 'nodemetric_condition_id'),
         };
         
         push @conditions, $hash;
-    } 
+    }
+    
+    my $rule_param = {
+        id        => $rule_id,
+        formula   => $rule->getAttr('name' => 'nodemetric_rule_formula'),
+        string    => $rule->toString(),
+        state     => $rule->getAttr('name' => 'nodemetric_rule_state'),
+        label     => $rule->getAttr('name' => 'nodemetric_rule_label'),
+        action_id => $rule->getAttr('name' => 'nodemetric_rule_action_id'),
+    };
+    
     template 'clustermetric_rules_details', {
         title_page    => "Rule details",
-        cluster_id    => param('extclusterid'),
-        rule_id       => param('ruleid'),
-        rule_formula  => $rule->getAttr('name' => 'aggregate_rule_formula'),
-        rule_string   => $rule->toString(),
-        rule_state    => $rule->getAttr('name' => 'aggregate_rule_state'),
-        rule_label    => $rule->getAttr('name' => 'aggregate_rule_label'),
+        cluster_id    => $cluster_id,
+        cluster_name  => $cluster_name,
+        rule          => $rule_param,
         conditions    => \@conditions,
     };
 };
 
-post '/extclusters/:extclusterid/nodemetrics/combinations/conditions/rules/:ruleid/edit' => sub {
-    my $rule = AggregateRule->get('id' => param('ruleid'));
-    my $checker = $rule->checkFormula(formula => param('formula'));
+post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
+    my $rule    = NodemetricRule->get('id' => param('ruleid'));
+    #my $checker = $rule->checkFormula(formula => param('formula'));
     
-    if($checker->{value} == 1) {
-        $rule->setAttr(name => 'aggregate_rule_label',   value => param('label'));
-        $rule->setAttr(name => 'aggregate_rule_formula', value => param('formula'));
-        $rule->save();
-        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
-    }else {
-        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
-    }
+   # if($checker->{value} == 1) {
+
+
+    $rule->setAttr(name => 'nodemetric_rule_formula',   value => param('formula'));
+    $rule->setAttr(name => 'nodemetric_rule_action_id', value => param('action'));
+    $rule->setAttr(name => 'nodemetric_rule_state',     value => param('state'));
+    $rule->setAttr(name => 'nodemetric_rule_label',     value => param('label'));
+    $rule->save();
+    redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules/'.param('ruleid').'/details');        
+#    }else {
+#        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
+#    }
 
 };
+
+
 
 
 
