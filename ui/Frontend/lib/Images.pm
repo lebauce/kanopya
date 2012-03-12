@@ -1,6 +1,7 @@
 package Images;
 
 use Dancer ':syntax';
+use Dancer::Plugin::Ajax;
 
 use Administrator;
 use Entity::ServiceProvider;
@@ -326,7 +327,34 @@ get '/images/diskmanagers/:storageid' => sub {
         }
     }
     
-    
     content_type('text/html');
     return $str;
+};
+
+get '/images/diskmanagers/:storageid/subform/:diskmanagerid' => sub {
+    my $storageid = param('storageid');
+    my $managerid = param('diskmanagerid');
+    my $sp = Entity::ServiceProvider->get(id => $storageid);
+    my $diskmanager = $sp->getManager(id => $managerid);
+    if($diskmanager->can('getConf')) {
+        my $template;
+        if($diskmanager->isa('Entity::Component')) {
+            my $componentdetail = $diskmanager->getComponentAttr();
+            $template = 'components/'.lc($componentdetail->{component_name}).$componentdetail->{component_version}.'_subform_addimage.tt';
+        } elsif($diskmanager->isa('Entity::Connector')) {
+            my $connectordetail = $diskmanager->getConnectorType();
+            $template = 'connectors/'.lc($connectordetail->{connector_name}).'_subform_addimage.tt';
+        }
+        
+        my $template_params = {};
+            
+        my $config = $diskmanager->getConf();
+        while( my ($key, $value) = each %$config) {
+            $template_params->{$key} = $value;    
+        }
+        
+        template "$template", $template_params, {layout => undef};
+    } else {
+        return 'not yet implemented';
+    }
 };

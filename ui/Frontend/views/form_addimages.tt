@@ -2,17 +2,14 @@
 
 <form id="target" method="POST" action="/systems/images/add">
 <table class="form">
-<tr>
-	<td class="label">Name :</td>
+<tr><td class="label">Name :</td>
 	<td><input type="text" name="systemimage_name" maxlength="32" size="32"/>
 	<span style="color: red"><% ERR_SYSTEMIMAGE_NAME %></span></td>
 </tr>
-<tr>
-	<td class="label">Description :</td>
+<tr><td class="label">Description :</td>
 	<td><textarea cols="50" name="systemimage_desc" value=""></textarea></td> 
 </tr>
-<tr>
-	<td class="label">Size :</td>
+<tr><td class="label">Size :</td>
 	<td><input type="text" name="systemimage_size" maxlength="16" size="5"/>
 	<select name="systemimage_size_unit">
         <option value="G">G</option>
@@ -20,8 +17,7 @@
     </select> 
     <span style="color: red"><% ERR_SYSTEMIMAGE_SIZE %></span></td>
 </tr>
-<tr>
-	<td class="label">from a master image :<input type="radio" name="source" value="masterimage" checked="checked" /></td>
+<tr><td class="label">from a master image :<input type="radio" name="source" value="masterimage" checked="checked" /></td>
 	<td>
 	<select id="duplicate" name="masterimage_id">
 	<% FOREACH masterimage IN masterimages_list %>
@@ -30,8 +26,7 @@
 	</td>
 </tr>
 <tr><td colspan="2">&nbsp;</td></tr>
-<tr>
-    <td class="label">Data Provider to store this image:</td>
+<tr><td class="label">Data Provider to store this image:</td>
     <td>
     <select id="storage_provider" name="storage_provider">
         <% FOREACH storage IN storageproviders_list %>
@@ -40,8 +35,7 @@
     </select>
     </td>
 </tr>
-<tr>
-    <td class="label">Disk Manager to use:</td>
+<tr><td class="label">Disk Manager to use:</td>
     <td>
     <select id="disk_manager" name="disk_manager">
         <% FOREACH diskmanager IN diskmanagers_list %>
@@ -50,9 +44,9 @@
     </select>
     </td>
 </tr>
+<tr id="diskmanagerdetails"></tr>
 <% IF systemimages_list.0 %>
-<tr>
-	<td class="label">clone a system image :<input type="radio" name="source" value="systemimage" /></td>
+<tr><td class="label">clone a system image :<input type="radio" name="source" value="systemimage" /></td>
 	<td>
 	<select name="systemimage_id">
 	<%FOREACH systemimage IN systemimages_list %>
@@ -76,12 +70,34 @@
         xhr.onreadystatechange = function() {
 			if (xhr.readyState == 4 && xhr.status == 200) {
                 select = document.getElementById('disk_manager');
-                select.innerHTML = xhr.responseText;		
+                select.innerHTML = xhr.responseText;
+                UpdateDiskmanagersSubform();		
             }
         }	
     xhr.send(null);
     }
     
+    
+    function UpdateDiskmanagersSubform() {
+        var xhr = new XMLHttpRequest();
+        var storageid = document.getElementById('storage_provider').value;
+        var diskmanagerid = document.getElementById('disk_manager').value;
+        var url = '/systems/images/diskmanagers/'+storageid+'/subform/'+diskmanagerid ;
+        xhr.open("GET", url);
+    
+        xhr.overrideMimeType('text/xml');
+        xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4 && xhr.status == 200) {
+                select = document.getElementById('diskmanagerdetails');
+                select.innerHTML = xhr.responseText;		
+            }
+        }	
+    xhr.send(null);
+    
+    }
+    
     document.getElementById('storage_provider').onchange = UpdateDiskmanagers;
+    document.getElementById('disk_manager').onchange = UpdateDiskmanagersSubform;
     UpdateDiskmanagers();
+    
 </script>

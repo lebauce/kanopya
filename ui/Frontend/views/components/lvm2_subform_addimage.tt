@@ -1,0 +1,10 @@
+<td class="label">Volume Group use:</td>
+<td>
+<select id="volume_group" name="volume_group">
+<% FOREACH lv IN lvm2_lvs %>
+    <option value="<% lv.lvm2_lv_name %>"><% lv.lvm2_lv_name %></option>
+<% END %>
+</select>
+</td>
+
+
