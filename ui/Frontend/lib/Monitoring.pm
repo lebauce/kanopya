@@ -319,10 +319,10 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	} else {
         while (my ($date, $value) = each %aggregate_combination) {				
                 my $dt = DateTime->from_epoch(epoch => $date);
-                my $date_string = $dt->mdy('-') . ' ' .$dt->hour_1().':'.$dt->minute();
+                my $date_string = $dt->strftime('%m-%d-%y %H:%M');
                 push @histovalues, [$date_string,$value];
             }		
-        $log->info('values sent to timed graph: '.Dumper \@histovalues);
+        # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }
 	to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
@@ -356,7 +356,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	} else {
 		my @nodes_values_to_sort;
 		while (my ($node, $metric) = each %$nodes_metrics) {
-			push @nodes_values_to_sort, { node => $node, value => $metric };
+			push @nodes_values_to_sort, { node => $node, value => $metric->{$indicator} };
 		}
 		my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
 	
