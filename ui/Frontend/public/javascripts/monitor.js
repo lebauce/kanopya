@@ -340,7 +340,6 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 	var params = {oid:metric_oid,unit:metric_unit};
 	document.getElementById('nodes_charts').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
-		alert('toto');
 		if (data.error){ alert (data.error); }
 		else{
 			document.getElementById('nodes_charts').style.display='block';
