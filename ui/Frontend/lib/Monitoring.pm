@@ -1280,7 +1280,7 @@ sub _getCombinations(){
 	my $cluster_id = $template_config->{'cluster_id'};
 	my %errors;
 	my @combinations;
-	my @aggregate_combinations;
+	my @clustermetric_combinations;
 	
 	eval {
 		#@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
@@ -1292,13 +1292,13 @@ sub _getCombinations(){
 		$log->error($error);
 		$template_config->{'errors'}{'combinations'} = $error;
 		return %$template_config;
-	}elsif (scalar(@aggregate_combinations) == 0){
+	}elsif (scalar(@clustermetric_combinations) == 0){
 		my $error = 'No combination could be found for this external cluster';
 		$log->error($error);
 		$template_config->{'errors'}{'combinations'} = $error;
 		return %$template_config;
 	}else{
-		 for my $combi (@aggregate_combinations){
+		 for my $combi (@clustermetric_combinations){
 			my %combination;
 			$combination{'id'} = $combi->getAttr(name => 'aggregate_combination_id');
 			$combination{'label'} = $combi->toString();
