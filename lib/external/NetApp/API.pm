@@ -111,4 +111,15 @@ sub volumes {
     return @objs;
 }
 
+sub disks {
+	my $self = shift;
+
+    my @objs = ();
+    my @volumes = $self->disk_list_info()->child_get("disk-details")->children_get();
+    foreach $volume (@volumes) {
+        push @objs, bless $volume, "NaObject";
+    }
+    return @objs;
+}
+
 1;

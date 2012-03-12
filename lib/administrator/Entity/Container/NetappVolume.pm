@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,17 +12,21 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Container::NetAppContainer;
+package Entity::Container::NetappVolume;
 use base "Entity::Container";
 
 use strict;
 use warnings;
 
-use Netapp::Filer;
-
 use constant ATTR_DEF => {
-    volume_id =>  {
-        pattern => '^[0-9\.]*$',
+    name => {
+        pattern      => '^\w*$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    size =>  {
+        pattern => '^[0-9]*$',
         is_mandatory => 1,
         is_extended => 0,
     },
@@ -40,11 +44,11 @@ sub getContainer {
     my $self = shift;
     my %args = @_;
 
-    my $netapp = Entity::Connector::NetApp->get(
+    my $manager = Entity::Connector::NetappVolumeManager->get(
         id => $self->{_dbix}->parent->get_column('disk_manager_id')
     );
 
-    return $netapp->getContainer(volume_id => $self->{_dbix}->get_column('volume_id'));
+    return $manager->getContainer(volume_id => $self->{_dbix}->get_column('volume_id'));
 }
 
 =head2 getDiskManager
