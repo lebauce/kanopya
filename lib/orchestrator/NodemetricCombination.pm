@@ -59,6 +59,8 @@ sub toString {
     return "@array";
 }
 
+
+
 # C/P of homonym method of AggregateCombination
 sub getDependantIndicatorIds{
     my $self = shift;
@@ -116,6 +118,36 @@ sub computeValueFromMonitoredValues {
 
     $log->info("$arrayString");
     return $res;
+}
+
+
+
+sub checkFormula{
+    my $class = shift;
+    my %args  = @_;
+    
+    my $formula = $args{formula};
+    my $adm = Administrator->new();
+    
+    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+    my @scom_indicators_ids = map {$_->{id}} @{$scom_indicatorset->{ds}};
+    
+        #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    
+    my @unkownIds;
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {   
+            #Check if element is a SCOM indicator
+            my $indicator_id = substr($element,2);
+            if (not (grep {$_ eq $indicator_id} @scom_indicators_ids)) {
+                push @unkownIds, $indicator_id;
+            }
+        }
+    }
+    return @unkownIds;
 }
 1;
 
