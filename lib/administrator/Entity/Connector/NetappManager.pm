@@ -1,4 +1,4 @@
-#    NetappManager.pm - NetApp connector
+#    NetappManager.pm - NetApp base manager
 #    Copyright © 2012 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Entity::Connector::NetappManager;
-use base "Entity::Connector";
 use lib "/opt/kanopya/lib/external/NetApp";
 
 use warnings;
@@ -31,6 +30,16 @@ sub get {
 
     my $self = $class->SUPER::get(%args);
 
+    $self->init();
+
+    return $self;
+}
+
+sub init {
+    my $self = shift;
+
+    return if (defined $self->{api});
+
     my $netapp = Entity::ServiceProvider::Outside::Netapp->get(
                      id => $self->getAttr(name => "service_provider_id")
                  );
@@ -41,6 +50,8 @@ sub get {
                        passwd   => $netapp->getAttr(name => "netapp_passwd")
                    );
 
+    $self->{netapp} = $netapp;
+
     eval {
         $self->system_get_version();
         $self->{state} = "up";
@@ -48,8 +59,6 @@ sub get {
     if ($@) {
         $self->{state} = "down";
     }
-
-    return $self;
 }
 
 sub AUTOLOAD {
@@ -58,6 +67,10 @@ sub AUTOLOAD {
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
+
+    if (not defined $self->{api}) {
+        $self->init();
+    }
 
     return $self->{api}->$method(%args);
 }
@@ -69,24 +82,29 @@ sub DESTROY {
     }
 }
 
-sub startHost {
+=head2 getFreeSpace
+
+    Desc : Implement getFreeSpace from DiskManager interface.
+           This function returns the free space on all disks
+    args :
+
+=cut
+
+sub getFreeSpace {
     my $self = shift;
-    my %args = @_;
+	my $total_spare_cap = 0;
+    my @disks = $self->disks;
 
-#    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-}
+    for my $disk (@disks) {
+        my $raid_state = $disk->raid_state;
+        if (($raid_state eq "spare") ||
+            ($raid_state eq "pending") ||
+            ($raid_state eq "reconstructing")) {
+            $total_spare_cap += $disk->used_space;
+        }
+    }
 
-sub postStart {
-}
-
-sub stopHost {
-    my $self = shift;
-    my %args = @_;
-
-#    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-
-#    my $sn = $args{host}->getAttr(name => "host_serial_number");
-#    $self->{api}->stop_service_profile(dn => $self->{ou} . "/" . $sn);
+    return $total_spare_cap;
 }
 
 1;

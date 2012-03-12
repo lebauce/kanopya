@@ -103,11 +103,17 @@ sub prepare {
     my $exec_ip = $self->{executor}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
 
-    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
-                                              ip_destination => $masternode_ip);
+    eval {
+        $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
+                                                  ip_destination => $masternode_ip);
+    };
+    if($@) {
+        $log->info("$@");
+        $self->{econtext} = {};
+    }
 }
 
-sub execute{
+sub execute {
     my $self = shift;
 
     my $container = $self->{_objs}->{edisk_manager}->createDisk(

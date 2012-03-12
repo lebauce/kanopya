@@ -95,16 +95,6 @@ sub getMasterNodeIp {
     return $self->{_dbix}->get_column('ucs_addr');
 }
 
-sub login {
-    my $ucs = Cisco::UCS->new(
-        cluster  => "89.31.149.80",
-        port     => 80, 
-        proto    => "http",
-        username => "admin",
-        passwd   => "Infidis2011"
-    ); 
-}
-
 sub toString {
     my $self = shift;
     return $self->{_dbix}->get_column('ucs_name') . " ".

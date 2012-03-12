@@ -75,7 +75,7 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "container_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 service_provider
@@ -90,7 +90,7 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::ServiceProvider",
   { service_provider_id => "service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container_accesses
@@ -138,6 +138,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 netapp_lun
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappLun>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_lun",
+  "AdministratorDB::Schema::Result::NetappLun",
+  { "foreign.lun_id" => "self.container_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netapp_volume
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappVolume>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_volume",
+  "AdministratorDB::Schema::Result::NetappVolume",
+  { "foreign.volume_id" => "self.container_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 systemimages
 
 Type: has_many
@@ -154,9 +184,17 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-06 14:51:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3gMZVYm4fNmPRa4zMTAlAw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-12 11:00:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dLybpiYWFkKChclPS/E3WQ
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# You can replace this text with custom content, and it will be preserved on regeneration
+
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { "foreign.entity_id" => "self.container_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
+);
+
 1;

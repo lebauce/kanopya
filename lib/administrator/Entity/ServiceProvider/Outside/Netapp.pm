@@ -45,6 +45,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getDefaultManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['category']);
+
+    if ($args{category} eq 'DiskManager') {
+        return $self->getConnector(category => "Storage", version => "1");
+    }
+}
+
 sub getNetapp {
     my $class = shift;
     my %args = @_;
@@ -58,7 +69,7 @@ sub create {
     my %args = @_;
 
     my $addrip = new NetAddr::IP($args{netapp_addr});
-    if(not defined $addrip) {
+    if (not defined $addrip) {
         $errmsg = "Netapp->create : wrong value for ip address!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -81,9 +92,20 @@ sub remove {
     $self->SUPER::delete();
 };
 
+sub getMasterNodeIp {
+    my $self = shift;
+    return $self->{_dbix}->get_column('netapp_addr');
+}
+
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('netapp_name'). " ". $self->{_dbix}->get_column('netapp_addr');
+    my $string = $self->{_dbix}->get_column('netapp_name') . " "
+                 . $self->{_dbix}->get_column('netapp_addr');
     return $string;
 }
+
+sub getState {
+    return 'up';
+}
+
 1;

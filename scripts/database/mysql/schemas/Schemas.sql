@@ -116,15 +116,6 @@ CREATE TABLE `outside` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for tables netapp_manager (conenctor)
--- Entity::Connector::NetApp class
-
-CREATE TABLE `netapp_manager` (
-    `netapp_manager_id` int(8) unsigned NOT NULL,
-    PRIMARY KEY (`netapp_manager_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Table structure for table `netapp`
 -- Entity::ServiceProvider::Outside::Netapp class
 
@@ -144,6 +135,26 @@ CREATE TABLE `netapp` (
 CREATE TABLE `ucs_manager` (
     `ucs_manager_id`int(8) unsigned NOT NULL,
     PRIMARY KEY (`ucs_manager_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for tables netapp_lun_manager (connector)
+-- Entity::Connector::NetappLunManager class
+
+CREATE TABLE `netapp_lun_manager` (
+    `netapp_lun_manager_id` int(8) unsigned NOT NULL,
+    PRIMARY KEY (`netapp_lun_manager_id`),
+    FOREIGN KEY (`netapp_lun_manager_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table netapp_volume_manager (connector)
+-- Entity::Connector::NetappVolumeManager class
+
+CREATE TABLE `netapp_volume_manager` (
+    `netapp_volume_manager_id` int(8) unsigned NOT NULL,
+    PRIMARY KEY (`netapp_volume_manager_id`),
+    FOREIGN KEY (`netapp_volume_manager_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -264,13 +275,42 @@ CREATE TABLE `lvm_container` (
 CREATE TABLE `file_container` (
   `file_container_id` int(8) unsigned NOT NULL,
   `container_access_id` int(8) unsigned NOT NULL,
-  `file_name` int(8) unsigned NOT NULL,
+  `file_name` char(255) NOT NULL,
   `file_size` int(8) unsigned NOT NULL,
-  `file_filesystem` int(8) unsigned NOT NULL,
+  `file_filesystem` char(32) NOT NULL,
   PRIMARY KEY (`file_container_id`),
   FOREIGN KEY (`file_container_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`container_access_id`),
   FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netapp_volume`
+-- Entity::Container::NetAppVolume class
+
+CREATE TABLE `netapp_volume` (
+  `volume_id` int(8) unsigned NOT NULL,
+  `aggregate_id` int(8) unsigned NOT NULL,
+  `name` char(255) NOT NULL,
+  `size` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`volume_id`),
+  FOREIGN KEY (`volume_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netapp_lun`
+-- Entity::Container::NetAppLun class
+
+CREATE TABLE `netapp_lun` (
+  `lun_id` int(8) unsigned NOT NULL,
+  `volume_id` int(8) unsigned NOT NULL,
+  `name` char(255) NOT NULL,
+  `size` int(8) unsigned NOT NULL,
+  `filesystem` char(32) NOT NULL,
+  PRIMARY KEY (`lun_id`),
+  FOREIGN KEY (`lun_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`volume_id`),
+  FOREIGN KEY (`volume_id`) REFERENCES `netapp_volume` (`volume_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
