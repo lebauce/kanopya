@@ -538,7 +538,7 @@ get '/extclusters/:clusterid' => sub {
     # Nodes list
     my $num_noderule_verif    = 0;
     
-    my $nodes = $extcluster->getNodes();
+    my $nodes = $extcluster->getNodes(shortname => 1);
     foreach my $node (@$nodes) {
         $node->{"state_" . $node->{state}} = 1;
         $num_noderule_verif += $node->{num_verified_rules};
