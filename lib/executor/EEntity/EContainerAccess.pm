@@ -111,6 +111,17 @@ sub copy {
     }
 }
 
+=head2 resize
+
+=cut
+
+sub resize {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'size', 'econtext' ]);
+}
+
 =head2 mount
 
     desc: Generic mount method. Connect to the container_access,

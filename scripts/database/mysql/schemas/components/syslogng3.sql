@@ -1,4 +1,4 @@
-USE `administrator`;
+USE `kanopya`;
 
 SET foreign_key_checks=0;
 

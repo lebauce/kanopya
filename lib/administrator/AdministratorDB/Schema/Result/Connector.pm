@@ -160,7 +160,22 @@ Related object: L<AdministratorDB::Schema::Result::UcsManager>
 __PACKAGE__->might_have(
   "ucs_manager",
   "AdministratorDB::Schema::Result::UcsManager",
-  { "foreign.ucs_id" => "self.connector_id" },
+  { "foreign.ucs_manager_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netapp_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_manager",
+  "AdministratorDB::Schema::Result::NetappManager",
+  { "foreign.netapp_manager_id" => "self.connector_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

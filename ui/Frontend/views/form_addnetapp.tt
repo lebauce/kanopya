@@ -1,0 +1,26 @@
+<h2>Create a new netapp</h2>
+
+<form id="target" method="POST" action="/equipments/netapp/add">
+<table class="form">
+    <tr>
+        <td class="label">Name :</td>
+        <td><input type="text" name="name" maxlength="16" size="16"/>
+    </tr>
+    <tr>
+        <td class="label">Description :</td>
+        <td><input type="text" name="desc" size="50" /></td>
+    </tr>
+    <tr>
+        <td class="label">Address :</td>
+        <td><input type="text" name="addr" size="16" /></td>
+    </tr>
+    <tr>
+        <td class="label">Login :</td>
+        <td><input type="text" name="login" size="16" /></td>
+    </tr>
+    <tr>
+        <td class="label">Password :</td>
+        <td><input type="password" name="passwd" size="16" /></td>
+    </tr>
+</table>
+</form> 

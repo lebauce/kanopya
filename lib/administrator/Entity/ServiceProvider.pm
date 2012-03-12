@@ -33,7 +33,8 @@ package Entity::ServiceProvider;
 use base "Entity";
 
 use Kanopya::Exceptions;
-
+use Entity::Component;
+use Entity::Connector;
 
 use constant ATTR_DEF => {};
 
@@ -51,8 +52,37 @@ sub getState {
     throw Kanopya::Exception::NotImplemented();
 }
 
-sub getMasterNodeIp {
-    throw Kanopya::Exception::NotImplemented();
+sub findManager {
+    my $key;
+    my ($class, %args) = @_;
+    my @managers = ();
+    $key = defined $args{id} ? { component_id => $args{id} } : {};
+    foreach my $component (Entity::Component->search(hash => $key)) {
+        my $obj = $component->getComponentAttr();
+        if ($obj->{component_category} eq $args{category}) {
+            push @managers, {
+                "category"            => $obj->{component_category},
+                "name"                => $obj->{component_name},
+                "id"                  => $component->getAttr(name => "component_id"),
+                "service_provider_id" => $component->getAttr(name => "service_provider_id"),
+            }
+        }
+    }
+
+    $key = defined $args{id} ? { connector_id => $args{id} } : {};
+    foreach my $connector (Entity::Connector->search(hash => $key)) {
+        my $obj = $connector->getConnectorType();
+        if ($obj->{connector_category} eq $args{category}) {
+            push @managers, {
+                "category"            => $obj->{connector_category},
+                "name"                => $obj->{connector_name},
+                "id"                  => $connector->getAttr(name => "connector_id"),
+                "service_provider_id" => $connector->getAttr(name => "service_provider_id")
+            }
+        }
+    }
+
+    return @managers;
 }
 
 sub findManager {

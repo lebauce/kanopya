@@ -230,15 +230,12 @@ else {
     print "User $answers->{dbuser} already exists\n";
 }
 
-#We grant all privileges to administrator database for $db_user
-my $grant = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep administrator`;
-if (!$grant) {
-    print "granting all privileges on administrator database to $answers->{dbuser}, please insert root password...\n";
-    system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON administrator.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
-    print "done\n";
-}else {
-    print "User $answers->{dbuser} seems to have good privileges\n";
-}
+#We grant all privileges to kanopya database for $db_user
+#my $grant = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep kanopya\.`;
+print "granting all privileges on kanopya database to $answers->{dbuser}, please insert root password...\n";
+system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON kanopya.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
+print "done\n";
+
 #We now generate the database schemas
 print "generating database schemas...";
 system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u $answers->{dbuser} -p$answers->{dbpassword1} < $conf_vars->{schema_sql}") == 0 or die "error while generating database schema: $!";

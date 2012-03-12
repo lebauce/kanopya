@@ -33,8 +33,13 @@ sub _timestamp_format {
 }
 
 sub _hosts {
-    my @ehosts = Entity::Host->getHosts(hash => {cloud_cluster_id => { '=', undef }});
+    my %args = @_;
+    my $filter = {};
     my $hosts = [];
+    if ($args{manager_id}) {
+        $filter = { host_manager_id => { '=', $args{manager_id} }};
+    }
+    my @ehosts = Entity::Host->getHosts(hash => $filter);
 
     foreach my $m (@ehosts) {
         my $tmp = {};
@@ -77,10 +82,20 @@ sub _hosts {
 }
 
 get '/hosts' => sub {
+    my $host_manager;
     my $methods = Entity::Host->getPerms();
+    my @host_managers = Entity::ServiceProvider->findManager(category => "Cloudmanager");
+    foreach my $manager (@host_managers) {
+        if ((defined request->params->{manager} and ($manager->{id} eq request->params->{manager})) or
+            (lc $manager->{name} eq  "physicalhoster")) {
+            $host_manager = $manager;
+        }
+    }
     template 'hosts', {
-        hosts_list => _hosts(),
-        can_create        => $methods->{'create'}->{'granted'}
+        hosts_list    => _hosts(manager_id => $host_manager->{id}),
+        host_managers => \@host_managers,
+        host_manager  => $host_manager,
+        can_create    => $methods->{'create'}->{'granted'}
     };
 };
 
@@ -89,6 +104,8 @@ get '/hosts/add' => sub {
     my @processormodels = Entity::Processormodel->getProcessormodels(hash => {});
     my @kernel = Entity::Kernel->getKernels(hash => {});
     my @powersupplycards = Entity::Powersupplycard->getPowerSupplyCards(hash => {});
+    my @managers = Entity::ServiceProvider->findManager(id => params->{manager},
+                                                        category => "Cloudmanager");
 
     my $mmodels = [];
     foreach my $x (@hostmodels){
@@ -127,7 +144,8 @@ get '/hosts/add' => sub {
     }
 
     template 'form_addhost', {
-        hostmodels_list => $mmodels,
+        manager                => $managers[0],
+        hostmodels_list        => $mmodels,
         processormodels_list   => $pmodels,
         kernels_list           => $kernels,
         powersupplycards_list  => $pscards,
@@ -136,6 +154,8 @@ get '/hosts/add' => sub {
 
 post '/hosts/add' => sub {
     my $adm = Administrator->new;
+    my $manager = Entity::ServiceProvider->get(id => params->{host_manager_id});
+
     my %parameters = (
         host_mac_address   => params->{mac_address},
         kernel_id          => params->{kernel},
@@ -146,12 +166,15 @@ post '/hosts/add' => sub {
         processormodel_id  => params->{cpu_model},
         host_desc          => params->{desc},
     );
+
     if(params->{powersupplycard_id} ne "none") {
         $parameters{powersupplycard_id}     = params->{powersupplycard_id};
         $parameters{powersupplyport_number} = params->{powersupplyport_number};
     }
     
-    eval { Entity::Host->create(%parameters); };
+    eval {
+        $manager->createHost(%parameters);
+    };
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {

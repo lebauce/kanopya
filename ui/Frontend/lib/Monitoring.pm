@@ -769,8 +769,6 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
     
 };
 
-
-
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdisabled' => sub {
   my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp', service_provider_id => params->{extclusterid});
   #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
@@ -834,6 +832,212 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
+
+## BEGIN CP ###
+
+
+# -----------------------------------------------------------------------------#
+# -------------------------- NODE METRICS COMBINATIONS-------------------------#
+# -----------------------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/nodemetrics/combinations' => sub {
+    
+    #my @nodemetric_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId(param('extclusterid'));
+    my @nodemetric_combinations = NodemetricCombination->search(hash=>{});
+    
+    my @nodemetric_combinations_param;
+    foreach my $nodemetric_combination (@nodemetric_combinations){
+        my $hash = {
+            id           => $nodemetric_combination->getAttr(name => 'nodemetric_combination_id'),
+            label        => $nodemetric_combination->toString(),
+        };
+        push @nodemetric_combinations_param, $hash;
+        
+    }
+    
+    template 'nodemetric_combinations', {
+        title_page      => "nodemetrics Combinations Overview",
+        combinations  => \@nodemetric_combinations_param,
+        cluster_id      => params->{extclusterid},
+    };
+};
+
+get '/extclusters/:extclusterid/nodemetrics/combinations/:combinationid/delete' => sub {
+    
+    my $combination_id =  params->{combinationid};
+    my $cluster_id     =  params->{extclusterid};
+     
+    my $combination = NodemetricCombination->get('id' => $combination_id);
+    
+    my @conditions = NodemetricCondition->search(hash=>{});
+    
+    my @conditionsUsingCombination;
+    foreach my $condition (@conditions) {
+        if($condition->getAttr(name => 'nodemetric_condition_combination_id') eq $combination_id){
+            push @conditionsUsingCombination,$condition->getAttr(name => 'nodemetric_condition_id');
+        }
+    }
+
+    if( (scalar @conditionsUsingCombination) eq 0) {
+        $combination->delete();
+        redirect("/architectures/extclusters/$cluster_id/nodemetrics/combinations");
+    }else{
+        template 'nodemetric_combination_deletion_forbidden', {
+            title_page          => "nodemetric Combination Deletion Forbidden",
+            conditions          => \@conditionsUsingCombination,
+            combination_id      => $combination_id,
+            cluster_id          => $cluster_id,
+        }
+    }
+};
+
+
+
+get '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+    
+    my $adm    = Administrator->new();
+    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+    my @indicators;
+    
+    foreach my $indicator (@{$scom_indicatorset->{ds}}){
+        my $hash = {
+            id     => $indicator->{id},
+            label  => $indicator->{label},
+        };
+        push @indicators, $hash;
+    }
+    template 'nodemetric_combination_new', {
+        title_page     => "Nodemetric combination creation",
+        cluster_id     => param('extclusterid'),
+        indicators     => \@indicators,
+    };
+};
+
+
+post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
+    my $params = {
+        nodemetric_combination_formula => param('formula'),
+    };
+   my $cm = NodemetricCombination->new(%$params);
+   my $var = param('extclusterid');
+   redirect("/architectures/extclusters/$var/nodemetrics/combinations");
+};
+
+## END CP ###
+
+# -----------------------------------------------------------------------------#
+# --------------------- NODEMETRIC COMBINATION CONcombiDITIONS ---------------------#
+# -----------------------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/nodemetrics/conditions' => sub {
+    #my @nodemetric_conditions = NodemetricCondition->search(hash=>{'nodemetric_condition_service_provider_id' => params->{extclusterid}});
+    my @nodemetric_conditions = NodemetricCondition->search(hash=>{});
+    
+    my @nodemetric_conditions_param;
+    foreach my $nodemetric_condition (@nodemetric_conditions){
+        my $hash = {
+            id           => $nodemetric_condition->getAttr(name => 'nodemetric_condition_id'),
+            label        => $nodemetric_condition->toString(),
+        };
+        push @nodemetric_conditions_param, $hash;
+    }
+    
+    template 'nodemetric_combination_conditions', {
+        title_page      => "nodemetrics Conditions Overview",
+        conditions      => \@nodemetric_conditions_param,
+        cluster_id      => params->{extclusterid},
+    };
+};
+
+get '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/delete' => sub {
+    
+    my $condition_id   =  params->{conditionid};
+    my $cluster_id     =  params->{extclusterid};
+    
+    my $condition = NodemetricCondition->get('id' => $condition_id);
+    
+    my @rules = NodemetricRule->search(hash=>{});
+    
+    my @rulesUsingCondition;
+    
+    # Check if the condition is not used by a role to delete it
+    foreach my $rule (@rules) {
+       
+       my $id = $rule->getAttr(name => 'nodemetric_rule_id');
+       
+       if($rule->isCombinationDependant($condition_id)){
+            push @rulesUsingCondition,$id;
+        }
+    }
+    if( (scalar @rulesUsingCondition) eq 0) {
+        $condition->delete();
+        redirect("/architectures/extclusters/$cluster_id/nodemetrics/conditions");
+    }else{
+        template 'nodemetric_condition_deletion_forbidden', {
+            title_page         => "Nodemetric condition Deletion Forbidden",
+            rules              => \@rulesUsingCondition,
+            condition_id       => $condition_id,
+            cluster_id         => $cluster_id,
+        }
+    }
+};
+
+post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
+    my $comparatorHash = 
+    {
+        "le" => "<",
+        "lt" => "<=",
+        "eq" => "==",
+        "gt" => ">",
+        "ge" => ">=",
+    };
+    
+    my $params = {
+        nodemetric_condition_combination_id => param('combinationid'),
+        nodemetric_condition_comparator               => $comparatorHash->{param('comparator')},
+        nodemetric_condition_threshold                => param('threshold'),
+    };
+    my $nodemetric_condition = NodemetricCondition->new(%$params);
+    my $var = param('extclusterid');    
+    
+    if(defined param('rule')){
+       my $params_rule = {
+            nodemetric_rule_service_provider_id => param('extclusterid'),
+            nodemetric_rule_formula   => 'id'.($nodemetric_condition->getAttr(name => 'nodemetric_condition_id')),
+            nodemetric_rule_state     => 'disabled',
+            nodemetric_rule_action_id => $nodemetric_condition->getAttr(name => 'nodemetric_condition_id'),
+        };
+        my $nodemetric_rule = NodemetricRule->new(%$params_rule);
+        redirect("/architectures/extclusters/$var/externalnodes/:extnodeid/rules");
+    }else{
+        redirect("/architectures/extclusters/$var/nodemetrics/conditions");
+    }
+};
+
+get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
+    
+   my $cluster_id    = params->{extclusterid} || 0;
+    
+    my @combinations = NodemetricCombination->search(hash => {});
+    
+    my @combinationsInput;
+    
+    foreach my $combination (@combinations){
+        my $hash = {
+            id     => $combination->getAttr(name => 'nodemetric_combination_id'),
+            label  => $combination->toString(),
+        };
+        push @combinationsInput, $hash;
+    }
+    template 'nodemetric_condition_new', {
+        title_page    => "Condition creation",
+        combinations  => \@combinationsInput,
+        cluster_id    => param('extclusterid'),
+    };
+};
+
 # ----------------------------------------------------------------------------#
 # ------------------------NODE METRIC RULES ----------------------------------#
 #----------- -----------------------------------------------------------------#
@@ -878,7 +1082,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
     };
 };
 
-get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/details' => sub {
+get '/extclusters/:extclusterid/nodemetrics/combinations/conditions/rules/:ruleid/details' => sub {
     my $rule = AggregateRule->get('id' => param('ruleid') );
     my @conditions;
 
@@ -904,7 +1108,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     };
 };
 
-post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/edit' => sub {
+post '/extclusters/:extclusterid/nodemetrics/combinations/conditions/rules/:ruleid/edit' => sub {
     my $rule = AggregateRule->get('id' => param('ruleid'));
     my $checker = $rule->checkFormula(formula => param('formula'));
     
@@ -912,12 +1116,16 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:r
         $rule->setAttr(name => 'aggregate_rule_label',   value => param('label'));
         $rule->setAttr(name => 'aggregate_rule_formula', value => param('formula'));
         $rule->save();
-        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
     }else {
-        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
     }
 
 };
+
+
+
+
 
 
 ########################################

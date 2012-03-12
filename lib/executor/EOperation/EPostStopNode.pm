@@ -142,20 +142,6 @@ sub prepare {
     $self->loadContext(internal_cluster => $args{internal_cluster}, service => "bootserver");
     $self->loadContext(internal_cluster => $args{internal_cluster}, service => "executor");
 
-    # Get the export manager of the host etc container
-    my $container_access = $self->{_objs}->{host}->getEtcContainerAccess;
-    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $container_access->getExportManager);
-    $self->{_objs}->{eexport_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $self->{executor}->{obj}->getMasterNodeIp(),
-                                ip_destination => $container_access->getServiceProvider->getMasterNodeIp());
-
-    # Get the disk manager of the host etc container
-    my $etc_container = $self->{_objs}->{host}->getEtcContainerAccess->getContainer;
-    $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $etc_container->getDiskManager);
-    $self->{_objs}->{edisk_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $self->{executor}->{obj}->getMasterNodeIp(),
-                                ip_destination => $etc_container->getServiceProvider->getMasterNodeIp());
-
     # Instanciate tftpd component
     $self->{_objs}->{component_tftpd}
         = EFactory::newEEntity(
@@ -209,17 +195,6 @@ sub execute {
             mount_point => ''
         );
     }
-
-    $self->{_objs}->{eexport_manager}->removeExport(
-        container_access => $self->{_objs}->{host}->getEtcContainerAccess,
-        initiator        => $self->{_objs}->{host}->getAttr(name => 'host_initiatorname'),
-        econtext         => $self->{eexport_manager}->{econtext}
-    );
-
-    $self->{_objs}->{edisk_manager}->removeDisk(
-        container => $self->{_objs}->{host}->getEtcContainerAccess->getContainer,
-        econtext  => $self->{edisk_manager}->{econtext}
-    );
     
     $self->{_objs}->{host}->setAttr(name => "host_hostname", value => undef);
     $self->{_objs}->{host}->setAttr(name => "host_initiatorname", value => undef);

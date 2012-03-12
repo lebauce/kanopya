@@ -62,8 +62,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 15 },
   "ucs_state",
   { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
-  "ucs_blade_number",
-  { data_type => "integer", default_value => 0, is_nullable => 1 },
   "ucs_login",
   { data_type => "char", is_nullable => 0, size => 32 },
   "ucs_passwd",
@@ -86,7 +84,7 @@ Related object: L<AdministratorDB::Schema::Result::Outside>
 =cut
 
 __PACKAGE__->belongs_to(
-  "uc",
+  "unified_computing_system",
   "AdministratorDB::Schema::Result::Outside",
   { outside_id => "ucs_id" },
   { on_delete => "CASCADE", on_update => "CASCADE" },

@@ -45,13 +45,6 @@ __PACKAGE__->table("systemimage");
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 distribution_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 container_id
 
   data_type: 'integer'
@@ -84,13 +77,6 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     default_value => 0,
     extra => { unsigned => 1 },
-    is_nullable => 0,
-  },
-  "distribution_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
     is_nullable => 0,
   },
   "container_id",
@@ -135,22 +121,7 @@ __PACKAGE__->belongs_to(
   "systemimage",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "systemimage_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 distribution
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Distribution>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "distribution",
-  "AdministratorDB::Schema::Result::Distribution",
-  { distribution_id => "distribution_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container
@@ -165,17 +136,18 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Container",
   { container_id => "container_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-06 11:12:13
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Hq6t1kKdUV24HJmFfAuBxQ
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.systemimage_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
-);
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-06 14:51:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mV6UE8yXrR6j4pKcvMqz0Q
 
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

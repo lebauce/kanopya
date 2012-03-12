@@ -128,21 +128,32 @@ sub execute {
     my $directory = $config->{masterimages}->{directory};
     $directory =~ s/\/$//g;
     
+    # get the image size
+    $cmd = "du -s --bytes /tmp/$imagefile | awk '{print \$1}'";
+    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    my $image_size = $cmd_res->{stdout};  
+    
+    # create the directory for the image
+    $cmd = "mkdir -p $directory/$imagefile";
+    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    
+    # move image and metadata to the directory
+    $cmd = "mv /tmp/$imagefile /tmp/img-metadata.xml $directory/$imagefile";
+    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    
+    # delete uploaded archive
+    $cmd = "rm $self->{file}";
+    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
+    
     my $args = {
         masterimage_name => $metadata->{name},
         masterimage_file => "$directory/$imagefile/$imagefile",
         masterimage_desc => $metadata->{description},
         masterimage_os   => $metadata->{os},
+        masterimage_size => $image_size,
     };
     
     my $masterimage = Entity::Masterimage->new(%$args);
-    
-    $cmd = "mkdir -p $directory/$imagefile";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-    $cmd = "mv /tmp/$imagefile /tmp/img-metadata.xml $directory/$imagefile";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
-    $cmd = "rm $self->{file}";
-    $cmd_res = $self->{executor}->{econtext}->execute(command => $cmd);
     
     # set components
     foreach my $name (keys %{$metadata->{component}}) {

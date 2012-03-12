@@ -53,7 +53,9 @@ chomp $db_pwd;
 
 # Define globals
 my $schema_class_name = 'AdministratorDB::Schema';
+
 my $connect_info = [ 'dbi:mysql:administrator:localhost:3306', $db_user, $db_pwd];
+
 my $dump_dir = '/opt/kanopya/lib/administrator';
 
 if ($table eq 'all') {  # Update all existing schema and create schema for new tables

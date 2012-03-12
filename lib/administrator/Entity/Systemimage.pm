@@ -51,11 +51,6 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
-    distribution_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_extended  => 0
-    },
     container_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,

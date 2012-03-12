@@ -11,7 +11,7 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::UnifiedComputingSystem
+AdministratorDB::Schema::Result::UcsManager
 
 =cut
 
@@ -19,7 +19,7 @@ __PACKAGE__->table("ucs_manager");
 
 =head1 ACCESSORS
 
-=head2 ucs_id
+=head2 ucs_manager_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -29,7 +29,7 @@ __PACKAGE__->table("ucs_manager");
 =cut
 
 __PACKAGE__->add_columns(
-  "ucs_id",
+  "ucs_manager_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -37,7 +37,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
-__PACKAGE__->set_primary_key("ucs_id");
+__PACKAGE__->set_primary_key("ucs_manager_id");
 
 =head1 RELATIONS
 
@@ -50,7 +50,7 @@ Type: belongs_to
 __PACKAGE__->belongs_to(
   "ucs",
   "AdministratorDB::Schema::Result::Connector",
-  { connector_id => "ucs_id" },
+  { connector_id => "ucs_manager_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -61,7 +61,7 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Connector",
-    { "foreign.connector_id" => "self.ucs_id" },
+    { "foreign.connector_id" => "self.ucs_manager_id" },
     { cascade_copy => 0, cascade_delete => 1 }
 );
 

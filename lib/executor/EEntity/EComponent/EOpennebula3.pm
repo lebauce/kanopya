@@ -13,6 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EOpennebula3;
 use base "EEntity::EComponent";
+use base "EEntity::EHostManager";
 
 use strict;
 use warnings;
