@@ -37,7 +37,25 @@
     <tr><td class="label">Address :</td><td><% netapp_addr %></td></tr>
     <tr><td class="label">Login :</td><td><% netapp_login %></td></tr>
     <tr><td class="label">Password :</td><td>**********</td></tr>
-    <tr><td class="label">Data Provider :</td><td><% netapp_dataprovider %></td></tr>
-    <tr><td class="label">OU :</td><td><% netapp_ou %></td></tr>
     </tr>
+</table>
+
+<hr/>
+<span id="netappaggr" class="title simpleexpand">Aggregates</span>
+<table id="Xnetappaggr" class="detailspart">
+<ul>
+<% FOREACH aggregate in netapp_aggregates %>
+<li>Aggregate name : <% aggregate.name %></li>
+<% END %>
+</ul>
+</table>
+
+<hr/>
+<span id="netappvolumes" class="title simpleexpand">Volumes</span>
+<table id="Xnetappvolumes" class="detailspart">
+<ul>
+<% FOREACH volume in netapp_volumes %>
+<li>Volume name : <% volume.name %></li>
+<% END %>
+</ul>
 </table>

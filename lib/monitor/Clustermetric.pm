@@ -27,7 +27,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
 
 use constant ATTR_DEF => {
-    clustermetric_cluster_id               =>  {pattern       => '^.*$',
+    clustermetric_service_provider_id               =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},

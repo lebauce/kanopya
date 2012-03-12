@@ -39,17 +39,8 @@ sub addHost {
                                        "hostmodel_id", "host_mac_address",
                                        "host_serial_number", "host_ram" ]);
 
-    my $host_provider_id;
-    my $host_manager_id;
-    eval {
-        $host_provider_id = $self->getAttr(name => 'inside_id');
-        $host_manager_id = $self->getAttr(name => 'component_id');
-    };
-    if ($@) {
-        $host_provider_id = $self->getAttr(name => 'outside_id');
-        $host_manager_id = $self->getAttr(name => 'connector_id');
-    }
-    $log->info("HostManager::addHost $host_provider_id $host_manager_id\n");
+    my $host_provider_id = $self->getAttr(name => 'service_provider_id');
+    my $host_manager_id = $self->getAttr(name => 'entity_id');
 
     # Instanciate new Host Entity
     my $host;
@@ -133,19 +124,10 @@ sub createHost {
                                        "hostmodel_id", "host_mac_address",
                                        "host_serial_number", "host_ram" ]);
 
-    my $host_provider_id;
-    my $host_manager_id;
-    eval {
-        $host_provider_id = $self->getAttr(name => 'inside_id');
-        $host_manager_id = $self->getAttr(name => 'component_id');
-    };
-    if ($@) {
-        $host_provider_id = $self->getAttr(name => 'outside_id');
-        $host_manager_id = $self->getAttr(name => 'connector_id');
-    }
+    my $host_provider_id = $self->getAttr(name => 'service_provider_id');
+    my $host_manager_id = $self->getAttr(name => 'entity_id');
 
     $log->info("New Operation AddHost with attrs : " . Dumper(%args));
-    $log->info("HOST PROVIDER ID $host_provider_id HOST MANAGER ID $host_manager_id");
     Operation->enqueue(
         priority => 200,
         type     => 'AddHost',

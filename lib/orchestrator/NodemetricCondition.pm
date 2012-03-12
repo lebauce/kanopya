@@ -43,6 +43,21 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 toString
+
+    desc: return a string representation of the entity
+
+=cut
+
+sub toString {
+    my $self = shift;
+    my $combination_id = $self->getAttr(name => 'nodemetric_condition_combination_id');
+    my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
+    my $threshold      = $self->getAttr(name => 'nodemetric_condition_threshold');
+    
+    return NodemetricCombination->get('id'=>$combination_id)->toString().$comparator.$threshold;
+};
+
 sub evalOnOneNode{
     my $self = shift;
     my %args = @_;

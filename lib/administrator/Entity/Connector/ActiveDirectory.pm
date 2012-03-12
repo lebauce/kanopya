@@ -58,13 +58,24 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub getNodes {
     my $self = shift;
-    
+
+    return $self->retrieveNodes(
+        ad_host             => $self->getAttr(name => 'ad_host'),
+        ad_user             => $self->getAttr(name => 'ad_user'),
+        ad_pwd              => $self->getAttr(name => 'ad_pwd'),
+        ad_nodes_base_dn    => $self->getAttr(name => 'ad_nodes_base_dn'),
+    );
+}
+
+sub retrieveNodes {
+    my $self = shift;
+    my %args = @_;
 
     my ($ad_host, $ad_user, $ad_pwd, $ad_nodes_base_dn) = (
-        $self->getAttr(name => 'ad_host'),
-        $self->getAttr(name => 'ad_user'),
-        $self->getAttr(name => 'ad_pwd'),
-        $self->getAttr(name => 'ad_nodes_base_dn'),
+        $args{'ad_host'},
+        $args{'ad_user'},
+        $args{'ad_pwd'},
+        $args{'ad_nodes_base_dn'},
     );
     
     my $ldap = Net::LDAP->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
@@ -74,7 +85,6 @@ sub getNodes {
     $mesg = $ldap->search(
         base => $ad_nodes_base_dn,
         filter => "cn=*",
-        #base => "cn=computers,dc=hedera,dc=forest",
     );
     
     $mesg->code && die $mesg->error;
@@ -89,6 +99,23 @@ sub getNodes {
     $mesg = $ldap->unbind;   # take down session
     
     return \@nodes;
+}
+
+
+sub checkConf {
+    my $self = shift;
+    my ($conf) = @_;
+    
+    my $nodes = $self->retrieveNodes(
+        ad_host             => $conf->{ad_host},
+        ad_user             => $conf->{ad_user},
+        ad_pwd              => $conf->{ad_pwd},
+        ad_nodes_base_dn    => $conf->{ad_nodes_base_dn},
+    );
+    
+    my $node_count = scalar(@$nodes);
+    
+    return "Request success, $node_count node" . ($node_count > 1 ? 's' : '') . ' found in container';
 }
 
 1;

@@ -1,5 +1,6 @@
-# UnifiedComputingSystem.pm - This object allows to manipulate cluster configuration
+#    NetApp.pm - NetApp storage equipment
 #    Copyright 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,8 +13,6 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Created on 05 March 2012
 
 package Entity::ServiceProvider::Outside::Netapp;
 use base 'Entity::ServiceProvider::Outside';
@@ -46,6 +45,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getDefaultManager {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['category']);
+
+    if ($args{category} eq 'DiskManager') {
+        return $self->getConnector(category => "Storage", version => "1");
+    }
+}
+
 sub getNetapp {
     my $class = shift;
     my %args = @_;
@@ -59,7 +69,7 @@ sub create {
     my %args = @_;
 
     my $addrip = new NetAddr::IP($args{netapp_addr});
-    if(not defined $addrip) {
+    if (not defined $addrip) {
         $errmsg = "Netapp->create : wrong value for ip address!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -82,29 +92,20 @@ sub remove {
     $self->SUPER::delete();
 };
 
-sub login {
-
-    my $hostname = "89.31.149.89";
-    my $username = "kanopya";
-
-    my $netapp = NetApp::Filer->new({
-        # Required arguments
-        hostname        => $hostname,
-        # Optional arguments
-        username        => $username,
-        ssh_identify    => $ssh_identity,
-        ssh_command     => [ @ssh_command ],
-        protocol        => 'ssh' | 'telnet',
-        telnet_password => $telnet_password,
-        telnet_timeout  => $telnet_timeout,
-        cache_enabled   => 0 || 1,
-        cache_expiration => $cache_expiration,
-    });
+sub getMasterNodeIp {
+    my $self = shift;
+    return $self->{_dbix}->get_column('netapp_addr');
 }
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('netapp_name'). " ". $self->{_dbix}->get_column('netapp_addr');
+    my $string = $self->{_dbix}->get_column('netapp_name') . " "
+                 . $self->{_dbix}->get_column('netapp_addr');
     return $string;
 }
+
+sub getState {
+    return 'up';
+}
+
 1;

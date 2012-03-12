@@ -26,7 +26,7 @@ __PACKAGE__->table("clustermetric");
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 clustermetric_cluster_id
+=head2 clustermetric_service_provider_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -52,6 +52,13 @@ __PACKAGE__->table("clustermetric");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 class_type_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -62,7 +69,7 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "clustermetric_cluster_id",
+  "clustermetric_service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -80,7 +87,7 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "clustermetric_window_time",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-    "class_type_id",
+  "class_type_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -92,7 +99,22 @@ __PACKAGE__->set_primary_key("clustermetric_id");
 
 =head1 RELATIONS
 
-=head2 indicator
+=head2 class_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ClassType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "class_type",
+  "AdministratorDB::Schema::Result::ClassType",
+  { class_type_id => "class_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 clustermetric_indicator
 
 Type: belongs_to
 
@@ -101,30 +123,30 @@ Related object: L<AdministratorDB::Schema::Result::Indicator>
 =cut
 
 __PACKAGE__->belongs_to(
-  "indicator",
+  "clustermetric_indicator",
   "AdministratorDB::Schema::Result::Indicator",
   { indicator_id => "clustermetric_indicator_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 cluster
+=head2 clustermetric_service_provider
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Cluster>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "cluster",
-  "AdministratorDB::Schema::Result::Cluster",
-  { cluster_id => "clustermetric_cluster_id" },
+  "clustermetric_service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "clustermetric_service_provider_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-02-02 12:58:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cU9famXGyvu272hZDKoaSQ
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-08 10:27:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:87gvS0W5Rwc87SOeEfXPBw
 
 
 # You can replace this text with custom content, and it will be preserved on regeneration

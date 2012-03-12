@@ -45,7 +45,17 @@ function catchError(link) {
              }  
         });
 }
-   
+
+function loadLink(link) {
+    loading_start();
+    window.location= link;
+}
+
+
+$(window).unload(function(){
+    loading_stop();
+});
+
 /*********************************************
 	Initialize generic behaviors
 *********************************************/
@@ -55,5 +65,6 @@ function commonInit () {
 	
 	$('.editable_choice').click( toggleChoiceMode ).addClass('clickable');
 
+    loading_stop();
 }
 

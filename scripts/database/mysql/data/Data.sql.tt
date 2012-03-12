@@ -70,7 +70,11 @@ INSERT INTO `class_type` VALUES
 (54, 'NodemetricCombination'),
 (55, 'NodemetricCondition'),
 (56, 'NodemetricRule'),
-(57, 'Entity::Connector::NetappManager');
+(57, 'Entity::Connector::NetappManager'),
+(58, 'Entity::Connector::NetappLunManager'),
+(59, 'Entity::Connector::NetappVolumeManager'),
+(60, 'Entity::Container::NetappLun'),
+(61, 'Entity::Container::NetappVolume');
 
 
 --
@@ -372,8 +376,8 @@ INSERT INTO `connector_type` VALUES
 (1,'ActiveDirectory','1','DirectoryService'),
 (2,'Scom','1','MonitoringService'),
 (3,'UcsManager','1','Cloudmanager'),
-(4,'NetappManager','1','Storage'),
-(5,'NetappManager','1','Export');
+(4,'NetappLunManager','1','Storage'),
+(5,'NetappVolumeManager','1','Storage');
 
 --
 -- kernels

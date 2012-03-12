@@ -31,6 +31,14 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    aggregate_rule_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    aggregate_rule_service_provider_id =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 0},
     aggregate_rule_formula   =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -170,9 +178,18 @@ sub isEnabled(){
 sub getRules() {
     my $class = shift;
     my %args = @_;
-    my $state = $args{state};
+
+    my $state               = $args{'state'};
+    my $service_provider_id = $args{'service_provider_id'};
     
-    my @rules = AggregateRule->search(hash => {});
+    my @rules;
+    if (defined $service_provider_id) {
+        @rules = AggregateRule->search(hash => {'aggregate_rule_service_provider_id' => $service_provider_id});
+    } else {
+        @rules = AggregateRule->search(hash => {});
+    }
+    
+    
     switch ($state){
         case "all"{
             return @rules; #All THE rules
@@ -229,6 +246,41 @@ sub isCombinationDependant{
     my $rep = any {$_ eq $condition_id} @dep_cond_id;
     return $rep;
 }
+
+sub checkFormula {
+    my $class = shift;
+    my %args = @_;
+    
+    my $formula = (\%args)->{formula};
+    
+    
+    my @array = split(/(id\d+)/,$formula);;
+
+    for my $element (@array) {
+        if( $element =~ m/id\d+/)
+        {
+            if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
+                return {
+                    value     => '0',
+                    attribute => substr($element,2),
+                };
+            }
+        }
+    }
+    return {
+        value     => '1',
+    };
+}
+
+sub setAttr {
+    my $class = shift;
+    my %args = @_;
+    if ($args{name} eq 'aggregate_rule_formula'){
+        _verify($args{value});
+    }   
+    my $self = $class->SUPER::setAttr(%args);
+};
+
 
 1;
 

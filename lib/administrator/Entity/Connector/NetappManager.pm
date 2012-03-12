@@ -1,5 +1,6 @@
-#    UCSManager.pm - Cisco UCS connector
+#    NetappManager.pm - NetApp base manager
 #    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,15 +13,12 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Created on 05 March 2012
 
 package Entity::Connector::NetappManager;
-use base "Entity::Connector";
+use lib "/opt/kanopya/lib/external/NetApp";
 
 use warnings;
-
-use NetApp::Filer;
+use NetApp::API;
 
 use constant ATTR_DEF => {};
 
@@ -32,19 +30,35 @@ sub get {
 
     my $self = $class->SUPER::get(%args);
 
+    $self->init();
+
+    return $self;
+}
+
+sub init {
+    my $self = shift;
+
+    return if (defined $self->{api});
+
     my $netapp = Entity::ServiceProvider::Outside::Netapp->get(
-                  id => $self->getAttr(name => "outside_id")
-              );
-    $self->{api} = NetApp::Filer->new(
-                       proto    => "http",
-                       port     => 80,
-                       cluster  => $netapp->getAttr(name => "netapp_addr"),
+                     id => $self->getAttr(name => "service_provider_id")
+                 );
+
+    $self->{api} = NetApp::API->new(
+                       addr     => $netapp->getAttr(name => "netapp_addr"),
                        username => $netapp->getAttr(name => "netapp_login"),
                        passwd   => $netapp->getAttr(name => "netapp_passwd")
                    );
-    $self->{state} = ($self->{api}->login() ? "up" : "down");
 
-    return $self;
+    $self->{netapp} = $netapp;
+
+    eval {
+        $self->system_get_version();
+        $self->{state} = "up";
+    };
+    if ($@) {
+        $self->{state} = "down";
+    }
 }
 
 sub AUTOLOAD {
@@ -53,6 +67,10 @@ sub AUTOLOAD {
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
+
+    if (not defined $self->{api}) {
+        $self->init();
+    }
 
     return $self->{api}->$method(%args);
 }
@@ -64,24 +82,29 @@ sub DESTROY {
     }
 }
 
-sub startHost {
+=head2 getFreeSpace
+
+    Desc : Implement getFreeSpace from DiskManager interface.
+           This function returns the free space on all disks
+    args :
+
+=cut
+
+sub getFreeSpace {
     my $self = shift;
-    my %args = @_;
+	my $total_spare_cap = 0;
+    my @disks = $self->disks;
 
-#    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-}
+    for my $disk (@disks) {
+        my $raid_state = $disk->raid_state;
+        if (($raid_state eq "spare") ||
+            ($raid_state eq "pending") ||
+            ($raid_state eq "reconstructing")) {
+            $total_spare_cap += $disk->used_space;
+        }
+    }
 
-sub postStart {
-}
-
-sub stopHost {
-    my $self = shift;
-    my %args = @_;
-
-#    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
-
-#    my $sn = $args{host}->getAttr(name => "host_serial_number");
-#    $self->{api}->stop_service_profile(dn => $self->{ou} . "/" . $sn);
+    return $total_spare_cap;
 }
 
 1;
