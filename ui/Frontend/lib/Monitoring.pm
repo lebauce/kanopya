@@ -319,10 +319,10 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 	} else {
         while (my ($date, $value) = each %aggregate_combination) {				
                 my $dt = DateTime->from_epoch(epoch => $date);
-                my $date_string = $dt->mdy('-') . ' ' .$dt->hour_1().':'.$dt->minute();
+                my $date_string = $dt->strftime('%m-%d-%y %H:%M');
                 push @histovalues, [$date_string,$value];
             }		
-        $log->info('values sent to timed graph: '.Dumper \@histovalues);
+        # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }
 	to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
@@ -342,24 +342,30 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	my $indicator_unit =  params->{'unit'};
 	my $nodes_metrics; 
 	my $error;
+    
+    #we retrieve the nodemetric values
 	eval {
-		$nodes_metrics = $extcluster->getNodesMetrics(indicators => ["Memory/Available MBytes"], time_span => 3600);
+		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
 	};
+    #error catching
 	if ($@) {
 		$error="$@";
 		$log->error($error);
 		return to_json {error => $error};
+    #we catch the fact that there is no value available for the selected nodemetric
 	} elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0) {
 		$error='no values available for this metric';
 		$log->error($error);
 		return to_json {error => $error};
 	} else {
+        #we create an array containing the values, to be sorted
 		my @nodes_values_to_sort;
 		while (my ($node, $metric) = each %$nodes_metrics) {
-			push @nodes_values_to_sort, { node => $node, value => $metric };
+			push @nodes_values_to_sort, { node => $node, value => $metric->{$indicator} };
 		}
+        #we now sort this array
 		my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
-	
+        #we split the array into 2 distincts one, that will be returned to the monitor.js
 		my @nodes = map { $_->{node} } @sorted_nodes_values;
 		my @values = map { $_->{value} } @sorted_nodes_values;	
 		
@@ -1401,11 +1407,11 @@ sub _getCombinations(){
 	my $cluster_id = $template_config->{'cluster_id'};
 	my %errors;
 	my @combinations;
-	my @aggregate_combinations;
+	my @clustermetric_combinations;
 	
 	eval {
 		#@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
-    my @clustermetric_combinations = AggregateCombination->search(hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
+        @clustermetric_combinations = AggregateCombination->search(hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
 
 	};
 	if ($@) {
@@ -1413,13 +1419,13 @@ sub _getCombinations(){
 		$log->error($error);
 		$template_config->{'errors'}{'combinations'} = $error;
 		return %$template_config;
-	}elsif (scalar(@aggregate_combinations) == 0){
+	}elsif (scalar(@clustermetric_combinations) == 0){
 		my $error = 'No combination could be found for this external cluster';
 		$log->error($error);
 		$template_config->{'errors'}{'combinations'} = $error;
 		return %$template_config;
 	}else{
-		 for my $combi (@aggregate_combinations){
+		 for my $combi (@clustermetric_combinations){
 			my %combination;
 			$combination{'id'} = $combi->getAttr(name => 'aggregate_combination_id');
 			$combination{'label'} = $combi->toString();

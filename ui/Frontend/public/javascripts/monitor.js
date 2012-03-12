@@ -344,9 +344,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 		else{
 			document.getElementById('nodes_charts').style.display='block';
             var min = data.values[0];
-            data.values.reverse();
-            var max = data.values[0];
-            data.values.reverse();
+            var max = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
 			var max_nodes_per_graph = 100;
 			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
