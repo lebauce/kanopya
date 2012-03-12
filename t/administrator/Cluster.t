@@ -29,11 +29,11 @@ eval {
     lives_ok {
 		$kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
                                hash => {
-                                   cluster_name => 'adm'
+                                   cluster_name => 'Kanopya'
                                }
                            );
         $physical_hoster = $kanopya_cluster->getDefaultManager(category => 'HostManager');
-     } 'Retrieve the admin cluster';
+     } 'Retrieve the Kanopya cluster';
 
     isa_ok ($kanopya_cluster, 'Entity::ServiceProvider::Inside::Cluster');
     isa_ok ($physical_hoster, 'Entity::Component::Physicalhoster0');

@@ -28,6 +28,7 @@ test -x "/opt/kanopya/sbin/$EXEC" || exit 0
 # Defaults
 PERL5LIB=\
 /opt/kanopya/lib/executor/:\
+/opt/kanopya/lib/external/:\
 /opt/kanopya/lib/administrator/:\
 /opt/kanopya/lib/common:\
 /opt/kanopya/lib/orchestrator

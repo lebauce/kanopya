@@ -183,7 +183,7 @@ get '/clusters/users/:gpid' => sub {
 
 sub _users_list { return (); }
 get '/clusters/add' => sub {
-    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(hash=>{cluster_name => 'adm'});
+    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(hash=>{cluster_name => 'Kanopya'});
     my @ekernels = Entity::Kernel->getKernels(hash => {});
     my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
     my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});

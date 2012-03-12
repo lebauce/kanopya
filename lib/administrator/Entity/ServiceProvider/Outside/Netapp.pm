@@ -1,5 +1,6 @@
-# Netapp.pm - This object allows to manipulate cluster configuration
-#    Copyright 2011 Hedera Technology SAS
+#    NetApp.pm - NetApp storage equipment
+#    Copyright 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,15 +14,76 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 july 2010
 package Entity::ServiceProvider::Outside::Netapp;
 use base 'Entity::ServiceProvider::Outside';
 
+use NetAddr::IP;
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+use NetApp::Filer;
 
-use constant ATTR_DEF => {};
+my $log = get_logger("administrator");
+my $errmsg;
+
+use constant ATTR_DEF => {
+    netapp_name            => { pattern      => '.*',
+                             is_mandatory => 1,
+                           },
+    netapp_desc            => { pattern      => '.*',
+                             is_mandatory => 0,
+                           },
+    netapp_addr            => { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+                             is_mandatory => 1,
+                           },
+    netapp_login           => { pattern    => '.*',
+                             is_mandatory => 1,
+                           },
+    netapp_passwd          => { pattern    => '.*',
+                             is_mandatory => 1,
+                           },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetapp {
+    my $class = shift;
+    my %args = @_;
+    General::checkParams(args => \%args, required => ['hash']);
 
+    return $class->search(%args);
+}
+
+sub create {
+    my $self = shift;
+    my %args = @_;
+
+    my $addrip = new NetAddr::IP($args{netapp_addr});
+    if(not defined $addrip) {
+        $errmsg = "Netapp->create : wrong value for ip address!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    my $netapp = Entity::ServiceProvider::Outside::Netapp->new(
+        netapp_name            => $args{netapp_name},
+        netapp_desc            => $args{netapp_desc},
+        netapp_addr            => $args{netapp_addr},
+        netapp_login           => $args{netapp_login},
+        netapp_passwd          => $args{netapp_passwd},
+    );
+
+    return $netapp;
+
+}
+
+sub remove {
+    my $self = shift;
+    $self->SUPER::delete();
+};
+
+sub toString {
+    my $self = shift;
+    my $string = $self->{_dbix}->get_column('netapp_name'). " ". $self->{_dbix}->get_column('netapp_addr');
+    return $string;
+}
 1;

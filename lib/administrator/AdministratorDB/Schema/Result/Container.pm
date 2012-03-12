@@ -75,7 +75,7 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "container_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 service_provider
@@ -90,7 +90,7 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::ServiceProvider",
   { service_provider_id => "service_provider_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container_accesses
@@ -104,21 +104,6 @@ Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
 __PACKAGE__->has_many(
   "container_accesses",
   "AdministratorDB::Schema::Result::ContainerAccess",
-  { "foreign.container_id" => "self.container_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 distributions
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Distribution>
-
-=cut
-
-__PACKAGE__->has_many(
-  "distributions",
-  "AdministratorDB::Schema::Result::Distribution",
   { "foreign.container_id" => "self.container_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -169,14 +154,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-06 11:12:13
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UwFhMOzABsZ9/yx9xbW/sg
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-06 14:51:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3gMZVYm4fNmPRa4zMTAlAw
 
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.container_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
-);
 
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

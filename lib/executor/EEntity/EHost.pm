@@ -57,7 +57,7 @@ sub new {
                   );
 
     $self->{host_manager} = EFactory::newEEntity(
-                                data => $self->{virt_cluster}->getManager(
+                                data => $self->{sp}->getManager(
                                    id => $self->_getEntity->getAttr(name => "host_manager_id")
                                 )
                             );

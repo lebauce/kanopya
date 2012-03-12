@@ -6,7 +6,6 @@ use Administrator;
 use Entity::User;
 use Entity::Gp;
 use Log::Log4perl "get_logger";
-
 prefix '/rights';
 
 my $log = get_logger("webui");
@@ -62,7 +61,7 @@ sub _entities_list {
     foreach my $e (@entities) {
         my $tmp = {};
         $tmp->{selected} = 'selected' if $selected eq $e->getAttr('name' => lc($entitytype).'_id');
-        $tmp->{entity_id} = $e->{_entity_id};
+        $tmp->{entity_id} = $e->getAttr('name' => lc($entitytype).'_id');
         $tmp->{entity} = $e->toString();
         $tmp->{entitytype} = $entitytype;
         push @$entitylist, $tmp;
@@ -75,7 +74,8 @@ sub _users_list {
     my $users = [];
     foreach my $u (@eusers) {
         my $tmp = {};
-        $tmp->{entity_id} = $u->{_entity_id};
+        #$tmp->{entity_id} = $u->toString();
+        $tmp->{entity_id} = $u->getAttr('name' => 'user_id');
         $tmp->{user} = $u->toString();
         $tmp->{entitytype} = 'User';
         push @$users, $tmp;
@@ -190,13 +190,14 @@ get '/permissions/set/:consumertype/:consumerid/:consumedtype/:consumedid' => su
     };
 };
 
+
 post '/permissions/set' => sub {
     my $adm = Administrator->new;
     my @methods = param('methods');
     $adm->{'_rightchecker'}->updatePerms(
         consumer_id => param('consumer_id'),
         consumed_id => param('consumed_id'),
-        methods => \@methods
+        methods => \@methods 
     );
 };
 

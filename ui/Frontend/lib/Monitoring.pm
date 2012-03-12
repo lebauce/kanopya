@@ -343,7 +343,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	my $nodes_metrics; 
 	my $error;
 	eval {
-		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
+		$nodes_metrics = $extcluster->getNodesMetrics(indicators => ["Memory/Available MBytes"], time_span => 3600);
 	};
 	if ($@) {
 		$error="$@";

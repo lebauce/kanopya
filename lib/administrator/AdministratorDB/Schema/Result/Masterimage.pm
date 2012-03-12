@@ -50,6 +50,12 @@ __PACKAGE__->table("masterimage");
   is_nullable: 1
   size: 64
 
+=head2 masterimage_size
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -68,6 +74,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 255 },
   "masterimage_os",
   { data_type => "char", is_nullable => 1, size => 64 },
+  "masterimage_size",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("masterimage_id");
 
@@ -104,8 +112,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-05 17:35:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:a4PgasovTHX9/RR4Ysi2Qw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-07 16:19:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gT/8I6TVBLjqj+s1COhJvw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

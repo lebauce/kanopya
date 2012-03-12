@@ -47,10 +47,9 @@
 <table id="Xnetwork" class="detailspart list">
 <% FOREACH sp IN ucs_templates %>
 <tr>
-    <td class="italic" colspan="2"><% sp.name %> - <% sp.dn %></td>
+    <td class="italic" colspan="2"><ul><li><% sp.name %> - <% sp.dn %></ul></li><br /></td>
     </td>
 
-    <td class="actions" rowspan="2">
     </td>
 </tr>
 <% END %>
@@ -61,10 +60,8 @@
 <table id="Xnetwork" class="detailspart list">
 <% FOREACH sp IN ucs_serviceprofiles %>
 <tr>
-    <td class="italic" colspan="2"><% sp.name %> - <% sp.dn %></td>
+    <td class="italic" colspan="2"><ul><li><% sp.name %> - <% sp.dn %></ul></li></td>
     </td>
-
-    <td class="actions" rowspan="2">
     </td>
 </tr>
 <% END %>
@@ -73,12 +70,18 @@
 <hr/>
 <span id="ucs_blades" class="title simpleexpand">Blades</span>
 <table id="XBlades" class="detailspart">
+    <tr><td class="label">Blades number :</td><td><% ucs_blades.size %></td>
+
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href=""</a><br />
+        <span class="desc"></span>
+    </td></tr>
+
     <% FOREACH blade IN ucs_blades %>
     <tr>
-        <td class="italic"><% blade.model %></td>
+        <td class="italic"><ul><li><% blade.model %></ul></li></td>
         </td>
     </tr>
     <% END %>
-    <tr><td class="label">Blades number :</td><td><% ucs_blades.size %></td></tr>
     </tr>
 </table>

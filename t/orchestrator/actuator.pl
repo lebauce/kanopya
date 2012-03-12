@@ -9,7 +9,7 @@ use Administrator;
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 
 
-my $cluster_name = "adm";
+my $cluster_name = 'Kanopya';
 
 my $actuator = Actuator->new();
 

@@ -45,7 +45,7 @@ my %conf_data = (
     dbip => '127.0.0.1',
     admin_password => 'K4n0pY4', 
     kanopya_server_domain_name => 'hostname',
-    db_name => 'administrator',
+    db_name => 'kanopya',
     db_pwd => 'K4n0pY4',
     );
 

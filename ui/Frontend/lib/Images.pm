@@ -3,11 +3,13 @@ package Images;
 use Dancer ':syntax';
 
 use Administrator;
+use Entity::ServiceProvider;
+use Entity::Masterimage;
 use Entity::Systemimage;
-use Entity::Distribution;
 
 prefix '/systems';
 
+# retrieve systemimages list
 sub _systemimages {
 
     my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});
@@ -18,12 +20,6 @@ sub _systemimages {
         $tmp->{systemimage_id}   = $s->getAttr(name => 'systemimage_id');
         $tmp->{systemimage_name} = $s->getAttr(name => 'systemimage_name');
         $tmp->{systemimage_desc} = $s->getAttr(name => 'systemimage_desc');
-
-        eval {
-            my $edistro = Entity::Distribution->get(id => $s->getAttr(name => 'distribution_id'));
-            $tmp->{distribution} = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
-        };
-
         $tmp->{active} = $s->getAttr(name => 'active');
         if($tmp->{active}) {
             $tmp->{systemimage_usage} = $s->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared';
@@ -36,14 +32,41 @@ sub _systemimages {
     return $systemimages;
 }
 
+# retrieve data managers
+sub _datamanagers {
+    my @datamanagers = Entity::ServiceProvider->findManager(category => 'Storage');
+    return @datamanagers;
+}
+
+# retrieve storage providers list
+sub _storage_providers {
+    my @storages = _datamanagers();
+    my %temp;
+    foreach my $s (@storages) {
+        $temp{ $s->{service_provider_id} } = 0;
+    }
+    
+    my $sp = [];
+    foreach my $id (keys %temp) {
+        my $tmp = {};
+        my $sp_entity = Entity::ServiceProvider->get(id => $id);
+        $tmp->{id} = $id;
+        $tmp->{name} = $sp_entity->toString();
+        
+        push (@$sp, $tmp);
+    }
+    return $sp;
+}
+
+
 get '/images' => sub {
 
     my $can_create;
     my $methods = Entity::Systemimage->getPerms();
     if($methods->{'create'}->{'granted'}) { $can_create = 1 }
 
-    my @edistros = Entity::Distribution->getDistributions(hash => {});
-    if(not scalar(@edistros)) { $can_create = 0 }
+    my @masterimgs = Entity::Masterimage->getMasterimages(hash => {});
+    if(not scalar(@masterimgs)) { $can_create = 0 }
 
     template 'images', {
         title_page         => 'Systems - System images',
@@ -54,7 +77,7 @@ get '/images' => sub {
 
 get '/images/add' => sub {
     my @esystemimages = Entity::Systemimage->getSystemimages(hash => {});
-    my @edistros = Entity::Distribution->getDistributions(hash => {});
+    my @masterimages = Entity::Masterimage->getMasterimages(hash => {});
     
     my $systemimage = [];
     foreach my $s (@esystemimages){
@@ -64,28 +87,31 @@ get '/images/add' => sub {
         push (@$systemimage, $tmp); 
     }
     
-    my $distro = [];
-    foreach my $d (@edistros){
+    my $masterimgs = [];
+    foreach my $d (@masterimages){
         my $tmp = {};
-        $tmp->{id} = $d->getAttr(name => 'distribution_id');
-        $tmp->{name} = join(' ',$d->getAttr(name =>'distribution_name'), $d->getAttr(name =>'distribution_version'));
-        push (@$distro, $tmp);        
+        $tmp->{id} = $d->getAttr(name => 'masterimage_id');
+        $tmp->{name} = $d->getAttr(name =>'masterimage_name');
+        push (@$masterimgs, $tmp);        
     }
     
+    my $storages = _storage_providers();
+    
     template 'form_addimages', {
-        title_page          => 'Systems - System images creation',
-        systemimages_list   => $systemimage,
-        distributions_list  => $distro
+        title_page            => 'Systems - System images creation',
+        systemimages_list     => $systemimage,
+        masterimages_list     => $masterimgs,
+        storageproviders_list => $storages
     }, { layout => '' };
 };
 
 post '/images/add' => sub {
     my $adm = Administrator->new;
     # system image create from another system image (clone)
-    # distribution_id query parameter contains system image source id 
+    # masterimage_id query parameter contains system image source id 
     if(params->{source} eq 'systemimage') {
         eval {
-            my $esystemimage = Entity::Systemimage->get(id => params->{systemimage_id});
+            my $esystemimage = Entity::Systemimage->get(id => params->{masterimage_id});
             $esystemimage->clone(
                 systemimage_name => params->{systemimage_name},
                 systemimage_desc => params->{systemimage_desc},
@@ -104,13 +130,13 @@ post '/images/add' => sub {
             redirect '/systems/images';
         }         
          
-    } # system image creation from a distribution
-    elsif(params->{source} eq 'distribution') {    
+    } # system image creation from a masterimage
+    elsif(params->{source} eq 'masterimage') {    
         eval {
             my %parameters = (
                 systemimage_name => params->{systemimage_name},
-                 systemimage_desc => params->{systemimage_desc},
-                 distribution_id => params->{distribution_id}, 
+                systemimage_desc => params->{systemimage_desc},
+                masterimage_id   => params->{masterimage_id}, 
             );        
              Entity::Systemimage->create(%parameters); 
         };     
@@ -193,76 +219,70 @@ get '/images/:imageid/deactivate' => sub {
 };
 
 get '/images/:imageid/installcomponent' => sub {
-    my $adm = Administrator->new;
-    my $systemimage_id = params->{imageid};
-    my ($edistribution, $esystemimage, $systemimage_components, $distribution_components);
-    eval {
-        $esystemimage = Entity::Systemimage->get(id => $systemimage_id);
-        $systemimage_components = $esystemimage->getInstalledComponents();
-        $edistribution = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
-        $distribution_components = $edistribution->getProvidedComponents();
-    };
-    if($@) {
-        my $exception = $@;
-        if(Kanopya::Exception::Permission::Denied->caught()) {
-            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
-            redirect '/permission_denied';    
-        }
-        else { $exception->rethrow(); }
-    }
-    else {    
-        my $components = []; 
-        foreach my $dc  (@$distribution_components) {    
-            my $found = 0;
-            foreach my $sic (@$systemimage_components) {
-                if($sic->{component_type_id} eq $dc->{component_type_id}) { $found = 1; }
-            }
-            if(not $found) { push @$components, $dc; };
-        } 
-        
-        template 'form_installcomponents', {
-            title_page          => 'Systems - System images creation',
-            systemimage_id   => $systemimage_id,
-            systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'),
-            components_list  => $components
-        }, { layout => '' };
-    }
+    #~ my $adm = Administrator->new;
+    #~ my $systemimage_id = params->{imageid};
+    #~ my ($edistribution, $esystemimage, $systemimage_components, $distribution_components);
+    #~ eval {
+        #~ $esystemimage = Entity::Systemimage->get(id => $systemimage_id);
+        #~ $systemimage_components = $esystemimage->getInstalledComponents();
+        #~ $edistribution = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
+        #~ $distribution_components = $edistribution->getProvidedComponents();
+    #~ };
+    #~ if($@) {
+        #~ my $exception = $@;
+        #~ if(Kanopya::Exception::Permission::Denied->caught()) {
+            #~ $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            #~ redirect '/permission_denied';    
+        #~ }
+        #~ else { $exception->rethrow(); }
+    #~ }
+    #~ else {    
+        #~ my $components = []; 
+        #~ foreach my $dc  (@$distribution_components) {    
+            #~ my $found = 0;
+            #~ foreach my $sic (@$systemimage_components) {
+                #~ if($sic->{component_type_id} eq $dc->{component_type_id}) { $found = 1; }
+            #~ }
+            #~ if(not $found) { push @$components, $dc; };
+        #~ } 
+        #~ 
+        #~ template 'form_installcomponents', {
+            #~ title_page          => 'Systems - System images creation',
+            #~ systemimage_id   => $systemimage_id,
+            #~ systemimage_name => $esystemimage->getAttr(name => 'systemimage_name'),
+            #~ components_list  => $components
+        #~ }, { layout => '' };
+    #~ }
 };
 
 post '/images/:imageid/installcomponent' => sub {
-    my $adm = Administrator->new;    
-    eval {
-        my $esystemimage = Entity::Systemimage->get(id => params->{imageid});
-        $esystemimage->installComponent(component_type_id => params->{component_type_id});
-    };
-    if($@) {
-        my $exception = $@;
-        if(Kanopya::Exception::Permission::Denied->caught()) {
-            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
-            redirect '/permission_denied';    
-        }
-        else { $exception->rethrow(); }
-    }
-    else {    
-        $adm->addMessage(from => 'Administrator', level => 'info', content => 'new component installation added to execution queue'); 
-        redirect '/systems/images/'.params->{imageid};
-    } 
+    #~ my $adm = Administrator->new;    
+    #~ eval {
+        #~ my $esystemimage = Entity::Systemimage->get(id => params->{imageid});
+        #~ $esystemimage->installComponent(component_type_id => params->{component_type_id});
+    #~ };
+    #~ if($@) {
+        #~ my $exception = $@;
+        #~ if(Kanopya::Exception::Permission::Denied->caught()) {
+            #~ $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            #~ redirect '/permission_denied';    
+        #~ }
+        #~ else { $exception->rethrow(); }
+    #~ }
+    #~ else {    
+        #~ $adm->addMessage(from => 'Administrator', level => 'info', content => 'new component installation added to execution queue'); 
+        #~ redirect '/systems/images/'.params->{imageid};
+    #~ } 
 };
 
 get '/images/:imageid' => sub {
 
     my $activate;
     my $active;
-    my $distribution;
     my $systemimage_usage;
 
     my $esystemimage = Entity::Systemimage->get(id => param('imageid'));
     my $methods = $esystemimage->getPerms();
-   
-    eval {    
-        my $edistro = Entity::Distribution->get(id => $esystemimage->getAttr(name => 'distribution_id'));
-        $distribution = $edistro->getAttr(name =>'distribution_name')." ".$edistro->getAttr(name => 'distribution_version');
-    };
 
     $active = $esystemimage->getAttr(name => 'active');
        
@@ -287,7 +307,6 @@ get '/images/:imageid' => sub {
         can_deactivate        => $methods->{'deactivate'}->{'granted'} && $active,
         can_delete            => $methods->{'remove'}->{'granted'} && ! $active,
         can_installcomponent  => $methods->{'installcomponent'}->{'granted'} && ! $active,
-        distribution          => $distribution,          
         systemimage_usage     => $systemimage_usage,     
         systemimage_id        => param('imageid'),     
         systemimage_name      => $esystemimage->getAttr(name => 'systemimage_name'), 
@@ -295,4 +314,19 @@ get '/images/:imageid' => sub {
         components_list       => $components_list,
         components_count      => $nb + 1,
      };
+};
+
+get '/images/diskmanagers/:storageid' => sub {
+    my $id = param('storageid');
+    my $str = '';
+    my @managers = _datamanagers();
+    foreach my $manager (@managers) {
+        if($manager->{service_provider_id} eq $id) {
+            $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
+        }
+    }
+    
+    
+    content_type('text/html');
+    return $str;
 };

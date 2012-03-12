@@ -1,6 +1,6 @@
 # ECloneSystemimage.pm - Operation class implementing System image cloning operation
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2010-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +15,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
 =head1 NAME
 
@@ -173,12 +172,10 @@ sub prepare {
     }
 
     # Check if disk manager has enough free space
-    my $devices    = $self->{_objs}->{systemimage_source}->getDevices;
-    my $neededsize = $devices->{etc}->getAttr(name => 'container_size') +
-                     $devices->{root}->getAttr(name => 'container_size');
+    my $neededsize = $self->{_objs}->{systemimage_source}->getDevice->getAttr(name => 'container_size');
     my $freespace  = $disk_manager->getFreeSpace;
 
-    $log->debug("Size needed for systemimage devices : $neededsize M, freespace left : $freespace M");
+    $log->debug("Size needed for systemimage device : $neededsize M, freespace left : $freespace M");
     if($neededsize > $freespace) {
         $errmsg = 'EOperation::ECloneSystemimage->prepare : not enough freespace on ' .
                   'the disk manager ($freespace M left)';
@@ -206,10 +203,10 @@ sub execute {
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
 
-    $esystemimage->create(devs            => $self->{_objs}->{systemimage_source}->getDevices(),
-                          edisk_manager   => $self->{_objs}->{edisk_manager},
-                          econtext        => $self->{executor}->{econtext},
-                          erollback       => $self->{erollback});
+    $esystemimage->create(src_container => $self->{_objs}->{systemimage_source}->getDevice,
+                          edisk_manager => $self->{_objs}->{edisk_manager},
+                          econtext      => $self->{executor}->{econtext},
+                          erollback     => $self->{erollback});
 
     $self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(
         systemimage_source_id => $self->{_objs}->{systemimage_source}->getAttr(name => 'systemimage_id')
@@ -224,7 +221,7 @@ __END__
 
 =head1 AUTHOR
 
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
+Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut

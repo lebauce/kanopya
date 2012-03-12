@@ -15,6 +15,7 @@
 
 package EEntity::EComponent::EPhysicalhoster0;
 use base "EEntity::EComponent";
+use base "EEntity::EHostManager";
 
 use strict;
 use warnings;
@@ -26,44 +27,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
 my $errmsg;
 
-
-=head2 createHost
-
-=cut
-
-sub createHost {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "processormodel_id", "host_core", "kernel_id",
-                                       "hostmodel_id", "host_mac_address",
-                                       "host_serial_number", "host_ram" ]);
-
-    if (defined $args{erollback}) { delete $args{erollback}; }
-    if (defined $args{econtext})  { delete $args{econtext}; }
-
-    my $host = $self->_getEntity()->addHost(%args);
-
-    #TODO: insert erollback ?
-    return $host;
-}
-
-=head2 removeHost
-
-=cut
-
-sub removeHost {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "host" ]);
-
-    my $host = $self->_getEntity()->delHost(%args);
-
-    #TODO: insert erollback ?
-}
 
 =head2 startHost
 

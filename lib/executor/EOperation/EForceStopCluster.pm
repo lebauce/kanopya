@@ -176,34 +176,6 @@ sub execute {
             );
         }
 
-        eval {
-            my $container_access = $node->getEtcContainerAccess;
-            my $container        = $container_access->getContainer;
-            my $eexport_manager  = EFactory::newEEntity(data => $container_access->getExportManager);
-            my $edisk_manager    = EFactory::newEEntity(data => $container->getDiskManager);
-
-            # The storage provider for export and disk creation should be
-            # the same for a container, so use the same econtext.
-            my $storage_provider = $container_access->getServiceProvider;
-            my $econtext = EFactory::newEContext(
-                               ip_source      => $self->{executor}->{obj}->getMasterNodeIp(),
-                               ip_destination => $storage_provider->getMasterNodeIp()
-                           );
-
-            $eexport_manager->removeExport(
-                container_access => $container_access,
-                initiator        => $node->getAttr(name => 'host_initiatorname'),
-                econtext         => $econtext
-            );
-
-            $edisk_manager->removeDisk(container => $container , econtext  => $econtext);
-        };
-        if ($@) {
-            my $error = $@;
-            $errmsg = "Problem with node <" . $node->getAttr(name => "host_id") .
-                      "> while removing export : $error";
-            $log->info($errmsg);
-        }
         $node->setAttr(name => "host_hostname", value => undef);
         $node->setAttr(name => "host_initiatorname", value => undef);
 

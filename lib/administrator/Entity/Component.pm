@@ -273,8 +273,8 @@ B<throws>  : None
 sub toString {
     my $self = shift;
 
-    my $component_name = $self->{_dbix}->component_type->get_column('component_name');
-    my $component_version = $self->{_dbix}->component_type->get_column('component_version');
+    my $component_name = $self->{_dbix}->parent->component_type->get_column('component_name');
+    my $component_version = $self->{_dbix}->parent->component_type->get_column('component_version');
 
     return $component_name . " " . $component_version;
 }
