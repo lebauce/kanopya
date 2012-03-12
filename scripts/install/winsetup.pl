@@ -156,20 +156,13 @@ else {
     print "User $db_user already exists\n";
 }
 
-#We grant all privileges to administrator database for $db_user
-
-$cmd = "mysql -h $dbip  -P $dbport -u root -p$root_passwd -e \"use mysql; SHOW GRANTS for $db_user;\"";
-my $grant = `$cmd 2>&1` ;
+#We grant all privileges to kanopya database for $db_user
 my $db_name = $conf_data{db_name};
-print $grant."\n";
- if ($grant !~ m/$db_name/ ) {
-    print "granting all privileges on $db_name database to $db_user , please insert root password...\n";
-    $cmd = "mysql -h $dbip  -P $dbport -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user' WITH GRANT OPTION\"";
-    $exec = `$cmd 2>&1`;
-    print "done\n";
-}else {
-    print "User seems to have good privileges\n";
-}
+
+print "granting all privileges on $db_name database to $db_user , please insert root password...\n";
+$cmd = "mysql -h $dbip  -P $dbport -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON $db_name.* TO '$db_user' WITH GRANT OPTION\"";
+$exec = `$cmd 2>&1`;
+print "done\n";
 
 #We now generate the database schemas
 print "generating database schemas...";
