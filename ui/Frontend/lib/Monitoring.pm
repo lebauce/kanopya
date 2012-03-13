@@ -286,7 +286,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     
 	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
 	if ($start eq '') {
-		$start = DateTime->now;
+		$start = DateTime->now->set_time_zone('local');
 		$start->subtract( days => 1 );
         $start_timestamp = $start->epoch(); 
 		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
@@ -296,7 +296,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     }
         
 	if ($stop eq '') {
-		$stop = DateTime->now;
+		$stop = DateTime->now->set_time_zone('local');
         $stop_timestamp = $stop->epoch(); 
 		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
 	} else {
