@@ -215,19 +215,19 @@ sub clone {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args=>\%args,required=>["systemimage_name", "systemimage_desc"]);
+    General::checkParams(args => \%args, required=>[ "systemimage_name", "systemimage_desc" ]);
 
     my $sysimg_id = $self->getAttr(name => 'systemimage_id');
     if (! defined $sysimg_id) {
-        $errmsg = "Entity::Systemimage->clone needs a distribution_id parameter!";
+        $errmsg = "Entity::Systemimage->clone needs a systemimage_id parameter!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     $args{systemimage_id} = $sysimg_id;
     $log->debug("New Operation CloneSystemimage with attrs : " . Dumper(%args));
     Operation->enqueue(priority => 200,
-                   type     => 'CloneSystemimage',
-                   params   => \%args);
+                       type     => 'CloneSystemimage',
+                       params   => \%args);
        
 }
 

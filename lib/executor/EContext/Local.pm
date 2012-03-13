@@ -120,6 +120,7 @@ sub execute {
     $result->{stderr} = `cat /tmp/EContext.stderr`;
     $log->debug("Command stdout is : '$result->{stdout}'");
     $log->debug("Command stderr is : '$result->{stderr}'");
+    $log->debug("Command exitcode is : '$result->{exitcode}'");
     #if($result->{stderr}) {
         #throw Kanopya::Exception::Execution(
             #error => "EContext::Local->execute : got stderr: $result->{stderr}");

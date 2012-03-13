@@ -72,6 +72,7 @@ __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Container",
   { "foreign.container_id" => "self.lvm_container_id" },
-  { cascade_copy => 0, cascade_delete => 1 });
+  { cascade_copy => 0, cascade_delete => 1 }
+);
 
 1;

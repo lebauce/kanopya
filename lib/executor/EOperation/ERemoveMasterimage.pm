@@ -46,6 +46,7 @@ use EFactory;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Masterimage;
+use File::Basename;
 
 our $VERSION = '1.00';
 my $log = get_logger("executor");
@@ -65,6 +66,8 @@ sub prepare {
     General::checkParams(args => \%args, required => ["internal_cluster"]);
     
     my $params = $self->_getOperation()->getParams();
+
+    General::checkParams(args => $params, required => [ "masterimage_id" ]);
 
     $self->{_objs} = {};
     $self->{executor} = {};
@@ -87,8 +90,15 @@ sub execute {
     $self->SUPER::execute();
 
     # delete master image directory
-    my $directory = $self->{_objs}->{masterimage}->getAttr(name => 'masterimage_file');
-    my $cmd = "rm -rf \$(dirname $directory)";
+    my $directory = dirname($self->{_objs}->{masterimage}->getAttr(name => 'masterimage_file'));
+
+    if (dirname($directory) -eq '/') {
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Sounld not remove $directory, aborting..."
+              );
+    }
+
+    my $cmd = "rm -rf $directory";
     
     $self->{executor}->{econtext}->execute(command => $cmd);
     $self->{_objs}->{masterimage}->delete();

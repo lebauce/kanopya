@@ -4,7 +4,6 @@ use Dancer ':syntax';
 
 use Log::Log4perl "get_logger";
 use Administrator;
-use NetApp::Filer;
 use Entity::ServiceProvider::Outside::Netapp;
 use Entity::Connector::NetappVolumeManager;
 use Entity::Connector::NetappLunManager;

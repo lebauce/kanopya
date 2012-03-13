@@ -37,6 +37,7 @@ use warnings;
 
 use Log::Log4perl "get_logger";
 use Operation;
+use Data::Dumper;
 
 my $log = get_logger("executor");
 
@@ -80,6 +81,8 @@ sub connect {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    return undef;
 }
 
 =head2 disconnect
@@ -93,6 +96,8 @@ sub disconnect {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    return undef;
 }
 
 1;

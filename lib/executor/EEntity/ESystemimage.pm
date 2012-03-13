@@ -48,16 +48,18 @@ sub create {
     my $cmd_res;
 
     General::checkParams(args     => \%args,
-                         required => [ "edisk_manager", "src_container",
+                         required => [ "edisk_manager", "esrc_container",
                                        "erollback", "econtext" ]);
 
     $log->info('Device creation for new systemimage');
 
+    my $esource_container = $args{esrc_container};
+
     # Creation of the device based on distribution device
     my $container = $args{edisk_manager}->createDisk(
-                        name       => $self->_getEntity()->getAttr(name => 'systemimage_name'),
-                        size       => $args{src_container}->getAttr(name => 'container_size') . "B",
-                        filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
+                        name       => $self->_getEntity->getAttr(name => 'systemimage_name'),
+                        size       => $esource_container->_getEntity->getAttr(name => 'container_size') . "B",
+                        filesystem => $esource_container->_getEntity->getAttr(name => 'container_filesystem'),
                         econtext   => $args{edisk_manager}->{econtext},
                         erollback  => $args{erollback}
                     );
@@ -66,8 +68,7 @@ sub create {
     $log->info('Fill the container with source data for new systemimage');
 
     # Get the corresponding EContainer
-    my $esource_container = EFactory::newEEntity(data => $args{src_container});
-    my $edest_container   = EFactory::newEEntity(data => $container);
+    my $edest_container = EFactory::newEEntity(data => $container);
 
     $esource_container->copy(dest      => $edest_container,
                              econtext  => $args{econtext},

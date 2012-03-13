@@ -187,9 +187,6 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-12 11:00:54
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dLybpiYWFkKChclPS/E3WQ
 
-
-# You can replace this text with custom content, and it will be preserved on regeneration
-
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
