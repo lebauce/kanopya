@@ -24,8 +24,11 @@ my $master_archive = dirname(abs_path($0)) .
 
 use_ok ('Administrator');
 use_ok ('Executor');
+use_ok ('EFactory');
+use_ok ('EContext');
 use_ok ('Entity::Masterimage');
 use_ok ('Entity::Systemimage');
+use_ok ('Entity::ServiceProvider::Inside::Cluster');
 
 # Test the existance of the master image test file.
 if(! -e $master_archive) {
@@ -67,13 +70,48 @@ eval {
     lives_ok { $executor->oneRun(); } 'DeployMasterimage operation execution succeed';
 
 	my $master_image;
-	lives_ok { 
+	lives_ok {
 		$master_image = Entity::Masterimage->find(
                             hash => {
                                 masterimage_name => $master_name,
                             }
                         );
 	} 'Retrieve master image';
+
+    # Create and export a container for file image hosting (lvm2/Nfsd3)
+    my ($kpc_cluster, $disk_manager, $export_manager);
+    lives_ok {
+        $kpc_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                           hash => { cluster_name => 'Kanopya' }
+                       );
+
+        $edisk_manager   = EFactory::newEEntity(
+                               data => $kpc_cluster->getComponent(name => "Lvm", version => "2")
+                           );
+        $eexport_manager = EFactory::newEEntity(
+                               data => $kpc_cluster->getComponent(name => "Nfsd", version => "3")
+                           );
+    } 'Get KPC cluster, disk manager ans export manager instances';
+
+    my $econtext;
+    lives_ok {
+        $econtext = EContext::Local->new(local => '127.0.0.1');
+    } 'Instanciate an econtext';
+
+    my $container;
+    lives_ok {
+        $container = $edisk_manager->createDisk(name       => 'test_volume_for_nfs_export',
+                                                size       => '10G',
+                                                filesystem => 'ext3',
+                                                econtext   => $econtext);
+    } 'Create a large lvm volume (10G)';
+
+    my $container_access;
+    lives_ok {
+        $container_access = $eexport_manager->createExport(container   => $container,
+                                                           export_name => 'test_volume_for_nfs_export',
+                                                           econtext    => $econtext);
+    } 'Create nfs export for file image hosting';
 
     # Add system image from distribution
     my $systemimage_name = 'TestScenario';
@@ -152,6 +190,16 @@ eval {
 		Entity::Systemimage->get(id => $systemimage_id);
 	} 'Kanopya::Exception::DB',
       'Systemimage removed ' . $systemimage_name . ', id ' . $systemimage_id;
+
+    lives_ok {
+        $eexport_manager->removeExport(container_access => $container_access,
+                                       econtext         => $econtext);
+    } 'Remove nfs export for file image hosting';
+
+    lives_ok {
+        $edisk_manager->removeDisk(container => $container,
+                                   econtext  => $econtext);
+    } 'Remove large lvm volume';
 
     $db->txn_rollback;
 
