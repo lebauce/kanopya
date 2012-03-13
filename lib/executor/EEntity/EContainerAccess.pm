@@ -118,8 +118,8 @@ sub copy {
 sub resize {
     my $self = shift;
     my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'size', 'econtext' ]);
+    # TODO resize implementation
+    #General::checkParams(args => \%args, required => [ 'size', 'econtext' ]);
 }
 
 =head2 mount
