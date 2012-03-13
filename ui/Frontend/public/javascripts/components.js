@@ -36,23 +36,25 @@ $(document).ready(function(){
 	function save () {
 		var conf = buildConf( $('.elem_root') );
         var params = { conf : JSON.stringify(conf) };
-
         // Manage links depending of entity Components or Connectors
         // TODO better management / unhardcode: currently target is extcluster for connector and cluster for component
         var instanceid;        
         var route;
-        var target;        
+        var target;
+        var serviceprovider_id;        
         if (conf['connector_id'] != undefined) {
             instanceid = conf['connector_id'];
             route = 'connectors';
-            target = 'extclusters'
+            target = 'extclusters';
+            serviceprovider_id = conf['serviceprovider_id'];
         } else {
             instanceid = conf['component_id'];
             route = 'components';
             target = 'clusters';
+            serviceprovider_id = conf['cluster_id'];
         }
         var save_component_conf_link = '/systems/' + route + '/' + instanceid + '/saveconfig';
-        var redirect_link            = '/architectures/' + target + '/' + conf['serviceprovider_id'];
+        var redirect_link            = '/architectures/' + target + '/' + serviceprovider_id;
 
 		$.get(save_component_conf_link, params, function(resp) {
 			//loading_stop();
