@@ -45,13 +45,12 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'name', 'size', 'filesystem', 'econtext', 'vg_id', 'vg_name' ]);
+                         required => [ 'name', 'size', 'filesystem', 'econtext', 'vg_id' ]);
 
     my $lv_id = $self->lvCreate(lvm2_vg_id         => $args{vg_id},
                                 lvm2_lv_name       => $args{name},
                                 lvm2_lv_filesystem => $args{filesystem},
                                 lvm2_lv_size       => $args{size},
-                                lvm2_vg_name       => $args{vg_name},
                                 econtext           => $args{econtext});
 
     my $container = $self->_getEntity()->addContainer(lv_id => $lv_id);
@@ -116,11 +115,13 @@ sub lvCreate{
     General::checkParams(args     => \%args,
                          required => [ "lvm2_lv_name", "lvm2_lv_size",
                                        "lvm2_lv_filesystem", "econtext",
-                                       "lvm2_vg_id", "lvm2_vg_name" ]);
+                                       "lvm2_vg_id" ]);
 
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 
-    my $command = "lvcreate $args{lvm2_vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}";
+    my $vg_name = $self->_getEntity()->getVg(lvm2_vg_id => $args{lvm2_vg_id});
+
+    my $command = "lvcreate $vg_name -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}";
     $log->debug($command);
 
     my $ret = $args{econtext}->execute(command => $command);
@@ -130,18 +131,17 @@ sub lvCreate{
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
     
-    my $newdevice = "/dev/$args{lvm2_vg_name}/$args{lvm2_lv_name}";
+    my $newdevice = "/dev/$vg_name/$args{lvm2_lv_name}";
     if (! defined $args{"noformat"}){
         $self->mkfs(device => $newdevice, fstype => $args{lvm2_lv_filesystem}, econtext => $args{econtext});
     }
     delete $args{noformat};
     
     $self->vgSpaceUpdate(lvm2_vg_id   => $args{lvm2_vg_id},
-                         lvm2_vg_name => $args{lvm2_vg_name},
+                         lvm2_vg_name => $vg_name,
                          econtext     => $args{econtext});
 
     delete $args{econtext};
-    delete $args{lvm2_vg_name};
     
     return $self->_getEntity()->lvCreate(%args);
 }
