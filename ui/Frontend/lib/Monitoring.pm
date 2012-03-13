@@ -311,11 +311,11 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     if ($@) {
 		$error="$@";
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
 		$error='no values could be computed for this combination';
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} else {
         while (my ($date, $value) = each %aggregate_combination) {				
                 my $dt = DateTime->from_epoch(epoch => $date);
@@ -324,7 +324,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
             }		
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }
-	to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
+	return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
   
   
@@ -369,7 +369,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 		my @nodes = map { $_->{node} } @sorted_nodes_values;
 		my @values = map { $_->{value} } @sorted_nodes_values;	
 		
-		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
+		return to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
 		# my (@test1, @test2);
         
 		# for (my $i = 1; $i<51; $i++){
