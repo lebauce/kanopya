@@ -347,27 +347,34 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	eval {
 		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
 	};
-    error catching
+    # error catching
 	if ($@) {
 		$error="$@";
 		$log->error($error);
 		return to_json {error => $error};
-    we catch the fact that there is no value available for the selected nodemetric
+    # we catch the fact that there is no value available for the selected nodemetric
 	} elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0) {
 		$error='no values available for this metric';
 		$log->error($error);
 		return to_json {error => $error};
 	} else {
-        we create an array containing the values, to be sorted
-		my @nodes_values_to_sort;
-		while (my ($node, $metric) = each %$nodes_metrics) {
-			push @nodes_values_to_sort, { node => $node, value => $metric->{$indicator} };
-		}
-        we now sort this array
+        #we create an array containing the values, to be sorted
+        my @nodes_values_to_sort;
+        my @nodes_values_undef;
+        while (my ($node, $metric) = each %$nodes_metrics) {
+            if (defined $metric->{$indicator}) {
+                push @nodes_values_to_sort, { node => $node, value => $metric->{$indicator} };
+            } else {
+                push @nodes_values_undef, $node;
+            }
+        }
+        #we now sort this array
 		my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
-        we split the array into 2 distincts one, that will be returned to the monitor.js
+        # we split the array into 2 distincts one, that will be returned to the monitor.js
 		my @nodes = map { $_->{node} } @sorted_nodes_values;
 		my @values = map { $_->{value} } @sorted_nodes_values;	
+		#we add nodes without values at the end of nodes list
+		@nodes = (@nodes, @nodes_values_undef);
 		
 		return to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
 		# my (@test1, @test2);
