@@ -22,10 +22,10 @@ use strict;
 use warnings;
 
 use EEntity::EContainerAccess::ELocalContainerAccess;
+use File::Basename;
 
 use Log::Log4perl "get_logger";
 use Operation;
-use Data::Dumper;
 
 my $log = get_logger("executor");
 
@@ -39,6 +39,7 @@ sub new {
         container_device     => $args{path},
         container_size       => $args{size},
         container_filesystem => $args{filesystem},
+        container_name       => basename($args{path}),
     };
 
     # Here bless $args{data} with this EEntity, to be able to call

@@ -37,8 +37,13 @@ sub createExport {
 
     my $default_client = $args{container}->getServiceProvider->getMasterNodeIp();
 
-    my $client_name = General::checkParam(args => \%args, name => 'client_name', default => $default_client);
-    my $client_options = General::checkParam(args => \%args, name => 'client_options', default => 'rw,sync');
+    my $client_name = General::checkParam(args    => \%args,
+                                          name    => 'client_name',
+                                          default => $default_client);
+
+    my $client_options = General::checkParam(args    => \%args,
+                                             name    => 'client_options',
+                                             default => 'rw,sync,no_root_squash');
 
     my $export_id = $self->addExport(container => $args{container},
                                      econtext  => $args{econtext});
@@ -74,16 +79,10 @@ sub removeExport {
               );
     }
 
-    # TODO: Really remove the export from nfsd3 internal tables,
-    #       and from nfsd configuration files.
-    my $device = $args{container_access}->getContainer->getAttr(name => 'container_device');
-    my $mountdir = $self->_getEntity()->getMountDir(device => $device);
+    $self->delExport(container_access => $args{container_access},
+                     econtext         => $args{econtext});
 
-    my $econtainer = EFactory::newEEntity(data => $args{container_access}->getContainer);
-    $econtainer->umount(mountpoint => $mountdir,
-                        econtext   => $args{econtext});
-
-    $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
+    $self->_getEntity->delContainerAccess(container_access => $args{container_access});
 }
 
 sub reload {
@@ -125,6 +124,24 @@ sub addExportClient {
            );
 }
 
+sub delExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['econtext', 'container_access']);
+
+    my $device = $args{container_access}->getContainer->getAttr(name => 'container_device');
+    my $econtainer = EFactory::newEEntity(data => $args{container_access}->getContainer);
+
+    $self->_getEntity()->delExport(device => $device);
+    $self->update_exports(econtext => $args{econtext});
+
+    my $mountdir = $self->_getEntity()->getMountDir(device => $device);
+
+    $econtainer->umount(mountpoint => $mountdir,
+                        econtext   => $args{econtext});
+}
+
 sub update_exports {
     my $self = shift;
     my %args = @_;
@@ -132,7 +149,7 @@ sub update_exports {
     General::checkParams(args => \%args, required => ['econtext']);
 
     $self->generate_exports(econtext => $args{econtext});
-    $args{econtext}->execute(command => "/usr/sbin/exportfs -r");
+    $args{econtext}->execute(command => "/usr/sbin/exportfs -rf");
 }
 
 sub generate_conf_file {
@@ -208,14 +225,6 @@ sub generate_exports {
         data     => $self->_getEntity()->getTemplateDataExports(),
         econtext => $args{econtext}
     );
-}
-
-sub createDisk {
-    
-}
-
-sub removeDisk {
-    
 }
 
 1;

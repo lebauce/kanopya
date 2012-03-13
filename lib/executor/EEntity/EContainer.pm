@@ -182,12 +182,18 @@ sub mount {
         # device within /dev/mapper directory.
         $device =~ s/ :.*$//g;
         $device = '/dev/mapper/' . $device;
+        chomp($device);
     }
 
     $log->info("mount $device $args{mountpoint}");
 
     my $mount_cmd = "mount $device $args{mountpoint}";
-    $args{econtext}->execute(command => $mount_cmd);
+    $result = $args{econtext}->execute(command => $mount_cmd);
+    if($result->{stderr}) {
+        $errmsg = "Unable to mount $device on $args{mountpoint}\n($result->{stderr})";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
 
     # TODO: insert an eroolback with umount method.
 
@@ -203,7 +209,12 @@ sub umount {
     $log->info("Unmonting (<$args{mountpoint}>)");
 
     my $umount_cmd = "umount $args{mountpoint}";
-    $args{econtext}->execute(command => $umount_cmd);
+    my $result = $args{econtext}->execute(command => $umount_cmd);
+    if($result->{stderr}) {
+        $errmsg = "Unable to unmount $args{mountpoint}\n($result->{stderr})";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
 
     my $mkdir_cmd = "rm -R $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
