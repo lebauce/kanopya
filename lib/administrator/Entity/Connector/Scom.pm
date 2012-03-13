@@ -89,7 +89,21 @@ sub retrieveData {
         time_zone   => $time_zone,
     );
     
+    _addUndefNodes( data => $res, nodes => $args{nodes});
+    
     return $res;
+}
+
+# Add a key for each nodes without data, with empty hash ref as value
+# So all nodes are listed even if no data are retrieved
+sub _addUndefNodes {
+    my %args = @_;
+
+    foreach my $node (@{$args{nodes}}) {
+        if (not exists $args{data}{$node}) {
+            $args{data}{$node} = {};
+        }
+    }
 }
 
 # Computes mean value for each metric from scom query res
