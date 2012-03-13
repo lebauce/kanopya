@@ -1,6 +1,6 @@
 <td class="label">Volume Group use:</td>
 <td>
-<select id="volume_group" name="volume_group">
+<select id="vg_id" name="vg_id">
 <% FOREACH vg IN lvm2_vgs %>
     <option value="<% vg.lvm2_vg_id %>"><% vg.lvm2_vg_name %></option>
 <% END %>

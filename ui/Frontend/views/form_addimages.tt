@@ -28,7 +28,7 @@
 <tr><td colspan="2">&nbsp;</td></tr>
 <tr><td class="label">Data Provider to store this image:</td>
     <td>
-    <select id="storage_provider" name="storage_provider">
+    <select id="storage_provider" name="storage_provider_id">
         <% FOREACH storage IN storageproviders_list %>
         <option value="<% storage.id %>"><% storage.name %></option>
         <% END %>
@@ -37,7 +37,7 @@
 </tr>
 <tr><td class="label">Disk Manager to use:</td>
     <td>
-    <select id="disk_manager" name="disk_manager">
+    <select id="disk_manager" name="disk_manager_id">
         <% FOREACH diskmanager IN diskmanagers_list %>
         <option value="<% diskmanager.id %>"><% diskmanager.name %></option>
         <% END %>
