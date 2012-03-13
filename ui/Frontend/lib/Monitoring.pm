@@ -286,7 +286,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     
 	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
 	if ($start eq '') {
-		$start = DateTime->now;
+		$start = DateTime->now->set_time_zone('local');
 		$start->subtract( days => 1 );
         $start_timestamp = $start->epoch(); 
 		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
@@ -296,7 +296,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     }
         
 	if ($stop eq '') {
-		$stop = DateTime->now;
+		$stop = DateTime->now->set_time_zone('local');
         $stop_timestamp = $stop->epoch(); 
 		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
 	} else {
@@ -311,11 +311,11 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     if ($@) {
 		$error="$@";
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
 		$error='no values could be computed for this combination';
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} else {
         while (my ($date, $value) = each %aggregate_combination) {				
                 my $dt = DateTime->from_epoch(epoch => $date);
@@ -324,7 +324,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
             }		
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }
-	to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
+	return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
   
   
@@ -369,7 +369,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 		my @nodes = map { $_->{node} } @sorted_nodes_values;
 		my @values = map { $_->{value} } @sorted_nodes_values;	
 		
-		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
+		return to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
 		# my (@test1, @test2);
         
 		# for (my $i = 1; $i<51; $i++){
@@ -844,9 +844,122 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/details' => sub {
 
-## BEGIN CP ###
+    my $rule_id      = param('ruleid');
+    my $rule         = AggregateRule->get('id' => $rule_id);
+    my $cluster_id   = params->{extclusterid} || 0;
+    my $cluster      = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$cluster_id);
+    #my $cluster_name = $cluster->getNode(externalnode_id=>$cluster_id);
+    my $cluster_name = $cluster->getAttr(name => 'externalcluster_name');
+    
+    my @conditions;
 
+    my @condition_insts = AggregateCondition->search(hash => {});
+    
+    foreach my $condition_inst (@condition_insts){
+        my $hash = {
+            label => $condition_inst->toString(),
+            id    => $condition_inst->getAttr('name' => 'aggregate_condition_id'),
+        };
+        
+        push @conditions, $hash;
+    }
+    
+    my $rule_param = {
+        id        => $rule_id,
+        formula   => $rule->getAttr('name' => 'aggregate_rule_formula'),
+        string    => $rule->toString(),
+        state     => $rule->getAttr('name' => 'aggregate_rule_state'),
+        label     => $rule->getAttr('name' => 'aggregate_rule_label'),
+        action_id => $rule->getAttr('name' => 'aggregate_rule_action_id'),
+    };
+    
+    template 'clustermetric_rules_details', {
+        title_page     => "Rule details",
+        cluster_id     => $cluster_id,
+        cluster_name   => $cluster_name,
+        rule           => $rule_param,
+        conditions     => \@conditions,
+        clustermetric  => 1,
+    };
+};
+
+
+
+post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/edit' => sub {
+    my $rule    = AggregateRule->get('id' => param('ruleid'));
+    my $checker = $rule->checkFormula(formula => param('formula'));
+    if($checker->{value} == 1) {
+        $rule->setAttr(name => 'aggregate_rule_formula',   value => param('formula'));
+        $rule->setAttr(name => 'aggregate_rule_action_id', value => param('action'));
+        $rule->setAttr(name => 'aggregate_rule_state',     value => param('state'));
+        $rule->setAttr(name => 'aggregate_rule_label',     value => param('label'));
+        $rule->save();
+        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');        
+    }else {
+        my $adm = Administrator->new();
+        $adm->addMessage(from => 'Monitoring', level => 'error', content => 'Wrong formula, unkown condition id'."$checker->{attribute}");
+        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
+    }
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/new' => sub {
+
+    my $cluster_id   = params->{extclusterid} || 0;
+    my $cluster      = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$cluster_id);
+    my $cluster_name = $cluster->getAttr(name => 'externalcluster_name');
+    
+    my @conditions   = AggregateCondition->search(hash=>{aggregate_condition_service_provider_id => $cluster_id});
+    my @condition_params;
+    foreach my $condition (@conditions){
+        my $hash = {
+            id           => $condition->getAttr(name => 'aggregate_condition_id'),
+            label        => $condition->toString(),
+        };
+            push @condition_params, $hash;
+    }
+    
+    template 'clustermetric_rules_details', {
+        title_page    => "Rule creation",
+        cluster_id    => $cluster_id,
+        cluster_name  => $cluster_name,    
+        conditions    => \@condition_params,
+        clustermetric => 1,
+    };
+};
+
+post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/new' => sub {
+
+    my $checker = AggregateRule->checkFormula(formula => param('formula'));
+    if($checker->{value} == 1) {
+        my $params = {
+            aggregate_rule_service_provider_id => param('extclusterid'),
+            aggregate_rule_formula             => param('formula'),
+            aggregate_rule_action_id           => param('action'),
+            aggregate_rule_state               => param('state'),
+            aggregate_rule_label               => param('label'),
+        };
+        my $cm = AggregateRule->new(%$params);
+        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
+    }else {
+        my $adm = Administrator->new();
+        $adm->addMessage(from => 'Monitoring', level => 'error', content => 'Wrong formula, unkown condition id'."$checker->{attribute}");
+        redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/new');
+    }
+    
+};
+
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/delete' => sub {
+   
+    my $rule_id     =  params->{ruleid};
+    my $cluster_id  =  params->{extclusterid};
+    
+    my $rule = AggregateRule->get('id' => $rule_id);
+    
+    $rule->delete();
+    redirect("/architectures/extclusters/$cluster_id/clustermetrics/combinations/conditions/rules");
+};
 
 # -----------------------------------------------------------------------------#
 # -------------------------- NODE METRICS COMBINATIONS-------------------------#
@@ -956,7 +1069,6 @@ post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
     };
 };
 
-## END CP ###
 
 # -----------------------------------------------------------------------------#
 # ---------------------------- NODEMETRIC CONDITIONS --------------------------#
@@ -1163,16 +1275,24 @@ get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
 
 
 post '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
-    my $params = {
-        nodemetric_rule_service_provider_id => param('extclusterid'),
-        nodemetric_rule_formula             => param('formula'),
-        nodemetric_rule_action_id           => param('action'),
-        nodemetric_rule_state               => param('state'),
-        nodemetric_rule_label               => param('label'),
-    };
-    my $cm = NodemetricRule->new(%$params);
+ 
+    my $checker = NodemetricRule->checkFormula(formula => param('formula'));
+    if($checker->{value} == 1) {
+        my $params = {
+            nodemetric_rule_service_provider_id => param('extclusterid'),
+            nodemetric_rule_formula             => param('formula'),
+            nodemetric_rule_action_id           => param('action'),
+            nodemetric_rule_state               => param('state'),
+            nodemetric_rule_label               => param('label'),
+        };
+        my $cm = NodemetricRule->new(%$params);
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules');
+    }else {
+        my $adm = Administrator->new();
+        $adm->addMessage(from => 'Monitoring', level => 'error', content => 'Wrong formula, unkown condition id'."$checker->{attribute}");
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules/new');
+    }
     
-    redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules');
 };
 
 
@@ -1217,25 +1337,32 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
 
 post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
     my $rule    = NodemetricRule->get('id' => param('ruleid'));
-    #my $checker = $rule->checkFormula(formula => param('formula'));
-    
-   # if($checker->{value} == 1) {
-
-
-    $rule->setAttr(name => 'nodemetric_rule_formula',   value => param('formula'));
-    $rule->setAttr(name => 'nodemetric_rule_action_id', value => param('action'));
-    $rule->setAttr(name => 'nodemetric_rule_state',     value => param('state'));
-    $rule->setAttr(name => 'nodemetric_rule_label',     value => param('label'));
-    $rule->save();
-    redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules/'.param('ruleid').'/details');        
-#    }else {
-#        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/combinations/conditions/rules/'.param('ruleid').'/details');        
-#    }
-
+    my $checker = $rule->checkFormula(formula => param('formula'));
+    if($checker->{value} == 1) {
+        $rule->setAttr(name => 'nodemetric_rule_formula',   value => param('formula'));
+        $rule->setAttr(name => 'nodemetric_rule_action_id', value => param('action'));
+        $rule->setAttr(name => 'nodemetric_rule_state',     value => param('state'));
+        $rule->setAttr(name => 'nodemetric_rule_label',     value => param('label'));
+        $rule->save();
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules/'.param('ruleid').'/details');        
+    }else {
+        my $adm = Administrator->new();
+        $adm->addMessage(from => 'Monitoring', level => 'error', content => 'Wrong formula, unkown condition id'."$checker->{attribute}");
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules/'.param('ruleid').'/details');        
+    }
 };
 
 
-
+get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/delete' => sub {
+   
+    my $rule_id     =  params->{ruleid};
+    my $cluster_id  =  params->{extclusterid};
+    
+    my $rule = NodemetricRule->get('id' => $rule_id);
+    
+    $rule->delete();
+    redirect("/architectures/extclusters/$cluster_id/nodemetrics/rules");
+};
 
 
 
