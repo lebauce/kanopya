@@ -349,11 +349,8 @@ get '/images/diskmanagers/:storageid/subform/:diskmanagerid' => sub {
         my $template_params = {};
             
         my $config = $diskmanager->getConf();
-        while( my ($key, $value) = each %$config) {
-            $template_params->{$key} = $value;    
-        }
         
-        template "$template", $template_params, {layout => undef};
+        template "$template", $config, {layout => undef};
     } else {
         return 'not yet implemented';
     }
