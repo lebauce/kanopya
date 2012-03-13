@@ -24,6 +24,8 @@ use warnings;
 use General;
 use EFactory;
 
+use Data::Dumper;
+
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -102,7 +104,7 @@ sub copy {
             $errmsg = "Error with copy of $source_mountpoint to $dest_mountpoint: " .
                       $cmd_res->{'stderr'};
             $log->error($errmsg);
-            Kanopya::Exception::Execution(error => $errmsg);
+            throw Kanopya::Exception::Execution(error => $errmsg);
         }
 
         # Unmount the containers.
@@ -143,8 +145,31 @@ sub mount {
 
     $log->info("Device found (<$device>), mounting on <$args{mountpoint}>.");
 
+    my $command = "kpartx -a $device";
+    $args{econtext}->execute(command => $command);
+
+    # Check if the device is partitioned
+    $command = "kpartx -l $device";
+    my $result = $args{econtext}->execute(command => $command);
+    if($result->{stdout}) {
+        # The device is partitioned, mount the one (...)
+        $device = $result->{stdout};
+
+        # Cut the stdout after first ocurence of ' : ' to get the
+        # device within /dev/mapper directory.
+        $device =~ s/ :.*$//g;
+        $device = '/dev/mapper/' . $device;
+        chomp($device);
+    }
+
     my $mount_cmd = "mount $device $args{mountpoint}";
-    $args{econtext}->execute(command => $mount_cmd);
+    my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
+    if($cmd_res->{'stderr'}){
+        $errmsg = "Unable to mount $device on $args{mountpoint}: " .
+                  $cmd_res->{'stderr'};
+        $log->error($errmsg);
+        throw Kanopya::Exception::Execution(error => $errmsg);
+    }
 
     # TODO: insert an eroolback with umount method.
 
@@ -167,7 +192,13 @@ sub umount {
     $log->info("Unmonting (<$args{mountpoint}>)");
 
     my $umount_cmd = "umount $args{mountpoint}";
-    $args{econtext}->execute(command => $umount_cmd);
+    my $cmd_res    = $args{econtext}->execute(command => $umount_cmd);
+    if($cmd_res->{'stderr'}){
+        $errmsg = "Unable to umount $args{mountpoint}: " .
+                  $cmd_res->{'stderr'};
+        $log->error($errmsg);
+        throw Kanopya::Exception::Execution(error => $errmsg);
+    }
 
     # Disconnecting from container access.
     $self->disconnect(econtext => $args{econtext});

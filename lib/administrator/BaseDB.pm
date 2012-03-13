@@ -150,7 +150,7 @@ sub new {
     my %args = @_;
 
     my $attrs = $class->checkAttrs(attrs => \%args);
-    $log->debug('checkAttrs for root class insertion return '.Dumper($attrs));
+    #$log->debug('checkAttrs for root class insertion return '.Dumper($attrs));
 
     my $adm = Administrator->new();
 
@@ -172,7 +172,7 @@ sub new {
     $dbixroot->insert;
     my $id = $dbixroot->id;
     if($id) {
-        $log->debug("$class successully inserted in database");
+        #$log->debug("$class successully inserted in database");
     }
     
     my $self = {
@@ -181,7 +181,7 @@ sub new {
         _entity_id => $id
     };
 
-    $log->debug('dbix object type retrieve : '.ref($self->{_dbix}));
+    #$log->debug('dbix object type retrieve : '.ref($self->{_dbix}));
     bless $self, $class;
     return $self;
 }
@@ -297,7 +297,7 @@ sub get {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    $log->debug('id <' . $args{id} . '>, class <' . $class . '>');
+    #$log->debug('id <' . $args{id} . '>, class <' . $class . '>');
 
     my $adm = Administrator->new();
     eval {
@@ -309,7 +309,7 @@ sub get {
     }
     my $table = _buildClassNameFromString($class);
 
-    $log->debug('id <' . $args{id} . '>, concrete_class <' . $class . '>');
+    #$log->debug('id <' . $args{id} . '>, concrete_class <' . $class . '>');
 
     my $location = General::getLocFromClass(entityclass => $class);
     eval { require $location; };

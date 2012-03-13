@@ -24,6 +24,7 @@ use Log::Log4perl "get_logger";
 use Operation;
 
 my $log = get_logger("executor");
+use Data::Dumper;
 
 sub new {
     my $class = shift;
@@ -31,19 +32,82 @@ sub new {
 
     General::checkParams(args => \%args, required => [ 'container' ]);
 
-    $args{data} = {};
+    $args{data} = { container => $args{container} };
+
+    bless $args{data}, $class;
 
     my $self = $class->SUPER::new(%args);
-
-    $self->{container} = $args{container};
 
     bless $self, $class;
     return $self;
 }
 
-=head2 connect
+sub getContainer {
+    my $self = shift;
 
-    desc: Creating open-iscsi node, and wait for the device appeared.
+    return $self->{container}->_getEntity;
+}
+
+sub getAttr {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'name' ]);
+
+    return $self->{$args{name}};
+}
+
+=head2 mount
+
+    desc: Generic mount method. Connect to the container_access,
+          and mount the corresponding device on givven mountpoint.
+
+=cut
+
+sub mount {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+
+    # Connecting to the container access.
+    my $device = $self->connect(econtext => $args{econtext});
+
+    my $mkdir_cmd = "mkdir -p $args{mountpoint}";
+    $args{econtext}->execute(command => $mkdir_cmd);
+
+    $log->info("Device found (<$device>), mounting on <$args{mountpoint}>.");
+
+    my $command = "kpartx -a $device";
+    $args{econtext}->execute(command => $command);
+
+    # Check if the device is partitioned
+    $command = "kpartx -l $device";
+    my $result = $args{econtext}->execute(command => $command);
+    if($result->{stdout}) {
+        # The device is partitioned, mount the one (...)
+        $device = $result->{stdout};
+
+        # Cut the stdout after first ocurence of ' : ' to get the
+        # device within /dev/mapper directory.
+        $device =~ s/ :.*$//g;
+        $device = '/dev/mapper/' . $device;
+        chomp($device);
+    }
+
+    my $mount_cmd = "mount -o loop $device $args{mountpoint}";
+    my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
+    if($cmd_res->{'stderr'}){
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to mount $device on $args{mountpoint}: " .
+                           $cmd_res->{'stderr'}
+              );
+    }
+
+    $log->info("Device <$device> mounted on <$args{mountpoint}>.");
+}
+
+=head2 connect
 
 =cut
 
@@ -53,15 +117,13 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->{container}->_getEntity->getAttr(name => 'container_device');
+    my $device = $self->_getEntity->{container}->_getEntity->getAttr(name => 'container_device');
 
     $log->info("Return file path (<$device>).");
     return $device;
 }
 
 =head2 disconnect
-
-    desc: Deleting open-iscsi node.
 
 =cut
 

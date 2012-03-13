@@ -225,24 +225,21 @@ sub addExportClient {
     return $exportclient->get_column('nfsd3_exportclient_id')
 }
 
-=head2 removeExportClient
+=head2 delExport
     
-    Desc : This function delete a client from an export
-    args : client_id
+    Desc : This function delete an export from db
 
 =cut
 
-sub removeExportClient {
+sub delExport {
     my $self = shift;
-    my %args  = @_;    
-    if (! exists $args{client_id} or ! defined $args{client_id}) {
-        $errmsg = "Component::Nfsd3->removeExportClient needs a client_id named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    #return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();    
-}
+    my %args = @_;
 
+    General::checkParams(args => \%args, required => [ "device" ]);
+
+    my $component = $self->{_dbix};
+    $component->nfsd3_exports->single({ nfsd3_export_path => $args{device} })->delete();
+}
 
 # return a data structure to pass to the template processor for /etc/exports file
 sub getTemplateDataExports {
