@@ -20,7 +20,6 @@ use base 'Entity::ServiceProvider::Outside';
 use NetAddr::IP;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use NetApp::Filer;
 
 my $log = get_logger("administrator");
 my $errmsg;
