@@ -76,6 +76,12 @@ sub prepare {
 
     my $masterimage_id = $params->{masterimage_id};
     delete $params->{masterimage_id};
+    
+    my $systemimage_name = $params->{systemimage_name};
+    delete $params->{systemimage_name};
+    
+    my $systemimage_desc = $params->{systemimage_desc};
+    delete $params->{systemimage_desc};
 
     $self->{_objs} = {};
     $self->{executor} = {};
@@ -83,7 +89,10 @@ sub prepare {
     # Create new systemimage instance
     $log->info("Create new systemimage instance");
     eval {
-       $self->{_objs}->{systemimage} = Entity::Systemimage->new(%$params);
+       $self->{_objs}->{systemimage} = Entity::Systemimage->new(
+            systemimage_name      => $systemimage_name,
+            systemimage_desc      => $systemimage_desc,
+       );
     };
     if($@) {
         my $err = $@;
@@ -92,6 +101,8 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
+    
+    
     $log->debug("get systemimage self->{_objs}->{systemimage} of type : " .
                 ref($self->{_objs}->{systemimage}));
 
@@ -108,28 +119,23 @@ sub prepare {
     }
 
     # Check if a service provider is given in parameters, use default instead.
-    eval {
-        General::checkParams(args => $params, required => [ "storage_provider_id" ]);
-
+    if( exists $params->{storage_provider_id} ) {
         $self->{_objs}->{storage_provider}
             = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
-    };
-    if ($@) {
-        $log->info("Service provider id not defined, using default.");
+        
+        delete $params->{storage_provider_id};
+    } else {    
         $self->{_objs}->{storage_provider}
             = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
     }
 
     # Check if a disk manager is given in parameters, use default instead.
     my $disk_manager;
-    eval {
-        General::checkParams(args => $params, required => ["disk_manager_id"]);
-
+    if( exists $params->{disk_manager_id} ) {
         $disk_manager
             = $self->{_objs}->{storage_provider}->getManager(id => $params->{disk_manager_id});
-    };
-    if ($@) {
-        $log->info("Disk manager id not defined, using default.");
+        delete $params->{disk_manager_id};
+    } else {
         $disk_manager
             = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'DiskManager');
     }
@@ -148,6 +154,7 @@ sub prepare {
         = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                 ip_destination => $storage_provider_ip);
 
+    $self->{params} = $params;
 }
 
 sub execute {
@@ -162,10 +169,13 @@ sub execute {
                             );
 
     # Instance a fake econtainer for the masterimage raw file.
-    $esystemimage->create(esrc_container => $emaster_container,
-                          edisk_manager  => $self->{_objs}->{edisk_manager},
-                          econtext       => $self->{executor}->{econtext},
-                          erollback      => $self->{erollback});
+    $esystemimage->create(
+        esrc_container => $emaster_container,
+        edisk_manager  => $self->{_objs}->{edisk_manager},
+        econtext       => $self->{executor}->{econtext},
+        erollback      => $self->{erollback},
+        %{$self->{params}}                    
+    );
 
     my @group = Entity::Gp->getGroups(hash => { gp_name => 'SystemImage' });
     $group[0]->appendEntity(entity => $self->{_objs}->{systemimage});

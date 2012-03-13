@@ -7,6 +7,7 @@ use Administrator;
 use Entity::ServiceProvider;
 use Entity::Masterimage;
 use Entity::Systemimage;
+use General;
 
 prefix '/systems';
 
@@ -110,12 +111,42 @@ post '/images/add' => sub {
     my $adm = Administrator->new;
     # system image create from another system image (clone)
     # masterimage_id query parameter contains system image source id 
-    if(params->{source} eq 'systemimage') {
+    
+    my $parameters = params;
+    
+    # convert input size in bytes
+    my $sizeinbyte = General::convertToBytes(
+        value => $parameters->{systemimage_size}, 
+        units => $parameters->{systemimage_size_unit}
+    ); 
+    
+    delete $parameters->{systemimage_size};
+    delete $parameters->{systemimage_size_unit};
+    
+    my $systemimage_name = $parameters->{systemimage_name};
+    delete $parameters->{systemimage_name};
+    
+    my $systemimage_desc = $parameters->{systemimage_desc};
+    delete $parameters->{systemimage_desc};
+    
+    my $masterimage_id = $parameters->{masterimage_id};
+    delete $parameters->{masterimage_id};
+    
+    my $storage_provider_id = $parameters->{storage_provider_id};
+    delete $parameters->{storage_provider_id};
+    
+    my $disk_manager_id = $parameters->{disk_manager_id};
+    delete $parameters->{disk_manager_id};
+    
+    my $source = $parameters->{source};
+    delete $parameters->{source};
+    
+    if($source eq 'systemimage') {
         eval {
-            my $esystemimage = Entity::Systemimage->get(id => params->{masterimage_id});
+            my $esystemimage = Entity::Systemimage->get(id => $masterimage_id);
             $esystemimage->clone(
-                systemimage_name => params->{systemimage_name},
-                systemimage_desc => params->{systemimage_desc},
+                systemimage_name => $systemimage_name,
+                systemimage_desc => $systemimage_desc,
             );
         };
         if($@) {
@@ -132,14 +163,17 @@ post '/images/add' => sub {
         }         
          
     } # system image creation from a masterimage
-    elsif(params->{source} eq 'masterimage') {    
+    elsif($source eq 'masterimage') {    
         eval {
-            my %parameters = (
-                systemimage_name => params->{systemimage_name},
-                systemimage_desc => params->{systemimage_desc},
-                masterimage_id   => params->{masterimage_id}, 
+            Entity::Systemimage->create(
+                systemimage_name    => $systemimage_name,
+                systemimage_desc    => $systemimage_desc,
+                systemimage_size    => $sizeinbyte,
+                masterimage_id      => $masterimage_id,
+                storage_provider_id => $storage_provider_id,
+                disk_manager_id     => $disk_manager_id,
+                %$parameters
             );        
-             Entity::Systemimage->create(%parameters); 
         };     
         if($@) {
             my $exception = $@;

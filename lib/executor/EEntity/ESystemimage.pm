@@ -53,15 +53,29 @@ sub create {
 
     $log->info('Device creation for new systemimage');
 
+    my $edisk_manager = $args{edisk_manager};
+    delete $args{edisk_manager};
+
     my $esource_container = $args{esrc_container};
+    delete $args{esrc_container};
+    
+    my $erollback = $args{erollback};
+    delete $args{erollback};
+    
+    my $econtext = $args{econtext}; 
+    delete $args{econtext};
+    
+    my $systemimage_size = $args{systemimage_size};
+    delete $args{systemimage_size};
 
     # Creation of the device based on distribution device
-    my $container = $args{edisk_manager}->createDisk(
+    my $container = $edisk_manager->createDisk(
                         name       => $self->_getEntity->getAttr(name => 'systemimage_name'),
-                        size       => $esource_container->_getEntity->getAttr(name => 'container_size') . "B",
+                        size       => $systemimage_size . 'B',
                         filesystem => $esource_container->_getEntity->getAttr(name => 'container_filesystem'),
-                        econtext   => $args{edisk_manager}->{econtext},
-                        erollback  => $args{erollback}
+                        econtext   => $edisk_manager->{econtext},
+                        erollback  => $erollback,
+                        %args
                     );
 
     # Copy of distribution data to systemimage devices
@@ -71,8 +85,8 @@ sub create {
     my $edest_container = EFactory::newEEntity(data => $container);
 
     $esource_container->copy(dest      => $edest_container,
-                             econtext  => $args{econtext},
-                             erollback => $args{erollback});
+                             econtext  => $econtext,
+                             erollback => $erollback);
 
     $self->_getEntity()->setAttr(name  => "container_id",
                                  value => $container->getAttr(name => 'container_id'));
