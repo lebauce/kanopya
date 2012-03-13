@@ -412,9 +412,9 @@ function barGraph(values, nodelist, unit, div_id, min, max){
  //Jqplot basic curve graph
  function timedGraph(first_graph_line, min, max){
 	$.jqplot.config.enablePlugins = true;
-    var line1=[['03-30-2012 16:12', 578.55], ['03-30-2012 16:17', 566.5], ['03-30-2012 16:23', 480.88], ['03-30-2012 16:26', 509.84]];
+    // var line1=[['03-30-2012 16:12', 578.55], ['03-30-2012 16:17', 566.5], ['03-30-2012 16:23', 480.88], ['03-30-2012 16:26', 509.84]];
     // alert ('data for selected combination: '+first_graph_line);
-    var plot1 = $.jqplot('clusterCombinationView', [line1], {
+    var plot1 = $.jqplot('clusterCombinationView', [first_graph_line], {
         title:'Combination Historical Graph',
         axes:{
             xaxis:{
@@ -430,10 +430,10 @@ function barGraph(values, nodelist, unit, div_id, min, max){
                     angle: -60,
                     formatString: '%y-%m-%d %H:%M'
                 },
-            // min:min,
-            // max:max,
-            min: '03-30-2012 16:00',
-            max: '03-30-2012 16:30'
+            min:min,
+            max:max,
+            // min: '03-30-2012 16:00',
+            // max: '03-30-2012 16:30'
             },
             yaxis:{
                 tickOptions: {
