@@ -58,15 +58,21 @@ sub create {
 
     my $esource_container = $args{esrc_container};
     delete $args{esrc_container};
-    
+
     my $erollback = $args{erollback};
     delete $args{erollback};
-    
-    my $econtext = $args{econtext}; 
+
+    my $econtext = $args{econtext};
     delete $args{econtext};
-    
-    my $systemimage_size = $args{systemimage_size};
-    delete $args{systemimage_size};
+
+    my $systemimage_size;
+    if (defined $args{systemimage_size}) {
+        $systemimage_size = $args{systemimage_size};
+        delete $args{systemimage_size};
+    }
+    else {
+        $systemimage_size = $esource_container->_getEntity->getAttr(name => 'container_size');
+    }
 
     # Creation of the device based on distribution device
     my $container = $edisk_manager->createDisk(

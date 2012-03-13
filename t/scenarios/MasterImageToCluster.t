@@ -101,7 +101,7 @@ eval {
     my $container;
     lives_ok {
         $container = $edisk_manager->createDisk(name       => 'test_volume_for_nfs_export',
-                                                size       => '10G',
+                                                size       => '5G',
                                                 filesystem => 'ext3',
                                                 econtext   => $econtext);
     } 'Create a large lvm volume (10G)';

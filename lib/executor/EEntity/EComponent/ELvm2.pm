@@ -45,9 +45,13 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'name', 'size', 'filesystem', 'econtext', 'vg_id' ]);
+                         required => [ 'name', 'size', 'filesystem', 'econtext' ]);
 
-    my $lv_id = $self->lvCreate(lvm2_vg_id         => $args{vg_id},
+    my $vg_id = General::checkParam(args    => \%args,
+                                    name    => 'vg_id',
+                                    default => $self->_getEntity->getMainVg->{vgid});
+
+    my $lv_id = $self->lvCreate(lvm2_vg_id         => $vg_id,
                                 lvm2_lv_name       => $args{name},
                                 lvm2_lv_filesystem => $args{filesystem},
                                 lvm2_lv_size       => $args{size},
