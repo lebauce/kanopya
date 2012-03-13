@@ -6,7 +6,8 @@ use Log::Log4perl "get_logger";
 use Administrator;
 use NetApp::Filer;
 use Entity::ServiceProvider::Outside::Netapp;
-use Entity::Connector::NetappManager;
+use Entity::Connector::NetappVolumeManager;
+use Entity::Connector::NetappLunManager;
 
 my $log = get_logger('webui');
 
@@ -68,7 +69,9 @@ post '/netapp/add' => sub {
         else { $exception->rethrow(); }
     }
     else {
-        my $connector = Entity::Connector::NetappManager->new();
+        my $connector = Entity::Connector::NetappLunManager->new();
+        $serviceProvider->addConnector('connector' => $connector);
+        $connector = Entity::Connector::NetappVolumeManager->new();
         $serviceProvider->addConnector('connector' => $connector);
         redirect('/equipments/netapp');
     }
