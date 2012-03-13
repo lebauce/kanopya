@@ -4,29 +4,40 @@
 <form class="elem_root" name="conf">
 <input class="conf_simple_value" type="hidden" name="component_id" value="<% component_instance_id %>"/>
 <input class="conf_simple_value" type="hidden" name="cluster_id" value="<% cluster_id %>"/>
-<input class="conf_simple_value" type="hidden" name="lvm2_vg_id" value="<% lvm2_vg_id %>"/>
+<input class="conf_simple_value" type="hidden" name="lvm2_id" value="<% component_instance_id %>"/>
 <input class="conf_simple_value" type="hidden" name="component_name" value="Lvm2"/>
-<table>
-<tr><td>vg name: </td><td><% lvm2_vg_name %></td></tr>
-<tr><td>vg size: </td><td><% lvm2_vg_size %></td></tr>
-<tr><td>vg free space: </td><td><% lvm2_vg_freespace %></td></tr>
-</table>
 
 <hr />
-<h3>Logical volumes</h3>
-	<table class="conf_array_value" id="lvm2_lvs">
-		<tr><th>Name</th><th>Size</th><th>Free space</th><th>File system</th></tr>
-		<% FOREACH lv IN lvm2_lvs %>
-			<tr>
-			<td><input type="text" value="<% lv.lvm2_lv_name %>" disabled/></td>
-			<td><input type="text" value="<% lv.lvm2_lv_size %>" disabled/></td>
-			<td><input type="text" value="<% lv.lvm2_lv_freespace %>" disabled/></td>
-			<td><input type="text" value="<% lv.lvm2_lv_filesystem %>" disabled/></td>
-			<td class="hidden"><% lv.lvm2_lv_id %></td>
+<h3>Volume Groups</h3>
+	<table class="conf_array_value" id="vgs">
+		<% MACRO togiga(arg1) GET arg1 / 1073741824 %>
+        <tr><th>Name</th><th>Size</th><th>Free space</th></tr>
+		<% FOREACH vg IN lvm2_vgs %>
+			<tr class="elem_vgs" name="vg">
+                <td class="vg_simple_value" name="vg_name" value="<% vg.lvm2_vg_name %>"><% vg.lvm2_vg_name %></td>
+                <td><% togiga(vg.lvm2_vg_size) %>G</td>
+                <td><% togiga(vg.lvm2_vg_freespace) %>G</td>
+                <td class="vg_simple_value hidden" name="vg_id" value="<% vg.lvm2_vg_id %>"><% vg.lvm2_vg_id %></td>
+                <td><a class="add_lvs imgAdding iconAction" >Add logical volume</a></td>
+       
+                <td>
+                    <table class="vg_array_value" id="lvs" >
+                        <tr><th>Name</th><th>Size</th><th>Free space</th><th>File system</th></tr>
+                        <% FOREACH lv IN vg.lvm2_lvs %>
+                        <tr class="elem_lvs" name="lv">
+                         <td><% lv.lvm2_lv_name %></td>
+                        <td><% togiga(lv.lvm2_lv_size) %>G</td>
+                        <td><% togiga(lv.lvm2_lv_freespace) %>G</td>
+                        <td class="hidden"><% lv.lvm2_lv_id %></td>
+                        </tr>
+                        <% END %>
+                    </table>
+                </td>
 			</tr>
+               
+   
 		<% END %>
 	</table>
-<a class="add_lvm2_lvs imgAdding iconAction" >Add logical volume</a>
 <hr />
 
 <div class="right">
@@ -37,7 +48,7 @@
 
 <div class="hidden" id="models">
 	<table>
-		<tr class="elem_lvm2_lvs" name="lv">
+		<tr class="elem_lvs" name="lv">
 			<td><input class="lv_simple_value" type="text" name="lvm2_lv_name" value=""/></td>
 			<td><input class="lv_simple_value" type="text" name="lvm2_lv_size" value="" /></td>
 			<!--td><input class="lv_simple_value" type="text" name="lvm2_lv_freespace" value="" /></td-->

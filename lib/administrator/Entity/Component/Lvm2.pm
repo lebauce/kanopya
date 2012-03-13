@@ -147,33 +147,37 @@ sub getConf {
     my $self = shift;
 
     my $conf = {};
-    my $lineindb = $self->{_dbix}->lvm2_vgs->first;
-    if (defined $lineindb) {
-        my %dbconf = $lineindb->get_columns();
-        $conf = \%dbconf;
-
-        my $lv_rs = $lineindb->lvm2_lvs;
-        my @tab_lv = ();
-        while (my $lv_row = $lv_rs->next){
+    my @tab_volumegroups = ();
+    my $volumegroups = $self->{_dbix}->lvm2_vgs;
+    while(my $vg_row = $volumegroups->next){
+        my @tab_logicalvolumes = ();
+        my %vg = $vg_row->get_columns();
+        my $logicalvolumes = $vg_row->lvm2_lvs;
+        while(my $lv_row = $logicalvolumes->next) {
             my %lv = $lv_row->get_columns();
-
-            delete $lv{'lvm2_vg_id'};
-            push @tab_lv, \%lv;
+            push @tab_logicalvolumes, \%lv;
         }
-        $conf->{lvm2_lvs} = \@tab_lv;
+        $vg{lvm2_lvs} = \@tab_logicalvolumes;
+        push @tab_volumegroups, \%vg;
     }
+    $conf->{lvm2_vgs} = \@tab_volumegroups;
     return $conf;
 }
 
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
-
-    #my $vg_id = $conf->{lvm2_vg_id};
-    for my $new_lv ( @{ $conf->{lvm2_lvs} }) {
-        $self->createDisk(disk_name  => $new_lv->{lvm2_lv_name},
-                          size       => $new_lv->{lvm2_lv_size},
-                          filesystem => $new_lv->{lvm2_lv_filesystem});
+    # TODO input validation
+    for my $vg ( @{ $conf->{vgs} }) {
+        for my $new_lv ( @{ $vg->{lvs} }) {
+            $self->createDisk(
+                disk_name  => $new_lv->{lvm2_lv_name},
+                size       => $new_lv->{lvm2_lv_size},
+                filesystem => $new_lv->{lvm2_lv_filesystem},
+                vg_id      => $vg->{vg_id},
+                vg_name    => $vg->{vg_name},
+            );
+        }
     }
 }
 
@@ -202,6 +206,8 @@ sub createDisk {
             disk_name           => $args{disk_name},
             size                => $args{size},
             filesystem          => $args{filesystem},
+            vg_id               => $args{vg_id},
+            vg_name             => $args{vg_name},
         },
     );
 }
