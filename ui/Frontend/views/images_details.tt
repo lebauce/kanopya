@@ -20,10 +20,10 @@
 </table>
 
 <hr/>
-<span id="settings" class="title simpleexpand">Main settings</span>
+<span id="settings" class="title simpleexpand">Informations</span>
 <table id="Xsettings" class="detailspart">
 <tr><td class="italic" colspan="2"><% systemimage_desc %></td>
-<td class="actions" rowspan="4">
+<td class="actions" rowspan="6">
 <% IF can_update %>
 	<a class="modal" href="/systems/images/<% systemimage_id %>/edit">edit</a><br />
 	<span class="desc">Modify these global parameters.</span><br /><br />
@@ -37,7 +37,9 @@
 	<span class="desc">View/set permissions on this system image.</span><br />
 <% END %>
 </td><tr/>
-<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td class="label">Storage Provider:</td><td><% storage_provider_name %></td></tr>
+<tr><td class="label">Disk manager:</td><td><% disk_manager_name %></td></tr>
 </table>
 
 <hr/>

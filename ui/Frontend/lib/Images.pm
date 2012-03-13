@@ -72,7 +72,7 @@ get '/images' => sub {
 
     template 'images', {
         title_page         => 'Systems - System images',
-        systemimages_list => _systemimages(),
+        systemimages_list  => _systemimages(),
         can_create         => $can_create,
     };
 };
@@ -332,6 +332,10 @@ get '/images/:imageid' => sub {
     foreach my $c (@$components_list) {
         delete $c->{component_type_id};
     }
+    
+    my $container = $esystemimage->getDevice();
+    my $storage = Entity::ServiceProvider->get(id => $container->getAttr(name => 'service_provider_id'));
+    my $manager = $storage->getManager(id => $container->getAttr(name => 'disk_manager_id'));
 
     template 'images_details', {
         title_page            => "Systems - System image's overview",
@@ -348,6 +352,8 @@ get '/images/:imageid' => sub {
         systemimage_desc      => $esystemimage->getAttr(name => 'systemimage_desc'), 
         components_list       => $components_list,
         components_count      => $nb + 1,
+        storage_provider_name => $storage->toString(),
+        disk_manager_name     => $manager->toString(),
      };
 };
 
