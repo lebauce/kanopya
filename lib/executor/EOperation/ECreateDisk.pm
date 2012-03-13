@@ -72,7 +72,7 @@ sub prepare {
 
     General::checkParams(args     => $params,
                          required => [ "storage_provider_id", "disk_manager_id",
-                                       "disk_name", "size", "filesystem" ]);
+                                       "name", "size", "filesystem" ]);
 
     $self->{params} = $params;
 
@@ -117,7 +117,7 @@ sub execute {
     my $self = shift;
 
     my $container = $self->{_objs}->{edisk_manager}->createDisk(
-                        name       => $self->{params}->{disk_name},
+                        name       => $self->{params}->{name},
                         size       => $self->{params}->{size},
                         filesystem => $self->{params}->{filesystem},
                         econtext   => $self->{econtext},

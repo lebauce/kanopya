@@ -203,7 +203,7 @@ sub createDisk {
         params   => {
             storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             disk_manager_id     => $self->getAttr(name => 'component_id'),
-            disk_name           => $args{disk_name},
+            name                => $args{disk_name},
             size                => $args{size},
             filesystem          => $args{filesystem},
             vg_id               => $args{vg_id},
