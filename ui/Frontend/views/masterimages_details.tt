@@ -4,10 +4,10 @@
 
 <h2><% masterimage_name %></h2>
 <hr/>
-<span id="settings" class="title simpleexpand">Main settings</span>
+<span id="settings" class="title simpleexpand">Informations</span>
 <table id="Xsettings" class="detailspart">
 <tr><td class="italic" colspan="2"><% masterimage_desc %></td>
-<td class="actions" rowspan="4">
+<td class="actions" rowspan="6">
 <% IF can_delete %>
 	<a class="imgRemove" href="/systems/masterimages/<% masterimage_id %>/remove">delete</a><br />
 	<span class="desc">Delete this master image.</span><br /><br />
@@ -17,7 +17,7 @@
 	<span class="desc">View/set permissions on this master image.</span><br />
 <% END %>
 </td><tr/>
-<tr><td colspan="2">&nbsp;</td></tr>
+<tr><td>&nbsp;</td></tr>
 <tr><td class="label">File :</td><td><% masterimage_file %></td></tr>
 <tr><td class="label">Size :</td><td><% masterimage_size %></td></tr>
 <tr><td class="label">arch :</td><td><% masterimage_arch %></td></tr>
@@ -25,7 +25,7 @@
 </table>
 
 <hr/>
-<span id="components" class="title simpleexpand">Provided Components</span>
+<span id="components" class="title simpleexpand">Installed Components</span>
 <table id="Xcomponents" class="detailspart list">
 <% IF components_list %>
 	<tr><td colspan="2">&nbsp;</td>
