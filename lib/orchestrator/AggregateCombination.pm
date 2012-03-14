@@ -127,10 +127,13 @@ sub computeLastValue{
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             $element = Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
+            if(not defined $element){
+                return undef;
+            }
         }
      }
      
-    my $res = -1;
+    my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
     

@@ -83,7 +83,7 @@ sub getValuesFromDB{
 sub getLastValueFromDB{
     my $self = shift;
 	my $id = $self->getAttr(name=>'clustermetric_id');
-    my %last_value = RRDTimeData::getLastUpdatedValue(aggregate_id => $id); 
+    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $id); 
     my @indicator = (values %last_value);
     return $indicator[0];
 }

@@ -317,11 +317,11 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 		$log->error($error);
 		return to_json {error => $error};
 	} else {
-        while (my ($date, $value) = each %aggregate_combination) {				
-                my $dt = DateTime->from_epoch(epoch => $date);
-                my $date_string = $dt->strftime('%m-%d-%y %H:%M');
-                push @histovalues, [$date_string,$value];
-            }		
+        while (my ($date, $value) = each %aggregate_combination) {
+            my $dt = DateTime->from_epoch(epoch => $date);
+            my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
+            push @histovalues, [$date_string,$value];
+        }
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }
 	return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
@@ -343,16 +343,16 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	my $nodes_metrics; 
 	my $error;
     
-    #we retrieve the nodemetric values
+    # we retrieve the nodemetric values
 	eval {
 		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
 	};
-    #error catching
+    # error catching
 	if ($@) {
 		$error="$@";
 		$log->error($error);
 		return to_json {error => $error};
-    #we catch the fact that there is no value available for the selected nodemetric
+    # we catch the fact that there is no value available for the selected nodemetric
 	} elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0) {
 		$error='no values available for this metric';
 		$log->error($error);
@@ -370,7 +370,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
         }
         #we now sort this array
 		my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
-        #we split the array into 2 distincts one, that will be returned to the monitor.js
+        # we split the array into 2 distincts one, that will be returned to the monitor.js
 		my @nodes = map { $_->{node} } @sorted_nodes_values;
 		my @values = map { $_->{value} } @sorted_nodes_values;	
 		#we add nodes without values at the end of nodes list
@@ -1159,7 +1159,7 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
             nodemetric_rule_action_id => $nodemetric_condition->getAttr(name => 'nodemetric_condition_id'),
         };
         my $nodemetric_rule = NodemetricRule->new(%$params_rule);
-        redirect("/architectures/extclusters/$var/externalnodes/:extnodeid/rules");
+        redirect("/architectures/extclusters/$var/nodemetrics/rules");
     }else{
         redirect("/architectures/extclusters/$var/nodemetrics/conditions");
     }
