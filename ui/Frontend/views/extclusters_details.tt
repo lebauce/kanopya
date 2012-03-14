@@ -1,5 +1,4 @@
-<%# <script type="text/javascript" src="/js/details.js"></script>
-%>
+<% js_head.push('details.js') %>
 <h2>Cluster : <% cluster_name %></h2>
 <hr/>
 <span id="state" class="title simpleexpand">State</span>
@@ -65,28 +64,6 @@
 </table>
 
 <hr/>
-<span id="connectors" class="title simpleexpand">Connectors</span>
-<table id="Xconnectors" class="detailspart list">
-<% IF connectors_list %>
-	<tr><td colspan="2">&nbsp;</td>
-	<td class="actions" rowspan="<% nbconnectors %>">
-	<% IF link_addconnector %>
-		<a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/connectors/add">add a connector</a><br />
-		<span class="desc">Add a new connector to this cluster.</span><br /><br />
-	<% END %>
-	</td></tr>
-	<% FOREACH conn IN connectors_list %>
-		<tr><td class="label2"><span class="bold"><% conn.connector_name %></span> - <% conn.connector_category %></td>
-		<% IF can_configure %>
-		<td class="action"><% IF conn.link_configureconnector %><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a> <% END %>
-		<% END %>
-		<% IF conn.link_remove %><a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
-	</td></tr>
-	<% END %>
-<% END %>
-</table>
-
-<hr/>
 <span id="nodes" class="title simpleexpand">Nodes</span>
 <table id="Xnodes" class="detailspart list">
 <% IF nodes_list %>
@@ -121,6 +98,28 @@
 </table>
 
 <hr/>
+<span id="connectors" class="title simpleexpand">Connectors</span>
+<table id="Xconnectors" class="detailspart list">
+<% IF connectors_list %>
+    <tr><td colspan="2">&nbsp;</td>
+    <td class="actions" rowspan="<% nbconnectors %>">
+    <% IF link_addconnector %>
+        <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/connectors/add">add a connector</a><br />
+        <span class="desc">Add a new connector to this cluster.</span><br /><br />
+    <% END %>
+    </td></tr>
+    <% FOREACH conn IN connectors_list %>
+        <tr><td class="label2"><span class="bold"><% conn.connector_name %></span> - <% conn.connector_category %></td>
+        <% IF can_configure %>
+        <td class="action"><% IF conn.link_configureconnector %><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a> <% END %>
+        <% END %>
+        <% IF conn.link_remove %><a class="imgRemove" href="/architectures/extclusters/<% cluster_id %>/connectors/<% conn.connector_id %>/remove">remove</a><% END %>
+    </td></tr>
+    <% END %>
+<% END %>
+</table>
+
+<hr/>
 <span id="monitor" class="title simpleexpand">Monitoring</span>
 <table id="Xmonitor" class="detailspart list">
 <tr>
@@ -128,20 +127,8 @@
 <a class="imgMonitor" href="/architectures/extclusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
-<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/monitoring/settings">settings</a><bd/>
-<p class="italic">Cluster collect and graph settings.</p>
 <a class="action imgSettings" href="/architectures/extclusters/<% cluster_id %>/clustermetrics">Rules settings</a><bd/>
 <p class="italic">Manage cluster metrics and node metrics rules.</p>
 </td></tr>
 </table>
 
-<hr/>
-<span id="orchestrator" class="title simpleexpand">Orchestration</span>
-<table id="Xmonitor" class="detailspart list">
-<tr>
-<td colspan="2"></td>
-<td class="actions">
-<a class="action imgSettings" href="/architectures/clusters/<% cluster_id %>/orchestration">settings</a><bd/>
-<p class="italic">Orchestration rules settings.</p>
-</td></tr>
-</table>
