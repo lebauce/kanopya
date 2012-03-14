@@ -1436,7 +1436,7 @@ sub _getCombinations(){
 		 for my $combi (@clustermetric_combinations){
 			my %combination;
 			$combination{'id'} = $combi->getAttr(name => 'aggregate_combination_id');
-			$combination{'label'} = $combi->toString();
+			$combination{'label'} = $combi->getAttr(name => 'aggregate_combination_label');
 			push @combinations, \%combination;
 		}
 	$template_config->{'combinations'} = \@combinations;
