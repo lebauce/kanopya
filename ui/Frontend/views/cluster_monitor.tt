@@ -1,4 +1,15 @@
-<% js_head.push('jqplot/jquery.jqplot.min.js', 'jqplot/jqplot.highlighter.min.js', 'jquery-ui-timepicker-addon.js', 'jqplot/jqplot.barRenderer.min.js', 'jqplot/jqplot.categoryAxisRenderer.min.js', 'jqplot/jqplot.dateAxisRenderer.min.js', 'jqplot/jqplot.canvasTextRenderer.min.js', 'jqplot/jqplot.canvasAxisTickRenderer.min.js', 'monitor.js') %>
+<% js_head.push(
+    'jqplot/jquery.jqplot.min.js',
+    'jqplot/jqplot.highlighter.min.js',
+    'jquery-ui-timepicker-addon.js',
+    'jqplot/jqplot.barRenderer.min.js',
+    'jqplot/jqplot.categoryAxisRenderer.min.js',
+    'jqplot/jqplot.dateAxisRenderer.min.js',
+    'jqplot/jqplot.canvasTextRenderer.min.js',
+    'jqplot/jqplot.canvasAxisTickRenderer.min.js',
+    'jqplot/jqplot.trendline.min.js',
+    'monitor.js') 
+    %>
 <% css_head.push('jquery-ui-1.8.18.custom.css', 'monitoring.css') %>
 
 <div class="cluster_overview">
