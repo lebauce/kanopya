@@ -18,9 +18,16 @@ Log::Log4perl->easy_init({
 use Cwd qw(abs_path);
 use File::Basename;
 
-my $master_name = 'Opennebula3';
-my $master_archive = dirname(abs_path($0)) .
-                     '/' . $master_name . '.tar.bz2';
+my $pwd = dirname(abs_path($0));
+my $master_name = 'test_masterimage';
+my $master_archive =  $pwd . '/' . $master_name . '.tar.bz2';
+
+my $metadataxml = '<masterimage file=\"' . $master_name . '.img\">
+<name>' . $master_name . '</name>
+<description>An empty image just for tests</description>
+<os>nothing</os>
+<arch>amd64</arch>
+</masterimage>';
 
 use_ok ('Administrator');
 use_ok ('Executor');
@@ -32,9 +39,38 @@ use_ok ('Entity::ServiceProvider::Inside::Cluster');
 
 # Test the existance of the master image test file.
 if(! -e $master_archive) {
-    ok (-e $master_archive, "Test master image required");
+
+    # Creating fake master image for test
+    system("dd if=/dev/zero of=$pwd/$master_name.img bs=1M count=64 2>/dev/null");
+    system("losetup /dev/loop7 $pwd/$master_name.img >/dev/null");
+
+    #...
+    system("fdisk /dev/loop7 << EOF
+n
+p
+1
+
+
+w
+EOF
+ 2>/dev/null 1>/dev/null");
+
+    system("kpartx -a /dev/loop7 >/dev/null");
+    system("mkfs -t ext3 /dev/mapper/loop7p1 >/dev/null");
+    system("mkdir -p /mnt/$master_name.img; mount /dev/mapper/loop7p1 /mnt/$master_name.img >/dev/null");
+    system("cp -R --preserve=all /etc/. /mnt/$master_name.img/ >/dev/null");
+    system("umount /mnt/$master_name.img/ >/dev/null");
+    system("kpartx -d /dev/loop7 >/dev/null");
+    system("losetup -d /dev/loop7 >/dev/null");
+    system("echo \"$metadataxml\" > $pwd/img-metadata.xml");
+    system("tar -cvjf $master_name.tar.bz2 $master_name.img img-metadata.xml >/dev/null");
+    system("rm $master_name.img img-metadata.xml >/dev/null");
+
+    if(! -e $master_archive) {
+        ok (-e $master_archive, "Test master image required");
     
-    BAIL_OUT('Cannot find test master image file: ' . $master_archive);
+        BAIL_OUT('Cannot find test master image file: ' . $master_archive);
+    }
 }
 
 # Test root access
@@ -113,83 +149,103 @@ eval {
                                                            econtext    => $econtext);
     } 'Create nfs export for file image hosting';
 
-    # Add system image from distribution
-    my $systemimage_name = 'TestScenario';
+    # Loop over disk managers.
+    my $storage_provider_id;
     lives_ok {
-        Entity::Systemimage->create(
-			systemimage_name => $systemimage_name,
-			systemimage_desc => 'System image for test scenario MasterImageToCluster.',
-            masterimage_id   => $master_image->getAttr(name => 'masterimage_id'),
-        );
-    } 'AddSytemImage operation enqueue';
-    
-    lives_ok { $executor->oneRun(); } 'AddSytemImage operation execution succeed';
+        $storage_provider_id = $kpc_cluster->getAttr(name => 'cluster_id');
+    } 'Get storage_provider_id';
 
-    my $systemimage;
-	lives_ok {
-		$systemimage = Entity::Systemimage->find(
-                           hash => {
-                               systemimage_name => $systemimage_name,
-                           }
-                       );
-	} 'Retrieve system image ' . $systemimage_name;
 
-    # Clone system image
-    my $systemimage_id = $systemimage->getAttr(name => 'systemimage_id');
-    my $clone_name = 'Clone' . $systemimage_name;
-    lives_ok {
-        Operation->enqueue(
-            priority => 200,
-            type     => 'CloneSystemimage',
-            params   => {
-                systemimage_id   => $systemimage_id,
-                systemimage_name => $clone_name,
-                systemimage_desc => 'System image for test scenario MasterImageToCluster.',
-            },
-        );
-    } 'CloneSystemImage operation enqueue';
-    
-    lives_ok { $executor->oneRun(); } 'CloneSystemImage operation execution succeed';
+    for my $disk_manager_current ($kpc_cluster->getComponent(name => "Lvm", version => "2")) {
 
-    my $clone;
-	lives_ok {
-		$clone = Entity::Systemimage->find(
-                     hash => {
-                         systemimage_name => $clone_name,
-                     }
-                 );
-	} 'Retrieve system image ' . $clone_name;
+        my $disk_manager_id;
+        lives_ok {
+            $disk_manager_id = $disk_manager_current->getAttr(name => 'component_id');
+        } 'Get storage_provider_id';
 
-    # Remove clone system image
-    lives_ok {
-        Operation->enqueue(
-            priority => 200,
-            type     => 'RemoveSystemimage',
-            params   => {
-                systemimage_id => $clone->getAttr(name => 'systemimage_id')
-            },
-        );
-    } 'RemoveSystemImage (clone) operation enqueue';
-    
-    lives_ok { $executor->oneRun(); } 'RemoveSystemImage operation execution succeed';
+        # Add system image from distribution
+        my $systemimage_name = 'TestScenario_' . $storage_provider_id . '_' . $disk_manager_id;
 
-    # Remove system image
-    lives_ok {
-        Operation->enqueue(
-            priority => 200,
-            type     => 'RemoveSystemimage',
-            params   => {
-                systemimage_id => $systemimage_id
-            },
-        );
-    } 'RemoveSystemImage operation enqueue';
-    
-    lives_ok { $executor->oneRun(); } 'RemoveSystemImage operation execution succeed';
+        lives_ok {
+            Entity::Systemimage->create(
+                storage_provider_id => $storage_provider_id,
+                disk_manager_id     => $disk_manager_id,
+                systemimage_name    => $systemimage_name,
+                systemimage_desc    => 'System image for test scenario MasterImageToCluster.',
+                masterimage_id      => $master_image->getAttr(name => 'masterimage_id'),
+            );
+        } 'AddSytemImage operation enqueue';
+        
+        lives_ok { $executor->oneRun(); } 'AddSytemImage operation execution succeed';
 
-	throws_ok {
-		Entity::Systemimage->get(id => $systemimage_id);
-	} 'Kanopya::Exception::DB',
-      'Systemimage removed ' . $systemimage_name . ', id ' . $systemimage_id;
+        my $systemimage;
+        lives_ok {
+            $systemimage = Entity::Systemimage->find(
+                               hash => {
+                                   systemimage_name => $systemimage_name,
+                               }
+                           );
+        } 'Retrieve system image ' . $systemimage_name;
+
+        # Clone system image
+        my $systemimage_id = $systemimage->getAttr(name => 'systemimage_id');
+        my $clone_name = 'Clone' . $systemimage_name;
+        lives_ok {
+            Operation->enqueue(
+                priority => 200,
+                type     => 'CloneSystemimage',
+                params   => {
+                    storage_provider_id => $storage_provider_id,
+                    disk_manager_id     => $disk_manager_id,
+                    systemimage_id      => $systemimage_id,
+                    systemimage_name    => $clone_name,
+                    systemimage_desc    => 'System image for test scenario MasterImageToCluster.',
+                },
+            );
+        } 'CloneSystemImage operation enqueue';
+        
+        lives_ok { $executor->oneRun(); } 'CloneSystemImage operation execution succeed';
+
+        my $clone;
+        lives_ok {
+            $clone = Entity::Systemimage->find(
+                         hash => {
+                             systemimage_name => $clone_name,
+                         }
+                     );
+        } 'Retrieve system image ' . $clone_name;
+
+        # Remove clone system image
+        lives_ok {
+            Operation->enqueue(
+                priority => 200,
+                type     => 'RemoveSystemimage',
+                params   => {
+                    systemimage_id => $clone->getAttr(name => 'systemimage_id')
+                },
+            );
+        } 'RemoveSystemImage (clone) operation enqueue';
+        
+        lives_ok { $executor->oneRun(); } 'RemoveSystemImage operation execution succeed';
+
+        # Remove system image
+        lives_ok {
+            Operation->enqueue(
+                priority => 200,
+                type     => 'RemoveSystemimage',
+                params   => {
+                    systemimage_id => $systemimage_id
+                },
+            );
+        } 'RemoveSystemImage operation enqueue';
+        
+        lives_ok { $executor->oneRun(); } 'RemoveSystemImage operation execution succeed';
+
+        throws_ok {
+            Entity::Systemimage->get(id => $systemimage_id);
+        } 'Kanopya::Exception::DB',
+          'Systemimage removed ' . $systemimage_name . ', id ' . $systemimage_id;
+    }
 
     lives_ok {
         $eexport_manager->removeExport(container_access => $container_access,
