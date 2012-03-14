@@ -23,19 +23,17 @@
                 <label for="combination_end_time">End time (default is now) </label>
                 <input type="text" id="combination_end_time" />
             </div><br />
-            <div class="field">
-                <label for="combination_list" class="list_label">available indicators for external cluster </label>
+                <label for="combination_list" class="list_label">Available combinations for external cluster </label><br /><br />
                 <% IF errors.combinations %>
                     <p class="error"> ERROR: <% errors.combinations %> </p>
                 <% ELSE %>
-                <select id="combination_list" class="combination_list" onchange="showCombinationGraph(this,this.options[this.selectedIndex].id, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);" >
+                <select id="combination_list" class="combination_list" onchange="showCombinationGraph(this,this.options[this.selectedIndex].id, this.options[this.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);" >
                     <option selected="selected" id="default">Select a combination</option>
                     <% FOREACH combination IN combinations %>
-                        <option id="<% combination.id %>"><% combination.label %></option>
+                        <option id="<% combination.id %>" value="<% combination.label %>"><% combination.label %></option>
                     <% END %>
                 </select>
                 <% END %>
-            </div>
         </div>
         <br />
         <div id="clusterCombinationView"></div><br />

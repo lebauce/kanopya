@@ -1095,6 +1095,7 @@ CREATE TABLE `graph` (
 
 CREATE TABLE `clustermetric` (
   `clustermetric_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `clustermetric_label` char(255),
   `clustermetric_service_provider_id` int(8) unsigned NOT NULL,
   `clustermetric_indicator_id` int(8) unsigned NOT NULL,
   `clustermetric_statistics_function_name` char(32) NOT NULL,
@@ -1115,6 +1116,7 @@ CREATE TABLE `clustermetric` (
 
 CREATE TABLE `aggregate_combination` (
   `aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `aggregate_combination_label` char(255),
   `aggregate_combination_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_combination_formula` char(32) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
@@ -1131,7 +1133,7 @@ CREATE TABLE `aggregate_combination` (
 
 CREATE TABLE `aggregate_rule` (
   `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-  `aggregate_rule_label` char(32),
+  `aggregate_rule_label` char(255),
   `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(32) NOT NULL ,
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
@@ -1152,6 +1154,7 @@ CREATE TABLE `aggregate_rule` (
 
 CREATE TABLE `aggregate_condition` (
   `aggregate_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `aggregate_condition_label` char(255),
   `aggregate_condition_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_combination_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
@@ -1176,6 +1179,7 @@ CREATE TABLE `aggregate_condition` (
 
 CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_combination_label` char(255),
   `nodemetric_combination_formula` char(32) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
@@ -1189,6 +1193,7 @@ CREATE TABLE `nodemetric_combination` (
 
 CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `nodemetric_condition_label` char(255),
   `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
   `nodemetric_condition_threshold` double NOT NULL,
@@ -1207,7 +1212,7 @@ CREATE TABLE `nodemetric_condition` (
 
 CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `nodemetric_rule_label` char(32),
+  `nodemetric_rule_label` char(255),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(32) NOT NULL ,
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,

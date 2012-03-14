@@ -24,9 +24,6 @@
 
     <table>
         <tr><td>
-            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics">View the clustermetrics</a>
-        </tr></td>
-        <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
         </td></tr>
         <tr><td>

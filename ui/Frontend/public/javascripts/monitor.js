@@ -320,16 +320,17 @@ var nodes_view = path + '/nodesview';
 var clusters_view = path  + '/clustersview';
 
 //function triggered on cluster_combination selection
-function showCombinationGraph(curobj,combi_id,start,stop){
+function showCombinationGraph(curobj,combi_id,label,start,stop){
 	if (combi_id == 'default'){return}
 	loading_start();
 	var params = {id:combi_id,start:start,stop:stop};
 	document.getElementById('clusterCombinationView').innerHTML='';
 	$.getJSON(clusters_view, params, function(data) {
+        // alert('titi');
 		if (data.error) { alert (data.error); }
 		else {
 			document.getElementById('clusterCombinationView').style.display='block';
-			timedGraph(data.first_histovalues, data.min, data.max);
+			timedGraph(data.first_histovalues, data.min, data.max, label);
 		}
         loading_stop();
     });
@@ -362,7 +363,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 				var sliced_values = data.values.slice(indexOffset,toElementNumber);
 				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
 				//we generate the graph
-				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max);
+				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, metric_oid);
 			}
 		}
         loading_stop();
@@ -370,15 +371,15 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 }
 
 //Jqplot bar graph
-function barGraph(values, nodelist, unit, div_id, min, max){
+function barGraph(values, nodelist, unit, div_id, min, max, title){
 	$.jqplot.config.enablePlugins = true;
     plot1 = $.jqplot(div_id, [values], {
-	title:'Indicator Distributed Graph (in '+unit+' )',
+	title: title+' (in '+unit+' )',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
             rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
-            pointLabels: { show: true }
+            pointLabels: { show: true },
         },
         axes: {
             xaxis: {
@@ -410,12 +411,16 @@ function barGraph(values, nodelist, unit, div_id, min, max){
 }
  
  //Jqplot basic curve graph
- function timedGraph(first_graph_line, min, max){
+ function timedGraph(first_graph_line, min, max, label){
 	$.jqplot.config.enablePlugins = true;
-    // var line1=[['03-30-2012 16:12', 578.55], ['03-30-2012 16:17', 566.5], ['03-30-2012 16:23', 480.88], ['03-30-2012 16:26', 509.84]];
+    // var line1=[['03-14-2012 16:23', 578.55], ['03-14-2012 16:17', 566.5], ['03-14-2012 16:12', 480.88],['03-14-2012 16:15',null], ['03-14-2012 16:19', 580.88], ['03-14-2012 16:26', 509.84], ['03-14-2012 16:21',null],];
+    // alert ('min: '+min+' max: '+max);
     // alert ('data for selected combination: '+first_graph_line);
     var plot1 = $.jqplot('clusterCombinationView', [first_graph_line], {
-        title:'Combination Historical Graph',
+        title:label,
+        seriesDefaults: {
+            breakOnNull:true,
+            },
         axes:{
             xaxis:{
                 renderer:$.jqplot.DateAxisRenderer,
@@ -428,22 +433,20 @@ function barGraph(values, nodelist, unit, div_id, min, max){
                     markSize: 10,
                     showGridline: false,
                     angle: -60,
-                    formatString: '%y-%m-%d %H:%M'
+                    formatString: '%m-%d-%Y %H:%M'
                 },
-            min:min,
-            max:max,
-            // min: '03-30-2012 16:00',
-            // max: '03-30-2012 16:30'
+                min:min,
+                max:max,
             },
             yaxis:{
                 tickOptions: {
                     showMark: false,
-                }
+                },
             },
         },
         highlighter: {
             show: true,
-            formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %d</p>',
+            // formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %f</p>',
         }
     });
 }

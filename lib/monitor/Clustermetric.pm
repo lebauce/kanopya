@@ -31,6 +31,10 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    clustermetric_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
     clustermetric_indicator_id             =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -103,6 +107,9 @@ sub new {
     #Create RRD DB
     my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
     RRDTimeData::createTimeDataStore(name => $clustermetric_id);
+    
+    $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
+    $self->save();
     return $self;
 }
 

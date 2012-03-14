@@ -399,7 +399,7 @@ get '/clustermetrics' => sub {
     foreach my $clustermetric (@clustermetrics){
         my $hash = {
             id           => $clustermetric->getAttr(name => 'clustermetric_id'),
-            label        => $clustermetric->toString(),
+            label        => $clustermetric->getAttr(name => 'clustermetric_label'),
             indicator_id => $clustermetric->getAttr(name => 'clustermetric_indicator_id'),
             function     => $clustermetric->getAttr(name => 'clustermetric_statistics_function_name'),
             window       => $clustermetric->getAttr(name => 'clustermetric_window_time'),
@@ -423,7 +423,7 @@ get '/extclusters/:extclusterid/clustermetrics' => sub {
     foreach my $clustermetric (@clustermetrics){
         my $hash = {
             id           => $clustermetric->getAttr(name => 'clustermetric_id'),
-            label        => $clustermetric->toString(),
+            label        => $clustermetric->getAttr(name => 'clustermetric_label'),
             indicator_id => $clustermetric->getAttr(name => 'clustermetric_indicator_id'),
             function     => $clustermetric->getAttr(name => 'clustermetric_statistics_function_name'),
             window       => $clustermetric->getAttr(name => 'clustermetric_window_time'),
@@ -526,7 +526,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations' => sub {
     foreach my $clustermetric_combination (@clustermetric_combinations){
         my $hash = {
             id           => $clustermetric_combination->getAttr(name => 'aggregate_combination_id'),
-            label        => $clustermetric_combination->toString(),
+            label        => $clustermetric_combination->getAttr(name => 'aggregate_combination_label'),
         };
         push @clustermetric_combinations_param, $hash;
         
@@ -579,7 +579,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
     foreach my $clustermetric (@clustermetrics){
         my $hash = {
             id           => $clustermetric->getAttr(name => 'clustermetric_id'),
-            label        => $clustermetric->toString(),
+            label        => $clustermetric->getAttr(name => 'clustermetric_label'),
         };
             push @clustermetrics_param, $hash;
     }
@@ -615,7 +615,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions' => sub {
     foreach my $clustermetric_condition (@clustermetric_conditions){
         my $hash = {
             id           => $clustermetric_condition->getAttr(name => 'aggregate_condition_id'),
-            label        => $clustermetric_condition->toString(),
+            label        => $clustermetric_condition->getAttr(name => 'aggregate_condition_label'),
         };
         push @clustermetric_conditions_param, $hash;
     }
@@ -706,7 +706,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
     foreach my $combination (@combinations){
         my $hash = {
             id     => $combination->getAttr(name => 'aggregate_combination_id'),
-            label  => $combination->toString(),
+            label  => $combination->getAttr(name => 'aggregate_combination_label'),
         };
         push @combinationsInput, $hash;
     }
@@ -729,17 +729,12 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
 #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
   my @rules;
   foreach my $aggregate_rule (@enabled_aggregaterules) {
-    my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
-    
-    if(not defined $label) {
-        $label = $aggregate_rule->toString();
-    }
     
     my $hash = {
         id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
         formula   => $aggregate_rule->toString(),
         last_eval => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
-        label     => $label,
+        label     => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
 
     };
     push @rules, $hash;
@@ -761,19 +756,12 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
   #my @disabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled'});
   my @disabled_rules;
   foreach my $aggregate_rule (@disabled_aggregaterules) {
-      
-    my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
-    
-    if(not defined $label) {
-        $label = $aggregate_rule->toString();
-    }
-    
-   
+
     my $hash = {
-      id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-      formula => $aggregate_rule->toString(),
+      id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+      formula   => $aggregate_rule->toString(),
       last_eval => -1,
-      label     => $label,
+      label     => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
       
     };
     push @disabled_rules, $hash;
@@ -793,18 +781,13 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdi
   #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
   my @tdisabled_rules;
   foreach my $aggregate_rule (@tdisabled_aggregaterules) {
-          my $label = $aggregate_rule->getAttr(name => 'aggregate_rule_label');
-    
-    if(not defined $label) {
-        $label = $aggregate_rule->toString();
-    }
-    
+
     my $hash = {
       id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula   => $aggregate_rule->toString(),
       last_eval => -1,
       time      => $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp') - time(),
-      label     => $label,
+      label     => $aggregate_rule->getAttr(name => 'aggregate_rule_formula'),
       
     };
     push @tdisabled_rules, $hash;
@@ -866,7 +849,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     
     foreach my $condition_inst (@condition_insts){
         my $hash = {
-            label => $condition_inst->toString(),
+            label => $condition_inst->getAttr('name' => 'aggregate_condition_label'),
             id    => $condition_inst->getAttr('name' => 'aggregate_condition_id'),
         };
         
@@ -876,7 +859,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     my $rule_param = {
         id        => $rule_id,
         formula   => $rule->getAttr('name' => 'aggregate_rule_formula'),
-        string    => $rule->toString(),
+        string    => $rule->getAttr('name' => 'aggregate_rule_label'),
         state     => $rule->getAttr('name' => 'aggregate_rule_state'),
         label     => $rule->getAttr('name' => 'aggregate_rule_label'),
         action_id => $rule->getAttr('name' => 'aggregate_rule_action_id'),
@@ -922,7 +905,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/new
     foreach my $condition (@conditions){
         my $hash = {
             id           => $condition->getAttr(name => 'aggregate_condition_id'),
-            label        => $condition->toString(),
+            label        => $condition->getAttr(name => 'aggregate_condition_label'),
         };
             push @condition_params, $hash;
     }
@@ -981,7 +964,7 @@ get '/extclusters/:extclusterid/nodemetrics/combinations' => sub {
     foreach my $nodemetric_combination (@nodemetric_combinations){
         my $hash = {
             id           => $nodemetric_combination->getAttr(name => 'nodemetric_combination_id'),
-            label        => $nodemetric_combination->toString(),
+            label        => $nodemetric_combination->getAttr(name => 'nodemetric_combination_label'),
         };
         push @nodemetric_combinations_param, $hash;
         
@@ -1088,7 +1071,7 @@ get '/extclusters/:extclusterid/nodemetrics/conditions' => sub {
     foreach my $nodemetric_condition (@nodemetric_conditions){
         my $hash = {
             id           => $nodemetric_condition->getAttr(name => 'nodemetric_condition_id'),
-            label        => $nodemetric_condition->toString(),
+            label        => $nodemetric_condition->getAttr(name => 'nodemetric_condition_label'),
         };
         push @nodemetric_conditions_param, $hash;
     }
@@ -1176,7 +1159,7 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
     foreach my $combination (@combinations){
         my $hash = {
             id     => $combination->getAttr(name => 'nodemetric_combination_id'),
-            label  => $combination->toString(),
+            label  => $combination->getAttr(name => 'nodemetric_combination_label'),
         };
         push @combinationsInput, $hash;
     }
@@ -1268,7 +1251,7 @@ get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
     foreach my $condition (@conditions){
         my $hash = {
             id           => $condition->getAttr(name => 'nodemetric_condition_id'),
-            label        => $condition->toString(),
+            label        => $condition->getAttr(name => 'nodemetric_condition_label'),
         };
             push @condition_params, $hash;
     }
@@ -1318,7 +1301,7 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
     
     foreach my $condition_inst (@condition_insts){
         my $hash = {
-            label => $condition_inst->toString(),
+            label => $condition_inst->getAttr('name' => 'nodemetric_condition_label'),
             id    => $condition_inst->getAttr('name' => 'nodemetric_condition_id'),
         };
         
