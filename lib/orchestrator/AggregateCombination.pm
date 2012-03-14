@@ -30,6 +30,10 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    aggregate_combination_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
     aggregate_combination_service_provider_id => {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -51,6 +55,9 @@ sub new {
     
     _verify($formula);
     my $self = $class->SUPER::new(%args);
+    
+    $self->setAttr(name=>'aggregate_combination_label', value => $self->toString());
+    $self->save();
     return $self;
 }
 
@@ -174,7 +181,7 @@ sub compute{
         }
      }
      
-    my $res = -1;
+    my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula

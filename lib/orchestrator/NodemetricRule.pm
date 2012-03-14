@@ -62,6 +62,14 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub new {
+    my $class = shift;
+    my %args = @_;
+    my $self = $class->SUPER::new(%args);
+    $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
+    $self->save();
+    return $self;
+}
 
 sub toString{
     my $self = shift;
