@@ -50,7 +50,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
     "nodemetric_combination_label",
-  { data_type => "char", is_nullable => 1, size => 64 },
+  { data_type => "char", is_nullable => 1, size => 255 },
   "nodemetric_combination_formula",
   { data_type => "char", is_nullable => 0, size => 32 },
   "class_type_id",
