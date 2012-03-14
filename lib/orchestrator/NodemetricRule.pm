@@ -161,7 +161,7 @@ sub deleteVerifiedRule  {
     
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
     
-    my $extnodes = $extcluster->getNodes();
+    my $extnodes = $extcluster->getNodes(shortname => 1);
     
     my $externalnode_id;
     
