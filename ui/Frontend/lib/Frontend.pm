@@ -74,6 +74,15 @@ get '/permission_denied' => sub {
     template 'permission_denied';
 };
 
+get '/error_500' => sub {
+    set log => "debug";
+    set show_errors => 1;
+    my $trace = Devel::StackTrace->new;
+    my $message = $trace->as_string;
+    template 'error_500',{
+        message => $message
+    };
+};
 
 
 any qr{.*} => sub {
