@@ -100,6 +100,7 @@ sub checkParam {
     eval {
         General::checkParams(args => $caller_args, required => [ $arg_name ]);
         $value = $caller_args->{$arg_name};
+        delete $caller_args->{$arg_name};
     };
     if ($@) {
         if (exists $args{default} and defined $args{default}) {
