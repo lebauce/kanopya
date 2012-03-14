@@ -172,7 +172,9 @@ sub deleteVerifiedRule  {
     }
     
     if(not defined $externalnode_id){
-        die assert("UNKOWN node $hostname in cluster $cluster_id");
+        my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }else{
         print "** try to delete $externalnode_id **\n";
             my $verified_rule_dbix = 
