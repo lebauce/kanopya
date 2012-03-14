@@ -253,7 +253,7 @@ sub _computeAggregateValuesAndUpdateTimeDB{
             #Store in DB and time stamp
             my $time = time();
             RRDTimeData::updateTimeDataStore(
-                aggregator_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
+                clustermetric_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
                 time          => $time, 
                 value         => $statValue,
                 );
