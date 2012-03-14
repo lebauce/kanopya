@@ -185,7 +185,9 @@ sub fetchTimeDataStore {
     #clean the string of unwanted ":"
     $exec =~ s/://g;
 	#replace the ',' by '.'
-	$exec =~ s/,/./g;
+	$exec =~ s/,/./g;	
+	#we replace the '-1.#IND000000e+000' values for 'undef'
+	$exec =~ s/-1\.\#IND000000e\+000/undef/g;
     #we split the string into an array
     my @values = split(' ', $exec);
     #print Dumper(\@values);
