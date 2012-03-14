@@ -360,6 +360,36 @@ sub search {
     return  @objs;
 }
 
+# Quick fix for perf optim (TODO refacto)
+# Don't manage concrete class type
+# See search and get
+sub searchLight {
+    my $class = shift;
+    my %args = @_;
+    my @objs = ();
+
+    General::checkParams(args => \%args, required => ['hash']);
+
+    my $table = _buildClassNameFromString($class);
+    my $adm = Administrator->new();
+  
+    my $rs = $adm->_getDbixFromHash( table => $table, hash => $args{hash} );
+
+    while ( my $row = $rs->next ) {
+        #my %data = $row->get_columns();
+        
+        my $self = {
+            _dbix => $row,
+        };
+
+        bless $self, $class;
+    
+        push @objs, $self;
+    }
+    
+    return @objs;
+}
+
 sub find {
     my $class = shift;
     my %args = @_;
