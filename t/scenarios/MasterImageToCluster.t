@@ -256,6 +256,12 @@ eval {
         $edisk_manager->removeDisk(container => $container,
                                    econtext  => $econtext);
     } 'Remove large lvm volume';
+    
+    lives_ok {
+        $master_image->remove();
+    } 'RemoveMasterimage operation enqueue';
+    
+    lives_ok { $executor->oneRun(); } 'RemoveMasterimage operation execution succeed';
 
     $db->txn_rollback;
 
