@@ -69,6 +69,8 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
+    "clustermetric_label",
+  { data_type => "char", is_nullable => 1, size => 64 },
   "clustermetric_service_provider_id",
   {
     data_type => "integer",
