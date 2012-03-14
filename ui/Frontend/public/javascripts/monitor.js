@@ -319,37 +319,39 @@ var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
 var clusters_view = path  + '/clustersview';
 
+//function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,start,stop){
-	if(combi_id == 'default'){return}
+	if (combi_id == 'default'){return}
 	loading_start();
 	var params = {id:combi_id,start:start,stop:stop};
-	document.getElementById('timedCombinationView').innerHTML='';
-	 $.getJSON(clusters_view, params, function(data) {
-		if (data.error){ alert (data.error); }
-		else{
-			document.getElementById('timedCombinationView').style.display='block';
+	document.getElementById('clusterCombinationView').innerHTML='';
+	$.getJSON(clusters_view, params, function(data) {
+		if (data.error) { alert (data.error); }
+		else {
+			document.getElementById('clusterCombinationView').style.display='block';
 			timedGraph(data.first_histovalues, data.min, data.max);
 		}
         loading_stop();
     });
 }
 
+//function triggered on node_combination selection
 function showMetricGraph(curobj,metric_oid,metric_unit){
-	if(metric_oid == 'default'){return}
+	if (metric_oid == 'default') { return }
 	loading_start();
 	var params = {oid:metric_oid,unit:metric_unit};
 	document.getElementById('nodes_charts').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
         if (data.error){ alert (data.error); }
-		else{
+		else {
 			document.getElementById('nodes_charts').style.display='block';
             var min = data.values[0];
             var max = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
-			var max_nodes_per_graph = 100;
+			var max_nodes_per_graph = 20;
 			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
 			var nodes_per_graph = data.nodelist.length/graph_number;
-			for (var i = 0; i<graph_number; i++){
+			for (var i = 0; i<graph_number; i++) {
 				var div_id = 'nodechart_'+i;
 				var div = '<div id=\"'+div_id+'\"></div>';
 				//create the graph div container
@@ -367,6 +369,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
     });
 }
 
+//Jqplot bar graph
 function barGraph(values, nodelist, unit, div_id, min, max){
 	$.jqplot.config.enablePlugins = true;
     plot1 = $.jqplot(div_id, [values], {
@@ -374,40 +377,44 @@ function barGraph(values, nodelist, unit, div_id, min, max){
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
-            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 5 },
+            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
             pointLabels: { show: true }
         },
         axes: {
             xaxis: {
                 renderer: $.jqplot.CategoryAxisRenderer,
-                showGridline: false,
                 ticks: nodelist,
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
-                    angle: -60,
+                    showMark: false,
+                    showGridline: false,
+                    angle: -40,
                 }
             },
             yaxis:{
                 min:0,
-                max:max
+                max:max,
             },
         },
         seriesColors: ["#D4D4D4" ,"#999999"],
-        highlighter: { show: false }
-    });
- 
-    // $('#nodechart').bind('jqplotDataClick',
+        highlighter: { 
+            show: true,
+            showMarker:false,
+        }
+    }); 
+    // $('#nodechart').bind('jqplotDataHighlight',
         // function (ev, seriesIndex, pointIndex, data) {
             // $('#info1').html('series: '+seriesIndex+', point: '+pointIndex+', data: '+data);
         // }
     // );
 }
  
+ //Jqplot basic curve graph
  function timedGraph(first_graph_line, min, max){
 	$.jqplot.config.enablePlugins = true;
-    alert ('data for selected combination: '+first_graph_line);
-	// var line1=[['03-30-2012 16:10',1], ['03-30-2012 16:13',3], ['03-30-2012 16:22',5], ['03-30-2012 16:23',7], ['03-30-2012 16:27',8]];
-	var plot1 = $.jqplot('timedCombinationView', [first_graph_line], {
+    // var line1=[['03-30-2012 16:12', 578.55], ['03-30-2012 16:17', 566.5], ['03-30-2012 16:23', 480.88], ['03-30-2012 16:26', 509.84]];
+    // alert ('data for selected combination: '+first_graph_line);
+    var plot1 = $.jqplot('clusterCombinationView', [first_graph_line], {
         title:'Combination Historical Graph',
         axes:{
             xaxis:{
@@ -417,48 +424,26 @@ function barGraph(values, nodelist, unit, div_id, min, max){
                 },
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
-                  angle: -60,
-                  formatString: '%y-%m-%d %H:%M'
+                    mark: 'inside',
+                    markSize: 10,
+                    showGridline: false,
+                    angle: -60,
+                    formatString: '%y-%m-%d %H:%M'
                 },
-        min:min,
-        max:max,
-		// min: '03-30-2012 16:00',
-		// max: '03-30-2012 16:30'
-            }      
+            min:min,
+            max:max,
+            // min: '03-30-2012 16:00',
+            // max: '03-30-2012 16:30'
+            },
+            yaxis:{
+                tickOptions: {
+                    showMark: false,
+                }
+            },
         },
-        series:[{lineWidth:4, markerOptions:{style:'square'}}]
+        highlighter: {
+            show: true,
+            formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %d</p>',
+        }
     });
 }
-
-// function testBar(){
-//var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet','plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU' ];
-	//var s1 = [ 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 6000,6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000];	
-	// $.jqplot.config.enablePlugins = true;
-	// plot1 = $.jqplot('testchart', [s1], {
-	// title:'Indicator Distributed Graph',
-        // animate: !$.jqplot.use_excanvas,
-        // seriesDefaults:{
-            // renderer:$.jqplot.BarRenderer,
-            // rendererOptions:{ varyBarColor : true },
-            // pointLabels: { show: true }
-        // },
-        // axes: {
-            // xaxis: {
-                // renderer: $.jqplot.CategoryAxisRenderer,
-                // ticks: ticks,
-                // tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-                // tickOptions: {
-                    // angle: -80,
-                // }
-            // }
-        // },
-        // seriesColors: ["#D4D4D4" ,"#999999"],
-        // highlighter: { show: false }
-    // });
-    
-    // $('#testchart').bind('jqplotDataClick', 
-    // function (ev, seriesIndex, pointIndex, data) {
-        // $('#info1').html('series: '+seriesIndex+', point: '+pointIndex+', data: '+data);
-    // }
-    // );
-// }

@@ -286,7 +286,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     
 	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
 	if ($start eq '') {
-		$start = DateTime->now;
+		$start = DateTime->now->set_time_zone('local');
 		$start->subtract( days => 1 );
         $start_timestamp = $start->epoch(); 
 		$start = $start->mdy('-') . ' ' .$start->hour_1().':'.$start->minute();
@@ -296,7 +296,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     }
         
 	if ($stop eq '') {
-		$stop = DateTime->now;
+		$stop = DateTime->now->set_time_zone('local');
         $stop_timestamp = $stop->epoch(); 
 		$stop = $stop->mdy('-') . ' ' .$stop->hour_1().':'.$stop->minute();
 	} else {
@@ -311,11 +311,11 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     if ($@) {
 		$error="$@";
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} elsif (!%aggregate_combination || scalar(keys %aggregate_combination) == 0) {
 		$error='no values could be computed for this combination';
 		$log->error($error);
-		to_json {error => $error};
+		return to_json {error => $error};
 	} else {
         while (my ($date, $value) = each %aggregate_combination) {				
                 my $dt = DateTime->from_epoch(epoch => $date);
@@ -324,7 +324,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
             }		
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }
-	to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
+	return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
   
   
@@ -343,33 +343,40 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
 	my $nodes_metrics; 
 	my $error;
     
-    #we retrieve the nodemetric values
+    # we retrieve the nodemetric values
 	eval {
 		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
 	};
-    #error catching
+    # error catching
 	if ($@) {
 		$error="$@";
 		$log->error($error);
 		return to_json {error => $error};
-    #we catch the fact that there is no value available for the selected nodemetric
+    # we catch the fact that there is no value available for the selected nodemetric
 	} elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0) {
 		$error='no values available for this metric';
 		$log->error($error);
 		return to_json {error => $error};
 	} else {
         #we create an array containing the values, to be sorted
-		my @nodes_values_to_sort;
-		while (my ($node, $metric) = each %$nodes_metrics) {
-			push @nodes_values_to_sort, { node => $node, value => $metric->{$indicator} };
-		}
+        my @nodes_values_to_sort;
+        my @nodes_values_undef;
+        while (my ($node, $metric) = each %$nodes_metrics) {
+            if (defined $metric->{$indicator}) {
+                push @nodes_values_to_sort, { node => $node, value => $metric->{$indicator} };
+            } else {
+                push @nodes_values_undef, $node;
+            }
+        }
         #we now sort this array
 		my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
-        #we split the array into 2 distincts one, that will be returned to the monitor.js
+        # we split the array into 2 distincts one, that will be returned to the monitor.js
 		my @nodes = map { $_->{node} } @sorted_nodes_values;
 		my @values = map { $_->{value} } @sorted_nodes_values;	
+		#we add nodes without values at the end of nodes list
+		@nodes = (@nodes, @nodes_values_undef);
 		
-		to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
+		return to_json {values => \@values, nodelist => \@nodes, unit => $indicator_unit};	
 		# my (@test1, @test2);
         
 		# for (my $i = 1; $i<51; $i++){

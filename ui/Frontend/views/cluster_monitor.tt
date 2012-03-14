@@ -1,41 +1,44 @@
-<% js_head.push('jqplot/jquery.jqplot.js', 'excanvas.min.js', 'jquery-ui-timepicker-addon.js', 'jqplot/jqplot.barRenderer.js', 'jqplot/jqplot.categoryAxisRenderer.js', 'jqplot/jqplot.dateAxisRenderer.js', 'jqplot/jqplot.canvasTextRenderer.js', 'jqplot/jqplot.canvasAxisTickRenderer.js', 'monitor.js') %>
+<% js_head.push('jqplot/jquery.jqplot.min.js', 'jqplot/jqplot.highlighter.min.js', 'jquery-ui-timepicker-addon.js', 'jqplot/jqplot.barRenderer.min.js', 'jqplot/jqplot.categoryAxisRenderer.min.js', 'jqplot/jqplot.dateAxisRenderer.min.js', 'jqplot/jqplot.canvasTextRenderer.min.js', 'jqplot/jqplot.canvasAxisTickRenderer.min.js', 'monitor.js') %>
 <% css_head.push('jquery-ui-1.8.18.custom.css', 'monitoring.css') %>
 
 <div class="cluster_overview">
 	<h2>cluster overview</h2>
-        <div class="clustermetric_dropdown">
-		<h3>Choose a time window to monitor: </h3>
-		<label for="combination_start_time">Start time (default is now - 1 hour) : </label>
-		<input type="text" id="combination_start_time" />
-		<label for="combination_end_time">End time (default is now): </label>
-		<input type="text" id="combination_end_time" /><br />
-		<h3>Choose a combination to monitor: </h3>
-		<% IF errors.combinations %>
-			<p> error: <% errors.combinations %> </p><br />
-			<p>no combination could be retrieved for this external cluster</p>
-		<% ELSE %>
-		<label for="combination_list" class="list_label">available indicators for external cluster: </label>
-		<select id="combination_list" onchange="showCombinationGraph(this,this.options[this.selectedIndex].id, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);" >
-			<option selected="selected" id="default"> Please select a combination to monitor </option>
-			<% FOREACH combination IN combinations %>
-				<option id="<% combination.id %>"><% combination.label %></option>
-			<% END %>
-		</select>
-		<% END %>
+        <div class="clustermetric_options">
+            <div class="field">
+                <label for="combination_start_time">Start time (default is now - 1 day) </label>
+                <input type="text" id="combination_start_time" />
+            </div><br />
+            <div class="field">
+                <label for="combination_end_time">End time (default is now) </label>
+                <input type="text" id="combination_end_time" />
+            </div><br />
+            <div class="field">
+                <label for="combination_list" class="list_label">available indicators for external cluster </label>
+                <% IF errors.combinations %>
+                    <p class="error"> ERROR: <% errors.combinations %> </p>
+                <% ELSE %>
+                <select id="combination_list" class="combination_list" onchange="showCombinationGraph(this,this.options[this.selectedIndex].id, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);" >
+                    <option selected="selected" id="default">Select a combination</option>
+                    <% FOREACH combination IN combinations %>
+                        <option id="<% combination.id %>"><% combination.label %></option>
+                    <% END %>
+                </select>
+                <% END %>
+            </div>
         </div>
         <br />
-        <div id="timedCombinationView"></div><br />
+        <div id="clusterCombinationView"></div><br />
 </div>
 <div class="nodes_overview">
 	<h2>nodes overview</h2>
 	<div class="indicator_dropdown">
 	<% IF errors.indicators %>
-		<p> error: <% errors.indicators %> </p><br />
+		<p class="error"> ERROR: <% errors.indicators %> </p><br />
 		<p>no indicator could be retrieved for this external cluster</p>
 	<% ELSE %>
-		<label for="indicator_list" class="list_label">available indicators for external cluster: </label>
+		<label for="indicator_list" class="list_label">Available indicators for external cluster </label>
 		<select id="indicator_list" onchange="showMetricGraph(this,this.options[this.selectedIndex].id,this.options[this.selectedIndex].value);" >
-			<option selected="selected" id="default"> Please select an indicator to monitor </option>
+			<option selected="selected" id="default">Select an indicator</option>
 			<% FOREACH indicator IN indicators %>
 				<option id ="<% indicator.oid %>" value="<% indicator.unit %>"><% indicator.label %></option>
 			<% END %>
@@ -43,8 +46,7 @@
 	<% END %>
 	</div>
 	<br />
-	<div id="nodes_charts">
-	</div>
+	<div id="nodes_charts"></div><br />
 </div>
 <div class="single_node_overview">
 	<h2>Single node view</h2>
