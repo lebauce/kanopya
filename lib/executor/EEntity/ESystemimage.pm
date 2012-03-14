@@ -53,26 +53,18 @@ sub create {
 
     $log->info('Device creation for new systemimage');
 
-    my $edisk_manager = $args{edisk_manager};
-    delete $args{edisk_manager};
+    my $edisk_manager     = General::checkParam(args => \%args, name => 'edisk_manager');
+    my $esource_container = General::checkParam(args => \%args, name => 'esrc_container');
+    my $erollback         = General::checkParam(args => \%args, name => 'erollback');
+    my $econtext          = General::checkParam(args => \%args, name => 'econtext');
 
-    my $esource_container = $args{esrc_container};
-    delete $args{esrc_container};
-
-    my $erollback = $args{erollback};
-    delete $args{erollback};
-
-    my $econtext = $args{econtext};
-    delete $args{econtext};
-
-    my $systemimage_size;
-    if (defined $args{systemimage_size}) {
-        $systemimage_size = $args{systemimage_size};
-        delete $args{systemimage_size};
-    }
-    else {
-        $systemimage_size = $esource_container->_getEntity->getAttr(name => 'container_size');
-    }
+    my $systemimage_size = General::checkParam(
+                               args => \%args,
+                               name => 'systemimage_size',
+                               default => $esource_container->_getEntity->getAttr(
+                                              name => 'container_size'
+                                          )
+                           );
 
     # Creation of the device based on distribution device
     my $container = $edisk_manager->createDisk(

@@ -72,16 +72,9 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
-    General::checkParams(args => $params, required => [ "masterimage_id" ]);
-
-    my $masterimage_id = $params->{masterimage_id};
-    delete $params->{masterimage_id};
-    
-    my $systemimage_name = $params->{systemimage_name};
-    delete $params->{systemimage_name};
-    
-    my $systemimage_desc = $params->{systemimage_desc};
-    delete $params->{systemimage_desc};
+    my $masterimage_id   = General::checkParam(args => $params, name => 'masterimage_id');
+    my $systemimage_name = General::checkParam(args => $params, name => 'systemimage_name');
+    my $systemimage_desc = General::checkParam(args => $params, name => 'systemimage_desc');
 
     $self->{_objs} = {};
     $self->{executor} = {};
@@ -102,7 +95,6 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     
-    
     $log->debug("get systemimage self->{_objs}->{systemimage} of type : " .
                 ref($self->{_objs}->{systemimage}));
 
@@ -119,25 +111,28 @@ sub prepare {
     }
 
     # Check if a service provider is given in parameters, use default instead.
-    if( exists $params->{storage_provider_id} ) {
-        $self->{_objs}->{storage_provider}
-            = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
-        
-        delete $params->{storage_provider_id};
-    } else {    
-        $self->{_objs}->{storage_provider}
-            = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    }
+    my $storage_provider_id = General::checkParam(
+                                  args    => $params,
+                                  name    => 'service_provider_id',
+                                  default => $args{internal_cluster}->{nas}
+                              );
+
+    $self->{_objs}->{storage_provider} = Entity::ServiceProvider->get(id => $storage_provider_id);
 
     # Check if a disk manager is given in parameters, use default instead.
+    my $disk_manager_id = General::checkParam(
+                              args    => $params,
+                              name    => 'disk_manager_id',
+                              default => 0
+                          );
     my $disk_manager;
-    if( exists $params->{disk_manager_id} ) {
-        $disk_manager
-            = $self->{_objs}->{storage_provider}->getManager(id => $params->{disk_manager_id});
-        delete $params->{disk_manager_id};
-    } else {
-        $disk_manager
-            = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'DiskManager');
+    if ($disk_manager_id) {
+        $disk_manager = $self->{_objs}->{storage_provider}->getManager(id => $disk_manager_id);
+    }
+    else {
+        $disk_manager = $self->{_objs}->{storage_provider}->getDefaultManager(
+                            category => 'DiskManager'
+                        )
     }
 
     # Get the edisk manager for disk creation.

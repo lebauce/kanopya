@@ -78,14 +78,9 @@ sub prepare {
 
     General::checkParams(args => $params, required => [ 'systemimage_id' ]);
 
-    my $imgsource_id = $params->{systemimage_id};
-    delete $params->{systemimage_id};
-    
-    my $systemimage_name = $params->{systemimage_name};
-    delete $params->{systemimage_name};
-    
-    my $systemimage_desc = $params->{systemimage_desc};
-    delete $params->{systemimage_desc};
+    my $imgsource_id     = General::checkParam(args => $params, name => 'systemimage_id');
+    my $systemimage_name = General::checkParam(args => $params, name => 'systemimage_name');
+    my $systemimage_desc = General::checkParam(args => $params, name => 'systemimage_desc');
     
     # Get instance of Systemimage to clone
     eval {
@@ -140,25 +135,28 @@ sub prepare {
     }
 
     # Check if a service provider is given in parameters, use default instead.
-    if( exists $params->{storage_provider_id} ) {
-        $self->{_objs}->{storage_provider}
-            = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
-        
-        delete $params->{storage_provider_id};
-    } else {    
-        $self->{_objs}->{storage_provider}
-            = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{nas});
-    }
+    my $storage_provider_id = General::checkParam(
+                                  args    => $params,
+                                  name    => 'service_provider_id',
+                                  default => $args{internal_cluster}->{nas}
+                              );
+
+    $self->{_objs}->{storage_provider} = Entity::ServiceProvider->get(id => $storage_provider_id);
 
     # Check if a disk manager is given in parameters, use default instead.
+    my $disk_manager_id = General::checkParam(
+                              args    => $params,
+                              name    => 'disk_manager_id',
+                              default => 0
+                          );
     my $disk_manager;
-    if( exists $params->{disk_manager_id} ) {
-        $disk_manager
-            = $self->{_objs}->{storage_provider}->getManager(id => $params->{disk_manager_id});
-        delete $params->{disk_manager_id};
-    } else {
-        $disk_manager
-            = $self->{_objs}->{storage_provider}->getDefaultManager(category => 'DiskManager');
+    if ($disk_manager_id) {
+        $disk_manager = $self->{_objs}->{storage_provider}->getManager(id => $disk_manager_id);
+    }
+    else {
+        $disk_manager = $self->{_objs}->{storage_provider}->getDefaultManager(
+                            category => 'DiskManager'
+                        )
     }
 
     # Check if disk manager has enough free space
