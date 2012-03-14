@@ -128,10 +128,7 @@ post '/images/add' => sub {
     
     my $systemimage_desc = $parameters->{systemimage_desc};
     delete $parameters->{systemimage_desc};
-    
-    my $masterimage_id = $parameters->{masterimage_id};
-    delete $parameters->{masterimage_id};
-    
+        
     my $storage_provider_id = $parameters->{storage_provider_id};
     delete $parameters->{storage_provider_id};
     
@@ -141,12 +138,22 @@ post '/images/add' => sub {
     my $source = $parameters->{source};
     delete $parameters->{source};
     
+    my $masterimage_id = $parameters->{masterimage_id};
+    delete $parameters->{masterimage_id};
+    
+    my $systemimage_id = $parameters->{systemimage_id};
+    delete $parameters->{systemimage_id};
+    
     if($source eq 'systemimage') {
         eval {
-            my $esystemimage = Entity::Systemimage->get(id => $masterimage_id);
+            my $esystemimage = Entity::Systemimage->get(id => $systemimage_id);
             $esystemimage->clone(
-                systemimage_name => $systemimage_name,
-                systemimage_desc => $systemimage_desc,
+                systemimage_name    => $systemimage_name,
+                systemimage_desc    => $systemimage_desc,
+                systemimage_size    => $sizeinbyte,
+                storage_provider_id => $storage_provider_id,
+                disk_manager_id     => $disk_manager_id,
+                %$parameters
             );
         };
         if($@) {
