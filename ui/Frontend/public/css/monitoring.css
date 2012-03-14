@@ -3,7 +3,9 @@
 #clusterCombinationView {
 	display:none;
     position:relative;
-    width:80%;
+    bottom:150px;
+    left: 390px;
+    width:74%;
 }
 
 .cluster_combination_tooltip{
