@@ -38,7 +38,7 @@ our $VERSION = "1.00";
 my $log = get_logger("administrator");
 my $errmsg;
 use constant ATTR_DEF => {
-    externalcluster_name    =>  {pattern        => '^\w*$',
+    externalcluster_name    =>  {pattern        => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
