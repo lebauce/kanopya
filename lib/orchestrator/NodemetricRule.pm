@@ -161,7 +161,7 @@ sub deleteVerifiedRule  {
     
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
     
-    my $extnodes = $extcluster->getNodes();
+    my $extnodes = $extcluster->getNodes(shortname => 1);
     
     my $externalnode_id;
     
@@ -172,7 +172,9 @@ sub deleteVerifiedRule  {
     }
     
     if(not defined $externalnode_id){
-        die assert("UNKOWN node $hostname in cluster $cluster_id");
+        my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }else{
         print "** try to delete $externalnode_id **\n";
             my $verified_rule_dbix = 
@@ -203,7 +205,7 @@ sub setVerifiedRule{
     
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
     
-    my $extnodes = $extcluster->getNodes();
+    my $extnodes = $extcluster->getNodes(shortname => 1);
     
     my $externalnode_id;
     
@@ -214,8 +216,9 @@ sub setVerifiedRule{
     }
     
     if(not defined $externalnode_id){
-        die assert("UNKOWN node $hostname in cluster $cluster_id");
-    }else{
+        my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);    }else{
         print "** $externalnode_id **\n";
         $self->{_dbix}
                 ->verified_noderules

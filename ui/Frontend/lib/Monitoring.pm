@@ -1237,6 +1237,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
             id         => $rule->getAttr(name => 'nodemetric_rule_id'),
             isVerified => $isVerified,
             formula      => $rule->toString(),
+            label      => $rule->getAttr(name => 'nodemetric_rule_label'),
         };
         
         push @rules, $hash;
