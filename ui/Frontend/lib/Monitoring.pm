@@ -1418,7 +1418,7 @@ sub _getCombinations(){
 	
 	eval {
 		#@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
-        @clustermetric_combinations = AggregateCombination->search(hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
+        @clustermetric_combinations = AggregateCombination->searchLight(hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
 
 	};
 	if ($@) {
