@@ -72,11 +72,7 @@ sub _contructRetrieverOutput {
     my @indicators_array       = undef;
     my $clustermetric_time_span    = undef;
     my $time_span              = undef;
-    
-#    # HARCODE hosts name
-#    my $hosts_names = $self->_getHostNamesFromIDs();
-#    $rep->{nodes} = $hosts_names;
-    
+
     
     
         
@@ -116,9 +112,7 @@ sub _contructRetrieverOutput {
     return $rep;
 };
 
-sub _getHostNamesFromIDs{
-    return ['WKANOPYA.hedera.forest', 'WIN-09DSUKS61DT.hedera.forest'];
-}
+
 
 
 
@@ -220,7 +214,6 @@ sub _computeAggregateValuesAndUpdateTimeDB{
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics){
         
-        #my $host_names = $self->_getHostNamesFromIDs(); #get all hosts name
         #TODO : To be modified when using ServerSets
         
         # Array that will store all the values needed to compute $clustermetric val

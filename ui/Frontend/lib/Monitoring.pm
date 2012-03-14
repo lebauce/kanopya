@@ -1159,7 +1159,7 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
             nodemetric_rule_action_id => $nodemetric_condition->getAttr(name => 'nodemetric_condition_id'),
         };
         my $nodemetric_rule = NodemetricRule->new(%$params_rule);
-        redirect("/architectures/extclusters/$var/externalnodes/:extnodeid/rules");
+        redirect("/architectures/extclusters/$var/externalnodes/rules");
     }else{
         redirect("/architectures/extclusters/$var/nodemetrics/conditions");
     }
