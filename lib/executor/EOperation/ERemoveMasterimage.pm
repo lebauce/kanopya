@@ -92,7 +92,7 @@ sub execute {
     # delete master image directory
     my $directory = dirname($self->{_objs}->{masterimage}->getAttr(name => 'masterimage_file'));
 
-    if (dirname($directory) -eq '/') {
+    if (dirname($directory) eq '/') {
         throw Kanopya::Exception::Internal::WrongValue(
                   error => "Sounld not remove $directory, aborting..."
               );
