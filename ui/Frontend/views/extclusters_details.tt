@@ -101,7 +101,9 @@
 		<tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
 		<td class="label2">
         <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
-            <% IF node.num_verified_rules == 0 %>
+            <% IF node.state_down%>
+                <span class="state imgDown">No data</span>
+            <% ELSIF node.num_verified_rules == 0 %>
                 <span class="state imgUp">No rules verified</span>
             <% ELSIF node.num_verified_rules == 1 %>
                 <span class="state imgBroken"><%node.num_verified_rules%> rule verified</span>
