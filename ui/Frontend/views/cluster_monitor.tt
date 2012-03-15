@@ -34,6 +34,8 @@
                     <% END %>
                 </select>
                 <% END %>
+                <br/>
+                <input id="trendlineinput" type="checkbox" onclick="toggleTrendLine()" value="show"> Trend line</input>
         </div>
         <br />
         <div id="clusterCombinationView"></div><br />

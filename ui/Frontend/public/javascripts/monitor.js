@@ -318,6 +318,7 @@ var url = window.location.href;
 var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
 var clusters_view = path  + '/clustersview';
+var plot1;
 
 //function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,label,start,stop){
@@ -409,18 +410,23 @@ function barGraph(values, nodelist, unit, div_id, min, max, title){
         // }
     // );
 }
- 
+
  //Jqplot basic curve graph
  function timedGraph(first_graph_line, min, max, label){
 	$.jqplot.config.enablePlugins = true;
-    // var line1=[['03-14-2012 16:23', 578.55], ['03-14-2012 16:17', 566.5], ['03-14-2012 16:12', 480.88],['03-14-2012 16:15',null], ['03-14-2012 16:19', 580.88], ['03-14-2012 16:26', 509.84], ['03-14-2012 16:21',null],];
+    //var line1=[['03-14-2012 16:23', 578.55], ['03-14-2012 16:17', 566.5], ['03-14-2012 16:12', 480.88],['03-14-2012 16:15',null], ['03-14-2012 16:19', 580.88], ['03-14-2012 16:26', 509.84]];
     // alert ('min: '+min+' max: '+max);
     // alert ('data for selected combination: '+first_graph_line);
-    var plot1 = $.jqplot('clusterCombinationView', [first_graph_line], {
+    plot1 = $.jqplot('clusterCombinationView', [first_graph_line], {
         title:label,
         seriesDefaults: {
             breakOnNull:true,
-            },
+
+            trendline: {
+                         color : '#555555',
+                         show  : $('#trendlineinput').attr('checked') ? true : false, 
+            }
+        },
         axes:{
             xaxis:{
                 renderer:$.jqplot.DateAxisRenderer,
@@ -448,5 +454,14 @@ function barGraph(values, nodelist, unit, div_id, min, max, title){
             show: true,
             // formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %f</p>',
         }
+        
     });
 }
+
+function toggleTrendLine() {
+    if (plot1) {
+        plot1.series[0].trendline.show = ! plot1.series[0].trendline.show;
+        plot1.replot();
+    }
+}
+
