@@ -17,7 +17,8 @@ use NodemetricRule;
 use General;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
-
+use Switch;
+ 
 my $log = get_logger("webui");
 
 prefix '/architectures';
@@ -725,30 +726,48 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' => sub {
-    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
 
-
-#  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
-  my @rules;
-  foreach my $aggregate_rule (@enabled_aggregaterules) {
     
-    my $hash = {
-        id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-        formula   => $aggregate_rule->toString(),
-        last_eval => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
-        label     => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
+    #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
+    
+    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
+    
+    my (@nokRules, @okRules, @unkownRules);
+    
+    foreach my $aggregate_rule (@enabled_aggregaterules){
+        switch ($aggregate_rule->getAttr(name => 'aggregate_rule_last_eval')) {
+            case 1 {
+                push @nokRules,$aggregate_rule;
+            }
+            case 0 {
+                push @okRules,$aggregate_rule;
+            }
+            else {
+                push @unkownRules,$aggregate_rule;
+            }
+        }
+    }
 
-    };
-    push @rules, $hash;
-  }
-  
-  template 'clustermetric_rules', {
-        title_page      => "Enabled Rules Overview",
-        rules      => \@rules,
-        status     => 'enabled',
-        cluster_id => param('extclusterid'),
+
+    my @rules;
+      #fill @rules in state order
+      foreach my $aggregate_rule (@nokRules, @okRules,@unkownRules) {
         
-  }, { layout => 'main' };
+        my $hash = {
+            id          => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+            formula     => $aggregate_rule->toString(),
+            last_eval   => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
+            label       => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
+        };
+        push @rules, $hash;
+      }
+      
+      template 'clustermetric_rules', {
+            title_page  => "Enabled Rules Overview",
+            rules       => \@rules,
+            status      => 'enabled',
+            cluster_id  => param('extclusterid'),
+      }, { layout => 'main' };
 };
 
 
@@ -865,6 +884,8 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
         state     => $rule->getAttr('name' => 'aggregate_rule_state'),
         label     => $rule->getAttr('name' => 'aggregate_rule_label'),
         action_id => $rule->getAttr('name' => 'aggregate_rule_action_id'),
+        description => $rule->getAttr('name' => 'aggregate_rule_description'),
+        
     };
     
     template 'clustermetric_rules_details', {
@@ -1210,24 +1231,40 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
                                 }
                            );
     
-    my @rules;
+    # SORT RULES BY STATE
+    my (@nokRules, @okRules, @unkownRules);
     
     foreach my $rule (@nodemetric_rules){
         my $isVerified = $rule->isVerifiedForANode(
             externalcluster_id => $externalcluster_id,
             externalnode_id    => $externalnode_id,
         );
-        
+        switch($isVerified){
+            case 1 {
+                push @nokRules,[$rule, $isVerified];
+            }
+            case 0 {
+                push @okRules,[$rule, $isVerified];
+            }
+            else {
+                push @unkownRules,[$rule, $isVerified];
+            }
+        }
+    }
+    
+    my @rules;
+    
+    foreach my $rule_and_verif (@nokRules, @okRules, @unkownRules){
+        my ($rule, $isVerified) = @$rule_and_verif;
         my $hash = {
             id         => $rule->getAttr(name => 'nodemetric_rule_id'),
             isVerified => $isVerified,
-            formula      => $rule->toString(),
+            formula    => $rule->toString(),
             label      => $rule->getAttr(name => 'nodemetric_rule_label'),
         };
         
         push @rules, $hash;
     } 
-    
 
     my $extclu = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$externalcluster_id);
     my $node = $extclu->getNode(externalnode_id=>$externalnode_id);
@@ -1311,12 +1348,13 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
     }
     
     my $rule_param = {
-        id        => $rule_id,
-        formula   => $rule->getAttr('name' => 'nodemetric_rule_formula'),
-        string    => $rule->toString(),
-        state     => $rule->getAttr('name' => 'nodemetric_rule_state'),
-        label     => $rule->getAttr('name' => 'nodemetric_rule_label'),
-        action_id => $rule->getAttr('name' => 'nodemetric_rule_action_id'),
+        id          => $rule_id,
+        formula     => $rule->getAttr('name' => 'nodemetric_rule_formula'),
+        string      => $rule->toString(),
+        state       => $rule->getAttr('name' => 'nodemetric_rule_state'),
+        label       => $rule->getAttr('name' => 'nodemetric_rule_label'),
+        action_id   => $rule->getAttr('name' => 'nodemetric_rule_action_id'),
+        description => $rule->getAttr('name' => 'nodemetric_rule_description'),
     };
     
     template 'clustermetric_rules_details', {
@@ -1337,7 +1375,7 @@ post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
         $rule->setAttr(name => 'nodemetric_rule_state',     value => param('state'));
         $rule->setAttr(name => 'nodemetric_rule_label',     value => param('label'));
         $rule->save();
-        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules/'.param('ruleid').'/details');        
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules');        
     }else {
         my $adm = Administrator->new();
         $adm->addMessage(from => 'Monitoring', level => 'error', content => 'Wrong formula, unkown condition id'."$checker->{attribute}");
@@ -1357,7 +1395,16 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/delete' => sub {
     redirect("/architectures/extclusters/$cluster_id/nodemetrics/rules");
 };
 
-
+get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/delete' => sub {
+   
+    my $rule_id     =  params->{ruleid};
+    my $cluster_id  =  params->{extclusterid};
+    
+    my $rule = NodemetricRule->get('id' => $rule_id);
+    
+    $rule->delete();
+    redirect('/architectures/extclusters/'.param('extclusterid').'/externalnodes/'.param('extnodeid').'/rules');
+};
 
 
 

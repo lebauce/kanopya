@@ -8,7 +8,6 @@
                 <% ELSIF rule.last_eval == 1%><span class="state imgBroken">  </span> 
                 <% ELSE %><span class="state imgDown">  </span> <% END %>
                 <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.label %></span></td>
-                <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/tdisable">disable for 2 min</a></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/disable">disable</a></td>
                 <td><a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/details">details</a></td>
                 </tr>
@@ -46,14 +45,13 @@
         <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/enabled">View enabled rules</a>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/disabled">View disabled rules</a>
-            <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/tdisabled">View temp. dis. rules</a>
         </td></tr>
         </table>
 <br/>
 <br/>
         <table>
         <tr><td>
-                    <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/new">Create new rule [not implemented]</a>
+                    <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/new">Create new rule</a>
         </td></tr>
         </table>
 <br/>

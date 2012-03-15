@@ -16,8 +16,12 @@
 <hr/>
 
 <% IF rule.id %>
-    <h4><%rule.label%> : <%rule.string%></h4>
+    <h4><%rule.label%>:<br/>
+        <%rule.string%></h4>
         This rule is <%rule.state%>.
+    <hr/>    
+        Description:<br>
+        <h4><%rule.description%></h4>
     <hr/>
     <% IF rule.id %> 
         <%IF clustermetric == 1%>
