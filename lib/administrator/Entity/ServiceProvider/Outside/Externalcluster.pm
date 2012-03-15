@@ -243,7 +243,16 @@ sub monitoringDefaultInit {
    # Create one clustermetric for each indicator scom
     # Create 4 aggregates for each cluster metric
     # Create the corresponding combination 'identity function' for each aggregate 
-    foreach my $indicator (@{$scom_indicatorset->{ds}}) {   
+    foreach my $indicator (@{$scom_indicatorset->{ds}}) {
+        
+        $self->generateNodeMetricRules(
+            indicator_id  => $indicator->{id},
+            extcluster_id => $extcluster_id,
+            );
+        
+        # GENERATE CLUSTER METRICS
+        # TODO : specific method
+        
         foreach my $func (@funcs) {
             my $cm_params = {
                 clustermetric_service_provider_id      => $extcluster_id,
@@ -324,6 +333,7 @@ sub monitoringDefaultInit {
             id_std        => $id_std,
             extcluster_id => $extcluster_id,
         );
+
     };
 
 #            aggregate_combination_formula             => 'id'.($id_std).'/ id'.($id_mean),
@@ -430,6 +440,61 @@ sub monitoringDefaultInit {
         };
         my $aggregate_rule = AggregateRule->new(%$params_rule);
     };
+    
+    sub generateNodeMetricRules{
+        my ($self,%args) = @_;
+
+        my $indicator_id   = $args{indicator_id};
+        my $extcluster_id  = $args{extcluster_id};
+
+        my $combination_param = {
+            nodemetric_combination_formula => 'id'.$indicator_id,
+        };
+        
+        my $comb = NodemetricCombination->new(%$combination_param);
+        
+        my $condition_param = {
+            nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
+            nodemetric_condition_comparator     => ">",
+            nodemetric_condition_threshold      => 85,
+        };
+        
+        my $condition = NodemetricCondition->new(%$condition_param);
+        
+        
+        my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
+        my $prule = {
+            nodemetric_rule_formula             => 'id'.$conditionid,
+            nodemetric_rule_label               => 'id'.$conditionid,
+            nodemetric_rule_label               => 'Metric over loaded',
+            nodemetric_rule_description         => 'This node is overloaded, check its configuration',
+            nodemetric_rule_state               => 'enabled',
+            nodemetric_rule_action_id           => '1',
+            nodemetric_rule_service_provider_id => $extcluster_id,
+        };
+        my $rule = NodemetricRule->new(%$prule);
+
+        $condition_param = {
+            nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
+            nodemetric_condition_comparator     => "<",
+            nodemetric_condition_threshold      => 10,
+        };
+        
+        $condition = NodemetricCondition->new(%$condition_param);
+        
+        
+        $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
+        $prule = {
+            nodemetric_rule_formula             => 'id'.$conditionid,
+            nodemetric_rule_label               => 'id'.$conditionid,
+            nodemetric_rule_label               => 'Metric over loaded',
+            nodemetric_rule_description         => 'This node is overloaded, check its configuration',
+            nodemetric_rule_state               => 'enabled',
+            nodemetric_rule_action_id           => '1',
+            nodemetric_rule_service_provider_id => $extcluster_id,
+        };
+        $rule = NodemetricRule->new(%$prule);
+      }
 }
 
 
