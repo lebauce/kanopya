@@ -1339,7 +1339,7 @@ post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
         $rule->setAttr(name => 'nodemetric_rule_state',     value => param('state'));
         $rule->setAttr(name => 'nodemetric_rule_label',     value => param('label'));
         $rule->save();
-        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules/'.param('ruleid').'/details');        
+        redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules');        
     }else {
         my $adm = Administrator->new();
         $adm->addMessage(from => 'Monitoring', level => 'error', content => 'Wrong formula, unkown condition id'."$checker->{attribute}");
