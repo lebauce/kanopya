@@ -1,0 +1,15 @@
+<% js_head.push('components.js') %>
+<h2><% serviceprovider_tostring %> - LUNS Management</h2>
+<hr />
+<form class="elem_root" name="conf">
+<input class="conf_simple_value" type="hidden" name="connector_id" value="<% connector_instance_id %>"/>
+<input class="conf_simple_value" type="hidden" name="serviceprovider_id" value="<% serviceprovider_id %>"/>
+<input class="conf_simple_value" type="hidden" name="netapp_lun_manager_id" value="<% netapp_lun_manager_id %>"/>
+
+<hr />
+<div class="right">
+<input id="save_button" type="button" value="ok"/>
+<input type="button" value="cancel" onclick="javascript:document.location='/equipments/netapp/<% serviceprovider_id %>'"/>
+</div>
+</form>
+

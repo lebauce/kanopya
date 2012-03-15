@@ -20,6 +20,10 @@
         <span class="state imgWarning">Broken (<% state_time %>)</span>
     <% END %>
     </td>
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/equipments/netapp/<% netapp_id %>/synchronize">synchronize</a><br />
+        <span class="desc">Synchronize Kanopya with this Netapp equipement</span>
+    </td>
 </tr>
 </table>
 
@@ -41,6 +45,22 @@
 </table>
 
 <hr/>
+<span id="connectors" class="title simpleexpand">Connectors</span>
+<table id="Xconnectors" class="detailspart list">
+<% IF connectors_list %>
+	<% FOREACH conn IN connectors_list %>
+		<tr><td class="label2"><span class="bold"><% conn.connector_name %></span> - <% conn.connector_category %></td>
+		<% IF conn.link_configureconnector %>
+		<td class="action"><a href="/systems/connectors/<% conn.connector_id %>/configure">configure</a>
+		<% ELSE %>
+        <td></td>
+        <% END %>
+	</td></tr>
+	<% END %>
+<% END %>
+</table>
+
+<hr/>
 <span id="netappaggr" class="title simpleexpand">Aggregates</span>
 <table id="Xnetappaggr" class="detailspart">
 <ul>
@@ -49,6 +69,8 @@
 <% END %>
 </ul>
 </table>
+
+
 
 <hr/>
 <span id="netappvolumes" class="title simpleexpand">Volumes</span>

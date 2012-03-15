@@ -97,22 +97,40 @@ get '/netapp/:netappid/remove' => sub {
 
 get '/netapp/:netappid' => sub {
     my $netapp_id = param('netappid');
-    my $enetapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
-    my $eenetapp = $enetapp->getConnector(category => 'Storage');
-    my @volumes = $eenetapp->volumes;
-    my @aggregates = $eenetapp->aggregates;
+    my $netapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
+    my $eenetapp = $netapp->getConnector(category => 'Storage');
+    
+    # Connectors
+    my @connectors = map { 
+        {
+            'connector_id'              => $_->getAttr(name => 'connector_id'),
+            'link_configureconnector'   => 1,
+            %{$_->getConnectorType()},
+        }
+    } $netapp->getConnectors();
+    
+    #my @volumes = $eenetapp->volumes;
+    #my @aggregates = $eenetapp->aggregates;
 
     template 'netapp_details', {
-        netapp_id              => $enetapp->getAttr('name' => 'netapp_id'),
-        netapp_name            => $enetapp->getAttr('name' => 'netapp_name'),
-        netapp_desc            => $enetapp->getAttr('name' => 'netapp_desc'),
-        netapp_addr            => $enetapp->getAttr('name' => 'netapp_addr'),
-        netapp_login           => $enetapp->getAttr('name' => 'netapp_login'),
-        netapp_passwd          => $enetapp->getAttr('name' => 'netapp_passwd'),
+        netapp_id              => $netapp->getAttr('name' => 'netapp_id'),
+        netapp_name            => $netapp->getAttr('name' => 'netapp_name'),
+        netapp_desc            => $netapp->getAttr('name' => 'netapp_desc'),
+        netapp_addr            => $netapp->getAttr('name' => 'netapp_addr'),
+        netapp_login           => $netapp->getAttr('name' => 'netapp_login'),
+        netapp_passwd          => $netapp->getAttr('name' => 'netapp_passwd'),
         netapp_state           => $eenetapp->{state},
-        netapp_volumes         => \@volumes,
-        netapp_aggregates      => \@aggregates,
+        connectors_list        => \@connectors,
+        #netapp_volumes         => \@volumes,
+        #netapp_aggregates      => \@aggregates,
     };
+};
+
+get '/netapp/:netappid/synchronize' => sub {
+    my $netapp_id = param('netappid');
+    my $netapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
+    $netapp->synchronize();
+    redirect('/equipments/netapp/'.$netapp_id);
 };
 
 1;
