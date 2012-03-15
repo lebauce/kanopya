@@ -233,7 +233,7 @@ sub monitoringDefaultInit {
     
     my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' ); 
     my @indicators;
-    my @funcs = qw(mean max min standard_deviation);
+    my @funcs = qw(mean max min standard_deviation numOfDataOutOfRange);
     foreach my $indicator (@{$scom_indicatorset->{ds}}){
         push @indicators, $indicator->{id};
     }
@@ -258,50 +258,29 @@ sub monitoringDefaultInit {
                 aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
             };
             my $aggregate_combination = AggregateCombination->new(%$acf_params);
-               
-               my $condition_params = {
-                    aggregate_condition_service_provider_id     => $extcluster_id,
-                    aggregate_combination_id                    => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
-                    comparator                                  => '>',
-                    threshold                                   => '0',
-                    state                                       => 'enabled',
-                };
-               my $aggregate_condition = AggregateCondition->new(%$condition_params);
-            
-               my $params_rule = {
-                    aggregate_rule_service_provider_id   => $extcluster_id,
-                    aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-                    aggregate_rule_state                => 'enabled',
-                    aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
-                };
-                my $aggregate_rule = AggregateRule->new(%$params_rule);
-            #}
         }
     }
     
     
     
-    #Create example combination
+    #Create conditions
     
     foreach my $indicator (@indicators) {
         
         #For each indicator id get the max aggregate and the min aggregate to compute max - min
-
-        my @cm_max = Clustermetric->search(hash => { 
-            clustermetric_indicator_id => $indicator,
-            clustermetric_statistics_function_name => 'max',
-        });
-        
-        my @cm_min = Clustermetric->search(hash => { 
-            clustermetric_indicator_id => $indicator,
-            clustermetric_statistics_function_name => 'min',
-        });
-        
-        my $id_min = $cm_min[0]->getAttr(name=>'clustermetric_id');
-        my $id_max = $cm_max[0]->getAttr(name=>'clustermetric_id'); 
-
-        
-
+#
+#        my @cm_max = Clustermetric->search(hash => { 
+#            clustermetric_indicator_id => $indicator,
+#            clustermetric_statistics_function_name => 'max',
+#        });
+#        
+#        my @cm_min = Clustermetric->search(hash => { 
+#            clustermetric_indicator_id => $indicator,
+#            clustermetric_statistics_function_name => 'min',
+#        });
+#        
+#        my $id_min = $cm_min[0]->getAttr(name=>'clustermetric_id');
+#        my $id_max = $cm_max[0]->getAttr(name=>'clustermetric_id'); 
         
         #For each indicator id get the mean aggregate and the standartdev aggregate to compute mean / standard_dev
         
@@ -315,31 +294,61 @@ sub monitoringDefaultInit {
             clustermetric_statistics_function_name => 'standard_deviation',
         });
         
-        my $id_mean = $cm_mean[0]->getAttr(name=>'clustermetric_id');
-        my $id_std  = $cm_std[0]->getAttr(name=>'clustermetric_id'); 
+        my @cm_ooa = Clustermetric->search(hash => { 
+            clustermetric_indicator_id => $indicator,
+            clustermetric_statistics_function_name => 'numOfDataOutOfRange',
+        });
         
-        my $acf_params = {
+        my $id_mean = $cm_mean[0]->getAttr(name=>'clustermetric_id');
+        my $id_std  = $cm_std[0]->getAttr(name=>'clustermetric_id');
+        my $id_ooa  = $cm_ooa[0]->getAttr(name=>'clustermetric_id'); 
+        
+
+#        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_mean);
+#        my $aggregate_combination_range_over_mean = AggregateCombination->new(%$acf_params);
+#
+#        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_std);
+#        my $aggregate_combination_range_over_std = AggregateCombination->new(%$acf_params);
+
+
+        $self->generateOutOfRangeRules(
+            clustermetric_id => $id_ooa,
+            extcluster_id    => $extcluster_id,
+        );
+        $self->generateCoefficientOfVariationRules(
+            id_mean       => $id_mean,
+            id_std        => $id_std,
+            extcluster_id => $extcluster_id,
+        );
+        $self->generateStandardDevRuleForNormalizedIndicatorsRules(
+            id_std        => $id_std,
+            extcluster_id => $extcluster_id,
+        );
+    };
+
+#            aggregate_combination_formula             => 'id'.($id_std).'/ id'.($id_mean),
+
+    # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
+    sub generateOutOfRangeRules {
+        my ($self,%args) = @_;
+        my $clustermetric_id = $args{clustermetric_id};
+        my $extcluster_id    = $args{extcluster_id};
+        
+        my $combination_params = {
             aggregate_combination_service_provider_id => $extcluster_id,
+            aggregate_combination_formula             => 'id'.($clustermetric_id),
         };
         
-        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_mean);
-        my $aggregate_combination_range_over_mean = AggregateCombination->new(%$acf_params);
-
-        $acf_params->{aggregate_combination_formula} = '(id'.($id_max).'- id'.($id_min).') / id'.($id_std);
-        my $aggregate_combination_range_over_std = AggregateCombination->new(%$acf_params);
-
-
-        $acf_params->{aggregate_combination_formula} = 'id'.($id_std).'/ id'.($id_mean);
-        my $aggregate_combination = AggregateCombination->new(%$acf_params);
-
-       #Creating a condition on coefficient of variation std/mean and a rule
-       my $condition_params = {
+        my $aggregate_combination = AggregateCombination->new(%$combination_params);
+        
+        my $condition_params = {
             aggregate_condition_service_provider_id => $extcluster_id,
             aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
             comparator                              => '>',
-            threshold                               => 0.5,
+            threshold                               => 0,
             state                                   => 'enabled',
         };
+         
        my $aggregate_condition = AggregateCondition->new(%$condition_params);
 
        my $params_rule = {
@@ -347,11 +356,81 @@ sub monitoringDefaultInit {
             aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
             aggregate_rule_state                => 'enabled',
             aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+            aggregate_rule_label                => 'Mainly homogenous datas with isolated values',
+            aggregate_rule_description          => 'Check the indicators of the nodes generating isolated datas',
         };
         my $aggregate_rule = AggregateRule->new(%$params_rule);
-       
-       
-    }
+    };
+
+    # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
+    sub generateCoefficientOfVariationRules {
+        my ($self,%args) = @_;
+        my $id_mean        = $args{id_mean},
+        my $id_std         = $args{id_std},
+        my $extcluster_id  = $args{extcluster_id};
+        
+        my $combination_params = {
+            aggregate_combination_service_provider_id => $extcluster_id,
+            aggregate_combination_formula             => 'id'.($id_std).'/ id'.($id_mean),
+        };
+        
+        my $aggregate_combination = AggregateCombination->new(%$combination_params);
+        
+        my $condition_params = {
+            aggregate_condition_service_provider_id => $extcluster_id,
+            aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+            comparator                              => '>',
+            threshold                               => 0.2,
+            state                                   => 'enabled',
+        };
+         
+       my $aggregate_condition = AggregateCondition->new(%$condition_params);
+
+       my $params_rule = {
+            aggregate_rule_service_provider_id  => $extcluster_id,
+            aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+            aggregate_rule_state                => 'enabled',
+            aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+            aggregate_rule_label                => 'Data homogeneity',
+            aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
+        };
+        my $aggregate_rule = AggregateRule->new(%$params_rule);
+    };
+    
+    # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
+    sub generateStandardDevRuleForNormalizedIndicatorsRules {
+        my ($self,%args) = @_;
+        my $id_std         = $args{id_std},
+        my $extcluster_id  = $args{extcluster_id};
+        
+        my $combination_params = {
+            aggregate_combination_service_provider_id => $extcluster_id,
+            aggregate_combination_formula             => 'id'.($id_std),
+        };
+        
+        my $aggregate_combination = AggregateCombination->new(%$combination_params);
+        
+        my $condition_params = {
+            aggregate_condition_service_provider_id => $extcluster_id,
+            aggregate_combination_id                => $aggregate_combination->getAttr(name=>'aggregate_combination_id'),
+            comparator                              => '>',
+            threshold                               => 0.15,
+            state                                   => 'enabled',
+        };
+         
+       my $aggregate_condition = AggregateCondition->new(%$condition_params);
+
+       my $params_rule = {
+            aggregate_rule_service_provider_id  => $extcluster_id,
+            aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+            aggregate_rule_state                => 'enabled',
+            aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+            aggregate_rule_label                => 'Data homogeneity',
+            aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
+        };
+        my $aggregate_rule = AggregateRule->new(%$params_rule);
+    };
 }
+
 
 1;
