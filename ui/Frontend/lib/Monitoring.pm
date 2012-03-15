@@ -1231,24 +1231,40 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
                                 }
                            );
     
-    my @rules;
+    # SORT RULES BY STATE
+    my (@nokRules, @okRules, @unkownRules);
     
     foreach my $rule (@nodemetric_rules){
         my $isVerified = $rule->isVerifiedForANode(
             externalcluster_id => $externalcluster_id,
             externalnode_id    => $externalnode_id,
         );
-        
+        switch($isVerified){
+            case 1 {
+                push @nokRules,[$rule, $isVerified];
+            }
+            case 0 {
+                push @okRules,[$rule, $isVerified];
+            }
+            else {
+                push @unkownRules,[$rule, $isVerified];
+            }
+        }
+    }
+    
+    my @rules;
+    
+    foreach my $rule_and_verif (@nokRules, @okRules, @unkownRules){
+        my ($rule, $isVerified) = @$rule_and_verif;
         my $hash = {
             id         => $rule->getAttr(name => 'nodemetric_rule_id'),
             isVerified => $isVerified,
-            formula      => $rule->toString(),
+            formula    => $rule->toString(),
             label      => $rule->getAttr(name => 'nodemetric_rule_label'),
         };
         
         push @rules, $hash;
     } 
-    
 
     my $extclu = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$externalcluster_id);
     my $node = $extclu->getNode(externalnode_id=>$externalnode_id);
