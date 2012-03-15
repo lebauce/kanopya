@@ -1395,7 +1395,16 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/delete' => sub {
     redirect("/architectures/extclusters/$cluster_id/nodemetrics/rules");
 };
 
-
+get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/delete' => sub {
+   
+    my $rule_id     =  params->{ruleid};
+    my $cluster_id  =  params->{extclusterid};
+    
+    my $rule = NodemetricRule->get('id' => $rule_id);
+    
+    $rule->delete();
+    redirect('/architectures/extclusters/'.param('extclusterid').'/externalnodes/'.param('extnodeid').'/rules');
+};
 
 
 
