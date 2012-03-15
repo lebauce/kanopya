@@ -260,7 +260,7 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 
 	# $log->error('get combinations: '.Dumper\%template_config);
 
-	template 'cluster_monitor', \%template_config;
+	template 'cluster_monitor', \%template_config, { layout => 'main' };
 };
 
 
@@ -283,7 +283,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     my $combination = AggregateCombination->get('id' => $combination_id);
     my %aggregate_combination;
     my @histovalues;
-    
+
 	#If user didn't fill start and stop time, we set them at (now) to (now - 1 hour)
 	if ($start eq '') {
 		$start = DateTime->now->set_time_zone('local');
@@ -409,7 +409,7 @@ get '/clustermetrics' => sub {
       template 'clustermetrics', {
         title_page      => "Clustermetrics Overview",
         clustermetrics  => \@clustermetrics_param,
-      };
+      }, { layout => 'main' };
 };
 
 # ------------------------------------------------------------------------------------------------#
@@ -434,7 +434,7 @@ get '/extclusters/:extclusterid/clustermetrics' => sub {
         title_page      => "Clustermetrics Overview",
         clustermetrics  => \@clustermetrics_param,
         cluster_id      => params->{extclusterid},
-      };
+      }, { layout => 'main' };
 
 };
 
@@ -458,7 +458,7 @@ get '/extclusters/:extclusterid/clustermetrics/new' => sub {
         title_page => "Clustermetric creation",
         indicators => \@indicators,
         cluster_id => param('extclusterid'),
-    };
+    }, { layout => 'main' };
 };
 
 post '/extclusters/:extclusterid/clustermetrics/new' => sub {
@@ -536,7 +536,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations' => sub {
         title_page      => "ClusterMetrics Combinations Overview",
         combinations  => \@clustermetric_combinations_param,
         cluster_id      => params->{extclusterid},
-    };
+    }, { layout => 'main' };
 };
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/:combinationid/delete' => sub {
@@ -589,7 +589,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/new' => sub {
         cluster_id     => param('extclusterid'),
         clustermetrics => \@clustermetrics_param,
         
-    };
+    }, { layout => 'main' };
 };
 
 
@@ -624,7 +624,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions' => sub {
         title_page      => "ClusterMetrics Conditions Overview",
         conditions      => \@clustermetric_conditions_param,
         cluster_id      => params->{extclusterid},
-    };
+    }, { layout => 'main' };
 };
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditionid/delete' => sub {
@@ -716,7 +716,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
         title_page    => "Condition creation",
         combinations  => \@combinationsInput,
         cluster_id    => param('extclusterid'),
-    };
+    }, { layout => 'main' };
 };
 
 # ----------------------------------------------------------------------------#
@@ -748,7 +748,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
         status     => 'enabled',
         cluster_id => param('extclusterid'),
         
-  };
+  }, { layout => 'main' };
 };
 
 
@@ -774,7 +774,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
         rules   => \@disabled_rules,
         status  => "disabled",
         cluster_id => param('extclusterid'),
-  };
+  }, { layout => 'main' };
     
 };
 
@@ -800,7 +800,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdi
         rules           => \@tdisabled_rules,
         status          => 'tdisabled',
         cluster_id      => param('extclusterid'),
-  };
+  }, { layout => 'main' };
 };
 
 
@@ -874,7 +874,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
         rule           => $rule_param,
         conditions     => \@conditions,
         clustermetric  => 1,
-    };
+    }, { layout => 'main' };
 };
 
 
@@ -918,7 +918,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/new
         cluster_name  => $cluster_name,    
         conditions    => \@condition_params,
         clustermetric => 1,
-    };
+    }, { layout => 'main' };
 };
 
 post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/new' => sub {
@@ -976,7 +976,7 @@ get '/extclusters/:extclusterid/nodemetrics/combinations' => sub {
         title_page      => "nodemetrics Combinations Overview",
         combinations  => \@nodemetric_combinations_param,
         cluster_id      => params->{extclusterid},
-    };
+    }, { layout => 'main' };
 };
 
 get '/extclusters/:extclusterid/nodemetrics/combinations/:combinationid/delete' => sub {
@@ -1082,7 +1082,7 @@ get '/extclusters/:extclusterid/nodemetrics/conditions' => sub {
         title_page      => "nodemetrics Conditions Overview",
         conditions      => \@nodemetric_conditions_param,
         cluster_id      => params->{extclusterid},
-    };
+    }, { layout => 'main' };
 };
 
 get '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/delete' => sub {
@@ -1169,7 +1169,7 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
         title_page    => "Condition creation",
         combinations  => \@combinationsInput,
         cluster_id    => param('extclusterid'),
-    };
+    }, { layout => 'main' };
 };
 
 # ----------------------------------------------------------------------------#
@@ -1197,7 +1197,7 @@ get '/extclusters/:extclusterid/nodemetrics/rules' => sub {
         rules           => \@rules,
         cluster_id      => $externalcluster_id,
         cluster_name    => $extclu->getAttr(name => 'externalcluster_name'),
-    };
+    }, { layout => 'main' };
 };
 
 get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
@@ -1238,7 +1238,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
         cluster_id      => $externalcluster_id,
         cluster_name    => $extclu->getAttr(name => 'externalcluster_name'),
         host_name       => $node->{hostname},
-    };
+    }, { layout => 'main' };
 };
 
 
@@ -1263,7 +1263,7 @@ get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
         cluster_id    => $cluster_id,
         cluster_name  => $cluster_name,    
         conditions    => \@condition_params,
-    };
+    }, { layout => 'main' };
 };
 
 
@@ -1325,7 +1325,7 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
         cluster_name  => $cluster_name,
         rule          => $rule_param,
         conditions    => \@conditions,
-    };
+    }, { layout => 'main' };
 };
 
 post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
