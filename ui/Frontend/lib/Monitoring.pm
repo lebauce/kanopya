@@ -17,7 +17,8 @@ use NodemetricRule;
 use General;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
-
+use Switch;
+ 
 my $log = get_logger("webui");
 
 prefix '/architectures';
@@ -725,29 +726,48 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' => sub {
-    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
 
-
-#  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
-  my @rules;
-  foreach my $aggregate_rule (@enabled_aggregaterules) {
     
-    my $hash = {
-        id          => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-        formula     => $aggregate_rule->toString(),
-        last_eval   => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
-        label       => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
-    };
-    push @rules, $hash;
-  }
-  
-  template 'clustermetric_rules', {
-        title_page      => "Enabled Rules Overview",
-        rules      => \@rules,
-        status     => 'enabled',
-        cluster_id => param('extclusterid'),
+    #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
+    
+    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
+    
+    my (@nokRules, @okRules, @unkownRules);
+    
+    foreach my $aggregate_rule (@enabled_aggregaterules){
+        switch ($aggregate_rule->getAttr(name => 'aggregate_rule_last_eval')) {
+            case 1 {
+                push @nokRules,$aggregate_rule;
+            }
+            case 0 {
+                push @okRules,$aggregate_rule;
+            }
+            else {
+                push @unkownRules,$aggregate_rule;
+            }
+        }
+    }
+
+
+    my @rules;
+      #fill @rules in state order
+      foreach my $aggregate_rule (@nokRules, @okRules,@unkownRules) {
         
-  }, { layout => 'main' };
+        my $hash = {
+            id          => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+            formula     => $aggregate_rule->toString(),
+            last_eval   => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
+            label       => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
+        };
+        push @rules, $hash;
+      }
+      
+      template 'clustermetric_rules', {
+            title_page  => "Enabled Rules Overview",
+            rules       => \@rules,
+            status      => 'enabled',
+            cluster_id  => param('extclusterid'),
+      }, { layout => 'main' };
 };
 
 
