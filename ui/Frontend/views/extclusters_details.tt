@@ -49,24 +49,24 @@
         <span class="state imgDown">No node rule configured</span>
     <% ELSIF num_noderule_verif == 0 %>
         <span class="state imgUp">All rules are not verified</span>
-    <%ELSIF num_noderule_verif == 1 %>
+    <% ELSIF num_noderule_verif == 1 %>
         <span class="state imgBroken"><%num_noderule_verif%>/<%num_node_rule_total%> rule is verified</span>
         <span class="state imgBroken"><%num_node_nok%>/<%nodes_list.size%> node is not ok</span>
-    <%ELSE%>
+    <% ELSE%>
         <span class="state imgBroken"><%num_noderule_verif%> rules are verified</span>
         <br/><span class="state imgBroken"><%num_node_nok%>/<%nodes_list.size%> nodes are not ok</span>
-    <%END%>
+    <% END%>
 </td>
 <td>
     <% IF num_cluster_rule_total == 0%>
         <span class="state imgDown">No cluster rule configured</span>
-    <% IF num_clusterrule_verif == 0 %>
+    <% ELSIF num_clusterrule_verif == 0 %>
         <span class="state imgUp">All rules are not verified</span>
-    <%ELSIF num_clusterrule_verif == 1 %>
+    <% ELSIF num_clusterrule_verif == 1 %>
         <span class="state imgBroken"><%num_clusterrule_verif%>/<%num_cluster_rule_total%> rule is verified</span>
-    <%ELSE%>
+    <% ELSE%>
         <span class="state imgBroken"><%num_clusterrule_verif%>/<%num_cluster_rule_total%> rules are verified</span>
-    <%END%>
+    <% END%>
 </td>
 
 </tr>
