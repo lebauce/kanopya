@@ -47,8 +47,10 @@
         <span class="state imgUp">All rules are not verified</span>
     <%ELSIF num_noderule_verif == 1 %>
         <span class="state imgBroken"><%num_noderule_verif%> rule is verified</span>
+        <span class="state imgBroken"><%num_node_nok%> node is not ok</span>
     <%ELSE%>
         <span class="state imgBroken"><%num_noderule_verif%> rules are verified</span>
+        <span class="state imgBroken"><%num_node_nok%> nodes are not ok</span>
     <%END%>
 </td>
 <td>

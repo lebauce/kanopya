@@ -539,9 +539,15 @@ get '/extclusters/:clusterid' => sub {
     my $num_noderule_verif    = 0;
     
     my $nodes = $extcluster->getNodes(shortname => 1);
+    
+    my $num_node_nok = 0; 
     foreach my $node (@$nodes) {
         $node->{"state_" . $node->{state}} = 1;
         $num_noderule_verif += $node->{num_verified_rules};
+        
+        if($node->{num_verified_rules} > 0){
+            $num_node_nok++;
+        }
     }
     
     # Connectors
@@ -583,6 +589,7 @@ get '/extclusters/:clusterid' => sub {
         can_configure         => 1,
         num_noderule_verif    => $num_noderule_verif,
         num_clusterrule_verif => $num_clusterrule_verif,
+        num_node_nok          => $num_node_nok,
     };
 };
 
