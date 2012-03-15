@@ -121,7 +121,7 @@ sub addNode {
 
     $self->{_dbix}->parent->externalnodes->create({
         externalnode_hostname   => $args{hostname},
-        externalnode_state      => 'up',
+        externalnode_state      => 'down',
     });
 }
 sub getNode {
@@ -136,6 +136,17 @@ sub getNode {
     $repNode->{hostname} = $node->get_column('externalnode_hostname');
     return $repNode;
 }
+
+sub updateNodeState {
+    my $self = shift;
+    my %args = @_;
+    
+     $self->{_dbix}->parent->externalnodes->update_or_create({
+                externalnode_hostname   => $args{hostname},
+                externalnode_state      => $args{state},
+            });
+}
+
 sub getNodes {
     my $self = shift;
     my %args = @_;
@@ -176,7 +187,7 @@ sub updateNodes {
          if (defined $node->{hostname}) {
             $self->{_dbix}->parent->externalnodes->update_or_create({
                 externalnode_hostname   => $node->{hostname},
-                externalnode_state      => 'up',
+                externalnode_state      => 'down',
             });
          }
      }
