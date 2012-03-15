@@ -1,0 +1,4 @@
+<p><b>"Ooops, an error has occured"</b></p>
+<p>Error 500</p>
+<p>Internal Server Error</p>
+<textarea cols="145" rows="39" readonly="true" id="log_container" ><% message %> </textarea>
