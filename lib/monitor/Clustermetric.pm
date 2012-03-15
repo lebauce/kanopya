@@ -27,7 +27,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
 
 use constant ATTR_DEF => {
-    clustermetric_service_provider_id               =>  {pattern       => '^.*$',
+    clustermetric_service_provider_id          =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -39,7 +39,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|kurtosis|numOfDataOutOfRange|sum)$',
+    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|kurtosis|skewness|numOfDataOutOfRange|sum)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
