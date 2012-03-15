@@ -342,7 +342,7 @@ get '/clusters' => sub {
         clusters_list => [ @{_clusters()}, @{_externalclusters()} ],
         can_create => $can_create,
         
-    };
+    }, { layout => 'main' };
 };
 
 get '/extclusters' => sub {
@@ -351,7 +351,7 @@ get '/extclusters' => sub {
     template 'clusters', {
         title_page         => 'Clusters - External Clusters',
         clusters_list => _externalclusters(),
-    };
+    }, { layout => 'main' };
 };
 
 get '/clusters/:clusterid' => sub {
@@ -527,7 +527,7 @@ get '/clusters/:clusterid' => sub {
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
         can_setperm        => $methods->{'setperm'}->{'granted'},        
                        
-     };
+     }, { layout => 'main' };
 };
 
 get '/extclusters/:clusterid' => sub {
@@ -594,7 +594,7 @@ get '/extclusters/:clusterid' => sub {
         num_noderule_verif    => $num_noderule_verif,
         num_clusterrule_verif => $num_clusterrule_verif,
         num_node_nok          => $num_node_nok,
-    };
+    }, { layout => 'main' };
 };
 
 get '/extclusters/:clusterid/remove' => sub {
