@@ -144,9 +144,9 @@ sub nodemetricManagement{
             
             # Eval the rules
             $self->_evalAllRules(
-                'monitored_values' => $monitored_values,
-                'rules'            => \@rules,
-                'cluster_id'       => $cluster_id,
+                'monitored_values'  => $monitored_values,
+                'rules'             => \@rules,
+                'cluster'           => $externalCluster,
             );
         }
     }
@@ -158,13 +158,13 @@ sub _evalAllRules {
    
    my $monitored_values = $args{monitored_values};
    my $rules            = $args{rules};
-   my $cluster_id       = $args{cluster_id};
+   my $cluster          = $args{cluster};
    
    foreach my $rule (@$rules){
        $self->_evalRule(
            'rule'              =>$rule,
            'monitored_values' => $monitored_values,
-           'cluster_id'       => $cluster_id,
+           'cluster'       => $cluster,
        );
    }
 }
@@ -175,13 +175,22 @@ sub _evalRule {
 
     my $monitored_values = $args{monitored_values};
     my $rule             = $args{rule};
-    my $cluster_id       = $args{cluster_id};
-    
+    my $cluster          = $args{cluster};
+
+    my $cluster_id = $cluster->getAttr(name => 'externalcluster_id');
+
     #Eval the rule for each node
+    NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
         # Warning, not all the monitored values are required but we transmit 
         # all of them
         
+        if (0 ==  keys %$monitored_values_for_one_node) {
+            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
+            next NODE;
+        }
+        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
+
         my $rep = $rule->evalOnOneNode(
             monitored_values_for_one_node => $monitored_values_for_one_node
         );
