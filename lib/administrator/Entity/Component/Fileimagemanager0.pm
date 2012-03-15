@@ -22,6 +22,7 @@ use strict;
 use warnings;
 
 use Entity::Container::FileContainer;
+use Entity::ContainerAccess::FileContainerAccess;
 use Entity::ContainerAccess;
 use Kanopya::Exceptions;
 
@@ -47,15 +48,6 @@ sub setConf {
     my ($conf) = @_;
 }
 
-sub getMainContainerAccess {
-    my $self = shift;
-
-    # For instance, like Lvm2 main vg, we get the first container_access found.
-    # So we are able to use the Fileimagemanager in a specific kanopya configuration,
-    # where only one container access exists for disk image storage.
-    return Entity::ContainerAccess->find(hash => {});
-}
-
 =head2 createDisk
 
     Desc : Implement createDisk from DiskManager interface.
@@ -69,7 +61,7 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "container_access", "disk_name", "size", "filesystem" ]);
+                         required => [ "container_access", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
     Operation->enqueue(
@@ -81,7 +73,7 @@ sub createDisk {
             container_access_id => $args{container_access}->getAttr(
                                        name => 'container_access_id'
                                    ),
-            disk_name           => $args{disk_name},
+            name                => $args{name},
             size                => $args{size},
             filesystem          => $args{filesystem},
         },
@@ -124,8 +116,12 @@ sub getFreeSpace {
     my $self = shift;
     my %args = @_;
 
-    my $container_access = $self->getMainContainerAccess();
-    return $container_access->getContainer->getFreeSpace;
+    General::checkParams(args     => \%args,
+                         required => [ "container_access_id" ]);
+
+    my $container_access = Entity::ContainerAccess->get(id => $args{container_access_id});
+
+    return $container_access->getContainer->getAttr(name => 'container_freespace');
 }
 
 =head2 addContainer
@@ -146,7 +142,7 @@ sub addContainer {
 
     my $container = Entity::Container::FileContainer->new(
                         service_provider_id => $self->getAttr(name => 'service_provider_id'),
-                        disk_manager_id     => $self->getAttr(name => 'lvm2_id'),
+                        disk_manager_id     => $self->getAttr(name => 'fileimagemanager0_id'),
                         container_access_id => $args{container_access_id},
                         file_name           => $args{file_name},
                         file_size           => $args{file_size},
@@ -174,6 +170,84 @@ sub delContainer {
     General::checkParams(args => \%args, required => [ "container" ]);
 
     $args{container}->delete();
+}
+
+=head2 createExport
+
+    Desc : Implement createExport from ExportManager interface.
+           This function enqueue a ECreateExport operation.
+    args : export_name, device, typeio, iomode
+
+=cut
+
+sub createExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container", "export_name" ]);
+
+    $log->debug("New Operation CreateExport with attrs : " . %args);
+    Operation->enqueue(
+        priority => 200,
+        type     => 'CreateExport',
+        params   => {
+            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
+            export_manager_id   => $self->getAttr(name => 'component_id'),
+            container_id => $args{container}->getAttr(name => 'container_id'),
+            export_name  => $args{export_name},
+        },
+    );
+}
+
+=head2 removeExport
+
+    Desc : Implement createExport from ExportManager interface.
+           This function enqueue a ERemoveExport operation.
+    args : export_name
+
+=cut
+
+sub removeExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container_access" ]);
+
+    $log->debug("New Operation RemoveExport with attrs : " . %args);
+    Operation->enqueue(
+        priority => 200,
+        type     => 'RemoveExport',
+        params   => {
+            container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
+        },
+    );
+}
+
+sub addContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container" ]);
+
+    my $access = Entity::ContainerAccess::FileContainerAccess->new(
+                     container_id      => $args{container}->getAttr(name => 'container_id'),
+                     export_manager_id => $self->getAttr(name => 'fileimagemanager0_id'),
+                 );
+
+    my $access_id = $access->getAttr(name => 'container_access_id');
+    $log->info("File container access <$access_id> saved to database");
+
+    return $access;
+}
+
+sub delContainerAccess {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "container_access" ]);
+
+    $args{container_access}->delete();
 }
 
 1;

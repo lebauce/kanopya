@@ -19,6 +19,7 @@ use strict;
 
 use General;
 use EFactory;
+use Entity::ContainerAccess;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
@@ -36,13 +37,14 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "name", "size", "filesystem", "econtext" ]);
+                         required => [ "name", "size", "filesystem",
+                                       "container_access_id", "econtext" ]);
 
-    my $container_access = $self->_getEntity()->getMainContainerAccess();
+    my $container_access = Entity::ContainerAccess->get(id => $args{container_access_id});
 
     $self->fileCreate(container_access => $container_access,
                       file_name        => $args{name},
-                      file_size        => $args{name},
+                      file_size        => $args{size},
                       file_filesystem  => $args{filesystem},
                       econtext         => $args{econtext});
 
@@ -81,15 +83,49 @@ sub removeDisk{
               );
     }
 
-    my $container_access = $self->_getEntity()->getMainContainerAccess();
-
-    $self->fileRemove(container        => $args{container},
-                      container_access => $container_access,
-                      econtext         => $args{econtext});
+    $self->fileRemove(container => $args{container},
+                      econtext  => $args{econtext});
 
     $self->_getEntity()->delContainer(container => $args{container});
 
     #TODO: insert erollback ?
+}
+
+
+sub createExport {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'container', 'econtext' ]);
+
+    # TODO: Check if the given container is provided by the same
+    #       storage provider than the nfsd storage provider.
+
+    my $container_access = $self->_getEntity()->addContainerAccess(
+                               container => $args{container}
+                           );
+
+    $log->info("Added NFS Export of device <$args{export_name}>");
+
+    # Insert an erollback for removeExport here ?
+    return $container_access;
+}
+
+sub removeExport {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'container_access', 'econtext' ]);
+
+    if (! $args{container_access}->isa("Entity::ContainerAccess::FileContainerAccess")) {
+        throw Kanopya::Exception::Execution(
+                  error => "ContainerAccess must be a Entity::ContainerAccess::FileContainerAccess"
+              );
+    }
+
+    $self->_getEntity->delContainerAccess(container_access => $args{container_access});
 }
 
 =head2 fileCreate
@@ -108,7 +144,7 @@ sub fileCreate{
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 
     # Firstly mount the container access on the executor.
-    my $mountpoint = $args{container_access}->getContainer->getAttr(name => 'container_name') .
+    my $mountpoint = "/mnt/" . $args{container_access}->getContainer->getAttr(name => 'container_name') .
                      "_filecreate_" . $args{file_name};
     my $econtainer_access = EFactory::newEEntity(data => $args{container_access});
     
@@ -145,12 +181,6 @@ sub fileCreate{
               );
     }
 
-    if (! defined $args{"noformat"}){
-        $self->mkfs(device   => $file_image_path,
-                    fstype   => $args{file_filesystem},
-                    econtext => $args{econtext});
-    }
-
     $econtainer_access->umount(mountpoint => $mountpoint,
                                econtext   => $args{econtext});
 }
@@ -164,20 +194,23 @@ sub fileRemove{
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ "container", "container_access",
-                                       "econtext" ]);
+                         required => [ "container", "econtext" ]);
 
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 
     # Firstly mount the container access on the executor.
-    my $mountpoint = $args{container_access}->getContainer->getAttr(name => 'container_name') .
-                     "_filecreate_" . $args{file_name};
-    my $econtainer_access = EFactory::newEEntity(data => $args{container_access});
-    
+    my $container_access = Entity::ContainerAccess->get(
+                               id => $args{container}->getAttr(name => 'container_access_id')
+                           );
+
+    my $mountpoint = "/mnt/" . $container_access->getContainer->getAttr(name => 'container_name') .
+                     "_fileremove_" . $args{container}->getAttr(name => 'container_device');
+
+    my $econtainer_access = EFactory::newEEntity(data => $container_access);
     $econtainer_access->mount(mountpoint => $mountpoint,
                               econtext   => $args{econtext});
 
-    my $file_image_path = "$mountpoint/$args{file_name}.img";
+    my $file_image_path = "$mountpoint/" . $args{container}->getAttr(name => 'container_device');
 
     $log->debug("Container access mounted, trying to remove $file_image_path");
 
@@ -193,31 +226,6 @@ sub fileRemove{
 
     $econtainer_access->umount(mountpoint => $mountpoint,
                                econtext   => $args{econtext});
-}
-
-=head2 mkfs
-
-=cut
-
-sub mkfs {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "device", "fstype", "econtext" ]);
-    
-    my $command = "mkfs -t $args{fstype} ";
-    if($args{fsoptions}) {
-        $command .= "$args{fsoptions} ";
-    }
-
-    $command .= " $args{device}";
-    my $ret = $args{econtext}->execute(command => $command);
-    if($ret->{exitcode} != 0) {
-        my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
-    }
 }
 
 1;
