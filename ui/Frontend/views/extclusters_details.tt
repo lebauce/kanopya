@@ -57,13 +57,13 @@
             </tr><tr>
             <td></td><td>All the <%num_node_rule_total%> rules are ok</span>
         <%ELSIF num_noderule_verif == 1 %>
-            <td><span class="state imgBroken"></td><td><%num_noderule_verif%> on <%num_node_rule_total%> rules is not ok</span></td>
+            <td><span class="state imgBroken"></td><td><%num_noderule_verif%> on <%num_node_rule_total%> rules not ok</span></td>
             </tr><tr>
             <td></td><td><%num_node_nok%> on  <%nodes_list.size%> node is not ok</span>
         <%ELSE%>
-            <td><span class="state imgBroken"></td><td><%num_noderule_verif%> on <%num_node_rule_total%> rules are not ok</span></td>
+            <td><span class="state imgBroken"></td><td><%num_noderule_verif%> on <%num_node_rule_total%> rules not ok</span></td>
             </tr><tr>
-            <td></td><td><%num_node_nok%> on <%nodes_list.size%> nodes are not ok</span></td>
+            <td></td><td><%num_node_nok%> on <%nodes_list.size%> nodes not ok</span></td>
         <%END%>
     </tr>
     </table>
@@ -108,11 +108,11 @@
 		<td class="label2">
         <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
             <% IF node.num_verified_rules == 0 %>
-                <span class="state imgUp">No rules verified</span>
+                <span class="state imgUp">ok</span>
             <% ELSIF node.num_verified_rules == 1 %>
-                <span class="state imgBroken"><%node.num_verified_rules%> rule verified</span>
+                <span class="state imgBroken"><%node.num_verified_rules%> rule not ok</span>
             <% ELSE %>
-                <span class="state imgBroken"><%node.num_verified_rules%> rules verified</span>
+                <span class="state imgBroken"><%node.num_verified_rules%> rules not ok</span>
             <% END %>
         </a>
 		</td>
