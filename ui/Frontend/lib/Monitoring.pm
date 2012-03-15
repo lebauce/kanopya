@@ -699,7 +699,9 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
     
    my $cluster_id    = params->{extclusterid} || 0;
     
-    my @combinations = AggregateCombination->search(hash => {});
+    my @combinations = AggregateCombination->search(hash => {
+        'aggregate_combination_service_provider_id' => param('extclusterid'),
+    });
     
     my @combinationsInput;
     
