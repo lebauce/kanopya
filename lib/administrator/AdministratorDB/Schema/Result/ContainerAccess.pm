@@ -93,6 +93,38 @@ __PACKAGE__->belongs_to(
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 file_containers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::FileContainer>
+
+=cut
+
+__PACKAGE__->has_many(
+  "file_containers",
+  "AdministratorDB::Schema::Result::FileContainer",
+  { "foreign.container_access_id" => "self.container_access_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 file_container_access
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::FileContainerAccess>
+
+=cut
+
+__PACKAGE__->might_have(
+  "file_container_access",
+  "AdministratorDB::Schema::Result::FileContainerAccess",
+  {
+    "foreign.file_container_access_id" => "self.container_access_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 iscsi_container_access
 
 Type: might_have
@@ -143,8 +175,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-16 23:52:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9sO6Xe9Yto4v+/8Tk4e5hQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-15 13:22:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4kE+T0VoduReLx0wnJcQCQ
 
 __PACKAGE__->belongs_to(
   "parent",

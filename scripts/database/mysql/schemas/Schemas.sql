@@ -339,6 +339,16 @@ CREATE TABLE `local_container_access` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `lfile_container_access`
+-- Entity::ContainerAccess::FileContainerAccess class
+
+CREATE TABLE `file_container_access` (
+  `file_container_access_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`file_container_access_id`),
+  FOREIGN KEY (`file_container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `iscsi_container_access`
 -- Entity::ContainerAccess::IscsiContainerAccess class
 
