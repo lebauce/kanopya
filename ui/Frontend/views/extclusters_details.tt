@@ -50,7 +50,7 @@
         <span class="state imgBroken"><%num_node_nok%> node is not ok</span>
     <%ELSE%>
         <span class="state imgBroken"><%num_noderule_verif%> rules are verified</span>
-        <span class="state imgBroken"><%num_node_nok%> nodes are not ok</span>
+        <br/><span class="state imgBroken"><%num_node_nok%> nodes are not ok</span>
     <%END%>
 </td>
 <td>
