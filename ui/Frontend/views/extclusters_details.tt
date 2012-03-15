@@ -45,9 +45,9 @@
     <table>
     <tr>
         <% IF nodes_list.size == 0 %>       
-            <td><%num_node_rule_total%></td><td>rule configured</td>
+            <td><span class="state imgDown"></td><td>No node monitored</span><br/>
             </tr><tr>
-            <td></td><td><span class="state imgDown"></td><td>No node monitored</span><br/>
+            <td></td><td><%num_node_rule_total%> rule(s) configured</td>
         <% ELSIF num_node_rule_total == 0 %>
             <td><span class="state imgDown">No node rule configured</span></td>
             </tr><tr>
@@ -74,11 +74,11 @@
     <% IF num_cluster_rule_total == 0%>
         <span class="state imgDown">No cluster rule configured</span>
     <% ELSIF num_clusterrule_verif == 0 %>
-        <span class="state imgUp">All rules are not verified</span>
+        <span class="state imgUp">0 on <%num_cluster_rule_total%> rule not ok</span>
     <%ELSIF num_clusterrule_verif == 1 %>
-        <span class="state imgBroken"><%num_clusterrule_verif%> on <%num_cluster_rule_total%> rule is verified</span>
+        <span class="state imgBroken"><%num_clusterrule_verif%> on <%num_cluster_rule_total%> rule not ok</span>
     <%ELSE%>
-        <span class="state imgBroken"><%num_clusterrule_verif%> on <%num_cluster_rule_total%> rules are verified</span>
+        <span class="state imgBroken"><%num_clusterrule_verif%> on <%num_cluster_rule_total%> ruless not ok</span>
     <%END%>
     
 </td>
