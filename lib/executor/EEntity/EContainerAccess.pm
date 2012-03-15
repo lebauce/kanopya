@@ -66,13 +66,11 @@ sub copy {
         $log->debug($dd_cmd);
         $cmd_res = $args{econtext}->execute(command => $dd_cmd);
 
-        if($cmd_res->{'stderr'}){
+        if($cmd_res->{'stderr'} and ($cmd_res->{'exitcode'} != 0)){
             $errmsg = "Error with copy of $source_device to $dest_device: " .
                       $cmd_res->{'stderr'};
             $log->error($errmsg);
-
-            # 'dd' command weems to write informations messages on stderr.
-            # throw Kanopya::Exception::Execution(error => $errmsg);
+            throw Kanopya::Exception::Execution(error => $errmsg);
         }
 
         # Disconnect the containers.
@@ -162,16 +160,16 @@ sub mount {
         chomp($device);
     }
 
-    my $mount_cmd = "mount $device $args{mountpoint}";
+    my $mount_opts = $self->getMountOpts();
+
+    my $mount_cmd = "mount $mount_opts $device $args{mountpoint}";
     my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
     if($cmd_res->{'stderr'}){
-        $errmsg = "Unable to mount $device on $args{mountpoint}: " .
-                  $cmd_res->{'stderr'};
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to mount $device on $args{mountpoint}: " .
+                           $cmd_res->{'stderr'}
+              );
     }
-
-    # TODO: insert an eroolback with umount method.
 
     $log->info("Device <$device> mounted on <$args{mountpoint}>.");
 }
@@ -190,6 +188,11 @@ sub umount {
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     $log->info("Unmonting (<$args{mountpoint}>)");
+
+    if ($self->{device}) {
+        my $command = "kpartx -d $self->{device}";
+        $args{econtext}->execute(command => $command);
+    }
 
     my $umount_cmd = "umount $args{mountpoint}";
     my $cmd_res    = $args{econtext}->execute(command => $umount_cmd);
@@ -237,6 +240,13 @@ sub disconnect {
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
     throw Kanopya::Exception::NotImplemented();
+}
+
+sub getMountOpts {
+    my $self = shift;
+    my %args = @_;
+
+    return '';
 }
 
 1;

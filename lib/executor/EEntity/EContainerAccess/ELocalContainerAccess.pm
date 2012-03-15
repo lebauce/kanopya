@@ -57,54 +57,11 @@ sub getAttr {
     return $self->{$args{name}};
 }
 
-=head2 mount
-
-    desc: Generic mount method. Connect to the container_access,
-          and mount the corresponding device on givven mountpoint.
-
-=cut
-
-sub mount {
+sub getMountOpts {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
-
-    # Connecting to the container access.
-    my $device = $self->connect(econtext => $args{econtext});
-
-    my $mkdir_cmd = "mkdir -p $args{mountpoint}";
-    $args{econtext}->execute(command => $mkdir_cmd);
-
-    $log->info("Device found (<$device>), mounting on <$args{mountpoint}>.");
-
-    my $command = "kpartx -a $device";
-    $args{econtext}->execute(command => $command);
-
-    # Check if the device is partitioned
-    $command = "kpartx -l $device";
-    my $result = $args{econtext}->execute(command => $command);
-    if($result->{stdout}) {
-        # The device is partitioned, mount the one (...)
-        $device = $result->{stdout};
-
-        # Cut the stdout after first ocurence of ' : ' to get the
-        # device within /dev/mapper directory.
-        $device =~ s/ :.*$//g;
-        $device = '/dev/mapper/' . $device;
-        chomp($device);
-    }
-
-    my $mount_cmd = "mount -o loop $device $args{mountpoint}";
-    my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
-    if($cmd_res->{'stderr'}){
-        throw Kanopya::Exception::Execution(
-                  error => "Unable to mount $device on $args{mountpoint}: " .
-                           $cmd_res->{'stderr'}
-              );
-    }
-
-    $log->info("Device <$device> mounted on <$args{mountpoint}>.");
+    return '-o loop'
 }
 
 =head2 connect
@@ -120,6 +77,8 @@ sub connect {
     my $device = $self->_getEntity->{container}->_getEntity->getAttr(name => 'container_device');
 
     $log->info("Return file path (<$device>).");
+    $self->{device} = $device;
+
     return $device;
 }
 
@@ -132,6 +91,8 @@ sub disconnect {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    $self->{device} = '';
 }
 
 1;

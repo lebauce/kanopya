@@ -69,7 +69,7 @@ sub create {
     # Creation of the device based on distribution device
     my $container = $edisk_manager->createDisk(
                         name       => $self->_getEntity->getAttr(name => 'systemimage_name'),
-                        size       => $systemimage_size . 'B',
+                        size       => $systemimage_size,
                         filesystem => $esource_container->_getEntity->getAttr(name => 'container_filesystem'),
                         econtext   => $edisk_manager->{econtext},
                         erollback  => $erollback,

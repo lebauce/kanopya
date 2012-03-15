@@ -130,16 +130,27 @@ sub delExport {
 
     General::checkParams(args => \%args, required => ['econtext', 'container_access']);
 
-    my $device = $args{container_access}->getContainer->getAttr(name => 'container_device');
+    my $device     = $args{container_access}->getContainer->getAttr(name => 'container_device');
     my $econtainer = EFactory::newEEntity(data => $args{container_access}->getContainer);
+    my $mountdir   = $self->_getEntity()->getMountDir(device => $device);
 
     $self->_getEntity()->delExport(device => $device);
-    $self->update_exports(econtext => $args{econtext});
 
-    my $mountdir = $self->_getEntity()->getMountDir(device => $device);
-
-    $econtainer->umount(mountpoint => $mountdir,
-                        econtext   => $args{econtext});
+    my $retry = 5;
+    while ($retry > 0) {
+        eval {
+            $self->update_exports(econtext => $args{econtext});
+            $econtainer->umount(mountpoint => $mountdir,
+                                econtext   => $args{econtext});
+        };
+        if ($@) {
+            $log->info("Unable to umount nfs mountpoint <>, retrying in 1s...");
+            $retry--;
+            sleep 1;
+            next;
+        }
+        last;
+    }
 }
 
 sub update_exports {
