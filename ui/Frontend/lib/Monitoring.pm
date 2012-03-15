@@ -733,11 +733,10 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
   foreach my $aggregate_rule (@enabled_aggregaterules) {
     
     my $hash = {
-        id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-        formula   => $aggregate_rule->toString(),
-        last_eval => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
-        label     => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
-
+        id          => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+        formula     => $aggregate_rule->toString(),
+        last_eval   => $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval'),
+        label       => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
     };
     push @rules, $hash;
   }
@@ -865,6 +864,8 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
         state     => $rule->getAttr('name' => 'aggregate_rule_state'),
         label     => $rule->getAttr('name' => 'aggregate_rule_label'),
         action_id => $rule->getAttr('name' => 'aggregate_rule_action_id'),
+        description => $rule->getAttr('name' => 'aggregate_rule_description'),
+        
     };
     
     template 'clustermetric_rules_details', {
@@ -1311,12 +1312,13 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
     }
     
     my $rule_param = {
-        id        => $rule_id,
-        formula   => $rule->getAttr('name' => 'nodemetric_rule_formula'),
-        string    => $rule->toString(),
-        state     => $rule->getAttr('name' => 'nodemetric_rule_state'),
-        label     => $rule->getAttr('name' => 'nodemetric_rule_label'),
-        action_id => $rule->getAttr('name' => 'nodemetric_rule_action_id'),
+        id          => $rule_id,
+        formula     => $rule->getAttr('name' => 'nodemetric_rule_formula'),
+        string      => $rule->toString(),
+        state       => $rule->getAttr('name' => 'nodemetric_rule_state'),
+        label       => $rule->getAttr('name' => 'nodemetric_rule_label'),
+        action_id   => $rule->getAttr('name' => 'nodemetric_rule_action_id'),
+        description => $rule->getAttr('name' => 'nodemetric_rule_description'),
     };
     
     template 'clustermetric_rules_details', {

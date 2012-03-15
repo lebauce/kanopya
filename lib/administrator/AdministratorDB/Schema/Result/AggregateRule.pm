@@ -99,6 +99,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "aggregate_rule_action_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "aggregate_rule_description",
+  { data_type => "text", is_nullable => 0 },
   "class_type_id",
   {
     data_type => "integer",

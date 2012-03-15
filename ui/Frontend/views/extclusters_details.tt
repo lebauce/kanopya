@@ -71,7 +71,13 @@
 </td>
 
 <td>
-    <% IF num_cluster_rule_total == 0%>
+    <table>
+    <td>
+    <% IF nodes_list.size == 0 %>       
+        <span class="state imgDown"></td><td>No node monitored</span><br/>
+        </tr><tr>
+        <td></td><td><%num_cluster_rule_total%> rule(s) configured
+    <% ELSIF num_cluster_rule_total == 0%>
         <span class="state imgDown">No cluster rule configured</span>
     <% ELSIF num_clusterrule_verif == 0 %>
         <span class="state imgUp">0 on <%num_cluster_rule_total%> rule not ok</span>
@@ -80,7 +86,7 @@
     <%ELSE%>
         <span class="state imgBroken"><%num_clusterrule_verif%> on <%num_cluster_rule_total%> ruless not ok</span>
     <%END%>
-    
+    </td></table>
 </td>
 
 </tr>
