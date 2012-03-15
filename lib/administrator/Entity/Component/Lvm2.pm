@@ -96,8 +96,13 @@ sub lvCreate{
                          required => [ "lvm2_lv_name", "lvm2_lv_size",
                                        "lvm2_lv_filesystem", "lvm2_vg_id" ]);
 
-    my ($value, $unit) = General::convertSizeFormat(size => $args{lvm2_lv_size});
-    $args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
+    eval{
+        my ($value, $unit) = General::convertSizeFormat(size => $args{lvm2_lv_size});
+        $args{lvm2_lv_size} = General::convertToBytes(value => $value, units => $unit);
+    };
+    if ($@) {
+        $log->info("Given size $args{lvm2_lv_size} is already in bytes.");
+    }
 
     $log->debug("lvm2_lv_name is $args{lvm2_lv_name}, " .
                 "lvm2_lv_size is $args{lvm2_lv_size}, " .
@@ -248,8 +253,11 @@ sub getFreeSpace {
     my $self = shift;
     my %args = @_;
 
-    my $vg    = $self->getMainVg();
-    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $vg->{vgid} });
+    my $vg_id = General::checkParam(args    => \%args,
+                                    name    => 'vg_id',
+                                    default => $self->getMainVg->{vgid});
+
+    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $vg_id });
 
     return $vg_rs->get_column('lvm2_vg_freespace');
 }
