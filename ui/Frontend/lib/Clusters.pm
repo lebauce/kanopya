@@ -562,23 +562,23 @@ get '/extclusters/:clusterid' => sub {
 
 
      
-    my $num_cluster_rule_total = scalar AggregateRule->searchLight(
+    my $num_node_rule_total = scalar NodemetricRule->searchLight(
                                     hash=>{
-                                        'aggreagate_rule_service_provider_id' => $cluster_id
+                                        'nodemetric_rule_service_provider_id' => $cluster_id,
                                     }
                                  );
 
 
-    my $num_node_rule_total = 0;
     
-    my $num_clusterrule_verif = 0;
+    my $num_clusterrule_verif   = 0;
     my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
+
+    my $num_cluster_rule_total = scalar @enabled_aggregaterules;
     
-    foreach my $rule (@enabled_aggregaterules){
-        $num_node_rule_total++;
+    foreach my $rule (@enabled_aggregaterules){        
         my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
         if( defined $last_eval and $last_eval == 1){
-            $num_clusterrule_verif++;
+            $num_noderule_verif++;
         } 
     }
         
