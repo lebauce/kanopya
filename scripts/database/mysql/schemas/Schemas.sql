@@ -1238,9 +1238,9 @@ CREATE TABLE `verified_noderule` (
   `verified_noderule_nodemetric_rule_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`verified_noderule_externalnode_id`,`verified_noderule_nodemetric_rule_id`),
   KEY (`verified_noderule_nodemetric_rule_id`),
-  FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`verified_noderule_externalnode_id`),
-  FOREIGN KEY (`verified_noderule_externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`verified_noderule_externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 

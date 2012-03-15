@@ -539,9 +539,15 @@ get '/extclusters/:clusterid' => sub {
     my $num_noderule_verif    = 0;
     
     my $nodes = $extcluster->getNodes(shortname => 1);
+    
+    my $num_node_nok = 0; 
     foreach my $node (@$nodes) {
         $node->{"state_" . $node->{state}} = 1;
         $num_noderule_verif += $node->{num_verified_rules};
+        
+        if($node->{num_verified_rules} > 0){
+            $num_node_nok++;
+        }
     }
     
     # Connectors
@@ -558,6 +564,8 @@ get '/extclusters/:clusterid' => sub {
   
 
 
+    my $num_cluster_rule_total = 6;
+    my $num_node_rule_total = 7;
     
     my $num_clusterrule_verif = 0;
     my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
@@ -581,8 +589,11 @@ get '/extclusters/:clusterid' => sub {
         link_addconnector     => 1,
         link_delete           => 1,
         can_configure         => 1,
+        num_node_rule_total   => $num_node_rule_total,
+        num_node_cluster_total => $num_cluster_rule_total,
         num_noderule_verif    => $num_noderule_verif,
         num_clusterrule_verif => $num_clusterrule_verif,
+        num_node_nok          => $num_node_nok,
     };
 };
 
