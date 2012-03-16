@@ -19,15 +19,19 @@
     <h4><%rule.label%>:<br/>
         <%rule.string%></h4>
         This rule is <%rule.state%>.
-    <hr/>    
+        <hr/>
+        <h4> Combination values details:</h4>
+                <%IF clustermetric == 1%>
+            <% FOREACH combination IN rule.combination %>
+                <% combination.0 %> : <% combination.1 %> <br/>
+            <%END%>
+        <%END%>
+        <hr/>    
+
         Description:<br>
         <h4><%rule.description%></h4>
         
-        <%IF clustermetric == 1%>
-            <% FOREACH combination IN rule.combination %>
-                <% combination.0 %> : <% combination.1 %> 
-            <%END%>
-        <%END%>
+
         
     <hr/>
     
