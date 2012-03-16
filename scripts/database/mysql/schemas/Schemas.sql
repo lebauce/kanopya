@@ -1181,6 +1181,7 @@ CREATE TABLE `aggregate_condition` (
 CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nodemetric_combination_label` char(255),
+  `nodemetric_combination_service_provider_id`  int(8) unsigned NOT NULL,
   `nodemetric_combination_formula` char(32) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
@@ -1195,6 +1196,7 @@ CREATE TABLE `nodemetric_combination` (
 CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `nodemetric_condition_label` char(255),
+  `nodemetric_condition_service_provider_id`  int(8) unsigned NOT NULL,
   `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
   `nodemetric_condition_threshold` double NOT NULL,
