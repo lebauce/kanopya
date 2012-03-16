@@ -980,8 +980,9 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
 
 get '/extclusters/:extclusterid/nodemetrics/combinations' => sub {
     
-    #my @nodemetric_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId(param('extclusterid'));
-    my @nodemetric_combinations = NodemetricCombination->search(hash=>{});
+    my @nodemetric_combinations = NodemetricCombination->search(hash=>{
+        'nodemetric_combination_service_provider_id' => param('extclusterid')
+    });
     
     my @nodemetric_combinations_param;
     foreach my $nodemetric_combination (@nodemetric_combinations){
@@ -1089,7 +1090,9 @@ post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
 # -----------------------------------------------------------------------------#
 
 get '/extclusters/:extclusterid/nodemetrics/conditions' => sub {
-    my @nodemetric_conditions = NodemetricCondition->search(hash=>{});
+    my @nodemetric_conditions = NodemetricCondition->search(
+        hash=>{'nodemetric_condition_service_provider_id' => param('extclusterid')}
+        );
     
     my @nodemetric_conditions_param;
     foreach my $nodemetric_condition (@nodemetric_conditions){
