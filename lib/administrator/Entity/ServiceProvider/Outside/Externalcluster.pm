@@ -505,6 +505,7 @@ sub generateNodeMetricRules{
     
     my $combination_param = {
         nodemetric_combination_formula => 'id'.$indicator_id,
+        nodemetric_combination_service_provider_id => $extcluster_id,
     };
     
     my $comb = NodemetricCombination->new(%$combination_param);
@@ -520,6 +521,7 @@ sub generateNodeMetricRules{
             nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
             nodemetric_condition_comparator     => ">",
             nodemetric_condition_threshold      => 85,
+            nodemetric_condition_service_provider_id => $extcluster_id,
         };
             my $condition = NodemetricCondition->new(%$condition_param);
     
@@ -539,10 +541,10 @@ sub generateNodeMetricRules{
             nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
             nodemetric_condition_comparator     => "<",
             nodemetric_condition_threshold      => 10,
+            nodemetric_condition_service_provider_id => $extcluster_id,
         };
         
         $condition = NodemetricCondition->new(%$condition_param);
-        
         
         $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         $prule = {

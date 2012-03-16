@@ -1075,6 +1075,7 @@ post '/extclusters/:extclusterid/nodemetrics/combinations/new' => sub {
     }else{
         my $params = {
             nodemetric_combination_formula => param('formula'),
+            nodemetric_combination_service_provider_id => param('extclusterid'), 
         };
         my $cm = NodemetricCombination->new(%$params);
         my $var = param('extclusterid');
@@ -1153,6 +1154,7 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
         nodemetric_condition_combination_id => param('combinationid'),
         nodemetric_condition_comparator     => $comparatorHash->{param('comparator')},
         nodemetric_condition_threshold      => param('threshold'),
+        nodemetric_condition_service_provider_id => param('extclusterid'),
     };
     my $nodemetric_condition = NodemetricCondition->new(%$params);
     my $var = param('extclusterid');    
