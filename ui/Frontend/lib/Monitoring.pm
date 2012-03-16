@@ -864,6 +864,16 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     #my $cluster_name = $cluster->getNode(externalnode_id=>$cluster_id);
     my $cluster_name = $cluster->getAttr(name => 'externalcluster_name');
     
+    my @depConditionIds = $rule->getDependantConditionIds();
+    my @combinationValues;
+    foreach my $depConditionId (@depConditionIds){
+        my $condition      = AggregateCondition->get('id'   => $depConditionId);
+        my $combination_id = $condition->getAttr('name'     => 'aggregate_combination_id');
+        my $combination    = AggregateCombination->get('id' => $combination_id);
+        push @combinationValues, [$combination->toString(),$combination->computeLastValue()];
+    }
+    
+
     my @conditions;
 
     my @condition_insts = AggregateCondition->search(hash => {});
@@ -878,14 +888,14 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     }
     
     my $rule_param = {
-        id        => $rule_id,
-        formula   => $rule->getAttr('name' => 'aggregate_rule_formula'),
-        string    => $rule->getAttr('name' => 'aggregate_rule_label'),
-        state     => $rule->getAttr('name' => 'aggregate_rule_state'),
-        label     => $rule->getAttr('name' => 'aggregate_rule_label'),
-        action_id => $rule->getAttr('name' => 'aggregate_rule_action_id'),
+        id          => $rule_id,
+        formula     => $rule->getAttr('name' => 'aggregate_rule_formula'),
+        string      => $rule->getAttr('name' => 'aggregate_rule_label'),
+        state       => $rule->getAttr('name' => 'aggregate_rule_state'),
+        label       => $rule->getAttr('name' => 'aggregate_rule_label'),
+        action_id   => $rule->getAttr('name' => 'aggregate_rule_action_id'),
         description => $rule->getAttr('name' => 'aggregate_rule_description'),
-        
+        combination => \@combinationValues,
     };
     
     template 'clustermetric_rules_details', {
@@ -960,7 +970,6 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/ne
         $adm->addMessage(from => 'Monitoring', level => 'error', content => 'Wrong formula, unkown condition id'."$checker->{attribute}");
         redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules/new');
     }
-    
 };
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/delete' => sub {
