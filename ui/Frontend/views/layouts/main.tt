@@ -53,7 +53,7 @@
             // function to get and update messages content
             var messages_update = function() {
                 $.ajax({
-                    url: "/messages",
+                    url: "/messager/messages",
                     type: "POST",
                     dataType: "json",
                     success: function(msg){
@@ -76,7 +76,7 @@
             // function to get and update operations queue content
             var operations_update = function() {
                 $.ajax({
-                    url: "/operation/queue",
+                    url: "/messager/operation/queue",
                     type: "POST",
                     dataType: "json",
                     success: function(msg){
@@ -104,7 +104,7 @@
 	    // this function is call to print the number of operations enqueued
 	    var operation_sum = function() {
 		$.ajax({
-		    url: "/operationQuantity",
+		    url: "/messager/operation/quantity",
                     type: "POST",
                     dataType: "json",
                     success: function(data) {

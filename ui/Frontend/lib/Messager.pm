@@ -4,7 +4,7 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Administrator;
 
-prefix '/';
+prefix '/messager';
 
 ajax '/messages' => sub {
     my $adm = Administrator->new();
