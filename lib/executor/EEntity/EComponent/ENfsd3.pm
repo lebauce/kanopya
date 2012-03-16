@@ -32,8 +32,14 @@ sub createExport {
     General::checkParams(args     => \%args,
                          required => [ 'container', 'export_name', 'econtext' ]);
 
-    # TODO: Check if the given container is provided by the same
-    #       storage provider than the nfsd storage provider.
+    # Check if the given container is provided by the same
+    # storage provider than the nfsd storage provider.
+    if ($args{container}->getServiceProvider->getAttr(name => "service_provider_id") !=
+        $self->_getEntity()->getAttr(name => "service_provider_id")) {
+        throw Kanopya::Exception::Execution(
+                  error => "Only local containers can be exported through NFS"
+              );
+    }
 
     my $default_client = $args{container}->getServiceProvider->getMasterNodeIp();
 
@@ -45,25 +51,19 @@ sub createExport {
                                              name    => 'client_options',
                                              default => 'rw,sync,no_root_squash');
 
-    my $export_id = $self->addExport(container => $args{container},
-                                     econtext  => $args{econtext});
+    my $export = $self->addExport(container => $args{container},
+                                  econtext  => $args{econtext});
 
-    my $client_id = $self->addExportClient(export_id      => $export_id,
-                                           client_name    => $client_name,
-                                           client_options => $client_options);
+    my $client = $self->addExportClient(export_id      => $export->getAttr(name => "container_access_id"),
+                                        client_name    => $client_name,
+                                        client_options => $client_options);
 
     $self->update_exports(econtext => $args{econtext});
-
-    my $container_access = $self->_getEntity()->addContainerAccess(
-                               container => $args{container},
-                               export_id => $export_id,
-                               client_id => $client_id,
-                           );
 
     $log->info("Added NFS Export of device <$args{export_name}>");
 
     # Insert an erollback for removeExport here ?
-    return $container_access;
+    return $export;
 }
 
 sub removeExport {
@@ -81,8 +81,6 @@ sub removeExport {
 
     $self->delExport(container_access => $args{container_access},
                      econtext         => $args{econtext});
-
-    $self->_getEntity->delContainerAccess(container_access => $args{container_access});
 }
 
 sub reload {
@@ -94,11 +92,7 @@ sub addExport {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'container']);
-    
-    my $export_id = $self->_getEntity()->addExport(
-                        device => $args{container}->getAttr(name => 'container_device')
-                    );
+    General::checkParams(args => \%args, required => [ 'econtext', 'container' ]);
 
     my $mountpoint = $self->_getEntity()->getMountDir(
                          device => $args{container}->getAttr(name => 'container_device')
@@ -107,7 +101,13 @@ sub addExport {
     my $econtainer = EFactory::newEEntity(data => $args{container});
     $econtainer->mount(mountpoint => $mountpoint,
                        econtext   => $args{econtext});
-    return $export_id;
+
+    my $container_access = $self->_getEntity()->addContainerAccess(
+                               container   => $args{container},
+                               export_path => $mountpoint
+                           );
+
+    return $container_access;
 }
 
 sub addExportClient {
@@ -115,7 +115,7 @@ sub addExportClient {
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => ['export_id', 'client_name', 'client_options']);
+                         required => [ 'export_id', 'client_name', 'client_options' ]);
 
     return $self->_getEntity()->addExportClient(
                export_id      => $args{export_id},
@@ -133,7 +133,8 @@ sub delExport {
     my $device = $args{container_access}->getContainer->getAttr(name => 'container_device');
     my $econtainer = EFactory::newEEntity(data => $args{container_access}->getContainer);
 
-    $self->_getEntity()->delExport(device => $device);
+    $self->_getEntity->delContainerAccess(container_access => $args{container_access});
+
     $self->update_exports(econtext => $args{econtext});
 
     my $mountdir = $self->_getEntity()->getMountDir(device => $device);
@@ -163,7 +164,7 @@ sub generate_conf_file {
         INTERPOLATE  => 1,               # expand "$var" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace 
         EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE => 1,                   # desactive par defaut
+        RELATIVE     => 1,               # disabled by default
     };
 
     my $rand = new String::Random;

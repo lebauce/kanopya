@@ -20,6 +20,7 @@ use base "Entity::Connector::NetappManager";
 
 use warnings;
 use Entity::Container::NetappVolume;
+use Entity::ContainerAccess::NfsContainerAccess;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -42,7 +43,7 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "disk_name", "size", "filesystem" ]);
+                         required => [ "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
     Operation->enqueue(
@@ -51,7 +52,7 @@ sub createDisk {
         params   => {
             storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             disk_manager_id     => $self->getAttr(name => 'connector_id'),
-            disk_name           => $args{disk_name},
+            name                => $args{name},
             size                => $args{size},
             filesystem          => $args{filesystem},
             volume_id           => $args{volume_id}
@@ -165,7 +166,7 @@ sub createExport {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "container", "export_name", "typeio", "iomode" ]);
+                         required => [ "container", "export_name" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
     Operation->enqueue(
@@ -173,11 +174,9 @@ sub createExport {
         type     => 'CreateExport',
         params   => {
             storage_provider_id => $self->getAttr(name => 'service_provider_id'),
-            export_manager_id   => $self->getAttr(name => 'component_id'),
-            container_id => $args{container}->getAttr(name => 'container_id'),
-            export_name  => $args{export_name},
-            typeio       => $args{typeio},
-            iomode       => $args{iomode}
+            export_manager_id   => $self->getAttr(name => 'connector_id'),
+            container_id        => $args{container}->getAttr(name => 'container_id'),
+            export_name         => $args{export_name},
         },
     );
 }
@@ -219,13 +218,13 @@ sub getContainerAccess {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "lun_id", "target_id" ]);
+    General::checkParams(args => \%args, required => [ "container_access" ]);
 
-    my $target_rs = $self->{_dbix}->iscsitarget1_targets->find($args{target_id});
+    my $netapp = Entity::ServiceProvider->get(id => $self->getAttr(name => "service_provider_id"));
 
     my $container = {
-        container_access_export => $target_rs->get_column('iscsitarget1_target_name'),
-        container_access_ip     => $self->{netapp}->getMasterNodeIp(),
+        container_access_export => '/vol/' . $args{container_access}->getAttr(name => "export_path"),
+        container_access_ip     => $netapp->getMasterNodeIp(),
         container_access_port   => 3260,
     };
 
@@ -235,7 +234,7 @@ sub getContainerAccess {
 =head2 addContainerAccess
 
     Desc : Implement addContainerAccess from ExportManager interface.
-           This function create a new IscsiContainerAccess into database.
+           This function create a new NfsContainerAccess into database.
     args : container, target_id, lun_id
 
 =cut
@@ -244,13 +243,12 @@ sub addContainerAccess {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "container", "target_id", "lun_id" ]);
+    General::checkParams(args => \%args, required => [ "container", "export_name" ]);
 
-    my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
+    my $access = Entity::ContainerAccess::NfsContainerAccess->new(
                      container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getId(),
-                     target_id         => $args{target_id},
-                     lun_id            => $args{lun_id},
+                     export_manager_id => $self->getAttr(name => "connector_id"),
+                     export_path       => $args{export_name}
                  );
 
     my $access_id = $access->getAttr(name => 'container_access_id');

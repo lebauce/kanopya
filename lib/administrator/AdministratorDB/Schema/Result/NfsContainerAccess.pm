@@ -26,17 +26,11 @@ __PACKAGE__->table("nfs_container_access");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 export_id
+=head2 export_path
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
+  data_type: 'char'
   is_nullable: 0
-
-=head2 client_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
+  size: 255
 
 =cut
 
@@ -48,10 +42,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "export_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "client_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "export_path",
+  { data_type => "char", is_nullable => 0, size => 255 },
 );
 __PACKAGE__->set_primary_key("nfs_container_access_id");
 
@@ -72,9 +64,26 @@ __PACKAGE__->belongs_to(
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 nfs_container_access_clients
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-22 15:12:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xkykyepCI2knc5/rmUvF1Q
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NfsContainerAccessClient>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nfs_container_access_clients",
+  "AdministratorDB::Schema::Result::NfsContainerAccessClient",
+  {
+    "foreign.nfs_container_access_id" => "self.nfs_container_access_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-14 19:05:25
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AQBmVVJKvycjWI92h43mhA
 
 __PACKAGE__->belongs_to(
   "parent",
@@ -83,4 +92,5 @@ __PACKAGE__->belongs_to(
   { cascade_copy => 0, cascade_delete => 1 }
 );
 
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;
