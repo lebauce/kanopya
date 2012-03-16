@@ -33,6 +33,8 @@ our $VERSION = '0.1';
 
 Log::Log4perl->init('/opt/kanopya/conf/webui-log.conf');
 
+prefix undef;
+
 hook 'before' => sub {
     $ENV{EID} = session('EID');
 };
