@@ -272,4 +272,15 @@ sub checkFormula {
         value     => '1',
     };
 }
+
+sub disable {
+    my $self = shift;
+   my $verified_rule_dbix = 
+        $self->{_dbix}
+        ->verified_noderules->delete_all;
+
+    $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
+    $self->save();
+};
+
 1;
