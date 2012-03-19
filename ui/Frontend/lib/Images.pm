@@ -99,6 +99,10 @@ get '/images/add' => sub {
     
     my $storages = _storage_providers();
     
+    # disk managers list and parameters is managed by javascript with
+    # /images/diskmanagers/:storageid and
+    # /images/diskmanagers/:storageid/subform/:diskmanagerid
+    
     template 'form_addimages', {
         title_page            => 'Systems - System images creation',
         systemimages_list     => $systemimage,
@@ -396,7 +400,7 @@ get '/images/diskmanagers/:storageid/subform/:diskmanagerid' => sub {
         my $template_params = {};
             
         my $config = $diskmanager->getConf();
-        
+        content_type('text/html');
         template "$template", $config, {layout => undef};
     } else {
         return 'not yet implemented';

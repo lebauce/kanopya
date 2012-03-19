@@ -60,44 +60,25 @@
 </form>
 
 <script type="text/javascript"> 
-    function UpdateDiskmanagers() {
-        var xhr = new XMLHttpRequest();
-        var storageid = document.getElementById('storage_provider').value;
-        var url = '/systems/images/diskmanagers/' + storageid;
-        xhr.open("GET", url);
+function UpdateDiskmanagers() {
+    var url = '/systems/images/diskmanagers/' + $('#storage_provider').val();
+    $.get(url, function(data) {
+        $('#disk_manager').html(data);
+    }).complete(UpdateDiskmanagersSubform);
+}
     
-        xhr.overrideMimeType('text/xml');
-        xhr.onreadystatechange = function() {
-			if (xhr.readyState == 4 && xhr.status == 200) {
-                select = document.getElementById('disk_manager');
-                select.innerHTML = xhr.responseText;
-                UpdateDiskmanagersSubform();		
-            }
-        }	
-    xhr.send(null);
-    }
+function UpdateDiskmanagersSubform() {
+    var storageid = $('#storage_provider').val();
+    var diskmanagerid = $('#disk_manager').val();
+    var url = '/systems/images/diskmanagers/'+storageid+'/subform/'+diskmanagerid ;
     
-    
-    function UpdateDiskmanagersSubform() {
-        var xhr = new XMLHttpRequest();
-        var storageid = document.getElementById('storage_provider').value;
-        var diskmanagerid = document.getElementById('disk_manager').value;
-        var url = '/systems/images/diskmanagers/'+storageid+'/subform/'+diskmanagerid ;
-        xhr.open("GET", url);
-    
-        xhr.overrideMimeType('text/xml');
-        xhr.onreadystatechange = function() {
-			if (xhr.readyState == 4 && xhr.status == 200) {
-                select = document.getElementById('diskmanagerdetails');
-                select.innerHTML = xhr.responseText;		
-            }
-        }	
-    xhr.send(null);
-    
-    }
-    
-    document.getElementById('storage_provider').onchange = UpdateDiskmanagers;
-    document.getElementById('disk_manager').onchange = UpdateDiskmanagersSubform;
-    UpdateDiskmanagers();
+    $.get(url, function(data) {
+        $('#diskmanagerdetails').html(data);
+    });
+}
+
+$('#storage_provider').change(UpdateDiskmanagers);
+$('#disk_manager').change(UpdateDiskmanagersSubform);
+UpdateDiskmanagers();
     
 </script>
