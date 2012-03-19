@@ -15,11 +15,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Entity::Connector::NetappLunManager;
-use base "Entity::Connector";
-use base "Entity::Connector::NetappManager";
+use base 'Entity::Connector', 'Entity::Connector::NetappManager';
 
 use warnings;
 use Entity::Container::NetappLun;
+use Administrator;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -281,6 +281,17 @@ sub delContainerAccess {
     General::checkParams(args => \%args, required => [ "container_access" ]);
 
     $args{container_access}->delete();
+}
+
+=head2 synchronize 
+
+    Desc: synchronize netapp lun information with kanopya database
+
+=cut 
+
+sub synchronize {
+    my ($self) = @_;
+ 
 }
 
 1;

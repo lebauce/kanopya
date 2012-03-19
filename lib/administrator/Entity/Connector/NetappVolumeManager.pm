@@ -20,6 +20,8 @@ use base "Entity::Connector::NetappManager";
 
 use warnings;
 use Entity::Container::NetappVolume;
+use Administrator;
+use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -274,6 +276,17 @@ sub delContainerAccess {
     General::checkParams(args => \%args, required => [ "container_access" ]);
 
     $args{container_access}->delete();
+}
+
+=head2 synchronize 
+
+    Desc: synchronize netapp volumes information with kanopya database
+
+=cut 
+
+sub synchronize {
+    my ($self) = @_;
+    
 }
 
 1;

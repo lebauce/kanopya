@@ -98,13 +98,22 @@ sub getMasterNodeIp {
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('netapp_name') . " "
-                 . $self->{_dbix}->get_column('netapp_addr');
+    my $string = $self->{_dbix}->get_column('netapp_name');
+    $string .= ' (NetApp Equipement)';
     return $string;
 }
 
 sub getState {
     return 'up';
+}
+
+sub synchronize {
+    my ($self) = @_;
+    my @connectors = $self->getConnectors();
+    
+    foreach my $connector (@connectors) {
+        $connector->synchronize();
+    }
 }
 
 1;
