@@ -17,9 +17,17 @@
                <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.label %></span>
             </td>
             <td>
-                <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/details">
-                    details
-                </a>
+                <%IF host_name%>
+                    <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules/<%rule.id%>/details">
+                        details
+                    </a>
+                <% ELSE %>
+                    <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/details">
+                        details
+                    </a>
+                <% END %>
+                
+                
             </td>
             <td>
                  <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules/<%rule.id%>/delete">
@@ -41,7 +49,7 @@
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions">View the conditions</a>
         </td></tr>
         <tr><td>
-            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View the rules</a>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules/disabled">View disabled rules</a>
         </td></tr>
     </table>
     
