@@ -1185,7 +1185,9 @@ CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_formula` char(32) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`nodemetric_combination_service_provider_id`),
+  FOREIGN KEY (`nodemetric_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 
