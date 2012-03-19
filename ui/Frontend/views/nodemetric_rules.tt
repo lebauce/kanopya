@@ -1,11 +1,15 @@
+
 <table class="simplelisting">
  
     <caption>Node metrics rules results 
     <%IF  host_name%>
-     - <%cluster_name%> - <%host_name%> 
+     - <%cluster_name%> - <%host_name%>
     <%END%> 
     </caption>
     </br>
+    
+    
+    
     <% FOREACH rule IN rules %>
         <tr>
             <td>
@@ -38,10 +42,14 @@
         </tr>
     <% END %>
 </table>
-    
-<div class="actions">
 
+
+
+<div class="actions">
     <table>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </td></tr>
         <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
         </td></tr>
@@ -57,7 +65,5 @@
         <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/new">Create new rule for this cluster</a>
     </td></tr></table>
 </div> 
-
-
 
 
