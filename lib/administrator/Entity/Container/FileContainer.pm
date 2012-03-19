@@ -26,13 +26,8 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended => 0
     },
-    container_access_id => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
     file_name => {
-        pattern => '^[0-9\.]*$',
+        pattern => '^.*$',
         is_mandatory => 1,
         is_extended => 0
     },
@@ -42,7 +37,7 @@ use constant ATTR_DEF => {
         is_extended => 0
     },
     file_filesystem => {
-        pattern => '^[0-9\.]*$',
+        pattern => '^.*$',
         is_mandatory => 1,
         is_extended => 0
     },
@@ -67,7 +62,7 @@ sub getContainer {
         container_filesystem => $self->{_dbix}->get_column('file_filesystem'),
         # Freespace on a container has no sens for instance.
         container_freespace  => 0,
-        container_device     => $self->{_dbix}->get_column('file_name'),
+        container_device     => $self->{_dbix}->get_column('file_name') . '.img',
     };
 }
 

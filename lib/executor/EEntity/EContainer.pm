@@ -93,9 +93,7 @@ sub createDefaultExport {
 
     my $storage_provider = $self->_getEntity->getServiceProvider;
     my $export_manager   = EFactory::newEEntity(
-                               data => $storage_provider->getDefaultManager(
-                                           category => 'ExportManager'
-                                       )
+                               data => $self->getDefaultExportManager()
                            );
 
     $export_manager->{econtext} = EFactory::newEContext(
@@ -129,9 +127,7 @@ sub removeDefaultExport {
 
     my $storage_provider = $self->_getEntity->getServiceProvider;
     my $export_manager   = EFactory::newEEntity(
-                               data => $storage_provider->getDefaultManager(
-                                           category => 'ExportManager'
-                                       )
+                               data => $self->getDefaultExportManager()
                            );
 
     $export_manager->{econtext} = EFactory::newEContext(
@@ -145,6 +141,14 @@ sub removeDefaultExport {
 
 }
 
+sub getDefaultExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    return $self->_getEntity->getServiceProvider->getDefaultManager(
+               category => 'ExportManager'
+           );
+}
 
 sub mount {
     my $self = shift;
@@ -207,6 +211,9 @@ sub umount {
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     $log->info("Unmonting (<$args{mountpoint}>)");
+
+    my $command = "kpartx -d " . $self->_getEntity->getAttr(name => 'container_device');;
+    $args{econtext}->execute(command => $command);
 
     my $umount_cmd = "umount $args{mountpoint}";
     my $result = $args{econtext}->execute(command => $umount_cmd);

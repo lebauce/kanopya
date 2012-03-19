@@ -161,12 +161,14 @@ sub prepare {
 
     # Check if disk manager has enough free space
     my $neededsize = $self->{_objs}->{systemimage_source}->getDevice->getAttr(name => 'container_size');
-    my $freespace  = $disk_manager->getFreeSpace;
+    my $freespace  = $disk_manager->getFreeSpace(%{$params});
 
     $log->debug("Size needed for systemimage device : $neededsize, freespace left : $freespace");
-    if($neededsize > $freespace) {
-        $errmsg = 'EOperation::ECloneSystemimage->prepare : not enough freespace on ' .
-                  'the disk manager ($freespace M left)';
+
+    # TODO: temporary disable freespace checking, cause some disk managers do not implement it.
+    if(0 and $neededsize > $freespace) {
+        $errmsg = "EOperation::ECloneSystemimage->prepare : not enough freespace on " .
+                  "the disk manager ($freespace left, $neededsize required)";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -198,7 +200,7 @@ sub execute {
                           edisk_manager  => $self->{_objs}->{edisk_manager},
                           econtext       => $self->{executor}->{econtext},
                           erollback      => $self->{erollback},
-                          %{$self->{params}}   
+                          %{$self->{params}}
     );
 
     $self->{_objs}->{systemimage}->cloneComponentsInstalledFrom(

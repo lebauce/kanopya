@@ -125,7 +125,7 @@ sub lvCreate{
 
     my $vg_name = $self->_getEntity()->getVg(lvm2_vg_id => $args{lvm2_vg_id});
 
-    my $command = "lvcreate $vg_name -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}";
+    my $command = "lvcreate $vg_name -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}B";
     $log->debug($command);
 
     my $ret = $args{econtext}->execute(command => $command);
@@ -134,7 +134,7 @@ sub lvCreate{
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
-    
+
     my $newdevice = "/dev/$vg_name/$args{lvm2_lv_name}";
     if (! defined $args{"noformat"}){
         $self->mkfs(device => $newdevice, fstype => $args{lvm2_lv_filesystem}, econtext => $args{econtext});

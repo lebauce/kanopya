@@ -83,6 +83,7 @@ sub connect {
     }
 
     $log->info("Device found (<$device>).");
+    $self->{device} = $device;
 
     return $device;
 }
@@ -113,6 +114,7 @@ sub disconnect {
     my $delete_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o delete";
     $args{econtext}->execute(command => $delete_node_cmd);
 
+    $self->{device} = '';
     # TODO: insert an eroolback with mount method ?
 }
 

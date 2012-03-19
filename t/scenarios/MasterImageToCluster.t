@@ -140,7 +140,7 @@ eval {
                                                 size       => '5G',
                                                 filesystem => 'ext3',
                                                 econtext   => $econtext);
-    } 'Create a large lvm volume (10G)';
+    } 'Create a large lvm volume (5G)';
 
     my $container_access;
     lives_ok {
@@ -156,9 +156,11 @@ eval {
     } 'Get storage_provider_id';
 
 
-    for my $disk_manager_current ($kpc_cluster->getComponent(name => "Lvm", version => "2")) {
+    for my $disk_manager_current ($kpc_cluster->getComponent(name => "Lvm", version => "2"),
+                                  $kpc_cluster->getComponent(name => "Fileimagemanager", version => "0")) {
 
         my $disk_manager_id;
+        my $disk_manager_custom_params = { container_access_id => $container_access->getAttr(name => 'container_access_id') };
         lives_ok {
             $disk_manager_id = $disk_manager_current->getAttr(name => 'component_id');
         } 'Get storage_provider_id';
@@ -173,6 +175,7 @@ eval {
                 systemimage_name    => $systemimage_name,
                 systemimage_desc    => 'System image for test scenario MasterImageToCluster.',
                 masterimage_id      => $master_image->getAttr(name => 'masterimage_id'),
+                %{$disk_manager_custom_params}
             );
         } 'AddSytemImage operation enqueue';
         
@@ -200,6 +203,7 @@ eval {
                     systemimage_id      => $systemimage_id,
                     systemimage_name    => $clone_name,
                     systemimage_desc    => 'System image for test scenario MasterImageToCluster.',
+                    %{$disk_manager_custom_params}
                 },
             );
         } 'CloneSystemImage operation enqueue';

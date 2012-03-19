@@ -402,7 +402,7 @@ sub removeExport {
     );
 }
 
-=head2 getContainer
+=head2 getContainerAcess
 
     Desc : Implement getContainerAccess from ExportManager interface.
            This function return the container access hash that match

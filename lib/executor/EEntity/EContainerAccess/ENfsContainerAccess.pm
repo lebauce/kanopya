@@ -41,7 +41,7 @@ use Data::Dumper;
 
 my $log = get_logger("executor");
 
-=head2 connect
+=head2 mount
 
     desc: Mount the remote container acces with mount.nfs.
 
@@ -53,20 +53,26 @@ sub mount {
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
-    my $target  = $self->_getEntity->getAttr(name => 'container_access_export');
-    my $ip      = $self->_getEntity->getAttr(name => 'container_access_ip');
-    my $port    = $self->_getEntity->getAttr(name => 'container_access_port');
+    my $target = $self->_getEntity->getAttr(name => 'container_access_export');
+    my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
+    my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
 
-    # Useless ? When mountung on client, server side options are automatically applyed.
+    # Useless ? When mounting on client, server side options are automatically applyed.
     my $options = $self->_getEntity->getAttr(name => 'container_access_options');
 
     my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
 
     my $mount_cmd = "mount.nfs $ip:$target $args{mountpoint} -o vers=3";
-    $args{econtext}->execute(command => $mount_cmd);
+    my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
 
-    # TODO: insert an erollback with umount method.
+    # exitcode 8192: mount.nfs: mountpoint is busy or already mounted
+    if ($cmd_res->{'stderr'}) { #and ($cmd_res->{'exitcode'} != 8192)){
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to mount $ip:$target on $args{mountpoint}: " .
+                           $cmd_res->{'stderr'}
+              );
+    }
     $log->info("NFS export $ip:$target mounted on <$args{mountpoint}>.");
 
     # TODO: insert an erollback to umount nfs volume
@@ -84,6 +90,7 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
+    $self->{device} = '';
     return undef;
 }
 
@@ -99,6 +106,7 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
+    $self->{device} = '';
     return undef;
 }
 
