@@ -259,6 +259,59 @@ post '/vms/migrate' => sub {
 redirect '/infrastructures/vms';
 };
 
+#************************************************************************************************************************************
+get '/vms/scale_memory/:host_id' => sub {
+    
+
+    
+
+    template 'form_scalememory',  {
+	host_id => params->{'host_id'},   
+    }, { layout => '' };
+};
+
+post '/vms/scale_memory' => sub {
+    
+   
+
+    Operation->enqueue(
+	type => 'ScalememoryHost',
+	priority => 1,
+	params => {
+	    host_id => params->{host_id},
+	    memory_quantity => params->{memory_quantity}
+	}
+   ); 
+redirect '/infrastructures/vms';
+};
+
+get '/vms/scale_cpu/:host_id' => sub {
+    
+
+    
+
+    template 'form_scalecpu',  {
+	host_id => params->{'host_id'},   
+    }, { layout => '' };
+};
+
+post '/vms/scale_cpu' => sub {
+    
+   
+
+    Operation->enqueue(
+	type => 'ScalecpuHost',
+	priority => 1,
+	params => {
+	    host_id => params->{host_id},
+	    memory_quantity => params->{vcpu_number}
+	}
+   ); 
+redirect '/infrastructures/vms';
+};
+
+#************************************************************************************************************************************
+
 get '/vms/:hostid/addharddisk' => sub {
     template 'form_addharddisk', {
         host_id => param('hostid')

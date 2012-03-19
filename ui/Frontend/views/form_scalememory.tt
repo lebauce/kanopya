@@ -1,0 +1,15 @@
+<h2>Scale of memory</h2>
+
+<form id="target" method="POST" action="/infrastructures/vms/scale_memory">
+<table class="form">
+	<tr>
+		<td class="label">Quantity of memory :</td>
+		<td><input type="text" name="memory_quantity" size="32"/>
+		<span style="color: red"><% err_memory_quantity %></span></td>
+		</td>
+	</tr>
+</table>
+<div class="buttons">
+<input type="hidden" name="host_id" value="<% host_id %>"/>
+</div>
+</form> 

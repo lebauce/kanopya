@@ -15,6 +15,8 @@ package EEntity::EComponent::EOpennebula3;
 use base "EEntity::EComponent";
 use base "EEntity::EHostManager";
 
+use EFactory;
+
 use strict;
 use warnings;
 
@@ -114,8 +116,10 @@ sub migrateHost{
     # instanciate opennebula master node econtext 
     my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
 
+
     my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
                                                     ip_destination => $masternodeip);
+
 
     my $hypervisor_id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{hypervisor_dst}->getAttr(name => "host_id"));
     
@@ -127,6 +131,40 @@ sub migrateHost{
     return $self->_getEntity()->migrateHost(%args);
 }
 
+# execute memory scale in
+sub scale_memory{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host', 'memory_quantity']);
+     my $memory_quantity=$args{memory_quantity};
+    # instanciate opennebula master node econtext 
+    my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
+    my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+    my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id")); 
+    my $command = $self->_oneadmin_command(command => "onevm memset $host_id $memory_quantity");
+    my $result = $masternode_econtext->execute(command => $command);
+    return $self->_getEntity()->scale_memory(%args);
+       
+}
+#execute cpu scale in
+sub scale_cpu{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['host','cpu_number']);
+    my $cpu_number= $args{cpu_number};
+    # instanciate opennebula master node econtext 
+    my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
+    my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+    my $host_id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => "host_id"));
+    my $command = $self->_oneadmin_command(command => "onevm cpuset $host_id $cpu_number");
+    my $result = $masternode_econtext->execute(command => $command);
+    
+    return $self->_getEntity()->scale_cpu(%args);
+    
+    
+}
 # generate $ONE_LOCATION/etc/oned.conf configuration file
 sub generateOnedConf {
      my $self = shift;
@@ -182,8 +220,41 @@ sub generateQemuconf {
                          template_dir => "/templates/components/opennebula",
                          input_file => "qemu.conf.tt", output => "/libvirt/qemu.conf", data => $data); 
 }
+# generate /etc/xen/xend-config.sxp configuration file
+sub generateXenconf {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    
+    my $data = {};
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/opennebula",
+                         input_file => "xend-config.sxp.tt", output => "/etc/xen/xend-config.sxp", data => $data); 
+}
 
-
+sub generatemultivlanconf {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    
+    my $data = {};
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/opennebula",
+                         input_file => "network-multi-vlan.tt", output => "/etc/xen/scripts/network-multi-vlan", data => $data); 
+}
+sub generatevlanconf {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    
+    my $data = {};
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         template_dir => "/templates/components/opennebula",
+                         input_file => "network-bridge-vlan.tt", output => "/etc/xen/scripts/network-bridge-vlan", data => $data); 
+}
 # generate /etc/init.d/oned init script
 sub generateOnedinitscript {
     my $self = shift;
@@ -424,6 +495,7 @@ sub _generateVmTemplate {
 		memory      => $ram,
 		cpu		    => $args{host}->getAttr(name => 'host_core'),
 		mac_address => $args{host}->getAttr(name => 'host_mac_address'),
+		
 	};
 
 	$self->generateFile( econtext     => $args{econtext}, 
