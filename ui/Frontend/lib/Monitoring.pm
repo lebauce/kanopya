@@ -1217,7 +1217,10 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
 
 get '/extclusters/:extclusterid/nodemetrics/rules' => sub {
     my $externalcluster_id = param('extclusterid');
-    my @nodemetric_rules   = NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $externalcluster_id});
+    my @nodemetric_rules   = NodemetricRule->search(hash => {
+        nodemetric_rule_service_provider_id => $externalcluster_id,
+        nodemetric_rule_state               => 'enabled', 
+    });
     
     my @rules;
     
@@ -1230,6 +1233,37 @@ get '/extclusters/:extclusterid/nodemetrics/rules' => sub {
         push @rules, $hash;
     } 
     
+    my $extclu = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$externalcluster_id);
+    template 'nodemetric_rules', {
+        title_page      => "Node Metric Rules Overview",
+        rules           => \@rules,
+        cluster_id      => $externalcluster_id,
+        cluster_name    => $extclu->getAttr(name => 'externalcluster_name'),
+    }, { layout => 'main' };
+};
+
+get '/extclusters/:extclusterid/nodemetrics/rules/disabled' => sub {
+    print "lol\n";
+    my $externalcluster_id = param('extclusterid');
+    my @nodemetric_rules = NodemetricRule->search(
+                                hash => {
+                                    nodemetric_rule_state => 'disabled',
+                                }
+                           );
+                           
+    my @rules;
+    
+    foreach my $rule (@nodemetric_rules){
+        my $hash = {
+            id         => $rule->getAttr(name => 'nodemetric_rule_id'),
+            isVerified => -1,
+            formula    => $rule->toString(),
+            label      => $rule->getAttr(name => 'nodemetric_rule_label'),
+        };
+        
+        push @rules, $hash;
+    } 
+
     my $extclu = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$externalcluster_id);
     template 'nodemetric_rules', {
         title_page      => "Node Metric Rules Overview",
