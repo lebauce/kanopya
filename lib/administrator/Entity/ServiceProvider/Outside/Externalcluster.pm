@@ -46,7 +46,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
-    externalcluster_state   => {pattern         => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
+    externalcluster_state   => {pattern         => '^.*$',
                                 is_mandatory    => 0,
                                 is_extended     => 0,
                                 is_editable        => 0},
