@@ -565,6 +565,7 @@ get '/extclusters/:clusterid' => sub {
     my $num_node_rule_total = scalar NodemetricRule->searchLight(
                                     hash=>{
                                         'nodemetric_rule_service_provider_id' => $cluster_id,
+                                        'nodemetric_rule_state' => 'enabled',
                                     }
                                  );
 
@@ -585,7 +586,7 @@ get '/extclusters/:clusterid' => sub {
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
         active                => 1,
-        cluster_state         => 'up',
+        cluster_state         => $extcluster->getAttr(name => 'externalcluster_state'),
         cluster_id            => $cluster_id,
         cluster_name          => $extcluster->getAttr(name => 'externalcluster_name'),
         nodes_list            => $nodes,
