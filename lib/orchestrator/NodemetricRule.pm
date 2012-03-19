@@ -188,7 +188,7 @@ sub deleteVerifiedRule  {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }else{
-        print "** try to delete $externalnode_id **\n";
+        #print "** try to delete $externalnode_id **\n";
             my $verified_rule_dbix = 
                     $self->{_dbix}
                 ->verified_noderules
@@ -196,11 +196,10 @@ sub deleteVerifiedRule  {
                     verified_noderule_externalnode_id    => $externalnode_id,
                 });
             if(defined $verified_rule_dbix){
-                print "** delete $externalnode_id **\n";
+                #print "** delete $externalnode_id **\n";
                 $verified_rule_dbix->delete();
             } else {
-                print "** not here $externalnode_id **\n";
-
+                #print "** not here $externalnode_id **\n";
             }
     }
 }
