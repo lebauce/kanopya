@@ -201,6 +201,7 @@ sub updateNodes {
     Params:
         indicators : array ref of indicator name (eg 'ObjectName/CounterName')
         time_span  : number of last seconds to consider when compute average on metric values
+        <optional> shortname : bool : node identified by their fqn or hostname in resulting struct
 =cut
 
 sub getNodesMetrics {
@@ -208,6 +209,8 @@ sub getNodesMetrics {
      my %args = @_;
 
      General::checkParams(args => \%args, required => ['indicators', 'time_span']);
+     
+     my $shortname = defined $args{shortname};
      
      my $ms_connector = $self->getConnector( category => 'MonitoringService' );
      my $nodes = $self->getNodes();
@@ -219,13 +222,15 @@ sub getNodesMetrics {
         %args,
      );
 
-    my %data_shortnodename;
-    while (my ($nodename, $metrics) = each %$data) {
-         $nodename =~ s/\..*//;
-         $data_shortnodename{$nodename} = $metrics;
+    if ($shortname) {
+        my %data_shortnodename;
+        while (my ($nodename, $metrics) = each %$data) {
+             $nodename =~ s/\..*//;
+             $data_shortnodename{$nodename} = $metrics;
+        }
+        return \%data_shortnodename;
     }
-
-    return \%data_shortnodename;
+    return $data;
 }
 
 =head2 monitoringDefaultInit

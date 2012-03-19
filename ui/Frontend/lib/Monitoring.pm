@@ -346,7 +346,11 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
     
     # we retrieve the nodemetric values
 	eval {
-		$nodes_metrics = $extcluster->getNodesMetrics(indicators => [$indicator], time_span => 3600);
+		$nodes_metrics = $extcluster->getNodesMetrics(
+            indicators => [$indicator],
+            time_span => 3600,
+            shortname => 1
+        );
 	};
     # error catching
 	if ($@) {
