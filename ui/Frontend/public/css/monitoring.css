@@ -5,7 +5,13 @@
     position:relative;
     bottom:150px;
     left: 390px;
-    width:74%;
+    width:70%;
+}
+
+#cb_button{
+	position:absolute;
+	top:-25px;
+	left:45px;
 }
 
 .cluster_combination_tooltip{
@@ -42,7 +48,7 @@
     position:relative;
     bottom:50px;
     left: 300px;
-    width:80%;
+    width:70%;
 }
 
 #single_node_overview{
