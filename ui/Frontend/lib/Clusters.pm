@@ -1012,29 +1012,28 @@ get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
 };
 
 
-# 'Prototype' method for error management
-# (instead of throw exception or redirect, return a json with error or redirect key which is handled on client side)
-# handled by js method catchError
 get '/extclusters/:clusterid/nodes/update' => sub {
     my $adm = Administrator->new;
     my %res;
+    my $node_count;
 
     eval {
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
-        $cluster->updateNodes();
+        $node_count = $cluster->updateNodes( password => param('password') );
     };
-       if($@) {
+    if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
             $res{redirect} = '/permission_denied';
         }
-        else { $res{error} = "$exception"; }
+        else { $res{msg} = "$exception"; }
     }
     else {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');
-        $res{redirect} = '/architectures/extclusters/'.param('clusterid');
+        $res{msg} = "$node_count node" . ( $node_count > 1 ? 's' : '') . " retrieved.";
     }
+    
     to_json \%res;
 };
 
