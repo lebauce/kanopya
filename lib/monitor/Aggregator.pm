@@ -122,36 +122,44 @@ sub update() {
     
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
     
+    CLUSTER:
     for my $externalCluster (@externalClusters){
-        my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-        
-        #FILTER CLUSTERS WITH MONITORING PROVIDER
         eval{
-            $externalCluster->getConnector(category => 'MonitoringService');
-        };
-        if($@){
-            print '*** Aggregator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
-        }else{
-            print '*** Aggregator collecting for cluster '.$cluster_id.' ***'."\n";
             my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
             
-            # Construct input of the SCOM retriever
-            my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
-            print Dumper $host_indicator_for_retriever;
-            
-            # Call the retriever to get SCOM data
-            my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-            print Dumper $monitored_values; 
+            #FILTER CLUSTERS WITH MONITORING PROVIDER
+            eval{
+                $externalCluster->getConnector(category => 'MonitoringService');
+            };
+            if($@){
+                print '*** Aggregator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+            }else{
+                print '*** Aggregator collecting for cluster '.$cluster_id.' ***'."\n";
+                my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
                 
-            # Verify answers received from SCOM to detect metrics anomalies
-            my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
-            
-            # Parse retriever return, compute clustermetric values and store in DB
-            if($checker == 1){
-                $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
-            } 
+                # Construct input of the SCOM retriever
+                my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
+                print Dumper $host_indicator_for_retriever;
+                
+                # Call the retriever to get SCOM data
+                my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+                print Dumper $monitored_values; 
+                    
+                # Verify answers received from SCOM to detect metrics anomalies
+                my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
+                
+                # Parse retriever return, compute clustermetric values and store in DB
+                if($checker == 1){
+                    $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
+                } 
+            } #END EVAL
+        1;
+        } or do{
+            print "Skip to next cluster due to error $@\n";
+            $log->error($@);
+            next CLUSTER;
         }
-    }
+    } #end for $externalCluster
 }
 
 sub _checkNodesMetrics{
