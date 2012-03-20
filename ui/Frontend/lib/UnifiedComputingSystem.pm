@@ -72,8 +72,6 @@ post '/ucs/add' => sub {
         else { $exception->rethrow(); }
     }
     else {
-        my $conn = Entity::Connector::UcsManager->new();
-        $sp->addConnector('connector' => $conn);
         redirect('/equipments/ucs');
     }
 };

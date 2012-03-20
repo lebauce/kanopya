@@ -18,6 +18,8 @@ package Entity::ServiceProvider::Outside::Netapp;
 use base 'Entity::ServiceProvider::Outside';
 
 use NetAddr::IP;
+use Entity::Connector::NetappLunManager;
+use Entity::Connector::NetappVolumeManager;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -81,6 +83,11 @@ sub create {
         netapp_login           => $args{netapp_login},
         netapp_passwd          => $args{netapp_passwd},
     );
+
+    my $connector = Entity::Connector::NetappLunManager->new();
+    $netapp->addConnector('connector' => $connector);
+    $connector = Entity::Connector::NetappVolumeManager->new();
+    $netapp->addConnector('connector' => $connector);
 
     return $netapp;
 

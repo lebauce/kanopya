@@ -20,6 +20,7 @@ use strict;
 use warnings;
 
 use NetAddr::IP;
+use Entity::Connector::UcsManager;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -80,6 +81,9 @@ sub create {
         ucs_dataprovider    => $args{ucs_dataprovider},
         ucs_ou              => $args{ucs_ou},
     );
+
+    my $connector = Entity::Connector::UcsManager->new();
+    $ucs->addConnector('connector' => $connector);
 
     return $ucs;
 

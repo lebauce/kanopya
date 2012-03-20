@@ -68,10 +68,6 @@ post '/netapp/add' => sub {
         else { $exception->rethrow(); }
     }
     else {
-        my $connector = Entity::Connector::NetappLunManager->new();
-        $serviceProvider->addConnector('connector' => $connector);
-        $connector = Entity::Connector::NetappVolumeManager->new();
-        $serviceProvider->addConnector('connector' => $connector);
         redirect('/equipments/netapp');
     }
 };
