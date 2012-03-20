@@ -180,11 +180,21 @@ sub umount {
     $log->info("Unmonting (<$args{mountpoint}>)");
 
     $command = "umount $args{mountpoint}";
-    $result  = $args{econtext}->execute(command => $command);
-    if($result->{stderr}){
-        $errmsg = "Unable to umount $args{mountpoint}: " .
-                  $result->{stderr};
-        throw Kanopya::Exception::Execution(error => $errmsg);
+    my $retry = 5;
+    while ($retry > 0) {
+        $result = $args{econtext}->execute(command => $command);
+        if ($result->{exitcode} != 0) {
+            $log->info("Unable to umount <$args{mountpoint}>, retrying in 1s...");
+            $retry--;
+            sleep 1;
+            next;
+        }
+        last;
+    }
+    if (!$retry){
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to umount $args{mountpoint}: " . $result->{stderr}
+              );
     }
 
     # Disconnecting from container access.
