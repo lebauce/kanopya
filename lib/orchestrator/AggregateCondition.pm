@@ -97,24 +97,27 @@ sub eval{
 
     my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
     my $value = $agg_combination->computeLastValue(); 
-    
-    my $evalString = $value.$comparator.$threshold;
-    
-    
-    if(eval $evalString){        
-        print $evalString."=> true\n";
-        $log->info($evalString."=> true");        
-        $self->setAttr(name => 'last_eval', value => 1);
-        $self->save();
-        return 1;
+    if(defined $value){
+        my $evalString = $value.$comparator.$threshold;
+        if(eval $evalString){        
+            print $evalString."=> true\n";
+            $log->info($evalString."=> true");        
+            $self->setAttr(name => 'last_eval', value => 1);
+            $self->save();
+            return 1;
+        }else{
+            print $evalString."=> false\n";
+            $log->info($evalString."=> false");        
+            $self->setAttr(name => 'last_eval', value => 0);
+            $self->save();
+            return 0;
+        }
     }else{
-        print $evalString."=> false\n";
-        $log->info($evalString."=> false");        
-        $self->setAttr(name => 'last_eval', value => 0);
+        $log->warning("No data received from DB for $aggregate_combination_id");
+        $self->setAttr(name => 'last_eval', value => undef);
         $self->save();
-        return 0;
+        return undef;
     }
-    
 }
 
 
