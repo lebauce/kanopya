@@ -21,7 +21,7 @@ use base "Entity::Connector";
 
 use strict;
 use warnings;
-use Net::LDAP;
+use Net::LDAPS;
 use Kanopya::Exceptions;
 use Data::Dumper;
 
@@ -66,6 +66,7 @@ sub getNodes {
         #ad_pwd              => $self->getAttr(name => 'ad_pwd'), # Password is not stored in db but provided to the method
         ad_pwd              => $args{password},
         ad_nodes_base_dn    => $self->getAttr(name => 'ad_nodes_base_dn'),
+        ad_usessl           => $self->getAttr(name => 'ad_usessl'),
     );
 }
 
@@ -73,14 +74,17 @@ sub retrieveNodes {
     my $self = shift;
     my %args = @_;
 
-    my ($ad_host, $ad_user, $ad_pwd, $ad_nodes_base_dn) = (
+    my ($ad_host, $ad_user, $ad_pwd, $ad_nodes_base_dn, $usessl) = (
         $args{'ad_host'},
         $args{'ad_user'},
         $args{'ad_pwd'},
         $args{'ad_nodes_base_dn'},
+        $args{'ad_usessl'},
     );
     
-    my $ldap = Net::LDAP->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
+    my $ldap_class = $usessl ? 'Net::LDAPS' : 'Net::LDAP';
+    
+    my $ldap = $ldap_class->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
     my $mesg = $ldap->bind($ad_user, password => $ad_pwd);
     
     

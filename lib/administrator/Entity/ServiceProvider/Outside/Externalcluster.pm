@@ -195,7 +195,7 @@ sub updateNodes {
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
             $new_node_count++;
-            $self->{_dbix}->parent->externalnodes->update_or_create({
+            $self->{_dbix}->parent->externalnodes->find_or_create({
                 externalnode_hostname   => $node->{hostname},
                 externalnode_state      => 'down',
             });
