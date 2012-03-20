@@ -70,7 +70,7 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = $class->SUPER::new(%args);
-    if(!defined $args{nodemetric_rule_label}){
+    if(!defined $args{nodemetric_rule_label} || $args{nodemetric_rule_label} eq ''){
         $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
         $self->save();
     }

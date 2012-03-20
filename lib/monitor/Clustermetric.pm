@@ -108,8 +108,10 @@ sub new {
     my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
     RRDTimeData::createTimeDataStore(name => $clustermetric_id);
     
-    $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
-    $self->save();
+    if(!defined $args{clustermetric_label} || $args{clustermetric_label} eq ''){
+        $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
+        $self->save();
+    }
     return $self;
 }
 
