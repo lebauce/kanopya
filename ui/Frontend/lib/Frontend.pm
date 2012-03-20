@@ -59,6 +59,14 @@ hook 'before_template' => sub {
         # Doing this we can't have submenu with the same name in different menu
         return 'class="selected"' if ( $url eq (split '/', request->path())[2] );
     };
+    $tokens->{is_menu_visible} = sub {
+        my $url = shift;
+
+        # TODO get from conf
+        my @hidden_menu = ('infrastructures', 'networks', 'equipments');
+
+        return (0 == grep { $_ eq $url} @hidden_menu);
+    };
 };
 
 get '/' => sub {

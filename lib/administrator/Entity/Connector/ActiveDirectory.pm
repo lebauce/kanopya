@@ -58,11 +58,13 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub getNodes {
     my $self = shift;
-
+    my %args = @_;
+    
     return $self->retrieveNodes(
         ad_host             => $self->getAttr(name => 'ad_host'),
         ad_user             => $self->getAttr(name => 'ad_user'),
-        ad_pwd              => $self->getAttr(name => 'ad_pwd'),
+        #ad_pwd              => $self->getAttr(name => 'ad_pwd'), # Password is not stored in db but provided to the method
+        ad_pwd              => $args{password},
         ad_nodes_base_dn    => $self->getAttr(name => 'ad_nodes_base_dn'),
     );
 }

@@ -186,18 +186,23 @@ sub getNodes {
 
 sub updateNodes {
      my $self = shift;
+     my %args = @_;
      
      my $ds_connector = $self->getConnector( category => 'DirectoryService' );
-     my $nodes = $ds_connector->getNodes();
+     my $nodes = $ds_connector->getNodes(%args);
      
+     my $new_node_count = 0;
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
+            $new_node_count++;
             $self->{_dbix}->parent->externalnodes->update_or_create({
                 externalnode_hostname   => $node->{hostname},
                 externalnode_state      => 'down',
             });
          }
      }
+     
+     return $new_node_count;
      # TODO remove dead nodes from db
 }
 

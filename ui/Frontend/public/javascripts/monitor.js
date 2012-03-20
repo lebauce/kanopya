@@ -319,6 +319,7 @@ var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
 var clusters_view = path  + '/clustersview';
 var plot1;
+var cluster_timed_graph;
 
 //function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,label,start,stop){
@@ -417,7 +418,7 @@ function barGraph(values, nodelist, unit, div_id, min, max, title){
     //var line1=[['03-14-2012 16:23', 578.55], ['03-14-2012 16:17', 566.5], ['03-14-2012 16:12', 480.88],['03-14-2012 16:15',null], ['03-14-2012 16:19', 580.88], ['03-14-2012 16:26', 509.84]];
     // alert ('min: '+min+' max: '+max);
     // alert ('data for selected combination: '+first_graph_line);
-    plot1 = $.jqplot('clusterCombinationView', [first_graph_line], {
+    cluster_timed_graph = $.jqplot('clusterCombinationView', [first_graph_line], {
         title:label,
         seriesDefaults: {
             breakOnNull:true,
@@ -459,9 +460,9 @@ function barGraph(values, nodelist, unit, div_id, min, max, title){
 }
 
 function toggleTrendLine() {
-    if (plot1) {
-        plot1.series[0].trendline.show = ! plot1.series[0].trendline.show;
-        plot1.replot();
+    if (cluster_timed_graph) {
+        cluster_timed_graph.series[0].trendline.show = ! cluster_timed_graph.series[0].trendline.show;
+        cluster_timed_graph.replot();
     }
 }
 

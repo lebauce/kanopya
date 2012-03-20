@@ -95,8 +95,8 @@
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_updatenodes %>
-		<a class="imgAdding clickable  action" onclick="catchError('/architectures/extclusters/<% cluster_id %>/nodes/update')">update</a><br />
-		<span class="desc">Update nodes list using linked DirectoryService.</span><br /><br />
+		<a class="clickable action" onclick="alert('To update node list:\n - Add a DirectoryService connector to the cluster\n - Provide required configuration\n - click on \'Get computers\' button')">update</a><br />
+		<span class="desc">Use a DirectoryService connector to retrieve nodes</span><br /><br />
 	<% END %>
 	</td></tr>
 	<% FOREACH node IN nodes_list %>

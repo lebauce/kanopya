@@ -1,6 +1,6 @@
 // components.js also manage connectors configuration
 
-$(document).ready(function(){
+
     //var regexp1 = /\/systems\/components\/\d+\/configure/g;
     //var regexp2 = /\d+/;
     //var instanceid = regexp2.exec(regexp1.exec(window.location.href));
@@ -62,8 +62,6 @@ $(document).ready(function(){
 		
 	}
 
-	$('#save_button').click( save );
-
 
 	// link remove button to the corresponding element
 	function linkRemoveElem () {
@@ -99,6 +97,11 @@ $(document).ready(function(){
             alert(resp.msg);
         });
     }
+
+$(document).ready(function(){
+
+	$('#save_button').click( save );
+
     $('#check_button').click( check );
 
 	// Init add button links
