@@ -55,9 +55,10 @@ sub new {
     
     _verify($formula);
     my $self = $class->SUPER::new(%args);
-    
-    $self->setAttr(name=>'aggregate_combination_label', value => $self->toString());
-    $self->save();
+    if(!defined $args{aggregate_combination_label} || $args{aggregate_combination_label} eq ''){
+        $self->setAttr(name=>'aggregate_combination_label', value => $self->toString());
+        $self->save();
+    }
     return $self;
 }
 

@@ -68,8 +68,11 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = $class->SUPER::new(%args);
-    $self->setAttr(name=>'aggregate_condition_label', value => $self->toString());
-    $self->save();
+    
+    if(!defined $args{aggregate_condition_label} || $args{aggregate_condition_label} eq ''){
+        $self->setAttr(name=>'aggregate_condition_label', value => $self->toString());
+        $self->save();
+    }
     return $self;
 }
 

@@ -46,8 +46,10 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = $class->SUPER::new(%args);
-    $self->setAttr(name=>'nodemetric_combination_label', value => $self->toString());
-    $self->save();
+    if(!defined $args{nodemetric_combination_label} || $args{nodemetric_combination_label} eq ''){
+        $self->setAttr(name=>'nodemetric_combination_label', value => $self->toString());
+        $self->save();
+    }
     return $self;
 }
 

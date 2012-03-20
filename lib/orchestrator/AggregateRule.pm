@@ -77,8 +77,10 @@ sub new {
     _verify($formula);
     my $self = $class->SUPER::new(%args);
 
-    $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
-    $self->save();
+    if(!defined $args{aggregate_rule_label} || $args{aggregate_rule_label} eq ''){
+        $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
+        $self->save();
+    }
     return $self;
 }
 

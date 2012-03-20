@@ -12,11 +12,13 @@
     <% FOREACH condition IN conditions %>
         <tr><td>
         <span class="bold"> Condition <% condition.id %></span>
-        <span class="italic"> <% condition.label %> 
+        <span class="italic"> <% condition.label %>         
         </td><td>
         <% IF NOT cluster_id %>
             <a class="imgManage" href="/architectures/clustermetrics/combinations/conditions/<%condition.id%>/delete">delete</a>
         <% ELSE %>
+            <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/<%condition.id%>/edit">edit</a>
+           </td><td>
             <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/<%condition.id%>/delete">delete</a>
         <% END %>
         </td>

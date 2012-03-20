@@ -216,9 +216,10 @@ sub _evalRule {
         my $nodeEval = $rule->evalOnOneNode(
             monitored_values_for_one_node => $monitored_values_for_one_node
         );
-        print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$nodeEval."\n";
         
         if(defined $nodeEval){
+            print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$nodeEval."\n";
+            
             if($nodeEval eq 0){
                 
                 $rule->deleteVerifiedRule(
@@ -234,6 +235,7 @@ sub _evalRule {
                 );
             }
         }else{
+            print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => undef \n";
             $rule->setVerifiedRule(
                 hostname => $host_name,
                 cluster_id => $cluster_id,
