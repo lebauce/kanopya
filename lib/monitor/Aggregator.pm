@@ -243,7 +243,7 @@ sub _computeAggregateValuesAndUpdateTimeDB{
         }
         
         #Compute the $clustermetric value from all @dataStored values
-        if(1 < (scalar @dataStored)){
+        if(0 < (scalar @dataStored)){
             my $statValue = $clustermetric->compute(values => \@dataStored);
             
             if(defined $statValue){
