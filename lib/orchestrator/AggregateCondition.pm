@@ -113,7 +113,7 @@ sub eval{
             return 0;
         }
     }else{
-        $log->warning("No data received from DB for $aggregate_combination_id");
+        $log->warn("No data received from DB for $aggregate_combination_id");
         $self->setAttr(name => 'last_eval', value => undef);
         $self->save();
         return undef;
