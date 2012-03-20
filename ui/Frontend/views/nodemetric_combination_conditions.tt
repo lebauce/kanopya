@@ -12,7 +12,9 @@
     <% FOREACH condition IN conditions %>
         <tr><td>
         <span class="bold"> Condition <% condition.id %></span>
-        <span class="italic"> <% condition.label %> 
+        <span class="italic"> <% condition.label %>
+        </td><td>
+        <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/<%condition.id%>/edit">edit</a>
         </td><td>
         <a class="imgManage" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/<%condition.id%>/delete">delete</a>
         </td>

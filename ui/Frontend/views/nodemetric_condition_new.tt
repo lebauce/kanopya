@@ -1,6 +1,15 @@
-    <h2>New node metric condition for cluster <%cluster_id%></h2>
+    <%IF condition.id%>
+        <h2>Edit condition</h2>
+    <%ELSE%>
+        <h2>New node metric condition for cluster <%cluster_id%></h2>
+    <%END%>
+    
     <hr />
-    <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/new">
+    <%IF condition.id%>
+        <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/<%condition.id%>/edit">
+    <%ELSE%>
+        <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/new">
+    <%END%>
 
     <table>
         <tr>
@@ -8,7 +17,7 @@
                 Combination:
                 <select name="combinationid" >
                     <% FOREACH combination IN combinations %>
-                        <option value="<% combination.id %>"><% combination.id %>:<% combination.label %></option>
+                        <option value="<% combination.id %>" <%IF condition.combination_id == combination.id %>SELECTED<%END%> ><% combination.id %>:<% combination.label %></option>
                     <% END %>
                 </select>
             </td>
@@ -21,25 +30,34 @@
             </td>
             <td>
                 <select name="comparator">
-                    <option value="le">&le;</option>
-                    <option value="lt">&lt;</option>
-                    <option value="eq">=</option>
-                    <option value="gt">&gt;</option>
-                    <option value="ge">&ge;</option>
+                    <option value="le" <%IF condition.comparator == '<='%> SELECTED <%END%> >&le;</option>
+                    <option value="lt" <%IF condition.comparator == '<'%> SELECTED <%END%> >&lt;</option>
+                    <option value="eq" <%IF condition.comparator == '=='%> SELECTED <%END%> >=</option>
+                    <option value="gt" <%IF condition.comparator == '>'%> SELECTED <%END%> >&gt;</option>
+                    <option value="ge" <%IF condition.comparator == '>='%> SELECTED <%END%> >&ge;</option>
                 </select>
             </td>
             <td>
-                <input type="text" value ="threshold" name="threshold"/>
+                <%IF condition.id %>
+                    <input type="text" value ="<%condition.threshold%>" name="threshold"/>
+                <%ELSE%>
+                    <input type="text" value ="threshold" name="threshold"/>
+                <%END%>
             </td>
         </tr>
     </table>
     <br/>
-    <input type="checkbox" name="rule" value="1"/> Create the corresponding rule at the same time 
-    <br/>(Warning : A rule will be created but will be disabled. You will have to add a specific action to enable it) 
-    <br/>
-    <br/>
-    <div class="left">
-        <input type="submit" value="Create condition"/>
-        
-    </div>
+    <%IF condition.id %>
+        <div class="left">
+            <input type="submit" value="Edit condition"/>
+        </div>
+    <%ELSE%>
+        <input type="checkbox" name="rule" value="1"/> Create the corresponding rule at the same time 
+        <br/>(Warning : A rule will be created but will be disabled. You will have to add a specific action to enable it) 
+        <br/>
+        <br/>
+        <div class="left">
+            <input type="submit" value="Create condition"/>
+        </div>
+    <%END%>
 </form>

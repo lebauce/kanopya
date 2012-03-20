@@ -779,10 +779,7 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditi
                             name  =>'threshold',
                             value => param('threshold'),
                         );
-    $condition_modified->setAttr(
-                            name  =>'threshold',
-                            value => param('threshold'),
-                        );
+
     $condition_modified->save();
     $condition_modified->setAttr(
                             name  =>'aggregate_condition_label',
@@ -1259,8 +1256,11 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
 };
 
 get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
+};
+
+get '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/edit' => sub {
     
-   my $cluster_id    = params->{extclusterid} || 0;
+   my $cluster_id    = params->{extclusterid};
     
     my @combinations = NodemetricCombination->search(hash => {});
     
@@ -1273,12 +1273,59 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
         };
         push @combinationsInput, $hash;
     }
+    
+    my $condition_obj = NodemetricCondition->get('id' => param('conditionid'));
+    my $condition = {
+        id             => param('conditionid'),
+        combination_id => $condition_obj->getAttr(name => 'nodemetric_condition_combination_id'),
+        comparator     => $condition_obj->getAttr(name => 'nodemetric_condition_comparator'),
+        threshold      => $condition_obj->getAttr(name => 'nodemetric_condition_threshold'),
+    };
+    
     template 'nodemetric_condition_new', {
         title_page    => "Condition creation",
         combinations  => \@combinationsInput,
         cluster_id    => param('extclusterid'),
+        condition     => $condition,
     }, { layout => 'main' };
 };
+
+
+
+post '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/edit' => sub {
+    my $condition_modified = NodemetricCondition->get('id'=>param('conditionid'));
+        my $comparatorHash = 
+    {
+        "le" => "<",
+        "lt" => "<=",
+        "eq" => "==",
+        "gt" => ">",
+        "ge" => ">=",
+    };
+    $condition_modified->setAttr(
+                            name  =>'nodemetric_condition_combination_id',
+                            value => param('combinationid'),
+                        );
+                        
+    $condition_modified->setAttr(
+                            name  =>'nodemetric_condition_comparator',
+                            value => $comparatorHash->{param('comparator')},
+                        );
+    $condition_modified->setAttr(
+                            name  =>'nodemetric_condition_threshold',
+                            value => param('threshold'),
+                        );
+
+    $condition_modified->save();
+    $condition_modified->setAttr(
+                            name  =>'nodemetric_condition_label',
+                            value => $condition_modified->toString(),
+                        );
+    $condition_modified->save();
+    redirect '/architectures/extclusters/'.param('extclusterid').'/nodemetrics/conditions';
+};
+###END CP
+
 
 # ----------------------------------------------------------------------------#
 # ------------------------NODE METRIC RULES ----------------------------------#
