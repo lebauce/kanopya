@@ -321,11 +321,6 @@ var clusters_view = path  + '/clustersview';
 var plot1;
 var cluster_timed_graph;
 
-function c_replot(){	
-	var combination_dropdown_list = document.getElementById('combination_list');
-	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
-}
-
 //function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,label,start,stop){
 	if (combi_id == 'default'){return}
@@ -475,3 +470,8 @@ function toggleTrendLine() {
     }
 }
 
+//replot cluster combination timed graph. TODO: make it generic (should be reused for all the graphes "refresh" buttons)
+function c_replot(){	
+	var combination_dropdown_list = document.getElementById('combination_list');
+	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
+}
