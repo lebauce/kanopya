@@ -583,7 +583,7 @@ get '/extclusters/:clusterid' => sub {
         } 
     }
 
-    my @nodes_sort = sort {$a->{num_verified_rules} cmp $b->{num_verified_rules}} @{$nodes}; 
+    my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$nodes}; 
     
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
