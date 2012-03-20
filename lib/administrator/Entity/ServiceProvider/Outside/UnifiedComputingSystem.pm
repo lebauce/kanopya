@@ -101,8 +101,8 @@ sub getMasterNodeIp {
 
 sub toString {
     my $self = shift;
-    return $self->{_dbix}->get_column('ucs_name') . " ".
-           $self->{_dbix}->get_column('ucs_addr');
+    my $str = $self->{_dbix}->get_column('ucs_name'); 
+    return $str.' (UCS Equipment)';
 }
 
 1;
