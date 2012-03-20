@@ -108,9 +108,9 @@
             <% ELSIF node.num_verified_rules == 0 %>
                 <span class="state imgUp">ok</span>
             <% ELSIF node.num_verified_rules == 1 %>
-                <span class="state imgBroken"><%node.num_verified_rules%> rule not ok</span>
+                <span class="state imgBroken"><%node.num_verified_rules%> rule not ok ; <%node.num_undef_rules%> no data</span>
             <% ELSE %>
-                <span class="state imgBroken"><%node.num_verified_rules%> rules not ok</span>
+                <span class="state imgBroken"><%node.num_verified_rules%> rules not ok ; <%node.num_undef_rules%> no data</span>
             <% END %>
         </a>
 		</td>

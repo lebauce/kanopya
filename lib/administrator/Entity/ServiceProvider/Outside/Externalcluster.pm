@@ -164,7 +164,14 @@ sub getNodes {
             hostname           => $hostname,
             state              => $node_row->get_column('externalnode_state'),
             id                 => $node_row->get_column('externalnode_id'),
-            num_verified_rules => $node_row->verified_noderules->count(),
+            num_verified_rules => $node_row->verified_noderules
+                                           ->search({
+                                             verified_noderule_state => 'verified'})
+                                           ->count(),
+            num_undef_rules    => $node_row->verified_noderules
+                                           ->search({
+                                             verified_noderule_state => 'undef'})
+                                           ->count(),
         };
     }
 

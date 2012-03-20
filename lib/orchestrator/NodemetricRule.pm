@@ -70,9 +70,24 @@ sub new {
     my $class = shift;
     my %args = @_;
     my $self = $class->SUPER::new(%args);
-    $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
-    $self->save();
-    return $self;
+    if(!defined $args{nodemetric_rule_label}){
+        $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
+        $self->save();
+    }
+
+    #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $args{nodemetric_rule_service_provider_id});
+
+    my $extnodes = $extcluster->getNodes();
+    
+    foreach my $extnode (@$extnodes) {
+        $self->{_dbix}
+        ->verified_noderules
+        ->update_or_create({
+            verified_noderule_externalnode_id    =>  $extnode->{'id'},
+            verified_noderule_state              => 'undef',
+        });
+    }
 }
 
 sub toString{

@@ -582,14 +582,16 @@ get '/extclusters/:clusterid' => sub {
             $num_clusterrule_verif++;
         } 
     }
-        
+
+    my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$nodes}; 
+    
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
         active                => 1,
         cluster_state         => $extcluster->getAttr(name => 'externalcluster_state'),
         cluster_id            => $cluster_id,
         cluster_name          => $extcluster->getAttr(name => 'externalcluster_name'),
-        nodes_list            => $nodes,
+        nodes_list            => \@nodes_sort,#$nodes,
         connectors_list       => \@connectors,
         link_updatenodes      => 1,
         link_addconnector     => 1,
