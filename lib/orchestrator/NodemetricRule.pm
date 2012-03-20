@@ -20,7 +20,7 @@ use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use List::MoreUtils qw {any} ;
-
+use Switch;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -154,6 +154,15 @@ sub isVerifiedForANode{
             verified_noderule_externalnode_id    => $externalnode_id,
         });
     if(defined $row){
+        my $state = $row->verified_noderule_state;
+        switch ($state){
+            case 'verfied'{
+                return 1;
+            }
+            case 'undef'{
+                return undef;
+            }
+        }
         return 1;
     }else{
         return 0;
