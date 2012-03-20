@@ -132,10 +132,13 @@ sub eval {
         {
             $element = AggregateCondition->get('id'=>substr($element,2))->eval();
             # Warning element can be undef e.g. true || undef => true
+            if( !defined $element) {
+                $element = 'undef',
+            }
         }
      }
      
-    my $res = undef;
+    my $res = -1;
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula
@@ -151,7 +154,7 @@ sub eval {
         $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
         $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
         $self->save();
-        return undef,
+        return undef;
     }
 
     
