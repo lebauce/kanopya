@@ -42,16 +42,10 @@ use Entity::ContainerAccess;
 use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
 
-sub getMountOpts {
-    my $self = shift;
-    my %args = @_;
-
-    return '-o loop';
-}
-
 sub connect {
     my $self = shift;
     my %args = @_;
+    my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
@@ -67,17 +61,44 @@ sub connect {
     $eunderlying_access->mount(mountpoint => $mountpoint,
                                econtext   => $args{econtext});
 
-    $self->{device} = $mountpoint . '/' . $self->_getEntity->getContainer->getAttr(
-                          name => 'container_device'
-                      );
-    return $self->{device};
+    # Get a free loop device
+    $command = "losetup -f";
+    $result = $args{econtext}->execute(command => $command);
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    }
+    chomp($result->{stdout});
+    my $loop = $result->{stdout};
+
+    my $file = $mountpoint . '/' . $self->_getEntity->getContainer->getAttr(
+                                       name => 'container_device'
+                                   );
+
+    $command = "losetup $loop $file";
+    $result = $args{econtext}->execute(command => $command);
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    }
+
+    $self->_getEntity->setAttr(name  => 'device_connected',
+                               value => $loop);
+    return $loop;
 }
 
 sub disconnect {
     my $self = shift;
     my %args = @_;
+    my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+
+    $command = "losetup -d $device";
+    $result = $args{econtext}->execute(command => $command);
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    }
 
     my $underlying_access_id = $self->_getEntity->getContainer->getAttr(
                                    name => 'container_access_id'
@@ -90,7 +111,9 @@ sub disconnect {
     my $mountpoint = $self->buildMountpoint(eunderlying_access => $eunderlying_access);
     $eunderlying_access->umount(mountpoint => $mountpoint,
                                 econtext   => $args{econtext});
-    $self->{device} = '';
+
+    $self->_getEntity->setAttr(name  => 'device_connected',
+                               value => '');
 }
 
 sub buildMountpoint {
@@ -99,13 +122,9 @@ sub buildMountpoint {
 
     General::checkParams(args => \%args, required => [ 'eunderlying_access' ]);
 
-    my $underlying_name = $args{eunderlying_access}->_getEntity->getContainer->getAttr(
-                              name => 'container_name'
-                          );
-    my $file_name = $self->_getEntity->getContainer->getAttr(
-                        name => 'container_device'
-                    );
+    my $underlying = $args{eunderlying_access}->_getEntity->getContainer->getAttr(name => 'container_id');
+    my $file_mountpoint = $self->_getEntity->getContainer->getMountPoint;
 
-    return "/mnt/" . $underlying_name . "_connect_" . $file_name;
+    return $file_mountpoint . "_on_" . $underlying;
 }
 1;

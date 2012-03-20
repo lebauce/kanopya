@@ -129,7 +129,7 @@ sub lvCreate{
     $log->debug($command);
 
     my $ret = $args{econtext}->execute(command => $command);
-    if($ret->{exitcode} != 0) {
+    if ($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
@@ -216,14 +216,14 @@ sub lvRemove{
     $log->debug($lvremove_cmd);
     $ret = $args{econtext}->execute(command => $lvremove_cmd);
 
-    if($ret->{'stderr'}){
+    if ($ret->{exitcode} != 0) {
         $errmsg = "Error with removing logical volume " .
                   "/dev/$args{lvm2_vg_name}/$args{lvm2_lv_name} " . $ret->{'stderr'};
         $log->error($errmsg);
 
         # sterr is defined, but the logical volume seems to be corectly
-        # removed from vg, so do not thorw exception.
-        #throw Kanopya::Exception::Execution(error => $errmsg);
+        # removed from vg.
+        throw Kanopya::Exception::Execution(error => $errmsg);
     }
 
     $self->_getEntity()->lvRemove(%args);

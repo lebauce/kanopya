@@ -21,6 +21,7 @@ use General;
 use String::Random;
 use Template;
 use EFactory;
+use EEntity::EContainerAccess::ELocalContainerAccess;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -104,9 +105,12 @@ sub addExport {
                          device => $args{container}->getAttr(name => 'container_device')
                      );
 
-    my $econtainer = EFactory::newEEntity(data => $args{container});
-    $econtainer->mount(mountpoint => $mountpoint,
-                       econtext   => $args{econtext});
+    my $elocal_access = EEntity::EContainerAccess::ELocalContainerAccess->new(
+                            econtainer => EFactory::newEEntity(data => $args{container})
+                        );
+
+    $elocal_access->mount(mountpoint => $mountpoint,
+                          econtext   => $args{econtext});
     return $export_id;
 }
 
@@ -131,8 +135,13 @@ sub delExport {
     General::checkParams(args => \%args, required => ['econtext', 'container_access']);
 
     my $device     = $args{container_access}->getContainer->getAttr(name => 'container_device');
-    my $econtainer = EFactory::newEEntity(data => $args{container_access}->getContainer);
     my $mountdir   = $self->_getEntity()->getMountDir(device => $device);
+
+    my $elocal_access = EEntity::EContainerAccess::ELocalContainerAccess->new(
+                            econtainer => EFactory::newEEntity(
+                                             data => $args{container_access}->getContainer
+                                         )
+                        );
 
     $self->_getEntity()->delExport(device => $device);
 
@@ -140,8 +149,8 @@ sub delExport {
     while ($retry > 0) {
         eval {
             $self->update_exports(econtext => $args{econtext});
-            $econtainer->umount(mountpoint => $mountdir,
-                                econtext   => $args{econtext});
+            $elocal_access->umount(mountpoint => $mountdir,
+                                   econtext   => $args{econtext});
         };
         if ($@) {
             $log->info("Unable to umount nfs mountpoint <>, retrying in 1s...");

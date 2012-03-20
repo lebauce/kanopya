@@ -113,7 +113,7 @@ sub prepare {
     # Check if a service provider is given in parameters, use default instead.
     my $storage_provider_id = General::checkParam(
                                   args    => $params,
-                                  name    => 'service_provider_id',
+                                  name    => 'storage_provider_id',
                                   default => $args{internal_cluster}->{nas}
                               );
 

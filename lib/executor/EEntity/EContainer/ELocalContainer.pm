@@ -67,7 +67,7 @@ sub createDefaultExport {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    return EEntity::EContainerAccess::ELocalContainerAccess->new(container => $self);
+    return EEntity::EContainerAccess::ELocalContainerAccess->new(econtainer => $self);
 }
 
 sub removeDefaultExport {

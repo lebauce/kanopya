@@ -46,7 +46,7 @@ our $VERSION = '1.00';
 sub copy {
     my $self = shift;
     my %args = @_;
-    my ($cmd_res);
+    my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
 
@@ -54,37 +54,57 @@ sub copy {
     my $dest_access   = $args{dest};
 
     $log->info('Try to connect to the source container...');
-    my $source_device = $source_access->connect(econtext => $args{econtext});
+    my $source_device = $source_access->tryConnect(econtext => $args{econtext});
     $log->info('Try to connect to the destination container...');
-    my $dest_device = $dest_access->connect(econtext => $args{econtext});
+    my $dest_device = $dest_access->tryConnect(econtext => $args{econtext});
 
     # If devices exists, copy contents with 'dd'
     if (defined $source_device and defined $dest_device) {
         # Copy the device
-        my $dd_cmd = "dd if=$source_device of=$dest_device bs=1M";
+        $command = "dd conv=notrunc,fdatasync if=$source_device of=$dest_device bs=1M";
+        $result  = $args{econtext}->execute(command => $command);
 
-        $log->debug($dd_cmd);
-        $cmd_res = $args{econtext}->execute(command => $dd_cmd);
-
-        if($cmd_res->{'stderr'} and ($cmd_res->{'exitcode'} != 0)){
+        if ($result->{stderr} and ($result->{exitcode} != 0)) {
             $errmsg = "Error with copy of $source_device to $dest_device: " .
-                      $cmd_res->{'stderr'};
-            $log->error($errmsg);
+                      $result->{stderr};
             throw Kanopya::Exception::Execution(error => $errmsg);
         }
 
+        my $source_size = $self->_getEntity->getContainer->getAttr(name => 'container_size');
+        my $dest_size   = $args{dest}->_getEntity->getContainer->getAttr(name => 'container_size');
+
+        # Check if the destination container is higher thant the source one,
+        # resize it to maximum.
+        if ($dest_size > $source_size) {
+            my $part_start = $args{dest}->getPartitionStart(econtext => $args{econtext});
+            if ($part_start > 0) {
+                $command = "parted -s $dest_device rm 1";
+                $result  = $args{econtext}->execute(command => $command);
+
+                $command = "parted -s -- $dest_device mkpart primary " . $part_start . "B -1s";
+                $result  = $args{econtext}->execute(command => $command);
+            }
+
+            my $part_device = $self->tryConnectPartition(econtext => $args{econtext});
+
+            # Finally resize2fs the partition
+            $command = "e2fsck -y -f $part_device";
+            $args{econtext}->execute(command => $command);
+            $command = "resize2fs -F $part_device";
+            $args{econtext}->execute(command => $command);
+
+            $self->tryDisconnectPartition(econtext => $args{econtext});
+        }
+
         # Disconnect the containers.
-        $source_access->disconnect(econtext => $args{econtext});
-        $dest_access->disconnect(econtext => $args{econtext});
+        $source_access->tryDisconnect(econtext => $args{econtext});
+        $dest_access->tryDisconnect(econtext => $args{econtext});
     }
     # One or both container access do not support device level (e.g. Nfs)
     else {
         # Mount the containers on the executor.
-        my $source_name = $source_access->_getEntity->getContainer->getAttr(name => 'container_name');
-        my $source_mountpoint = "/mnt/" . $source_name;
-
-        my $dest_name = $dest_access->_getEntity->getContainer->getAttr(name => 'container_name');
-        my $dest_mountpoint = "/mnt/" . $dest_name;
+        my $source_mountpoint = $source_access->_getEntity->getContainer->getMountPoint;
+        my $dest_mountpoint   = $dest_access->_getEntity->getContainer->getMountPoint;
 
         $log->info('Mounting source container <' . $source_mountpoint . '>');
         $source_access->mount(mountpoint => $source_mountpoint, econtext => $args{econtext});
@@ -93,14 +113,12 @@ sub copy {
         $dest_access->mount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
 
         # Copy the filesystem.
-        my $copy_fs_cmd = "cp -R --preserve=all $source_mountpoint/. $dest_mountpoint/";
+        $command = "cp -R --preserve=all $source_mountpoint/. $dest_mountpoint/";
+        $result  = $args{econtext}->execute(command => $command);
 
-        $log->debug($copy_fs_cmd);
-        $cmd_res = $args{econtext}->execute(command => $copy_fs_cmd);
-
-        if($cmd_res->{'stderr'}){
+        if ($result->{stderr}) {
             $errmsg = "Error with copy of $source_mountpoint to $dest_mountpoint: " .
-                      $cmd_res->{'stderr'};
+                      $result->{stderr};
             $log->error($errmsg);
             throw Kanopya::Exception::Execution(error => $errmsg);
         }
@@ -109,17 +127,6 @@ sub copy {
         $source_access->umount(mountpoint => $source_mountpoint, econtext => $args{econtext});
         $dest_access->umount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
     }
-}
-
-=head2 resize
-
-=cut
-
-sub resize {
-    my $self = shift;
-    my %args = @_;
-    # TODO resize implementation
-    #General::checkParams(args => \%args, required => [ 'size', 'econtext' ]);
 }
 
 =head2 mount
@@ -132,42 +139,24 @@ sub resize {
 sub mount {
     my $self = shift;
     my %args = @_;
+    my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     # Connecting to the container access.
-    my $device = $self->connect(econtext => $args{econtext});
+    my $device = $self->tryConnectPartition(econtext => $args{econtext});
 
-    my $mkdir_cmd = "mkdir -p $args{mountpoint}";
-    $args{econtext}->execute(command => $mkdir_cmd);
-
-    $log->info("Device found (<$device>), mounting on <$args{mountpoint}>.");
-
-    my $command = "kpartx -a $device";
+    $command = "mkdir -p $args{mountpoint}";
     $args{econtext}->execute(command => $command);
 
-    # Check if the device is partitioned
-    $command = "kpartx -l $device";
-    my $result = $args{econtext}->execute(command => $command);
-    if($result->{stdout}) {
-        # The device is partitioned, mount the one (...)
-        $device = $result->{stdout};
+    $log->info("Mounting <$device> on <$args{mountpoint}>.");
 
-        # Cut the stdout after first ocurence of ' : ' to get the
-        # device within /dev/mapper directory.
-        $device =~ s/ :.*$//g;
-        $device = '/dev/mapper/' . $device;
-        chomp($device);
-    }
-
-    my $mount_opts = $self->getMountOpts();
-
-    my $mount_cmd = "mount $mount_opts $device $args{mountpoint}";
-    my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
-    if($cmd_res->{'stderr'}){
+    $command = "mount $device $args{mountpoint}";
+    $result  = $args{econtext}->execute(command => $command);
+    if($result->{stderr}){
         throw Kanopya::Exception::Execution(
                   error => "Unable to mount $device on $args{mountpoint}: " .
-                           $cmd_res->{'stderr'}
+                           $result->{stderr}
               );
     }
 
@@ -184,30 +173,26 @@ sub mount {
 sub umount {
     my $self = shift;
     my %args = @_;
+    my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     $log->info("Unmonting (<$args{mountpoint}>)");
 
-    if ($self->{device}) {
-        my $command = "kpartx -d $self->{device}";
-        $args{econtext}->execute(command => $command);
-    }
-
-    my $umount_cmd = "umount $args{mountpoint}";
-    my $cmd_res    = $args{econtext}->execute(command => $umount_cmd);
-    if($cmd_res->{'stderr'}){
+    $command = "umount $args{mountpoint}";
+    $result  = $args{econtext}->execute(command => $command);
+    if($result->{stderr}){
         $errmsg = "Unable to umount $args{mountpoint}: " .
-                  $cmd_res->{'stderr'};
-        $log->error($errmsg);
+                  $result->{stderr};
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
 
     # Disconnecting from container access.
-    $self->disconnect(econtext => $args{econtext});
+    $self->tryDisconnectPartition(econtext => $args{econtext});
+    $self->tryDisconnect(econtext => $args{econtext});
 
-    my $mkdir_cmd = "rm -R $args{mountpoint}";
-    $args{econtext}->execute(command => $mkdir_cmd);
+    $command = "rm -R $args{mountpoint}";
+    $args{econtext}->execute(command => $command);
 
     # TODO: insert an eroolback with mount method ?
 }
@@ -242,11 +227,137 @@ sub disconnect {
     throw Kanopya::Exception::NotImplemented();
 }
 
-sub getMountOpts {
+sub getPartitionStart {
+    my $self = shift;
+    my %args = @_;
+    my ($command, $result);
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    if (! $device) {
+        my $msg = "A container access must be connected before getting partition start.";
+        throw Kanopya::Exception::Execution(error => $msg);
+    }
+
+    $command = "parted -m -s $device u B print";
+    $result = $args{econtext}->execute(command => $command);
+
+    # Parse the parted output to get partition start.
+    my $part_start = $result->{stdout};
+    $part_start =~ s/.*\n.*\n1://g;
+    $part_start =~ s/B.*$//g;
+    chomp($part_start);
+
+    return $part_start;
+}
+
+sub connectPartition {
+    my $self = shift;
+    my %args = @_;
+    my ($command, $result);
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $device = $self->tryConnect(econtext => $args{econtext});
+    my $part_start = $self->getPartitionStart(econtext => $args{econtext});
+
+    if ($part_start > 0) {
+        # Get a free loop device
+        $command = "losetup -f";
+        $result  = $args{econtext}->execute(command => $command);
+        if ($result->{exitcode} != 0) {
+            throw Kanopya::Exception::Execution(error => $result->{stderr});
+        }
+        chomp($result->{stdout});
+        my $loop = $result->{stdout};
+
+        $command = "losetup $loop $device -o $part_start";
+        $result  = $args{econtext}->execute(command => $command);
+        if ($result->{exitcode} != 0) {
+            throw Kanopya::Exception::Execution(error => $result->{stderr});
+        }
+
+        $self->_getEntity->setAttr(name  => 'partition_connected',
+                                   value => $loop);
+        return $loop;
+    }
+    else {
+        return $device;
+    }
+}
+
+sub disconnectPartition {
+    my $self = shift;
+    my %args = @_;
+    my ($command, $result);
+
+    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
+
+    $command = "losetup -d $partition";
+    $result = $args{econtext}->execute(command => $command);
+    if ($result->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
+    }
+
+    $self->_getEntity->setAttr(name  => 'partition_connected',
+                               value => '');
+}
+
+sub tryConnect {
     my $self = shift;
     my %args = @_;
 
-    return '';
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    if ($device) {
+        $log->debug("Device already connected <$device>.");
+        return $device;
+    }
+    return $self->connect(%args);
+}
+
+sub tryDisconnect {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    if (! $device) {
+        $log->debug('Device seems to be not connected, doing nothing.');
+        return;
+    }
+    $self->disconnect(%args);
+}
+
+sub tryConnectPartition {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
+    if ($partition) {
+        $log->debug("Partition already connected <$partition>.");
+        return $partition;
+    }
+    return $self->connectPartition(%args);
+}
+
+sub tryDisconnectPartition {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'econtext' ]);
+
+    my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
+    if (! $partition) {
+        $log->debug('Partition seems to be not connected, doing nothing.');
+        return;
+    }
+    $self->disconnectPartition(%args);
 }
 
 1;

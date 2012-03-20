@@ -46,6 +46,16 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended => 0
     },
+    device_connected => {
+        pattern => '^.*$',
+        is_mandatory => 0,
+        is_extended => 0
+    },
+    partition_connected => {
+        pattern => '^.*$',
+        is_mandatory => 0,
+        is_extended => 0
+    },
     container_access_export => {
         pattern => '^.*$',
         is_mandatory => 0,
