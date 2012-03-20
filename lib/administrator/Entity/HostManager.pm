@@ -157,4 +157,41 @@ sub removeHost {
     );
 }
 
+=head2 getFreeHosts
+
+    Desc: return a list containing available hosts for this hosts manager
+
+=cut
+
+sub getFreeHosts {
+    my ($self) = @_;
+
+    my $where = {
+        active          => 0, 
+        host_state      => {-like => 'down:%'},
+        host_manager_id => $self->getAttr(name => 'entity_id')      
+    };
+
+    my @hosts = Entity::Host->getHosts(hash => $where);
+    my @free;
+    foreach my $m (@hosts) {
+        if(not $m->{_dbix}->node) {
+            push @free, $m;
+        }
+    }
+    return @free;
+}
+
+=head2 getBootPolicies
+
+    Desc: return a list containing boot policies available
+        on hosts manager ; MUST BE IMPLEMENTED IN CHILD CLASSES
+
+=cut
+
+sub getBootPolicies {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
 1;

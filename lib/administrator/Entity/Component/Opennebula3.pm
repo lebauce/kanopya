@@ -71,6 +71,14 @@ my $errmsg;
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
+=head2 getBootPolicies
+
+    Desc: return a list containing boot policies available
+
+=cut
+
+sub getBootPolicies { return ('PXE Boot','???');  }
+
 sub getConf {
     my $self = shift;
     my %conf = ();
