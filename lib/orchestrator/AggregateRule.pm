@@ -131,13 +131,14 @@ sub eval {
         if( $element =~ m/id(\d+)/)
         {
             $element = AggregateCondition->get('id'=>substr($element,2))->eval();
-            # Warning element can be undef e.g. true || undef => true
             if( !defined $element) {
-                $element = 'undef',
+                return undef;
             }
         }
      }
-     
+    
+    
+    
     my $res = -1;
     my $arrayString = '$res = '."@array"; 
     
