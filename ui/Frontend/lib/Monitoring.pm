@@ -1089,7 +1089,9 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/:combinationid/delete' 
     
     #When destroying a combination
     #Check if it is not used in combinations
-    my @conditions  = NodemetricCondition->search(hash=>{});
+    my @conditions  = NodemetricCondition->search(hash=>{
+        'nodemetric_combination_service_provider_id' => param('extclusterid')
+    });
     
     my @conditionsUsingCombination;
     foreach my $condition (@conditions) {
@@ -1196,7 +1198,9 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/delete' => s
     
     my $condition = NodemetricCondition->get('id' => $condition_id);
     
-    my @rules = NodemetricRule->search(hash=>{});
+    my @rules = NodemetricRule->search(hash=>{
+        'nodemetric_condition_service_provider_id' => param('extclusterid')
+    });
     
     my @rulesUsingCondition;
     
@@ -1256,10 +1260,30 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
 };
 
 get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
+   my $cluster_id    = params->{extclusterid};
+    
+    my @combinations = NodemetricCombination->search(hash => {});
+    
+    my @combinationsInput;
+    
+    foreach my $combination (@combinations){
+        my $hash = {
+            id     => $combination->getAttr(name => 'nodemetric_combination_id'),
+            label  => $combination->getAttr(name => 'nodemetric_combination_label'),
+        };
+        push @combinationsInput, $hash;
+    }
+    
+    
+    template 'nodemetric_condition_new', {
+        title_page    => "Condition creation",
+        combinations  => \@combinationsInput,
+        cluster_id    => param('extclusterid'),
+    }, { layout => 'main' };
 };
 
 get '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/edit' => sub {
-    
+
    my $cluster_id    = params->{extclusterid};
     
     my @combinations = NodemetricCombination->search(hash => {});
