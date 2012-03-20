@@ -4,6 +4,8 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Administrator;
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider;
+use Entity::HostManager;
 use Entity::Host;
 use Entity::Gp;
 use Entity::Systemimage;
@@ -114,6 +116,32 @@ sub _externalclusters {
     return \@clusters;
 }
 
+# retrieve data managers
+sub _cloudmanagers {
+    my @cloudmanagers = Entity::ServiceProvider->findManager(category => 'Cloudmanager');
+    return @cloudmanagers;
+}
+
+# retrieve hosts providers list
+sub _host_providers {
+    my @cloudmanagers = _cloudmanagers();
+    my %temp;
+    foreach my $s (@cloudmanagers) {
+        $temp{ $s->{service_provider_id} } = 0;
+    }
+    
+    my $sp = [];
+    foreach my $id (keys %temp) {
+        my $tmp = {};
+        my $sp_entity = Entity::ServiceProvider->get(id => $id);
+        $tmp->{id} = $id;
+        $tmp->{name} = $sp_entity->toString();
+        
+        push (@$sp, $tmp);
+    }
+    return $sp;
+}
+
 # return an array containing running clusters with Cloudmanager component
 
 sub _virtualization_clusters {
@@ -128,19 +156,16 @@ sub _virtualization_clusters {
 	}
 	return @virtualization_clusters;
 }
-#return user groups
-sub _groups {
-	  my $selected = shift;
-    my @egroups = Entity::Gp->getGroups(hash => { gp_type => "User" });
-    my $groups  = [];
-    if($selected) {
-        if(!scalar(grep(/$selected/, @egroups))) {
-            redirect('/architectures/clusters');
-        }
-    }
 
+# return user groups containing at least one user
+
+sub _users_groups {
+    my ($selected) = @_;
+    my @egroups = Entity::Gp->getGroups(hash => { gp_type => 'User' });
+    my $groups  = [];
 
     foreach my $group (@egroups) {
+        next if not $group->getSize();
         my $tmp = {};
         $tmp->{gp_id}   = $group->getAttr('name' => 'gp_id');
         $tmp->{gp_name} = $group->getAttr('name' => 'gp_name');
@@ -155,33 +180,31 @@ sub _groups {
     return $groups;
 }
 
-get '/clusters/userid/:userid' => sub {
- my $user_id = param('userid');
- return Dumper($user_id);
-};
+# route to dynamically update owner user list
 
 get '/clusters/users/:gpid' => sub {
-	 my $adm = Administrator->new();
-	 my $loguser=$adm->{_rightchecker}->{user_id};
-	 my $loguser_entity=Entity::User->get(id=>$loguser);
+    my $adm        = Administrator->new();
+	my $loguser_id = $adm->{_rightchecker}->{user_id};
+	my $loguser    = Entity::User->get(id => $loguser_id);
 	 
-     my $gp_id = param('gpid');
-     my $gp_selected=Entity::Gp->get(id=>param('gpid'));
-     my @eusers= $gp_selected->getEntities();
-     my $str="<option value="."$loguser".">"."current"." "."</option>";
-     foreach my $u (@eusers) {
-	   my $tmp = {};
-	   $tmp->{user_firstname} = $u->getAttr(name=>'user_firstname');
-	   $tmp->{user_lastname}=$u->getAttr(name=>'user_lastname');
-	   $tmp->{user_id}=$u->getAttr(name=>'user_id');
-	   $str .="<option value="."$tmp->{user_id}".">"."$tmp->{user_firstname} "."$tmp->{user_lastname}"."</option>";
-	  
-   }
-    content_type('text/html');
-  return $str;
- };
+    my $gp_id = param('gpid');
+    my $gp_selected=Entity::Gp->get(id => param('gpid'));
+    my @eusers= $gp_selected->getEntities();
+    my $str="<option value=$loguser>current logged user</option>";
+    foreach my $u (@eusers) {
+        my $tmp = {};
+	    $tmp->{user_firstname} = $u->getAttr(name=>'user_firstname');
+	    $tmp->{user_lastname}  = $u->getAttr(name=>'user_lastname');
+	    $tmp->{user_id}        = $u->getAttr(name=>'user_id');
+	    $str .='<option value='."$tmp->{user_id}".'>'."$tmp->{user_firstname} $tmp->{user_lastname}".'</option>';
+    }
+    content_type('text/html'); 
+    return $str;
+};
 
-sub _users_list { return (); }
+
+# cluster add form display
+
 get '/clusters/add' => sub {
     my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(hash=>{cluster_name => 'Kanopya'});
     my @ekernels = Entity::Kernel->getKernels(hash => {});
@@ -219,17 +242,85 @@ get '/clusters/add' => sub {
         push (@$si_fordedicated, $tmp);
     }
 
+    # owner users list content is managed by javascript with
+    # /clusters/users/:gpid
+
+    # cloud managers list and parameters is managed by javascript with
+    # /clusters/cloudmanagers/:hostproviderid and
+    # /clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid
+
     template 'form_addcluster', {
         title_page                  => "Clusters - Cluster creation",
-        'nodescount'                => $c,
-        'kernels_list'              => $kmodels,
-        'systemimages_forshared'    => $si_forshared,
-        'systemimages_fordedicated' => $si_fordedicated,
-        'gp_list'                   => _groups(),
-        'users_list'                => _users_list(),
-        'nameserver'                => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
+        kernels_list              => $kmodels,
+        systemimages_forshared    => $si_forshared,
+        systemimages_fordedicated => $si_fordedicated,
+        gp_list                   => _users_groups(),
+        hostproviders_list        => _host_providers(),
+        nameserver                => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
+        
     }, { layout => '' };
 };
+
+# route to dynamically update cloud managers list
+
+get '/clusters/cloudmanagers/:hostproviderid' => sub {
+    my $id = param('hostproviderid');
+    my $str = '';
+    my @managers = _cloudmanagers();
+    foreach my $manager (@managers) {
+        if($manager->{service_provider_id} eq $id) {
+            $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
+        }
+    }
+    
+    content_type('text/html');
+    return $str;
+};
+
+# route to dynamically update cloud managers parameters 
+
+get '/clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid' => sub {
+    my $storageid = param('hostproviderid');
+    my $managerid = param('cloudmanagerid');
+    my $sp = Entity::ServiceProvider->get(id => $storageid);
+    my $cloudmanager = $sp->getManager(id => $managerid);
+    if($cloudmanager->can('getConf')) {
+        my $template;
+        if($cloudmanager->isa('Entity::Component')) {
+            my $componentdetail = $cloudmanager->getComponentAttr();
+            $template = 'components/'.lc($componentdetail->{component_name}).$componentdetail->{component_version}.'_subform_addcluster.tt';
+        } elsif($cloudmanager->isa('Entity::Connector')) {
+            my $connectordetail = $cloudmanager->getConnectorType();
+            $template = 'connectors/'.lc($connectordetail->{connector_name}).'_subform_addcluster.tt';
+        }
+        
+        my $template_params = {};
+            
+        my $config = $cloudmanager->getConf();
+        content_type('text/html');
+        template "$template", $config, {layout => undef};
+    } else {
+        return 'not yet implemented';
+    }
+};
+
+# route to dynamically update boot policies list 
+
+get '/clusters/cloudmanagers/:hostproviderid/bootpolicies/:cloudmanagerid' => sub {
+    my $storageid = param('hostproviderid');
+    my $managerid = param('cloudmanagerid');
+    my $sp = Entity::ServiceProvider->get(id => $storageid);
+    my $cloudmanager = $sp->getManager(id => $managerid);
+    my @bootpolicies = $cloudmanager->getBootPolicies();
+    my $str = '';
+    for my $boot (@bootpolicies) {
+        $str .= "<option value=\"$boot\">$boot</option>";
+    }
+    content_type('text/html');
+    return $str;
+};
+
+# cluster add processing
 
 post '/clusters/add' => sub {
     my $adm = Administrator->new;
@@ -288,12 +379,16 @@ post '/clusters/add' => sub {
     }
 };
 
+# external cluster add form display
+
 get '/extclusters/add' => sub {
     
     template 'form_addexternalcluster', {
         title_page                  => "External Clusters - Add",
     }, { layout => '' };
 };
+
+# external cluster add processing
 
 post '/extclusters/add' => sub {
     my $adm = Administrator->new;
@@ -325,6 +420,7 @@ post '/extclusters/add' => sub {
     }
 };
 
+# clusters list display
 
 get '/clusters' => sub {
     my $can_create;
@@ -345,6 +441,8 @@ get '/clusters' => sub {
     };
 };
 
+# external clusters list display
+
 get '/extclusters' => sub {
     my $can_create;
 
@@ -353,6 +451,8 @@ get '/extclusters' => sub {
         clusters_list => _externalclusters(),
     };
 };
+
+# cluster detail display
 
 get '/clusters/:clusterid' => sub {
     my $cluster_id = params->{clusterid};
@@ -530,6 +630,8 @@ get '/clusters/:clusterid' => sub {
      };
 };
 
+# external cluster detail display
+
 get '/extclusters/:clusterid' => sub {
     my $cluster_id = params->{clusterid};
     
@@ -586,6 +688,8 @@ get '/extclusters/:clusterid' => sub {
     };
 };
 
+# external cluster deletion processing
+
 get '/extclusters/:clusterid/remove' => sub {
     my $adm = Administrator->new;
     eval {
@@ -605,6 +709,8 @@ get '/extclusters/:clusterid/remove' => sub {
         redirect('/architectures/clusters');
     }
 };
+
+# cluster activation processing
 
 get '/clusters/:clusterid/activate' => sub {
     my $adm = Administrator->new;
@@ -627,6 +733,8 @@ get '/clusters/:clusterid/activate' => sub {
     }
 };
 
+# cluster deactivation processing
+
 get '/clusters/:clusterid/deactivate' => sub {
     my $adm = Administrator->new;
     eval {
@@ -646,6 +754,8 @@ get '/clusters/:clusterid/deactivate' => sub {
         redirect('/architectures/clusters/'.param('clusterid'));
     }
 };
+
+# cluster deletion processing
 
 get '/clusters/:clusterid/remove' => sub {
     my $adm = Administrator->new;
@@ -667,6 +777,8 @@ get '/clusters/:clusterid/remove' => sub {
     }
 };
 
+# cluster start processing
+
 get '/clusters/:clusterid/start' => sub {
     my $adm = Administrator->new;
     eval {
@@ -686,6 +798,8 @@ get '/clusters/:clusterid/start' => sub {
         redirect('/architectures/clusters/'.param('clusterid'));
     }
 };
+
+# cluster stop processing
 
 get '/clusters/:clusterid/stop' => sub {
     my $adm = Administrator->new;
@@ -707,6 +821,8 @@ get '/clusters/:clusterid/stop' => sub {
     }
 };
 
+# cluster forcestop processing
+
 get '/clusters/:clusterid/forcestop' => sub {
     my $adm = Administrator->new;
     eval {
@@ -726,6 +842,8 @@ get '/clusters/:clusterid/forcestop' => sub {
         redirect('/architectures/clusters/'.param('clusterid'));
     }
 };
+
+# cluster components addition form display
 
 get '/clusters/:clusterid/components/add' => sub {
     my $adm = Administrator->new;
@@ -766,6 +884,8 @@ get '/clusters/:clusterid/components/add' => sub {
     }, { layout => '' };
 };
 
+# cluster components addition processing
+
 post '/clusters/:clusterid/components/add' => sub {
     my $adm = Administrator->new;
     my $component_id;
@@ -787,6 +907,8 @@ post '/clusters/:clusterid/components/add' => sub {
     }
 };
 
+# cluster component deletion processing
+
 get '/clusters/:clusterid/components/:instanceid/remove' => sub {
     my $adm = Administrator->new;
     eval {
@@ -807,6 +929,8 @@ get '/clusters/:clusterid/components/:instanceid/remove' => sub {
     }
 };
 
+# external cluster connect addition form display
+
 get '/extclusters/:clusterid/connectors/add' => sub {
     my $adm = Administrator->new;
     my $cluster_id = param('clusterid');
@@ -821,6 +945,8 @@ get '/extclusters/:clusterid/connectors/add' => sub {
         connectors_list    => $connectors
     }, { layout => '' };
 };
+
+# external cluster connectors addition form display
 
 post '/extclusters/:clusterid/connectors/add' => sub {
     my $adm = Administrator->new;
@@ -843,6 +969,8 @@ post '/extclusters/:clusterid/connectors/add' => sub {
     }
 };
 
+# external cluster connectors addition processing
+
 get '/extclusters/:clusterid/connectors/:instanceid/remove' => sub {
     my $adm = Administrator->new;
     eval {
@@ -863,6 +991,8 @@ get '/extclusters/:clusterid/connectors/:instanceid/remove' => sub {
     }
 };
 
+# cluster public ip addition form display
+
 get '/clusters/:clusterid/ips/public/add' => sub {
     my $adm = Administrator->new;
     my $freepublicips = $adm->{manager}->{network}->getFreePublicIPs();
@@ -872,6 +1002,8 @@ get '/clusters/:clusterid/ips/public/add' => sub {
         freepublicips_list => $freepublicips
     }, { layout => '' };
 };
+
+# cluster public ip addition processing
 
 post '/clusters/:clusterid/ips/public/add' => sub {
     my $adm = Administrator->new;
@@ -890,6 +1022,8 @@ post '/clusters/:clusterid/ips/public/add' => sub {
     redirect('/architectures/clusters/'.param('clusterid'));
 };
 
+# cluster public ip deletion processing
+
 get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
     my $adm = Administrator->new;
     eval {
@@ -906,6 +1040,8 @@ get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
     }
     redirect('/architectures/clusters/'.param('clusterid'));
 };
+
+# cluster node addition form display
 
 get '/clusters/:clusterid/nodes/add' => sub {
 	
@@ -944,6 +1080,8 @@ get '/clusters/:clusterid/nodes/add' => sub {
 
 };
 
+# cluster node addition processing
+
 post '/clusters/:clusterid/nodes/add' => sub {
     my $adm = Administrator->new;
     
@@ -975,6 +1113,8 @@ post '/clusters/:clusterid/nodes/add' => sub {
     }
 };
 
+# cluster node remove processing
+
 get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
     my $adm = Administrator->new;
     eval {
@@ -999,6 +1139,7 @@ get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
 # 'Prototype' method for error management
 # (instead of throw exception or redirect, return a json with error or redirect key which is handled on client side)
 # handled by js method catchError
+
 get '/extclusters/:clusterid/nodes/update' => sub {
     my $adm = Administrator->new;
     my %res;
@@ -1021,5 +1162,7 @@ get '/extclusters/:clusterid/nodes/update' => sub {
     }
     to_json \%res;
 };
+
+
 
 1;

@@ -2,146 +2,176 @@
 
 <form id="target" method="POST" action="/architectures/clusters/add">
 <table class="form">
-    <tr>
-        <td class="label">Name :</td>
+    <tr><td class="label">Name :</td>
         <td><input type="text" name="name" maxlength="32" size="32"/>
         <span style="color: red"><% err_name %></span></td>
     </tr>
-    <tr>
-        <td class="label">Description :</td>
+    <tr><td class="label">Description :</td>
         <td><textarea cols="50" name="desc" value=""></textarea></td>
     </tr>
-        <tr>
-        <td class="label">Cluster type :</td>
-        <td>
-        <input type="radio" name="si_location" value="diskless" checked="checked" onclick="javascript:document.getElementById('sitype').style.visibility='visible';"/>Diskless via
-        <select name="exporttype" style="width: 50px">
-            <option value="iscsi">ISCSI</option>
-        </select>&nbsp;<!--|&nbsp;
-        <input type="radio" name="si_location" value="local" onclick="javascript:document.getElementById('sitype').style.visibility='hidden';" />Local -->
-        </td>
-    </tr>
-    <tr>
-        <td class="label">System image :</td><td>
-        <% IF systemimages_forshared %>
-        <input type="radio" name="si_shareordedicate" value="shared" checked=checked/>shared :
-        <select name="systemimage_forshared">
-        <% FOREACH si IN systemimages_forshared %>
-            <option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
-        <% END %>
-        </select>
-        <% END %>
-        <% IF systemimages_fordedicated %>
-        <input type="radio" name="si_shareordedicate" value="dedicated" />dedicated :
-        <select name="systemimage_fordedicated">
-        <% FOREACH si IN systemimages_fordedicated %>
-            <option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
-        <% END %>
-        </select>
-        <% END %>
-        </td>
-    </tr>
-    <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
-    <tr>
-        <td class="label">Cluster_basehostname :</td>
-        <td><input type="text" name="cluster_basehostname" maxlength="64" size="32"/>
-        <span style="color: red"><% err_cluster_basehostname %></span></td>
-    </tr>
-     <tr>
-        <td class="label">minimum node to used :</td>
-        <td><select name="min_node">
-        <% FOREACH node IN nodescount %>
-            <option value="<% node.nodes %>"><% node.nodes %></option>
-        <% END %>
-        </select></td>
-        <span style="color: red"><% err_min_node %></span></td>
-    </tr>
-    <tr>
-        <td class="label">maximum node to used :</td>
-        <td><select name="max_node">
-        <% FOREACH node IN nodescount %>
-            <option value="<% node.nodes %>"><% node.nodes %></option>
-        <% END %>
-        </select></td>
-        <span style="color: red"><% err_max_node %></span></td>
-    </tr>
-         <tr>
-         <td class="label">Users groups :</td>
-         
+    <tr><td class="label">Owner group :</td>
         <td><select id="groupschoice">
-        <% FOREACH gp IN gp_list %>
-        <option value="<% gp.gp_id %>" <% gp.selected %>><% gp.gp_name %></option>
-        <% END %>
-        </select></td>
-       <span style="color: red"><% err_owner %></span></td>
+            <% FOREACH gp IN gp_list %>
+                <option value="<% gp.gp_id %>"><% gp.gp_name %></option>
+            <% END %>
+            </select>
+            <span style="color: red"><% err_owner %></span>
+        </td>
     </tr>
-    <tr>
-        <td class="label">Priority :</td>
-        <td><input type="text" name="priority" maxlength="5" size="5"/>
-        <span style="color: red"><% err_priority %></span></td></td>
-    </tr>
-    
-     <tr>
-         <td class="label">Users:</td>
-         <td><select id="owner" name="user_id">
-	     <% IF users_list %>
-		    <% FOREACH user IN users_list %>
-		    <option value="<% user.entity_id %> <% user.entitytype %>"><% user.user %></option>
-		    <% END %>
-	     <% END %>
+    <tr><td class="label">Owner user:</td>
+        <td><select id="owner" name="user_id">
+            
          </select>
        </td>
     </tr>
-       
-    <tr>
-        <td class="label">Kernel :</td>
+    <tr><td class="label">Contact email :</td>
+		<td><input type="text" name="email" maxlength="255" size="32"value="not yet implemented" disabled />
+            <span style="color: red"><% err_email %></span>
+        </td>
+	</tr>
+    
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">Hosts Provider :</td>
+        <td><select id="host_provider" name="hostprovider_id">
+            <% FOREACH hp IN hostproviders_list %>
+                <option value="<% hp.id %>"><% hp.name %></option>
+            <% END %>
+            </select>
+        </td>
+    </tr>
+    <tr><td class="label">Cloud Manager to use :</td>
+        <td><select id="cloud_manager" name="cloud_manager_id">
+            <% FOREACH cloudmanager IN cloudmanagers_list %>
+                <option value="<% cloudmanager.id %>"><% cloudmanager.name %></option>
+            <% END %>
+            </select>
+        </td>
+    </tr>
+    <tr><td class="label">Boot Policy :</td>
+        <td><select id="boot_policy" name="boot_policy"></select>
+        </td>
+    </tr>
+    <tr id="cloudmanagerdetails"></tr>
+
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">System image :</td>
+        <td><select name="systemimage_forshared">
+            <% FOREACH si IN systemimages_forshared %>
+                <option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
+            <% END %>
+            </select>
+        </td>
+    </tr>
+    <tr><td class="label">Usage :</td>
+        <td><input type="radio" name="si_shareordedicate" value="dedicated" checked=checked />dedicated (one image per node)
+            <input type="radio" name="si_shareordedicate" value="shared" />shared
+        </td>
+    </tr>
+    <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
+    <tr><td class="label">Kernel :</td>
         <td><select name="kernel_id">
-        <option value="0">default host kernel</option>
-        <% FOREACH kernel IN kernels_list %>
-            <option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
-        <% END %>
-        </select>
-        <span style="color: red"><% err_kernel %></span></td>
+                <option value="0">default host kernel</option>
+            <% FOREACH kernel IN kernels_list %>
+                <option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
+            <% END %>
+            </select>
+            <span style="color: red"><% err_kernel %></span>
+        </td>
     </tr>
-    <tr>
-        <td class="label">Domain name :</td>
+     
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">Priority :</td>
+        <td><input type="text" name="priority" maxlength="5" size="5" value="1" />
+            <span style="color: red"><% err_priority %></span>
+        </td>
+    </tr>
+    <tr><td class="label">minimum node to used :</td>
+        <td><input type="text" id="min_node" name="min_node" maxlength="5" size="5" value="1" />
+            <span style="color: red"><% err_min_node %></span>
+        </td>
+    </tr>
+    <tr><td class="label">maximum node to used :</td>
+        <td><input type="text" id="max_node" name="max_node" maxlength="5" size="5" value="1" />
+            <span style="color: red"><% err_max_node %></span>
+        </td>
+    </tr>
+
+    <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">Base node's hostname :</td>
+        <td><input type="text" name="cluster_basehostname" maxlength="64" size="32"/>
+            <span style="color: red"><% err_cluster_basehostname %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Domain name :</td>
         <td><input type="text" name="domainname" maxlength="64" size="32" value="hedera-technology.com"/>
-        <span style="color: red"><% err_domainname %></span></td></td>
+            <span style="color: red"><% err_domainname %></span>
+        </td>
     </tr>
-    <tr>
-        <td class="label">Name server :</td>
+    <tr><td class="label">Name server 1 :</td>
         <td><input type="text" name="nameserver" maxlength="15" size="15" value="<% nameserver %>"/>
-        <span style="color: red"><% err_nameserver %></span></td></td>
+            <span style="color: red"><% err_nameserver %></span>
+        </td>
+    </tr>
+    <tr><td class="label">Name server 2 :</td>
+        <td><input type="text" name="nameserver2" maxlength="15" size="15" value="not yet implemented" disabled/>
+            <span style="color: red"><% err_nameserver %></span>
+        </td>
     </tr>
 </table>
 </form>
 
 <script type="text/javascript">
+
+// update owner users list
 function Updateusers() {
-    var xhr = new XMLHttpRequest();
-    var gpid=document.getElementById("groupschoice").value;
-    var url = "/architectures/clusters/users/" + gpid;
-    xhr.open("GET", url);
+    var url = '/architectures/clusters/users/' + $('#groupschoice').val();
+    $.get(url, function(data) {
+        $('#owner').html(data);
+    }); 
+}
+
+// update cloud manager list
+function UpdateCloudmanagers() {
+    var url = '/architectures/clusters/cloudmanagers/' + $('#host_provider').val();
+    $.get(url, function(data) {
+        $('#cloud_manager').html(data);
+    }).complete(UpdateCloudmanagersSubform);
+}
+
+function UpdateCloudmanagersSubform() {
+    var hostproviderid = $('#host_provider').val();
+    var cloudmanagerid = $('#cloud_manager').val();
+    var url = '/architectures/clusters/cloudmanagers/'+hostproviderid+'/subform/'+cloudmanagerid ;
     
-    xhr.overrideMimeType('text/xml');
-    xhr.onreadystatechange = function() {
-		//alert(xhr.readyState + ' ' + xhr.status);
-		if (xhr.readyState == 4 && xhr.status == 200) {
-			select = document.getElementById('owner');
-			select.innerHTML = xhr.responseText;		
-      }
-	}	
-    xhr.send(null);
-    //setTimeout('Updateusers()', 5000);
+    $.get(url, function(data) {
+        $('#cloudmanagerdetails').html(data);
+    }).complete(UpdateBootPolicies);
 }
-function UpdateUpdateuserid() {
-var xhr = new XMLHttpRequest();
-    var userid=document.getElementById("owner").value;
-    var url = "/architectures/clusters/userid/" + userid;
-    xhr.open("GET", url);
+
+function UpdateBootPolicies() {
+    var hostproviderid = $('#host_provider').val();
+    var cloudmanagerid = $('#cloud_manager').val();
+    var url = '/architectures/clusters/cloudmanagers/'+hostproviderid+'/bootpolicies/'+cloudmanagerid ;
+    
+    $.get(url, function(data) {
+        $('#boot_policy').html(data);
+    });
+}
+
+function UpdateMinMaxNode() {
+    var min = $("#min_node").val();
+    var max = $("#max_node").val();
+    if( parseInt(max) < parseInt(min) ) {
+        $("#max_node").val(min);
+    }
 }
 
 
-document.getElementById('groupschoice').onchange = Updateusers;
-document.getElementById('owner').onchange = Updateuserid;
+$('#min_node, #max_node').change(UpdateMinMaxNode);
+$('#host_provider').change(UpdateCloudmanagers);
+$('#cloud_manager').change(UpdateCloudmanagersSubform);
+$('#groupschoice').change(Updateusers);
+
+Updateusers();
+UpdateCloudmanagers();
 </script>
