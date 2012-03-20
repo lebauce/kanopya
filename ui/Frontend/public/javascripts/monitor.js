@@ -321,6 +321,11 @@ var clusters_view = path  + '/clustersview';
 var plot1;
 var cluster_timed_graph;
 
+function c_replot(){	
+	var combination_dropdown_list = document.getElementById('combination_list');
+	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
+}
+
 //function triggered on cluster_combination selection
 function showCombinationGraph(curobj,combi_id,label,start,stop){
 	if (combi_id == 'default'){return}
@@ -328,11 +333,16 @@ function showCombinationGraph(curobj,combi_id,label,start,stop){
 	var params = {id:combi_id,start:start,stop:stop};
 	document.getElementById('clusterCombinationView').innerHTML='';
 	$.getJSON(clusters_view, params, function(data) {
-        // alert('titi');
 		if (data.error) { alert (data.error); }
 		else {
+			var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
+			var div_id = 'cluster_combination_graph';
+			var div = '<div id=\"'+div_id+'\"></div>';
+			// alert(div);
 			document.getElementById('clusterCombinationView').style.display='block';
-			timedGraph(data.first_histovalues, data.min, data.max, label);
+			$("#clusterCombinationView").append(div);
+			timedGraph(data.first_histovalues, data.min, data.max, label, div_id);
+			$("#clusterCombinationView").append(button);
 		}
         loading_stop();
     });
@@ -413,19 +423,18 @@ function barGraph(values, nodelist, unit, div_id, min, max, title){
 }
 
  //Jqplot basic curve graph
- function timedGraph(first_graph_line, min, max, label){
+ function timedGraph(first_graph_line, min, max, label, div_id){
 	$.jqplot.config.enablePlugins = true;
     //var line1=[['03-14-2012 16:23', 578.55], ['03-14-2012 16:17', 566.5], ['03-14-2012 16:12', 480.88],['03-14-2012 16:15',null], ['03-14-2012 16:19', 580.88], ['03-14-2012 16:26', 509.84]];
     // alert ('min: '+min+' max: '+max);
     // alert ('data for selected combination: '+first_graph_line);
-    cluster_timed_graph = $.jqplot('clusterCombinationView', [first_graph_line], {
+    cluster_timed_graph = $.jqplot(div_id, [first_graph_line], {
         title:label,
         seriesDefaults: {
             breakOnNull:true,
-
             trendline: {
-                         color : '#555555',
-                         show  : $('#trendlineinput').attr('checked') ? true : false, 
+				color : '#555555',
+				show  : $('#trendlineinput').attr('checked') ? true : false, 
             }
         },
         axes:{
