@@ -724,6 +724,75 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => s
     }, { layout => 'main' };
 };
 
+get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditionid/edit' => sub {
+    my $cluster_id    = params->{extclusterid};
+    
+    my @combinations = AggregateCombination->search(hash => {
+        'aggregate_combination_service_provider_id' => param('extclusterid'),
+    });
+    
+    my @combinationsInput;
+    
+    foreach my $combination (@combinations){
+        my $hash = {
+            id     => $combination->getAttr(name => 'aggregate_combination_id'),
+            label  => $combination->getAttr(name => 'aggregate_combination_label'),
+        };
+        push @combinationsInput, $hash;
+    }
+    my $condition_obj = AggregateCondition->get('id' => param('conditionid'));
+    my $condition = {
+        id             => param('conditionid'),
+        combination_id => $condition_obj->getAttr(name => 'aggregate_combination_id'),
+        comparator     => $condition_obj->getAttr(name => 'comparator'),
+        threshold      => $condition_obj->getAttr(name => 'threshold'),
+    };
+    
+    template 'clustermetric_condition_new', {
+        title_page    => "Condition edition",
+        combinations  => \@combinationsInput,
+        cluster_id    => param('extclusterid'),
+        condition     => $condition,
+    }, { layout => 'main' };
+};
+
+post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditionid/edit' => sub {
+    my $condition_modified = AggregateCondition->get('id'=>param('conditionid'));
+        my $comparatorHash = 
+    {
+        "le" => "<",
+        "lt" => "<=",
+        "eq" => "==",
+        "gt" => ">",
+        "ge" => ">=",
+    };
+    $condition_modified->setAttr(
+                            name  =>'aggregate_combination_id',
+                            value => param('combinationid'),
+                        );
+                        
+    $condition_modified->setAttr(
+                            name  =>'comparator',
+                            value => $comparatorHash->{param('comparator')},
+                        );
+    $condition_modified->setAttr(
+                            name  =>'threshold',
+                            value => param('threshold'),
+                        );
+    $condition_modified->setAttr(
+                            name  =>'threshold',
+                            value => param('threshold'),
+                        );
+    $condition_modified->save();
+    $condition_modified->setAttr(
+                            name  =>'aggregate_condition_label',
+                            value => $condition_modified->toString(),
+                        );
+    $condition_modified->save();
+    redirect '/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions';
+};
+
+
 # ----------------------------------------------------------------------------#
 # ---------------------CLUSTER METRIC RULES ----------------------------------#
 #----------- -----------------------------------------------------------------#
