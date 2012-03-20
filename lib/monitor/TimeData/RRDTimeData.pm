@@ -225,9 +225,7 @@ sub fetchTimeDataStore {
     #clean the string of unwanted ":"
     $exec =~ s/://g;
 	#replace the ',' by '.'
-	$exec =~ s/,/./g;	
-	#we replace the '-1.#IND000000e+000' values for 'undef'
-	$exec =~ s/-1\.\#IND000000e\+000/undef/g;
+	$exec =~ s/,/./g;
     #we split the string into an array
     my @values = split(' ', $exec);
     #print Dumper(\@values);
@@ -236,7 +234,12 @@ sub fetchTimeDataStore {
     #print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
-    
+	#we replace the '-1.#IND000000e+000' values for "undef"
+	while (my ($timestamp, $value) = each %values) {
+		if ($value eq '-1.#IND000000e+000'){
+			$values{$timestamp} = undef;
+			}
+	}	
     $log->debug(Dumper(\%values));
     return %values;   
 }
@@ -319,6 +322,14 @@ sub getLastUpdatedValue {
     # print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
+	
+	#we replace the '-1.#IND000000e+000' values for "undef"
+	while (my ($timestamp, $value) = each %values) {
+		if ($value eq '-1.#IND000000e+000'){
+			$values{$timestamp} = undef;
+			}
+	}
+	
     #print Dumper(\%values);
     $log->debug(Dumper(\%values));
     return %values;
