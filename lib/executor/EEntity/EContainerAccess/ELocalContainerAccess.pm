@@ -30,9 +30,13 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'container' ]);
+    General::checkParams(args => \%args, required => [ 'econtainer' ]);
 
-    $args{data} = { container => $args{container} };
+    $args{data} = {
+        econtainer          => $args{econtainer},
+        device_connected    => '',
+        partition_connected => '',
+    };
 
     bless $args{data}, $class;
 
@@ -45,7 +49,7 @@ sub new {
 sub getContainer {
     my $self = shift;
 
-    return $self->{container}->_getEntity;
+    return $self->{econtainer}->_getEntity;
 }
 
 sub getAttr {
@@ -57,11 +61,13 @@ sub getAttr {
     return $self->{$args{name}};
 }
 
-sub getMountOpts {
+sub setAttr {
     my $self = shift;
     my %args = @_;
 
-    return '-o loop'
+    General::checkParams(args => \%args, required => [ 'name', 'value' ]);
+
+    $self->{$args{name}} = $args{value};
 }
 
 =head2 connect
@@ -71,14 +77,35 @@ sub getMountOpts {
 sub connect {
     my $self = shift;
     my %args = @_;
+    my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->{container}->_getEntity->getAttr(name => 'container_device');
+    my $file = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_device');
 
-    $log->info("Return file path (<$device>).");
-    $self->{device} = $device;
+    my $device;
+    if (-b $file) {
+        $device = $file;
+    }
+    else {
+        # Get a free loop device
+        $command = "losetup -f";
+        $result = $args{econtext}->execute(command => $command);
+        if ($result->{exitcode} != 0) {
+            throw Kanopya::Exception::Execution(error => $result->{stderr});
+        }
+        chomp($result->{stdout});
+        $device = $result->{stdout};
 
+        $command = "losetup $device $file";
+        $result = $args{econtext}->execute(command => $command);
+        if ($result->{exitcode} != 0) {
+            throw Kanopya::Exception::Execution(error => $result->{stderr});
+        }
+    }
+    $log->info("Return file loop dev (<$device>).");
+    $self->_getEntity->setAttr(name  => 'device_connected',
+                               value => $device);
     return $device;
 }
 
@@ -89,10 +116,21 @@ sub connect {
 sub disconnect {
     my $self = shift;
     my %args = @_;
+    my ($command, $result);
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    $self->{device} = '';
+    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+
+    if (! -b $device) {
+        $command = "losetup -d $device";
+        $result  = $args{econtext}->execute(command => $command);
+        if ($result->{exitcode} != 0) {
+            throw Kanopya::Exception::Execution(error => $result->{stderr});
+        }
+    }
+    $self->_getEntity->setAttr(name  => 'device_connected',
+                               value => '');
 }
 
 1;

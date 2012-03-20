@@ -39,6 +39,20 @@ __PACKAGE__->table("container_access");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 device_connected
+
+  data_type: 'char'
+  default_value: (empty string)
+  is_nullable: 0
+  size: 255
+
+=head2 partition_connected
+
+  data_type: 'char'
+  default_value: (empty string)
+  is_nullable: 0
+  size: 255
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -58,6 +72,10 @@ __PACKAGE__->add_columns(
   },
   "export_manager_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "device_connected",
+  { data_type => "char", default_value => "", is_nullable => 0, size => 255 },
+  "partition_connected",
+  { data_type => "char", default_value => "", is_nullable => 0, size => 255 },
 );
 __PACKAGE__->set_primary_key("container_access_id");
 
@@ -175,9 +193,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-15 13:22:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4kE+T0VoduReLx0wnJcQCQ
-
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-20 12:39:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fjzafSG/6HmZUxPQ71pbzg
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

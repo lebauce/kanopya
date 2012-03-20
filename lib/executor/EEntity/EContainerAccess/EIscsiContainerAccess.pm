@@ -83,8 +83,8 @@ sub connect {
     }
 
     $log->info("Device found (<$device>).");
-    $self->{device} = $device;
-
+    $self->_getEntity->setAttr(name  => 'device_connected',
+                               value => $device);
     return $device;
 }
 
@@ -114,7 +114,9 @@ sub disconnect {
     my $delete_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o delete";
     $args{econtext}->execute(command => $delete_node_cmd);
 
-    $self->{device} = '';
+    $self->_getEntity->setAttr(name  => 'device_connected',
+                               value => '');
+
     # TODO: insert an eroolback with mount method ?
 }
 

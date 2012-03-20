@@ -144,7 +144,7 @@ sub fileCreate{
     $log->debug("Command execute in the following context : <" . ref($args{econtext}) . ">");
 
     # Firstly mount the container access on the executor.
-    my $mountpoint = "/mnt/" . $args{container_access}->getContainer->getAttr(name => 'container_name') .
+    my $mountpoint = $args{container_access}->getContainer->getMountPoint .
                      "_filecreate_" . $args{file_name};
     my $econtainer_access = EFactory::newEEntity(data => $args{container_access});
     
@@ -153,7 +153,7 @@ sub fileCreate{
 
     my $file_image_path = "$mountpoint/$args{file_name}.img";
 
-    $log->debug("Container access mounted, trying to create $file_image_path");
+    $log->debug("Container access mounted, trying to create $file_image_path, size $args{file_size}.");
 
     if (-e $file_image_path) {
         throw Kanopya::Exception::Execution(
@@ -170,7 +170,7 @@ sub fileCreate{
         # Seek the file until wanted size
         seek(FILEIMAGE, $args{file_size} - 1, 0);
 
-        # Write 0 tat the end of file
+        # Write 0 at the end of file
         print FILEIMAGE 0;
 
         close(FILEIMAGE);
@@ -203,7 +203,7 @@ sub fileRemove{
                                id => $args{container}->getAttr(name => 'container_access_id')
                            );
 
-    my $mountpoint = "/mnt/" . $container_access->getContainer->getAttr(name => 'container_name') .
+    my $mountpoint = $container_access->getContainer->getMountPoint .
                      "_fileremove_" . $args{container}->getAttr(name => 'container_device');
 
     my $econtainer_access = EFactory::newEEntity(data => $container_access);

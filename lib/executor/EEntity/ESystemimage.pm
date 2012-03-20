@@ -57,10 +57,9 @@ sub create {
     my $esource_container = General::checkParam(args => \%args, name => 'esrc_container');
     my $erollback         = General::checkParam(args => \%args, name => 'erollback');
     my $econtext          = General::checkParam(args => \%args, name => 'econtext');
-
-    my $systemimage_size = General::checkParam(
-                               args => \%args,
-                               name => 'systemimage_size',
+    my $systemimage_size  = General::checkParam(
+                               args    => \%args,
+                               name    => 'systemimage_size',
                                default => $esource_container->_getEntity->getAttr(
                                               name => 'container_size'
                                           )
@@ -117,7 +116,7 @@ sub generateAuthorizedKeys{
     # Get the corresponding EContainerAccess
     my $econtainer_access = EFactory::newEEntity(data => $container_access);
 
-    my $mount_point = "/mnt/" . $container->getAttr(name => 'container_name');
+    my $mount_point = $container->getMountPoint;
     $econtainer_access->mount(mountpoint => $mount_point, econtext => $args{econtext});
 
     my $rsapubkey_cmd = "cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";

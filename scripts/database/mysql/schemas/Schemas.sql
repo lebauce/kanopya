@@ -321,6 +321,8 @@ CREATE TABLE `container_access` (
   `container_access_id` int(8) unsigned NOT NULL,
   `container_id` int(8) unsigned NOT  NULL,
   `export_manager_id` int(8) unsigned NOT NULL,
+  `device_connected` char(255) NOT NULL DEFAULT '',
+  `partition_connected` char(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`container_access_id`),
   FOREIGN KEY (`container_access_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`container_id`),

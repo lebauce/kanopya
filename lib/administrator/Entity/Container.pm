@@ -159,6 +159,12 @@ sub getDiskManager {
     throw Kanopya::Exception::NotImplemented();
 }
 
+sub getMountPoint {
+    my $self = shift;
+
+    return "/mnt/" . $self->getAttr(name => 'container_id');
+}
+
 sub getContainer {
     my $self = shift;
 

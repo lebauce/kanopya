@@ -224,7 +224,7 @@ sub execute {
     my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
 
     # Mount the containers on the executor.
-    my $mountpoint = "/mnt/" . $self->{_objs}->{container}->getAttr(name => 'container_name') . "_startnode";
+    my $mountpoint = $self->{_objs}->{container}->getMountPoint;
 
     $log->info('Mounting the container <' . $mountpoint . '>');
     $econtainer_access->mount(mountpoint => $mountpoint, econtext => $self->{executor}->{econtext});

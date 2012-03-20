@@ -134,9 +134,10 @@ eval {
         $econtext = EContext::Local->new(local => '127.0.0.1');
     } 'Instanciate an econtext';
 
+    my $nfsexport_name = 'nfs_export_for_vm_disk_hosting';
     my $container;
     lives_ok {
-        $container = $edisk_manager->createDisk(name       => 'test_volume_for_nfs_export',
+        $container = $edisk_manager->createDisk(name       => $nfsexport_name,
                                                 size       => '5G',
                                                 filesystem => 'ext3',
                                                 econtext   => $econtext);
@@ -145,7 +146,7 @@ eval {
     my $container_access;
     lives_ok {
         $container_access = $eexport_manager->createExport(container   => $container,
-                                                           export_name => 'test_volume_for_nfs_export',
+                                                           export_name => $nfsexport_name,
                                                            econtext    => $econtext);
     } 'Create nfs export for file image hosting';
 
@@ -203,6 +204,7 @@ eval {
                     systemimage_id      => $systemimage_id,
                     systemimage_name    => $clone_name,
                     systemimage_desc    => 'System image for test scenario MasterImageToCluster.',
+                    systemimage_size    => $systemimage->getDevice->getAttr(name => 'container_size') + 104857600,
                     %{$disk_manager_custom_params}
                 },
             );

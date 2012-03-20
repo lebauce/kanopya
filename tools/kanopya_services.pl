@@ -2,7 +2,7 @@
 
 # Call all kanopya init script with given param
 
-my @services = qw(executor state-manager collector grapher orchestrator);
+my @services = qw(executor state-manager collector grapher orchestrator front);
 
 my $cmd = $ARGV[0] or die "Need param start/stop/restart/status";
 

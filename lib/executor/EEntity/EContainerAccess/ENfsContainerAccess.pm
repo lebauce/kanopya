@@ -90,7 +90,8 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    $self->{device} = '';
+    #$self->_getEntity->setAttr(name  => 'device_connected',
+    #                           value => '');
     return undef;
 }
 
@@ -106,7 +107,8 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    $self->{device} = '';
+    #$self->_getEntity->setAttr(name  => 'device_connected',
+    #                           value => '');
     return undef;
 }
 
