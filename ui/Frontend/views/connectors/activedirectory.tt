@@ -13,12 +13,12 @@
 <table>
 <tr><td>User@domain :</td><tr></tr><td><input type="text" size="64" class="conf_simple_value" name="ad_user" value="<% ad_user %>"/></td></tr>
 <tr><td>Password :</td><tr></tr><td><input type="password" id='ad_pwd'/></td></tr>
-<!--tr><td>Use ssl :
+<tr><td>Use ssl :
     <select class="conf_simple_value" name="ad_usessl">
         <option value="1" <% IF ad_usessl %>selected<% END %>>yes</option>
         <option value="0" <% UNLESS ad_usessl %>selected<% END %>>no</option>
     </select>
-</td></tr-->
+</td></tr>
 </table>
 <hr />
 <div class="right">

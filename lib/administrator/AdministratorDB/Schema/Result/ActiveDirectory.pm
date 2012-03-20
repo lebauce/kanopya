@@ -67,6 +67,8 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 32 },
   "ad_nodes_base_dn",
   { data_type => "text", is_nullable => 1},
+  "ad_usessl",
+  { data_type => "integer", is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("ad_id");
 
