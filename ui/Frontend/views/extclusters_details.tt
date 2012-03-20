@@ -27,7 +27,7 @@
 	<td>
 	<% SWITCH cluster_state %>
         <% CASE 'up' %>
-        <span class="state imgUp">Up</span>
+        <span class="state imgUp">ok</span>
         <% CASE 'down' %>
         <span class="state imgDown">Down</span>
         <% CASE 'starting' %>
@@ -36,6 +36,8 @@
         <span class="state imgDown">Stopping...</span>
         <% CASE 'broken' %>
         <span class="state imgWarning">Broken</span>
+        <% CASE 'warning' %>
+        <span class="state imgBroken">not ok</span>
 	<% END %>
 	</td>
 <% ELSE %>

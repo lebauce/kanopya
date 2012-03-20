@@ -131,23 +131,34 @@ sub eval {
         if( $element =~ m/id(\d+)/)
         {
             $element = AggregateCondition->get('id'=>substr($element,2))->eval();
+            if( !defined $element) {
+                return undef;
+            }
         }
      }
-     
+    
+    
+    
     my $res = -1;
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula
     eval $arrayString;
-    my $store = ($res)?1:0;
+    
+    if (defined $res){
+        my $store = ($res)?1:0;    
+        $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
+        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
+        $self->save();
+        return $store;
+    } else {
+        $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
+        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
+        $self->save();
+        return undef;
+    }
 
-    #print "Evaluated Rule : $arrayString => $store ($res)\n";
-    #$log->info("Evaluated Rule : $arrayString => $store ($res)");
-     
-    $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
-    $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
-    $self->save();
-    return $res;
+    
 }
 
 

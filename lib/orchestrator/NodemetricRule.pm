@@ -20,7 +20,7 @@ use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use List::MoreUtils qw {any} ;
-
+use Switch;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("orchestrator");
@@ -154,6 +154,15 @@ sub isVerifiedForANode{
             verified_noderule_externalnode_id    => $externalnode_id,
         });
     if(defined $row){
+        my $state = $row->verified_noderule_state;
+        switch ($state){
+            case 'verfied'{
+                return 1;
+            }
+            case 'undef'{
+                return undef;
+            }
+        }
         return 1;
     }else{
         return 0;
@@ -210,6 +219,7 @@ sub setVerifiedRule{
     
     my $hostname   = $args{hostname};
     my $cluster_id = $args{cluster_id};
+    my $state      = $args{state};
 
     # GET THE EXTERNAL NODE ID    
     # note : externalcluster_name is UNIQUE !
@@ -235,6 +245,7 @@ sub setVerifiedRule{
                 ->verified_noderules
                 ->update_or_create({
                     verified_noderule_externalnode_id    => $externalnode_id,
+                    verified_noderule_state              => $state,
                 });
     }
 }
@@ -272,4 +283,15 @@ sub checkFormula {
         value     => '1',
     };
 }
+
+sub disable {
+    my $self = shift;
+   my $verified_rule_dbix = 
+        $self->{_dbix}
+        ->verified_noderules->delete_all;
+
+    $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
+    $self->save();
+};
+
 1;

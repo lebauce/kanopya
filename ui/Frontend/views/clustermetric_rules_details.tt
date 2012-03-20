@@ -50,6 +50,9 @@
             <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/<%rule.id%>/edit">
         <%ELSE%>
             <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/<%rule.id%>/edit">
+            <% IF rule.extnodeid%>
+                <input type="hidden" name="extnodeid" value = "<%rule.extnodeid%>" />
+            <% END %>
         <%END%>
 <% ELSE %>
         <%IF clustermetric == 1%>

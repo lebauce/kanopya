@@ -144,12 +144,12 @@ sub update() {
             print Dumper $monitored_values; 
                 
             # Verify answers received from SCOM to detect metrics anomalies
-            $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
+            my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
             
-            # Parse retriever return, compute clustermetric values and store in DB 
-            $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
-            
-            print Dumper $monitored_values;
+            # Parse retriever return, compute clustermetric values and store in DB
+            if($checker == 1){
+                $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
+            } 
         }
     }
 }
@@ -177,9 +177,13 @@ sub _checkNodesMetrics{
             }
         }
         if($count eq 0){
+            return 0;
             $log->info("*** [WARNING] $indicator_name given by no node !");
         } elsif(($count / $num_of_nodes) le 0.75) {
             $log->info("*** [WARNING] $indicator_name given by less than 75% of nodes ($count / $num_of_nodes)!");
+            return 1;
+        } else {
+            return 1;
         }
     }
 }
@@ -239,21 +243,24 @@ sub _computeAggregateValuesAndUpdateTimeDB{
         }
         
         #Compute the $clustermetric value from all @dataStored values
-        
-        my $statValue = $clustermetric->compute(values => \@dataStored);
-        
-        if(defined $statValue){
-            #Store in DB and time stamp
-            my $time = time();
-            RRDTimeData::updateTimeDataStore(
-                clustermetric_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
-                time          => $time, 
-                value         => $statValue,
-                );
-        } else {
+        if(0 < (scalar @dataStored)){
+            my $statValue = $clustermetric->compute(values => \@dataStored);
             
-            $log->info("*** [WARNING] No statvalue computed for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
-                    }
+            if(defined $statValue){
+                #Store in DB and time stamp
+                my $time = time();
+                RRDTimeData::updateTimeDataStore(
+                    clustermetric_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
+                    time          => $time, 
+                    value         => $statValue,
+                    );
+            } else {
+                
+                $log->info("*** [WARNING] No statvalue computed for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
+            }
+        } else {
+             $log->info("*** [WARNING] No datas received for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
+        }
     }
 }
 

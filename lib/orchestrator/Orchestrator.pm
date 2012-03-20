@@ -105,8 +105,14 @@ sub manage_aggregates {
     my $self = shift;
     
     print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
-    $self->clustermetricManagement();
-    $self->nodemetricManagement();
+    eval{
+        $self->clustermetricManagement();
+        $self->nodemetricManagement();
+        1;
+    }or do {
+        print "Skip due to error $@\n";
+        $log->error($@);
+    }
 }
 
 sub nodemetricManagement{
@@ -124,14 +130,15 @@ sub nodemetricManagement{
             $externalCluster->getConnector(category => 'MonitoringService');
         };
         if($@){
-            print '*** Orchestrator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+            print '*** Orchestrator skip cluster '.$cluster_id.' for NM Management because it has no MonitoringService Connector ***'."\n";
         }else{
         
             print '*** ClusterRules of management '.$cluster_id.'***'."\n";
             
             my @rules = NodemetricRule->search(
                     hash => {
-                        nodemetric_rule_service_provider_id => $cluster_id
+                        nodemetric_rule_service_provider_id => $cluster_id,
+                        nodemetric_rule_state => 'enabled',
                     }
             );
             
@@ -143,11 +150,25 @@ sub nodemetricManagement{
             $log->info(Dumper $monitored_values);
             
             # Eval the rules
-            $self->_evalAllRules(
+            my $rep = $self->_evalAllRules(
                 'monitored_values'  => $monitored_values,
                 'rules'             => \@rules,
                 'cluster'           => $externalCluster,
             );
+            print "** rep $rep\n";
+            if(0 < $rep){
+                
+                $externalCluster->setAttr(
+                    name => 'externalcluster_state',
+                    value => 'warning',
+                );
+            }else{
+                $externalCluster->setAttr(
+                    name => 'externalcluster_state',
+                    value => 'up',
+                );
+            }
+            $externalCluster->save();
         }
     }
 }
@@ -159,14 +180,15 @@ sub _evalAllRules {
    my $monitored_values = $args{monitored_values};
    my $rules            = $args{rules};
    my $cluster          = $args{cluster};
-   
+   my $rep = 0;
    foreach my $rule (@$rules){
-       $self->_evalRule(
+       $rep += $self->_evalRule(
            'rule'              =>$rule,
            'monitored_values' => $monitored_values,
            'cluster'       => $cluster,
        );
    }
+   return $rep;
 }
 
 sub _evalRule {
@@ -178,7 +200,7 @@ sub _evalRule {
     my $cluster          = $args{cluster};
 
     my $cluster_id = $cluster->getAttr(name => 'externalcluster_id');
-
+    my $rep = 0;
     #Eval the rule for each node
     NODE:
     while(my ($host_name,$monitored_values_for_one_node) = each %$monitored_values){
@@ -191,24 +213,35 @@ sub _evalRule {
         }
         $cluster->updateNodeState( hostname => $host_name, state => 'up' );
 
-        my $rep = $rule->evalOnOneNode(
+        my $nodeEval = $rule->evalOnOneNode(
             monitored_values_for_one_node => $monitored_values_for_one_node
         );
-        print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$rep."\n";
-        if($rep eq 0){
-            $rule->deleteVerifiedRule(
-                hostname   => $host_name,
-                cluster_id => $cluster_id,
-            );
-            
-        }else {
+        print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$nodeEval."\n";
+        
+        if(defined $nodeEval){
+            if($nodeEval eq 0){
+                
+                $rule->deleteVerifiedRule(
+                    hostname   => $host_name,
+                    cluster_id => $cluster_id,
+                );
+            }else {
+                $rep++;
+                $rule->setVerifiedRule(
+                    hostname => $host_name,
+                    cluster_id => $cluster_id,
+                    state      => 'verified'
+                );
+            }
+        }else{
             $rule->setVerifiedRule(
                 hostname => $host_name,
                 cluster_id => $cluster_id,
+                state      => 'undef'
             );
         }
-        
     }
+    return $rep;
 }
 # Construct hash table for the service provider.
 # Inspired by eponyme aggregator method 
@@ -269,7 +302,7 @@ sub clustermetricManagement{
             $externalCluster->getConnector(category => 'MonitoringService');
         };
         if($@){
-            print '*** Orchestrator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+            print '*** Orchestrator skip cluster '.$cluster_id.' for CM Management because it has no MonitoringService Connector ***'."\n";
         }else{
             
             #GET RULES RELATIVE TO A CLUSTER
@@ -290,13 +323,17 @@ sub clustermetricManagement{
                     
                     my $result = $aggregate_rule->eval();
                     
-                    if($result){
-                       print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-                       $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-                       #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
-                    }else{
-                        #print "Rule false, no action \n";
-                        #$log->info("Rule false, no action");
+                    if(defined $result){
+                        if($result == 1){
+                           print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+                           $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
+                           #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
+                        }else{
+                            print "Rule false, no action \n";
+                            #$log->info("Rule false, no action");
+                        }                        
+                    } else{
+                        print "rule undef\n";
                     }
                 }
             } # for my $aggregate_rule 
@@ -693,7 +730,7 @@ sub _isOpInQueue {
 
     #TODO keep cluster id from the beginning (get by name is not really good)
     my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
-        
+    
     
     foreach my $op ( @{ $adm->getOperations() } ) {
         if ($op->{'TYPE'} eq $type) {
