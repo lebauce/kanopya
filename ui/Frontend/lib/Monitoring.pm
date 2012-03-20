@@ -813,16 +813,15 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' =>
     my (@nokRules, @okRules, @unkownRules);
     
     foreach my $aggregate_rule (@enabled_aggregaterules){
-        switch ($aggregate_rule->getAttr(name => 'aggregate_rule_last_eval')) {
-            case 1 {
-                push @nokRules,$aggregate_rule;
-            }
-            case 0 {
-                push @okRules,$aggregate_rule;
-            }
-            else {
-                push @unkownRules,$aggregate_rule;
-            }
+        my $eval = $aggregate_rule->getAttr(name => 'aggregate_rule_last_eval');
+        if (! defined $eval) {
+            push @unkownRules,$aggregate_rule;
+        }elsif($eval == 1){
+            push @nokRules,$aggregate_rule;   
+        }elsif($eval == 0){
+            push @okRules,$aggregate_rule;
+        }else {
+            push @unkownRules,$aggregate_rule;
         }
     }
 

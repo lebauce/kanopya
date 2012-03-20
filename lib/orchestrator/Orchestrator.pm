@@ -296,51 +296,61 @@ sub clustermetricManagement{
     # FOR EACH EXT CLUSTERS
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
     
+   
+    CLUSTER:
     for my $externalCluster (@externalClusters){
-        my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-        
-        #FILTER CLUSTERS WITH MONITORING PROVIDER
         eval{
-            $externalCluster->getConnector(category => 'MonitoringService');
-        };
-        if($@){
-            print '*** Orchestrator skip cluster '.$cluster_id.' for CM Management because it has no MonitoringService Connector ***'."\n";
-        }else{
+            my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
             
-            #GET RULES RELATIVE TO A CLUSTER
-            my @rules = AggregateRule->search(hash=>{
-                aggregate_rule_service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id')
-            });
-            
-            for my $aggregate_rule (@rules){
+            #FILTER CLUSTERS WITH MONITORING PROVIDER
+            eval{
+                $externalCluster->getConnector(category => 'MonitoringService');
+            };
+            if($@){
+                print '*** Orchestrator skip cluster '.$cluster_id.' for CM Management because it has no MonitoringService Connector ***'."\n";
+            }else{
                 
-                if ($aggregate_rule -> isEnabled()) {
-                    print "**********\n";
-                    print '* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
-                    print $aggregate_rule->toString()."\n";
-        
-                    $log->info("**********");
-                    $log->info('* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
-        
+                #GET RULES RELATIVE TO A CLUSTER
+                my @rules = AggregateRule->search(hash=>{
+                    aggregate_rule_service_provider_id => $externalCluster->getAttr(name => 'externalcluster_id')
+                });
+                
+                for my $aggregate_rule (@rules){
                     
-                    my $result = $aggregate_rule->eval();
-                    
-                    if(defined $result){
-                        if($result == 1){
-                           print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-                           $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-                           #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
-                        }else{
-                            print "Rule false, no action \n";
-                            #$log->info("Rule false, no action");
-                        }                        
-                    } else{
-                        print "rule undef\n";
+                    if ($aggregate_rule -> isEnabled()) {
+                        print "**********\n";
+                        print '* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
+                        print $aggregate_rule->toString()."\n";
+            
+                        $log->info("**********");
+                        $log->info('* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
+            
+                        
+                        my $result = $aggregate_rule->eval();
+                        
+                        if(defined $result){
+                            if($result == 1){
+                               print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+                               $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
+                               #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
+                            }else{
+                                print "Rule false, no action \n";
+                                #$log->info("Rule false, no action");
+                            }                        
+                        } else{
+                            print "rule undef\n";
+                        }
                     }
-                }
-            } # for my $aggregate_rule 
-        } #end eval
+                } # for my $aggregate_rule 
+            } #end eval
+        1; #END EVAL
+        }or do {
+            print "Skip to next cluster due to error $@\n";
+            $log->error($@);
+            next CLUSTER;
+        }
     } # end for my $externalCluster
+
 }
 
 =head2 manage
