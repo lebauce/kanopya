@@ -135,7 +135,7 @@ sub eval {
         }
      }
      
-    my $res = -1;
+    my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula
