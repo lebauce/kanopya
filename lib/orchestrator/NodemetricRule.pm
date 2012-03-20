@@ -210,6 +210,7 @@ sub setVerifiedRule{
     
     my $hostname   = $args{hostname};
     my $cluster_id = $args{cluster_id};
+    my $state      = $args{state};
 
     # GET THE EXTERNAL NODE ID    
     # note : externalcluster_name is UNIQUE !
@@ -235,6 +236,7 @@ sub setVerifiedRule{
                 ->verified_noderules
                 ->update_or_create({
                     verified_noderule_externalnode_id    => $externalnode_id,
+                    verified_noderule_state              => $state,
                 });
     }
 }

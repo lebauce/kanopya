@@ -217,17 +217,27 @@ sub _evalRule {
             monitored_values_for_one_node => $monitored_values_for_one_node
         );
         print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$nodeEval."\n";
-        if($nodeEval eq 0){
-            
-            $rule->deleteVerifiedRule(
-                hostname   => $host_name,
-                cluster_id => $cluster_id,
-            );
-        }else {
-            $rep++;
+        
+        if(defined $nodeEval){
+            if($nodeEval eq 0){
+                
+                $rule->deleteVerifiedRule(
+                    hostname   => $host_name,
+                    cluster_id => $cluster_id,
+                );
+            }else {
+                $rep++;
+                $rule->setVerifiedRule(
+                    hostname => $host_name,
+                    cluster_id => $cluster_id,
+                    state      => 'verified'
+                );
+            }
+        }else{
             $rule->setVerifiedRule(
                 hostname => $host_name,
                 cluster_id => $cluster_id,
+                state      => 'undef'
             );
         }
     }
@@ -720,7 +730,7 @@ sub _isOpInQueue {
 
     #TODO keep cluster id from the beginning (get by name is not really good)
     my $cluster_id = Entity::ServiceProvider::Inside::Cluster->getCluster( hash => { cluster_name => $cluster } )->getAttr( name => "cluster_id");
-        
+    
     
     foreach my $op ( @{ $adm->getOperations() } ) {
         if ($op->{'TYPE'} eq $type) {
