@@ -133,8 +133,9 @@ CREATE TABLE `netapp` (
 -- Table ucs for connector
 
 CREATE TABLE `ucs_manager` (
-    `ucs_manager_id`int(8) unsigned NOT NULL,
-    PRIMARY KEY (`ucs_manager_id`)
+  `ucs_manager_id`int(8) unsigned NOT NULL,
+  PRIMARY KEY (`ucs_manager_id`),
+  FOREIGN KEY (`ucs_manager_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

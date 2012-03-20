@@ -96,7 +96,7 @@ __PACKAGE__->belongs_to(
   "connector",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "connector_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 service_provider
@@ -111,7 +111,12 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::Outside",
   { outside_id => "service_provider_id" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 connector_type
@@ -126,7 +131,7 @@ __PACKAGE__->belongs_to(
   "connector_type",
   "AdministratorDB::Schema::Result::ConnectorType",
   { connector_type_id => "connector_type_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 netapp_lun_manager
@@ -174,9 +179,24 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 ucs_manager
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-11 23:10:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BYarYPwy11ipYdAcQF8NMA
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::UcsManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ucs_manager",
+  "AdministratorDB::Schema::Result::UcsManager",
+  { "foreign.ucs_manager_id" => "self.connector_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-20 16:41:59
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HvyVFwqWOFlj4OsHXKpeXQ
 
 __PACKAGE__->belongs_to(
   "parent",
@@ -184,5 +204,5 @@ __PACKAGE__->belongs_to(
     { "foreign.entity_id" => "self.connector_id" },
     { cascade_copy => 0, cascade_delete => 1 });
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
