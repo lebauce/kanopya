@@ -263,7 +263,7 @@ sub monitoringDefaultInit {
     my $active_session_indicator_id; 
     my @indicators;
     
-    my @funcs = qw(mean max min standard_deviation numOfDataOutOfRange);
+    my @funcs = qw(mean max min std dataOut);
     
     foreach my $indicator (@{$scom_indicatorset->{ds}}){
         if($indicator->{oid} eq 'Terminal Services/Active Sessions'){
@@ -318,10 +318,10 @@ sub monitoringDefaultInit {
                        push @mean_percent_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
                    }
             }
-            elsif($func eq 'standard_deviation'){
+            elsif($func eq 'std'){
                 push @std_cm_ids, $cm->getAttr(name => 'clustermetric_id');
             }
-            elsif($func eq 'numOfDataOutOfRange'){
+            elsif($func eq 'dataOut'){
                 push @ndoor_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
             }
             
@@ -355,8 +355,8 @@ sub monitoringDefaultInit {
     }
     foreach my $i (0..(scalar @std_cm_ids)-1){
         $self->generateCoefficientOfVariationRules(
-            id_mean       => $std_cm_ids[$i],
-            id_std        => $mean_cm_ids[$i],
+            id_std       => $std_cm_ids[$i],
+            id_mean        => $mean_cm_ids[$i],
             extcluster_id => $extcluster_id,
         )
     }

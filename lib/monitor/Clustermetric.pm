@@ -39,7 +39,7 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|kurtosis|skewness|numOfDataOutOfRange|sum)$',
+    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|std|max|min|kurtosis|skewness|dataOut|sum)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},

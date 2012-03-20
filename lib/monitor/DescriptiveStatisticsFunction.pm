@@ -47,11 +47,11 @@ sub firstValue {
     return $data->[0];
 }
 
-sub numOfDataOutOfRange{
+sub dataOut{
     my $self        = shift;
     my $data        = $self->_data();
 
-    my $coef        = 4;
+    my $coef        = 3;
 
     my $std         = $self->standard_deviation();
     my $mean        = $self->mean();
@@ -69,4 +69,8 @@ sub numOfDataOutOfRange{
     return $outOfRange/($self->count());
 };
 
+sub std{
+    my $self = shift;
+    return $self->standard_deviation();
+}
 1;
