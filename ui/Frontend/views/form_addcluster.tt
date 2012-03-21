@@ -3,11 +3,11 @@
 <form id="target" method="POST" action="/architectures/clusters/add">
 <table class="form">
     <tr><td class="label">Name :</td>
-        <td><input type="text" name="name" maxlength="32" size="32"/>
+        <td><input type="text" name="cluster_name" maxlength="32" size="32"/>
         <span style="color: red"><% err_name %></span></td>
     </tr>
     <tr><td class="label">Description :</td>
-        <td><textarea cols="50" name="desc" value=""></textarea></td>
+        <td><textarea cols="50" name="cluster_desc" value=""></textarea></td>
     </tr>
     <tr><td class="label">Owner group :</td>
         <td><select id="groupschoice">
@@ -25,14 +25,14 @@
        </td>
     </tr>
     <tr><td class="label">Contact email :</td>
-		<td><input type="text" name="email" maxlength="255" size="32"value="not yet implemented" disabled />
+		<td><input type="text" name="cluster_contactemail" maxlength="255" size="32"value="not yet implemented" disabled />
             <span style="color: red"><% err_email %></span>
         </td>
 	</tr>
     
     <tr><td colspan="2"><hr /></td></tr>
     <tr><td class="label">Hosts Provider :</td>
-        <td><select id="host_provider" name="hostprovider_id">
+        <td><select id="host_provider">
             <% FOREACH hp IN hostproviders_list %>
                 <option value="<% hp.id %>"><% hp.name %></option>
             <% END %>
@@ -55,16 +55,22 @@
 
     <tr><td colspan="2"><hr /></td></tr>
     <tr><td class="label">System image :</td>
-        <td><select name="systemimage_forshared">
-            <% FOREACH si IN systemimages_forshared %>
+        <td><select name="systemimage_id">
+            <% FOREACH si IN systemimages_list %>
                 <option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
             <% END %>
             </select>
         </td>
     </tr>
     <tr><td class="label">Usage :</td>
-        <td><input type="radio" name="si_shareordedicate" value="dedicated" checked=checked />dedicated (one image per node)
-            <input type="radio" name="si_shareordedicate" value="shared" />shared
+        <td><input type="radio" name="systemimage_usage" value="dedicated" checked=checked />dedicated (one image per node)
+            <input type="radio" name="systemimage_usage" value="shared" />shared
+        </td>
+    </tr>
+    <tr><td class="label">Export Manager :</td>
+        <td><select name="export_manager_id">
+                <option value="0">TODO</option>
+            </select>
         </td>
     </tr>
     <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
@@ -81,17 +87,17 @@
      
     <tr><td colspan="2"><hr /></td></tr>
     <tr><td class="label">Priority :</td>
-        <td><input type="text" name="priority" maxlength="5" size="5" value="1" />
+        <td><input type="text" name="cluster_priority" maxlength="5" size="5" value="1" />
             <span style="color: red"><% err_priority %></span>
         </td>
     </tr>
     <tr><td class="label">minimum node to used :</td>
-        <td><input type="text" id="min_node" name="min_node" maxlength="5" size="5" value="1" />
+        <td><input type="text" id="min_node" name="cluster_min_node" maxlength="5" size="5" value="1" />
             <span style="color: red"><% err_min_node %></span>
         </td>
     </tr>
     <tr><td class="label">maximum node to used :</td>
-        <td><input type="text" id="max_node" name="max_node" maxlength="5" size="5" value="1" />
+        <td><input type="text" id="max_node" name="cluster_max_node" maxlength="5" size="5" value="1" />
             <span style="color: red"><% err_max_node %></span>
         </td>
     </tr>
@@ -103,17 +109,17 @@
         </td>
     </tr>
     <tr><td class="label">Domain name :</td>
-        <td><input type="text" name="domainname" maxlength="64" size="32" value="hedera-technology.com"/>
+        <td><input type="text" name="cluster_domainname" maxlength="64" size="32" value="hedera-technology.com"/>
             <span style="color: red"><% err_domainname %></span>
         </td>
     </tr>
     <tr><td class="label">Name server 1 :</td>
-        <td><input type="text" name="nameserver" maxlength="15" size="15" value="<% nameserver %>"/>
+        <td><input type="text" name="cluster_nameserver1" maxlength="15" size="15" value="<% nameserver %>"/>
             <span style="color: red"><% err_nameserver %></span>
         </td>
     </tr>
     <tr><td class="label">Name server 2 :</td>
-        <td><input type="text" name="nameserver2" maxlength="15" size="15" value="not yet implemented" disabled/>
+        <td><input type="text" name="cluster_nameserver2" maxlength="15" size="15" value="not yet implemented" disabled/>
             <span style="color: red"><% err_nameserver %></span>
         </td>
     </tr>

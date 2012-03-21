@@ -190,13 +190,13 @@ get '/clusters/users/:gpid' => sub {
     my $gp_id = param('gpid');
     my $gp_selected=Entity::Gp->get(id => param('gpid'));
     my @eusers= $gp_selected->getEntities();
-    my $str="<option value=$loguser>current logged user</option>";
+    my $str="<option value=$loguser_id>current logged user</option>";
     foreach my $u (@eusers) {
         my $tmp = {};
 	    $tmp->{user_firstname} = $u->getAttr(name=>'user_firstname');
 	    $tmp->{user_lastname}  = $u->getAttr(name=>'user_lastname');
 	    $tmp->{user_id}        = $u->getAttr(name=>'user_id');
-	    $str .='<option value='."$tmp->{user_id}".'>'."$tmp->{user_firstname} $tmp->{user_lastname}".'</option>';
+	    $str .='<option value='.$tmp->{user_id}.'>'.$tmp->{user_firstname}.' '.$tmp->{user_lastname}.'</option>';
     }
     content_type('text/html'); 
     return $str;
@@ -208,8 +208,7 @@ get '/clusters/users/:gpid' => sub {
 get '/clusters/add' => sub {
     my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(hash=>{cluster_name => 'Kanopya'});
     my @ekernels = Entity::Kernel->getKernels(hash => {});
-    my @esystemimages_forshared = Entity::Systemimage->getSystemimages(hash => {systemimage_dedicated => {'!=',1}});
-    my @esystemimages_fordedicated = Entity::Systemimage->getSystemimages(hash => {active => 0});
+    my @esystemimages = Entity::Systemimage->getSystemimages(hash => {active => 0});
     my @ehosts = Entity::Host->getHosts(hash => {});
     my $count = scalar @ehosts;
     my $c =[];
@@ -225,21 +224,13 @@ get '/clusters/add' => sub {
         };
         push (@$kmodels, $tmp);
     }
-    my $si_forshared = [];
-    foreach my $s (@esystemimages_forshared){
+    my $si_list = [];
+    foreach my $s (@esystemimages){
         my $tmp = {
             systemimage_id => $s->getAttr(name => 'systemimage_id'),
             systemimage_name => $s->getAttr(name => 'systemimage_name')
         };
-        push (@$si_forshared, $tmp);
-    }
-    my $si_fordedicated = [];
-    foreach my $s (@esystemimages_fordedicated){
-        my $tmp = {
-            systemimage_id => $s->getAttr(name => 'systemimage_id'),
-            systemimage_name => $s->getAttr(name => 'systemimage_name')
-        };
-        push (@$si_fordedicated, $tmp);
+        push (@$si_list, $tmp);
     }
 
     # owner users list content is managed by javascript with
@@ -250,13 +241,12 @@ get '/clusters/add' => sub {
     # /clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid
 
     template 'form_addcluster', {
-        title_page                  => "Clusters - Cluster creation",
-        kernels_list              => $kmodels,
-        systemimages_forshared    => $si_forshared,
-        systemimages_fordedicated => $si_fordedicated,
-        gp_list                   => _users_groups(),
-        hostproviders_list        => _host_providers(),
-        nameserver                => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
+        title_page         => "Clusters - Cluster creation",
+        kernels_list       => $kmodels,
+        systemimages_list  => $si_list,
+        gp_list            => _users_groups(),
+        hostproviders_list => _host_providers(),
+        nameserver         => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
         
     }, { layout => '' };
 };
@@ -324,44 +314,34 @@ get '/clusters/cloudmanagers/:hostproviderid/bootpolicies/:cloudmanagerid' => su
 
 post '/clusters/add' => sub {
     my $adm = Administrator->new;
+    my %parameters = params;
+ 
+    #~ eval {
+        #~ my $params = {
+            #~ cluster_name           => params->{'name'},
+            #~ cluster_desc           => params->{'desc'},
+            #~ user_id                => params->{'user_id'}
+            #~ # cluster_contactemail => params->{'email'},
+            #~ 
+            #~ host_manager_id        => params->{'cloud_manager'},
+            #~ boot_policy            => params->{'boot_policy'},
+            #~ 
+            #~ systemimage_id         => params->{'systemimage_id'},
+            #~ systemimage_usage      => params->{'systemimage_usage'},
+                        #~ 
+            #~ cluster_priority       => params->{'priority'},
+            #~ cluster_min_node       => params->{'min_node'},
+            #~ cluster_max_node       => params->{'max_node'},
+            #~ 
+            #~ cluster_basehostname   => params->{'cluster_basehostname'},
+            #~ cluster_domainname     => params->{'domainname'},
+            #~ cluster_nameserver1     => params->{'nameserver1'},
+            #~ #cluster_nameserver2     => params->{'nameserver2'},
+        #~ 
+        #~ };
+        
+        Entity::ServiceProvider::Inside::Cluster->create(%parameters);
     
-    my ($si_location, $si_access_mode, $si_shared, $systemimage_id);
-
-    $si_location = params->{'si_location'};
-    if($si_location eq 'local') {
-        $si_access_mode = 'rw';
-        $si_shared = 0;
-    } elsif($si_location eq 'diskless') {
-        if(params->{'si_shareordedicate'} eq 'shared') {
-            $si_access_mode = 'ro';
-            $si_shared = 1;
-            $systemimage_id = params->{'systemimage_forshared'};
-        } else {
-            $si_access_mode = 'rw';
-            $si_shared = 0;
-            $systemimage_id = params->{'systemimage_fordedicated'};
-        }
-    }
-
-    eval {
-        my $params = {
-            cluster_name           => params->{'name'},
-            cluster_desc           => params->{'desc'},
-            cluster_si_location    => $si_location,
-            cluster_si_access_mode => $si_access_mode,
-            cluster_si_shared      => $si_shared,
-            cluster_min_node       => params->{'min_node'},
-            cluster_max_node       => params->{'max_node'},
-            cluster_priority       => params->{'priority'},
-            systemimage_id         => $systemimage_id,
-            cluster_domainname     => params->{'domainname'},
-            cluster_nameserver     => params->{'nameserver'},
-            cluster_basehostname   => params->{'cluster_basehostname'},
-            user_id                => params->{'user_id'}
-        };
-        if(params->{'kernel_id'} ne '0') { $params->{kernel_id} = params->{'kernel_id'}; }
-        Entity::ServiceProvider::Inside::Cluster->create(%$params);
-    };
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
