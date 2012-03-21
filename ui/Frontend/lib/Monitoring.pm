@@ -329,6 +329,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 			}
 			if (scalar(@histovalues) == $undef_count){
 				$error='all values retrieved for the selected time windows were undefined';
+				return to_json {error => $error};
 			}
         }
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
