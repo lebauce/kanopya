@@ -17,7 +17,6 @@ use NodemetricRule;
 use General;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
-use Switch;
  
 my $log = get_logger("webui");
 
