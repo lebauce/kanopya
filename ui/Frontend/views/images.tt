@@ -9,10 +9,8 @@
 <% END %>
 
 <div class="actions">
-<% IF can_create %>
-<a class="action modal" href="/systems/images/add">create a system image</a>
-<p class="italic">Create a new system image.</p>
-<% END %>
+<p class="italic">System images used by your architectures</p>
+
 </div>
 
 
