@@ -23,6 +23,7 @@
                 <label for="combination_end_time">End time (default is now) </label>
                 <input type="text" id="combination_end_time" />
             </div><br />
+			<div id="dropdown_container">
                 <label for="combination_list" class="list_label">Available combinations for external cluster </label><br /><br />
                 <% IF errors.combinations %>
                     <p class="error"> ERROR: <% errors.combinations %> </p>
@@ -34,6 +35,7 @@
                     <% END %>
                 </select>
                 <% END %>
+			</div>
                 <br/>
                 <input id="trendlineinput" type="checkbox" onclick="toggleTrendLine()" value="show"> Trend line</input>
         </div>
