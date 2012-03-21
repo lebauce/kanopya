@@ -117,6 +117,32 @@ sub _externalclusters {
 }
 
 # retrieve data managers
+sub _datamanagers {
+    my @datamanagers = Entity::ServiceProvider->findManager(category => 'Storage');
+    return @datamanagers;
+}
+
+# retrieve storage providers list
+sub _storage_providers {
+    my @storages = _datamanagers();
+    my %temp;
+    foreach my $s (@storages) {
+        $temp{ $s->{service_provider_id} } = 0;
+    }
+    
+    my $sp = [];
+    foreach my $id (keys %temp) {
+        my $tmp = {};
+        my $sp_entity = Entity::ServiceProvider->get(id => $id);
+        $tmp->{id} = $id;
+        $tmp->{name} = $sp_entity->toString();
+        
+        push (@$sp, $tmp);
+    }
+    return $sp;
+}
+
+# retrieve data managers
 sub _cloudmanagers {
     my @cloudmanagers = Entity::ServiceProvider->findManager(category => 'Cloudmanager');
     return @cloudmanagers;
@@ -207,30 +233,30 @@ get '/clusters/users/:gpid' => sub {
 
 get '/clusters/add' => sub {
     my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(hash=>{cluster_name => 'Kanopya'});
-    my @ekernels = Entity::Kernel->getKernels(hash => {});
-    my @esystemimages = Entity::Systemimage->getSystemimages(hash => {active => 0});
-    my @ehosts = Entity::Host->getHosts(hash => {});
-    my $count = scalar @ehosts;
+    my @kernels = Entity::Kernel->getKernels(hash => {});
+    my @masterimages = Entity::Masterimage->getMasterimages(hash => {});
+    my @hosts = Entity::Host->getHosts(hash => {});
+    my $count = scalar @hosts;
     my $c =[];
     for (my $i=1; $i<=$count; $i++) {
         my $tmp->{nodes}=$i;
         push(@$c, $tmp);
     }
     my $kmodels = [];
-    foreach my $k (@ekernels) {
+    foreach my $k (@kernels) {
         my $tmp = {
             kernel_id => $k->getAttr( name => 'kernel_id'),
             kernel_name => $k->getAttr(name => 'kernel_version')
         };
         push (@$kmodels, $tmp);
     }
-    my $si_list = [];
-    foreach my $s (@esystemimages){
+    my $masterimages_list = [];
+    foreach my $s (@masterimages){
         my $tmp = {
-            systemimage_id => $s->getAttr(name => 'systemimage_id'),
-            systemimage_name => $s->getAttr(name => 'systemimage_name')
+            masterimage_id => $s->getAttr(name => 'masterimage_id'),
+            masterimage_name => $s->getAttr(name => 'masterimage_name')
         };
-        push (@$si_list, $tmp);
+        push (@$masterimages_list, $tmp);
     }
 
     # owner users list content is managed by javascript with
@@ -241,12 +267,13 @@ get '/clusters/add' => sub {
     # /clusters/cloudmanagers/:hostproviderid/subform/:cloudmanagerid
 
     template 'form_addcluster', {
-        title_page         => "Clusters - Cluster creation",
-        kernels_list       => $kmodels,
-        systemimages_list  => $si_list,
-        gp_list            => _users_groups(),
-        hostproviders_list => _host_providers(),
-        nameserver         => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
+        title_page            => "Clusters - Cluster creation",
+        kernels_list          => $kmodels,
+        masterimages_list     => $masterimages_list,
+        storageproviders_list => _storage_providers(),
+        gp_list               => _users_groups(),
+        hostproviders_list    => _host_providers(),
+        nameserver            => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
         
     }, { layout => '' };
 };

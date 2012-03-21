@@ -31,6 +31,16 @@
 	</tr>
     
     <tr><td colspan="2"><hr /></td></tr>
+    <tr><td class="label">Kernel :</td>
+        <td><select name="kernel_id">
+                <option value="0">default host kernel</option>
+            <% FOREACH kernel IN kernels_list %>
+                <option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
+            <% END %>
+            </select>
+            <span style="color: red"><% err_kernel %></span>
+        </td>
+    </tr>
     <tr><td class="label">Hosts Provider :</td>
         <td><select id="host_provider">
             <% FOREACH hp IN hostproviders_list %>
@@ -54,19 +64,38 @@
     <tr id="cloudmanagerdetails"></tr>
 
     <tr><td colspan="2"><hr /></td></tr>
-    <tr><td class="label">System image :</td>
-        <td><select name="systemimage_id">
-            <% FOREACH si IN systemimages_list %>
-                <option value="<% si.systemimage_id %>"><% si.systemimage_name %></option>
+    <tr><td class="label" rowspan="2">System image usage :</td>
+        <td><input type="radio" name="systemimage_usage" value="dedicated" checked=checked />dedicated (one image per node)</td>
+    </tr>
+    <tr><td><input type="radio" name="systemimage_usage" value="shared" />shared (one image for all nodes)</td>
+    </tr>
+    <tr><td class="label">Master Image :</td>
+        <td><select name="masterimage_id">
+            <% FOREACH si IN masterimages_list %>
+                <option value="<% si.masterimage_id %>"><% si.masterimage_name %></option>
             <% END %>
             </select>
         </td>
     </tr>
-    <tr><td class="label">Usage :</td>
-        <td><input type="radio" name="systemimage_usage" value="dedicated" checked=checked />dedicated (one image per node)
-            <input type="radio" name="systemimage_usage" value="shared" />shared
+    <tr><td class="label">Storage Provider :</td>
+        <td><select id="storage_provider" name="storage_provider_id">
+            <% FOREACH storage IN storageproviders_list %>
+                <option value="<% storage.id %>"><% storage.name %></option>
+            <% END %>
+            </select>
         </td>
     </tr>
+    <tr><td class="label">Disk Manager to store this image :</td>
+        <td><select id="disk_manager" name="disk_manager_id">
+            <% FOREACH diskmanager IN diskmanagers_list %>
+            <option value="<% diskmanager.id %>"><% diskmanager.name %></option>
+            <% END %>
+        </select>
+        </td>
+    </tr>
+    <tr id="diskmanagerdetails"></tr>
+
+
     <tr><td class="label">Export Manager :</td>
         <td><select name="export_manager_id">
                 <option value="0">TODO</option>
@@ -74,16 +103,7 @@
         </td>
     </tr>
     <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
-    <tr><td class="label">Kernel :</td>
-        <td><select name="kernel_id">
-                <option value="0">default host kernel</option>
-            <% FOREACH kernel IN kernels_list %>
-                <option value="<% kernel.kernel_id %>"><% kernel.kernel_name %></option>
-            <% END %>
-            </select>
-            <span style="color: red"><% err_kernel %></span>
-        </td>
-    </tr>
+
      
     <tr><td colspan="2"><hr /></td></tr>
     <tr><td class="label">Priority :</td>
@@ -172,7 +192,27 @@ function UpdateMinMaxNode() {
     }
 }
 
+function UpdateDiskmanagers() {
+    var url = '/systems/images/diskmanagers/' + $('#storage_provider').val();
+    $.get(url, function(data) {
+        $('#disk_manager').html(data);
+    }).complete(UpdateDiskmanagersSubform);
+}
+    
+function UpdateDiskmanagersSubform() {
+    var storageid = $('#storage_provider').val();
+    var diskmanagerid = $('#disk_manager').val();
+    var url = '/systems/images/diskmanagers/'+storageid+'/subform/'+diskmanagerid ;
+    
+    $.get(url, function(data) {
+        $('#diskmanagerdetails').html(data);
+    });
+}
 
+
+
+$('#storage_provider').change(UpdateDiskmanagers);
+$('#disk_manager').change(UpdateDiskmanagersSubform);
 $('#min_node, #max_node').change(UpdateMinMaxNode);
 $('#host_provider').change(UpdateCloudmanagers);
 $('#cloud_manager').change(UpdateCloudmanagersSubform);
@@ -180,4 +220,6 @@ $('#groupschoice').change(Updateusers);
 
 Updateusers();
 UpdateCloudmanagers();
+UpdateDiskmanagers();
+
 </script>
