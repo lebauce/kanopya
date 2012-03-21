@@ -336,8 +336,8 @@ sub monitoringDefaultInit {
         aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
         aggregate_rule_state                => 'enabled',
         aggregate_rule_action_id            => 0,
-        aggregate_rule_label                => '',
-        aggregate_rule_description          => '',
+        aggregate_rule_label                => 'Cluster load',
+        aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
     };
     my $combo_rule = AggregateRule->new(%$params_rule);
     
@@ -435,8 +435,8 @@ sub ruleGeneration{
         aggregate_rule_formula              => 'id'.$coef_cond_id.' && '.'id'.$std_cond_id,
         aggregate_rule_state                => 'enabled',
         aggregate_rule_action_id            => 0,
-        aggregate_rule_label                => '',
-        aggregate_rule_description          => '',
+        aggregate_rule_label                => 'Cluster '.$label.' homogeneity',
+        aggregate_rule_description          => $label.' is not well balanced across the cluster',
     };
     my $homo_rule = AggregateRule->new(%$params_rule);
     
@@ -445,8 +445,8 @@ sub ruleGeneration{
         aggregate_rule_formula              => 'id'.$out_cond_id,
         aggregate_rule_state                => 'enabled',
         aggregate_rule_action_id            => 0,
-        aggregate_rule_label                => '',
-        aggregate_rule_description          => '',
+        aggregate_rule_label                => 'Cluster '.$label.' consistency',
+        aggregate_rule_description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
     };
     my $out_rule = AggregateRule->new(%$params_rule);
     
@@ -465,8 +465,8 @@ sub ruleGeneration{
         aggregate_rule_formula              => 'id'.$mean_cond_id,
         aggregate_rule_state                => 'enabled',
         aggregate_rule_action_id            => 0,
-        aggregate_rule_label                => '',
-        aggregate_rule_description          => '',
+        aggregate_rule_label                => 'Cluster '.$label.' overload',
+        aggregate_rule_description          => 'Average '.$label.' is too high, your cluster may be undersized',
     };
     my $mean_rule = AggregateRule->new(%$params_rule);
     
@@ -730,8 +730,8 @@ sub generateNodeMetricRules{
         'LogicalDisk/% Free Space' => {
              comparator      => '<',
              threshold       => 15,
-             rule_label      => '%DISK used too low',
-             rule_description => 'Percentage disk used is too high, please check this node',
+             rule_label      => '%DISK space too low',
+             rule_description => 'Percentage disk space is too low, please check this node',
         },
         'Network Adapter/PercentBandwidthUsedTotal' => {
              comparator      => '>',
