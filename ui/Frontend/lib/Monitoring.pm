@@ -1701,6 +1701,43 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/delete' =
     redirect('/architectures/extclusters/'.param('extclusterid').'/externalnodes/'.param('extnodeid').'/rules');
 };
 
+# ----------------------------------------------------------------------------#
+# ------------------------------ INDICATOR -----------------------------------#
+#----------- -----------------------------------------------------------------#
+
+get '/indicators' => sub {
+    my $adm    = Administrator->new();
+    my $scom_indicatorset = $adm->{'manager'}{'monitor'}->getSetDesc( set_name => 'scom' );
+    my @indicators;
+    
+    foreach my $indicator (@{$scom_indicatorset->{ds}}){
+        my $hash = {
+            id     => $indicator->{id},
+            label  => $indicator->{label},
+            oid  => $indicator->{oid},
+            unit  => $indicator->{unit},
+        };
+        push @indicators, $hash;
+    }
+    template 'indicators', {
+        title_page => "Clustermetric creation",
+        indicators => \@indicators,
+    }, { layout => 'main' };
+};
+
+post '/indicators/new' => sub {
+    my $adm    = Administrator->new();
+    my $indicatorset_id = $adm->{'manager'}{'monitor'}->getSetIdFromName( set_name => 'scom' );
+
+    Indicator->new(
+            indicator_name  => param('indicator_name'),
+            indicator_oid   => param('indicator_oid'),
+            indicator_unit  => param('indicator_unit'),
+            indicatorset_id => $indicatorset_id,
+            indicator_color => 'FF000099',
+    );
+    redirect '/architectures/indicators';
+};
 
 
 ########################################

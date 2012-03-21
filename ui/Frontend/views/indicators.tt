@@ -1,0 +1,33 @@
+<form METHOD="POST" ACTION="/architectures/indicators/new">
+<table class="simplelisting">
+    <caption>
+    Indicators
+    </caption>
+    <tr><td> <h4> Label </h4> </td><td> <h4> OID </h4> </td><td> <h4> Unit </h4> </td></tr>
+    <% FOREACH indicator IN indicators %>
+        <tr><td>
+        <span class="italic"> <% indicator.label %> 
+        </td><td>(<% indicator.oid %>)
+        </td><td><% indicator.unit %>
+        </td>
+        </tr>
+    <% END %>
+
+<tr><td> 
+Label <br/>
+<input type="text" value="" name ="indicator_name"/> 
+
+</td><td> 
+OID <br/>
+<input type="text" value="" name ="indicator_oid"/> 
+
+</td><td> 
+Unit <br/>
+<input type="text" value="" name ="indicator_unit"/>
+
+</td></tr>
+</table>
+<input type="submit" value="Add indicator"/>
+
+</form>
+

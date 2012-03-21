@@ -55,7 +55,7 @@ sub new {
     return $self;
 }
 
-=head2 getIndicatorSets
+
     
     Class : Public
     
@@ -67,6 +67,7 @@ sub new {
     Return : array ref of set description
     
 =cut
+    
 
 sub getIndicatorSets {
     my $self = shift;
@@ -289,6 +290,14 @@ sub getClusterGraphSettings {
     return \@graphs;
 }
 
+sub getSetIdFromName{
+    my $self = shift;
+    my %args = @_;
+    
+    my $resultSet = $self->{db}->resultset('Indicatorset')->search( { indicatorset_name => $args{set_name}} );
+    my $indicatorset_id = $resultSet->first->get_column('indicatorset_id'); #UNIQUE
+    return $indicatorset_id;
+}
 sub _graphHash {
     my $self = shift;
     my %args = @_;

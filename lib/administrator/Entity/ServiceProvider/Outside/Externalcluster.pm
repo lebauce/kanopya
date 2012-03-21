@@ -278,7 +278,8 @@ sub monitoringDefaultInit {
     # Create 4 aggregates for each cluster metric
     # Create the corresponding combination 'identity function' for each aggregate 
     
-    my (@mean_cm_ids, @std_cm_ids, @ndoor_comb_ids, @mean_percent_comb_ids);
+    my (@mean_cm_ids, @std_cm_ids, @ndoor_comb_ids);#, @mean_percent_comb_ids);
+    my (@mean_over_comb_ids, @mean_under_comb_ids);
     
     foreach my $indicator (@{$scom_indicatorset->{ds}}) {
         
@@ -290,7 +291,8 @@ sub monitoringDefaultInit {
         
         # GENERATE CLUSTER METRICS
         # TODO : specific method
-        my %func_param;
+
+        
         foreach my $func (@funcs) {
             
             my $cm_params = {
@@ -307,46 +309,56 @@ sub monitoringDefaultInit {
             };
             my $aggregate_combination = AggregateCombination->new(%$acf_params);
             
-            if($func eq 'mean'){
-                push @mean_cm_ids, $cm->getAttr(name => 'clustermetric_id');
-                if (
-                   ($indicator->{oid} eq 'Memory/PercentMemoryUsed')   || 
-                   ($indicator->{oid} eq 'Processor/% Processor Time') ||
-                   ($indicator->{oid} eq 'LogicalDisk/% Free Space')   ||
-                   ($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal')
-                   ){
-                       push @mean_percent_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-                   }
-            }
-            elsif($func eq 'std'){
-                push @std_cm_ids, $cm->getAttr(name => 'clustermetric_id');
-            }
-            elsif($func eq 'dataOut'){
-                push @ndoor_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-            }
             
-        }
-    }
+            if (
+               ($indicator->{oid} eq 'Memory/PercentMemoryUsed')   || 
+               ($indicator->{oid} eq 'Processor/% Processor Time') ||
+               ($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal')
+            ){
+                if($func eq 'mean'){
+                    push @mean_cm_ids, $cm->getAttr(name => 'clustermetric_id');
+                    push @mean_over_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
+                    #push @mean_percent_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
+                }
+                elsif($func eq 'std'){
+                    push @std_cm_ids, $cm->getAttr(name => 'clustermetric_id');
+                }
+                elsif($func eq 'dataOut'){
+                    push @ndoor_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
+                }
+             }elsif($indicator->{oid} eq 'LogicalDisk/% Free Space'){
+                if($func eq 'mean'){
+                    push @mean_cm_ids, $cm->getAttr(name => 'clustermetric_id');
+                    push @mean_under_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
+                    #push @mean_percent_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
+                }
+                elsif($func eq 'std'){
+                    push @std_cm_ids, $cm->getAttr(name => 'clustermetric_id');
+                }
+                elsif($func eq 'dataOut'){
+                    push @ndoor_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
+                }             
+            }
+        }; # end for
+        
+        #SPECIAL TAKE SUM OF SESSION ID
+        my $cm_params = {
+            clustermetric_service_provider_id      => $extcluster_id,
+            clustermetric_indicator_id             => $active_session_indicator_id,
+            clustermetric_statistics_function_name => 'sum',
+            clustermetric_window_time              => '1200',
+        };
+        my $cm = Clustermetric->new(%$cm_params);
+    
+        my $acf_params = {
+            aggregate_combination_service_provider_id   => $extcluster_id,
+            aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+        };
+        my $aggregate_combination = AggregateCombination->new(%$acf_params);
+    } #ALL CLUSTERMETRIC AND THEIR CORRESPONDING IDENTITY ARE NOW CREATED
     
     
-    #SPECIAL TAKE SUM OF SESSION ID
-    my $cm_params = {
-        clustermetric_service_provider_id      => $extcluster_id,
-        clustermetric_indicator_id             => $active_session_indicator_id,
-        clustermetric_statistics_function_name => 'sum',
-        clustermetric_window_time              => '1200',
-    };
-    my $cm = Clustermetric->new(%$cm_params);
-   
-    my $acf_params = {
-        aggregate_combination_service_provider_id   => $extcluster_id,
-        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
-    };
-    my $aggregate_combination = AggregateCombination->new(%$acf_params);
-
-    #ALL CLUSTERMETRIC AND THEIR CORRESPONDING IDENTITY ARE CREATED
-    
-    #NOW CREATE CONDITION AND RULES
+    #THEN CREATE CONDITIONS AND RULES
     foreach my $ndoor_comb_id (@ndoor_comb_ids){
         $self->generateAOutOfRangeRule(
             ndoor_comb_id => $ndoor_comb_id,
@@ -355,14 +367,21 @@ sub monitoringDefaultInit {
     }
     foreach my $i (0..(scalar @std_cm_ids)-1){
         $self->generateCoefficientOfVariationRules(
-            id_std       => $std_cm_ids[$i],
-            id_mean        => $mean_cm_ids[$i],
+            id_std        => $std_cm_ids[$i],
+            id_mean       => $mean_cm_ids[$i],
             extcluster_id => $extcluster_id,
         )
     }
     
-    foreach my $mean_percent_comb_id (@mean_percent_comb_ids){
-        $self->generateLoadRules(
+    foreach my $mean_percent_comb_id (@mean_over_comb_ids){
+        $self->generateOverRules(
+            mean_percent_comb_id => $mean_percent_comb_id,
+            extcluster_id        => $extcluster_id,
+        )
+    }
+    
+    foreach my $mean_percent_comb_id (@mean_under_comb_ids){
+        $self->generateUnderRules(
             mean_percent_comb_id => $mean_percent_comb_id,
             extcluster_id        => $extcluster_id,
         )
@@ -384,21 +403,21 @@ sub generateAOutOfRangeRule {
         state                                   => 'enabled',
     };
      
-   my $aggregate_condition = AggregateCondition->new(%$condition_params);
-    
-   my $params_rule = {
+    my $aggregate_condition = AggregateCondition->new(%$condition_params);
+    my $label = 'Isolated data - '.$aggregate_condition->getCombination()->toString();
+   
+    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
-        aggregate_rule_label                => 'Mainly homogenous datas with isolated values',
+        aggregate_rule_action_id            => 0,
+        aggregate_rule_label                => $label,
         aggregate_rule_description          => 'Check the indicators of the nodes generating isolated datas',
     };
     my $aggregate_rule = AggregateRule->new(%$params_rule);
 };
 
-# CHECK LOAD
-sub generateLoadRules {
+sub generateOverRules {
     my ($self,%args) = @_;
     my $mean_percent_comb_id     = $args{mean_percent_comb_id};
     my $extcluster_id            = $args{extcluster_id};
@@ -406,42 +425,55 @@ sub generateLoadRules {
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
         aggregate_combination_id                => $mean_percent_comb_id,
-        comparator                              => '>',
-        threshold                               => 70,
         state                                   => 'enabled',
     };
-     
+   
+   $condition_params->{comparator} = '>';
+   $condition_params->{threshold}  = 70;
+   
    my $aggregate_condition = AggregateCondition->new(%$condition_params);
     
    my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
-        aggregate_rule_label                => 'Mainly homogenous datas with isolated values',
-        aggregate_rule_description          => 'You may add a Cluster',
+        aggregate_rule_action_id            => 0,
     };
-    my $aggregate_rule = AggregateRule->new(%$params_rule);
     
-    $condition_params = {
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' overloaded';
+    $params_rule->{aggregate_rule_description} = 'You may add a node';
+    
+    my $aggregate_rule = AggregateRule->new(%$params_rule);
+};
+
+
+sub generateUnderRules {
+    my ($self,%args) = @_;
+    my $mean_percent_comb_id     = $args{mean_percent_comb_id};
+    my $extcluster_id            = $args{extcluster_id};
+        
+    my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
         aggregate_combination_id                => $mean_percent_comb_id,
-        comparator                              => '<',
-        threshold                               => 10,
         state                                   => 'enabled',
     };
-     
-   $aggregate_condition = AggregateCondition->new(%$condition_params);
+   
+   $condition_params->{comparator} = '<';
+   $condition_params->{threshold}  = 10;
+   
+   my $aggregate_condition = AggregateCondition->new(%$condition_params);
     
-   $params_rule = {
+   my $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
-        aggregate_rule_label                => 'Mainly homogenous datas with isolated values',
-        aggregate_rule_description          => 'You may remove a Cluster',
+        aggregate_rule_action_id            => 0,
     };
-    $aggregate_rule = AggregateRule->new(%$params_rule);
+    
+    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' underloaded';
+    $params_rule->{aggregate_rule_description} = 'You may add a node';
+    
+    my $aggregate_rule = AggregateRule->new(%$params_rule);
 };
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
@@ -473,12 +505,11 @@ sub generateCoefficientOfVariationRules {
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
         aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
-        aggregate_rule_label                => 'Data homogeneity',
+        aggregate_rule_label                => 'Heterogeneity detected with '.$aggregate_combination->toString(),
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
     my $aggregate_rule = AggregateRule->new(%$params_rule);
 };
-
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
 sub generateStandardDevRuleForNormalizedIndicatorsRules {
