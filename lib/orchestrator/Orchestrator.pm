@@ -353,7 +353,7 @@ sub clustermetricManagement{
                         
                         my $result = $aggregate_rule->eval();
                         $clusters_state_cm->{$cluster_id} += $result;
-                        print "\n";
+                        
                          # LOOP USED TO TRIGGER ACTIONS
                          
 #                        if(defined $result){
