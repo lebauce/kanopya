@@ -434,8 +434,8 @@ get '/clusters' => sub {
 
     my $methods = Entity::ServiceProvider::Inside::Cluster->getPerms();
     if($methods->{'create'}->{'granted'}) {
-        my @si = Entity::Systemimage->getSystemimages(hash => {});
-        if (scalar @si){
+        my @mi = Entity::Masterimage->getMasterimages(hash => {});
+        if (scalar @mi){
             $can_create = 1;
         }
     }
@@ -1059,19 +1059,6 @@ get '/clusters/:clusterid/network/:interfaceid/remove' => sub {
         redirect('/architectures/clusters/'.param('clusterid'));
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # cluster node addition form display
 
