@@ -51,7 +51,7 @@ sub dataOut{
     my $self        = shift;
     my $data        = $self->_data();
 
-    my $coef        = 3;
+    my $coef        = 4;
 
     my $std         = $self->standard_deviation();
     my $mean        = $self->mean();
