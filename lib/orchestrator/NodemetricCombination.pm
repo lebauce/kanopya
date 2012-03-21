@@ -128,7 +128,7 @@ sub computeValueFromMonitoredValues {
      
     my $res = -1;
     my $arrayString = '$res = '."@array"; 
-    print $arrayString."\n";
+    #print $arrayString."\n";
     
     #Evaluate the logic formula
     eval $arrayString;

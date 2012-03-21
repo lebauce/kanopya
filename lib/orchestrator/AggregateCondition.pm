@@ -103,13 +103,13 @@ sub eval{
     if(defined $value){
         my $evalString = $value.$comparator.$threshold;
         if(eval $evalString){        
-            print $evalString."=> true\n";
+            #print $evalString."=> true\n";
             $log->info($evalString."=> true");        
             $self->setAttr(name => 'last_eval', value => 1);
             $self->save();
             return 1;
         }else{
-            print $evalString."=> false\n";
+            #print $evalString."=> false\n";
             $log->info($evalString."=> false");        
             $self->setAttr(name => 'last_eval', value => 0);
             $self->save();

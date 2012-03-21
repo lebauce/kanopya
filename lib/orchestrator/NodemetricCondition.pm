@@ -100,7 +100,7 @@ sub evalOnOneNode{
     } else {
         my $evalString = $value.$comparator.$threshold;
         
-        print $evalString."\n";
+        #print $evalString."\n";
         
         if(eval $evalString){
             return 1;
