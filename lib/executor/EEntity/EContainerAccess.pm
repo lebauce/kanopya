@@ -100,7 +100,9 @@ sub copy {
         }
 
         # Disconnect the containers.
+        $log->info('Try to disconnect from the source container...');
         $source_access->tryDisconnect(econtext => $args{econtext});
+        $log->info('Try to disconnect from the destination container...');
         $dest_access->tryDisconnect(econtext => $args{econtext});
     }
     # One or both container access do not support device level (e.g. Nfs)
@@ -127,6 +129,7 @@ sub copy {
         }
 
         # Unmount the containers.
+        
         $source_access->umount(mountpoint => $source_mountpoint, econtext => $args{econtext});
         $dest_access->umount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
     }
@@ -186,20 +189,11 @@ sub umount {
     $args{econtext}->execute(command => $command);
 
     $command = "umount $args{mountpoint}";
-    my $retry = 10;
-    while ($retry > 0) {
-        $result = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            $log->info("Unable to umount <$args{mountpoint}>, retrying in 1s...");
-            $retry--;
-            sleep 1;
-            next;
-        }
-        last;
-    }
-    if (!$retry){
+    $result  = $args{econtext}->execute(command => $command);
+    if ($result->{exitcode} != 0) {
         throw Kanopya::Exception::Execution(
-                  error => "Unable to umount $args{mountpoint}: " . $result->{stderr}
+                  error => "Unable to umount $args{mountpoint}: " .
+                           $result->{stderr}
               );
     }
 

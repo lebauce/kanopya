@@ -120,15 +120,18 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $device = $self->_getEntity->getAttr(name => 'device_connected');
+    my $file = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_device');
 
-    if (! -b $device) {
+    if (! -b $file) {
+        my $device = $self->_getEntity->getAttr(name => 'device_connected');
+
         $command = "losetup -d $device";
         $result  = $args{econtext}->execute(command => $command);
         if ($result->{exitcode} != 0) {
             throw Kanopya::Exception::Execution(error => $result->{stderr});
         }
     }
+
     $self->_getEntity->setAttr(name  => 'device_connected',
                                value => '');
 }
