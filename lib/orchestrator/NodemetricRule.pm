@@ -149,7 +149,7 @@ sub evalOnOneNode{
     my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
-    print $arrayString."\n";
+
     #Evaluate the logic formula
     eval $arrayString;
     my $store = ($res)?1:0;
@@ -255,7 +255,7 @@ sub setVerifiedRule{
         my $errmsg = "UNKOWN node $hostname in cluster $cluster_id";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);    }else{
-        print "** $externalnode_id **\n";
+       # print "** $externalnode_id **\n";
         $self->{_dbix}
                 ->verified_noderules
                 ->update_or_create({
