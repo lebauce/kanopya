@@ -17,7 +17,6 @@ use NodemetricRule;
 use General;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
-use Switch;
  
 my $log = get_logger("webui");
 
@@ -323,13 +322,14 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
             my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
 			my $undef_count = 0;
             push @histovalues, [$date_string,$value];
-			#we reference the undef values in order to throw an error if all values are undef
-			# if ($value eq 'undef'){
-				# $undef_count++;
-			# }
-			# if (scalar(@histovalues) == $undef_count){
-				# $error='all values retrieved for the selected time windows were undefined';
-			# }
+			# we reference the undef values in order to throw an error if all values are undef
+			if (!defined $value){
+				$undef_count++;
+			}
+			if (scalar(@histovalues) == $undef_count){
+				$error='all values retrieved for the selected time windows were undefined';
+				return to_json {error => $error};
+			}
         }
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }
@@ -1469,16 +1469,16 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
             externalcluster_id => $externalcluster_id,
             externalnode_id    => $externalnode_id,
         );
-        switch($isVerified){
-            case 1 {
+        if (defined $isVerified){
+            if(1 == $isVerified) {
                 push @nokRules,[$rule, $isVerified];
-            }
-            case 0 {
+            }elsif(0 == $isVerified) {
                 push @okRules,[$rule, $isVerified];
+            }else {
+                    push @unkownRules,[$rule, $isVerified];
             }
-            else {
+        }else {
                 push @unkownRules,[$rule, $isVerified];
-            }
         }
     }
     
@@ -1647,7 +1647,7 @@ post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
         
         if(param('state') eq 'disabled'){
             $rule->disable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
-        }elsif(param('state') eq 'disabled'){
+        }elsif(param('state') eq 'enabled'){
             $rule->enable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
         }else
         {

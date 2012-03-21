@@ -74,9 +74,7 @@ sub new {
         $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
         $self->save();
     }
-   $self->setUndefForEachNode(
-            service_provider_id => $args{nodemetric_rule_service_provider_id},
-   );
+    $self->setUndefForEachNode();
 
 }
 
@@ -87,7 +85,7 @@ sub setUndefForEachNode{
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(
                         'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
                      );
-
+    
     my $extnodes = $extcluster->getNodes();
     
     foreach my $extnode (@$extnodes) {
