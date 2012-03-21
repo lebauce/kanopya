@@ -109,15 +109,12 @@ sub manage_aggregates {
         my $clusters_state_cm = $self->clustermetricManagement();
         my $clusters_state_nm = $self->nodemetricManagement();
         
-        print Dumper $clusters_state_cm;
-        print Dumper $clusters_state_nm;
-        
         my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
         for my $externalCluster (@externalClusters){
             my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
             
-            if(defined $clusters_state_cm->{$cluster_id} && defined $clusters_state_cm->{$cluster_id}){
-             if($clusters_state_cm->{$cluster_id} + $clusters_state_cm->{$cluster_id} >0){
+            if(defined $clusters_state_cm->{$cluster_id} && defined $clusters_state_nm->{$cluster_id}){
+             if($clusters_state_cm->{$cluster_id} + $clusters_state_nm->{$cluster_id} >0){
                  $externalCluster->setAttr(
                         name => 'externalcluster_state',
                         value => 'warning',
