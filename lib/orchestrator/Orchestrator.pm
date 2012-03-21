@@ -312,7 +312,7 @@ sub _contructRetrieverOutput {
         indicators => \@indicators_array,
         time_span  => 1200,
     };
-    print Dumper $rep;
+    #print Dumper $rep;
     return $rep;
 };
 
