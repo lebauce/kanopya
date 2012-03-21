@@ -179,7 +179,7 @@ sub compute{
         if( $element =~ m/id\d+/)
         {
             $element = $args{substr($element,2)};
-            if (!defined $element || $element eq 'undef'){
+            if (!defined $element){
                 return undef;
             }
         }
