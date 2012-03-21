@@ -1,0 +1,7 @@
+<td class="label">Service Profile Template:</td>
+<td><select name="serviceprofiletemplate">
+        <option>retrieve service profile template list</option>
+    </select>
+</td>
+
+
