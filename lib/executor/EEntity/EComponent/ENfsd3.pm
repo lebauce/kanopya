@@ -145,15 +145,32 @@ sub delExport {
 
     $self->_getEntity()->delExport(device => $device);
 
-    $self->update_exports(econtext => $args{econtext});
-    $elocal_access->umount(mountpoint => $mountdir,
-                           econtext   => $args{econtext});
+    my $retry = 5;
+    while ($retry > 0) {
+        eval {
+            $self->update_exports(econtext => $args{econtext});
+            $elocal_access->umount(mountpoint => $mountdir,
+                                   econtext   => $args{econtext});
+        };
+        if ($@) {
+            $log->info("Unable to umount <$mountdir>, retrying in 1s...");
+            $retry--;
+            if (!$retry){
+                throw Kanopya::Exception::Execution(
+                          error => "Unable to umount nfs mountpoint $mountdir: $@"
+                      );
+            }
+            sleep 1;
+            next;
+        }
+        last;
+    }
 }
 
 sub update_exports {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => ['econtext']);
 
     $self->generate_exports(econtext => $args{econtext});

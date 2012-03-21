@@ -138,7 +138,7 @@ eval {
     my $container;
     lives_ok {
         $container = $edisk_manager->createDisk(name       => $nfsexport_name,
-                                                size       => '5G',
+                                                size       => '20G',
                                                 filesystem => 'ext3',
                                                 econtext   => $econtext);
     } 'Create a large lvm volume (5G)';
@@ -161,6 +161,7 @@ eval {
                                   $kpc_cluster->getComponent(name => "Fileimagemanager", version => "0")) {
 
         my $disk_manager_id;
+
         my $disk_manager_custom_params = { container_access_id => $container_access->getAttr(name => 'container_access_id') };
         lives_ok {
             $disk_manager_id = $disk_manager_current->getAttr(name => 'component_id');

@@ -73,13 +73,13 @@ sub copy {
         $command = "sync";
         $args{econtext}->execute(command => $command);
 
-        my $source_size = $self->_getEntity->getContainer->getAttr(name => 'container_size');
-        my $dest_size   = $args{dest}->_getEntity->getContainer->getAttr(name => 'container_size');
+        my $source_size = $source_access->_getEntity->getContainer->getAttr(name => 'container_size');
+        my $dest_size   = $dest_access->_getEntity->getContainer->getAttr(name => 'container_size');
 
         # Check if the destination container is higher thant the source one,
         # resize it to maximum.
         if ($dest_size > $source_size) {
-            my $part_start = $args{dest}->getPartitionStart(econtext => $args{econtext});
+            my $part_start = $dest_access->getPartitionStart(econtext => $args{econtext});
             if ($part_start > 0) {
                 $command = "parted -s $dest_device rm 1";
                 $result  = $args{econtext}->execute(command => $command);
@@ -88,7 +88,7 @@ sub copy {
                 $result  = $args{econtext}->execute(command => $command);
             }
 
-            my $part_device = $self->tryConnectPartition(econtext => $args{econtext});
+            my $part_device = $dest_access->tryConnectPartition(econtext => $args{econtext});
 
             # Finally resize2fs the partition
             $command = "e2fsck -y -f $part_device";
@@ -96,11 +96,13 @@ sub copy {
             $command = "resize2fs -F $part_device";
             $args{econtext}->execute(command => $command);
 
-            $self->tryDisconnectPartition(econtext => $args{econtext});
+            $dest_access->tryDisconnectPartition(econtext => $args{econtext});
         }
 
         # Disconnect the containers.
+        $log->info('Try to disconnect from the source container...');
         $source_access->tryDisconnect(econtext => $args{econtext});
+        $log->info('Try to disconnect from the destination container...');
         $dest_access->tryDisconnect(econtext => $args{econtext});
     }
     # One or both container access do not support device level (e.g. Nfs)
@@ -127,6 +129,7 @@ sub copy {
         }
 
         # Unmount the containers.
+        
         $source_access->umount(mountpoint => $source_mountpoint, econtext => $args{econtext});
         $dest_access->umount(mountpoint => $dest_mountpoint, econtext => $args{econtext});
     }
@@ -186,20 +189,11 @@ sub umount {
     $args{econtext}->execute(command => $command);
 
     $command = "umount $args{mountpoint}";
-    my $retry = 10;
-    while ($retry > 0) {
-        $result = $args{econtext}->execute(command => $command);
-        if ($result->{exitcode} != 0) {
-            $log->info("Unable to umount <$args{mountpoint}>, retrying in 1s...");
-            $retry--;
-            sleep 1;
-            next;
-        }
-        last;
-    }
-    if (!$retry){
+    $result  = $args{econtext}->execute(command => $command);
+    if ($result->{exitcode} != 0) {
         throw Kanopya::Exception::Execution(
-                  error => "Unable to umount $args{mountpoint}: " . $result->{stderr}
+                  error => "Unable to umount $args{mountpoint}: " .
+                           $result->{stderr}
               );
     }
 
