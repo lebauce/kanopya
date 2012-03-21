@@ -66,6 +66,9 @@ sub dataOut{
             $outOfRange++;
         }
     }
+    if($self->count() == 0){
+        return 0;
+    }
     return $outOfRange/($self->count());
 };
 
