@@ -106,8 +106,10 @@ sub manage_aggregates {
     
     print "## UPDATE ALL $self->{_time_step} SECONDS##\n";
     eval{
-        $self->clustermetricManagement();
-        $self->nodemetricManagement();
+        my $clusters_state_cm = $self->clustermetricManagement();
+        my $clusters_state_nm = $self->nodemetricManagement();
+        print Dumper $clusters_state_cm;
+        print Dumper $clusters_state_nm;
         1;
     }or do {
         print "Skip due to error $@\n";
@@ -117,6 +119,8 @@ sub manage_aggregates {
 
 sub nodemetricManagement{
     my $self = shift;
+    
+    my $clusters_state;
     
     # Merge all needed indicators to consctruc only one SCOM request
     
@@ -155,22 +159,25 @@ sub nodemetricManagement{
                 'rules'             => \@rules,
                 'cluster'           => $externalCluster,
             );
-
-            if(0 < $rep){
-                
-                $externalCluster->setAttr(
-                    name => 'externalcluster_state',
-                    value => 'warning',
-                );
-            }else{
-                $externalCluster->setAttr(
-                    name => 'externalcluster_state',
-                    value => 'up',
-                );
-            }
-            $externalCluster->save();
+            
+            $clusters_state->{$cluster_id} = $rep;
+            
+#            if(0 < $rep){
+#                
+#                $externalCluster->setAttr(
+#                    name => 'externalcluster_state',
+#                    value => 'warning',
+#                );
+#            }else{
+#                $externalCluster->setAttr(
+#                    name => 'externalcluster_state',
+#                    value => 'up',
+#                );
+#            }
+#            $externalCluster->save();
         }
     }
+    return $clusters_state;
 }
 
 sub _evalAllRules {
@@ -293,6 +300,7 @@ sub _contructRetrieverOutput {
 
 sub clustermetricManagement{
     my $self = shift;
+    my $clusters_state_cm;
     
     # FOR EACH EXT CLUSTERS
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
@@ -300,9 +308,10 @@ sub clustermetricManagement{
    
     CLUSTER:
     for my $externalCluster (@externalClusters){
+        
         eval{
             my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-            
+            $clusters_state_cm->{$cluster_id} = 0;
             #FILTER CLUSTERS WITH MONITORING PROVIDER
             eval{
                 $externalCluster->getConnector(category => 'MonitoringService');
@@ -317,7 +326,6 @@ sub clustermetricManagement{
                 });
                 
                 for my $aggregate_rule (@rules){
-                    
                     if ($aggregate_rule -> isEnabled()) {
 
                         print 'CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
@@ -326,6 +334,7 @@ sub clustermetricManagement{
                         $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
                         
                         my $result = $aggregate_rule->eval();
+                        $clusters_state_cm->{$cluster_id} += $result;
                         print "\n";
                          # LOOP USED TO TRIGGER ACTIONS
                          
@@ -351,7 +360,7 @@ sub clustermetricManagement{
             next CLUSTER;
         }
     } # end for my $externalCluster
-
+return $clusters_state_cm;
 }
 
 =head2 manage
