@@ -291,6 +291,8 @@ sub monitoringDefaultInit {
     my $active_session_indicator_id; 
     my @indicators;
     
+    my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);
+    
     my @funcs = qw(mean max min std dataOut);
     
     foreach my $indicator (@{$scom_indicatorset->{ds}}){
@@ -320,13 +322,25 @@ sub monitoringDefaultInit {
                     );
             }
         }elsif($indicator->{oid} eq 'Memory/PercentMemoryUsed'){
-            $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Memory');
+            $low_mean_cond_mem_id = $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Memory');
         }elsif($indicator->{oid} eq 'Processor/% Processor Time'){
-            $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Processor');
+            $low_mean_cond_cpu_id = $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Processor');
         }elsif($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal'){
-            $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Network');
+            $low_mean_cond_net_id = $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Network');
         }
     }
+    
+    
+   my $params_rule = {
+        aggregate_rule_service_provider_id  => $extcluster_id,
+        aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
+        aggregate_rule_state                => 'enabled',
+        aggregate_rule_action_id            => 0,
+        aggregate_rule_label                => '',
+        aggregate_rule_description          => '',
+    };
+    my $combo_rule = AggregateRule->new(%$params_rule);
+    
         #SPECIAL TAKE SUM OF SESSION ID
     my $cm_params = {
         clustermetric_service_provider_id      => $extcluster_id,
@@ -435,6 +449,38 @@ sub ruleGeneration{
         aggregate_rule_description          => '',
     };
     my $out_rule = AggregateRule->new(%$params_rule);
+    
+   $condition_params = {
+        aggregate_condition_service_provider_id => $extcluster_id,
+        aggregate_combination_id                => $mean_ids->{comb_id},
+        comparator                              => '>',
+        threshold                               => 80,
+        state                                   => 'enabled',
+    };
+     
+   my $mean_cond = AggregateCondition->new(%$condition_params);
+   my $mean_cond_id = $mean_cond->getAttr(name => 'aggregate_condition_id');
+   $params_rule = {
+        aggregate_rule_service_provider_id  => $extcluster_id,
+        aggregate_rule_formula              => 'id'.$mean_cond_id,
+        aggregate_rule_state                => 'enabled',
+        aggregate_rule_action_id            => 0,
+        aggregate_rule_label                => '',
+        aggregate_rule_description          => '',
+    };
+    my $mean_rule = AggregateRule->new(%$params_rule);
+    
+   $condition_params = {
+        aggregate_condition_service_provider_id => $extcluster_id,
+        aggregate_combination_id                => $mean_ids->{comb_id},
+        comparator                              => '<',
+        threshold                               => 10,
+        state                                   => 'enabled',
+    };
+     
+   my $low_mean_cond = AggregateCondition->new(%$condition_params);
+    
+   return $low_mean_cond->getAttr(name => 'aggregate_condition_id');
 }
 #        
 #
