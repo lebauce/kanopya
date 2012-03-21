@@ -243,16 +243,16 @@ sub _evalRule {
         );
         
         if(defined $nodeEval){
-            print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
+            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
             
             if($nodeEval eq 0){
-                print ' WARNING'."\n";
+                #print ' WARNING'."\n";
                 $rule->deleteVerifiedRule(
                     hostname   => $host_name,
                     cluster_id => $cluster_id,
                 );
             }else {
-                print ' OK'."\n";
+                #print ' OK'."\n";
                 $rep++;
                 $rule->setVerifiedRule(
                     hostname => $host_name,
@@ -261,7 +261,7 @@ sub _evalRule {
                 );
             }
         }else{
-            print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
+            #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
             $rule->setVerifiedRule(
                 hostname => $host_name,
                 cluster_id => $cluster_id,
