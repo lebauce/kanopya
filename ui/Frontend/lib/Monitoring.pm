@@ -805,9 +805,6 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/:conditi
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules' => sub {
 
-    
-    #  my @enabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'enabled'});
-    
     my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id => params->{extclusterid});
     
     my (@nokRules, @okRules, @unkownRules);
@@ -858,7 +855,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
     my $hash = {
       id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
       formula   => $aggregate_rule->toString(),
-      last_eval => -1,
+      last_eval => undef,
       label     => $aggregate_rule->getAttr(name => 'aggregate_rule_label'),
       
     };
@@ -874,35 +871,34 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/dis
     
 };
 
-get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdisabled' => sub {
-  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp', service_provider_id => params->{extclusterid});
-  #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
-  my @tdisabled_rules;
-  foreach my $aggregate_rule (@tdisabled_aggregaterules) {
-
-    my $hash = {
-      id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
-      formula   => $aggregate_rule->toString(),
-      last_eval => -1,
-      time      => $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp') - time(),
-      label     => $aggregate_rule->getAttr(name => 'aggregate_rule_formula'),
-      
-    };
-    push @tdisabled_rules, $hash;
-  }  
-  
-  template 'clustermetric_rules', {
-        title_page      => "Temporarily Disabled Rules Overview",
-        rules           => \@tdisabled_rules,
-        status          => 'tdisabled',
-        cluster_id      => param('extclusterid'),
-  }, { layout => 'main' };
-};
+#get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/tdisabled' => sub {
+#  my @tdisabled_aggregaterules = AggregateRule->getRules(state => 'disabled_temp', service_provider_id => params->{extclusterid});
+#  #my @tdisabled_aggregaterules = AggregateRule->search(hash => {aggregate_rule_state => 'disabled_temp'});
+#  my @tdisabled_rules;
+#  foreach my $aggregate_rule (@tdisabled_aggregaterules) {
+#
+#    my $hash = {
+#      id        => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+#      formula   => $aggregate_rule->toString(),
+#      last_eval => -1,
+#      time      => $aggregate_rule->getAttr(name => 'aggregate_rule_timestamp') - time(),
+#      label     => $aggregate_rule->getAttr(name => 'aggregate_rule_formula'),
+#      
+#    };
+#    push @tdisabled_rules, $hash;
+#  }  
+#  
+#  template 'clustermetric_rules', {
+#        title_page      => "Temporarily Disabled Rules Overview",
+#        rules           => \@tdisabled_rules,
+#        status          => 'tdisabled',
+#        cluster_id      => param('extclusterid'),
+#  }, { layout => 'main' };
+#};
 
 
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/enabled' => sub {
-    
     redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
@@ -920,17 +916,17 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
 };
 
-get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
-    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
-    $aggregateRule->disableTemporarily(length => 120);
-    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
-};
-
-get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
-    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
-    $aggregateRule->disableTemporarily(length => 120);
-    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
-};
+#get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
+#    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+#    $aggregateRule->disableTemporarily(length => 120);
+#    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
+#};
+#
+#get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/tdisable' => sub {
+#    my $aggregateRule = AggregateRule->get('id' => params->{ruleid});
+#    $aggregateRule->disableTemporarily(length => 120);
+#    redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
+#};
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/details' => sub {
 
@@ -1651,6 +1647,8 @@ post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
         
         if(param('state') eq 'disabled'){
             $rule->disable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
+        }elsif(param('state') eq 'disabled'){
+            $rule->enable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
         }else
         {
              $rule->setAttr(name => 'nodemetric_rule_state', value => param('state'));
