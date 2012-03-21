@@ -42,6 +42,9 @@
 
 <div class="actions">
         <table>
+         <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </td></tr>
         <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/enabled">View enabled rules</a>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/rules/disabled">View disabled rules</a>
