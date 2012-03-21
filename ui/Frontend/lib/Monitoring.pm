@@ -1647,7 +1647,7 @@ post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
         
         if(param('state') eq 'disabled'){
             $rule->disable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
-        }elsif(param('state') eq 'disabled'){
+        }elsif(param('state') eq 'enabled'){
             $rule->enable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
         }else
         {
