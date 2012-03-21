@@ -271,10 +271,10 @@ sub updateTimeDataStore {
 
     my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
     $log->debug($cmd);
-    print $cmd."\n";
+    #print $cmd."\n";
 
     my $exec =`$cmd 2>&1`;
-    print $exec."\n";
+    #print $exec."\n";
     $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/){

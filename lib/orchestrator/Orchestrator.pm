@@ -326,7 +326,7 @@ sub clustermetricManagement{
                         $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
                         
                         my $result = $aggregate_rule->eval();
-                        
+                        print "\n";
                          # LOOP USED TO TRIGGER ACTIONS
                          
 #                        if(defined $result){
