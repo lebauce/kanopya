@@ -61,7 +61,7 @@ sub copy {
     # If devices exists, copy contents with 'dd'
     if (defined $source_device and defined $dest_device) {
         # Copy the device
-        $command = "dd conv=notrunc,fdatasync if=$source_device of=$dest_device bs=1M";
+        $command = "dd conv=notrunc,fsync,fdatasync if=$source_device of=$dest_device bs=1M";
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
@@ -69,6 +69,9 @@ sub copy {
                       $result->{stderr};
             throw Kanopya::Exception::Execution(error => $errmsg);
         }
+
+        $command = "sync";
+        $args{econtext}->execute(command => $command);
 
         my $source_size = $self->_getEntity->getContainer->getAttr(name => 'container_size');
         my $dest_size   = $args{dest}->_getEntity->getContainer->getAttr(name => 'container_size');
@@ -179,12 +182,25 @@ sub umount {
 
     $log->info("Unmonting (<$args{mountpoint}>)");
 
+    $command = "sync";
+    $args{econtext}->execute(command => $command);
+
     $command = "umount $args{mountpoint}";
-    $result  = $args{econtext}->execute(command => $command);
-    if($result->{stderr}){
-        $errmsg = "Unable to umount $args{mountpoint}: " .
-                  $result->{stderr};
-        throw Kanopya::Exception::Execution(error => $errmsg);
+    my $retry = 10;
+    while ($retry > 0) {
+        $result = $args{econtext}->execute(command => $command);
+        if ($result->{exitcode} != 0) {
+            $log->info("Unable to umount <$args{mountpoint}>, retrying in 1s...");
+            $retry--;
+            sleep 1;
+            next;
+        }
+        last;
+    }
+    if (!$retry){
+        throw Kanopya::Exception::Execution(
+                  error => "Unable to umount $args{mountpoint}: " . $result->{stderr}
+              );
     }
 
     # Disconnecting from container access.
@@ -293,6 +309,9 @@ sub disconnectPartition {
     my ($command, $result);
 
     my $partition = $self->_getEntity->getAttr(name => 'partition_connected');
+
+    $command = "sync";
+    $args{econtext}->execute(command => $command);
 
     $command = "losetup -d $partition";
     $result = $args{econtext}->execute(command => $command);

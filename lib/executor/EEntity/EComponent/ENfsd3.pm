@@ -145,21 +145,9 @@ sub delExport {
 
     $self->_getEntity()->delExport(device => $device);
 
-    my $retry = 5;
-    while ($retry > 0) {
-        eval {
-            $self->update_exports(econtext => $args{econtext});
-            $elocal_access->umount(mountpoint => $mountdir,
-                                   econtext   => $args{econtext});
-        };
-        if ($@) {
-            $log->info("Unable to umount nfs mountpoint <>, retrying in 1s...");
-            $retry--;
-            sleep 1;
-            next;
-        }
-        last;
-    }
+    $self->update_exports(econtext => $args{econtext});
+    $elocal_access->umount(mountpoint => $mountdir,
+                           econtext   => $args{econtext});
 }
 
 sub update_exports {
