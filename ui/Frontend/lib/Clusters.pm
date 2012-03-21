@@ -97,12 +97,15 @@ sub _externalclusters {
         my $nodes = $cluster->getNodes();
         my $nbnodes = scalar(@$nodes);
         
+        my $clusterstate = $cluster->getAttr('name' => 'externalcluster_state');
+        
+        
         push @clusters, {
             route_base      => 'extclusters',
             link_activity   => 1,
             type            => 'External cluster',
             active          => 1,
-            state_up        => 1,
+            "state_$clusterstate"        => 1,
             cluster_id      => $cluster->getAttr(name => 'externalcluster_id'),
             cluster_name    => $cluster->getAttr(name => 'externalcluster_name'),
             cluster_desc    => $cluster->getAttr(name => 'externalcluster_desc'),
