@@ -346,8 +346,8 @@ sub clustermetricManagement{
                 for my $aggregate_rule (@rules){
                     if ($aggregate_rule -> isEnabled()) {
 
-                        print 'CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
-                        print $aggregate_rule->toString().' ';
+                        #print 'CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
+                        #print $aggregate_rule->toString().' ';
                         
                         $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
                         
