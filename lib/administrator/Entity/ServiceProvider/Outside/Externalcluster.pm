@@ -245,6 +245,34 @@ sub getNodesMetrics {
     return $data;
 }
 
+
+sub generateClustermetricAndCombination{
+    my ($self,%args) = @_;
+    my $extcluster_id = $args{extcluster_id};
+    my $indicator     = $args{indicator};
+    my $func          = $args{func};
+    
+    my $cm_params = {
+        clustermetric_service_provider_id      => $extcluster_id,
+        clustermetric_indicator_id             => $indicator->{id},
+        clustermetric_statistics_function_name => $func,
+        clustermetric_window_time              => '1200',
+    };
+    my $cm = Clustermetric->new(%$cm_params);
+   
+    my $acf_params = {
+        aggregate_combination_service_provider_id   => $extcluster_id,
+        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+    };
+    my $aggregate_combination = AggregateCombination->new(%$acf_params);
+    my $rep = {
+        cm_id => $cm->getAttr(name => 'clustermetric_id'),
+        comb_id => $aggregate_combination->getAttr(name => 'aggregate_combination_id'),
+    };
+    return $rep;
+}
+
+
 =head2 monitoringDefaultInit
 
     Insert some basic clustermetrics, combinations and rules for this cluster
@@ -273,120 +301,199 @@ sub monitoringDefaultInit {
     }
 
     my $extcluster_id = $self->getAttr( name => 'outside_id' );
-
-   # Create one clustermetric for each indicator scom
-    # Create 4 aggregates for each cluster metric
-    # Create the corresponding combination 'identity function' for each aggregate 
-    
-    my (@mean_cm_ids, @std_cm_ids, @ndoor_comb_ids);#, @mean_percent_comb_ids);
-    my (@mean_over_comb_ids, @mean_under_comb_ids);
     
     foreach my $indicator (@{$scom_indicatorset->{ds}}) {
-        
         $self->generateNodeMetricRules(
             indicator_id  => $indicator->{id},
             indicator_oid => $indicator->{oid},
             extcluster_id => $extcluster_id,
-            );
+        );
         
-        # GENERATE CLUSTER METRICS
-        # TODO : specific method
-
-        
-        foreach my $func (@funcs) {
-            
-            my $cm_params = {
-                clustermetric_service_provider_id      => $extcluster_id,
-                clustermetric_indicator_id             => $indicator->{id},
-                clustermetric_statistics_function_name => $func,
-                clustermetric_window_time              => '1200',
-            };
-            my $cm = Clustermetric->new(%$cm_params);
-           
-            my $acf_params = {
-                aggregate_combination_service_provider_id   => $extcluster_id,
-                aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
-            };
-            my $aggregate_combination = AggregateCombination->new(%$acf_params);
-            
-            
-            if (
-               ($indicator->{oid} eq 'Memory/PercentMemoryUsed')   || 
-               ($indicator->{oid} eq 'Processor/% Processor Time') ||
-               ($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal')
-            ){
-                if($func eq 'mean'){
-                    push @mean_cm_ids, $cm->getAttr(name => 'clustermetric_id');
-                    push @mean_over_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-                    #push @mean_percent_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-                }
-                elsif($func eq 'std'){
-                    push @std_cm_ids, $cm->getAttr(name => 'clustermetric_id');
-                }
-                elsif($func eq 'dataOut'){
-                    push @ndoor_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-                }
-             }elsif($indicator->{oid} eq 'LogicalDisk/% Free Space'){
-                if($func eq 'mean'){
-                    push @mean_cm_ids, $cm->getAttr(name => 'clustermetric_id');
-                    push @mean_under_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-                    #push @mean_percent_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-                }
-                elsif($func eq 'std'){
-                    push @std_cm_ids, $cm->getAttr(name => 'clustermetric_id');
-                }
-                elsif($func eq 'dataOut'){
-                    push @ndoor_comb_ids, $aggregate_combination->getAttr(name => 'aggregate_combination_id');
-                }             
+     if (
+        0 == grep {$indicator->{oid} eq $_} ('Memory/PercentMemoryUsed','Processor/% Processor Time','Network Adapter/PercentBandwidthUsedTotal','LogicalDisk/% Free Space')
+        ){
+            foreach my $func (@funcs) {
+                    my $ids = $self->generateClustermetricAndCombination(
+                        extcluster_id => $extcluster_id,
+                        indicator     => $indicator,
+                        func          => $func,
+                    );
             }
-        }; # end for
-        
+        }elsif($indicator->{oid} eq 'Memory/PercentMemoryUsed'){
+            $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Memory');
+        }elsif($indicator->{oid} eq 'Processor/% Processor Time'){
+            $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Processor');
+        }elsif($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal'){
+            $self->ruleGeneration(indicator => $indicator, extcluster_id => $extcluster_id, label => 'Network');
+        }
+    }
         #SPECIAL TAKE SUM OF SESSION ID
-        my $cm_params = {
-            clustermetric_service_provider_id      => $extcluster_id,
-            clustermetric_indicator_id             => $active_session_indicator_id,
-            clustermetric_statistics_function_name => 'sum',
-            clustermetric_window_time              => '1200',
-        };
-        my $cm = Clustermetric->new(%$cm_params);
+    my $cm_params = {
+        clustermetric_service_provider_id      => $extcluster_id,
+        clustermetric_indicator_id             => $active_session_indicator_id,
+        clustermetric_statistics_function_name => 'sum',
+        clustermetric_window_time              => '1200',
+    };
+    my $cm = Clustermetric->new(%$cm_params);
     
-        my $acf_params = {
-            aggregate_combination_service_provider_id   => $extcluster_id,
-            aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
-        };
-        my $aggregate_combination = AggregateCombination->new(%$acf_params);
-    } #ALL CLUSTERMETRIC AND THEIR CORRESPONDING IDENTITY ARE NOW CREATED
-    
-    
-    #THEN CREATE CONDITIONS AND RULES
-    foreach my $ndoor_comb_id (@ndoor_comb_ids){
-        $self->generateAOutOfRangeRule(
-            ndoor_comb_id => $ndoor_comb_id,
-            extcluster_id => $extcluster_id,
-        )
-    }
-    foreach my $i (0..(scalar @std_cm_ids)-1){
-        $self->generateCoefficientOfVariationRules(
-            id_std        => $std_cm_ids[$i],
-            id_mean       => $mean_cm_ids[$i],
-            extcluster_id => $extcluster_id,
-        )
-    }
-    
-    foreach my $mean_percent_comb_id (@mean_over_comb_ids){
-        $self->generateOverRules(
-            mean_percent_comb_id => $mean_percent_comb_id,
-            extcluster_id        => $extcluster_id,
-        )
-    }
-    
-    foreach my $mean_percent_comb_id (@mean_under_comb_ids){
-        $self->generateUnderRules(
-            mean_percent_comb_id => $mean_percent_comb_id,
-            extcluster_id        => $extcluster_id,
-        )
-    }
+    my $acf_params = {
+        aggregate_combination_service_provider_id   => $extcluster_id,
+        aggregate_combination_formula               => 'id'.($cm->getAttr(name => 'clustermetric_id'))
+    };
+    my $aggregate_combination = AggregateCombination->new(%$acf_params);
 }
+
+sub ruleGeneration{
+    my ($self,%args) = @_;
+    my $indicator = $args{indicator};
+    my $extcluster_id = $args{extcluster_id};
+    my $label         = $args{label};
+    my $inverse       = $args{inverse};
+    
+    my @funcs = qw(max min);
+    foreach my $func (@funcs) {
+            my $ids = $self->generateClustermetricAndCombination(
+                extcluster_id => $extcluster_id,
+                indicator     => $indicator,
+                func          => $func,
+            );
+    }
+    
+    my $mean_ids = $self->generateClustermetricAndCombination(
+        extcluster_id => $extcluster_id,
+        indicator     => $indicator,
+        func          => 'mean',
+    );
+    my $std_ids = $self->generateClustermetricAndCombination(
+        extcluster_id => $extcluster_id,
+        indicator     => $indicator,
+        func          => 'std',
+    );
+    
+    my $out_ids = $self->generateClustermetricAndCombination(
+        extcluster_id => $extcluster_id,
+        indicator     => $indicator,
+        func          => 'dataOut',
+    );
+    
+    my $combination_params = {
+        aggregate_combination_service_provider_id => $extcluster_id,
+        aggregate_combination_formula             => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
+    };
+    
+    my $coef_comb = AggregateCombination->new(%$combination_params);
+    
+   my $condition_params = {
+        aggregate_condition_service_provider_id => $extcluster_id,
+        aggregate_combination_id                => $coef_comb->getAttr(name=>'aggregate_combination_id'),
+        comparator                              => '>',
+        threshold                               => 0.2,
+        state                                   => 'enabled',
+    };
+     
+   my $coef_cond = AggregateCondition->new(%$condition_params);
+   my $coef_cond_id = $coef_cond->getAttr(name => 'aggregate_condition_id');
+
+   $condition_params = {
+        aggregate_condition_service_provider_id => $extcluster_id,
+        aggregate_combination_id                => $std_ids->{comb_id},
+        comparator                              => '>',
+        threshold                               => 10,
+        state                                   => 'enabled',
+    };
+     
+   my $std_cond = AggregateCondition->new(%$condition_params);
+   my $std_cond_id = $std_cond->getAttr(name => 'aggregate_condition_id'); 
+
+   $condition_params = {
+        aggregate_condition_service_provider_id => $extcluster_id,
+        aggregate_combination_id                => $out_ids->{comb_id},
+        comparator                              => '>',
+        threshold                               => 0,
+        state                                   => 'enabled',
+    };
+     
+   my $out_cond = AggregateCondition->new(%$condition_params);
+   my $out_cond_id = $out_cond->getAttr(name => 'aggregate_condition_id');
+   
+   my $params_rule = {
+        aggregate_rule_service_provider_id  => $extcluster_id,
+        aggregate_rule_formula              => 'id'.$coef_cond_id.' && '.'id'.$std_cond_id,
+        aggregate_rule_state                => 'enabled',
+        aggregate_rule_action_id            => 0,
+        aggregate_rule_label                => '',
+        aggregate_rule_description          => '',
+    };
+    my $homo_rule = AggregateRule->new(%$params_rule);
+    
+   $params_rule = {
+        aggregate_rule_service_provider_id  => $extcluster_id,
+        aggregate_rule_formula              => 'id'.$out_cond_id,
+        aggregate_rule_state                => 'enabled',
+        aggregate_rule_action_id            => 0,
+        aggregate_rule_label                => '',
+        aggregate_rule_description          => '',
+    };
+    my $out_rule = AggregateRule->new(%$params_rule);
+}
+#        
+#
+#            if (
+#               ($indicator->{oid} eq 'Memory/PercentMemoryUsed')   || 
+#               ($indicator->{oid} eq 'Processor/% Processor Time') ||
+#               ($indicator->{oid} eq 'Network Adapter/PercentBandwidthUsedTotal')
+#            ){
+#
+#             }elsif($indicator->{oid} eq 'LogicalDisk/% Free Space'){
+#                my $ids = $self->generateClustermetricAndCombination(
+#                    extcluster_id => $extcluster_id,
+#                    indicator     => $indicator,
+#                    func          => $func,
+#                );
+#            }
+#            else{
+#                $self->generateClustermetricAndCombination(
+#                    extcluster_id => $extcluster_id,
+#                    indicator     => $indicator,
+#                    func          => $func,
+#                );
+#            }
+#        }
+#        
+
+#    } #ALL CLUSTERMETRIC AND THEIR CORRESPONDING IDENTITY ARE NOW CREATED
+#    
+#    
+#    #THEN CREATE CONDITIONS AND RULES
+#    foreach my $ndoor_comb_id (@ndoor_comb_ids){
+#        $self->generateAOutOfRangeRule(
+#            ndoor_comb_id => $ndoor_comb_id,
+#            extcluster_id => $extcluster_id,
+#        )
+#    }
+#    foreach my $i (0..(scalar @std_cm_ids)-1){
+#        $self->generateCoefficientOfVariationRules(
+#            id_std        => $std_cm_ids[$i],
+#            id_mean       => $mean_cm_ids[$i],
+#            extcluster_id => $extcluster_id,
+#        )
+#    }
+#    
+#    foreach my $mean_percent_comb_id (@mean_over_comb_ids){
+#        $self->generateOverRules(
+#            mean_percent_comb_id => $mean_percent_comb_id,
+#            extcluster_id        => $extcluster_id,
+#        )
+#    }
+#    
+#    foreach my $mean_percent_comb_id (@mean_under_comb_ids){
+#        $self->generateUnderRules(
+#            mean_percent_comb_id => $mean_percent_comb_id,
+#            extcluster_id        => $extcluster_id,
+#        )
+#    }
+#}
+
 
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
