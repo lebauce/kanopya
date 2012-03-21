@@ -318,7 +318,7 @@ var url = window.location.href;
 var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
 var clusters_view = path  + '/clustersview';
-var plot1;
+var nodes_bar_graph;
 var cluster_timed_graph;
 
 //function triggered on cluster_combination selection
@@ -381,13 +381,16 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 //Jqplot bar graph
 function barGraph(values, nodelist, unit, div_id, min, max, title){
 	$.jqplot.config.enablePlugins = true;
-    plot1 = $.jqplot(div_id, [values], {
+    nodes_bar_graph = $.jqplot(div_id, [values], {
 	title: title+' (in '+unit+' )',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
             rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
             pointLabels: { show: true },
+			trendline: {
+				show: false, 
+            },
         },
         axes: {
             xaxis: {
@@ -421,7 +424,7 @@ function barGraph(values, nodelist, unit, div_id, min, max, title){
  //Jqplot basic curve graph
  function timedGraph(first_graph_line, min, max, label, div_id){
 	$.jqplot.config.enablePlugins = true;
-    //var line1=[['03-14-2012 16:23', 578.55], ['03-14-2012 16:17', 566.5], ['03-14-2012 16:12', 480.88],['03-14-2012 16:15',null], ['03-14-2012 16:19', 580.88], ['03-14-2012 16:26', 509.84]];
+    // var first_graph_line=[['03-14-2012 16:23', 0], ['03-14-2012 16:17', 0], ['03-14-2012 16:12', 0],['03-14-2012 16:15',null], ['03-14-2012 16:19', 0], ['03-14-2012 16:26', null]];
     // alert ('min: '+min+' max: '+max);
     // alert ('data for selected combination: '+first_graph_line);
     cluster_timed_graph = $.jqplot(div_id, [first_graph_line], {
