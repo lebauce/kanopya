@@ -290,6 +290,8 @@ Use inverse quote to execute a pidof, and know the status
 sub getStatus {
     my ( $args ) = @_;
 
+    return 'Down' if ($^O eq 'MSWin32');
+	
     my $status  = `pidof -x $args->{proc_name}` ? 'Up' : 'Down';
 
     return $status;
