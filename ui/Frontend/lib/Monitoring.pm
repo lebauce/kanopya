@@ -323,13 +323,13 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
             my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
 			my $undef_count = 0;
             push @histovalues, [$date_string,$value];
-			#we reference the undef values in order to throw an error if all values are undef
-			# if ($value eq 'undef'){
-				# $undef_count++;
-			# }
-			# if (scalar(@histovalues) == $undef_count){
-				# $error='all values retrieved for the selected time windows were undefined';
-			# }
+			we reference the undef values in order to throw an error if all values are undef
+			if (!defined $value){
+				$undef_count++;
+			}
+			if (scalar(@histovalues) == $undef_count){
+				$error='all values retrieved for the selected time windows were undefined';
+			}
         }
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
     }

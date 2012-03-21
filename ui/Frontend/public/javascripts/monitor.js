@@ -330,11 +330,9 @@ function showCombinationGraph(curobj,combi_id,label,start,stop){
 	$.getJSON(clusters_view, params, function(data) {
 		if (data.error) { alert (data.error); }
 		else {
-			var list_id = 'combination_list';
-			var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot('+list_id+')\"/>';
+			var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
 			var div_id = 'cluster_combination_graph';
 			var div = '<div id=\"'+div_id+'\"></div>';
-			// alert(div);
 			document.getElementById('clusterCombinationView').style.display='block';
 			$("#clusterCombinationView").append(div);
 			timedGraph(data.first_histovalues, data.min, data.max, label, div_id);
@@ -357,7 +355,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
             var min = data.values[0];
             var max = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
-			var max_nodes_per_graph = 20;
+			var max_nodes_per_graph = 3;
 			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
 			var nodes_per_graph = data.nodelist.length/graph_number;
 			for (var i = 0; i<graph_number; i++) {
@@ -373,8 +371,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 				//we generate the graph
 				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, metric_oid);
 			}
-			var list_id = 'indicator_list';
-			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"c_replot('+list_id+')\"/>';
+			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
 			$("#nodes_charts").append(button);
 		}
         loading_stop();
@@ -474,8 +471,16 @@ function toggleTrendLine() {
     }
 }
 
-//replot cluster combination timed graph. TODO: make it generic (should be reused for all the graphes "refresh" buttons)
-function c_replot(list_id){	
-	var combination_dropdown_list = document.getElementById(list_id);
+
+// TODO: make one generic refresh functions for every case.
+
+//replot cluster combination timed graph. 
+function c_replot(){
+	var combination_dropdown_list = document.getElementById('combination_list');
 	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
+}
+//replot  node combination bar graph
+function nc_replot(){
+	var ncombination_dropdown_list = document.getElementById('indicator_list');
+	showMetricGraph(this,ncombination_dropdown_list.options[ncombination_dropdown_list.selectedIndex].id,ncombination_dropdown_list.options[ncombination_dropdown_list.selectedIndex].value)	
 }
