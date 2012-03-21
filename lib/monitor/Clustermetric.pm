@@ -80,7 +80,7 @@ sub getValuesFromDB{
     my %rep = RRDTimeData::fetchTimeDataStore(
                                             name         => $id, 
                                             start        => $args{start_time},
-                                            stop         => $args{stop_time}
+                                            end          => $args{stop_time}
                                           );
     return \%rep;
 }
