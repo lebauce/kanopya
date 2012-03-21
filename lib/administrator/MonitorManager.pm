@@ -56,7 +56,8 @@ sub new {
 }
 
 
-    
+=head2 getIndicatorSets
+
     Class : Public
     
     Desc : Retrieve detailed sets description (including indicators desc for each set)
