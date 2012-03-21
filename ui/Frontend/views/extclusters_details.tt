@@ -27,7 +27,7 @@
 	<td>
 	<% SWITCH cluster_state %>
         <% CASE 'up' %>
-        <span class="state imgUp">ok</span>
+        <span class="state imgUp">Ok</span>
         <% CASE 'down' %>
         <span class="state imgDown">Down</span>
         <% CASE 'starting' %>
@@ -37,7 +37,7 @@
         <% CASE 'broken' %>
         <span class="state imgWarning">Broken</span>
         <% CASE 'warning' %>
-        <span class="state imgBroken">not ok</span>
+        <span class="state imgBroken">Warning</span>
 	<% END %>
 	</td>
 <% ELSE %>
@@ -108,7 +108,11 @@
             <% ELSIF node.num_verified_rules == 0 %>
                 <span class="state imgUp">ok</span>
             <% ELSIF node.num_verified_rules == 1 %>
-                <span class="state imgBroken"><%node.num_verified_rules%> rule not ok ; <%node.num_undef_rules%> no data</span>
+               <span class="state imgBroken"> <%node.num_verified_rules%> rule not ok ;
+                <% IF node.num_undef_rules > 0 %> 
+                 <%node.num_undef_rules%> unknown
+                <%END%>
+            </span>
             <% ELSE %>
                 <span class="state imgBroken"><%node.num_verified_rules%> rules not ok ; <%node.num_undef_rules%> no data</span>
             <% END %>

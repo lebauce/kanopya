@@ -14,7 +14,7 @@
     <table>
         <tr>
             <td>
-                Combination :
+                Combination:
                 <select name="combinationid" >
                     <% FOREACH combination IN combinations %>
                         <option value="<% combination.id %>" <%IF condition.combination_id == combination.id %>SELECTED<%END%>> <% combination.id %>:<% combination.label %></option>

@@ -167,14 +167,15 @@ sub eval {
 sub enable(){
     my $self = shift;
     $self->setAttr(name => 'aggregate_rule_state', value => 'enabled');
-    $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    #$self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    $self->setAttr(name => 'aggregate_rule_last_eval', value => undef);
     $self->save();
 }
 
 sub disable(){
     my $self = shift;
     $self->setAttr(name => 'aggregate_rule_state', value => 'disabled');
-    $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    #$self->setAttr(name => 'aggregate_rule_timestamp', value => time());
     $self->save();
 }
 
@@ -192,7 +193,7 @@ sub disableTemporarily(){
 
 sub isEnabled(){
     my $self = shift;
-    $self->updateState();
+    #$self->updateState();
     return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled'); 
 }
 
@@ -219,7 +220,7 @@ sub getRules() {
             my @rep;
             foreach my $rule (@rules){
                 #update state and return $rule only if state is corresponding
-                $rule->updateState();
+                #$rule->updateState();
                 
                 if($rule->getAttr(name=>'aggregate_rule_state') eq $state){
                     push @rep, $rule;
