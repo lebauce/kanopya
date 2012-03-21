@@ -71,7 +71,12 @@
             Formula: </td><td> <input type=test name="formula" value=<%IF rule.id%>"<%rule.formula%>"<%ELSE%>"(idXX && idYY) || idZZ"<%END%>/>
         </td></tr>
         <tr><td>        
-            Action: </td><td> <input type=test name="action" value="<%rule.action_id%>"/>
+            Action: </td><td>
+            
+            <select name="action">
+                <option value="0">No action available</option>
+            </select>
+            <%IF 0%> <input type=test name="action" value="<%rule.action_id%>"/> <%END%>
         </td></tr>
         <tr><td>        
             State : </td><td> 
