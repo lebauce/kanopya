@@ -323,7 +323,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
             my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
 			my $undef_count = 0;
             push @histovalues, [$date_string,$value];
-			we reference the undef values in order to throw an error if all values are undef
+			# we reference the undef values in order to throw an error if all values are undef
 			if (!defined $value){
 				$undef_count++;
 			}
