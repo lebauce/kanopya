@@ -654,7 +654,7 @@ CREATE TABLE `vlan` (
 CREATE TABLE `interface_role` (
   `interface_role_id`   int(8) unsigned AUTO_INCREMENT,
   `interface_role_name` char(32) NOT NULL,
-  `interface_role_desc` char(32) NOT NULL,
+  `interface_role_desc` char(255) NOT NULL,
   PRIMARY KEY (`interface_role_id`),
   UNIQUE KEY (`interface_role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
