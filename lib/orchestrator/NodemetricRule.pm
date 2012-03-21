@@ -74,9 +74,19 @@ sub new {
         $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
         $self->save();
     }
+   $self->setUndefForEachNode(
+            service_provider_id => $args{nodemetric_rule_service_provider_id},
+   );
 
+}
+
+
+sub setUndefForEachNode{
+    my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $args{nodemetric_rule_service_provider_id});
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(
+                        'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
+                     );
 
     my $extnodes = $extcluster->getNodes();
     
@@ -89,6 +99,8 @@ sub new {
         });
     }
 }
+
+
 
 sub toString{
     my $self = shift;
@@ -311,10 +323,7 @@ sub disable {
 
 sub enable {
     my $self = shift;
-    my $verified_rule_dbix = 
-        $self->{_dbix}
-        ->verified_noderules->delete_all;
-
+    $self->setUndefForEachNode();
     $self->setAttr(name => 'nodemetric_rule_state', value => 'enabled');
     $self->save();
 }

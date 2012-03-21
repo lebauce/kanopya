@@ -61,5 +61,4 @@
 </div>
 <div class="single_node_overview">
 	<h2>Single node view</h2>
-	<div id="testchart" style="height:650px;width:100%;"></div><br />
 </div>
