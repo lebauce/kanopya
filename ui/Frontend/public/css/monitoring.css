@@ -1,20 +1,24 @@
 /*cluster overview zone */
 
+#combination_list {
+	width:25%;
+}
+
 #clusterCombinationView {
 	display:none;
     position:relative;
-    bottom:150px;
-    left: 390px;
+    bottom:170px;
+    left: 290px;
     width:70%;
 }
 
-#cb_button{
+#cb_button {
 	position:absolute;
 	top:-25px;
 	left:15px;
 }
 
-.cluster_combination_tooltip{
+.cluster_combination_tooltip {
     background-color:#D4D4D4;
     border:dotted;
 }
@@ -34,7 +38,7 @@
 }
 
 /*nodes overview zone */
-.indicator_dropdown{
+.indicator_dropdown {
     margin-bottom:5px;
 }
 
@@ -43,21 +47,21 @@
     width:120px;
 }
 
-#nodes_charts{
+#nodes_charts {
 	display:none;
     position:relative;
     bottom:50px;
-    left: 300px;
+    left: 290px;
     width:70%;
 }
 
-#ncb_button{
+#ncb_button {
 	position:absolute;
 	top:-25px;
 	left:45px;
 }
 
-.jqplot-yaxis{
+.jqplot-yaxis {
     margin-right: 15px;
 }
 

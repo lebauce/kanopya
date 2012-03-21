@@ -334,7 +334,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 			return to_json {error => $error};
 		}
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
-		$log->error('counter value: '.$undef_count.' number of values: '.$res_number);
+		# $log->info('counter value: '.$undef_count.' number of values: '.$res_number);
 		return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
     }
 };  
@@ -362,17 +362,19 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
             time_span => 3600,
             shortname => 1
         );
+		# $log->info('get nodes metric result: '. Dumper \%$nodes_metrics);
 	};
     # error catching
 	if ($@) {
 		$error="$@";
 		$log->error($error);
 		return to_json {error => $error};
+	# TODO: delete this now useless test.	
     # we catch the fact that there is no value available for the selected nodemetric
 	} elsif (!defined $nodes_metrics || scalar(keys %$nodes_metrics) == 0) {
-		$error='no values available for this metric';
+		$error='this cluster doesn\'t have any node to monitor';
 		$log->error($error);
-		return to_json {error => $error};
+		return to_json {error => $error};	
 	} else {
         #we create an array containing the values, to be sorted
         my @nodes_values_to_sort;
@@ -384,6 +386,11 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
                 push @nodes_values_undef, $node;
             }
         }
+		if (scalar(@nodes_values_to_sort) == 0){
+			$error="no value could be retrieve for this metric";
+			$log->error($error);
+			return to_json {error => $error};	
+		}	
         #we now sort this array
 		my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
         # we split the array into 2 distincts one, that will be returned to the monitor.js

@@ -322,7 +322,7 @@ var nodes_bar_graph;
 var cluster_timed_graph;
 
 //function triggered on cluster_combination selection
-function showCombinationGraph(curobj,combi_id,label,start,stop){
+function showCombinationGraph(curobj,combi_id,label,start,stop) {
 	if (combi_id == 'default'){return}
 	loading_start();
 	var params = {id:combi_id,start:start,stop:stop};
@@ -343,7 +343,7 @@ function showCombinationGraph(curobj,combi_id,label,start,stop){
 }
 
 //function triggered on node_combination selection
-function showMetricGraph(curobj,metric_oid,metric_unit){
+function showMetricGraph(curobj,metric_oid,metric_unit) {
 	if (metric_oid == 'default') { return }
 	loading_start();
 	var params = {oid:metric_oid,unit:metric_unit};
@@ -355,7 +355,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
             var min = data.values[0];
             var max = data.values[(data.values.length-1)];
             // alert('min: '+min+ ' max: '+max); 
-			var max_nodes_per_graph = 3;
+			var max_nodes_per_graph = 50;
 			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
 			var nodes_per_graph = data.nodelist.length/graph_number;
 			for (var i = 0; i<graph_number; i++) {
@@ -379,7 +379,7 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 }
 
 //Jqplot bar graph
-function barGraph(values, nodelist, unit, div_id, min, max, title){
+function barGraph(values, nodelist, unit, div_id, min, max, title) {
 	$.jqplot.config.enablePlugins = true;
     nodes_bar_graph = $.jqplot(div_id, [values], {
 	title: title+' (in '+unit+' )',
@@ -422,7 +422,7 @@ function barGraph(values, nodelist, unit, div_id, min, max, title){
 }
 
  //Jqplot basic curve graph
- function timedGraph(first_graph_line, min, max, label, div_id){
+ function timedGraph(first_graph_line, min, max, label, div_id) {
 	$.jqplot.config.enablePlugins = true;
     // var first_graph_line=[['03-14-2012 16:23', 0], ['03-14-2012 16:17', 0], ['03-14-2012 16:12', 0],['03-14-2012 16:15',null], ['03-14-2012 16:19', 0], ['03-14-2012 16:26', null]];
     // alert ('min: '+min+' max: '+max);
@@ -473,7 +473,6 @@ function toggleTrendLine() {
         cluster_timed_graph.replot();
     }
 }
-
 
 // TODO: make one generic refresh functions for every case.
 
