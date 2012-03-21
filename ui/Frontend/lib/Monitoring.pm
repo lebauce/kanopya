@@ -1469,16 +1469,16 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
             externalcluster_id => $externalcluster_id,
             externalnode_id    => $externalnode_id,
         );
-        switch($isVerified){
-            case 1 {
+        if (defined $isVerified){
+            if(1 == $isVerified) {
                 push @nokRules,[$rule, $isVerified];
-            }
-            case 0 {
+            }elsif(0 == $isVerified) {
                 push @okRules,[$rule, $isVerified];
+            }else {
+                    push @unkownRules,[$rule, $isVerified];
             }
-            else {
+        }else {
                 push @unkownRules,[$rule, $isVerified];
-            }
         }
     }
     
