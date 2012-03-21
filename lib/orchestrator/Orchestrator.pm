@@ -138,7 +138,7 @@ sub nodemetricManagement{
             my @rules = NodemetricRule->search(
                     hash => {
                         nodemetric_rule_service_provider_id => $cluster_id,
-                        nodemetric_rule_state => 'enabled',
+                        nodemetric_rule_state               => 'enabled',
                     }
             );
             
@@ -327,18 +327,20 @@ sub clustermetricManagement{
                         
                         my $result = $aggregate_rule->eval();
                         
-                        if(defined $result){
-                            if($result == 1){
-                               print 'Rule false => take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
-                               $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
-                               #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
-                            }else{
-                                print "Rule false => no action \n";
-                                #$log->info("Rule false, no action");
-                            }                        
-                        } else{
-                            print "Rule undef\n";
-                        }
+                         # LOOP USED TO TRIGGER ACTIONS
+                         
+#                        if(defined $result){
+#                            if($result == 1){
+#                               print 'Rule false => take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+#                               $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
+#                               $aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
+#                            }else{
+#                                print "Rule false => no action \n";
+#                                #$log->info("Rule false, no action");
+#                            }                        
+#                        } else{
+#                            print "Rule undef\n";
+#                        }
                     }
                 } # for my $aggregate_rule 
             } #end eval
