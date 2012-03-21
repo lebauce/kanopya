@@ -306,7 +306,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
     
     eval {
         %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
-        # $log->error('combination gathered: '.Dumper(\%aggregate_combination));
+		# $log->info('values returned by compute values: '.Dumper \%aggregate_combination);
     };
     if ($@) {
 		$error="$@";
@@ -317,23 +317,26 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 		$log->error($error);
 		return to_json {error => $error};
 	} else {
+		my $undef_count = 0;
+		my $res_number = scalar(keys %aggregate_combination);
         while (my ($date, $value) = each %aggregate_combination) {
             my $dt = DateTime->from_epoch(epoch => $date);
             my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
-			my $undef_count = 0;
             push @histovalues, [$date_string,$value];
 			# we reference the undef values in order to throw an error if all values are undef
-			if (!defined $value){
+			if (!defined $value) {
 				$undef_count++;
 			}
-			if (scalar(@histovalues) == $undef_count){
-				$error='all values retrieved for the selected time windows were undefined';
-				return to_json {error => $error};
-			}
         }
+		if ($res_number == $undef_count) {
+			$error='all values retrieved for the selected time windows were undefined';
+			$log->error($error);
+			return to_json {error => $error};
+		}
         # $log->info('values sent to timed graph: '.Dumper \@histovalues);
+		$log->error('counter value: '.$undef_count.' number of values: '.$res_number);
+		return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
     }
-	return to_json {first_histovalues => \@histovalues, min => $start, max => $stop};
 };  
   
   
