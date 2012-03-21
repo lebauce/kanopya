@@ -92,21 +92,23 @@ activate</a><br />
 <hr/>
 <span id="network" class="title simpleexpand">Network Configuration</span>
 <table id="Xnetwork" class="detailspart list">
-<% IF nbpublicips %>
+    <% IF networks_list.0 %>
 	<tr><td colspan="2">&nbsp;</td>
-	<td class="actions" rowspan="<% nbpublicips %>">
-<% ELSE %>
-    <tr><td colspan="2">no public ip defined.</td>
-    <td class="actions">
-<% END %>
-	<a class="modal" href="/architectures/clusters/<% cluster_id %>/ips/public/add">add a virtual ip</a><br />
-	<span class="desc">Add a new virtual ip to this cluster.</span><br /><br />
-	</td></tr>
-	<% FOREACH ip IN publicip_list %>
-		<tr><td class="label2"><% ip.address %> / <% ip.netmask %> (gateway: <% ip.gateway %>)</td>
-		<td class="action"><a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/ips/public/<% ip.publicip_id %>/remove">remove</a>
-		<input type="hidden" value="<% ip.name %>"/>
-		<td></tr>
+        <td class="actions" rowspan="<% networks_list %>">
+    <% ELSE %>
+    <tr><td colspan="2">no network defined.</td>
+        <td class="actions">
+    <% END %>
+            <a class="modal" href="/architectures/clusters/<% cluster_id %>/network/add">add a network</a><br />
+            <span class="desc">Add a new network connectivity to this cluster.</span><br /><br />
+        </td>
+    </tr>
+	<% FOREACH net IN networks_list %>
+		<tr><td class="label2"><% net.interface_role_name %></td>
+            <td class="action">
+                <a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/network/<% net.interface_id %>/remove">remove</a>
+            </td>
+		</tr>
 	<% END %>
 </table>
 

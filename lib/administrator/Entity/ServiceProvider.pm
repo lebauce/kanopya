@@ -33,8 +33,10 @@ package Entity::ServiceProvider;
 use base "Entity";
 
 use Kanopya::Exceptions;
+use General;
 use Entity::Component;
 use Entity::Connector;
+use Administrator;
 
 use constant ATTR_DEF => {};
 
@@ -83,6 +85,60 @@ sub findManager {
     }
 
     return @managers;
+}
+
+=head2 addNetworkInterface
+
+    Desc: add a network interface on this service provider
+
+=cut
+
+sub addNetworkInterface {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['interface_role_id']);
+    my $adm = Administrator->new;
+    $adm->{db}->resultset('Interface')->create(
+        {
+            interface_role_id   => $args{interface_role_id},
+            service_provider_id => $self->getAttr(name => 'service_provider_id')
+        }
+    );
+}
+
+=head2 getNetworkInterfaces 
+
+    Desc : return a list of NetworkInterface
+
+=cut
+
+sub getNetworkInterfaces {
+    my ($self) = @_;
+    my $adm = Administrator->new;
+    my @rows = $adm->{db}->resultset('Interface')->search(
+        { service_provider_id => $self->getAttr(name => 'service_provider_id') },
+        { '+columns' => { 'interface_role_name' => 'interface_role.interface_role_name' },
+         join => ['interface_role']
+        }
+    );
+    my @interfaces = ();
+    foreach my $row (@rows) {
+        push @interfaces, { $row->get_columns };
+    }
+    
+    return wantarray ? @interfaces : \@interfaces;    
+}
+
+=head2 removeNetworkInterface
+
+    Desc: remove a network interface 
+
+=cut
+
+sub removeNetworkInterface {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['interface_id']);
+    my $adm = Administrator->new;
+    $adm->{db}->resultset('Interface')->find($args{interface_id})->delete;
 }
 
 1;

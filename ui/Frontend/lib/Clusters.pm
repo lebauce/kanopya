@@ -469,7 +469,7 @@ get '/clusters/:clusterid' => sub {
         $kernel = 'no specific kernel';
     }
 
-    my $publicips = $ecluster->getPublicIps();
+    my $networks_list = $ecluster->getNetworkInterfaces();
     
     # state info
     my ($cluster_state, $timestamp) = split ':', $ecluster->getAttr('name' => 'cluster_state');
@@ -588,8 +588,8 @@ get '/clusters/:clusterid' => sub {
         systemimage_active => $systemimage_active,
         systemimage_id     => $systemimage_id,
         kernel             => $kernel,
-        publicip_list      => $publicips,
-        nbpublicips        => scalar(@$publicips),
+        networks_list      => $networks_list,
+        nbnetworks        => scalar(@$networks_list),
         active             => $active,
         cluster_state      => $cluster_state,
         state_time         => _timestamp_format( timestamp => $timestamp ),
@@ -971,55 +971,80 @@ get '/extclusters/:clusterid/connectors/:instanceid/remove' => sub {
     }
 };
 
-# cluster public ip addition form display
+### Network configuration
 
-get '/clusters/:clusterid/ips/public/add' => sub {
+# cluster network addition form display
+
+get '/clusters/:clusterid/network/add' => sub {
     my $adm = Administrator->new;
-    my $freepublicips = $adm->{manager}->{network}->getFreePublicIPs();
-
-    template 'form_setpubliciptocluster', {
+    my @rows = $adm->{db}->resultset('InterfaceRole')->search(undef, {});
+    my $interfaceroles = [];
+    foreach my $row (@rows) {
+        push @$interfaceroles, { $row->get_columns };
+    }
+    
+    $log->info(Dumper($interfaceroles));
+ 
+    template 'form_addnetwork', {
         cluster_id         => param('clusterid'),
-        freepublicips_list => $freepublicips
+        interfaceroles_list => $interfaceroles,
     }, { layout => '' };
 };
 
-# cluster public ip addition processing
+# cluster network addition form processing
 
-post '/clusters/:clusterid/ips/public/add' => sub {
+post '/clusters/:clusterid/network/add' => sub {
     my $adm = Administrator->new;
     eval {
-        $adm->{manager}->{network}->setClusterPublicIP(
-            publicip_id => param('publicip_id'),
-            cluster_id => param('clusterid'),
-        );
+        my $cluster = Entity::ServiceProvider->get(id => param('clusterid'));
+        $cluster->addNetworkInterface(interface_role_id => param('interface_role_id'));
     };
     if($@) {
-        my $error = $@;
-        $adm->addMessage(from => 'Administrator',level => 'error', content => $error);
-    } else {
-        $adm->addMessage(from => 'Administrator',level => 'info', content => 'new public ip added to cluster.');
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
     }
-    redirect('/architectures/clusters/'.param('clusterid'));
+    else {
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
 };
 
-# cluster public ip deletion processing
+# cluster network addition form processing
 
-get '/clusters/:clusterid/ips/public/:ipid/remove' => sub {
+get '/clusters/:clusterid/network/:interfaceid/remove' => sub {
     my $adm = Administrator->new;
     eval {
-        $adm->{manager}->{network}->unsetClusterPublicIP(
-            publicip_id => param('ipid'),
-            cluster_id => param('clusterid'),
-        );
+        my $cluster = Entity::ServiceProvider->get(id => param('clusterid'));
+        $cluster->removeNetworkInterface(interface_id => param('interfaceid'));
     };
     if($@) {
-        my $error = $@;
-        $adm->addMessage(from => 'Administrator',level => 'error', content => $error);
-    } else {
-        $adm->addMessage(from => 'Administrator',level => 'info', content => 'public ip removed from cluster.');
+        my $exception = $@;
+        if(Kanopya::Exception::Permission::Denied->caught()) {
+            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+            redirect('/permission_denied');
+        }
+        else { $exception->rethrow(); }
     }
-    redirect('/architectures/clusters/'.param('clusterid'));
+    else {
+        redirect('/architectures/clusters/'.param('clusterid'));
+    }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # cluster node addition form display
 
