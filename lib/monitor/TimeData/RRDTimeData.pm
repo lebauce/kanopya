@@ -86,7 +86,7 @@ sub createTimeDataStore{
         }
 	
     #default parameter for Round Robin Archive
-    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '1440');
+    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '7200');
 
     if (defined $args{'RRA'}){
         my $RRA = $args{'RRA'};
