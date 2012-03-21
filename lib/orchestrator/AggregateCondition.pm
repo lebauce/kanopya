@@ -123,5 +123,8 @@ sub eval{
     }
 }
 
-
+sub getCombination{
+    my ($self) = @_;
+    return AggregateCombination->get('id' => $self->getAttr(name => 'aggregate_combination_id'));
+}
 1;
