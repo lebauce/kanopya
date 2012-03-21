@@ -513,6 +513,8 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
     };
     my $aggregate_rule = AggregateRule->new(%$params_rule);
 };
+
+
 sub generateNodeMetricRules{
     my ($self,%args) = @_;
     
@@ -520,63 +522,61 @@ sub generateNodeMetricRules{
     my $extcluster_id  = $args{extcluster_id};
     my $indicator_oid  = $args{indicator_oid};
     
+    #CREATE A COMBINATION FOR EACH INDICATOR
     my $combination_param = {
         nodemetric_combination_formula => 'id'.$indicator_id,
         nodemetric_combination_service_provider_id => $extcluster_id,
     };
     
     my $comb = NodemetricCombination->new(%$combination_param);
+
+    my $creation_conf = {
+        'Memory/PercentMemoryUsed' => {
+             comparator      => '>',
+             threshold       => 85,
+             rule_label      => '%MEM used too high',
+             rule_description => 'Percentage memory used is too high, please check this node',
+        },
+        'Processor/% Processor Time' => {
+             comparator      => '>',
+             threshold       => 85,
+             rule_label      => '%CPU used too high',
+             rule_description => 'Percentage processor used is too high, please check this node',
+        },
+        'LogicalDisk/% Free Space' => {
+             comparator      => '<',
+             threshold       => 15,
+             rule_label      => '%DISK used too low',
+             rule_description => 'Percentage disk used is too high, please check this node',
+        },
+        'Network Adapter/PercentBandwidthUsedTotal' => {
+             comparator      => '>',
+             threshold       => 85,
+             rule_label      => '%Bandwith used too high',
+             rule_description => 'Percentage bandwith used is too high, please check this node',
+        },
+    };
     
     my $condition_param;
-    if (
-       ($indicator_oid eq 'Memory/PercentMemoryUsed')   || 
-       ($indicator_oid eq 'Processor/% Processor Time') ||
-       ($indicator_oid eq 'LogicalDisk/% Free Space')   ||
-       ($indicator_oid eq 'Network Adapter/PercentBandwidthUsedTotal')
-       ){
+    if (defined $creation_conf->{$indicator_oid}){
         my $condition_param = {
             nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
-            nodemetric_condition_comparator     => ">",
-            nodemetric_condition_threshold      => 85,
+            nodemetric_condition_comparator     => $creation_conf->{$indicator_oid}->{comparator},
+            nodemetric_condition_threshold      => $creation_conf->{$indicator_oid}->{threshold},
             nodemetric_condition_service_provider_id => $extcluster_id,
         };
-            my $condition = NodemetricCondition->new(%$condition_param);
-    
+        my $condition = NodemetricCondition->new(%$condition_param);
         my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         my $prule = {
             nodemetric_rule_formula             => 'id'.$conditionid,
-            nodemetric_rule_label               => 'id'.$conditionid,
-            nodemetric_rule_label               => 'Metric over loaded',
-            nodemetric_rule_description         => 'This node is overloaded, check its configuration',
+            nodemetric_rule_label               => $creation_conf->{$indicator_oid}->{rule_label},
+            nodemetric_rule_description         => $creation_conf->{$indicator_oid}->{rule_description},
             nodemetric_rule_state               => 'enabled',
-            nodemetric_rule_action_id           => '1',
+            nodemetric_rule_action_id           => '0',
             nodemetric_rule_service_provider_id => $extcluster_id,
         };
         my $rule = NodemetricRule->new(%$prule);
-        
-        $condition_param = {
-            nodemetric_condition_combination_id => $comb->getAttr(name=>'nodemetric_combination_id'),
-            nodemetric_condition_comparator     => "<",
-            nodemetric_condition_threshold      => 10,
-            nodemetric_condition_service_provider_id => $extcluster_id,
-        };
-        
-        $condition = NodemetricCondition->new(%$condition_param);
-        
-        $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
-        $prule = {
-            nodemetric_rule_formula             => 'id'.$conditionid,
-            nodemetric_rule_label               => 'id'.$conditionid,
-            nodemetric_rule_label               => 'Metric over loaded',
-            nodemetric_rule_description         => 'This node is overloaded, check its configuration',
-            nodemetric_rule_state               => 'enabled',
-            nodemetric_rule_action_id           => '1',
-            nodemetric_rule_service_provider_id => $extcluster_id,
-        };
-        $rule = NodemetricRule->new(%$prule);
     }
-    
-
 }
 
 1;
