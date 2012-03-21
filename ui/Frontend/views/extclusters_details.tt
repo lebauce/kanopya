@@ -162,7 +162,9 @@
 <a class="imgMonitor" href="/architectures/extclusters/<% cluster_id %>/monitoring">activity</a>
 </td>
 <td class="actions">
-<a class="action imgSettings" href="/architectures/extclusters/<% cluster_id %>/clustermetrics">Rules settings</a><bd/>
+<a class="action imgSettings" href="/architectures/extclusters/<% cluster_id %>/clustermetrics/combinations/conditions/rules">Cluster rules settings</a><br/>
+<a class="action imgSettings" href="/architectures/extclusters/<% cluster_id %>/nodemetrics/rules">Node rules settings</a><br/>
+<a class="action imgSettings" href="/architectures/indicators">Add indicator</a><br/>
 <p class="italic">Manage cluster metrics and node metrics rules.</p>
 </td></tr>
 </table>
