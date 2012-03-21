@@ -330,7 +330,8 @@ function showCombinationGraph(curobj,combi_id,label,start,stop){
 	$.getJSON(clusters_view, params, function(data) {
 		if (data.error) { alert (data.error); }
 		else {
-			var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
+			var list_id = 'combination_list';
+			var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot('+list_id+')\"/>';
 			var div_id = 'cluster_combination_graph';
 			var div = '<div id=\"'+div_id+'\"></div>';
 			// alert(div);
@@ -372,6 +373,9 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 				//we generate the graph
 				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, metric_oid);
 			}
+			var list_id = 'indicator_list';
+			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"c_replot('+list_id+')\"/>';
+			$("#nodes_charts").append(button);
 		}
         loading_stop();
     });
@@ -471,7 +475,7 @@ function toggleTrendLine() {
 }
 
 //replot cluster combination timed graph. TODO: make it generic (should be reused for all the graphes "refresh" buttons)
-function c_replot(){	
-	var combination_dropdown_list = document.getElementById('combination_list');
+function c_replot(list_id){	
+	var combination_dropdown_list = document.getElementById(list_id);
 	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
 }

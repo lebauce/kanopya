@@ -51,9 +51,10 @@
     width:70%;
 }
 
-#single_node_overview{
-   	height:800px;
-	width:1600px;  
+#ncb_button{
+	position:absolute;
+	top:-25px;
+	left:45px;
 }
 
 .jqplot-yaxis{
