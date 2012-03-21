@@ -1,15 +1,15 @@
 <h2>
     <% IF rule.id %> 
         <%IF clustermetric == 1%>
-            Cluster Metric Details - Cluster <%cluster_name%> (<%cluster_id%>) rule <%rule.id%>
+            Cluster Rule Details - Cluster <%cluster_name%> (<%cluster_id%>) rule <%rule.id%>
         <%ELSE%>
-            Node Metric Details - Cluster <%cluster_name%> (<%cluster_id%>) rule <%rule.id%>
+            Node Rule Details - Cluster <%cluster_name%> (<%cluster_id%>) rule <%rule.id%>
         <%END%>
     <% ELSE %>
         <%IF clustermetric == 1%>
-            Cluster Metric Creation - Cluster <%cluster_name%> (<%cluster_id%>)
+            Cluster Rule Creation - Cluster <%cluster_name%> (<%cluster_id%>)
         <%ELSE%>
-            Node Metric Creation - Cluster <%cluster_name%> (<%cluster_id%>)
+            Node Rule Creation - Cluster <%cluster_name%> (<%cluster_id%>)
         <%END%>   
     <% END %>
 </h2>
