@@ -133,7 +133,7 @@ sub nodemetricManagement{
             print '*** Orchestrator skip cluster '.$cluster_id.' for NM Management because it has no MonitoringService Connector ***'."\n";
         }else{
         
-            print '*** ClusterRules of management '.$cluster_id.'***'."\n";
+            print 'Cluster NM management'.$cluster_id."\n";
             
             my @rules = NodemetricRule->search(
                     hash => {
@@ -155,7 +155,7 @@ sub nodemetricManagement{
                 'rules'             => \@rules,
                 'cluster'           => $externalCluster,
             );
-            print "** rep $rep\n";
+
             if(0 < $rep){
                 
                 $externalCluster->setAttr(
@@ -218,15 +218,16 @@ sub _evalRule {
         );
         
         if(defined $nodeEval){
-            print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => ".$nodeEval."\n";
+            print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
             
             if($nodeEval eq 0){
-                
+                print ' WARNING'."\n";
                 $rule->deleteVerifiedRule(
                     hostname   => $host_name,
                     cluster_id => $cluster_id,
                 );
             }else {
+                print ' OK'."\n";
                 $rep++;
                 $rule->setVerifiedRule(
                     hostname => $host_name,
@@ -235,7 +236,7 @@ sub _evalRule {
                 );
             }
         }else{
-            print "RULE ".$rule->getAttr(name => 'nodemetric_rule_id')." ON HOST ".$host_name." => undef \n";
+            print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
             $rule->setVerifiedRule(
                 hostname => $host_name,
                 cluster_id => $cluster_id,
@@ -318,34 +319,32 @@ sub clustermetricManagement{
                 for my $aggregate_rule (@rules){
                     
                     if ($aggregate_rule -> isEnabled()) {
-                        print "**********\n";
-                        print '* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
-                        print $aggregate_rule->toString()."\n";
-            
-                        $log->info("**********");
-                        $log->info('* Rule #'.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
-            
+
+                        print 'CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
+                        print $aggregate_rule->toString().' ';
+                        
+                        $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
                         
                         my $result = $aggregate_rule->eval();
                         
                         if(defined $result){
                             if($result == 1){
-                               print '=> take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
+                               print 'Rule false => take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";
                                $log->info('Rule true,  take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id')));
                                #$aggregate_rule->disableTemporarily(length=>120); #Commented for testing day 24/02/12 
                             }else{
-                                print "Rule false, no action \n";
+                                print "Rule false => no action \n";
                                 #$log->info("Rule false, no action");
                             }                        
                         } else{
-                            print "rule undef\n";
+                            print "Rule undef\n";
                         }
                     }
                 } # for my $aggregate_rule 
             } #end eval
         1; #END EVAL
         }or do {
-            print "Skip to next cluster due to error $@\n";
+            print "*** Skip to next cluster due to error $@\n";
             $log->error($@);
             next CLUSTER;
         }
