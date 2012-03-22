@@ -58,16 +58,16 @@
         </td>
     </tr>
     <tr><td class="label">Boot Policy :</td>
-        <td><select id="boot_policy" name="boot_policy"></select>
+        <td><select id="boot_policy" name="cluster_boot_policy"></select>
         </td>
     </tr>
     <tr id="cloudmanagerdetails"></tr>
 
     <tr><td colspan="2"><hr /></td></tr>
     <tr><td class="label" rowspan="2">System image usage :</td>
-        <td><input type="radio" name="systemimage_usage" value="dedicated" checked=checked />dedicated (one image per node)</td>
+        <td><input type="radio" name="cluster_si_shared" value="0" checked=checked />dedicated (one image per node)</td>
     </tr>
-    <tr><td><input type="radio" name="systemimage_usage" value="shared" />shared (one image for all nodes)</td>
+    <tr><td><input type="radio" name="cluster_si_shared" value="1" />shared (one image for all nodes)</td>
     </tr>
     <tr><td class="label">Master Image :</td>
         <td><select name="masterimage_id">
@@ -97,8 +97,10 @@
 
 
     <tr><td class="label">Export Manager :</td>
-        <td><select name="export_manager_id">
-                <option value="0">TODO</option>
+        <td><select id="export_manager" name="export_manager_id">
+                <% FOREACH export IN exportmanagers_list %>
+                <option value="<% export.id %>"><% export.name %></option>
+                <% END %>
             </select>
         </td>
     </tr>
@@ -206,10 +208,17 @@ function UpdateDiskmanagersSubform() {
     
     $.get(url, function(data) {
         $('#diskmanagerdetails').html(data);
-    });
+    }).complete(UpdateExportmanagers);
 }
 
-
+function UpdateExportmanagers() {
+    var storageid = $('#storage_provider').val();
+    var url = '/architectures/clusters/exportmanagers/'+storageid;
+    
+    $.get(url, function(data) {
+        $('#export_manager').html(data);
+    });
+}
 
 $('#storage_provider').change(UpdateDiskmanagers);
 $('#disk_manager').change(UpdateDiskmanagersSubform);
@@ -221,5 +230,6 @@ $('#groupschoice').change(Updateusers);
 Updateusers();
 UpdateCloudmanagers();
 UpdateDiskmanagers();
+UpdateExportmanagers();
 
 </script>

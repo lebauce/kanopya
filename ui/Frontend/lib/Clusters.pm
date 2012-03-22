@@ -117,14 +117,15 @@ sub _externalclusters {
 }
 
 # retrieve data managers
-sub _datamanagers {
-    my @datamanagers = Entity::ServiceProvider->findManager(category => 'Storage');
+sub _managers {
+    my ($category) = @_; 
+    my @datamanagers = Entity::ServiceProvider->findManager(category => $category);
     return @datamanagers;
 }
 
 # retrieve storage providers list
 sub _storage_providers {
-    my @storages = _datamanagers();
+    my @storages = _managers('Storage');
     my %temp;
     foreach my $s (@storages) {
         $temp{ $s->{service_provider_id} } = 0;
@@ -150,7 +151,7 @@ sub _cloudmanagers {
 
 # retrieve hosts providers list
 sub _host_providers {
-    my @cloudmanagers = _cloudmanagers();
+    my @cloudmanagers = _managers('Cloudmanager');
     my %temp;
     foreach my $s (@cloudmanagers) {
         $temp{ $s->{service_provider_id} } = 0;
@@ -169,7 +170,6 @@ sub _host_providers {
 }
 
 # return an array containing running clusters with Cloudmanager component
-
 sub _virtualization_clusters {
 	my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters(hash => {});
 	my @virtualization_clusters = ();
@@ -283,7 +283,23 @@ get '/clusters/add' => sub {
 get '/clusters/cloudmanagers/:hostproviderid' => sub {
     my $id = param('hostproviderid');
     my $str = '';
-    my @managers = _cloudmanagers();
+    my @managers = _managers('Cloudmanager');
+    foreach my $manager (@managers) {
+        if($manager->{service_provider_id} eq $id) {
+            $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
+        }
+    }
+    
+    content_type('text/html');
+    return $str;
+};
+
+# route to dynamically update export managers list
+
+get '/clusters/exportmanagers/:storageproviderid' => sub {
+    my $id = param('storageproviderid');
+    my $str = '';
+    my @managers = _managers('Export');
     foreach my $manager (@managers) {
         if($manager->{service_provider_id} eq $id) {
             $str .= '<option value="'.$manager->{id}.'">'.$manager->{name}.'</option>';
