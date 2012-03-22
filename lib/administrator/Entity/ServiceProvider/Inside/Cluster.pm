@@ -274,7 +274,18 @@ sub create {
        throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
     }
 
+    # we remove specific managers parameters before attributes cheking 
+    my %managers_params = ();
+    for my $key (keys %params) {
+        if($key =~ /(^host_manager_param|^disk_manager_param|^export_manager_param)/) {
+           $managers_params{$key} = $params{$key};
+           delete $params{$key};
+        }
+    }
+
     $class->checkAttrs(attrs => \%params);
+
+    %params = (%params, %managers_params);
 
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(

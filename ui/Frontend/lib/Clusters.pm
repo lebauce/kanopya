@@ -273,7 +273,7 @@ get '/clusters/add' => sub {
         storageproviders_list => _storage_providers(),
         gp_list               => _users_groups(),
         hostproviders_list    => _host_providers(),
-        nameserver            => $kanopya_cluster->getAttr(name => 'cluster_nameserver'),
+        nameserver            => $kanopya_cluster->getAttr(name => 'cluster_nameserver1'),
         
     }, { layout => '' };
 };
@@ -359,32 +359,9 @@ post '/clusters/add' => sub {
     my $adm = Administrator->new;
     my %parameters = params;
  
-    #~ eval {
-        #~ my $params = {
-            #~ cluster_name           => params->{'name'},
-            #~ cluster_desc           => params->{'desc'},
-            #~ user_id                => params->{'user_id'}
-            #~ # cluster_contactemail => params->{'email'},
-            #~ 
-            #~ host_manager_id        => params->{'cloud_manager'},
-            #~ boot_policy            => params->{'boot_policy'},
-            #~ 
-            #~ systemimage_id         => params->{'systemimage_id'},
-            #~ systemimage_usage      => params->{'systemimage_usage'},
-                        #~ 
-            #~ cluster_priority       => params->{'priority'},
-            #~ cluster_min_node       => params->{'min_node'},
-            #~ cluster_max_node       => params->{'max_node'},
-            #~ 
-            #~ cluster_basehostname   => params->{'cluster_basehostname'},
-            #~ cluster_domainname     => params->{'domainname'},
-            #~ cluster_nameserver1     => params->{'nameserver1'},
-            #~ #cluster_nameserver2     => params->{'nameserver2'},
-        #~ 
-        #~ };
-        
+    eval {
         Entity::ServiceProvider::Inside::Cluster->create(%parameters);
-    
+    };
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
@@ -621,7 +598,7 @@ get '/clusters/:clusterid' => sub {
         cluster_desc       => $ecluster->getAttr(name => 'cluster_desc'),
         cluster_priority   => $ecluster->getAttr(name => 'cluster_priority'),
         cluster_domainname => $ecluster->getAttr(name => 'cluster_domainname'),
-        cluster_nameserver => $ecluster->getAttr(name => 'cluster_nameserver'),
+        cluster_nameserver => $ecluster->getAttr(name => 'cluster_nameserver1'),
         cluster_min_node   => $minnode,
         cluster_max_node   => $maxnode,
         cluster_basehostname => $cluster_basehostname,
