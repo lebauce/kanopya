@@ -100,12 +100,13 @@ CREATE TABLE `cluster` (
 -- Table structure for table `manager_parameter`
 
 CREATE TABLE `manager_parameter` (
-  `manager_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `manager_parameter_id` int(8) unsigned NOT NULL,
   `cluster_id` int(8) unsigned NOT NULL,
   `manager_id` int(8) unsigned NOT NULL,
   `name` char(64) NOT NULL,
   `value` char(255) NOT NULL,
   PRIMARY KEY (`manager_parameter_id`),
+  FOREIGN KEY (`manager_parameter_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`cluster_id`),
   FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

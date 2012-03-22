@@ -23,7 +23,7 @@ __PACKAGE__->table("manager_parameter");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 cluster_id
@@ -58,7 +58,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "cluster_id",
@@ -79,6 +79,21 @@ __PACKAGE__->set_primary_key("manager_parameter_id");
 
 =head1 RELATIONS
 
+=head2 manager_parameter
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "manager_parameter",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "manager_parameter_id" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 cluster
 
 Type: belongs_to
@@ -95,9 +110,12 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 12:11:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+E77MDhuMhTD1Q9W5lrCCA
-
-
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 15:41:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SEGdWt7Ivi/EUpIJM96i1A
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+    { "foreign.entity_id" => "self.manager_parameter_id" },
+    { cascade_copy => 0, cascade_delete => 1 }
+);
 1;

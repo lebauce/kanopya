@@ -127,7 +127,7 @@ __PACKAGE__->belongs_to(
   "class_type",
   "AdministratorDB::Schema::Result::ClassType",
   { class_type_id => "class_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 entityright_entityrights_consumed
@@ -247,6 +247,21 @@ __PACKAGE__->might_have(
   "kernel",
   "AdministratorDB::Schema::Result::Kernel",
   { "foreign.kernel_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 manager_parameter
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ManagerParameter>
+
+=cut
+
+__PACKAGE__->might_have(
+  "manager_parameter",
+  "AdministratorDB::Schema::Result::ManagerParameter",
+  { "foreign.manager_parameter_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -401,9 +416,9 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-06 14:51:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ore3/D3Dr6GG/gHXkHiRIQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 15:41:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ol/38+Y1FY4qobTesBf0rQ
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;

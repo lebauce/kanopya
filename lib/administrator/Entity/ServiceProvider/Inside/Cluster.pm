@@ -29,6 +29,7 @@ use Entity::Tier;
 use Operation;
 use Administrator;
 use General;
+use Entity::ManagerParameter;
 use DecisionMaker::HostSelector;
 
 use Log::Log4perl "get_logger";
@@ -918,6 +919,20 @@ sub getNewNodeNumber {
 		}
 	}
 	return $counter;
+}
+
+sub addManagerParamater {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
+
+    Entity::ManagerParameter->new(
+        cluster_id => $self->getAttr(name => 'cluster_id'),
+        manager_id => $self->getAttr(name => $args{manager_type} . '_id'),
+        name       => $args{name},
+        value      => $args{value},
+    );
 }
 
 1;
