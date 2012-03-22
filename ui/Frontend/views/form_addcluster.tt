@@ -77,6 +77,15 @@
             </select>
         </td>
     </tr>
+    <tr><td class="label">Image size :</td>
+        <td><input type="text" name="disk_manager_param_systemimage_size" maxlength="16" size="5"/>
+            <select name="systemimage_size_unit">
+                <option value="G">G</option>
+                <option value="M">M</option>
+            </select> 
+            <span style="color: red"><% ERR_SYSTEMIMAGE_SIZE %></span>
+        </td>
+    </tr>
     <tr><td class="label">Storage Provider :</td>
         <td><select id="storage_provider">
             <% FOREACH storage IN storageproviders_list %>

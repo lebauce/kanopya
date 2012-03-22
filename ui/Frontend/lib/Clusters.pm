@@ -3,12 +3,13 @@ package Clusters;
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Administrator;
+use General;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider;
 use Entity::HostManager;
 use Entity::Host;
 use Entity::Gp;
-use Entity::Systemimage;
+use Entity::Masterimage;
 use Entity::Kernel;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -358,6 +359,14 @@ get '/clusters/cloudmanagers/:hostproviderid/bootpolicies/:cloudmanagerid' => su
 post '/clusters/add' => sub {
     my $adm = Administrator->new;
     my %parameters = params;
+
+    my $sizeinbyte = General::convertToBytes(
+        value => $parameters{disk_manager_param_systemimage_size}, 
+        units => $parameters{systemimage_size_unit}
+    );
+    
+    delete $parameters{systemimage_size_unit};
+    $parameters{disk_manager_param_systemimage_size} = $sizeinbyte;
  
     eval {
         Entity::ServiceProvider::Inside::Cluster->create(%parameters);
@@ -462,17 +471,15 @@ get '/clusters/:clusterid' => sub {
     my $minnode = $ecluster->getAttr(name => 'cluster_min_node');
     my $maxnode = $ecluster->getAttr(name => 'cluster_max_node');
     my $cluster_basehostname = $ecluster->getAttr(name=>'cluster_basehostname');
-    my $systemimage_id = $ecluster->getAttr(name => 'systemimage_id');
+    my $masterimage_id = $ecluster->getAttr(name => 'masterimage_id');
     my $user_id = $ecluster->getAttr(name => 'user_id');
-    my ($systemimage_name, $systemimage_active);
-    if($systemimage_id) {
-        my $esystemimage = eval { Entity::Systemimage->get(id => $systemimage_id) };
+    my ($masterimage_name);
+    if($masterimage_id) {
+        my $masterimage = eval { Entity::Masterimage->get(id => $masterimage_id) };
         if(Kanopya::Exception::Permission::Denied->caught()) {
-            $systemimage_name = '-';
-            $systemimage_active = '-';
+            $masterimage_name = '-';
         } else {
-            $systemimage_name =  $esystemimage->getAttr(name => 'systemimage_name');
-            $systemimage_active = $esystemimage->getAttr('name' => 'active');
+            $masterimage_name =  $masterimage->getAttr(name => 'masterimage_name');
         }
     }
 
@@ -598,15 +605,15 @@ get '/clusters/:clusterid' => sub {
         cluster_desc       => $ecluster->getAttr(name => 'cluster_desc'),
         cluster_priority   => $ecluster->getAttr(name => 'cluster_priority'),
         cluster_domainname => $ecluster->getAttr(name => 'cluster_domainname'),
-        cluster_nameserver => $ecluster->getAttr(name => 'cluster_nameserver1'),
+        cluster_nameserver1 => $ecluster->getAttr(name => 'cluster_nameserver1'),
+        cluster_nameserver2 => $ecluster->getAttr(name => 'cluster_nameserver2'),
         cluster_min_node   => $minnode,
         cluster_max_node   => $maxnode,
         cluster_basehostname => $cluster_basehostname,
         user_id             => $user_id,
         type               => $minnode == $maxnode ? 'Static cluster' : 'Dynamic cluster',
-        systemimage_name   => $systemimage_name,
-        systemimage_active => $systemimage_active,
-        systemimage_id     => $systemimage_id,
+        masterimage_name   => $masterimage_name,
+        masterimage_id     => $masterimage_id,
         kernel             => $kernel,
         networks_list      => $networks_list,
         nbnetworks        => scalar(@$networks_list),
