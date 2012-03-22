@@ -1,10 +1,10 @@
 <td colspan="2">
     <table>
         <tr><td class="label">CPU:</td>
-            <td><input type="text" name="host_manager_cpu" maxlength="2" size="2"/></td>
+            <td><input type="text" name="host_manager_param_cpu" maxlength="2" size="2"/></td>
         </tr>
         <tr><td class="label">RAM:</td>
-            <td><input type="text" name="host_manager_ram" maxlength="5" size="5"/>G</td>
+            <td><input type="text" name="host_manager_param_ram" maxlength="5" size="5"/>G</td>
         </tr>
     </table>
 </td>
