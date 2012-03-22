@@ -7,12 +7,7 @@
 <tr><% IF active %><td>Active</td><% ELSE %><td>Deactivated</td><% END %>
 <td class="actions" rowspan="2">
 <% IF link_activate %>
-	<% IF systemimage_active %>
-		<a class="imgActivate" href="/architectures/clusters/<% cluster_id %>/activate">
-	<% ELSE %>
-		<a class="imgActivate" href="javascript:alert('<% systemimage_name %> used by this cluster must be active.');">
-	<% END %>
-activate</a><br />
+		<a class="imgActivate" href="/architectures/clusters/<% cluster_id %>/activate">activate</a><br />
 <span class="desc">Activate this cluster to be able to start it.</span><br /><br />
 <% ELSE %>
 	<% IF link_deactivate %>
@@ -76,9 +71,9 @@ activate</a><br />
 <tr><td class="label">Minimum nodes :</td><td><% cluster_min_node %></td></tr>
 <tr><td class="label">Maximum nodes :</td><td><% cluster_max_node %></td></tr>
 <tr><td colspan="2">&nbsp;</td></tr>
-<tr><% IF systemimage_name %>
-	<td class="label">System Image :</td>
-	<td><a href="/systems/images/<% systemimage_id %>"><% systemimage_name %></a> (<% IF systemimage_active %>Active<% ELSE %>Deactivated<% END %>)</td>
+<tr><% IF masterimage_name %>
+	<td class="label">Master Image :</td>
+	<td><a href="/systems/masterimages/<% masterimage_id %>"><% masterimage_name %></a></td>
 <% ELSE %>
 	<td></td>
 <% END %>
@@ -86,7 +81,8 @@ activate</a><br />
 <tr><td class="label">Kernel :</td><td><% kernel %></td></tr>
 <tr><td colspan="2">&nbsp;</td></tr>
 <tr><td class="label">Domain name :</td><td><% cluster_domainname %></td></tr>
-<tr><td class="label">Name server :</td><td><% cluster_nameserver %></td></tr>
+<tr><td class="label">Name server 1 :</td><td><% cluster_nameserver1 %></td></tr>
+<tr><td class="label">Name server 2 :</td><td><% cluster_nameserver2 %></td></tr>
 </table>
 
 <hr/>
