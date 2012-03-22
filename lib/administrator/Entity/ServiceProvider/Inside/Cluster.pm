@@ -58,14 +58,8 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 0
     },
-    cluster_si_location => {
-        pattern      => '^(diskless|local)$',
-        is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    cluster_si_access_mode => {
-        pattern      => '^(ro|rw)$',
+    cluster_boot_policy => {
+        pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0
@@ -94,24 +88,6 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 1
     },
-    active => {
-        pattern      => '^[01]$',
-        is_mandatory => 0,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    systemimage_id => {
-        pattern      => '\d*',
-        is_mandatory => 0,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    kernel_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0,
-        is_editable  => 1
-    },
     cluster_state => {
         pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*$',
         is_mandatory => 0,
@@ -124,7 +100,13 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 0
     },
-    cluster_nameserver => {
+    cluster_nameserver1 => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    cluster_nameserver2 => {
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
         is_extended  => 0,
@@ -136,6 +118,24 @@ use constant ATTR_DEF => {
         is_extended  => 0,
         is_editable  => 1
     },
+    active => {
+        pattern      => '^[01]$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    masterimage_id => {
+        pattern      => '\d*',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    kernel_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0,
+        is_editable  => 1
+    },
 	user_id => {
         pattern      => '^\d+$',
         is_mandatory => 1,
@@ -143,7 +143,19 @@ use constant ATTR_DEF => {
         is_editable  => 0
     },
     host_manager_id => {
-        pattern      => '^[0-9\.]*$',
+        pattern      => '^\d+$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    disk_manager_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 0
+    },
+    export_manager_id => {
+        pattern      => '^\d+$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0
@@ -257,12 +269,12 @@ sub create {
 
     my $admin = Administrator->new();
     my $mastergroup_eid = $class->getMasterGroupEid();
-       my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
-       if(not $granted) {
-           throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
-       }
+    my $granted = $admin->{_rightchecker}->checkPerm(entity_id => $mastergroup_eid, method => 'create');
+    if (not $granted) {
+       throw Kanopya::Exception::Permission::Denied(error => "Permission denied to create a new user");
+    }
 
-    #$class->checkAttrs(attrs => \%params);
+    $class->checkAttrs(attrs => \%params);
 
     $log->debug("New Operation Create with attrs : " . %params);
     Operation->enqueue(
@@ -522,26 +534,6 @@ sub getComponentByInstanceId{
     return "$class"->get(id =>$comp_instance_id);
 }
 
-=head2 getSystemImage
-
-    Desc : This function return the cluster's system image.
-    args:
-        administrator : Administrator : Administrator object to instanciate all components
-    return : a system image instance
-
-=cut
-
-sub getSystemImage {
-    my $self = shift;
-    my $systemimage_id = $self->getAttr(name => 'systemimage_id');
-    if($systemimage_id) {
-        return Entity::Systemimage->get(id => $systemimage_id);
-    } else {
-        # only admin cluster has no systemimage ?
-        return;
-    }
-}
-
 sub getMasterNodeIp {
     my $self = shift;
     my $adm = Administrator->new();
@@ -753,10 +745,10 @@ sub addNode {
     }
     # Else lets the DesisionMaker to choose one.
     else {
-        $args{cluster_id}      = $self->getAttr(name => "cluster_id");
-        $args{host_manager_id} = $self->getAttr(name => "host_manager_id");
+        my $host_manager = Entity->get(id => $self->getAttr(name => "host_manager_id"));
 
-        $log->debug("Cluster <$args{cluster_id}> ask for a host with args:" . Dumper(%args));
+        $log->debug("Cluster <$args{cluster_id}> ask for a host to host manager <$host_manager>");
+        
         $params{host_id} = DecisionMaker::HostSelector->getHost(%args);
     }
 

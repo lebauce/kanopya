@@ -50,24 +50,6 @@ sub create {
 
     General::checkParams(args => \%args, required => ["econtext"]);
 
-    my $si_location = $self->_getEntity()->getAttr(name =>"cluster_si_location");
-    my $si_access_mode = $self->_getEntity()->getAttr(name =>"cluster_si_access_mode");
-    my $si_shared = $self->_getEntity()->getAttr(name =>"cluster_si_shared");
-
-    my $systemimage;
-    my $systemimage_id = $self->_getEntity()->getAttr(name =>"systemimage_id");
-
-    if ($systemimage_id) {
-        $systemimage = Entity::Systemimage->get(id => $systemimage_id);
-
-        if($si_location eq 'diskless') {
-            if(not $si_shared) {
-                $systemimage->setAttr(name => 'systemimage_dedicated', value => 1);
-                $systemimage->save();
-            }
-        }
-    }
-
     # Create cluster directory
     my $command = "mkdir -p /clusters/" . $self->_getEntity()->getAttr(name =>"cluster_name");
     $args{econtext}->execute(command => $command);
@@ -81,19 +63,16 @@ sub create {
     $self->_getEntity()->save();
 
     # automatically add System|Monitoragent|Logger components
-    
-    if ($systemimage) {
-        foreach my $compclass (qw/Entity::Component::Mounttable1
-                                  Entity::Component::Syslogng3
-                                  Entity::Component::Snmpd5/) {
-			my $location = General::getLocFromClass(entityclass => $compclass);
-			eval { require $location; };
-			$log->debug("trying to add $compclass to cluster");
-			my $comp = $compclass->new();
-			$comp->insertDefaultConfiguration();
-			$self->_getEntity()->addComponent(component => $comp);
-			$log->info("$compclass automatically added");
-		} 
+    foreach my $compclass (qw/Entity::Component::Mounttable1
+                              Entity::Component::Syslogng3
+                              Entity::Component::Snmpd5/) {
+        my $location = General::getLocFromClass(entityclass => $compclass);
+        eval { require $location; };
+        $log->debug("trying to add $compclass to cluster");
+        my $comp = $compclass->new();
+        $comp->insertDefaultConfiguration();
+        $self->_getEntity()->addComponent(component => $comp);
+        $log->info("$compclass automatically added");
     }
 }
 

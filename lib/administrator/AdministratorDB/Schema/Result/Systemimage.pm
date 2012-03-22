@@ -38,13 +38,6 @@ __PACKAGE__->table("systemimage");
   is_nullable: 1
   size: 255
 
-=head2 systemimage_dedicated
-
-  data_type: 'integer'
-  default_value: 0
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =head2 container_id
 
   data_type: 'integer'
@@ -72,13 +65,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "systemimage_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "systemimage_dedicated",
-  {
-    data_type => "integer",
-    default_value => 0,
-    extra => { unsigned => 1 },
-    is_nullable => 0,
-  },
   "container_id",
   {
     data_type => "integer",
@@ -109,6 +95,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nodes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Node>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodes",
+  "AdministratorDB::Schema::Result::Node",
+  { "foreign.systemimage_id" => "self.systemimage_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 systemimage
 
 Type: belongs_to
@@ -121,7 +122,7 @@ __PACKAGE__->belongs_to(
   "systemimage",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "systemimage_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container
@@ -136,18 +137,18 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Container",
   { container_id => "container_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-06 14:51:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mV6UE8yXrR6j4pKcvMqz0Q
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-21 22:25:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7O7nWkC6XAyK+Gqtr9DyEg
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { "foreign.entity_id" => "self.systemimage_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

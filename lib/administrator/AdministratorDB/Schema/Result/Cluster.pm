@@ -62,17 +62,11 @@ __PACKAGE__->table("cluster");
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 cluster_si_location
+=head2 cluster_boot_policy
 
-  data_type: 'enum'
-  extra: {list => ["local","diskless"]}
+  data_type: 'char'
   is_nullable: 0
-
-=head2 cluster_si_access_mode
-
-  data_type: 'enum'
-  extra: {list => ["ro","rw"]}
-  is_nullable: 0
+  size: 32
 
 =head2 cluster_si_shared
 
@@ -86,29 +80,17 @@ __PACKAGE__->table("cluster");
   is_nullable: 0
   size: 64
 
-=head2 cluster_nameserver
+=head2 cluster_nameserver1
 
   data_type: 'char'
   is_nullable: 0
   size: 15
 
-=head2 active
+=head2 cluster_nameserver2
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
+  data_type: 'char'
   is_nullable: 0
-
-=head2 systemimage_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
-=head2 kernel_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
+  size: 15
 
 =head2 cluster_state
 
@@ -129,6 +111,12 @@ __PACKAGE__->table("cluster");
   is_nullable: 0
   size: 64
 
+=head2 active
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 user_id
 
   data_type: 'integer'
@@ -136,11 +124,35 @@ __PACKAGE__->table("cluster");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 kernel_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 masterimage_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =head2 host_manager_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_nullable: 0
+
+=head2 disk_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 export_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
 
 =cut
 
@@ -164,36 +176,24 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "cluster_priority",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "cluster_si_location",
-  {
-    data_type => "enum",
-    extra => { list => ["local", "diskless"] },
-    is_nullable => 0,
-  },
-  "cluster_si_access_mode",
-  {
-    data_type => "enum",
-    extra => { list => ["ro", "rw"] },
-    is_nullable => 0,
-  },
+  "cluster_boot_policy",
+  { data_type => "char", is_nullable => 0, size => 32 },
   "cluster_si_shared",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "cluster_domainname",
   { data_type => "char", is_nullable => 0, size => 64 },
-  "cluster_nameserver",
+  "cluster_nameserver1",
   { data_type => "char", is_nullable => 0, size => 15 },
-  "active",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "systemimage_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "kernel_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "cluster_nameserver2",
+  { data_type => "char", is_nullable => 0, size => 15 },
   "cluster_state",
   { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
   "cluster_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
   "cluster_basehostname",
   { data_type => "char", is_nullable => 0, size => 64 },
+  "active",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "user_id",
   {
     data_type => "integer",
@@ -201,8 +201,16 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "kernel_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "masterimage_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "host_manager_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "disk_manager_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "export_manager_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 __PACKAGE__->set_primary_key("cluster_id");
 __PACKAGE__->add_unique_constraint("cluster_name", ["cluster_name"]);
@@ -299,6 +307,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 manager_parameters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ManagerParameter>
+
+=cut
+
+__PACKAGE__->has_many(
+  "manager_parameters",
+  "AdministratorDB::Schema::Result::ManagerParameter",
+  { "foreign.cluster_id" => "self.cluster_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 qos_constraints
 
 Type: has_many
@@ -360,8 +383,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-05 11:35:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:viXa52S7jA6zqB6AN37xXw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 12:31:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sRO9LUW3PRMqq1Tww9nGiA
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Inside",

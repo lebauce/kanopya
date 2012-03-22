@@ -70,10 +70,29 @@ sub prepare {
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
+
+    my $cluster_params = {
+        cluster_name         => General::checkParam(args => $params, name => 'cluster_name'),
+        cluster_desc         => General::checkParam(args => $params, name => 'cluster_desc', default => ''),
+        cluster_si_shared    => General::checkParam(args => $params, name => 'cluster_si_shared'),
+        cluster_boot_policy  => General::checkParam(args => $params, name => 'cluster_boot_policy'),
+        cluster_priority     => General::checkParam(args => $params, name => 'cluster_priority'),
+        cluster_min_node     => General::checkParam(args => $params, name => 'cluster_min_node'),
+        cluster_max_node     => General::checkParam(args => $params, name => 'cluster_max_node'),
+        cluster_basehostname => General::checkParam(args => $params, name => 'cluster_basehostname'),
+        cluster_domainname   => General::checkParam(args => $params, name => 'cluster_domainname'),
+        cluster_nameserver1  => General::checkParam(args => $params, name => 'cluster_nameserver1'),
+        cluster_nameserver2  => General::checkParam(args => $params, name => 'cluster_nameserver2'),
+        user_id              => General::checkParam(args => $params, name => 'user_id'),
+        masterimage_id       => General::checkParam(args => $params, name => 'masterimage_id'),
+        host_manager_id      => General::checkParam(args => $params, name => 'host_manager_id'),
+        disk_manager_id      => General::checkParam(args => $params, name => 'disk_manager_id'),
+        export_manager_id    => General::checkParam(args => $params, name => 'export_manager_id'),
+    };
     
     # Cluster instantiation
     eval {
-        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$params);
+        $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$cluster_params);
     };
     if($@) {
         $errmsg = "EOperation::EAddCluster->prepare : Cluster instanciation failed because : " . $@;
@@ -89,10 +108,11 @@ sub prepare {
 sub execute {
     my $self = shift;
 
+    # Firstly create the cluster.
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
-    $ecluster->create(econtext => $self->{econtext},erollback => $self->{erollback});
-    
-    $log->info("Cluster <".$self->{_objs}->{cluster}->getAttr(name=>"cluster_name") ."> is now added");
+    $ecluster->create(econtext => $self->{econtext}, erollback => $self->{erollback});
+
+    $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name=>"cluster_name") . "> is now added");
 }
 
 =head1 DIAGNOSTICS
