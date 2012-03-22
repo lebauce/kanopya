@@ -95,8 +95,8 @@ sub prepare {
     }
     
     # cluster systemimage instanciation
-    $log->debug("checking cluster existence with id <$params->{cluster_id}>"); 
-    $self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getSystemImage();
+    #$log->debug("checking cluster existence with id <$params->{cluster_id}>"); 
+    #$self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getSystemImage();
 
     ### Check Parameters and context
     eval {
@@ -126,20 +126,20 @@ sub execute {
     $log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
     # if systemimage defined (always true...?) and dedicated, back to shared state and deactivate it
-    if ($self->{_objs}->{systemimage}) {
-        if ($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')) {
-            $self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
-            $self->{_objs}->{systemimage}->save();
-
-            Operation->enqueue(
-                priority => 2000,
-                type     => 'DeactivateSystemimage',
-                params   => { systemimage_id => $self->{_objs}->{systemimage}->getAttr(
-                                                    name => 'systemimage_id'
-                                                ) },
-            );
-        }
-    }
+    #~ if ($self->{_objs}->{systemimage}) {
+        #~ if ($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')) {
+            #~ $self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
+            #~ $self->{_objs}->{systemimage}->save();
+#~ 
+            #~ Operation->enqueue(
+                #~ priority => 2000,
+                #~ type     => 'DeactivateSystemimage',
+                #~ params   => { systemimage_id => $self->{_objs}->{systemimage}->getAttr(
+                                                    #~ name => 'systemimage_id'
+                                                #~ ) },
+            #~ );
+        #~ }
+    #~ }
 
     $self->{_objs}->{cluster}->delete();
 }
