@@ -149,7 +149,7 @@ use Exception::Class (
 
 # Force print trace when exception is stringified
 # For Kanopya::Exception and all its subclasses
-#Kanopya::Exception->Trace(1);
+Kanopya::Exception->Trace(1);
 
 # Override method called when exception is stringified
 sub Kanopya::Exception::full_message {

@@ -40,14 +40,15 @@ use base "EOperation";
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use Kanopya::Exceptions;
 use EFactory;
 
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Gp;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -71,6 +72,7 @@ sub prepare {
 
     $self->{_objs} = {};
 
+    # Pop the cluster paramaters.
     my $cluster_params = {
         cluster_name         => General::checkParam(args => $params, name => 'cluster_name'),
         cluster_desc         => General::checkParam(args => $params, name => 'cluster_desc', default => ''),
@@ -89,7 +91,7 @@ sub prepare {
         disk_manager_id      => General::checkParam(args => $params, name => 'disk_manager_id'),
         export_manager_id    => General::checkParam(args => $params, name => 'export_manager_id'),
     };
-    
+
     # Cluster instantiation
     eval {
         $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->new(%$cluster_params);
@@ -100,9 +102,23 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
+    # Store managers paramaters for this cluster.
+    for my $manager ('host_manager', 'disk_manager', 'export_manager') {
+        for my $param_name (keys %$params) {
+            if ($param_name =~ m/^$manager/) {
+                my $value = $params->{$param_name};
+                $param_name =~ s/^${manager}_//g;
+                $self->{_objs}->{cluster}->addManagerParamater(
+                    manager_type => $manager,
+                    name         => $param_name,
+                    value        => $value,
+                );
+            }
+        }   
+    }
+    
     $self->{econtext} = EFactory::newEContext(ip_source      => "127.0.0.1",
                                               ip_destination => "127.0.0.1");
-
 }
 
 sub execute {
@@ -112,7 +128,7 @@ sub execute {
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
     $ecluster->create(econtext => $self->{econtext}, erollback => $self->{erollback});
 
-    $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name=>"cluster_name") . "> is now added");
+    $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
 }
 
 =head1 DIAGNOSTICS
