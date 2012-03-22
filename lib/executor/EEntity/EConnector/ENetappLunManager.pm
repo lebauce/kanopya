@@ -51,23 +51,35 @@ sub createDisk {
     my $volume = Entity::Container::NetappVolume->get(id => $args{volume_id});
     my $volume_name = "/vol/" . $volume->getAttr(name => "name") . "/" . $args{name};
 
+    # Make the XML RPC call
     my $api = $self->_getEntity();
     $api->lun_create_by_size(path => $volume_name,
                              size => $args{size},
                              type => "linux");
 
-    if (! defined $args{"noformat"}) {
-        my $newdevice = "";
-        $self->mkfs(device   => $newdevice,
-                    fstype   => $args{filesystem},
-                    econtext => $args{econtext});
-    }
+    my $noformat = $args{"noformat"};
+    my $econtext = $args{econtext};
     delete $args{noformat};
     delete $args{econtext};
 
-    # TODO: Update volume group size
-
+    # Insert the container into the database
     my $container = $self->_getEntity()->addContainer(%args);
+
+    if (! defined $noformat) {
+        # Connect to the iSCSI target and format it locally
+
+        my $export = $self->createExport(container   => $container,
+                                         export_name => $args{name},
+                                         econtext    => $econtext,
+                                         erollback   => $args{erollback});
+
+        my $container_access = EFactory::newEEntity(data => $export);
+        my $newdevice = $container_access->connect(econtext => $econtext);
+
+        $self->mkfs(device   => $newdevice,
+                    fstype   => $args{filesystem},
+                    econtext => $econtext);
+    }
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -83,7 +95,7 @@ sub createDisk {
 
 =cut
 
-sub removeDisk{
+sub removeDisk {
     my $self = shift;
     my %args = @_;
 
@@ -95,7 +107,14 @@ sub removeDisk{
               );
     }
 
-    $self->_getEntity()->lun_remove(path => $args{container}->{path});
+    my $container = $args{container};
+    my $volume = Entity::Container::NetappVolume->get(
+                     id => $container->getAttr(name => "volume_id")
+                 );
+
+    my $lun_path = "/vol/" . $volume->getAttr(name => "name") .
+                   "/" . $container->getAttr(name => "name");
+    $self->_getEntity()->lun_destroy(path => $lun_path);
 
     $self->_getEntity()->delContainer(container => $args{container});
 
@@ -112,6 +131,7 @@ _mkfs ( device, fstype, fsoptions, econtext)
         fsoptions : string: filesystem options to use during creation (optional) 
         econtext : Econtext : execution context on the storage server
 =cut
+
 sub mkfs {
     my $self = shift;
     my %args = @_;
@@ -119,7 +139,7 @@ sub mkfs {
     General::checkParams(args     => \%args,
                          required => [ "device", "fstype", "econtext" ]);
     
-    my $command = "mkfs -t $args{fstype} ";
+    my $command = "mkfs -F -t $args{fstype} ";
     if($args{fsoptions}) {
         $command .= "$args{fsoptions} ";
     }
@@ -131,6 +151,83 @@ sub mkfs {
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
+}
+
+=head2 createExport
+
+    Desc : This method allow to create a new export in 1 call
+
+=cut
+
+sub createExport {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'container', 'export_name', 'econtext' ]);
+
+    my $container_access = $self->_getEntity()->addContainerAccess(
+                               container   => $args{container},
+                               name        => $args{export_name},
+                           );
+
+    $log->info("Added iSCSI export for lun " .
+               $args{container}->getAttr(name => "container_name"));
+
+    if (defined $args{erollback}) {
+        my $eroll_add_export = $args{erollback}->getLastInserted();
+        $args{erollback}->insertNextErollBefore(erollback => $eroll_add_export);
+
+        $args{erollback}->add(
+            function   => $self->can('removeExport'),
+            parameters => [ $self,
+                            "container_access", $container_access,
+                            "econtext", $args{econtext} ]
+        );
+    }
+
+    return $container_access;
+}
+
+=head2 removeExport
+
+    Desc : This method allow to remove an export in 1 call
+
+=cut
+
+sub removeExport {
+    my $self = shift;
+    my %args = @_;
+    my $log_content = "";
+    my $container_access = $args{container_access};
+    my $container = $container_access->getContainer();
+    my $export_name = $container_access->getAttr(name => "container_access_id");
+
+    General::checkParams(args     => \%args,
+                         required => [ 'container_access', 'econtext' ]);
+
+    if (! $args{container_access}->isa("Entity::ContainerAccess::IscsiContainerAccess")) {
+        throw Kanopya::Exception::Execution::WrongType(
+                  error => "ContainerAccess must be a Entity::ContainerAccess::IscsiContainerAccess"
+              );
+    }
+
+    $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
+
+    $log_content = "Remove export with export name <" . $export_name . ">";
+    if(exists $args{erollback} and defined $args{erollback}) {
+        $args{erollback}->add(
+            function   => $self->can('createExport'),
+            parameters => [ $self,
+                            "container", $container,
+                            "export_name", $export_name,
+                            "econtext", $args{econtext} ]);
+
+       $log_content .= " and will be rollbacked with add export of disk <" .
+                       $container->getAttr(name => 'container_device') . ">";
+    }
+
+    $log->debug($log_content);
 }
 
 1;

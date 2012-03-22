@@ -57,17 +57,13 @@ sub mount {
     my $ip      = $self->_getEntity->getAttr(name => 'container_access_ip');
     my $port    = $self->_getEntity->getAttr(name => 'container_access_port');
 
-    # Useless ? When mountung on client, server side options are automatically applyed.
-    my $options = $self->_getEntity->getAttr(name => 'container_access_options');
-
     my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
 
     my $mount_cmd = "mount.nfs $ip:$target $args{mountpoint} -o vers=3";
     $args{econtext}->execute(command => $mount_cmd);
-
-    # TODO: insert an erollback with umount method.
-    $log->info("NFS export $ip:$target mounted on <$args{mountpoint}>.");
+    $log->info("NFS export $ip:$target mounted on <$
+    args{mountpoint}>.");
 
     # TODO: insert an erollback to umount nfs volume
 }

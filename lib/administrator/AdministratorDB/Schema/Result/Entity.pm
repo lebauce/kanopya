@@ -280,6 +280,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 iscsi_target
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::IscsiTarget>
+
+=cut
+
+__PACKAGE__->might_have(
+  "iscsi_target",
+  "AdministratorDB::Schema::Result::IscsiTarget",
+  { "foreign.iscsi_target_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 poolip
 
 Type: might_have

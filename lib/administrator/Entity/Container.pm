@@ -86,12 +86,16 @@ sub getAttr {
 
     General::checkParams(args => \%args, required => [ 'name' ]);
 
-    # Firstly, try to get value from generic attrs.
-    my $value = $self->getContainer->{$args{name}};
-    if (! defined $value) {
-        # Else get the value from usual way.
+    if (!defined $self->{recursion}) {
+        $self->{recursion} = 1;
+        $value = $self->getContainer->{$args{name}};
+        delete $self->{recursion};
+    }
+
+    if (!defined $value) {
         $value = $self->SUPER::getAttr(name => $args{name});
     }
+
     return $value;
 }
 

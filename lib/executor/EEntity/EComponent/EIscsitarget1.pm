@@ -52,7 +52,7 @@ sub createExport {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name', 'econtext']);
+                         required => [ 'container', 'export_name', 'econtext' ]);
 
     # TODO: Check if the given container is provided by the same
     #       storage provider than the iscsi storage provider.
@@ -63,33 +63,38 @@ sub createExport {
     my $disk_targetname = $self->generateTargetname(name => $args{export_name});
     my $device          = $args{container}->getAttr(name => 'container_device');
 
-    my $target_id = $self->addTarget(
-                        iscsitarget1_target_name => $disk_targetname,
-                        econtext                 => $args{econtext}
-                    );
+    $self->addTarget(
+        target_name => $disk_targetname,
+        econtext    => $args{econtext}
+    );
 
     my $lun_id = $self->addLun(
-                     iscsitarget1_target_id   => $target_id,
-                     iscsitarget1_lun_device  => $device,
-                     iscsitarget1_lun_number  => 0,
-                     iscsitarget1_lun_typeio  => $typeio,
-                     iscsitarget1_lun_iomode  => $iomode,
-                     iscsitarget1_target_name => $disk_targetname,
-                     econtext                 => $args{econtext},
+                     number      => 0,
+                     device      => $device,
+                     typeio      => $typeio,
+                     iomode      => $iomode,
+                     target_name => $disk_targetname,
+                     econtext    => $args{econtext},
                  );
 
     my $container_access = $self->_getEntity()->addContainerAccess(
-                               container => $args{container},
-                               target_id => $target_id,
-                               lun_id    => $lun_id,
+                               container   => $args{container},
+                               target_name => $disk_targetname,
+                               device      => $device,
+                               number      => 0,
+                               typeio      => $typeio,
+                               iomode      => $iomode,
                            );
 
-    $log->info("Added IScsi Export of device <$device> with target <$disk_targetname>");
+    $self->generate(econtext => $args{econtext});
+
+    $log->info("Added iSCSI Export of device <$device> with target <$disk_targetname>");
 
     if (exists $args{erollback}) {
         my $eroll_add_export = $args{erollback}->getLastInserted();
         $args{erollback}->insertNextErollBefore(erollback => $eroll_add_export);
-        $self->generate(econtext => $args{econtext}, erollback => $args{erollback});
+        $self->generate(econtext => $args{econtext},
+                        erollback => $args{erollback});
 
         $args{erollback}->add(
             function   => $self->can('removeExport'),
@@ -98,6 +103,7 @@ sub createExport {
                             "econtext", $args{econtext} ]
         );
     }
+
     return $container_access;
 }
 
@@ -121,23 +127,19 @@ sub removeExport {
               );
     }
 
-    my $iscsitarget1_lun_id    = $args{container_access}->getAttr(name => 'lun_id');
-    my $iscsitarget1_target_id = $args{container_access}->getAttr(name => 'target_id');
     my $target_name = $args{container_access}->getAttr(name => 'container_access_export');
+    my $lun_typeio;
+    my $lun_iomode;
 
     # Get required infos for erollback before deleting the access
     if(exists $args{erollback} and defined $args{erollback}) {
         $container = $args{container_access}->getContainer();
-        $lun = $self->_getEntity()->getLun(iscsitarget1_lun_id    => $iscsitarget1_lun_id,
-                                           iscsitarget1_target_id => $iscsitarget1_target_id);
+        $lun_typeio = $args{container_access}->getAttr(name => "typeio");
+        $lun_iomode = $args{container_access}->getAttr(name => "iomode");
     }
 
-    $self->removeLun(iscsitarget1_lun_id    => $iscsitarget1_lun_id,
-                     iscsitarget1_target_id => $iscsitarget1_target_id);
-
-    $self->removeTarget(iscsitarget1_target_id => $iscsitarget1_target_id,
-                        econtext               => $args{econtext});
-
+    $self->removeTarget(target_name => $target_name,
+                        econtext    => $args{econtext});
 
     if (exists $args{host_initiatorname} and defined $args{host_initiatorname}) {
         $self->cleanInitiatorSession(initiator => $args{host_initiatorname},
@@ -157,17 +159,18 @@ sub removeExport {
             parameters => [ $self,
                             "container", $container,
                             "export_name", $export_name,
-                            "typeio", $lun->{iscsitarget1_lun_typeio},
-                            "iomode", $lun->{iscsitarget1_lun_iomode},
+                            "typeio", $lun_typeio,
+                            "iomode", $lun_iomode,
                             "econtext", $args{econtext} ]);
 
        $log_content .= " and will be rollbacked with add export of disk <" .
                        $container->getAttr(name => 'container_device') . ">";
     }
+
     $log->debug($log_content);
 }
 
-sub generateInitiatorname{
+sub generateInitiatorname {
     my $self = shift;
     my %args  = @_;
 
@@ -208,7 +211,7 @@ sub addTarget {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['iscsitarget1_target_name']);
+    General::checkParams(args => \%args, required => [ 'target_name' ]);
 
     my $cmd = "grep tid: /proc/net/iet/volume | sed 's/tid:\\(\[0-9\]\*\\) .*/\\1/'";
     my $result = $args{econtext}->execute(command => $cmd);
@@ -224,25 +227,27 @@ sub addTarget {
     }
 
     # Create the new target
-    $cmd = "ietadm --op new --tid=$tid --params Name=$args{iscsitarget1_target_name}";
+    $cmd = "ietadm --op new --tid=$tid --params Name=$args{target_name}";
     $result = $args{econtext}->execute(command => $cmd);
     delete $args{econtext};
-
-    return $self->_getEntity()->addTarget(%args);
 }
 
 sub gettid {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['target_name',"econtext"]);
+    General::checkParams(args => \%args, required => [ 'target_name', "econtext" ]);
 
-    my $result = $args{econtext}->execute(command =>"grep \"$args{target_name}\" /proc/net/iet/volume");
+    my $result = $args{econtext}->execute(
+                     command =>"grep \"$args{target_name}\" /proc/net/iet/volume"
+                 );
+
     if ($result->{stdout} eq "") {
         $errmsg = "EComponent::EIscsitarget1->gettid : no target name found for $args{target_name}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+
     my @t1 = split(/\s/, $result->{stdout});
     my @t2 = split(/:/, $t1[0]);
     my $tid = $t2[1];
@@ -261,57 +266,37 @@ sub addLun {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_lun_device", "iscsitarget1_target_id",
-                                       "iscsitarget1_lun_number", "iscsitarget1_lun_typeio",
-                                       "iscsitarget1_lun_iomode", "iscsitarget1_target_name",
+                         required => [ "device",
+                                       "number", "typeio",
+                                       "iomode", "target_name",
                                        "econtext" ]);
 
-    my $tid = $self->gettid(target_name => $args{iscsitarget1_target_name},
+    my $tid = $self->gettid(target_name => $args{target_name},
                             econtext    => $args{econtext});
-    delete $args{iscsitarget1_target_name};
 
     my $command = "ietadm --op new --tid=$tid " .
-                  "--lun=$args{iscsitarget1_lun_number} --params " .
-                  "Path=$args{iscsitarget1_lun_device}," .
-                  "Type=$args{iscsitarget1_lun_typeio}," .
-                  "IOMode=$args{iscsitarget1_lun_iomode}";
+                  "--lun=$args{number} --params " .
+                  "Path=$args{device}," .
+                  "Type=$args{typeio}," .
+                  "IOMode=$args{iomode}";
 
     my $result = $args{econtext}->execute(command => $command);
-    delete $args{econtext};
-
-    return $self->_getEntity()->addLun(%args);
-}
-
-sub removeLun {
-    my $self = shift;
-    my %args  = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id", "iscsitarget1_lun_id" ]);
-
-    return $self->_getEntity()->removeLun(%args);
 }
 
 sub removeTarget {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => [ 'iscsitarget1_target_id',
+    General::checkParams(args => \%args, required => [ 'target_name',
                                                        'econtext' ]);
 
-    my $iscsitarget1_target_name = $self->_getEntity()->getTargetName(
-                                       iscsitarget1_target_id => $args{iscsitarget1_target_id}
-                                   );
-
     # First we clean sessions for this target
-    my $tid = $self->cleanTargetSession(targetname => $iscsitarget1_target_name,
+    my $tid = $self->cleanTargetSession(targetname => $args{target_name},
                                         econtext   => $args{econtext});
 
 	if(defined $tid) {
 		my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
     }
-    delete $args{econtext};
-    return $self->_getEntity()->removeTarget(%args);
 }
 
 =head2 _getIetdSessions
@@ -338,16 +323,28 @@ sub _getIetdSessions {
 
     foreach my $line (@output) {
         if($line =~ $target_regexp) {
-            $target = { tid => $1, targetname => $2, sessions => [] };
-            push(@$ietdsessions, $target);
+            push @$ietdsessions, {
+                tid        => $1,
+                targetname => $2,
+                sessions   => []
+            };
         } elsif($line =~ $session_regexp) {
-            $session = { sid => $1, initiator => $2, connections => [] };
-            push(@{$ietdsessions->[-1]->{sessions}}, $session);
+            push @{$ietdsessions->[-1]->{sessions}}, {
+                sid         => $1,
+                initiator   => $2,
+                connections => []
+            };
         } elsif($line =~ $connection_regexp) {
-            $connection = { cid => $1, ip => $2, state => $3, hd => $4, dd => $5};
-            push(@{$ietdsessions->[-1]->{sessions}->[-1]->{connections}}, $connection);
+            push @{$ietdsessions->[-1]->{sessions}->[-1]->{connections}}, {
+                cid   => $1,
+                ip    => $2,
+                state => $3,
+                hd    => $4,
+                dd    => $5
+            };
         }
     }
+
     return $ietdsessions;
 }
 
@@ -368,20 +365,19 @@ sub cleanTargetSession {
 
     # next we clean existing sessions on this target
     foreach my $target (@$ietdsessions) {
-        if($target->{targetname} eq $args{targetname}) {
-            foreach my $session(@{$target->{sessions}}) {
+        if ($target->{targetname} eq $args{targetname}) {
+            foreach my $session (@{$target->{sessions}}) {
                 for my $connection (@{$session->{connections}}) {
                     my $command = "ietadm --op delete --tid=$target->{tid} " .
                                   "--sid=$session->{sid} --cid=$connection->{cid}";
                     my $result = $args{econtext}->execute(command => $command);
-                    #TODO tester le retour de la commande
+                    # TODO: Check return code
                 }
             }
             return $target->{tid};
         }
         else { next; }
     }
-    return;
 }
 
 =head2 cleanInitiatorSession
@@ -403,13 +399,12 @@ sub cleanInitiatorSession {
     # next we clean existing sessions for the given initiatorname
     foreach my $target (@$ietdsessions) {
         foreach my $session(@{$target->{sessions}}) {
-			$log->info(">>>>> session initiator: $session->{initiator}");
             if(($session->{initiator} eq $args{initiator}) || !$session->{initiator}){
                 for my $connection (@{$session->{connections}}) {
                     my $command = "ietadm --op delete --tid=$target->{tid} " .
                                   "--sid=$session->{sid} --cid=$connection->{cid}";
                     my $result = $args{econtext}->execute(command => $command);
-                    #TODO tester le retour de la commande
+                    # TODO: check return code
                 }
             } else { next; }
         }
@@ -421,18 +416,18 @@ sub generate {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ["econtext"]);
+    General::checkParams(args => \%args, required => [ "econtext" ]);
 
     my $data = $self->_getEntity()->getTemplateData();
 
-    $self->generateFile(econtext => $args{econtext},
-                        mount_point => "/etc",
+    $self->generateFile(econtext     => $args{econtext},
+                        mount_point  => "/etc",
                         template_dir => "/templates/components/ietd",
-                        input_file => "ietd.conf.tt",
-                        output => "/iet/ietd.conf",
-                        data => $data);
+                        input_file   => "ietd.conf.tt",
+                        output       => "/iet/ietd.conf",
+                        data         => $data);
 
-    if(exists $args{erollback}){
+    if(exists $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('generate'),
             parameters => [$self, "econtext", $args{econtext}]

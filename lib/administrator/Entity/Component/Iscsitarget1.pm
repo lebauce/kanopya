@@ -77,7 +77,7 @@ use constant ACCESS_MODE => {
     READ_ONLY  => 'ro',
 };
 
-sub getLun{
+sub getLun {
     my $self = shift;
     my %args = @_;
 
@@ -162,83 +162,6 @@ sub setConf {
     }
 }
 
-=head2 
-    
-    Desc : 
-    args: 
-
-    return : a system image instance
-
-=cut
-=head2 AddTarget
-B<Class>   : Public
-B<Desc>    : This function add a new target entry into iscsitarget configuration.
-B<args>    : 
-    B<iscsitarget1_target_name> : I<String> : Identify component. Refer to component identifier table
-    B<mountpoint> : I<String> : Identify cluster owning the component instance
-    B<mount_option> : I<String> : Identify cluster owning the component instance
-B<Return>  : Int : Targetid contained by iscsitarget component instance
-B<Comment>  : None
-B<throws>  : 
-    B<Kanopya::Exception::Internal::IncorrectParam> When missing mandatory parameters
-=cut
-sub addTarget {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'iscsitarget1_target_name' ]);
-
-    my $iscsitarget1_rs = $self->{_dbix}->iscsitarget1_targets;
-    my $res = $iscsitarget1_rs->create(\%args);
-
-    $log->info("New target <$args{iscsitarget1_target_name}> added and return " .
-               $res->get_column("iscsitarget1_target_id"));
-
-    $res->discard_changes;
-    return $res->get_column("iscsitarget1_target_id");
-}
-
-=head2 AddLun
-    
-    Desc : This function a new lun to a target.
-    args: 
-        administrator : Administrator : Administrator object to instanciate all components
-    return : a system image instance
-
-=cut
-sub addLun {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_lun_device", "iscsitarget1_target_id",
-                                       "iscsitarget1_lun_number", "iscsitarget1_lun_typeio",
-                                       "iscsitarget1_lun_iomode" ]);
-
-    $log->debug("New Lun try to be added with iscsitarget1_target_id " .
-                "$args{iscsitarget1_target_id} iscsitarget1_lun_number " .
-                "$args{iscsitarget1_lun_number} iscsitarget1_lun_device " .
-                "$args{iscsitarget1_lun_device}");
-
-    my $iscsitarget1_lun_rs = $self->{_dbix}->iscsitarget1_targets->single(
-                                  { iscsitarget1_target_id => $args{iscsitarget1_target_id} }
-                              )->iscsitarget1_luns;
-
-    my $res = $iscsitarget1_lun_rs->create(
-                  { iscsitarget1_target_id  => $args{iscsitarget1_target_id},
-                    iscsitarget1_lun_number => $args{iscsitarget1_lun_number},
-                    iscsitarget1_lun_iomode => $args{iscsitarget1_lun_iomode},
-                    iscsitarget1_lun_typeio => $args{iscsitarget1_lun_typeio},
-                    iscsitarget1_lun_device => $args{iscsitarget1_lun_device}, }
-              );
-
-    $log->info("New Lun <$args{iscsitarget1_lun_device}> added");
-
-    $res->discard_changes;
-    return $res->get_column('iscsitarget1_lun_id');
-}
-
 sub getTargetIdLike {
     my $self = shift;
     my %args = @_;
@@ -287,16 +210,6 @@ sub removeLun {
     return $target_rs->iscsitarget1_luns->find($args{iscsitarget1_lun_id})->delete();
 }
 
-sub removeTarget{
-    my $self = shift;
-    my %args  = @_;    
-
-    General::checkParams(args     => \%args,
-                         required => [ "iscsitarget1_target_id" ]);
-
-    return $self->{_dbix}->iscsitarget1_targets->find($args{iscsitarget1_target_id})->delete();
-}
-
 sub getTargetName {
     my $self = shift;
     my %args  = @_;    
@@ -311,28 +224,42 @@ sub getTargetName {
 # return a data structure to pass to the template processor 
 sub getTemplateData {
     my $self = shift;
-    my $data = {};
+    my $targets = { };
+    my @results = ();
 
-    my $targets = $self->{_dbix}->iscsitarget1_targets;
-    $data->{targets} = [];
-    while (my $onetarget = $targets->next) {
-        my $record = {};
-        $record->{target_name} = $onetarget->get_column('iscsitarget1_target_name');
-        $record->{luns} = [];
+    my @exports = Entity::ContainerAccess->search(
+                      hash => { export_manager_id => $self->getAttr(name => "component_id") }
+                  );
 
-        my $luns = $onetarget->iscsitarget1_luns->search();
-        while(my $onelun = $luns->next) {
-            push @{$record->{luns}}, { 
-                number => $onelun->get_column('iscsitarget1_lun_number'),
-                device => $onelun->get_column('iscsitarget1_lun_device'),
-                type => $onelun->get_column('iscsitarget1_lun_typeio'),
-                iomode => $onelun->get_column('iscsitarget1_lun_iomode'),
-            }; 
+    for my $export (@exports) {
+        my $target;
+        my $target_name = $export->getAttr(name => "target_name");
+        my $luns;
+
+        if (defined $targets->{$target_name}) {
+            $target = $targets->{$target_name};
         }
-        push @{$data->{targets}}, $record;
+        else {
+            $target = { luns        => [],
+                        target_name => $target_name };
+        }
+
+        my $container = Entity::Container->get(
+                            id => $export->getAttr(name => 'container_id')
+                        );
+
+        push @{$target->{luns}}, {
+            number => 0, # $export->getAttr(name => 'number'),
+            device => $container->getAttr(name => 'container_device'),
+            typeio => $export->getAttr(name => 'typeio'),
+            iomode => $export->getAttr(name => 'iomode'),
+        };
+
+        $targets->{$target_name} = $target;
     }
-     
-    return $data;      
+
+    my @values = values %{$targets};
+    return { targets => \@values };
 }
 
 =head2 getNetConf
@@ -370,10 +297,10 @@ sub createExport {
         params   => {
             storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             export_manager_id   => $self->getAttr(name => 'component_id'),
-            container_id => $args{container}->getAttr(name => 'container_id'),
-            export_name  => $args{export_name},
-            typeio       => $args{typeio},
-            iomode       => $args{iomode}
+            container_id        => $args{container}->getAttr(name => 'container_id'),
+            export_name         => $args{export_name},
+            typeio              => $args{typeio},
+            iomode              => $args{iomode}
         },
     );
 }
@@ -415,15 +342,13 @@ sub getContainerAccess {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "lun_id", "target_id" ]);
-
-    my $target_rs = $self->{_dbix}->iscsitarget1_targets->find($args{target_id});
-    my $lun_rs = $target_rs->iscsitarget1_luns->find($args{lun_id});
+    General::checkParams(args => \%args, required => [ "container_access" ]);
 
     my $container = {
-        container_access_export => $target_rs->get_column('iscsitarget1_target_name'),
+        container_access_export => $args{container_access}->getAttr(name => 'target_name'),
         container_access_ip     => '10.0.0.1',
         container_access_port   => 3260,
+        container_lun_name      => "lun-0"
     };
 
     return $container;
@@ -441,13 +366,12 @@ sub addContainerAccess {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "container", "target_id", "lun_id" ]);
+    General::checkParams(args => \%args, required => [ "container", "target_name" ]);
 
     my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
                      container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getAttr(name => 'iscsitarget1_id'),
-                     target_id         => $args{target_id},
-                     lun_id            => $args{lun_id},
+                     export_manager_id => $self->getAttr(name => 'component_id'),
+                     target_name       => $args{target_name},
                  );
 
     my $access_id = $access->getAttr(name => 'container_access_id');

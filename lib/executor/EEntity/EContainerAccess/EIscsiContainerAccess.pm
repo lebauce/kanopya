@@ -55,6 +55,7 @@ sub connect {
     my $target = $self->_getEntity->getAttr(name => 'container_access_export');
     my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
     my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
+    my $lun    = $self->_getEntity->getAttr(name => 'container_lun_name');
 
     $log->info("Creating open iscsi node <$target> from <$ip:$port>.");
 
@@ -66,7 +67,7 @@ sub connect {
     my $login_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -l";
     $args{econtext}->execute(command => $login_node_cmd);
 
-    my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-lun-0';
+    my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-' . $lun;
 
     my $retry = 10;
     while (! -e $device) {

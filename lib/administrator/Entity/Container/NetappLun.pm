@@ -25,7 +25,7 @@ use constant ATTR_DEF => {
         is_extended => 0,
     },
     name => {
-        pattern      => '^\w*$',
+        pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0,
         is_editable  => 0
@@ -58,7 +58,7 @@ sub getContainer {
         id => $self->{_dbix}->parent->get_column('disk_manager_id')
     );
 
-    return $manager->getContainer(lun_id => $self->{_dbix}->get_column('lun_id'));
+    return $manager->getContainer(lun => $self);
 }
 
 =head2 getDiskManager
@@ -70,7 +70,7 @@ sub getContainer {
 sub getDiskManager {
     my $self = shift;
 
-    return Entity::Connector::NetApp->get(id => $self->getAttr(name => 'disk_manager_id'));
+    return Entity->get(id => $self->getAttr(name => 'disk_manager_id'));
 }
 
 1;

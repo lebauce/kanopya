@@ -26,17 +26,29 @@ __PACKAGE__->table("iscsi_container_access");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 lun_id
+=head2 target_name
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 255
+
+=head2 number
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 target_id
+=head2 typeio
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
+  data_type: 'char'
   is_nullable: 0
+  size: 32
+
+=head2 iomode
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 16
 
 =cut
 
@@ -48,10 +60,14 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "lun_id",
+  "target_name",
+  { data_type => "char", is_nullable => 0, size => 255 },
+  "number",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "target_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "typeio",
+  { data_type => "char", is_nullable => 0, size => 32 },
+  "iomode",
+  { data_type => "char", is_nullable => 0, size => 16 },
 );
 __PACKAGE__->set_primary_key("iscsi_container_access_id");
 
@@ -73,8 +89,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-19 13:00:30
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:687NZWxbaeOxWCknY4mqow
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 16:05:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:02hWvRjHheXEGFA3eoUjFw
 
 __PACKAGE__->belongs_to(
    "parent",

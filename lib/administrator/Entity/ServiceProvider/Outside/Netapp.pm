@@ -53,6 +53,10 @@ sub getDefaultManager {
     if ($args{category} eq 'DiskManager') {
         return $self->getConnector(category => "Storage", version => "1");
     }
+
+    elsif ($args{category} eq 'ExportManager') {
+        return $self->getConnector(category => "Export", version => "1");
+    }
 }
 
 sub getNetapp {
