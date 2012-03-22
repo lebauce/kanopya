@@ -105,9 +105,9 @@ sub prepare {
     # Store managers paramaters for this cluster.
     for my $manager ('host_manager', 'disk_manager', 'export_manager') {
         for my $param_name (keys %$params) {
-            if ($param_name =~ m/^$manager/) {
+            if ($param_name =~ m/^${manager}_param/) {
                 my $value = $params->{$param_name};
-                $param_name =~ s/^${manager}_//g;
+                $param_name =~ s/^${manager}_param_//g;
                 $self->{_objs}->{cluster}->addManagerParamater(
                     manager_type => $manager,
                     name         => $param_name,
