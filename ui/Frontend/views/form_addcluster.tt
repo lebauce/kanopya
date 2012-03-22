@@ -49,8 +49,8 @@
             </select>
         </td>
     </tr>
-    <tr><td class="label">Cloud Manager to use :</td>
-        <td><select id="cloud_manager" name="cloud_manager_id">
+    <tr><td class="label">Host Manager to use :</td>
+        <td><select id="cloud_manager" name="host_manager_id">
             <% FOREACH cloudmanager IN cloudmanagers_list %>
                 <option value="<% cloudmanager.id %>"><% cloudmanager.name %></option>
             <% END %>
@@ -78,7 +78,7 @@
         </td>
     </tr>
     <tr><td class="label">Storage Provider :</td>
-        <td><select id="storage_provider" name="storage_provider_id">
+        <td><select id="storage_provider">
             <% FOREACH storage IN storageproviders_list %>
                 <option value="<% storage.id %>"><% storage.name %></option>
             <% END %>
@@ -141,7 +141,7 @@
         </td>
     </tr>
     <tr><td class="label">Name server 2 :</td>
-        <td><input type="text" name="cluster_nameserver2" maxlength="15" size="15" value="not yet implemented" disabled/>
+        <td><input type="text" name="cluster_nameserver2" maxlength="15" size="15" value="<% nameserver %>" />
             <span style="color: red"><% err_nameserver %></span>
         </td>
     </tr>
