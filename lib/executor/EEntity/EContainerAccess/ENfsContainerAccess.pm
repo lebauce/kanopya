@@ -57,9 +57,6 @@ sub mount {
     my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
     my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
 
-    # Useless ? When mounting on client, server side options are automatically applyed.
-    my $options = $self->_getEntity->getAttr(name => 'container_access_options');
-
     my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
 

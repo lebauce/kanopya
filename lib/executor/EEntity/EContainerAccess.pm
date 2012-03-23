@@ -272,7 +272,7 @@ sub connectPartition {
     my $device = $self->tryConnect(econtext => $args{econtext});
     my $part_start = $self->getPartitionStart(econtext => $args{econtext});
 
-    if ($part_start > 0) {
+    if ($part_start and $part_start > 0) {
         # Get a free loop device
         $command = "losetup -f";
         $result  = $args{econtext}->execute(command => $command);

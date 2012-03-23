@@ -119,7 +119,7 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Container",
-    { "foreign.container_id" => "self.volume_id" },
+    { "foreign.container_id" => "self.lun_id" },
     { cascade_copy => 0, cascade_delete => 1 });
 
 1;

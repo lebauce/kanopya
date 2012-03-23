@@ -41,22 +41,27 @@ __PACKAGE__->set_primary_key("ucs_manager_id");
 
 =head1 RELATIONS
 
-=head2 ucs
+=head2 ucs_manager
 
 Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Connector>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "ucs",
+  "ucs_manager",
   "AdministratorDB::Schema::Result::Connector",
   { connector_id => "ucs_manager_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-02-24 10:51:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qWYJTCsbqQZE1kFxKazsKw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-12 16:10:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yq70wXnD7sDePFGy2pugdQ
+
+
+# You can replace this text with custom content, and it will be preserved on regeneration
 
 __PACKAGE__->belongs_to(
   "parent",
@@ -65,5 +70,4 @@ __PACKAGE__->belongs_to(
     { cascade_copy => 0, cascade_delete => 1 }
 );
 
-# You can replace this text with custom content, and it will be preserved on regeneration
 1;

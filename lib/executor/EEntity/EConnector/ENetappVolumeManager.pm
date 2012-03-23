@@ -95,4 +95,80 @@ sub removeDisk {
     #TODO: insert erollback ?
 }
 
+=head2 createExport
+
+    Desc : This method allow to create a new export in 1 call
+
+=cut
+
+sub createExport {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'container', 'export_name', 'econtext' ]);
+
+    my $container_access = $self->_getEntity()->addContainerAccess(
+                               container   => $args{container},
+                               export_name => $args{export_name}
+                           );
+
+    $log->info("Added NFS export for volume " . $args{container}->getAttr(name => "container_name"));
+
+    if (exists $args{erollback}) {
+        my $eroll_add_export = $args{erollback}->getLastInserted();
+        $args{erollback}->insertNextErollBefore(erollback => $eroll_add_export);
+
+        $args{erollback}->add(
+            function   => $self->can('removeExport'),
+            parameters => [ $self,
+                            "container_access", $container_access,
+                            "econtext", $args{econtext} ]
+        );
+    }
+
+    return $container_access;
+}
+
+=head2 removeExport
+
+    Desc : This method allow to remove an export in 1 call
+
+=cut
+
+sub removeExport {
+    my $self = shift;
+    my %args = @_;
+    my $log_content = "";
+    my $container_access = $args{container_access};
+    my $container = $container_access->getContainer();
+    my $export_name = $container_access->getAttr(name => "container_access_id");
+
+    General::checkParams(args     => \%args,
+                         required => [ 'container_access', 'econtext' ]);
+
+    if (! $args{container_access}->isa("Entity::ContainerAccess::NfsContainerAccess")) {
+        throw Kanopya::Exception::Execution::WrongType(
+                  error => "ContainerAccess must be a Entity::ContainerAccess::NfsContainerAccess"
+              );
+    }
+
+    $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
+
+    $log_content = "Remove Export with export name <" . $export_name . ">";
+    if(exists $args{erollback} and defined $args{erollback}) {
+        $args{erollback}->add(
+            function   => $self->can('createExport'),
+            parameters => [ $self,
+                            "container", $container,
+                            "export_name", $export_name,
+                            "econtext", $args{econtext} ]);
+
+       $log_content .= " and will be rollbacked with add export of disk <" .
+                       $container->getAttr(name => 'container_device') . ">";
+    }
+
+    $log->debug($log_content);
+}
+
 1;
