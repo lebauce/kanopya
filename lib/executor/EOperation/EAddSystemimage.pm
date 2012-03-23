@@ -140,14 +140,9 @@ sub prepare {
 
     # Get contexts
     my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                                           ip_destination => $exec_cluster->getMasterNodeIp());
-
-    my $storage_provider_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
-    $self->{_objs}->{edisk_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                ip_destination => $storage_provider_ip);
 
     $self->{params} = $params;
 }
@@ -156,31 +151,13 @@ sub execute {
     my $self = shift;
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
-    my $emaster_container = EEntity::EContainer::ELocalContainer->new(
-                                path => $self->{_objs}->{masterimage}->getAttr(name => 'masterimage_file'),
-                                size => $self->{_objs}->{masterimage}->getAttr(name => 'masterimage_size'),
-                                # TODO: get this value from masterimage attrs.
-                                filesystem => 'ext3',
-                            );
-
-    # Instance a fake econtainer for the masterimage raw file.
-    $esystemimage->create(
-        esrc_container => $emaster_container,
+    $esystemimage->createFromMasterimage(
+        masterimage    => $self->{_objs}->{masterimage},
         edisk_manager  => $self->{_objs}->{edisk_manager},
+        manager_params => $self->{params},
         econtext       => $self->{executor}->{econtext},
         erollback      => $self->{erollback},
-        %{$self->{params}}                    
     );
-
-    my @group = Entity::Gp->getGroups(hash => { gp_name => 'SystemImage' });
-    $group[0]->appendEntity(entity => $self->{_objs}->{systemimage});
-
-    my $components = $self->{_objs}->{masterimage}->getProvidedComponents();
-    foreach my $comp (@$components) {
-            $self->{_objs}->{systemimage}->installedComponentLinkCreation(
-                component_type_id => $comp->{component_type_id}
-            );
-    }
 }
 
 =head1 DIAGNOSTICS

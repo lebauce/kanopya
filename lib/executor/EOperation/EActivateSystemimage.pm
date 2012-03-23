@@ -190,11 +190,6 @@ sub prepare {
         = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
     $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                                           ip_destination => $exec_cluster->getMasterNodeIp());
-
-    my $storage_provider_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
-    $self->{_objs}->{eexport_manager}->{econtext}
-        = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                ip_destination => $storage_provider_ip);
 }
 
 sub execute {
@@ -202,6 +197,8 @@ sub execute {
 
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
     $esystemimage->activate(eexport_manager => $self->{_objs}->{eexport_manager},
+                            # TODO: get export manager params form ?
+                            manager_params  => {};
                             econtext        => $self->{executor}->{econtext},
                             erollback       => $self->{erollback});
 }

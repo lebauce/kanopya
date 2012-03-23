@@ -312,14 +312,17 @@ sub becomeNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['inside_id','master_node','node_number']);
+    General::checkParams(args     => \%args,
+                         required => [ 'inside_id', 'master_node',
+                                       'node_number', 'systemimage_id' ]);
 
     my $adm = Administrator->new();
     my $res = $adm->{db}->resultset('Node')->create({
-                  inside_id   => $args{inside_id},
-                  host_id     => $self->getAttr(name => 'host_id'),
-                  master_node => $args{master_node},
-			      node_number => $args{node_number}
+                  inside_id      => $args{inside_id},
+                  host_id        => $self->getAttr(name => 'host_id'),
+                  master_node    => $args{master_node},
+                  node_number    => $args{node_number},
+                  systemimage_id => $args{systemimage_id},
               });
 
     return $res->get_column("node_id");

@@ -46,6 +46,7 @@ use EFactory;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Systemimage;
 use Entity::Gp;
+use Entity;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -114,9 +115,21 @@ sub prepare {
                     value        => $value,
                 );
             }
-        }   
+        }
     }
-    
+
+    # Get export manager parameter related to si shared value.
+    my $export_manager = Entity->get(id => $cluster_params->{export_manager_id});
+    my $readonly_param = $export_manager->getReadOnlyParameter(
+                             readonly => $cluster_params->{cluster_si_shared}
+                         );
+
+    if ($readonly_param) {
+        $self->{_objs}->{cluster}->addManagerParamater(manager_type => 'export_manager',
+                                                       name         => $readonly_param->{name},
+                                                       value        => $readonly_param->{value});
+    }
+
     $self->{econtext} = EFactory::newEContext(ip_source      => "127.0.0.1",
                                               ip_destination => "127.0.0.1");
 }
@@ -124,7 +137,6 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    # Firstly create the cluster.
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
     $ecluster->create(econtext => $self->{econtext}, erollback => $self->{erollback});
 

@@ -247,6 +247,15 @@ sub getTemplateDataNfsKernelServer {
     }
 }
 
+sub getReadOnlyParameter {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'readonly' ]);
+    
+    return {};
+}
+
 =head2 createExport
     
     Desc : Implement createExport from ExportManager interface.
