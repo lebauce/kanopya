@@ -68,7 +68,7 @@ sub createExport {
                                export_path => $mountpoint
                            );
 
-    my $client = $self->addExportClient(export_id      => $export->getAttr(name => "container_access_id"),
+    my $client = $self->addExportClient(export_id      => $container_access->getAttr(name => "container_access_id"),
                                         client_name    => $client_name,
                                         client_options => $client_options);
 
@@ -77,7 +77,7 @@ sub createExport {
     $log->info("Added NFS Export of device <$args{export_name}>");
 
     # Insert an erollback for removeExport here ?
-    return $export;
+    return $container_access;
 }
 
 sub removeExport {
