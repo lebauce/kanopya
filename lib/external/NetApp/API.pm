@@ -51,8 +51,7 @@ sub AUTOLOAD {
 
     my $response = $self->{server}->invoke_elem($request);
     if ($response->results_status() eq "failed") {
-        print "NetApp error : " . $response->results_reason() . "\n";
-        exit (-2);
+        die $response->results_reason();
     }
 
     bless $response, "NaObject";
