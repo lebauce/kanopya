@@ -327,14 +327,14 @@ sub enable {
 }
 
 sub setAllRulesUndefForANode{
-    my ($class, %args) = @_;
+    my (%args) = @_;
     my $cluster_id     = $args{cluster_id};
     my $node_id        = $args{node_id};
     
     my @nodemetric_rules = NodemetricRule->search(
                                hash => {
                                    nodemetric_rule_service_provider_id => $cluster_id,
-                                   nodemetric_rule_service_state       => 'enabled',
+                                   nodemetric_rule_state               => 'enabled',
                                },
                            );
     
