@@ -10,6 +10,7 @@ use Entity::Systemimage;
 use Entity::Kernel;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use NodemetricRule;
 
 my $log = get_logger("webui");
 
@@ -1025,7 +1026,19 @@ get '/extclusters/:clusterid/nodes/update' => sub {
 
     eval {
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
-        $node_count = $cluster->updateNodes( password => param('password') );
+        
+        my $rep = $cluster->updateNodes( password => param('password') );
+        
+        $node_count       = $rep->{node_count};
+        my $created_nodes = $rep->{created_nodes};
+        
+        foreach my $node (@$created_nodes){
+            NodemetricRule::setAllRulesUndefForANode(
+                cluster_id     => param('clusterid'),
+                node_id        => $node->{id},
+            );
+        } 
+        
     };
     if($@) {
         my $exception = $@;

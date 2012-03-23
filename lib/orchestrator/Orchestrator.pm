@@ -232,11 +232,11 @@ sub _evalRule {
         # Warning, not all the monitored values are required but we transmit 
         # all of them
         
-        if (0 ==  keys %$monitored_values_for_one_node) {
-            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
-            next NODE;
-        }
-        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
+#        if (0 ==  keys %$monitored_values_for_one_node) {
+#            $cluster->updateNodeState( hostname => $host_name, state => 'down' );
+#            next NODE;
+#        }
+#        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
 
         my $nodeEval = $rule->evalOnOneNode(
             monitored_values_for_one_node => $monitored_values_for_one_node

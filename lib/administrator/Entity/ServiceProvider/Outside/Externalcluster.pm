@@ -29,6 +29,9 @@ use Clustermetric;
 use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
+use Clustermetric;
+
+
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -191,18 +194,28 @@ sub updateNodes {
      my $ds_connector = $self->getConnector( category => 'DirectoryService' );
      my $nodes = $ds_connector->getNodes(%args);
      
+     my @created_nodes;
+     
      my $new_node_count = 0;
      for my $node (@$nodes) {
          if (defined $node->{hostname}) {
             $new_node_count++;
-            $self->{_dbix}->parent->externalnodes->find_or_create({
+            
+            my $row = $self->{_dbix}->parent->externalnodes->find({
                 externalnode_hostname   => $node->{hostname},
-                externalnode_state      => 'down',
             });
+
+            if(! defined $row){
+                $self->{_dbix}->parent->externalnodes->create({
+                    externalnode_hostname   => $node->{hostname},
+                    externalnode_state      => 'down',
+                });
+                push @created_nodes, $node;
+            }
          }
      }
      
-     return $new_node_count;
+     return {created_nodes => \@created_nodes, node_count => $new_node_count};
      # TODO remove dead nodes from db
 }
 
