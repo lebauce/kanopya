@@ -146,11 +146,15 @@ sub manage_aggregates {
 sub evalExtCluster{
     my %args = @_;
     
-    my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{cluster_id});
-    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster       => $args{extcluster});
+    my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{extcluster_id});
+    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $args{extcluster}, extcluster_id => $args{extcluster_id});
     my $cluster_eval = {%$cr_eval,%$nr_eval};
-    
-    
+    print Dumper $cluster_eval; 
+#        if( ($cluster_eval->{cm_rule_undef} == $cluster_eval->{cm_rule_enabled})
+#    ||  (
+#       
+#    ){
+#    }
 #    if($cluster_eval->{} + $cluster_eval->{}  >0){
 #         $externalCluster->setAttr(
 #                name => 'externalcluster_state',
@@ -168,26 +172,39 @@ sub evalExtCluster{
 
 sub evalExtClusterNodeRuleState {
     my %args = @_;
-    my $extcluster    = $args{extcluster};
-
+    my $extcluster     = $args{extcluster};
+    my $extcluster_id  = $args{extcluster_id};
+    
     my $externalClusterState = {};
     
     my $nodes = $extcluster->getNodes(shortname => 1);
     
-    $externalClusterState->{num_nodes}          = scalar (@$nodes);    
-    $externalClusterState->{num_node_nok}       = 0;
-    $externalClusterState->{num_noderule_verif} = 0;
+    $externalClusterState->{nm_rule_nodes}   = scalar (@$nodes);    
+    $externalClusterState->{nm_rule_enabled} = my $num_node_rule_total = scalar NodemetricRule->searchLight(
+                                    hash=>{
+                                        'nodemetric_rule_service_provider_id' => $extcluster_id,
+                                        'nodemetric_rule_state' => 'enabled',
+                                    }
+                                 );
+    
+    
+
+                                 
+                                 
+    $externalClusterState->{nm_rule_nodes_ok}  = 0;
+    $externalClusterState->{nm_rule_nodes_nok} = 0;
+    
     
     foreach my $node (@$nodes) {
         $node->{"state_" . $node->{state}} = 1;
-        $externalClusterState->{num_noderule_verif} += $node->{num_verified_rules};
+        $externalClusterState->{nm_rule_nodes_nok} += $node->{num_verified_rules};
         
         if($node->{num_verified_rules} > 0){
             $externalClusterState->{num_node_nok}++;
         }
     }
     
-    $externalClusterState->{nodes} = $nodes;
+    $externalClusterState->{nm_rule_nodes} = $nodes;
     return $externalClusterState;
 }
 
