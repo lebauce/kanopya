@@ -377,7 +377,12 @@ sub getFreeHost {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ "ram", "cpu" ]);
-    
+
+    if ($args{ram_unit}) {
+        $args{ram} .= $args{ram_unit};
+        delete $args{ram_unit};
+    }
+
     $log->info( "Looking for a virtual host" );
     my $host = eval{ 
         return $self->_getEntity->createVirtualHost(
