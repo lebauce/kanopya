@@ -239,6 +239,7 @@ sub getNodeState {
     my $state = $self->{_dbix}->node->get_column('node_state');
     return wantarray ? split(/:/, $state) : $state;
 }
+
 =head2 getNodeNumber
 
 =cut
@@ -247,6 +248,18 @@ sub getNodeNumber {
     my $node_number = $self->{_dbix}->node->get_column('node_number');
     return $node_number;
 }
+
+=head2 getNodeSystemimage
+
+=cut
+
+sub getNodeSystemimage {
+    my $self = shift;
+
+    my $systemimage_id = $self->{_dbix}->node->get_column('systemimage_id');
+    return Entity::Systemimage->get(id => $systemimage_id);
+}
+
 =head2 getHostRAM
 =cut
 sub getHostRAM {
@@ -254,6 +267,7 @@ sub getHostRAM {
     my $host_ram = $self->{_dbix}->get_column('host_ram');
     return $host_ram;
 }
+
 =head2 getHostCore
 =cut
 sub getHostCORE {
