@@ -132,11 +132,8 @@ sub manage_aggregates {
                 $log->error($@);
             };
             
-            my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $cluster_id);
-            my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $externalCluster);
-            
-            print Dumper $cr_eval;
-            print Dumper $nr_eval;
+            my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);
+            print Dumper $cluster_eval;
         }
     1;
     }or do {
@@ -159,6 +156,15 @@ sub manage_aggregates {
 }
 
 
+sub evalExtCluster{
+    my %args = @_;
+    
+    my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{cluster_id});
+    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster       => $args{externalCluster});
+    my $cluster_eval = {%$cr_eval,%$nr_eval};
+    return $cluster_eval;
+}
+
 sub evalExtClusterNodeRuleState {
     my %args = @_;
     my $extcluster    = $args{extcluster};
@@ -168,7 +174,7 @@ sub evalExtClusterNodeRuleState {
     my $nodes = $extcluster->getNodes(shortname => 1);
     
     $externalClusterState->{num_nodes}          = scalar (@$nodes);    
-    $externalClusterState->{num_node_not_ok}    = 0;
+    $externalClusterState->{num_node_nok}       = 0;
     $externalClusterState->{num_noderule_verif} = 0;
     
     foreach my $node (@$nodes) {
@@ -190,8 +196,6 @@ sub evalExtClusterClusterRuleState {
     my $extcluster_id = $args{extcluster_id};
     my $externalClusterState = {};
     
-
-
     
     my @rules = AggregateRule->search(
         hash => {
