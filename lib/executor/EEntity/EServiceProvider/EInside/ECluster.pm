@@ -40,7 +40,7 @@ use warnings;
 
 use Entity;
 use EFactory;
-
+use String::Random;
 use IO::Socket;
 use Net::Ping;
 
@@ -48,6 +48,14 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 my $errmsg;
+
+my $config = {
+    INCLUDE_PATH => '/templates/internal/',
+    INTERPOLATE  => 1,               # expand "$var" in plain text
+    POST_CHOMP   => 0,               # cleanup whitespace
+    EVAL_PERL    => 1,               # evaluate Perl code blocks
+    RELATIVE     => 1,               # desactive par defaut
+};
 
 sub create {
     my $self = shift;
@@ -97,6 +105,38 @@ sub addNode {
                 "> returned free host " . $host->getAttr(name => 'host_id'));
 
     return $host;
+}
+
+sub generateResolvConf {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args,
+                         required => ['econtext', 'etc_path' ]);
+
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+
+    my @nameservers = ();
+
+    for my $attr ('cluster_nameserver1','cluster_nameserver2') {
+        push @nameservers, {
+            ipaddress => $self->_getEntity()->getAttr(name => $attr)
+        };
+    }
+
+    my $vars = {
+        domainname => $self->_getEntity()->getAttr(name => 'cluster_domainname'),
+        nameservers => \@nameservers,
+    };
+
+    my $template = Template->new($config);
+    my $input = "resolv.conf.tt";
+
+    $template->process($input, $vars, "/tmp/".$tmpfile) or die $template->error(), "\n";
+    $args{econtext}->send(
+        src  => "/tmp/$tmpfile",
+        dest => "$args{etc_path}/resolv.conf"
+    );
+    unlink "/tmp/$tmpfile";
 }
 
 1;
