@@ -19,7 +19,6 @@ use base 'Entity::Connector', 'Entity::Connector::NetappManager';
 
 use warnings;
 use Entity::Container::NetappLun;
-use Entity::IscsiTarget;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
