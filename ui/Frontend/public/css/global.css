@@ -17,18 +17,21 @@ body {
   background-color: white;
   border-top: 2px solid #7E388A;
   height: 140px;
+  border-bottom: 1px solid #7E388A;
 }
 
 #header #logo {
-  position: absolute;
   top: 10px;
-  left: 110px;
+  padding-left: 110px;
+  padding-right: 20px;
+  float: left;
+  padding-top: 10px;
 }
 
 #header #infologin {
   position: absolute;
   top: 5px;
-  right: 127px;
+  right: 100px;
   color: #C2C2C2;
   font-size: 11px;
   font-weight: bold;
@@ -41,8 +44,7 @@ body {
 #header .logout {
   position: absolute;
   top: 0px;
-  right: 25px;
-  background: #7E388A url(/images/picto_logout.png) no-repeat left;
+  right: 0px;
   color: white;
   text-align: center;
   width: 84px;
@@ -50,25 +52,27 @@ body {
   padding-top: 10px;
   font-size: 11px;
   font-weight: bold;
+  background: #7E388A;
 }
 
 #header .logout a {
   color: white;
   text-decoration: none;
+  background: #7E388A url(/images/picto_logout.png) no-repeat left;
+  padding-left: 25px;
 }
 
 #header #menu_separator {
   border-bottom: 1px solid #C2C2C2;
-  top: 98px;
   width: 100%;
-  position: absolute;
+  clear: both;
+  padding-top: 3px;
 }
 
 #header #menu {
-  margin-top: 60px;
   margin-left: auto;
   margin-right: auto;
-  width: 65%;
+  width: 85%;
 }
 
 #header #menu ul {
@@ -80,7 +84,6 @@ body {
 }
 
 #header #menu ul li {
-  //padding-right: 37px;
   padding: 8px 37px 8px 0px;
 }
 
@@ -99,6 +102,7 @@ body {
 
 #header #menu ul .selected {
   border-bottom: 3px solid #7E388A;
+  margin-bottom: -3px;
 }
 
 #header #menu ul .selected a {
@@ -106,20 +110,22 @@ body {
 }
 
 #header #submenu {
-  margin-top: 103px;
+  margin-top: 93px;
   margin-left: auto;
   margin-right: auto;
-  width: 65%;
+  width: 75%;
 }
 
 #header #submenu ul {
   list-style-type: none;
+  margin-top: 0px;
+  text-align: center;
 }
 
 #header #submenu ul li {
-  float: left;
   padding: 5px 15px 5px 15px;
   background-color: #C2C2C2;
+  display: inline-block;
 }
 
 #header #submenu ul li a {
@@ -188,4 +194,18 @@ body {
   display: none;
   font-size: 0.7em;
   line-height: 1.4em;
+}
+
+.disabled {
+  color: #BBBBBB;
+}
+
+a .action .disabled {
+  color: #BBBBBB;
+}
+
+.disabled a {
+  pointer-events: none;
+  cursor: default;
+  color: #BBBBBB;
 }
