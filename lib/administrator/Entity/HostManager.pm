@@ -193,5 +193,15 @@ sub getBootPolicies {
     throw Kanopya::Exception::NotImplemented();
 }
 
+=head2 getHostType
+
+    Desc: return the name of the host managed by this host manager
+
+=cut
+
+sub getHostType {
+    return "Host";
+}
+
 
 1;

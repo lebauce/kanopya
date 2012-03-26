@@ -42,6 +42,10 @@ sub getBootPolicies {
     );
 }
 
+sub getHostType {
+    return "Physical host";
+}
+
 sub getConf {
     my $self = shift;
     my $conf = {};

@@ -18,7 +18,7 @@
 <% END %>
 <div class="actions">
 <% IF can_create %>
-	<a class="action modal" href="/infrastructures/hosts/add?manager=<% host_manager.id %>">add a new host</a>
+	<a class="action modal" href="/infrastructures/hosts/add?manager=<% host_manager.id %>">add a new <% host_manager.host_type %></a>
 	<p class="italic">add a new host.</p>
 <% END %>&nbsp;
 </div>

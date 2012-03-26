@@ -27,6 +27,10 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub getBootPolicies { return ('BootOnSan');  }
 
+sub getHostType {
+    return "UCS blade";
+}
+
 sub get {
     my $class = shift;
     my %args = @_;

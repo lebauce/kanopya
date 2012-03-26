@@ -67,6 +67,7 @@ sub findManager {
                 "name"                => $obj->{component_name},
                 "id"                  => $component->getAttr(name => "component_id"),
                 "service_provider_id" => $component->getAttr(name => "service_provider_id"),
+                "host_type"           => $component->can("getHostType") ? $component->getHostType() : "",
             }
         }
     }
@@ -79,7 +80,8 @@ sub findManager {
                 "category"            => $obj->{connector_category},
                 "name"                => $obj->{connector_name},
                 "id"                  => $connector->getAttr(name => "connector_id"),
-                "service_provider_id" => $connector->getAttr(name => "service_provider_id")
+                "service_provider_id" => $connector->getAttr(name => "service_provider_id"),
+                "host_type"           => $connector->can("getHostType") ? $connector->getHostType() : "",
             }
         }
     }

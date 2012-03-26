@@ -216,7 +216,7 @@
                     <% ELSIF is_menu_selected('infrastructures') %>
                         <% FOREACH manager IN host_managers %>
                             <li <%IF host_manager.id == manager.id %>class="selected"<% END %>>
-                                <a href="/infrastructures/hosts?manager=<% manager.id %>"><% manager.name %></a>
+                                <a href="/infrastructures/hosts?manager=<% manager.id %>"><% manager.host_type %></a>
                             </li>
                         <% END %>
                     <% ELSIF is_menu_selected('networks') %>

@@ -78,10 +78,13 @@ sub getAttrDef { return ATTR_DEF; }
 =cut
 
 sub getBootPolicies { 
-    return ('PXE Boot via ISCSI',
-            'PXE Boot via NFS', 
-            'BootOnVirtualDisk'
-            );
+    return ( 'PXE Boot via ISCSI',
+             'PXE Boot via NFS',
+             'BootOnVirtualDisk' );
+}
+
+sub getHostType {
+    return "Virtual Machine";
 }
 
 sub getConf {
