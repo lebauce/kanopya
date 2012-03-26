@@ -24,6 +24,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Masterimage;
+use Entity::Systemimage;
 use Entity::Host;
 
 use Log::Log4perl "get_logger";
@@ -89,13 +90,20 @@ sub prepare {
     # - If node number == 1: always create a system image for the new node.
     # - If node number > 1 : - if not cluster_si_shared: create a system image for the new node.
     #                        - else: get the master node systemimage id for the new node.
+    my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '_' .
+                           $params->{node_number};
 
-    if (($params->{node_number} == 1) or (not $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared'))) {
+    # Check for existing systemimage for this node.
+    my $existing_image = Entity::Systemimage->find(hash => {systemimage_name => $systemimage_name});
+
+    if ($existing_image) {
+        $log->info("Using existing systemimage instance <$systemimage_name>");
+        $params->{systemimage_id} = $existing_image->getAttr(name => 'systemimage_id');
+    }
+    elsif (($params->{node_number} == 1) or (not $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared'))) {
         # Create new systemimage instance
-        $log->info("Create new systemimage instance");
-        
-        my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '_' .
-                               $params->{node_number} ;
+        $log->info("Create new systemimage instance <$systemimage_name>");
+
         my $systemimage_desc = 'System image for node ' . $params->{node_number}  .' in cluster ' .
                                $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '.';
 
@@ -112,7 +120,6 @@ sub prepare {
     elsif (not defined $params->{systemimage_id}) {
         $params->{systemimage_id} = $self->{_objs}->{cluster}->getMasterNodeSystemimageId;
     }
-    
 
     # Get contexts
     my $exec_cluster

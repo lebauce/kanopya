@@ -46,6 +46,8 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
     $self->{executor}   = {};
     $self->{bootserver} = {};
     $self->{_objs}      = {};
@@ -103,7 +105,7 @@ sub prepare {
     $log->debug("Loaded dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
 
     # Get container of the system image, get the container access of the container
-    $self->{_objs}->{container} = $self->{_objs}->{cluster}->getSystemImage->getDevice;
+    $self->{_objs}->{container} = $self->{_objs}->{host}->getNodeSystemimage->getDevice;
 
     # Warning:
     # 1. Systeme image should be activated, so at least one container access exists
@@ -173,7 +175,7 @@ sub execute {
         dhcpd3_hosts_hostname           => $host_hostname,
         dhcpd3_hosts_ntp_server         => $self->{bootserver}->{obj}->getMasterNodeIp(),
         dhcpd3_hosts_domain_name        => $self->{_objs}->{cluster}->getAttr(name => "cluster_domainname"),
-        dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver"),
+        dhcpd3_hosts_domain_name_server => $self->{_objs}->{cluster}->getAttr(name => "cluster_nameserver1"),
         kernel_id                       => $host_kernel_id,
         erollback                       => $self->{erollback}
     );
@@ -207,8 +209,8 @@ sub execute {
 
 
     # Get the ECluster and EHost
-    my $ECluster = EFactory::newEEntity(data => $self->{_obj}->{cluster});
-    my $EHost = EFactory::newEEntity(data => $self->{_objs}->{host});
+    my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
+    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
 
     # Get the corresponding EContainerAccess
     my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
@@ -221,19 +223,19 @@ sub execute {
 
 
     # generate resolv.conf
-    $ECluster->generateResolvConf(
+    $ecluster->generateResolvConf(
         etc_path => $mountpoint . '/etc',
         econtext => $self->{executor}->{econtext}
     );
 
     # generate node hostname
-    $EHost->generateHostname(
+    $ehost->generateHostname(
         etc_path => $mountpoint . '/etc',
         econtext => $self->{executor}->{econtext}
     );
 
     # generate node udev persistent net rules
-    $EHost->generateUdevPersistentNetRules(
+    $ehost->generateUdevPersistentNetRules(
         etc_path => $mountpoint . '/etc',
         econtext => $self->{executor}->{econtext}
     );
@@ -273,7 +275,7 @@ sub execute {
 
     # Finally we start the node
     
-    $EHost->start(
+    $ehost->start(
         econtext  => $self->{executor}->{econtext},
         erollback => $self->{erollback}
     );
@@ -458,7 +460,7 @@ sub _generateBootConf {
     $log->info("Generate Kanopya Halt script Conf");
 
     $self->_generateKanopyaHalt(etc_path   => $args{etc_path},
-                                targetname => $args{targetname});
+                                targetname => $targetname);
 
     $log->info("Generate Initiator Conf");
 
@@ -466,7 +468,7 @@ sub _generateBootConf {
     my $initiatorname = $targetname;
     $initiatorname =~ s/\:.*$//g;   # Remove string after the last ':'
     $initiatorname =~ s/[^\.]+$//g; # Remove string after the last '.'
-    $initiatorname .= $self->{_objs}->{host}->getAttr(name => 'host_name');
+    $initiatorname .= $self->{_objs}->{host}->getAttr(name => 'host_hostname');
 
     # Set initiatorName
     $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
@@ -485,9 +487,9 @@ sub _generateBootConf {
     my $input = "bootconf.tt";
 
     my $vars = {
-        filesystem    => $args{filesystem},
+        filesystem    => $self->{_objs}->{container}->getAttr(name => 'container_filesystem'),
         initiatorname => $initiatorname,
-        target        => $args{targetname},
+        target        => $targetname,
         ip            => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
         port          => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
         mount_opts    => $args{options},
