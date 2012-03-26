@@ -10,11 +10,14 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/Cluster.t.log', layout=>'%
 
 use_ok ('Administrator');
 use_ok ('Executor');
-use_ok('Entity::ServiceProvider::Inside::Cluster');
-use_ok('Entity::User');
+use_ok ('Entity::ServiceProvider::Inside::Cluster');
+use_ok ('Entity::User');
+use_ok ('Entity::ManagerParameter');
 
 
 eval {
+    #BEGIN { $ENV{DBIC_TRACE} = 1 }
+
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
     my $adm = Administrator->new;
     my $db = $adm->{db};
@@ -72,23 +75,30 @@ eval {
 	} 'Kanopya::Exception::Internal::IncorrectParam',
 	  'missing mandatory attribute';
 
+    $db->txn_rollback; 
+    
+    $db->txn_begin;
+    
 	lives_ok {
 		Entity::ServiceProvider::Inside::Cluster->create(
-			cluster_name           => "foobar",
-			cluster_min_node       => "1",
-			cluster_max_node       => "3",
-			cluster_priority       => "100",
-			cluster_boot_policy    => 'best_policy',
-			cluster_domainname     => 'my.domain',
-			cluster_nameserver1    => '127.0.0.1',
-            cluster_nameserver2    => '127.0.0.1',
-			cluster_basehostname   =>'test_',
-			cluster_si_shared      => '1',
-			masterimage_id         => "1",
-            user_id                => $admin_user->getAttr(name => 'user_id'),
-            host_manager_id        => $physical_hoster->getAttr(name => 'component_id'),
-            disk_manager_id        => $lvm_component->getAttr(name => 'component_id'),
-            export_manager_id      => $iscsi_component->getAttr(name => 'component_id'),
+			cluster_name         => "foobar",
+			cluster_min_node     => "1",
+			cluster_max_node     => "3",
+			cluster_priority     => "100",
+			cluster_boot_policy  => 'best_policy',
+			cluster_domainname   => 'my.domain',
+			cluster_nameserver1  => '127.0.0.1',
+            cluster_nameserver2  => '127.0.0.1',
+			cluster_basehostname =>'test_',
+			cluster_si_shared    => 1,
+			masterimage_id       => "1",
+            user_id              => $admin_user->getAttr(name => 'user_id'),
+            host_manager_id      => $physical_hoster->getAttr(name => 'component_id'),
+            disk_manager_id      => $lvm_component->getAttr(name => 'component_id'),
+            export_manager_id    => $iscsi_component->getAttr(name => 'component_id'),
+            disk_manager_param_vg_id => 1,
+            host_manager_param_cpu   => 2,
+            host_manager_param_ram   => 512,
 		);
 	} 'AddCluster operation enqueue';
 
@@ -107,7 +117,33 @@ eval {
 	
 	isnt($cluster_id, undef, "cluster_id is defined ($cluster_id)");
 
-	lives_ok { $executor->oneRun(); } 'AddHost operation execution succeed';
+    my $manager_param;
+    lives_ok {
+		$manager_param = Entity::ManagerParameter->find(
+                             hash => {
+                                 cluster_id => $cluster_id,
+                                 manager_id => $lvm_component->getAttr(name => 'component_id'),
+                                 name       => 'vg_id',
+                             }
+                         );
+	} 'retrieve disk manager paramater';
+
+    isa_ok ($manager_param, 'Entity::ManagerParameter'); 	
+    cmp_ok ($manager_param->getAttr(name => 'value'), '==', 1, 'disk manager paramater "vg_id" is 1');
+
+    my $manager_param;
+    lives_ok {
+		$manager_param = Entity::ManagerParameter->find(
+                             hash => {
+                                 cluster_id => $cluster_id,
+                                 manager_id => $physical_hoster->getAttr(name => 'component_id'),
+                                 name       => 'ram',
+                             }
+                         );
+	} 'retrieve host manager paramater';
+
+    isa_ok ($manager_param, 'Entity::ManagerParameter'); 	
+    cmp_ok ($manager_param->getAttr(name => 'value'), '==', 512, 'host manager paramater "ram" is 256');
 
 	lives_ok { $cluster->remove; } 'RemoveCluster operation enqueue';
     lives_ok { $executor->oneRun; } 'RemoveCluster operation execution succeed';

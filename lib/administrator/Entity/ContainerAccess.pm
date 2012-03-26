@@ -87,15 +87,20 @@ sub getAttrDef { return ATTR_DEF; }
 sub getAttr {
     my $self = shift;
     my %args = @_;
+    my $value;
 
     General::checkParams(args => \%args, required => [ 'name' ]);
 
-    # Firstly, try to get value from generic attrs.
-    my $value = $self->getContainerAccess->{$args{name}};
-    if (! defined $value) {
-        # Else get the value from usual way.
+    if (!defined $self->{recursion}) {
+        $self->{recursion} = 1;
+        $value = $self->getContainerAccess->{$args{name}};
+        delete $self->{recursion};
+    }
+
+    if (!defined $value) {
         $value = $self->SUPER::getAttr(name => $args{name});
     }
+
     return $value;
 }
 
@@ -110,11 +115,11 @@ sub toString {
 
     my $access_id    = $self->getAttr(name => 'container_access_id');
     my $container_id = $self->getAttr(name => 'container_id');
-    my $mananger_id  = $self->getAttr(name => 'export_manager_id');
+    my $manager_id   = $self->getAttr(name => 'export_manager_id');
 
     my $string = "ContainerAccess, id = $container_access_id, " .
                  "container_id = $container_id" .
-                 "export_manager_id = $mananger_id";
+                 "export_manager_id = $manager_id";
 
     return $string;
 }

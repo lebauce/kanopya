@@ -28,6 +28,7 @@ use Administrator;
 
 use Entity::Container;
 use Entity::ContainerAccess::NfsContainerAccess;
+use Entity::NfsContainerAccessClient;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -37,58 +38,60 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub getExports {
     my $self = shift;
+    my @result = ();
 
     if ($self->{_dbix}) {
-        my @result = ();
-        my $exports = $self->{_dbix}->nfsd3_exports;
-        while (my $export = $exports->next) {
-            my $client_rs = $export->nfsd3_exportclients;
+        my @exports = Entity::ContainerAccess->search(
+                          hash => { export_manager_id => $self->getAttr(name => "component_id") }
+                      );
+
+        for my $export (@exports) {
             my @clients = ();
-            while (my $client = $client_rs->next) {
+            for my $client ($export->getClients()) {
                 push @clients, {
-                    nfsd3_exportclient_name => $client->get_column('nfsd3_exportclient_name'),
-                    nfsd3_exportclient_options => $client->get_column('nfsd3_exportclient_options'),
-                }
+                    nfsd3_exportclient_name    => $client->getAttr(name => 'name'),
+                    nfsd3_exportclient_options => $client->getAttr(name => 'options'),
+                };
             }
             push @result, {
-                nfsd3_export_path => $export->get_column('nfsd3_export_path'),
-                clients => \@clients,
+                nfsd3_export_path => $export->getAttr(name => 'export_path'),
+                clients     => \@clients,
             };
         }
-
-		return @result;
-	}
+    }
+    return @result;
 }
 
 sub getConf {
     my $self = shift;
     my %conf = ( );
-    
-    my $conf_row = $self->{_dbix};
-    if($conf_row) {
-        $conf{nfsd3_statdopts} = $conf_row->get_column('nfsd3_statdopts');
-        $conf{nfsd3_need_gssd} = $conf_row->get_column('nfsd3_need_gssd');
-        $conf{nfsd3_rpcnfsdcount} = $conf_row->get_column('nfsd3_rpcnfsdcount');
-        $conf{nfsd3_rpcnfsdpriority} = $conf_row->get_column('nfsd3_rpcnfsdpriority');
-        $conf{nfsd3_rpcmountopts} = $conf_row->get_column('nfsd3_rpcmountopts');
-        $conf{nfsd3_need_svcgssd} = $conf_row->get_column('nfsd3_need_svcgssd');
-        $conf{nfsd3_rpcsvcgssdopts} = $conf_row->get_column('nfsd3_rpcsvcgssdopts');
-        
+
+    if ($self->{_dbix}) {
         my @exports = $self->getExports();
-        $conf{exports} = \@exports;
+
+        return {
+            nfsd3_statdopts       => $self->getAttr(name => 'nfsd3_statdopts'),
+            nfsd3_need_gssd       => $self->getAttr(name => 'nfsd3_need_gssd'),
+            nfsd3_rpcnfsdcount    => $self->getAttr(name => 'nfsd3_rpcnfsdcount'),
+            nfsd3_rpcnfsdpriority => $self->getAttr(name => 'nfsd3_rpcnfsdpriority'),
+            nfsd3_rpcmountopts    => $self->getAttr(name => 'nfsd3_rpcmountopts'),
+            nfsd3_need_svcgssd    => $self->getAttr(name => 'nfsd3_need_svcgssd'),
+            nfsd3_rpcsvcgssdopts  => $self->getAttr(name => 'nfsd3_rpcsvcgssdopts'),
+            exports               => \@exports
+        };
     }
     else {
-        $conf{nfsd3_statdopts} = '';
-        $conf{nfsd3_need_gssd} = 'no';
-        $conf{nfsd3_rpcnfsdcount} = '8';
-        $conf{nfsd3_rpcnfsdpriority} = '0';
-        $conf{nfsd3_rpcmountopts} = '';
-        $conf{nfsd3_need_svcgssd} = 'no';
-        $conf{nfsd3_rpcsvcgssdopts} = '';
-        $conf{exports} = [];
+        return {
+            nfsd3_statdopts       => '',
+            nfsd3_need_gssd       => 'no',
+            nfsd3_rpcnfsdcount    => '8',
+            nfsd3_rpcnfsdpriority => '0',
+            nfsd3_rpcmountopts    => '',
+            nfsd3_need_svcgssd    => 'no',
+            nfsd3_rpcsvcgssdopts  => '',
+            exports               => []
+        };
     }
-    
-    return \%conf;
 }
 
 sub setConf {
@@ -103,15 +106,16 @@ sub setConf {
 
         # Check if specified device match to a registred container.
         my $container;
+        my $device;
         foreach my $cont (@containers) {
-            my $device = $cont->getAttr(name => 'container_device');
+            $device = $cont->getAttr(name => 'container_device');
             if ("$device" eq "$export->{nfsd3_export_path}") {
                 $container = $cont;
                 last;
             }
         }
         if (! defined $container) {
-            $errmsg = "Specified device <$export->{nfsd3_export_path}> " .
+            $errmsg = "Specified device <$device> " .
                       "does not match to an existing container.";
             $log->error($errmsg);
             throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -125,85 +129,30 @@ sub setConf {
             last;
         }
     }
-
-#    my $self = shift;
-#    my($conf) = @_;
-#    
-#    # delete old conf        
-#    my $conf_row = $self->{_dbix};
-#    $conf_row->delete() if (defined $conf_row); 
-#
-#    # create
-#    $conf_row = $self->{_dbix}->create( {
-#        nfsd3_statdopts => $conf->{nfsd3_statdopts},
-#        nfsd3_need_gssd => $conf->{nfsd3_need_gssd},
-#        nfsd3_rpcnfsdcount => $conf->{nfsd3_rpcnfsdcount},
-#        nfsd3_rpcnfsdpriority => $conf->{nfsd3_rpcnfsdpriority},
-#        nfsd3_rpcmountopts => $conf->{nfsd3_rpcmountopts},
-#        nfsd3_need_svcgssd => $conf->{nfsd3_need_svcgssd},
-#        nfsd3_rpcsvcgssdopts => $conf->{nfsd3_rpcsvcgssdopts},
-#    } );
-#    
-#    # exports
-#    foreach my $export (@{ $conf->{exports} }) {
-#        my $export_row = $conf_row->nfsd3_exports->create({
-#            nfsd3_export_path => $export->{nfsd3_export_path}
-#        });
-#        # clients options                                                        
-#        foreach my $client (@{ $export->{clients} }) {
-#            $export_row->nfsd3_exportclients->create(
-#            {    
-#                nfsd3_exportclient_name => $client->{nfsd3_exportclient_name},
-#                nfsd3_exportclient_options => $client->{nfsd3_exportclient_options},
-#            });
-#        }    
-#    } 
-
 }
 
-# return directory where a device will be mounted for nfs export 
+=head2 getMountDir
+    
+    Desc : Return directory where a device will be mounted for nfs export 
+    args : device
+
+=cut
+
 sub getMountDir {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ "device" ]);
 
-    #my $dir = $args{device};
-    #$dir =~ /^\/dev\/[\w-]+\/([\w-]+)$/;
-    #return "/nfsexports/" . $1;
-
     my $dev = $args{device};
     $dev =~ s/.*\///g;
-    return "/nfsexports/" . $dev
-}
-
-=head2 addExport
-    
-    Desc : This function add new export to the db component
-    args : export_id, client_name, client_options 
-
-=cut
-
-sub addExport {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "device" ]);
-
-    my $component = $self->{_dbix};
-    my $export = $component->nfsd3_exports->create(
-                     { nfsd3_export_path => $args{device} }
-                 );
-
-    $export->discard_changes;
-    return $export->get_column('nfsd3_export_id')
-
+    return "/nfsexports/" . $dev;
 }
 
 =head2 addExportClient
     
     Desc : This function a new client with options to an export.
-    args : export_id, client_name, client_options 
+    args : export_id, client_name, client_options
 
 =cut
 
@@ -214,90 +163,97 @@ sub addExportClient {
     General::checkParams(args     => \%args,
                          required => [ "export_id", "client_name", "client_options" ]);
 
-    my $component = $self->{_dbix};
-    my $exportclient_rs = $component->nfsd3_exports->single({nfsd3_export_id =>$args{export_id}})->nfsd3_exportclients;
-    my $exportclient = $exportclient_rs->create(
-                           { nfsd3_exportclient_name => $args{client_name},
-                             nfsd3_exportclient_options => $args{client_options} }
+    my $exportclient = Entity::NfsContainerAccessClient->new(
+                           name                    => $args{client_name},
+                           options                 => $args{client_options},
+                           nfs_container_access_id => $args{export_id}
                        );
 
-    $exportclient->discard_changes;
-    return $exportclient->get_column('nfsd3_exportclient_id')
+    return $exportclient;
 }
 
-=head2 delExport
+=head2 getTemplateDataExports
     
-    Desc : This function delete an export from db
+    Desc : Return a data structure to pass to the template processor
+           for /etc/exports file
 
 =cut
 
-sub delExport {
+sub getTemplateDataExports {
+    my $self = shift;
+    my $nfsd3_exports = [];
+
+    my @exports = Entity::ContainerAccess->search(
+                      hash => { export_manager_id => $self->getAttr(name => "component_id") }
+                  );
+
+    for my $export (@exports) {
+        my $clients = [];
+        my $mountpoint = $self->getMountDir(device => $export->getAttr(name => 'export_path'));
+        my @clients = Entity::NfsContainerAccessClient->search(
+                          hash => { nfs_container_access_id => $export->getAttr(name => "nfs_container_access_id") }
+                      );
+
+        for my $client(@clients) {
+            push @{$clients}, {
+                name    => $client->getAttr(name => 'name'),
+                options => $client->getAttr(name => 'options')
+            };
+        }
+
+        push @{$nfsd3_exports}, {
+            clients => $clients,
+            path    => $mountpoint
+        };
+    }
+
+    return {
+        nfsd3_exports => $nfsd3_exports
+    };
+}
+
+=head2 getTemplateDataNfsCommon
+    
+    Desc : Return a data structure to pass to the template processor
+           for /etc/default/nfs-common file
+
+=cut
+
+sub getTemplateDataNfsCommon {
+    my $self = shift;
+
+    return {
+        nfsd3_statdopts => $self->getAttr(name => 'nfsd3_statdopts'),
+        nfsd3_need_gssd => $self->getAttr(name => 'nfsd3_need_gssd')
+    };
+}
+
+=head2 getTemplateDataNfsKernelServer
+    
+    Desc : Return a data structure to pass to the template processor
+           for /etc/default/nfs-kernel-server file
+    
+=cut
+
+sub getTemplateDataNfsKernelServer {
+    my $self = shift;
+
+    return {
+        nfsd3_rpcnfsdcount    => $self->getAttr(name => 'nfsd3_rpcnfsdcount'),
+        nfsd3_rpcnfsdpriority => $self->getAttr(name => 'nfsd3_rpcnfsdpriority'),
+        nfsd3_rpcmountopts    => $self->getAttr(name => 'nfsd3_rpcmountopts'),
+        nfsd3_need_svcgssd    => $self->getAttr(name => 'nfsd3_need_svcgssd'),
+        nfsd3_rpcsvcgssdopts  => $self->getAttr(name => 'nfsd3_rpcsvcgssdopts')
+    }
+}
+
+sub getReadOnlyParameter {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "device" ]);
-
-    my $component = $self->{_dbix};
-    $component->nfsd3_exports->single({ nfsd3_export_path => $args{device} })->delete();
-}
-
-# return a data structure to pass to the template processor for /etc/exports file
-sub getTemplateDataExports {
-    my $self = shift;
-    my $data = {};
-    my $general_config = $self->{_dbix};
-    if(not $general_config) {
-        # TODO throw exception then no configuration
-    } 
+    General::checkParams(args => \%args, required => [ 'readonly' ]);
     
-    $data->{nfsd3_exports} = [];
-    my $exports_rs = $general_config->nfsd3_exports;
-    while(my $export = $exports_rs->next) {
-        my $record = {};
-        $record->{path} = $self->getMountDir(device => $export->get_column('nfsd3_export_path'));
-        $record->{clients} = [];
-        my $clients_rs = $export->nfsd3_exportclients;
-        while(my $client = $clients_rs->next) {
-            my $tmp = {
-                name => $client->get_column('nfsd3_exportclient_name'),
-                options => $client->get_column('nfsd3_exportclient_options')
-            };    
-            push @{$record->{clients}}, $tmp;     
-        }
-        push @{$data->{nfsd3_exports}}, $record;     
-    }
-     return $data;
-}
-
-# return a data structure to pass to the template processor for /etc/default/nfs-common file
-sub getTemplateDataNfsCommon {
-    my $self = shift;
-    my $data = {};
-    my $general_config = $self->{_dbix};
-    if(not $general_config) {
-        # TODO throw exception then no configuration
-    } 
-    $data->{nfsd3_statdopts} = $general_config->get_column('nfsd3_statdopts');
-    $data->{nfsd3_need_gssd} = $general_config->get_column('nfsd3_need_gssd');
-    
-    return $data;
-}
-
-# return a data structure to pass to the template processor for /etc/default/nfs-kernel-server file
-sub getTemplateDataNfsKernelServer {
-    my $self = shift;
-    my $data = {};
-    my $general_config = $self->{_dbix};
-    if(not $general_config) {
-        # TODO throw exception then no configuration
-    } 
-    $data->{nfsd3_rpcnfsdcount}    = $general_config->get_column('nfsd3_rpcnfsdcount');
-    $data->{nfsd3_rpcnfsdpriority} = $general_config->get_column('nfsd3_rpcnfsdpriority');
-    $data->{nfsd3_rpcmountopts}    = $general_config->get_column('nfsd3_rpcmountopts');
-    $data->{nfsd3_need_svcgssd}    = $general_config->get_column('nfsd3_need_svcgssd');
-    $data->{nfsd3_rpcsvcgssdopts}  = $general_config->get_column('nfsd3_rpcsvcgssdopts');
-    
-    return $data;   
+    return {};
 }
 
 =head2 createExport
@@ -369,20 +325,23 @@ sub getContainerAccess {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "export_id", "client_id" ]);
+    General::checkParams(args => \%args, required => [ "container_access" ]);
 
-    my $export_rs = $self->{_dbix}->nfsd3_exports->find($args{export_id});
-    my $client_rs = $export_rs->nfsd3_exportclients->find($args{client_id});
+    my $export = $args{container_access};
+    my $mountdir = $self->getMountDir(device => $export->getAttr(name => 'export_path'));
 
-    my $mountdir = $self->getMountDir(device => $export_rs->get_column('nfsd3_export_path'));
-    my $container = {
+    # TODO: do not do this...
+    # my @clients = $export->getClients();
+    # my $options = $clients[0]->getAttr(name => "options");
+
+    my $options = "ro";
+
+    return {
         container_access_export  => $mountdir,
-        container_access_options => $client_rs->get_column('nfsd3_exportclient_options'),
+        container_access_options => $options,
         container_access_ip      => '10.0.0.1',
         container_access_port    => 2049
     };
-
-    return $container;
 }
 
 =head2 addContainerAccess
@@ -398,13 +357,12 @@ sub addContainerAccess {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "container", "export_id", "client_id" ]);
+                         required => [ "container" ]);
 
     my $access = Entity::ContainerAccess::NfsContainerAccess->new(
                      container_id      => $args{container}->getAttr(name => 'container_id'),
                      export_manager_id => $self->getAttr(name => 'nfsd3_id'),
-                     export_id         => $args{export_id},
-                     client_id         => $args{client_id},
+                     export_path       => $args{container}->getAttr(name => 'container_device')
                  );
 
     my $access_id = $access->getAttr(name => 'container_access_id');

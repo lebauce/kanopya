@@ -80,7 +80,7 @@ sub copy {
         # resize it to maximum.
         if ($dest_size > $source_size) {
             my $part_start = $dest_access->getPartitionStart(econtext => $args{econtext});
-            if ($part_start > 0) {
+            if ($part_start and $part_start > 0) {
                 $command = "parted -s $dest_device rm 1";
                 $result  = $args{econtext}->execute(command => $command);
 
@@ -272,7 +272,7 @@ sub connectPartition {
     my $device = $self->tryConnect(econtext => $args{econtext});
     my $part_start = $self->getPartitionStart(econtext => $args{econtext});
 
-    if ($part_start > 0) {
+    if ($part_start and $part_start > 0) {
         # Get a free loop device
         $command = "losetup -f";
         $result  = $args{econtext}->execute(command => $command);

@@ -80,19 +80,6 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    $log->info('Getting minimum number of nodes to start');
-    my $nodes_to_start = $self->{_objs}->{cluster}->getAttr(name => 'cluster_min_node');    
-
-#    my @free_hosts = Entity::Host->getHosts(hash => { active => 1, host_state => 'down'});
-#    
-#    my $priority = $self->_getOperation()->getAttr(attr_name => 'priority');
-#    
-#
-#    for(my $i=0 ; $i < $nodes_to_start ; $i++) {
-#        my $host = pop @free_hosts;
-#        $self->{_objs}->{cluster}->addNode(host_id => $host->getAttr(name => 'host_id'));
-#    }     
-
     # Just call Master node addition, other node will be add by the state manager
     $self->{_objs}->{cluster}->addNode();
     $self->{_objs}->{cluster}->setState(state => 'starting');

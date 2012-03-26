@@ -21,13 +21,8 @@ use warnings;
 use Entity::Component::Nfsd3;
 
 use constant ATTR_DEF => {
-    export_id => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
-    client_id => {
-        pattern => '^[0-9\.]*$',
+    export_path => {
+        pattern => '^.*$',
         is_mandatory => 1,
         is_extended => 0
     },
@@ -48,12 +43,32 @@ sub getContainerAccess {
 
     # Cannot use getAttr here, to avoid infinite recursion as
     # getContainer method is called from getAttr parent class.
-    my $nfsd3 = Entity::Component::Nfsd3->get(
-                    id => $self->{_dbix}->parent->get_column('export_manager_id')
-                );
+    my $export_manager = Entity::Component->get(
+                             id => $self->{_dbix}->parent->get_column('export_manager_id')
+                         );
 
-    return $nfsd3->getContainerAccess(export_id => $self->{_dbix}->get_column('export_id'),
-                                      client_id => $self->{_dbix}->get_column('client_id'));
+    return $export_manager->getContainerAccess(container_access => $self);
+
+=comment
+    # return $nfsd3->getContainerAccess(container_access_export  => $self->{_dbix}->get_column('export_path'),
+
+    return {
+        # container_access_export  => $self->{_dbix}->get_column('export_path'),
+        container_access_export  => $nfsd3->getMountDir(device => $export_rs->get_column('nfsd3_export_path'));
+        container_access_ip      => '10.0.0.1',
+        container_access_port    => 2049
+    };
+=cut
+}
+
+sub getClients {
+    my $self = shift;
+
+    return Entity::NfsContainerAccessClient->find(
+               hash => {
+                   nfs_container_access_id => $self->getAttr(name => "nfs_container_access_id")
+               }
+           );
 }
 
 =head2 getExportManager

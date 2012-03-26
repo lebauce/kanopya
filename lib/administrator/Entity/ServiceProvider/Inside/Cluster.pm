@@ -29,7 +29,7 @@ use Entity::Tier;
 use Operation;
 use Administrator;
 use General;
-use DecisionMaker::HostSelector;
+use Entity::ManagerParameter;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -571,6 +571,17 @@ sub getMasterNodeId {
     }
 }
 
+sub getMasterNodeSystemimageId {
+    my $self = shift;
+    my $node_instance_rs = $self->{_dbix}->parent->search_related("nodes", { master_node => 1 })->single;
+    if(defined $node_instance_rs) {
+        my $id = $node_instance_rs->host->get_column('systemimage_id');
+        return $id;
+    } else {
+        return;
+    }
+}
+
 =head2 addComponent
 
 link a existing component with the cluster
@@ -738,37 +749,10 @@ sub addNode {
               );
     }
 
-    # Check if a host is specified.
-    if (defined $args{host_id}) {
-        my $host = Entity::Host->get(id => $args{host_id});
-        my $manager_id = $host->getAttr(name => 'host_manager_id');
-        my $cluster_host_manager_id = $self->getAttr(name => "host_manager_id");
-
-        # Check if the specified host is manager by the cluster host manager
-        if ($manager_id != $cluster_host_manager_id) {
-            $errmsg = "Specified host <" . $args{host_id} . ">, is not managed by the same " .
-                      "host manager than the cluster one (<" . $manager_id .
-                      "> ne <" . $cluster_host_manager_id . ").";
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg)
-        }
-
-        $params{host_id} = $args{host_id};
-    }
-    # Else lets the DesisionMaker to choose one.
-    else {
-        my $host_manager = Entity->get(id => $self->getAttr(name => "host_manager_id"));
-
-        $log->debug("Cluster <$args{cluster_id}> ask for a host to host manager <$host_manager>");
-        
-        $params{host_id} = DecisionMaker::HostSelector->getHost(%args);
-    }
-
-    Entity::Host->get(id => $params{host_id})->setState(state => "locked");
-
-    $log->debug("New Operation PreStartNode with attrs : " . %params);
+    $log->debug("New Operation AddNode with attrs : " . %params);
     Operation->enqueue(
         priority => 200,
-        type     => 'PreStartNode',
+        type     => 'AddNode',
         params   => \%params
     );
 }
@@ -918,6 +902,41 @@ sub getNewNodeNumber {
 		}
 	}
 	return $counter;
+}
+
+sub addManagerParamater {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
+
+    Entity::ManagerParameter->new(
+        cluster_id => $self->getAttr(name => 'cluster_id'),
+        manager_id => $self->getAttr(name => $args{manager_type} . '_id'),
+        name       => $args{name},
+        value      => $args{value},
+    );
+}
+
+sub getManagerParamaters {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'manager_type' ]);
+
+    my @parameters = Entity::ManagerParameter->search(
+        hash => {
+            cluster_id => $self->getAttr(name => 'cluster_id'),
+            manager_id => $self->getAttr(name => $args{manager_type} . '_id'),
+        }
+    );
+
+    my $params_hash;
+    for my $param (@parameters) {
+        $params_hash->{$param->getAttr(name => 'name')}
+            = $param->getAttr(name => 'value');
+    }
+    return $params_hash;
 }
 
 1;

@@ -28,22 +28,19 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 
 =head2 getHost
-    
+
     Class : Public
-    
+
     Desc :  Select and return the more suitable host according to constraints
-     
-    Args :  cluster_id : id of the cluster requesting a host
-            
-            CONSTRAINTS
-            core : min number of desired core
+
+    Args :  core : min number of desired core
             ram  : min amount of desired ram  # TODO manage unit (M,G,..)
-            
+
             All constraints args are optional, not defined means no constraint for this arg
             Final constraints are intersection of input constraints and cluster components contraints.
-            
+
     Return : Entity::Host
-    
+
 =cut
 
 sub getHost {
@@ -51,7 +48,7 @@ sub getHost {
     my %args = @_;
     my ($default_core, $default_ram) = (1, "512M");
 
-    General::checkParams(args => \%args, required => [ "cluster_id", "host_manager_id" ]);
+    General::checkParams(args => \%args, required => [ "host_manager_id" ]);
 
     # Set default Ram and convert in B.
     my $ram = defined $args{ram} ? $args{ram} : $default_ram;
@@ -64,12 +61,13 @@ sub getHost {
     $log->debug("Host selector search for a node with ram : <$args{ram}> and core : <$args{core}>");
 
     # Get all free hosts of the specified host manager
-    my @free_hosts = Entity::Host->getFreeHosts(host_manager_id => $args{host_manager_id});
+    my $host_manager = ENtity->get(id => $args{host_manager_id});
+    my @free_hosts = $host_manager->getFreeHosts();
 
     # Keep only hosts matching constraints (cpu, mem)
     my @valid_hosts = grep { $self->_matchHostConstraints(host => $_, %args) } @free_hosts;
 
-    if ( scalar @valid_hosts == 0) {
+    if (scalar @valid_hosts == 0) {
         my $errmsg = "no free  host respecting constraints";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -78,7 +76,7 @@ sub getHost {
     # TODO get the better hosts according to rank (e.g min consumption, max cpu, ...)
     my $host = $valid_hosts[0];
 
-    return $host->getAttr(name => 'host_id');
+    return $host;
 }
 
 sub _matchHostConstraints {
@@ -98,64 +96,6 @@ sub _matchHostConstraints {
     }
 
     return 1;
-}
-
-sub getPhysicalHost {
-    my $self = shift;
-    my %args = @_;
-    
-    $log->info("Looking for a physical host");
-    print Dumper \%args;
-    
-    # Get all free hosts
-    my @free_hosts = Entity::Host->getFreeHosts();
-    
-    # Keep only hosts matching constraints (cpu,mem)
-    my @valid_hosts = grep { $self->_matchHostConstraints( host => $_, %args ) } @free_hosts;
-    
-    if ( scalar @valid_hosts == 0) {
-        my $errmsg = "no free physical host respecting constraints";
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-    
-    # Get the first valid host
-    # TODO get the better hosts according to rank (e.g min consumption, max cpu, ...)
-    my $host = $valid_hosts[0];
-
-    return $host->getAttr(name => 'host_id');
-}
-
-sub getVirtualHost {
-    my $self = shift;
-    my %args = @_;
-    
-    $log->info( "Looking for a virtual host" );
-    my $tmp = $args{clusters};
-    my @clusters = @$tmp;
-    CLUSTER:                
-    for my $cluster (@clusters) {
-        my $components = $cluster->getComponents( category => 'Cloudmanager');
-        next CLUSTER if (0 == keys %$components);
-        my $cm_component = (values %$components)[0];
-        my $host_id = eval {
-            return $cm_component->createVirtualHost(
-                core => $args{core},
-                ram => $args{ram},
-                cluster_id => $cluster->getAttr(name=>"cluster_id")
-            );
-        };
-        if ($@) {
-            my $error =$@;
-            # We can't create virtual host for some reasons (e.g can't meet constraints)
-            $log->debug("This cluster ". $cluster->getAttr(name=>"cluster_name")
-                        ."does not have capabilities to host this vm core <$args{core}> and ram <$args{ram}>". $error);
-            next CLUSTER;
-        }
-        return $host_id;
-    }
-
-    my $errmsg = "can't create a virtual host";
-    throw Kanopya::Exception::Internal(error => $errmsg);
 }
 
 1;

@@ -24,7 +24,6 @@ ESystemimage - execution class of systemimage entities
 =head1 SYNOPSIS
 
 
-
 =head1 DESCRIPTION
 
 ESystemimage is the execution class of systemimage entities
@@ -32,15 +31,57 @@ ESystemimage is the execution class of systemimage entities
 =head1 METHODS
 
 =cut
+
 package EEntity::ESystemimage;
 use base "EEntity";
 
 use strict;
 use warnings;
+
+use Entity;
+use Entity::Gp;
+use EEntity::EContainer::ELocalContainer;
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 my $errmsg;
+
+sub createFromMasterimage {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "masterimage", "edisk_manager",
+                                       "manager_params", "erollback", "econtext" ]);
+    
+    my $emaster_container = EEntity::EContainer::ELocalContainer->new(
+                                path => $args{masterimage}->getAttr(name => 'masterimage_file'),
+                                size => $args{masterimage}->getAttr(name => 'masterimage_size'),
+                                # TODO: get this value from masterimage attrs.
+                                filesystem => 'ext3',
+                            );
+
+    # Instance a fake econtainer for the masterimage raw file.
+    $self->create(
+        esrc_container => $emaster_container,
+        edisk_manager  => $args{edisk_manager},
+        econtext       => $args{econtext},
+        erollback      => $args{erollback},
+        %{$args{manager_params}}
+    );
+
+    my @group = Entity::Gp->getGroups(hash => { gp_name => 'SystemImage' });
+    $group[0]->appendEntity(entity => $self->_getEntity);
+
+    my $components = $args{masterimage}->getProvidedComponents();
+    foreach my $comp (@$components) {
+            $self->installedComponentLinkCreation(
+                component_type_id => $comp->{component_type_id}
+            );
+    }
+}
+
 
 sub create {
     my $self = shift;
@@ -65,12 +106,17 @@ sub create {
                                           )
                            );
 
+    my $storage_provider = Entity->get(id => $edisk_manager->_getEntity->getAttr(name => 'service_provider_id'));
+    my $disk_manager_econtext
+        = EFactory::newEContext(ip_source      => $econtext->getLocalIp,
+                                ip_destination => $storage_provider->getMasterNodeIp());
+
     # Creation of the device based on distribution device
     my $container = $edisk_manager->createDisk(
                         name       => $self->_getEntity->getAttr(name => 'systemimage_name'),
                         size       => $systemimage_size,
                         filesystem => $esource_container->_getEntity->getAttr(name => 'container_filesystem'),
-                        econtext   => $edisk_manager->{econtext},
+                        econtext   => $disk_manager_econtext,
                         erollback  => $erollback,
                         %args
                     );
@@ -106,10 +152,15 @@ sub generateAuthorizedKeys{
     # mount the root systemimage device
     my $container = $self->_getEntity()->getDevice();
 
+    my $storage_provider = Entity->get(id => $args{eexport_manager}->_getEntity->getAttr(name => 'service_provider_id'));
+    my $export_manager_econtext
+        = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
+                                ip_destination => $storage_provider->getMasterNodeIp());
+
     my $container_access = $args{eexport_manager}->createExport(
                                container   => $container,
                                export_name => $container->getAttr(name => 'container_name'),
-                               econtext    => $args{eexport_manager}->{econtext},
+                               econtext    => $export_manager_econtext,
                                erollback   => $args{erollback}
                             );
 
@@ -129,7 +180,7 @@ sub generateAuthorizedKeys{
 
     $args{eexport_manager}->removeExport(
         container_access => $container_access,
-        econtext         => $args{eexport_manager}->{econtext},
+        econtext         => $export_manager_econtext,
         erollback        => $args{erollback}
     );
 }
@@ -140,9 +191,14 @@ sub activate {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "econtext", "eexport_manager", "erollback" ]);
+                         required => [ "eexport_manager", "manager_params", "econtext", "erollback" ]);
 
     my $container = $self->_getEntity()->getDevice();
+
+    my $storage_provider = Entity->get(id => $args{eexport_manager}->_getEntity->getAttr(name => 'service_provider_id'));
+    my $export_manager_econtext
+        = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
+                                ip_destination => $storage_provider->getMasterNodeIp());
 
     # Provide root rsa pub key to provide ssh key authentication
     $self->generateAuthorizedKeys(eexport_manager => $args{eexport_manager},
@@ -150,15 +206,13 @@ sub activate {
                                   erollback       => $args{erollback});
 
     # Get acontainer export information
-    my $si_access_mode = $self->_getEntity()->getAttr(name => 'systemimage_dedicated') ? 'wb' : 'ro';
-    my $export_name    = 'root_' . $self->_getEntity()->getAttr(name => 'systemimage_name');
+    my $export_name = $self->_getEntity()->getAttr(name => 'systemimage_name');
 
     $args{eexport_manager}->createExport(container   => $container,
                                          export_name => $export_name,
-                                         typeio      => "fileio",
-                                         iomode      => $si_access_mode,
-                                         econtext    => $args{eexport_manager}->{econtext},
-                                         erollback   => $args{erollback});
+                                         econtext    => $export_manager_econtext,
+                                         erollback   => $args{erollback},
+                                         %{$args{manager_params}});
 
     # Set system image active in db
     $self->_getEntity()->setAttr(name => 'active', value => 1);

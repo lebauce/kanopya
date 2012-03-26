@@ -76,8 +76,9 @@ INSERT INTO `class_type` VALUES
 (60, 'Entity::Container::NetappLun'),
 (61, 'Entity::Container::NetappVolume'),
 (62, 'Entity::Container::FileContainer'),
-(63, 'Entity::ContainerAccess::FileContainerAccess');
-
+(63, 'Entity::ContainerAccess::FileContainerAccess'),
+(64, 'Entity::ManagerParameter'),
+(65, 'Entity::NfsContainerAccessClient');
 
 --
 -- system groups

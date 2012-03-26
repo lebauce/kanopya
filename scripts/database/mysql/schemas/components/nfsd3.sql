@@ -19,32 +19,5 @@ CREATE TABLE `nfsd3` (
   CONSTRAINT FOREIGN KEY (`nfsd3_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for nfsd3_export
---
-
-CREATE TABLE `nfsd3_export` (
-  `nfsd3_export_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `nfsd3_id` int(8) unsigned NOT NULL,
-  `nfsd3_export_path` char(255) NOT NULL,
-  PRIMARY KEY (`nfsd3_export_id`),
-  KEY `fk_nfsd3_export_1` (`nfsd3_id`),
-  CONSTRAINT `fk_nfsd3_export_1` FOREIGN KEY (`nfsd3_id`) REFERENCES `nfsd3` (`nfsd3_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for nfsd3_exportclient
---
-
-CREATE TABLE `nfsd3_exportclient` (
-  `nfsd3_exportclient_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `nfsd3_export_id` int(8) unsigned NOT NULL,
-  `nfsd3_exportclient_name` char(255) NOT NULL,
-  `nfsd3_exportclient_options` char(255) NOT NULL,
-  PRIMARY KEY (`nfsd3_exportclient_id`),
-  KEY `fk_nfsd3_exportclient_1` (`nfsd3_export_id`),
-  CONSTRAINT `fk_nfsd3_exportclient_1` FOREIGN KEY (`nfsd3_export_id`) REFERENCES `nfsd3_export` (`nfsd3_export_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 SET foreign_key_checks=1;
 

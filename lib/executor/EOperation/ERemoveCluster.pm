@@ -1,6 +1,6 @@
 # ERemoveCluster.pm - Operation class implementing Cluster remove operation
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2009-2012 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -82,7 +82,7 @@ sub prepare {
 
     $self->{_objs} = {};
 
-     # Cluster instantiation
+    # Cluster instantiation
     $log->debug("checking cluster existence with id <$params->{cluster_id}>");
     eval {
         $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
@@ -93,12 +93,8 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    
-    # cluster systemimage instanciation
-    #$log->debug("checking cluster existence with id <$params->{cluster_id}>"); 
-    #$self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getSystemImage();
 
-    ### Check Parameters and context
+    # Check Parameters and context
     eval {
         $self->checkOp(params => $params);
     };
@@ -109,7 +105,6 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    ## Instanciate context 
     # Get context for nas
     $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
     
@@ -124,22 +119,6 @@ sub execute {
     $self->{econtext}->execute(command => $command);
 
     $log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
-
-    # if systemimage defined (always true...?) and dedicated, back to shared state and deactivate it
-    #~ if ($self->{_objs}->{systemimage}) {
-        #~ if ($self->{_objs}->{systemimage}->getAttr(name => 'systemimage_dedicated')) {
-            #~ $self->{_objs}->{systemimage}->setAttr(name => 'systemimage_dedicated', value => 0);
-            #~ $self->{_objs}->{systemimage}->save();
-#~ 
-            #~ Operation->enqueue(
-                #~ priority => 2000,
-                #~ type     => 'DeactivateSystemimage',
-                #~ params   => { systemimage_id => $self->{_objs}->{systemimage}->getAttr(
-                                                    #~ name => 'systemimage_id'
-                                                #~ ) },
-            #~ );
-        #~ }
-    #~ }
 
     $self->{_objs}->{cluster}->delete();
 }
@@ -184,7 +163,7 @@ Patches are welcome.
 
 =head1 LICENCE AND COPYRIGHT
 
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
+Kanopya Copyright (C) 2009-2012 Hedera Technology.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

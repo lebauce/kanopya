@@ -100,6 +100,11 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rwcCd7TTcBOA4LkmPuWwjg
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { "foreign.entity_id" => "self.iscsitarget1_target_id" },
+  { cascade_copy => 0, cascade_delete => 1 }
+);
 
-# You can replace this text with custom content, and it will be preserved on regeneration
 1;

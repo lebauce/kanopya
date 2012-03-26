@@ -176,11 +176,10 @@ sub setConf {
     for my $vg ( @{ $conf->{vgs} }) {
         for my $new_lv ( @{ $vg->{lvs} }) {
             $self->createDisk(
-                disk_name  => $new_lv->{lvm2_lv_name},
+                name       => $new_lv->{lvm2_lv_name},
                 size       => $new_lv->{lvm2_lv_size},
                 filesystem => $new_lv->{lvm2_lv_filesystem},
-                vg_id      => $vg->{vg_id},
-                vg_name    => $vg->{vg_name},
+                vg_id      => $vg->{vg_id}
             );
         }
     }
@@ -199,7 +198,7 @@ sub createDisk {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "disk_name", "size", "filesystem" ]);
+                         required => [ "vg_id", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
     Operation->enqueue(
@@ -208,11 +207,10 @@ sub createDisk {
         params   => {
             storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             disk_manager_id     => $self->getAttr(name => 'component_id'),
-            name                => $args{disk_name},
+            name                => $args{name},
             size                => $args{size},
             filesystem          => $args{filesystem},
             vg_id               => $args{vg_id},
-            vg_name             => $args{vg_name},
         },
     );
 }
@@ -275,13 +273,15 @@ sub getContainer {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "lv_id" ]);
-
     my $main  = $self->getMainVg;
     my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $main->{vgid} });
     my $lv_rs = $vg_rs->lvm2_lvs->single({ lvm2_lv_id => $args{lv_id} });
 
+    my $lvm_container = Entity::Container::LvmContainer->find(
+                            hash => { lv_id => $lv_rs->get_column('lvm2_lv_id') }
+                        );
     my $container = {
+        container_id         => $lvm_container->{_dbix}->get_column('lvm_container_id'),
         container_name       => $lv_rs->get_column('lvm2_lv_name'),
         container_size       => $lv_rs->get_column('lvm2_lv_size'),
         container_filesystem => $lv_rs->get_column('lvm2_lv_filesystem'),

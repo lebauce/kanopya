@@ -22,6 +22,7 @@ use warnings;
 
 use General;
 use Entity::Powersupplycard;
+use DecisionMaker::HostSelector;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
@@ -107,7 +108,7 @@ sub stopHost {
         my $sock = new IO::Socket::INET (
                        PeerAddr => $powersupplycard->getAttr(name => "powersupplycard_ip"),
                        PeerPort => '1470',
-                       Proto => 'tcp',
+                       Proto    => 'tcp',
                    );
 
         $sock->autoflush(1);
@@ -120,6 +121,21 @@ sub stopHost {
         printf $sock $s;
         close($sock);
     }
+}
+
+=head2 getFreeHost
+
+=cut
+
+sub getFreeHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "ram", "cpu" ]);
+
+    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'component_id');
+
+    return DecisionMaker::HostSelector->getHost(%args);
 }
 
 =head2 postStart

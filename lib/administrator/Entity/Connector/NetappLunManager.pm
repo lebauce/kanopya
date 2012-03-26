@@ -19,7 +19,7 @@ use base 'Entity::Connector', 'Entity::Connector::NetappManager';
 
 use warnings;
 use Entity::Container::NetappLun;
-use Administrator;
+use Entity::IscsiTarget;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -96,11 +96,10 @@ sub removeDisk {
 sub getContainer {
     my $self = shift;
     my %args = @_;
-
-    my $lun = Entity::Container::NetappLun->find(hash => \%args);
+    my $lun = $args{lun};
 
     my $container = {
-        container_name       => $lun->{_dbix}->get_column('name'),
+        container_name       => $lun->getAttr(name => 'name'),
         container_size       => $lun->{_dbix}->get_column('size'),
         container_filesystem => $lun->{_dbix}->get_column('filesystem'),
         container_device     => $lun->{_dbix}->get_column('name'),
@@ -136,8 +135,6 @@ sub addContainer {
 
     my $container_id = $container->getAttr(name => 'container_id');
     $log->info("LUN container <$container_id> saved to database");
-
-    print "DONE CREATEING NETAPPLUN\n";
 
     return $container;
 }
@@ -180,7 +177,7 @@ sub createExport {
         type     => 'CreateExport',
         params   => {
             storage_provider_id => $self->getAttr(name => 'service_provider_id'),
-            export_manager_id   => $self->getAttr(name => 'component_id'),
+            export_manager_id   => $self->getAttr(name => 'connector_id'),
             container_id => $args{container}->getAttr(name => 'container_id'),
             export_name  => $args{export_name},
             typeio       => $args{typeio},
@@ -226,14 +223,15 @@ sub getContainerAccess {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "lun_id", "target_id" ]);
+    General::checkParams(args => \%args, required => [ "container_access" ]);
 
-    my $target_rs = $self->{_dbix}->iscsitarget1_targets->find($args{target_id});
+    my $lun = Entity::Container::NetappLun->get(id => $args{container_access}->getAttr(name => "container_id"));
 
     my $container = {
-        container_access_export => $target_rs->get_column('iscsitarget1_target_name'),
+        container_access_export => $self->iscsi_node_get_name->node_name,
         container_access_ip     => $self->{netapp}->getMasterNodeIp(),
         container_access_port   => 3260,
+        container_lun_name      => "lun-0"
     };
 
     return $container;
@@ -251,13 +249,14 @@ sub addContainerAccess {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "container", "target_id", "lun_id" ]);
+    General::checkParams(args => \%args, required => [ "container", "name", "typeio", "iomode" ]);
 
     my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
                      container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getId(),
-                     target_id         => $args{target_id},
-                     lun_id            => $args{lun_id},
+                     export_manager_id => $self->getAttr(name => "connector_id"),
+                     target_name       => $args{name},
+                     typeio            => $args{typeio},
+                     iomode            => $args{iomode}
                  );
 
     my $access_id = $access->getAttr(name => 'container_access_id');

@@ -72,7 +72,6 @@ my $config = {
 =cut
 
 sub prepare {
-    
     my $self = shift;
     my %args = @_;
     $self->SUPER::prepare();
@@ -86,7 +85,8 @@ sub prepare {
     my $params = $self->_getOperation()->getParams();
 
     General::checkParams(args     => $params,
-                         required => [ "cluster_id", "host_id" ]);
+                         required => [ "cluster_id", "host_id",
+                                       "systemimage_id", "node_number" ]);
 
     # Get instance of Cluster Entity
     $log->info("Load cluster instance");
@@ -109,6 +109,8 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+    
+    $self->{params} = $params;
 }
 
 sub execute {
@@ -126,13 +128,11 @@ sub execute {
                            cluster => $self->{_objs}->{cluster});
     }
 
-    my $node_number =  $self->{_objs}->{cluster}->getNewNodeNumber();
-    $log->debug("Node number for this new node: $node_number");
-
     $self->{_objs}->{host}->becomeNode(
-		inside_id   => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
-        master_node => 0,
-        node_number => $node_number,
+		inside_id      => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
+        master_node    => 0,
+        systemimage_id => $self->{systemimage_id},
+        node_number    => $self->{node_number},
     );
 
     $self->{_objs}->{host}->setNodeState(state => "pregoingin");

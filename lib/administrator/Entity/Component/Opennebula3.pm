@@ -147,22 +147,23 @@ sub createVirtualHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['ram', 'core', 'cluster_id']);
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
 
     my $adm =  Administrator->new();
     my $new_mac_address = $adm->{manager}->{network}->generateMacAddress();
 
     my $vm = Entity::Host->new(
-            host_mac_address => $new_mac_address,
-            kernel_id => 1,
-            host_serial_number => "Virtual Host with mac $new_mac_address",
-            host_ram => $args{ram},
-            host_core => $args{core},
-            active  => 1
-            );
+                 host_mac_address   => $new_mac_address,
+                 kernel_id          => 1,
+                 host_serial_number => "Virtual Host with mac $new_mac_address",
+                 host_ram           => $args{ram},
+                 host_core          => $args{core},
+                 active             => 1,
+             );
+
     $vm->save();
-    $log->debug("return host with <" .$vm->getAttr(name=>"host_id").">");
-    return $vm->getAttr(name=>"host_id");
+    $log->debug("return host with <" . $vm->getAttr(name => "host_id") . ">");
+    return $vm;
 }
 
 ### hypervisors manipulation ###

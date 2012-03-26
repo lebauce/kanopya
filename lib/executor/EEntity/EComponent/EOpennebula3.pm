@@ -372,6 +372,28 @@ sub postStart {
 	
 }
 
+sub getFreeHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "ram", "cpu" ]);
+    
+    $log->info( "Looking for a virtual host" );
+    my $host = eval{ 
+        return $self->_getEntity->createVirtualHost(
+                   core => $args{core},
+                   ram  => $args{ram},
+               );
+    };
+    if ($@) {
+        my $error =$@;
+        # We can't create virtual host for some reasons (e.g can't meet constraints)
+        $log->debug("Component OpenNebula3 <" . $self->getAttr(name => 'component_id') .
+                    "> No capabilities to host this vm core <$args{core}> and ram <$args{ram}>" . $error);
+    }
+    return $host;
+}
+
 # generate vm template and push it on opennebula master node
 sub _generateVmTemplate {
 	my $self = shift;
@@ -383,14 +405,12 @@ sub _generateVmTemplate {
 		value => $args{host}->getAttr(name => 'host_ram'),
 		units => 'M'
 	);
-	
-	
+
 	my $data = {
 		memory      => $ram,
 		cpu		    => $args{host}->getAttr(name => 'host_core'),
 		mac_address => $args{host}->getAttr(name => 'host_mac_address'),
 	};
-	
 
 	$self->generateFile( econtext     => $args{econtext}, 
 						 mount_point  => '',

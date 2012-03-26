@@ -12,65 +12,30 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Container::NetappLun;
-use base "Entity::Container";
+package Entity::NfsContainerAccessClient;
+use base "Entity";
 
 use strict;
 use warnings;
 
 use constant ATTR_DEF => {
-    volume_id => {
+    name => {
+        pattern => '^.*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+    options => {
+        pattern => '^.*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+    nfs_container_access_id => {
         pattern => '^[0-9\.]*$',
         is_mandatory => 1,
-        is_extended => 0,
-    },
-    name => {
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_extended  => 0,
-        is_editable  => 0
-    },
-    filesystem => {
-        pattern      => '^\w*$',
-        is_mandatory => 1,
-        is_extended  => 0,
-    },
-    size => {
-        pattern => '^[0-9]*$',
-        is_mandatory => 1,
-        is_extended => 0,
+        is_extended => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getContainer
-
-    desc :
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    my $manager = Entity::Connector::NetappLunManager->get(
-        id => $self->{_dbix}->parent->get_column('disk_manager_id')
-    );
-
-    return $manager->getContainer(lun => $self);
-}
-
-=head2 getDiskManager
-    
-    desc:
-
-=cut
-
-sub getDiskManager {
-    my $self = shift;
-
-    return Entity->get(id => $self->getAttr(name => 'disk_manager_id'));
-}
 
 1;

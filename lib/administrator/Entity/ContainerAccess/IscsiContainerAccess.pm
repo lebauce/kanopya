@@ -18,16 +18,19 @@ use base "Entity::ContainerAccess";
 use strict;
 use warnings;
 
-use Entity::Component::Iscsitarget1;
-
 use constant ATTR_DEF => {
-    target_id => {
-        pattern => '^[0-9\.]*$',
+    target_name => {
+        pattern => '^.*$',
         is_mandatory => 1,
         is_extended => 0
     },
-    lun_id => {
-        pattern => '^[0-9\.]*$',
+    iomode => {
+        pattern => '^.*$',
+        is_mandatory => 1,
+        is_extended => 0
+    },
+    typeio => {
+        pattern => '^.*$',
         is_mandatory => 1,
         is_extended => 0
     },
@@ -48,12 +51,11 @@ sub getContainerAccess {
 
     # Cannot use getAttr here, to avoid infinite recursion as
     # getContainer method is called from getAttr parent class.
-    my $iscsitarget1 = Entity::Component::Iscsitarget1->get(
-                           id => $self->{_dbix}->parent->get_column('export_manager_id')
-                       );
+    my $export_manager = Entity->get(
+                             id => $self->getAttr(name => "export_manager_id"),
+                         );
 
-    return $iscsitarget1->getContainerAccess(lun_id    => $self->{_dbix}->get_column('lun_id'),
-                                             target_id => $self->{_dbix}->get_column('target_id'));
+    return $export_manager->getContainerAccess(container_access => $self);
 }
 
 =head2 getExportManager
@@ -65,7 +67,7 @@ sub getContainerAccess {
 sub getExportManager {
     my $self = shift;
 
-    return Entity::Component::Iscsitarget1->get(id => $self->getAttr(name => 'export_manager_id'));
+    return Entity->get(id => $self->getAttr(name => 'export_manager_id'));
 }
 
 1;

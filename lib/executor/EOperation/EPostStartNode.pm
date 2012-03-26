@@ -61,40 +61,6 @@ my $config = {
     RELATIVE => 1,                   # desactive par defaut
 };
 
-
-=head2 new
-
-    my $op = EOperation::EAddHost->new();
-
-    # Operation::EAddHost->new creates a new AddMotheboard operation.
-    # RETURN : EOperation::EAddHost : Operation add motherboar on execution side
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    $log->debug("Class is : $class");
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-
-    return;
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
