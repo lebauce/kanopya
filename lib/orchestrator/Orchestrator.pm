@@ -132,8 +132,11 @@ sub manage_aggregates {
                 $log->error($@);
             };
             
-            my $eval = Orchestrator::evalExtClusterState(extcluster_id => $cluster_id);
-            print Dumper $eval;
+            my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $cluster_id);
+            my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $externalCluster);
+            
+            print Dumper $cr_eval;
+            print Dumper $nr_eval;
         }
     1;
     }or do {
@@ -153,11 +156,36 @@ sub manage_aggregates {
 #                    );
 #                }
 #            $externalCluster->save();
-
-
 }
 
-sub evalExtClusterState {
+
+sub evalExtClusterNodeRuleState {
+    my %args = @_;
+    my $extcluster    = $args{extcluster};
+
+    my $externalClusterState = {};
+    
+    my $nodes = $extcluster->getNodes(shortname => 1);
+    
+    $externalClusterState->{num_nodes}          = scalar (@$nodes);    
+    $externalClusterState->{num_node_not_ok}    = 0;
+    $externalClusterState->{num_noderule_verif} = 0;
+    
+    foreach my $node (@$nodes) {
+        $node->{"state_" . $node->{state}} = 1;
+        $externalClusterState->{num_noderule_verif} += $node->{num_verified_rules};
+        
+        if($node->{num_verified_rules} > 0){
+            $externalClusterState->{num_node_nok}++;
+        }
+    }
+    
+    $externalClusterState->{nodes} = $nodes;
+    return $externalClusterState;
+}
+
+
+sub evalExtClusterClusterRuleState {
     my %args = @_;
     my $extcluster_id = $args{extcluster_id};
     my $externalClusterState = {};
@@ -171,14 +199,14 @@ sub evalExtClusterState {
                 }
         );
         
-    my @enabled_rules = NodemetricRule->search(
+    my @enabled_rules = AggregateRule->search(
         hash => {
                     aggregate_rule_service_provider_id => $extcluster_id,
                     aggregate_rule_state               => 'enabled',
                 }
         );
         
-    my @verif_rules = NodemetricRule->search(
+    my @verif_rules = AggregateRule->search(
         hash => {
                     aggregate_rule_service_provider_id => $extcluster_id,
                     aggregate_rule_state               => 'enabled',
