@@ -204,12 +204,13 @@ sub updateNodes {
             my $row = $self->{_dbix}->parent->externalnodes->find({
                 externalnode_hostname   => $node->{hostname},
             });
-
+            
             if(! defined $row){
-                $self->{_dbix}->parent->externalnodes->create({
+                my $node_row = $self->{_dbix}->parent->externalnodes->create({
                     externalnode_hostname   => $node->{hostname},
                     externalnode_state      => 'down',
                 });
+                $node->{id} =  $node_row->id;
                 push @created_nodes, $node;
             }
          }
