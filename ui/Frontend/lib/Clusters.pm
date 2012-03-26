@@ -11,6 +11,7 @@ use Entity::Kernel;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NodemetricRule;
+use Orchestrator;
 
 my $log = get_logger("webui");
 
@@ -536,24 +537,11 @@ get '/clusters/:clusterid' => sub {
 
 get '/extclusters/:clusterid' => sub {
     my $cluster_id = params->{clusterid};
-    
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
+
+    my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id,extcluster => $extcluster);
     
-    # Nodes list
-    my $num_noderule_verif    = 0;
-    
-    my $nodes = $extcluster->getNodes(shortname => 1);
-    
-    my $num_node_nok = 0; 
-    foreach my $node (@$nodes) {
-        $node->{"state_" . $node->{state}} = 1;
-        $num_noderule_verif += $node->{num_verified_rules};
-        
-        if($node->{num_verified_rules} > 0){
-            $num_node_nok++;
-        }
-    }
-    
+
     # Connectors
     my @connectors = map { 
         {
@@ -563,31 +551,45 @@ get '/extclusters/:clusterid' => sub {
             %{$_->getConnectorType()},
         }
     } $extcluster->getConnectors();
-
-
-     
-    my $num_node_rule_total = scalar NodemetricRule->searchLight(
-                                    hash=>{
-                                        'nodemetric_rule_service_provider_id' => $cluster_id,
-                                        'nodemetric_rule_state' => 'enabled',
-                                    }
-                                 );
-
-
     
-    my $num_clusterrule_verif   = 0;
-    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
-
-    my $num_cluster_rule_total = scalar @enabled_aggregaterules;
     
-    foreach my $rule (@enabled_aggregaterules){        
-        my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
-        if( defined $last_eval and $last_eval == 1){
-            $num_clusterrule_verif++;
-        } 
-    }
+    # Nodes list
+#    my $num_noderule_verif    = 0;
+#    
+#    my $nodes = $extcluster->getNodes(shortname => 1);
+#    
+#    my $num_node_nok = 0; 
+#    foreach my $node (@$nodes) {
+#        $node->{"state_" . $node->{state}} = 1;
+#        $num_noderule_verif += $node->{num_verified_rules};
+#        
+#        if($node->{num_verified_rules} > 0){
+#            $num_node_nok++;
+#        }
+#    }
+#    
+#    my $num_node_rule_total = scalar NodemetricRule->searchLight(
+#                                    hash=>{
+#                                        'nodemetric_rule_service_provider_id' => $cluster_id,
+#                                        'nodemetric_rule_state' => 'enabled',
+#                                    }
+#                                 );
+#
+#
+#    
+#    my $num_clusterrule_verif   = 0;
+#    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
+#
+#    my $num_cluster_rule_total = scalar @enabled_aggregaterules;
+#    
+#    foreach my $rule (@enabled_aggregaterules){        
+#        my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
+#        if( defined $last_eval and $last_eval == 1){
+#            $num_clusterrule_verif++;
+#        } 
+#    }
 
-    my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$nodes}; 
+    my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nodes}}; 
     
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
@@ -601,11 +603,12 @@ get '/extclusters/:clusterid' => sub {
         link_addconnector     => 1,
         link_delete           => 1,
         can_configure         => 1,
-        num_node_rule_total   => $num_node_rule_total,
-        num_cluster_rule_total => $num_cluster_rule_total,
-        num_noderule_verif    => $num_noderule_verif,
-        num_clusterrule_verif => $num_clusterrule_verif,
-        num_node_nok          => $num_node_nok,
+        #num_node_rule_total    => $nr_rule->{num_node_rule_total},
+        num_noderule_verif     => $cluster_eval->{nm_rule_nok},
+        num_node_nok           => $cluster_eval->{nm_rule_node_nok},
+        num_cluster_rule_total => $cluster_eval->{cm_rule_total},
+        num_clusterrule_verif  => $cluster_eval->{cm_rule_nok},
+        
     }, { layout => 'main' };
 };
 

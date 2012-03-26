@@ -149,7 +149,7 @@ sub evalExtCluster{
     my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{extcluster_id});
     my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $args{extcluster}, extcluster_id => $args{extcluster_id});
     my $cluster_eval = {%$cr_eval,%$nr_eval};
-    print Dumper $cluster_eval; 
+
 #        if( ($cluster_eval->{cm_rule_undef} == $cluster_eval->{cm_rule_enabled})
 #    ||  (
 #       
@@ -192,11 +192,11 @@ sub evalExtClusterNodeRuleState {
     $externalClusterState->{nm_rule_nodes_down}  = 0;
     
     foreach my $node (@$nodes) {
-        $node->{"state_" . $node->{state}} = 1;
-        $externalClusterState->{nm_rule_nodes_nok} += $node->{num_verified_rules};        
+        #$node->{"state_" . $node->{state}} = 1;
+        #$externalClusterState->{nm_rule_nodes_nok} += $node->{num_verified_rules};        
         
-        if($node->{nm_rule_enabled} > 0){ # TEST IF THERE ARE ENABLED RULES 
-            if($node->{num_undef_rules} == $node->{nm_rule_enabled}){ # TEST IF THERE ARE DATA
+        if($externalClusterState->{nm_rule_enabled} > 0){ # TEST IF THERE ARE ENABLED RULES 
+            if($node->{num_undef_rules} == $externalClusterState->{nm_rule_enabled}){ # TEST IF THERE ARE DATA
                 $node->{state} = 'down';
                 $externalClusterState->{nm_rule_nodes_down}++;
             } else {
