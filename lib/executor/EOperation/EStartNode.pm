@@ -220,6 +220,10 @@ sub execute {
     my $options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
                       ? "ro,noatime,nodiratime" : "defaults";
 
+
+    # Get the ECluster
+    my $ECluster = EFactory::newEEntity(data => $self->{_obj}->{cluster});
+
     # Get the corresponding EContainerAccess
     my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
 
@@ -228,6 +232,13 @@ sub execute {
 
     $log->info('Mounting the container <' . $mountpoint . '>');
     $econtainer_access->mount(mountpoint => $mountpoint, econtext => $self->{executor}->{econtext});
+
+
+    # generate resolv.conf
+    $ECluster->generateResolvConf(
+        etc_path => $mountpoint . '/etc',
+        econtext => $self->{executor}->{econtext}
+    );
 
     # Apply node etc configuration
     $self->_generateNodeConf(etc_path   => $mountpoint . '/etc',
@@ -287,9 +298,6 @@ sub _generateNodeConf {
 
     $log->info("Generate Network Conf");
     $self->_generateNetConf(etc_path => $args{etc_path});
-
-    $log->info("Generate resolv.conf");
-    $self->_generateResolvConf(etc_path => $args{etc_path});
 
     # TODO generateRouteConf
 
@@ -563,39 +571,6 @@ sub _generateBootConf {
     my $dest = $tftp_conf->{'repository'} . '/' . $self->{_objs}->{host}->getAttr(name => "host_hostname") . ".conf";
 
     $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
-    unlink "/tmp/$tmpfile";
-}
-
-sub _generateResolvConf{
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args,
-                         required => [ 'etc_path' ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    my @nameservers = ();
-
-    # TODO: Manage more than only one nameserver !
-    push @nameservers, {
-        ipaddress => $self->{_objs}->{cluster}->getAttr(name => 'cluster_nameserver')
-    };
-
-    my $vars = {
-        domainname => $self->{_objs}->{cluster}->getAttr(name => 'cluster_domainname'),
-        nameservers => \@nameservers,
-    };
-
-    my $template = Template->new($config);
-    my $input = "resolv.conf.tt";
-
-    $template->process($input, $vars, "/tmp/".$tmpfile) or die $template->error(), "\n";
-    $self->{executor}->{econtext}->send(
-        src  => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/resolv.conf"
-    );
     unlink "/tmp/$tmpfile";
 }
 
