@@ -109,7 +109,7 @@ sub prepare {
             if ($param_name =~ m/^${manager}_param/) {
                 my $value = $params->{$param_name};
                 $param_name =~ s/^${manager}_param_//g;
-                $self->{_objs}->{cluster}->addManagerParamater(
+                $self->{_objs}->{cluster}->addManagerParameter(
                     manager_type => $manager,
                     name         => $param_name,
                     value        => $value,
@@ -125,7 +125,7 @@ sub prepare {
                          );
 
     if ($readonly_param) {
-        $self->{_objs}->{cluster}->addManagerParamater(manager_type => 'export_manager',
+        $self->{_objs}->{cluster}->addManagerParameter(manager_type => 'export_manager',
                                                        name         => $readonly_param->{name},
                                                        value        => $readonly_param->{value});
     }

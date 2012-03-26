@@ -904,7 +904,7 @@ sub getNewNodeNumber {
 	return $counter;
 }
 
-sub addManagerParamater {
+sub addManagerParameter {
     my $self = shift;
     my %args = @_;
 
@@ -918,7 +918,7 @@ sub addManagerParamater {
     );
 }
 
-sub getManagerParamaters {
+sub getManagerParameters {
     my $self = shift;
     my %args = @_;
 
