@@ -132,7 +132,8 @@ sub manage_aggregates {
                 $log->error($@);
             };
             
-            Orchestrator::evalExtClusterState(extcluster_id => $cluster_id)
+            my $eval = Orchestrator::evalExtClusterState(extcluster_id => $cluster_id);
+            print Dumper $eval;
         }
     1;
     }or do {
@@ -159,7 +160,37 @@ sub manage_aggregates {
 sub evalExtClusterState {
     my %args = @_;
     my $extcluster_id = $args{extcluster_id};
-    print "evaluate cluster $extcluster_id \n";
+    my $externalClusterState = {};
+    
+
+
+    
+    my @rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                }
+        );
+        
+    my @enabled_rules = NodemetricRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                }
+        );
+        
+    my @verif_rules = NodemetricRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                    aggregate_rule_last_eval           => 1,
+                }
+        );
+        
+    $externalClusterState->{num_total_cm_rule}   = scalar @rules;
+    $externalClusterState->{num_enabled_cm_rule} = scalar @enabled_rules;
+    $externalClusterState->{num_verif_cm_rule}   = scalar @verif_rules;
+    
+    return $externalClusterState;
 }
 sub nodemetricManagement{
     my ($self, %args) = @_;
