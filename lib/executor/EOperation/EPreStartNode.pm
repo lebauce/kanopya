@@ -131,8 +131,8 @@ sub execute {
     $self->{_objs}->{host}->becomeNode(
 		inside_id      => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
         master_node    => 0,
-        systemimage_id => $self->{systemimage_id},
-        node_number    => $self->{node_number},
+        systemimage_id => $self->{params}->{systemimage_id},
+        node_number    => $self->{params}->{node_number},
     );
 
     # Set Hostname
