@@ -113,15 +113,19 @@ sub manage_aggregates {
         CLUSTER:
         for my $externalCluster (@externalClusters){
             my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-            eval{
-                $self->clustermetricManagement(cluster => $externalCluster);
+            eval{   
+                print "<CM $cluster_id>\n";
+                $self->clustermetricManagement(externalCluster => $externalCluster);
+                print "</CM $cluster_id>\n";
                 1;
             }or do {
                 print "Skip all clusterRules of cluster $cluster_id due to error $@\n";
                 $log->error($@);
             };
             eval{
-                $self->nodemetricManagement(cluster => $externalCluster);
+                print "<CN $cluster_id>\n";
+                $self->nodemetricManagement(externalCluster => $externalCluster);
+                print "</CN $cluster_id>\n";
                 1;
             }or do{
                 print "Skip all nodeRules of cluster $cluster_id due to error $@\n";
@@ -351,7 +355,8 @@ sub clustermetricManagement{
             aggregate_rule_state               => 'enabled'
         });
         for my $aggregate_rule (@rules){
-            #print 'CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '; 
+            
+            print '<CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').">\n"; 
             #print $aggregate_rule->toString().' ';
             
             $log->info('CM Rule '.$aggregate_rule->getAttr(name => 'aggregate_rule_id').' '.$aggregate_rule->toString());
