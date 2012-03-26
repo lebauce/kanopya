@@ -76,7 +76,7 @@ sub createFromMasterimage {
 
     my $components = $args{masterimage}->getProvidedComponents();
     foreach my $comp (@$components) {
-            $self->installedComponentLinkCreation(
+            $self->_getEntity->installedComponentLinkCreation(
                 component_type_id => $comp->{component_type_id}
             );
     }

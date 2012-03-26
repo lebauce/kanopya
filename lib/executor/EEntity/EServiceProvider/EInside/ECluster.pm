@@ -89,13 +89,13 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ["econtext"]);
 
-    my $host_manager = Entity->get(id => $self->getEntity->getAttr(name => 'host_manager_id'));
-    my $host_manager_params = $self->getEntity->getManagerParams(manager_type => 'host_manager');
+    my $host_manager = Entity->get(id => $self->_getEntity->getAttr(name => 'host_manager_id'));
+    my $host_manager_params = $self->_getEntity->getManagerParameters(manager_type => 'host_manager');
 
     my $ehost_manager = EFactory::newEEntity(data => $host_manager);
     my $host = $ehost_manager->getFreeHost(%$host_manager_params);
 
-    $log->debug("Host manager <" . $self->getEntity->getAttr(name => 'host_manager_id') .
+    $log->debug("Host manager <" . $self->_getEntity->getAttr(name => 'host_manager_id') .
                 "> returned free host " . $host->getAttr(name => 'host_id'));
 
     return $host;

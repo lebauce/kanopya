@@ -19,9 +19,12 @@ package DecisionMaker::HostSelector;
 
 use strict;
 use warnings;
-use Kanopya::Exceptions;
+
 use General;
+use Entity;
 use Entity::Host;
+use Kanopya::Exceptions;
+
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -61,14 +64,14 @@ sub getHost {
     $log->debug("Host selector search for a node with ram : <$args{ram}> and core : <$args{core}>");
 
     # Get all free hosts of the specified host manager
-    my $host_manager = ENtity->get(id => $args{host_manager_id});
+    my $host_manager = Entity->get(id => $args{host_manager_id});
     my @free_hosts = $host_manager->getFreeHosts();
 
     # Keep only hosts matching constraints (cpu, mem)
     my @valid_hosts = grep { $self->_matchHostConstraints(host => $_, %args) } @free_hosts;
 
     if (scalar @valid_hosts == 0) {
-        my $errmsg = "no free  host respecting constraints";
+        my $errmsg = "no free host respecting constraints";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -88,7 +91,7 @@ sub _matchHostConstraints {
     for my $constraint ('core', 'ram') {
         if (defined $args{$constraint}) {
             my $host_value = $host->getAttr(name => "host_$constraint");
-            $log->debug("constraint '$constraint' ($host_value) >= $args{$constraint}");
+            $log->info("constraint '$constraint' ($host_value) >= $args{$constraint}");
             if ($host_value < $args{$constraint}) {
                 return 0;
             }
