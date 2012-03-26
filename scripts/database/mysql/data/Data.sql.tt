@@ -381,6 +381,22 @@ INSERT INTO `connector_type` VALUES
 (4,'NetappLunManager','1','Storage'),
 (5,'NetappVolumeManager','1','Storage');
 
+
+--
+-- initial vlan
+--
+
+INSERT INTO `vlan` VALUES
+(1,'novlan','used when no vlan are required', 0);
+
+--
+-- interace role list
+--
+
+INSERT INTO `interface_role` VALUES
+(1,'admin','network used for system administration'),
+(2,'public','network used for public access');
+
 --
 -- kernels
 --
