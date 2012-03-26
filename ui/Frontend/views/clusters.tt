@@ -24,12 +24,14 @@
 <% END %>
 
 <div class="actions">
-<% IF can_create %>
-	<a class="action modal" href="/architectures/clusters/add">create a cluster</a>
-	<p class="italic">Create and configure a new cluster.</p>
-<% END %>
-    <a class="action modal" href="/architectures/extclusters/add">add an external cluster</a>
-    <p class="italic">Register and manage an external cluster.</p>
+    <div class="<% IF ! can_create %> disabled<% END %>">
+	    <a class="action modal" href="/architectures/clusters/add"<% IF ! can_create %> title="At least one free host and one master image are required to create a cluster"<% END %>>create a cluster</a>
+	    <p class="italic">Create and configure a new cluster.</p>
+    </div>
+    <div>
+        <a class="action modal" href="/architectures/extclusters/add">add an external cluster</a>
+        <p class="italic">Register and manage an external cluster.</p>
+    </div>
 </div>
 
 
