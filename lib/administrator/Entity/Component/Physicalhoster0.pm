@@ -36,7 +36,11 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getBootPolicies { return ('PXE Boot');  }
+sub getBootPolicies { 
+    return ('PXE Boot via ISCSI',
+            'PXE Boot via NFS'
+    );
+}
 
 sub getConf {
     my $self = shift;

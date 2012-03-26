@@ -77,7 +77,12 @@ sub getAttrDef { return ATTR_DEF; }
 
 =cut
 
-sub getBootPolicies { return ('PXE Boot','???');  }
+sub getBootPolicies { 
+    return ('PXE Boot via ISCSI',
+            'PXE Boot via NFS', 
+            'BootOnVirtualDisk'
+            );
+}
 
 sub getConf {
     my $self = shift;
