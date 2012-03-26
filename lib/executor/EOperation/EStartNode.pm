@@ -214,6 +214,7 @@ sub execute {
                       ? "ro,noatime,nodiratime" : "defaults";
 
 
+
     # Get the ECluster and EHost
     my $ECluster = EFactory::newEEntity(data => $self->{_obj}->{cluster});
     my $EHost = EFactory::newEEntity(data => $self->{_objs}->{host});
@@ -233,6 +234,7 @@ sub execute {
         etc_path => $mountpoint . '/etc',
         econtext => $self->{executor}->{econtext}
     );
+
 
     # generate udev persistent net rules
     $EHost->generateUdevPersistentNetRules(

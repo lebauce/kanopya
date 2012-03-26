@@ -51,8 +51,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
 my $errmsg;
 
-
-
 sub create {
     my $self = shift;
     my %args = @_;
@@ -123,6 +121,7 @@ sub generateResolvConf {
         domainname => $self->_getEntity()->getAttr(name => 'cluster_domainname'),
         nameservers => \@nameservers,
     };
+
 
     my $template = Template->new(General::getTemplateConfiguration());
     my $input = "resolv.conf.tt";
