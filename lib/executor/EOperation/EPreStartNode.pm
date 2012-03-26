@@ -135,7 +135,22 @@ sub execute {
         node_number    => $self->{node_number},
     );
 
+    # Set Hostname
+    my $hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
+    if (not $hostname) {
+        $hostname = $self->{_objs}->{cluster}->getAttr(name => 'cluster_basehostname');
+        if($self->{_objs}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {    
+            $hostname .=  $self->{_objs}->{host}->getNodeNumber();
+        }
+        $self->{_objs}->{host}->setAttr(
+            name  => "host_hostname",
+            value => $hostname
+        );
+        $self->{_objs}->{host}->save();
+    }    
+                                  
     $self->{_objs}->{host}->setNodeState(state => "pregoingin");
+    
 } 
 
 sub _cancel {
