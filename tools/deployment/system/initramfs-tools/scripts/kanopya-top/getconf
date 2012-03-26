@@ -35,7 +35,11 @@ for x in $(cat /tmp/net-"${DEVICE}".conf); do
     esac
 done
 
+# Remove cotes
+TFTPSERVER=${TFTPSERVER#\'}
+TFTPSERVER=${TFTPSERVER%\'}
+
 cd /tmp
-tftp -g -r "$HOSTNAME".conf "$TFTPSERVER"
+tftp -g -r "$HOSTNAME".conf $TFTPSERVER
 
 
