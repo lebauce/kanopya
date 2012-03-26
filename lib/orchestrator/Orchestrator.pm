@@ -187,21 +187,31 @@ sub evalExtClusterNodeRuleState {
                                     }
                                  );
     
-    
-
-                                 
-                                 
-    $externalClusterState->{nm_rule_nodes_ok}  = 0;
-    $externalClusterState->{nm_rule_nodes_nok} = 0;
-    
+    $externalClusterState->{nm_rule_nodes_ok}    = 0;
+    $externalClusterState->{nm_rule_nodes_nok}   = 0;
+    $externalClusterState->{nm_rule_nodes_down}  = 0;
     
     foreach my $node (@$nodes) {
         $node->{"state_" . $node->{state}} = 1;
-        $externalClusterState->{nm_rule_nodes_nok} += $node->{num_verified_rules};
+        $externalClusterState->{nm_rule_nodes_nok} += $node->{num_verified_rules};        
         
-        if($node->{num_verified_rules} > 0){
-            $externalClusterState->{num_node_nok}++;
-        }
+        if($node->{nm_rule_enabled} > 0){ # TEST IF THERE ARE ENABLED RULES 
+            if($node->{num_undef_rules} == $node->{nm_rule_enabled}){ # TEST IF THERE ARE DATA
+                $node->{state} = 'down';
+                $externalClusterState->{nm_rule_nodes_down}++;
+            } else {
+                if($node->{num_verified_rules} > 0){
+                    $externalClusterState->{nm_rule_nodes_nok}++;
+                    $node->{state} = 'warning';
+                }else{
+                    $externalClusterState->{nm_rule_nodes_ok}++;
+                    $node->{state} = 'up';
+                }
+            }
+        }else{ #NO RULES ENABLED, NODE OK!
+            $node->{state} = 'up';
+        } 
+        
     }
     
     $externalClusterState->{nm_rule_nodes} = $nodes;
