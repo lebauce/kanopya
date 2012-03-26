@@ -1010,11 +1010,16 @@ get '/clusters/:clusterid/network/add' => sub {
         push @$interfaceroles, { $row->get_columns };
     }
     
-    $log->info(Dumper($interfaceroles));
+    @rows = $adm->{db}->resultset('Vlan')->search(undef, {});
+    my $vlans = [];
+    foreach my $row (@rows) {
+        push @$vlans, { $row->get_columns };
+    }
  
     template 'form_addnetwork', {
-        cluster_id         => param('clusterid'),
+        cluster_id          => param('clusterid'),
         interfaceroles_list => $interfaceroles,
+        vlans_list          => $vlans,
     }, { layout => '' };
 };
 
@@ -1022,6 +1027,8 @@ get '/clusters/:clusterid/network/add' => sub {
 
 post '/clusters/:clusterid/network/add' => sub {
     my $adm = Administrator->new;
+    my %params = params;
+    $log->info(Dumper(%params));
     eval {
         my $cluster = Entity::ServiceProvider->get(id => param('clusterid'));
         $cluster->addNetworkInterface(interface_role_id => param('interface_role_id'));
