@@ -163,6 +163,17 @@ sub generateUdevPersistentNetRules {
     unlink "/tmp/$tmpfile";
 }
 
+sub generateHostname {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => ['econtext', 'etc_path']);
+
+    my $hostname = $self->_getEntity()->getAttr(name => 'host_hostname');
+    $args{econtext}->execute(
+        command => "echo $hostname > $args{etc_path}/hostname"
+    );
+}
+
 1;
 
 __END__

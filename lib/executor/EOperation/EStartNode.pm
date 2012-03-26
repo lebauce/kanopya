@@ -155,15 +155,6 @@ sub execute {
 
     # Set Hostname
     my $host_hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
-    if (not $host_hostname) {
-        $host_hostname = $self->{_objs}->{cluster}->getAttr(name => 'cluster_basehostname');
-        $host_hostname .=  $self->{_objs}->{host}->getNodeNumber();
-   
-        $self->{_objs}->{host}->setAttr(
-			name  => "host_hostname",
-            value => $host_hostname
-        );                              
-    }
 
     # Configure DHCP Component
     my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
@@ -235,8 +226,13 @@ sub execute {
         econtext => $self->{executor}->{econtext}
     );
 
+    # generate node hostname
+    $EHost->generateHostname(
+        etc_path => $mountpoint . '/etc',
+        econtext => $self->{executor}->{econtext}
+    );
 
-    # generate udev persistent net rules
+    # generate node udev persistent net rules
     $EHost->generateUdevPersistentNetRules(
         etc_path => $mountpoint . '/etc',
         econtext => $self->{executor}->{econtext}
@@ -290,11 +286,6 @@ sub _generateNodeConf {
     General::checkParams(args => \%args,
                          required => [ "etc_path", "options" ]);
 
-    $log->info("Generate Hostname Conf");
-    my $hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
-    $self->_generateHostnameConf(hostname => $hostname,
-                                 etc_path => $args{etc_path});
-
     $log->info("Generate Network Conf");
     $self->_generateNetConf(etc_path => $args{etc_path});
 
@@ -302,18 +293,6 @@ sub _generateNodeConf {
 
     $log->info("Generate ntpdate Conf");
     $self->_generateNtpdateConf(etc_path => $args{etc_path});
-}
-
-sub _generateHostnameConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "etc_path", "hostname" ]);
-
-    $self->{executor}->{econtext}->execute(
-        command => "echo $args{hostname} > $args{etc_path}/hostname"
-    );
 }
 
 sub _generateKanopyaHalt{
