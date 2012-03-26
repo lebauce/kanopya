@@ -39,6 +39,8 @@ use Entity::Powersupplycard;
 
 use strict;
 use warnings;
+use String::Random;
+use Template;
 use Log::Log4perl "get_logger";
 use IO::Socket;
 use Net::Ping;
@@ -127,6 +129,38 @@ sub checkUp {
     }
 
     return $pingable;
+}
+
+sub generateUdevPersistentNetRules {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => [ 'econtext', 'etc_path' ]);
+
+    my $rand = new String::Random;
+    my $tmpfile = $rand->randpattern("cccccccc");
+
+    # create Template object
+    my $template = Template->new(General::getTemplateConfiguration());
+    my $input = "udev_70-persistent-net.rules.tt";
+
+    my @interfaces = ();
+    
+    for my $iface ($self->_getEntity()->getIfaces()) {
+        my $tmp = {
+            mac_address   => lc($iface->{iface_mac_addr}),
+            net_interface => $iface->{iface_name}
+        };
+        push @interfaces, $tmp;
+    }
+       
+    $template->process($input, { interfaces => \@interfaces }, "/tmp/" . $tmpfile)
+        or die $template->error(), "\n";
+
+    $args{econtext}->send(
+        src => "/tmp/$tmpfile",
+        dest => "$args{etc_path}/udev/rules.d/70-persistent-net.rules"
+    );
+    unlink "/tmp/$tmpfile";
 }
 
 1;

@@ -385,8 +385,7 @@ sub getIfaces {
         
         push @$ifcs, $tmp;
     }
-    return $ifcs;
-
+    return wantarray ? @$ifcs : $ifcs;
 }
 
 sub removeInterface {

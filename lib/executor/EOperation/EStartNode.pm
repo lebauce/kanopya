@@ -214,8 +214,9 @@ sub execute {
                       ? "ro,noatime,nodiratime" : "defaults";
 
 
-    # Get the ECluster
+    # Get the ECluster and EHost
     my $ECluster = EFactory::newEEntity(data => $self->{_obj}->{cluster});
+    my $EHost = EFactory::newEEntity(data => $self->{_objs}->{host});
 
     # Get the corresponding EContainerAccess
     my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
@@ -229,6 +230,12 @@ sub execute {
 
     # generate resolv.conf
     $ECluster->generateResolvConf(
+        etc_path => $mountpoint . '/etc',
+        econtext => $self->{executor}->{econtext}
+    );
+
+    # generate udev persistent net rules
+    $EHost->generateUdevPersistentNetRules(
         etc_path => $mountpoint . '/etc',
         econtext => $self->{executor}->{econtext}
     );
@@ -267,8 +274,8 @@ sub execute {
     $self->{_objs}->{host}->save();
 
     # Finally we start the node
-    my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-    $ehost->start(
+    
+    $EHost->start(
         econtext  => $self->{executor}->{econtext},
         erollback => $self->{erollback}
     );
@@ -285,9 +292,6 @@ sub _generateNodeConf {
     my $hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
     $self->_generateHostnameConf(hostname => $hostname,
                                  etc_path => $args{etc_path});
-
-    $log->info("Generate Udev Conf");
-    $self->_generateUdevConf(etc_path => $args{etc_path});
 
     $log->info("Generate Network Conf");
     $self->_generateNetConf(etc_path => $args{etc_path});
@@ -308,37 +312,6 @@ sub _generateHostnameConf {
     $self->{executor}->{econtext}->execute(
         command => "echo $args{hostname} > $args{etc_path}/hostname"
     );
-}
-
-sub _generateUdevConf{
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "etc_path" ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    # create Template object
-    my $template = Template->new($config);
-    my $input = "udev_70-persistent-net.rules.tt";
-
-    # TODO: Get ALL the network interfaces
-    my $interfaces = [ {
-        mac_address   => lc($self->{_objs}->{host}->getAttr(name => "host_mac_address")),
-        net_interface => "eth0"
-    } ];
-
-    $log->debug("generateUdevConf with " . Dumper($interfaces));
-    $template->process($input, { interfaces => $interfaces }, "/tmp/" . $tmpfile)
-        or die $template->error(), "\n";
-
-    $self->{executor}->{econtext}->send(
-        src => "/tmp/$tmpfile",
-        dest => "$args{etc_path}/udev/rules.d/70-persistent-net.rules"
-    );
-    unlink "/tmp/$tmpfile";
 }
 
 sub _generateKanopyaHalt{
