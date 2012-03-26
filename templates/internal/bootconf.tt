@@ -9,28 +9,16 @@ initiatorname=[% initiatorname %]
 bootmode=iscsi
 additional_devices="[% additional_devices %]"
 
-root_fs_type=[% root_fs %]
-root_mount_opts="[% root_mount_opts %]"
-root_target_name=[% root_target %]
-root_target_ip=[% root_ip %]
-root_target_port=[% root_port %]
+root_fs_type=[% filesystem %]
+root_mount_opts="[% mount_opts %]"
+root_target_name=[% target %]
+root_target_ip=[% ip %]
+root_target_port=[% port %]
 root_target_group=0
 root_username=
 root_password=
 root_in_username=
 root_in_password=
-
-etc_fs_type=[% etc_fs %]
-etc_mount_point="/etc"
-etc_mount_opts="rw"
-etc_target_name=[% etc_target %]
-etc_target_ip=[% etc_ip %]
-etc_target_port=[% etc_port %]
-etc_target_group=0
-etc_username=
-etc_password=
-etc_in_username=
-etc_in_password=
 
 [% FOREACH mount=mounts_iscsi %]
 
