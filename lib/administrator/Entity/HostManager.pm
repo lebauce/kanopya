@@ -167,7 +167,7 @@ sub getFreeHosts {
     my ($self) = @_;
 
     my $where = {
-        active          => 0, 
+        active          => 1, 
         host_state      => {-like => 'down:%'},
         host_manager_id => $self->getAttr(name => 'entity_id')      
     };
