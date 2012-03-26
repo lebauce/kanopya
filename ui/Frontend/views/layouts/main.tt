@@ -154,13 +154,13 @@
 
                 // modals
                 $('.modal').each(function() {
-                    var $link = $(this);
+                    var link = $(this);
 
-                    var $dialog = $('<div></div>')
+                    var dialog = $('<div></div>')
                         .dialog({
                             autoOpen: false,
                             modal: true,
-                            title: $link.attr('title' + '#content'),
+                            title: link.attr('title' + '#content'),
                             width: 500,
                             height: 500,
                             resizable: true,
@@ -174,12 +174,14 @@
                                     $(this).dialog('close');
                                 }
                             },
-
                         });
 
-                    $link.click(function() {
-			$dialog.load($(this).attr('href'))
-                        $dialog.dialog('open');
+                    link.click(function() {
+                        if ($(this).parents(".disabled").length) {
+                            return false;
+                        }
+                        dialog.load($(this).attr('href'))
+                        dialog.dialog('open');
                         return false;
                     });
                 });
