@@ -39,11 +39,14 @@ use Entity::Powersupplycard;
 
 use strict;
 use warnings;
+
+use Entity;
 use String::Random;
 use Template;
-use Log::Log4perl "get_logger";
 use IO::Socket;
 use Net::Ping;
+
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -74,8 +77,15 @@ sub start {
     my $self = shift;
     my %args = @_;
 
-    $self->{host_manager}->startHost(cluster => $self->{sp},
-                                     host    => $self->{host});
+    General::checkParams(args => \%args, required => [ "econtext" ]);
+
+    my $host_manager_econtext
+        = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
+                                ip_destination => $self->{sp}->getMasterNodeIp());
+
+    $self->{host_manager}->startHost(cluster  => $self->{sp},
+                                     host     => $self->{host},
+                                     econtext => $host_manager_econtext);
     $self->{host}->setState(state => 'starting');
 }
 
