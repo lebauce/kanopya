@@ -48,6 +48,22 @@ use warnings;
 my $log = get_logger("executor");
 my $errmsg;
 
+=head2 getTemplateConfiguration
+
+    Desc: return hashref used to configure Template instance
+
+=cut
+
+sub getTemplateConfiguration {
+    return {
+        INCLUDE_PATH => '/templates/internal/',
+        INTERPOLATE  => 1,     # expand "$var" in plain text
+        POST_CHOMP   => 0,     # cleanup whitespace
+        EVAL_PERL    => 1,     # evaluate Perl code blocks
+        RELATIVE     => 1,     # desactive par defaut
+    };
+}
+
 =head2---------+--------------+
 1 row in set (0.00 sec)
 

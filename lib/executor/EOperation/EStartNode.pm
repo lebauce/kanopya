@@ -35,14 +35,7 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-my $config = {
-    INCLUDE_PATH => '/templates/internal/',
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-    RELATIVE     => 1,               # desactive par defaut
-};
-
+my $config = General::getTemplateConfiguration();
 
 sub prepare {
     my $self = shift;

@@ -39,6 +39,7 @@ use strict;
 use warnings;
 
 use Entity;
+use General;
 use EFactory;
 use Template;
 use String::Random;
@@ -50,13 +51,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("executor");
 my $errmsg;
 
-my $config = {
-    INCLUDE_PATH => '/templates/internal/',
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-    RELATIVE     => 1,               # desactive par defaut
-};
+
 
 sub create {
     my $self = shift;
@@ -129,7 +124,7 @@ sub generateResolvConf {
         nameservers => \@nameservers,
     };
 
-    my $template = Template->new($config);
+    my $template = Template->new(General::getTemplateConfiguration());
     my $input = "resolv.conf.tt";
 
     $template->process($input, $vars, "/tmp/".$tmpfile) or die $template->error(), "\n";
