@@ -1,0 +1,14 @@
+DEFAULT linux
+label linux
+[% IF nfsroot %]
+[% IF xenkernel %]
+  kernel mboot.c32
+  append xen-4.0-amd64.gz noreboot --- vmlinuz-2.6.32-5-xen-amd64 rw root=/dev/nfs ip=::::diskless:eth0:dhcp nfsroot=10.0.0.1:/nfsexports/root --- initrd.img-2.6.32-5-xen-amd64
+[% ELSE %]
+  kernel  [% kernelfile %]
+  append initrd=[% initrdfile %] root=/dev/nfs rw ip=::::diskless:eth0:dhcp nfsroot=10.0.0.1:/nfsexports/root
+[% END %]
+[% ELSIF iscsiroot %]
+  kernel [% kernelfile %]
+  append initrd=[% initrdfile %] vga=0x317 fastboot boot=kanopya     
+[% END %]
