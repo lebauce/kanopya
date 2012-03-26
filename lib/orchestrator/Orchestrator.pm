@@ -140,19 +140,6 @@ sub manage_aggregates {
         print "Skip all orchestration service due to error $@\n";
         $log->error($@);
     }
-#            if(defined $clusters_state_cm->{$cluster_id} && defined $clusters_state_nm->{$cluster_id}){
-#                if($clusters_state_cm->{$cluster_id} + $clusters_state_nm->{$cluster_id} >0){
-#                     $externalCluster->setAttr(
-#                            name => 'externalcluster_state',
-#                            value => 'warning',
-#                        );
-#                }else{
-#                    $externalCluster->setAttr(
-#                        name => 'externalcluster_state',
-#                        value => 'up',
-#                    );
-#                }
-#            $externalCluster->save();
 }
 
 
@@ -160,8 +147,22 @@ sub evalExtCluster{
     my %args = @_;
     
     my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{cluster_id});
-    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster       => $args{externalCluster});
+    my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster       => $args{extcluster});
     my $cluster_eval = {%$cr_eval,%$nr_eval};
+    
+    
+#    if($cluster_eval->{} + $cluster_eval->{}  >0){
+#         $externalCluster->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'warning',
+#            );
+#    }else{
+#        $externalCluster->setAttr(
+#            name => 'externalcluster_state',
+#            value => 'up',
+#        );
+#    }
+#$externalCluster->save();
     return $cluster_eval;
 }
 
@@ -217,11 +218,28 @@ sub evalExtClusterClusterRuleState {
                     aggregate_rule_last_eval           => 1,
                 }
         );
-        
-    $externalClusterState->{num_total_cm_rule}   = scalar @rules;
-    $externalClusterState->{num_enabled_cm_rule} = scalar @enabled_rules;
-    $externalClusterState->{num_verif_cm_rule}   = scalar @verif_rules;
-    
+
+    my @ok_rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                    aggregate_rule_last_eval           => 0,
+                }
+        );
+
+    my @undef_rules = AggregateRule->search(
+        hash => {
+                    aggregate_rule_service_provider_id => $extcluster_id,
+                    aggregate_rule_state               => 'enabled',
+                    aggregate_rule_last_eval           => undef,
+                }
+        );
+    $externalClusterState->{cm_rule_total}   = scalar @rules;
+    $externalClusterState->{cm_rule_enabled} = scalar @enabled_rules;
+    $externalClusterState->{cm_rule_nok}     = scalar @verif_rules;
+    $externalClusterState->{cm_rule_ok}      = scalar @ok_rules;
+    $externalClusterState->{cm_rule_undef}   = scalar @undef_rules;
+
     return $externalClusterState;
 }
 sub nodemetricManagement{
