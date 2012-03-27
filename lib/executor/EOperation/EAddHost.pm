@@ -192,8 +192,13 @@ sub prepare {
     my $exec_ip = $self->{executor}->getMasterNodeIp();
     my $masternode_ip = $self->{_objs}->{host_provider}->getMasterNodeIp();
 
-    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
-                                              ip_destination => $masternode_ip);
+    eval {
+        $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
+                                                  ip_destination => $masternode_ip);
+    };
+    if ($@) {
+        $self->{econtext} = {};
+    }
 }
 
 sub execute {
