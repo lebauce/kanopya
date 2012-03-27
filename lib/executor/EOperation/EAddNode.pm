@@ -102,6 +102,7 @@ sub prepare {
     if ($existing_image) {
         $log->info("Using existing systemimage instance <$systemimage_name>");
         $params->{systemimage_id} = $existing_image->getAttr(name => 'systemimage_id');
+        $self->{_objs}->{systemimage} = $existing_image;
     }
     elsif (($params->{node_number} == 1) or (not $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared'))) {
         # Create new systemimage instance
