@@ -251,7 +251,7 @@ sub evalExtClusterNodeRuleState {
     
     my $externalClusterState = {};
     
-    my $nodes = $extcluster->getNodes(shortname => 1);
+    my $nodes = $extcluster->getNodes();
     
     $externalClusterState->{nm_rule_nodes}   = scalar (@$nodes);    
     $externalClusterState->{nm_rule_enabled} = my $num_node_rule_total = scalar NodemetricRule->searchLight(
