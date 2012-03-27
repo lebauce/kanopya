@@ -541,6 +541,7 @@ get '/extclusters/:clusterid' => sub {
 
     my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id,extcluster => $extcluster);
     
+    #print Dumper $cluster_eval; 
 
     # Connectors
     my @connectors = map { 
@@ -588,9 +589,8 @@ get '/extclusters/:clusterid' => sub {
 #            $num_clusterrule_verif++;
 #        } 
 #    }
-
-    my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nodes}}; 
-    
+   
+    my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nm_rule_nodes}};
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
         active                => 1,
@@ -603,11 +603,16 @@ get '/extclusters/:clusterid' => sub {
         link_addconnector     => 1,
         link_delete           => 1,
         can_configure         => 1,
-        #num_node_rule_total    => $nr_rule->{num_node_rule_total},
+        nm_rule_enabled        => $cluster_eval->{nm_rule_enabled},
+        nm_rule_undef          => $cluster_eval->{nm_rule_undef},
         num_noderule_verif     => $cluster_eval->{nm_rule_nok},
-        num_node_nok           => $cluster_eval->{nm_rule_node_nok},
+        num_nodes_nok          => $cluster_eval->{nm_rule_nodes_nok},
+        cm_rule_ok             => $cluster_eval->{cm_rule_ok},
+        cm_rule_enabled        => $cluster_eval->{cm_rule_enabled},
+        cm_rule_undef          => $cluster_eval->{cm_rule_undef},
         num_cluster_rule_total => $cluster_eval->{cm_rule_total},
         num_clusterrule_verif  => $cluster_eval->{cm_rule_nok},
+        
         
     }, { layout => 'main' };
 };

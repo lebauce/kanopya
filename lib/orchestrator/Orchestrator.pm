@@ -133,7 +133,6 @@ sub manage_aggregates {
             };
             
             my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id, extcluster => $externalCluster);
-            print Dumper $cluster_eval;
         }
     1;
     }or do {
@@ -148,11 +147,85 @@ sub evalExtCluster{
     
     my $cr_eval = Orchestrator::evalExtClusterClusterRuleState(extcluster_id => $args{extcluster_id});
     my $nr_eval = Orchestrator::evalExtClusterNodeRuleState(extcluster => $args{extcluster}, extcluster_id => $args{extcluster_id});
+    
     my $cluster_eval = {%$cr_eval,%$nr_eval};
+    
+    #print Dumper $cluster_eval;
+    
+    if((scalar $cluster_eval->{nm_rule_nodes}) == 0) { # no nodes
+         $args{extcluster}->setAttr(
+            name => 'externalcluster_state',
+            value => 'down',
+        );
+    }
+    elsif ($cluster_eval->{nm_rule_enabled} == 0 && $cluster_eval->{cm_rule_enabled} == 0) { # no rules 
+         $args{extcluster}->setAttr(
+            name => 'externalcluster_state',
+            value => 'up',
+        );
+    }
+#    elsif ($cluster_eval->{nm_rule_enabled} == 0) { # cm_rule_enabled > 0 
+#        if($cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0){
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'up',
+#            );
+#        }elsif($cluster_eval->{cm_rule_nok} > 0){
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'warning',
+#            );
+#        }else{
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'down',
+#            );
+#        }
+#    }
+#    elsif ($cluster_eval->{cm_rule_enabled} == 0) { # nm_rule_enabled > 0
+#        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0){
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'up',
+#            );
+#        }
+#        elsif($cluster_eval->{nm_rule_nodes_nok} > 0) {
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'warning',
+#            );
+#        }else{
+#            $args{extcluster}->setAttr(
+#                name => 'externalcluster_state',
+#                value => 'down',
+#            );
+#        }
+#    }
+    else { # nm_rule_enabled > 0 AND cm_rule_enabled > 0 
+        if($cluster_eval->{nm_rule_nodes_nok} == 0 && $cluster_eval->{nm_rule_nodes_down} == 0
+        && $cluster_eval->{cm_rule_undef} == 0 && $cluster_eval->{cm_rule_nok} == 0)
+        {
+            $args{extcluster}->setAttr(
+                name => 'externalcluster_state',
+                value => 'up',
+            );
+        }elsif(
+            $cluster_eval->{cm_rule_undef} == $cluster_eval->{cm_rule_enabled} &&
+            $cluster_eval->{nm_rule_nodes_down} == (scalar $cluster_eval->{nm_rule_nodes}) 
+        ){
+            $args{extcluster}->setAttr(
+                name => 'externalcluster_state',
+                value => 'down',
+            );
+        } else {
+            $args{extcluster}->setAttr(
+                name => 'externalcluster_state',
+                value => 'warning',
+            );
+        }
+    }
 
-#        if( ($cluster_eval->{cm_rule_undef} == $cluster_eval->{cm_rule_enabled})
-#    ||  (
-#       
+#
 #    ){
 #    }
 #    if($cluster_eval->{} + $cluster_eval->{}  >0){
@@ -166,7 +239,7 @@ sub evalExtCluster{
 #            value => 'up',
 #        );
 #    }
-#$externalCluster->save();
+    $args{extcluster}->save();
     return $cluster_eval;
 }
 
@@ -190,30 +263,38 @@ sub evalExtClusterNodeRuleState {
     $externalClusterState->{nm_rule_nodes_ok}    = 0;
     $externalClusterState->{nm_rule_nodes_nok}   = 0;
     $externalClusterState->{nm_rule_nodes_down}  = 0;
+    $externalClusterState->{nm_rule_nok}         = 0;
+    $externalClusterState->{nm_rule_ok}          = 0;
+    $externalClusterState->{nm_rule_undef}       = 0;
+    
+
     
     foreach my $node (@$nodes) {
-        #$node->{"state_" . $node->{state}} = 1;
-        #$externalClusterState->{nm_rule_nodes_nok} += $node->{num_verified_rules};        
-        
+        $externalClusterState->{nm_rule_nok}   += $node->{num_verified_rules};
+        $externalClusterState->{nm_rule_undef} += $node->{num_undef_rules};
+
         if($externalClusterState->{nm_rule_enabled} > 0){ # TEST IF THERE ARE ENABLED RULES 
             if($node->{num_undef_rules} == $externalClusterState->{nm_rule_enabled}){ # TEST IF THERE ARE DATA
                 $node->{state} = 'down';
+                $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'down');
                 $externalClusterState->{nm_rule_nodes_down}++;
             } else {
-                if($node->{num_verified_rules} > 0){
+                if($node->{num_verified_rules} > 0 || $node->{num_undef_rules} > 0){
                     $externalClusterState->{nm_rule_nodes_nok}++;
                     $node->{state} = 'warning';
+                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'warning');
                 }else{
                     $externalClusterState->{nm_rule_nodes_ok}++;
+                    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
                     $node->{state} = 'up';
                 }
             }
         }else{ #NO RULES ENABLED, NODE OK!
             $node->{state} = 'up';
+            $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'up');
         } 
         
     }
-    
     $externalClusterState->{nm_rule_nodes} = $nodes;
     return $externalClusterState;
 }

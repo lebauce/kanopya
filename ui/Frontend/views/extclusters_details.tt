@@ -45,21 +45,27 @@
 <% END %>
 <td>
     <table>
-        <% IF nodes_list.size == 0 %> 
+        <% IF nodes_list.size == 0  && nm_rule_enabled == 0%>
             <tr><td><span class="state imgDown"></td><td>No node monitored</span></td></tr>
-            <tr><td></td><td><%num_node_rule_total%> rule(s) configured</td>
-        <% ELSIF num_node_rule_total == 0 %>
-            <tr><td><span class="state imgDown"></td><td>No node rule configured</span></td></tr>
-            <tr><td></td><td><%nodes_list.size%> node(s) monitored</td></tr> 
-        <% ELSIF num_noderule_verif == 0 %>
+            <tr><td></td><td>no rule enabled</td>
+        <% ELSIF nodes_list.size == 0 %> 
+            <tr><td><span class="state imgDown"></td><td>No node monitored</span></td></tr>
+            <tr><td></td><td><%nm_rule_enabled%> rule(s) enabled</td>
+        <% ELSIF nm_rule_enabled == 0 %>
+            <tr><td><span class="state imgUp"></td><td><%nodes_list.size%> node(s) monitored</td></tr>
+            <tr><td></td><td>No node rule enabled</span></td></tr>
+        <% ELSIF num_noderule_verif == 0 && nm_rule_undef == 0%>
             <tr><td><span class="state imgUp"></td><td><%nodes_list.size%> node(s) monitored</span></td></tr>
-            <tr><td></td><td>All the <%num_node_rule_total%> rules are ok</span></td></tr>
-        <%ELSIF num_noderule_verif == 1 %>
-            <tr><td><span class="state imgBroken"></td><td>Total: <%num_noderule_verif%> rules not ok</span></td></tr>
-            <tr><td></td><td>Total: <%num_node_nok%>/<%nodes_list.size%> nodes not ok</span></td></tr>
+            <tr><td></td><td>All the enabled rules are ok</span></td></tr>
         <%ELSE%>
-            <tr><td><span class="state imgBroken"></td><td><%num_noderule_verif%> rules not ok</span></td></tr>
-            <tr><td></td><td><%num_node_nok%>/<%nodes_list.size%> nodes not ok</span></td></tr>
+            <% IF nm_rule_undef == 0 %>
+                <tr><td><span class="state imgBroken"></td><td><%num_noderule_verif%> rule(s) not ok</span></td></tr>
+            <% ELSIF num_noderule_verif == 0 %>
+                <tr><td><span class="state imgBroken"></td><td><%nm_rule_undef%> rule(s) unknown</span></td></tr>
+            <% ELSE %>
+                <tr><td><span class="state imgBroken"></td><td><%num_noderule_verif%> rule(s) not ok</span></td></tr>            
+                <tr><td>                              </td><td><%nm_rule_undef%> rule(s) unknown</span></td></tr>
+            <% END %>
         <%END%>
     </table>
     
@@ -68,18 +74,30 @@
 <td>
     <table>
     <tr>
-    <% IF nodes_list.size == 0 %>       
+    <% IF nodes_list.size == 0 && cm_rule_enabled ==0 %>
         <td><span class="state imgDown"></td><td>No node monitored</span><br/></td>
         </tr><tr>
-        <td></td><td><%num_cluster_rule_total%> rule(s) configured</td>
-    <% ELSIF num_cluster_rule_total == 0%>
-        <td><span class="state imgDown">No cluster rule configured</span></td>
-    <% ELSIF num_clusterrule_verif == 0 %>
-        <td><span class="state imgUp">0 on <%num_cluster_rule_total%> rule not ok</span></td>
-    <%ELSIF num_clusterrule_verif == 1 %>
-        <td><span class="state imgBroken"><%num_clusterrule_verif%>/<%num_cluster_rule_total%> rule not ok</span></td>
-    <%ELSE%>
-        <td><span class="state imgBroken"><%num_clusterrule_verif%>/<%num_cluster_rule_total%> rules not ok</span></td>
+        <td></td><td>No rule enabled</td>
+    <% ELSIF nodes_list.size == 0 %>
+        <td><span class="state imgDown"></td><td>No node monitored</span><br/></td>
+        </tr><tr>
+        <td></td><td><%num_cluster_rule_total%> rule(s) enabled</td>
+    <% ELSIF cm_rule_enabled == 0 %>
+        <td><span class="state imgUp"></td><td> <% nodes_list.size %> node(s) monitored</span><br/></td>
+        </tr><tr>
+        <td></td><td>no rule enabled</td>
+    <% ELSIF num_clusterrule_verif == 0 && cm_rule_undef == 0%>
+        <tr><td><span class="state imgUp"></td><td><%nodes_list.size%> node(s) monitored</span></td></tr>
+        <tr><td></td><td> <%cm_rule_ok %> enabled rules ok</span></td></tr>
+    <% ELSE %>
+        <% IF cm_rule_undef == 0 %>
+            <td><span class="state imgBroken"><%num_clusterrule_verif%>/<%cm_rule_enabled%> rule(s) not ok</span></td>
+        <% ELSIF num_clusterrule_verif == 0 %>
+            <td><span class="state imgBroken"><%cm_rule_undef%>/<%cm_rule_enabled%> rule(s) unknown</span></td>
+        <% ELSE %>
+                <td><span class="state imgBroken"></td><td><%num_clusterrule_verif%>/<%cm_rule_enabled%> rule(s) not ok</span></td></tr>
+            <tr><td>                              </td><td><%cm_rule_undef%>/<%cm_rule_enabled%> rule(s) unknown</span></td>
+        <%END%> 
     <%END%>
     </tr>
     </table>
@@ -102,25 +120,32 @@
 	<% FOREACH node IN nodes_list %>
 		<tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
 		<td class="label2">
-        <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
-            <% IF node.state_down%>
-                <span class="state imgDown">no data</span>
-            <% ELSIF node.num_verified_rules == 0 %>
-                <span class="state imgUp">ok</span>
-            <% ELSIF node.num_verified_rules == 1 %>
-               <span class="state imgBroken"> <%node.num_verified_rules%> rule not ok 
-                <% IF node.num_undef_rules > 0 %> 
-                 ; <%node.num_undef_rules%> unknown
-                <%END%>
-            </span>
-            <% ELSE %>
-                <span class="state imgBroken"><%node.num_verified_rules%> rules not ok 
-                <% IF node.num_undef_rules > 0 %> 
-                    ; <%node.num_undef_rules%> unknown
-                <%END%>
-                </span>
-            <% END %>
-        </a>
+            <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+                <% SWITCH node.state %>
+                    <% CASE 'up' %>
+                        <span class="state imgUp">
+                            <%IF nm_rule_enabled == 0%> 
+                                no rule enabled
+                            <%ELSE%>
+                                ok
+                            <% END %>
+                        </span>
+                    <% CASE 'warning' %>
+                        <span class="state imgBroken">
+                            <%IF node.num_verified_rules > 0%>
+                               <%node.num_verified_rules%> rule(s) not ok
+                            <%END%>
+                            <%IF node.num_verified_rules > 0 &&  node.num_undef_rules > 0 %> ; <%END%>
+                            <%IF node.num_undef_rules > 0%>
+                                <%node.num_undef_rules%> rule(s) unkown
+                            <%END%>
+                        </span>
+                    <% CASE 'down' %>
+                        <span class="state imgDown">
+                            <%node.num_undef_rules%>/<%nm_rule_enabled%> rule(s) unkown
+                        </span>
+                <% END %>
+            </a>
 		</td>
 		<td class="action">
 		<% IF node.link_remove %>
