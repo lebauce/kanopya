@@ -727,11 +727,14 @@ CREATE TABLE `interface` (
 CREATE TABLE `interface_vlan` (
   `interface_id` int(8) unsigned NOT NULL,
   `vlan_id`      int(8) unsigned NOT NULL,
+  `poolip_id`    int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`interface_id`, `vlan_id`),
   KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`vlan_id`),
-  FOREIGN KEY (`vlan_id`) REFERENCES `vlan` (`vlan_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`vlan_id`) REFERENCES `vlan` (`vlan_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`poolip_id`),
+  FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

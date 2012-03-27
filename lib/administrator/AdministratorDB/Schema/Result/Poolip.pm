@@ -93,6 +93,21 @@ __PACKAGE__->add_unique_constraint("poolip_addr", ["poolip_addr", "poolip_mask"]
 
 =head1 RELATIONS
 
+=head2 interface_vlans
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::InterfaceVlan>
+
+=cut
+
+__PACKAGE__->has_many(
+  "interface_vlans",
+  "AdministratorDB::Schema::Result::InterfaceVlan",
+  { "foreign.poolip_id" => "self.poolip_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 ips
 
 Type: has_many
@@ -139,8 +154,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-14 18:09:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:z0jUc4QBoRv06R5IuRwE9g
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-27 07:11:49
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XkJHXB/C/Ay9Rr6fKGFGvA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
