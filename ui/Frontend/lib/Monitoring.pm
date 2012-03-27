@@ -320,7 +320,7 @@ ajax '/extclusters/:extclusterid/monitoring/clustersview' => sub {
 		my $undef_count = 0;
 		my $res_number = scalar(keys %aggregate_combination);
         while (my ($date, $value) = each %aggregate_combination) {
-            my $dt = DateTime->from_epoch(epoch => $date);
+            my $dt = DateTime->from_epoch(epoch => $date)->set_time_zone('local');
             my $date_string = $dt->strftime('%m-%d-%Y %H:%M');
             push @histovalues, [$date_string,$value];
 			# we reference the undef values in order to throw an error if all values are undef

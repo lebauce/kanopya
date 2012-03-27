@@ -326,4 +326,26 @@ sub enable {
     $self->save();
 }
 
+sub setAllRulesUndefForANode{
+    my (%args) = @_;
+    my $cluster_id     = $args{cluster_id};
+    my $node_id        = $args{node_id};
+    
+    my @nodemetric_rules = NodemetricRule->search(
+                               hash => {
+                                   nodemetric_rule_service_provider_id => $cluster_id,
+                                   nodemetric_rule_state               => 'enabled',
+                               },
+                           );
+    
+    foreach my $nodemetric_rule (@nodemetric_rules){
+        $nodemetric_rule->{_dbix}
+            ->verified_noderules
+            ->update_or_create({
+                verified_noderule_externalnode_id    =>  $node_id,
+                verified_noderule_state              => 'undef',
+        });
+    }
+} 
+
 1;
