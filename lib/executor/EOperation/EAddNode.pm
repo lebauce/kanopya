@@ -94,7 +94,10 @@ sub prepare {
                            $params->{node_number};
 
     # Check for existing systemimage for this node.
-    my $existing_image = Entity::Systemimage->find(hash => {systemimage_name => $systemimage_name});
+    my $existing_image;
+    eval {
+        $existing_image = Entity::Systemimage->find(hash => {systemimage_name => $systemimage_name});
+    };
 
     if ($existing_image) {
         $log->info("Using existing systemimage instance <$systemimage_name>");
