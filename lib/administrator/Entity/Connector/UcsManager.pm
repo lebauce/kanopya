@@ -50,8 +50,8 @@ sub get {
                    );
 
     $self->{state} = ($self->{api}->login() ? "up" : "down");
-
     $self->{ou} = $ucs->getAttr(name => "ucs_ou");
+    $self->{ucs} = $ucs;
 
     return $self;
 }
