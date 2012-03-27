@@ -119,16 +119,17 @@ sub manage_aggregates {
                 print "</CM $cluster_id>\n";
                 1;
             }or do {
-                print "Skip all clusterRules of cluster $cluster_id due to error $@\n";
+                print "Error in clustermetricManagement of cluster $cluster_id : $@\n";
                 $log->error($@);
             };
+            
             eval{
                 print "<CN $cluster_id>\n";
                 $self->nodemetricManagement(externalCluster => $externalCluster);
                 print "</CN $cluster_id>\n";
                 1;
             }or do{
-                print "Skip all nodeRules of cluster $cluster_id due to error $@\n";
+                print "Error in nodemetricManagement of cluster $cluster_id  $@\n";
                 $log->error($@);
             };
             
@@ -413,12 +414,20 @@ sub _evalAllRules {
    my $rules            = $args{rules};
    my $cluster          = $args{cluster};
    my $rep = 0;
+   
+   RULE:   
    foreach my $rule (@$rules){
-       $rep += $self->_evalRule(
-           'rule'              =>$rule,
-           'monitored_values' => $monitored_values,
-           'cluster'       => $cluster,
-       );
+       eval{
+           $rep += $self->_evalRule(
+               'rule'              =>$rule,
+               'monitored_values' => $monitored_values,
+               'cluster'       => $cluster,
+           );
+           1;
+       } or do {
+            print 'Error in evaluation of rule'.($rule->getAttr(name=>'nodemetric_rule_id')).' of cluster '.($rule->getAttr(name=>'nodemetric_rule_service_provider_id')).": $@\n";
+            $log->error($@);
+       }
    }
    return $rep;
 }
