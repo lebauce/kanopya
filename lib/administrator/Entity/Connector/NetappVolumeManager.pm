@@ -22,6 +22,8 @@ use warnings;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::NfsContainerAccess;
 
+use Data::Dumper;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 
@@ -305,6 +307,48 @@ sub synchronize {
                           );
         }
     }
+}
+
+=head2 getConf 
+
+    Desc: return hash structure containing aggregates and volumes  
+
+=cut
+
+sub getConf {
+    my ($self) = @_;
+    my $config = {};
+    $config->{aggregates} = [];
+    $config->{volumes} = [];
+    my @aggregates = $self->aggregates;
+    my @volumes = $self->volumes;
+    
+    foreach my $aggr (@aggregates) {
+        my $tmp = {
+            aggregate_name      => $aggr->name,
+            aggregate_state     => $aggr->state,
+            aggregate_totalsize => $aggr->size_total,
+            aggregate_sizeused  => $aggr->size_used,
+            aggregate_volumes   => []
+        };
+        foreach my $volume (@volumes) {
+            if($volume->containing_aggregate eq $aggr->name) {
+                my $tmp2 = {
+                    volume_name      => $volume->name,
+                    volume_state     => $volume->state,
+                    volume_totalsize => $volume->size_total,
+                    volume_sizeused  => $volume->size_used,
+                    volume_luns      => []
+                };
+            
+                push @{$tmp->{aggregates_volumes}}, $tmp2;
+            }    
+        }
+        
+        push @{$config->{aggregates}}, $tmp;
+    }
+     
+    return $config;
 }
 
 1;

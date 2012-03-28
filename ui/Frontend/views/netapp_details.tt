@@ -60,24 +60,3 @@
 <% END %>
 </table>
 
-<hr/>
-<span id="netappaggr" class="title simpleexpand">Aggregates</span>
-<table id="Xnetappaggr" class="detailspart">
-<ul>
-<% FOREACH aggregate in netapp_aggregates %>
-<li>Aggregate name : <% aggregate.name %></li>
-<% END %>
-</ul>
-</table>
-
-
-
-<hr/>
-<span id="netappvolumes" class="title simpleexpand">Volumes</span>
-<table id="Xnetappvolumes" class="detailspart">
-<ul>
-<% FOREACH volume in netapp_volumes %>
-<li>Volume name : <% volume.name %></li>
-<% END %>
-</ul>
-</table>
