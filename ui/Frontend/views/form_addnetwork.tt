@@ -5,7 +5,7 @@
 	<tr><td class="label">role :</td>
         <td><select name="interface_role_id">
                 <% FOREACH role IN interfaceroles_list %>          
-                    <option value="<% role.interface_role_id %>"><% role.interface_role_name %></option>
+                    <option value="<% role.interface_role_id %>"><% role.interface_role_name %> - <% role.interface_role_desc %></option>
                 <% END %>
             </select>
         </td>
