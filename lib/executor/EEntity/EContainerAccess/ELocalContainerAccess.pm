@@ -149,7 +149,7 @@ sub tryDisconnectPartition {
     #}
 
     # Manualy check if the device is connected, as we do not have this info in database.
-    $device = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_name');
+    my $device = $self->_getEntity->{econtainer}->_getEntity->getAttr(name => 'container_name');
 
     my $check_cmd = "losetup -a | grep $device";
     my $result    = $args{econtext}->execute(command => $check_cmd);
