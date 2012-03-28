@@ -26,7 +26,7 @@ option domain-name "[% node.domain_name %]";
 option ntp-servers [% node.ntp_server %];
 #server-name [% server_name %];
 option host-name "[% node.hostname %]";
-option pxelinux.configfile "pxelinux.cfg/[% node.kernel_version %].cfg";
+#option pxelinux.configfile "pxelinux.cfg/[% node.kernel_version %].cfg";
 }
 [% END %]
 }
