@@ -900,11 +900,10 @@ sub get_vlans {
 
 	$self->_check_args() or return;
 
-	my $children = $self->resolve_children(dn      => "sys/chassis-1/blade-5/adaptor-1/host-eth-1",
-	                                       classId => "adaptorVlan");
+	my $children = $self->resolve_class(classId => 'fabricVlan') or return [];
 
 	return $self->map_objects(objects => $children->{outConfigs},
-	                          classId => "adaptorVlan");
+	                          classId => "fabricVlan");
 }
 
 sub get_interfaces {
