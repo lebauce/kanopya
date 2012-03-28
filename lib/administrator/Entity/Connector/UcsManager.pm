@@ -42,6 +42,14 @@ sub get {
 
     my $self = $class->SUPER::get(%args);
 
+    $self->init();
+
+    return $self;
+}
+
+sub init {
+    my $self = shift;
+
     my $ucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(
                   id => $self->getAttr(name => "service_provider_id")
               );
@@ -57,8 +65,6 @@ sub get {
     $self->{state} = ($self->{api}->login() ? "up" : "down");
     $self->{ou} = $ucs->getAttr(name => "ucs_ou");
     $self->{ucs} = $ucs;
-
-    return $self;
 }
 
 sub AUTOLOAD {
