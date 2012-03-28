@@ -66,7 +66,7 @@ sub retrieveData {
     #print Dumper \%counters;
     
     my $global_time_laps = 7200;
-    my $time_zone = 'local';
+    my $time_zone = 'UTC';
     my $end_dt   = DateTime->now->set_time_zone($time_zone);
     my $start_dt = DateTime->now->subtract( seconds => $global_time_laps )->set_time_zone($time_zone);
     
