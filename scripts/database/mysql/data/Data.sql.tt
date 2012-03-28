@@ -400,7 +400,8 @@ SET @eid := @eid +1;
 
 INSERT INTO `interface_role` VALUES
 (1,'admin','network used for system administration'),
-(2,'public','network used for public access');
+(2,'public','network used for public access'),
+(3,'vms','network used for virtual machines');
 
 --
 -- kernels
