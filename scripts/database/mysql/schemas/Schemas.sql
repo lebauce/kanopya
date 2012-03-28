@@ -1234,6 +1234,46 @@ CREATE TABLE `nodemetric_rule` (
 
 
 
+--
+-- Table structure for table `action`
+-- 
+
+CREATE TABLE `action` (
+  `action_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_service_provider_id` int(8) unsigned NOT NULL,
+  `action_name` char(64) NOT NULL,
+  PRIMARY KEY (`action_id`),
+  KEY (`action_service_provider_id`),
+  FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `action_parameter`
+-- 
+
+CREATE TABLE `action_parameter` (
+  `action_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_parameter_name` char(64) NOT NULL,
+  `action_parameter_value` char(255),
+  `action_parameter_action_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`action_parameter_id`),
+  KEY (`action_parameter_action_id`),
+  FOREIGN KEY (`action_parameter_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `action_triggered`
+-- 
+
+CREATE TABLE `action_triggered` (
+  `action_triggered_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_triggered_hostname` char(255) NOT NULL,
+  `action_triggered_timestamp` char(255) NOT NULL,
+  `action_triggered_action_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`action_triggered_id`),
+  KEY (`action_triggered_action_id`),
+  FOREIGN KEY (`action_triggered_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
 --
 -- Table structure for table `verified_noderule`
