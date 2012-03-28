@@ -253,7 +253,7 @@ sub getReadOnlyParameter {
 
     General::checkParams(args => \%args, required => [ 'readonly' ]);
     
-    return {};
+    return undef;
 }
 
 =head2 createExport

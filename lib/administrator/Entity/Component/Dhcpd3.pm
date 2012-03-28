@@ -144,7 +144,7 @@ sub getConf {
                 ntp_server => $host->get_column('dhcpd3_hosts_ntp_server'),
                 mac_address => $host->get_column('dhcpd3_hosts_mac_address'), 
                 hostname => $host->get_column('dhcpd3_hosts_hostname'), 
-                kernel_version => $host->kernel->get_column('kernel_version')
+                #kernel_version => $host->kernel->get_column('kernel_version')
             };
         }
         push @data_subnets, {

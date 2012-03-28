@@ -931,7 +931,7 @@ sub getManagerParameters {
         }
     );
 
-    my $params_hash;
+    my $params_hash = {};
     for my $param (@parameters) {
         $params_hash->{$param->getAttr(name => 'name')}
             = $param->getAttr(name => 'value');
