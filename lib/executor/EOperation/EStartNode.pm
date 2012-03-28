@@ -18,8 +18,6 @@ use base "EOperation";
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use String::Random;
 use Date::Simple (':all');
 
@@ -28,8 +26,12 @@ use EFactory;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
+use Entity::Kernel;
 use Template;
 use General;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -160,6 +162,8 @@ sub execute {
 
     # Configure DHCP Component
     my $host_mac = $self->{_objs}->{host}->getAttr(name => "host_mac_address");
+    
+    # Not used any more in dhcp component, please have a see to _generatePXEConf
     my $host_kernel_id;
     my $tmp_kernel_id = $self->{_objs}->{cluster}->getAttr(name => "kernel_id");
     if ($tmp_kernel_id) {
@@ -205,8 +209,6 @@ sub execute {
 
     my $options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
                       ? "ro,noatime,nodiratime" : "defaults";
-
-
 
     # Get the ECluster and EHost
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
@@ -295,73 +297,6 @@ sub _generateNodeConf {
 
     $log->info("Generate ntpdate Conf");
     $self->_generateNtpdateConf(etc_path => $args{etc_path});
-}
-
-sub _generateKanopyaHalt{
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "etc_path", "targetname" ]);
-
-    my $rand = new String::Random;
-    my $template = Template->new($config);
-    my $tmpfile = $rand->randpattern("cccccccc");
-    my $tmpfile2 = $rand->randpattern("cccccccc");
-    my $input = "KanopyaHalt.tt";
-    my $omitted_file = "Kanopya_omitted_iscsid";
-
-    #TODO: mettre en parametre le port du iscsi du nas!!
-    my $vars = {
-        target   => $args{targetname},
-        nas_ip   => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
-        nas_port => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
-    };
-
-    my $components = $self->{_objs}->{components};
-    foreach my $i (keys %$components) {
-        # TODO: Check if it is an ExportClient and call generic method
-        if ($components->{$i}->isa("Entity::Component")) {
-            if ($components->{$i}->isa("Entity::Component::Openiscsi2")) {
-                $log->debug("The cluster component is an Openiscsi2");
-
-                my $iscsi_export = $components->{$i};
-                $vars->{data_exports} = $iscsi_export->getExports();
-            }
-        }
-    }
-
-    $log->debug("Generate Kanopya Halt with :" . Dumper($vars));
-    $template->process($input, $vars, "/tmp/" . $tmpfile) or die $template->error(), "\n";
-
-    $self->{executor}->{econtext}->send(src  => "/tmp/$tmpfile",
-                                        dest => "$args{etc_path}/init.d/Kanopya_halt");
-    unlink "/tmp/$tmpfile";
-
-    $self->{executor}->{econtext}->execute(
-        command => "chmod 755 $args{etc_path}/init.d/Kanopya_halt"
-    );
-    $self->{executor}->{econtext}->execute(
-        command => "ln -sf ../init.d/Kanopya_halt $args{etc_path}/rc0.d/S89Kanopya_halt"
-    );
-
-    $log->debug("Generate omitted file <$omitted_file>");
-    $self->{executor}->{econtext}->execute(
-        command => "cp /templates/internal/$omitted_file /tmp/"
-    );
-    $self->{executor}->{econtext}->send(
-        src  => "/tmp/$omitted_file",
-        dest => "$args{etc_path}/init.d/Kanopya_omitted_iscsid"
-    );
-    unlink "/tmp/$omitted_file";
-
-    $self->{executor}->{econtext}->execute(
-        command => "chmod 755 $args{etc_path}/init.d/Kanopya_omitted_iscsid"
-    );
-    $self->{executor}->{econtext}->execute(
-        command => "ln -sf ../init.d/Kanopya_omitted_iscsid " .
-                   "$args{etc_path}/rc0.d/S19Kanopya_omitted_iscsid"
-    );
 }
 
 sub _generateNetConf {
@@ -454,73 +389,200 @@ sub _generateBootConf {
     General::checkParams(args     =>\%args,
                          required => [ "etc_path", "filesystem", "options" ]);
 
-    # Warning: Work only when container access is a IscsiContainerAccess.
-    my $targetname = $self->{_objs}->{container_access}->getAttr(name => 'container_access_export');
+    # Firstly create pxe config file if needed
+    my $boot_policy = $self->{_objs}->{cluster}->getAttr(name => 'cluster_boot_policy');
 
-    $log->info("Generate Kanopya Halt script Conf");
+    if ($boot_policy =~ m/PXE/) {
+        $self->_generatePXEConf(cluster => $self->{_objs}->{cluster},
+                                host    => $self->{_objs}->{host});
 
-    $self->_generateKanopyaHalt(etc_path   => $args{etc_path},
-                                targetname => $targetname);
+        if ($boot_policy =~ m/ISCSI/) {
+            my $targetname = $self->{_objs}->{container_access}->getAttr(name => 'container_access_export');
 
-    $log->info("Generate Initiator Conf");
+            $log->info("Generate Kanopya Halt script Conf");
 
-    # Here we compute an iscsi initiator name for the node from the target name.
-    my $initiatorname = $targetname;
-    $initiatorname =~ s/\:.*$//g;   # Remove string after the last ':'
-    $initiatorname =~ s/[^\.]+$//g; # Remove string after the last '.'
-    $initiatorname .= $self->{_objs}->{host}->getAttr(name => 'host_hostname');
+            $self->_generateKanopyaHalt(etc_path   => $args{etc_path},
+                                        targetname => $targetname);
 
-    # Set initiatorName
-    $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
-                                    value => $initiatorname);
+            $log->info("Generate Initiator Conf");
 
-    $self->{executor}->{econtext}->execute(
-        command => "echo \"InitiatorName=$initiatorname\" > " .
-                   "$args{etc_path}/iscsi/initiatorname.iscsi"
-    );
+            # Here we compute an iscsi initiator name for the node from the target name.
+            my $initiatorname = $targetname;
+            $initiatorname =~ s/\:.*$//g;   # Remove string after the last ':'
+            $initiatorname =~ s/[^\.]+$//g; # Remove string after the last '.'
+            $initiatorname .= $self->{_objs}->{host}->getAttr(name => 'host_hostname');
 
-    my $rand = new String::Random;
+            # Set initiatorName
+            $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
+                                            value => $initiatorname);
+
+            $self->{executor}->{econtext}->execute(
+                command => "echo \"InitiatorName=$initiatorname\" > " .
+                           "$args{etc_path}/iscsi/initiatorname.iscsi"
+            );
+
+            my $rand = new String::Random;
+            my $tmpfile = $rand->randpattern("cccccccc");
+
+            # create Template object
+            my $template = Template->new($config);
+            my $input = "bootconf.tt";
+
+            my $vars = {
+                filesystem    => $self->{_objs}->{container}->getAttr(name => 'container_filesystem'),
+                initiatorname => $initiatorname,
+                target        => $targetname,
+                ip            => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
+                port          => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
+                mount_opts    => $args{options},
+                mounts_iscsi  => [],
+                additional_devices => "",
+            };
+
+            my $components = $self->{_objs}->{components};
+            foreach my $i (keys %$components) {
+                if ($components->{$i}->isa("Entity::Component")) {
+                    if ($components->{$i}->isa("Entity::Component::Openiscsi2")){
+                        my $iscsi_export = $components->{$i};
+                        $vars->{mounts_iscsi} = $iscsi_export->getExports();
+                        my $tmp = $vars->{mounts_iscsi};
+                        foreach my $j (@$tmp){
+                            $vars->{additional_devices} .= " ". $j->{name};
+                        }
+                    }
+                }
+            }
+
+            $template->process($input, $vars, "/tmp/$tmpfile")
+                or throw Kanopya::Exception::Internal(
+                             error => "Error when processing template $input."
+                         );
+
+            my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
+            my $dest = $tftp_conf->{'repository'} . '/' . $self->{_objs}->{host}->getAttr(name => "host_hostname") . ".conf";
+
+            $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
+            unlink "/tmp/$tmpfile";
+        }
+    }
+}
+
+sub _generatePXEConf {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     =>\%args,
+                         required => [ "cluster", "host" ]);
+
+    my $cluster_kernel_id = $args{cluster}->getAttr(name => "kernel_id");
+    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->getAttr(name => "kernel_id");
+
+    my $kernel_version   = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
+    my $container_access = $self->{_objs}->{container_access};
+    my $boot_policy      = $args{cluster}->getAttr(name => 'cluster_boot_policy');
+
+    my $nfsexport = "";
+    if ($boot_policy =~ m/NFS/) {
+        $nfsexport = $container_access->getAttr(name => 'container_access_ip') . ':' .
+                     $container_access->getAttr(name => 'container_access_export');
+    }
+
+    my $rand    = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
     # create Template object
     my $template = Template->new($config);
-    my $input = "bootconf.tt";
+    my $input    = "node-syslinux.cfg.tt";
 
     my $vars = {
-        filesystem    => $self->{_objs}->{container}->getAttr(name => 'container_filesystem'),
-        initiatorname => $initiatorname,
-        target        => $targetname,
-        ip            => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
-        port          => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
-        mount_opts    => $args{options},
-        mounts_iscsi  => [],
-        additional_devices => "",
+        nfsroot    => ($boot_policy =~ m/NFS/) ? 1 : 0,
+        iscsiroot  => ($boot_policy =~ m/ISCSI/) ? 1 : 0,
+        xenkernel  => 0, #($kernel_version =~ m/xen/) ? 1 : 0,
+        kernelfile => "vmlinuz-$kernel_version",
+        initrdfile => "initrd_$kernel_version",
+        nfsexport  => $nfsexport,
+    };
+
+    $template->process($input, $vars, "/tmp/$tmpfile")
+        or throw Kanopya::Exception::Internal(
+                     error => "Error when processing template $input."
+                 );
+    
+    my $node_mac_addr = $args{host}->getAttr(name => 'host_mac_address');
+    $node_mac_addr =~ s/:/-/g;
+
+    my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
+    my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . $node_mac_addr;
+
+    $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
+    unlink "/tmp/$tmpfile";
+}
+
+sub _generateKanopyaHalt{
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "etc_path", "targetname" ]);
+
+    my $rand = new String::Random;
+    my $template = Template->new($config);
+    my $tmpfile = $rand->randpattern("cccccccc");
+    my $tmpfile2 = $rand->randpattern("cccccccc");
+    my $input = "KanopyaHalt.tt";
+    my $omitted_file = "Kanopya_omitted_iscsid";
+
+    #TODO: mettre en parametre le port du iscsi du nas!!
+    my $vars = {
+        target   => $args{targetname},
+        nas_ip   => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
+        nas_port => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
     };
 
     my $components = $self->{_objs}->{components};
     foreach my $i (keys %$components) {
+        # TODO: Check if it is an ExportClient and call generic method
         if ($components->{$i}->isa("Entity::Component")) {
-            if ($components->{$i}->isa("Entity::Component::Openiscsi2")){
+            if ($components->{$i}->isa("Entity::Component::Openiscsi2")) {
+                $log->debug("The cluster component is an Openiscsi2");
+
                 my $iscsi_export = $components->{$i};
-                $vars->{mounts_iscsi} = $iscsi_export->getExports();
-                my $tmp = $vars->{mounts_iscsi};
-                foreach my $j (@$tmp){
-                    $vars->{additional_devices} .= " ". $j->{name};
-                }
+                $vars->{data_exports} = $iscsi_export->getExports();
             }
         }
     }
 
-    $template->process($input, $vars, "/tmp/$tmpfile")
-        or throw Kanopya::Exception::Internal(
-                     error => "EOperation::EAddHost->GenerateNetConf error when parsing template"
-                 );
+    $log->debug("Generate Kanopya Halt with :" . Dumper($vars));
+    $template->process($input, $vars, "/tmp/" . $tmpfile) or die $template->error(), "\n";
 
-    my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
-    my $dest = $tftp_conf->{'repository'} . '/' . $self->{_objs}->{host}->getAttr(name => "host_hostname") . ".conf";
-
-    $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
+    $self->{executor}->{econtext}->send(src  => "/tmp/$tmpfile",
+                                        dest => "$args{etc_path}/init.d/Kanopya_halt");
     unlink "/tmp/$tmpfile";
+
+    $self->{executor}->{econtext}->execute(
+        command => "chmod 755 $args{etc_path}/init.d/Kanopya_halt"
+    );
+    $self->{executor}->{econtext}->execute(
+        command => "ln -sf ../init.d/Kanopya_halt $args{etc_path}/rc0.d/S89Kanopya_halt"
+    );
+
+    $log->debug("Generate omitted file <$omitted_file>");
+    $self->{executor}->{econtext}->execute(
+        command => "cp /templates/internal/$omitted_file /tmp/"
+    );
+    $self->{executor}->{econtext}->send(
+        src  => "/tmp/$omitted_file",
+        dest => "$args{etc_path}/init.d/Kanopya_omitted_iscsid"
+    );
+    unlink "/tmp/$omitted_file";
+
+    $self->{executor}->{econtext}->execute(
+        command => "chmod 755 $args{etc_path}/init.d/Kanopya_omitted_iscsid"
+    );
+    $self->{executor}->{econtext}->execute(
+        command => "ln -sf ../init.d/Kanopya_omitted_iscsid " .
+                   "$args{etc_path}/rc0.d/S19Kanopya_omitted_iscsid"
+    );
 }
 
 sub _generateNtpdateConf {

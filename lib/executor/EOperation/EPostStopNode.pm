@@ -106,7 +106,7 @@ sub prepare {
     };
     if($@) {
         my $err = $@;
-        $errmsg = "EOperation::EPostStopNode->prepare : cluster_id $params->{cluster_id} "
+        $errmsg = "EOperation::EPostStopNode->prepare : cluster_id $params->{cluster_id} " .
                   "could not be found\n" . $err;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -204,9 +204,6 @@ sub execute {
     
     # Finally save the host
     $self->{_objs}->{host}->save();
-
-    # Update of etc/hosts
-    my $nodes = $self->{_objs}->{cluster}->getHosts();
 
     $log->info("Generate Hosts Conf");
     my $nodes = $self->{_objs}->{cluster}->getHosts();

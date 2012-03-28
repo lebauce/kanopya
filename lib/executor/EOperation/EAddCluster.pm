@@ -129,7 +129,6 @@ sub prepare {
                                                        name         => $readonly_param->{name},
                                                        value        => $readonly_param->{value});
     }
-
     $self->{econtext} = EFactory::newEContext(ip_source      => "127.0.0.1",
                                               ip_destination => "127.0.0.1");
 }
