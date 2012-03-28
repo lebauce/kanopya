@@ -20,6 +20,7 @@ use base 'Entity::Connector::NetappManager';
 use warnings;
 use Entity::Container::NetappLun;
 use Entity::Container::NetappVolume;
+use Entity::ContainerAccess::IscsiContainerAccess;
 
 use Data::Dumper;
 

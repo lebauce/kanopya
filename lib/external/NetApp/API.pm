@@ -18,6 +18,15 @@ use NaServer;
 use NaElement;
 use NaObject;
 
+use General;
+use EContext::Local;
+use Kanopya::Exceptions;
+
+use Data::Dumper;
+use Log::Log4perl "get_logger";
+
+my $log = get_logger("executor");
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -46,7 +55,9 @@ sub AUTOLOAD {
 
     my $request = NaElement->new($method);
     foreach my $key (keys %args) {
-        $request->child_add_string($key, $args{$key});
+        my $value = $args{$key};
+        $key =~ s/_/-/g;
+        $request->child_add_string($key, $value);
     }
 
     my $response = $self->{server}->invoke_elem($request);

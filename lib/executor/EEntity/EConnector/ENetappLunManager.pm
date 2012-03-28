@@ -19,6 +19,7 @@ use warnings;
 use strict;
 
 use General;
+use EContext::Local;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
@@ -74,11 +75,13 @@ sub createDisk {
                                          erollback   => $args{erollback});
 
         my $container_access = EFactory::newEEntity(data => $export);
-        my $newdevice = $container_access->connect(econtext => $econtext);
+        my $local_context    = EContext::Local->new(local => '127.0.0.1');
+
+        my $newdevice = $container_access->connect(econtext => $local_context);
 
         $self->mkfs(device   => $newdevice,
                     fstype   => $args{filesystem},
-                    econtext => $econtext);
+                    econtext => $local_context);
     }
 
     if (exists $args{erollback} and defined $args{erollback}){
@@ -175,6 +178,13 @@ sub createExport {
                                typeio      => $typeio,
                                iomode      => $iomode,
                            );
+
+    my $api = $self->_getEntity();
+    my $volume = Entity::Container::NetappVolume->get(id => $args{container}->getAttr(name => "volume_id"));
+
+    $api->lun_map(path            => '/vol/' . $volume->getAttr(name => "name") .
+                                     '/' . $args{export_name},
+                  initiator_group => 'igroup_testcluster_testblockpool');
 
     $log->info("Added iSCSI export for lun " .
                $args{container}->getAttr(name => "container_name"));
