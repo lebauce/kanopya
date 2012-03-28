@@ -1273,7 +1273,7 @@ CREATE TABLE `action_triggered` (
   PRIMARY KEY (`action_triggered_id`),
   KEY (`action_triggered_action_id`),
   FOREIGN KEY (`action_triggered_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `verified_noderule`
