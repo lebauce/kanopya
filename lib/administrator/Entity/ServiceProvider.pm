@@ -58,7 +58,9 @@ sub findManager {
     my $key;
     my ($class, %args) = @_;
     my @managers = ();
+
     $key = defined $args{id} ? { component_id => $args{id} } : {};
+    $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
     foreach my $component (Entity::Component->search(hash => $key)) {
         my $obj = $component->getComponentAttr();
         if ($obj->{component_category} eq $args{category}) {
@@ -73,6 +75,7 @@ sub findManager {
     }
 
     $key = defined $args{id} ? { connector_id => $args{id} } : {};
+    $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
     foreach my $connector (Entity::Connector->search(hash => $key)) {
         my $obj = $connector->getConnectorType();
         if ($obj->{connector_category} eq $args{category}) {
