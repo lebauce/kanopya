@@ -22,6 +22,7 @@ use Data::Dumper;
 use warnings;
 
 use Cisco::UCS;
+use Cisco::UCS::VLAN;
 
 use constant ATTR_DEF => {};
 
@@ -139,6 +140,32 @@ sub synchronize {
     }
     
 ### Begin of VLANs synchronisation :
+
+    # Synchronize VLANs from UCS to Kanopya :
+    # TODO ->
+    
+    
+    # Synchronize VLANs from Kanopya to UCS :
+    # Get all VLANs on Kanopya :
+    my @vlans = Entity::Vlan->search(hash => {});
+    foreach my $vlan (@vlans) {
+        my $vlan_nb = $vlan->getAttr('name' => 'vlan_number');
+        my $vlan_name = $vlan->getAttr('name' => 'vlan_name');
+        # We must ignore the VLAN 0 on Kanopya side, this is the default UCS Vlan too
+        if ($vlan_nb ne "0") {
+            %parameters = (
+                ucs         => $ucs,
+                defaultNet  => "no",
+                id          => $vlan_nb,
+                name        => $vlan_name,
+                pubNwName   => "",
+                sharing     => "none",
+                status      => "created",
+            );
+            # Create VLANs on UCS :
+            Cisco::UCS::VLAN->create(%parameters);
+        }
+    }
 
     $ucs->logout();
     };

@@ -105,4 +105,15 @@ sub toString {
     return $str.' (UCS Equipment)';
 }
 
+sub synchronize {
+    my ($self) = @_;
+    my @connectors = $self->getConnectors();
+    
+    foreach my $connector (@connectors) {
+        if ($connector->isa("Entity::Connector::UcsManager") ) {
+            $connector->synchronize();
+        }
+    }
+}
+
 1;
