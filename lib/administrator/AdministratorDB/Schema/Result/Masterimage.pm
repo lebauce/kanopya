@@ -81,6 +81,21 @@ __PACKAGE__->set_primary_key("masterimage_id");
 
 =head1 RELATIONS
 
+=head2 clusters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Cluster>
+
+=cut
+
+__PACKAGE__->has_many(
+  "clusters",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.masterimage_id" => "self.masterimage_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 components_provided
 
 Type: has_many
@@ -112,14 +127,14 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-07 16:19:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gT/8I6TVBLjqj+s1COhJvw
-
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-28 16:32:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xVN5wsSJk4mBdG50/e0C1w
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.masterimage_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+        { "foreign.entity_id" => "self.masterimage_id" },
+        { cascade_copy => 0, cascade_delete => 1 });
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

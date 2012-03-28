@@ -65,6 +65,21 @@ __PACKAGE__->set_primary_key("kernel_id");
 
 =head1 RELATIONS
 
+=head2 clusters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Cluster>
+
+=cut
+
+__PACKAGE__->has_many(
+  "clusters",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.kernel_id" => "self.kernel_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 dhcpd3_hosts
 
 Type: has_many
@@ -111,14 +126,14 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:19:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vTbt5qpRL6bXNuVQmf2mNA
-
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-28 16:32:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Qr1Hwst/tM458GTUyGJ5hA
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-    { "foreign.entity_id" => "self.kernel_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+        { "foreign.entity_id" => "self.kernel_id" },
+        { cascade_copy => 0, cascade_delete => 1 });
 
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

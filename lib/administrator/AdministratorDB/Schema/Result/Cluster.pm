@@ -128,12 +128,14 @@ __PACKAGE__->table("cluster");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 masterimage_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 host_manager_id
@@ -202,9 +204,19 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "kernel_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
   "masterimage_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
   "host_manager_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "disk_manager_id",
@@ -229,7 +241,7 @@ __PACKAGE__->belongs_to(
   "cluster",
   "AdministratorDB::Schema::Result::Inside",
   { inside_id => "cluster_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 user
@@ -244,7 +256,47 @@ __PACKAGE__->belongs_to(
   "user",
   "AdministratorDB::Schema::Result::User",
   { user_id => "user_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 kernel
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Kernel>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "kernel",
+  "AdministratorDB::Schema::Result::Kernel",
+  { kernel_id => "kernel_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 masterimage
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Masterimage>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "masterimage",
+  "AdministratorDB::Schema::Result::Masterimage",
+  { masterimage_id => "masterimage_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 cluster_ipv4_routes
@@ -383,13 +435,14 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-22 12:31:46
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sRO9LUW3PRMqq1Tww9nGiA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-03-28 16:32:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2Za7AR3ptvmxjYZK4FvKUg
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Inside",
-    { "foreign.inside_id" => "self.cluster_id" },
-    { cascade_copy => 0, cascade_delete => 1 }
-);
+        { "foreign.inside_id" => "self.cluster_id" },
+        { cascade_copy => 0, cascade_delete => 1 }
+    );
 
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

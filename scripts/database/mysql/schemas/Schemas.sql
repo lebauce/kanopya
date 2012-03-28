@@ -89,11 +89,14 @@ CREATE TABLE `cluster` (
   `disk_manager_id` int(8) unsigned DEFAULT NULL,
   `export_manager_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`cluster_id`),
+  UNIQUE KEY (`cluster_name`),
   FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
---  KEY `fk_cluster_1` (`infrastructure_id`),
-  UNIQUE KEY (`cluster_name`)
+  KEY (`kernel_id`),
+  FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`masterimage_id`),
+  FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
