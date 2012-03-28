@@ -16,10 +16,10 @@
 
 package Entity::Connector::NetappLunManager;
 use base 'Entity::Connector::NetappManager';
-use Entity::Container::NetappLun;
 
 use warnings;
 use Entity::Container::NetappLun;
+use Entity::Container::NetappVolume;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
@@ -28,6 +28,41 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getConf {
+    my $self = shift;
+
+    my $conf = {};
+    my @tab_volumes = ();
+
+    my @volumes = Entity::Container::NetappVolume->search(hash => {});
+
+    for my $volume (@volumes) {
+        my $netapp_volume = {
+            volume_id   => $volume->getAttr(name => 'volume_id'),
+            volume_name => $volume->getAttr(name => 'container_name'),
+        };
+        $netapp_volume->{luns} = ();
+        my $luns = Entity::Container::NetappLun->search(
+                       hash => {
+                           volume_id => $netapp_volume->{volume_id}
+                        }
+                   );
+
+        for my $lun (@{$luns}) {
+            my $lun_hash = {
+                lun_id     => $lun->getAttr(name => 'lun_id'),
+                name       => $lun->getAttr(name => 'container_name'),
+                size       => $lun->getAttr(name => 'container_size'),
+                filesystem => $lun->getAttr(name => 'container_filesystem'),
+            };
+            push @{$netapp_volume->{luns}}, $lun_hash;
+        }
+        push @tab_volumes, $netapp_volume;
+    }
+    $conf->{netapp_volumes} = \@tab_volumes;
+    return $conf;
+}
 
 =head2 createDisk
 
@@ -96,6 +131,9 @@ sub removeDisk {
 sub getContainer {
     my $self = shift;
     my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "lun" ]);
+
     my $lun = $args{lun};
 
     my $container = {
