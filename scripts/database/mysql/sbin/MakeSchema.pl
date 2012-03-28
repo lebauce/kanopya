@@ -54,7 +54,7 @@ chomp $db_pwd;
 # Define globals
 my $schema_class_name = 'AdministratorDB::Schema';
 
-my $connect_info = [ 'dbi:mysql:administrator:localhost:3306', $db_user, $db_pwd];
+my $connect_info = [ 'dbi:mysql:kanopya:localhost:3306', $db_user, $db_pwd];
 
 my $dump_dir = '/opt/kanopya/lib/administrator';
 
