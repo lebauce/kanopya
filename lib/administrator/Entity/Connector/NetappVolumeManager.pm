@@ -281,8 +281,16 @@ sub delContainerAccess {
 =cut 
 
 sub synchronize {
-    my ($self) = @_;
-    
+    my $self = shift;
+    my %args = @_;
+    # Get list of volumes exists on NetApp :
+    my @volumesList = $self->volumes;
+    foreach my $vol (@volumesList) {
+        my $volname = $self->addContainer(
+                        name    => $vol->name,
+                        size    => $vol->size_used,
+                     );
+    }
 }
 
 1;

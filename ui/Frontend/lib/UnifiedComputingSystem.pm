@@ -121,4 +121,12 @@ get '/ucs/:ucsid' => sub {
     };
 };
 
+get '/ucs/:ucsid/synchronize' => sub {
+    my $ucs_id = param('ucsid');
+    my $eucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(id => $ucs_id);
+    my $eeucs = $eucs->getConnector(category => 'Cloudmanager');
+    $eeucs->synchronize();
+    redirect('/equipments/ucs/'.$ucs_id);
+};
+
 1;

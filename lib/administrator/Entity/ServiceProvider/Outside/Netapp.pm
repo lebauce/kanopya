@@ -123,7 +123,15 @@ sub synchronize {
     my @connectors = $self->getConnectors();
     
     foreach my $connector (@connectors) {
-        $connector->synchronize();
+        if ($connector->isa("Entity::Connector::NetappVolumeManager") ) {
+            $connector->synchronize();
+        }
+    }
+
+    foreach my $connector (@connectors) {
+        if ($connector->isa("Entity::Connector::NetappLunManager") ) {
+            $connector->synchronize();
+        }
     }
 }
 

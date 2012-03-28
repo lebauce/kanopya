@@ -16,12 +16,16 @@
 package Entity::Connector::UcsManager;
 use base "Entity::Connector";
 use base "Entity::HostManager";
+use Administrator;
+use Data::Dumper;
 
 use warnings;
 
 use Cisco::UCS;
 
 use constant ATTR_DEF => {};
+
+my ($schema, $config, $oneinstance);
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -73,6 +77,75 @@ sub DESTROY {
         $self->{api}->logout();
         $self->{api} = undef;
     }
+}
+
+=head2 synchronize
+
+    Desc: synchronize ucs information with kanopya database
+    
+=cut
+
+sub synchronize {
+    
+    my $self = shift;
+    my %args = @_;
+      
+    eval {
+    my $ucs = Cisco::UCS->new(
+        cluster  => "89.31.149.80",
+        port     => 80,
+        proto    => "http",
+        username => "admin",
+        passwd   => "Infidis2011"
+    );
+
+    $ucs->login();    
+### Begin of Blades synchronisation :    
+    # Get list of blade existing on ucs :
+    my @blades = $ucs->get_blades();   
+    # Get a "random" kernel for his id :
+    my $kernelhash =  Entity::Kernel->find(hash => {});
+    my $kernelid = $kernelhash->getAttr('name' => 'kernel_id');
+    # Get a "random" host model for his id :
+    my $hostmodelhash = Entity::Host->find(hash => {});
+    my $hostmodelid = $hostmodelhash->getAttr('name' => 'hostmodel_id');
+    # Get a "random" processor model for his id :
+    my $processormodelhash = Entity::Processormodel->find(hash => {});
+    my $processormodelid = $processormodelhash->getAttr('name' => 'processormodel_id');
+    # Get the hostmanager for his id :
+    my $hostmanagerid = $self->getAttr('name' => 'entity_id');
+    my $adm = Administrator->new;   
+    foreach my $blade (@blades) {
+        # Add the blade to the host table :
+        my $mac = $adm->{manager}->{network}->generateMacAddress();
+        my %parameters = (
+                host_mac_address    => $mac,
+                kernel_id           => $kernelid,
+                host_serial_number  => $blade->{dn},
+                host_ram            => $blade->{totalMemory},
+                host_core           => $blade->{numOfCores},
+                hostmodel_id        => $hostmodelid,
+                processormodel_id   => $processormodelid,
+                host_desc           => "",
+                service_provider_id => "1",
+                host_manager_id     => $hostmanagerid,
+        );
+        # Check if an entry with the same serial number exist in table
+        my $serial_number_exist = Entity::Host->search( hash => { host_serial_number => $blade->{dn} } );
+        my $nb_sn_occurences = scalar($serial_number_exist);
+        if( $nb_sn_occurences == '0' ) {
+            Entity::Host->new(%parameters);
+        }
+    }
+    
+### Begin of VLANs synchronisation :
+
+    $ucs->logout();
+    };
+    if($@) {
+        print $@;
+    }
+   
 }
 
 1;

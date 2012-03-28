@@ -20,6 +20,10 @@
         <span class="state imgWarning">Broken (<% state_time %>)</span>
     <% END %>
     </td>
+    <td class="actions" rowspan="2">
+        <a class="imgStart" href="/equipments/ucs/<% ucs_id %>/synchronize">synchronize</a><br />
+        <span class="desc">Synchronize Kanopya with this UCS equipement</span>
+    </td>
 </tr>
 </table>
 
