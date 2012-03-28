@@ -27,14 +27,12 @@ sub new {
     General::checkParams(args => \%args,
                          required => ['data']);
     
-       $log->debug("Class is : $class");
     my $self = { _operation         => $args{data},
                 duration_report     => 20,
                 # default duration to wait during operation reporting (in seconds) 
                 internal_cluster    => {}
     };
     bless $self, $class;
-
     return $self;
 }
 

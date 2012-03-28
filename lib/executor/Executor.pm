@@ -57,8 +57,6 @@ use Message;
 
 my $log = get_logger("executor");
 
-$VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r };
-
 =head2 new
 
     my $executor = Executor->new();
@@ -119,7 +117,6 @@ sub run {
        $self->execnround(run => 1);
     }
 
-    $log->debug("condition become false : $$running");
     Message->send(
         from    => 'Executor',
         level   => 'warning',
@@ -132,8 +129,6 @@ sub oneRun {
 
     my $adm = Administrator->new();
     my $errors;
-
-    $log->debug("Try to get an operation");
     my $opdata = Operation::getNextOp();
     
     if ($opdata){
@@ -142,7 +137,7 @@ sub oneRun {
         my $op = EFactory::newEOperation(op => $opdata);
         my $opclass = ref($op);
         
-        $log->info("New operation (".ref($op).") retrieve ; execution processing");
+        $log->info("---- [$opclass] retrieved ; execution processing ----");
         Message->send(
             from    => 'Executor',
             level   => 'info',
@@ -198,6 +193,7 @@ sub oneRun {
             # commit transaction
             $op->finish();
             $adm->{db}->txn_commit;
+            $log->info("---- [$opclass] Execution succeed ----");
             Message->send(
                 from    => 'Executor',
                 level   => 'info',
