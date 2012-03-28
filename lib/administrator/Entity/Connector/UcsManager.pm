@@ -50,9 +50,7 @@ sub get {
 sub init {
     my $self = shift;
 
-    my $ucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(
-                  id => $self->getAttr(name => "service_provider_id")
-              );
+    my $ucs = Entity->get(id => $self->getAttr(name => "service_provider_id"));
 
     $self->{api} = Cisco::UCS->new(
                        proto    => "http",
