@@ -8,6 +8,8 @@ use XML::Simple;
 use Carp qw(croak carp);
 use Exporter;
 
+use Cisco::UCS::Object;
+
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 @ISA               	= qw(Exporter);
@@ -559,8 +561,11 @@ sub resolve_children {
 
 	$args{inHierarchical}	= (defined $args{inHierarchical} ? _isInHierarchical($args{inHierarchical}) : 'false');
 
-	my $xml	= $self->_ucsm_request('<configResolveChildren inHierarchical="' . $args{inHierarchical} . '" cookie="' . $self->{cookie} .
-				'" inDn="' . $args{dn} . '"></configResolveChildren>') or return;
+	my $xml	= $self->_ucsm_request('<configResolveChildren inHierarchical="' . $args{inHierarchical} . '"'
+				. ' cookie="' . $self->{cookie} . '"'
+				. ' inDn="' . $args{dn} . '"'
+				. (defined $args{classId} ? (' classId="'. $args{classId} . '"') : '')
+				. '></configResolveChildren>') or return;
 
 	return $xml
 }	
@@ -614,6 +619,21 @@ sub resolve_templates {
 				  '</lsResolveTemplates>', 'classId') or return;
 
 	return $xml
+}
+
+sub set_conf {
+	my $self = shift;
+    my %args = @_;
+
+	$self->_check_args() or return;
+
+	my $xml = $self->_ucsm_request('<configConfMo cookie="' . $self->{cookie} . '" inHierarchical="false">' .
+	                               '<inConfig>' .
+                                   $args{config} .
+	                               '</inConfig>' .
+                                   '</configConfMo>');
+
+    return $xml;
 }
 
 =head3 get_cluster_status
@@ -744,7 +764,8 @@ sub get_service_profiles {
 
 	my $xml	= $self->resolve_class_filter(classId => 'lsServer', type => 'instance') or return [];
 
-	return (defined $xml->{outConfigs}->{lsServer} ? @{$xml->{outConfigs}->{lsServer}} : [])
+	return $self->map_objects(objects => $xml->{outConfigs},
+	                          classId => "lsServer");
 }
 
 =head3 get_service_profile_templates
@@ -780,8 +801,50 @@ sub get_service_profile_templates {
 	return @templates;
 }
 
+sub set_service_profile_power_state {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	my $xml = $self->_ucsm_request('<configConfMo cookie="' . $self->{cookie} . '" inHierarchical="false">' .
+	                               '<inConfig>' .
+	                               '<lsServer ' .
+	                               'dn="' . $args{dn} . '" >' .
+	                               '<lsPower childAction="deleteNonPresent"  rn="power" state="' . $args{state} . '" /> ' .
+	                               '</lsServer>' .
+	                               '</inConfig>' .
+	                               '</configConfMo>');
+}
+
+sub start_service_profile {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	$self->set_service_profile_power_state(%args,
+	                                       state => "up");
+}
+
+sub reboot_service_profile {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	$self->set_service_profile_power_state(%args,
+	                                       state => "cycle-wait");
+}
+
+sub shutdown_service_profile {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	$self->set_service_profile_power_state(%args,
+	                                       state => "soft-shut-down");
+}
+
 sub instantiate_service_profile {
-	my ($self, %args) = @_; 
+	my ($self, %args) = @_;
 
 	$self->_check_args() or return;
 
@@ -795,69 +858,178 @@ sub instantiate_service_profile {
 	          '</lsInstantiateTemplate>', 'classId') or return;
 }
 
-sub set_service_profile_power_state {
-	my ($self, %args) = @_; 
+sub map_objects {
+	my $self = shift;
+	my %args = @_;
+	my @objs = ();
+	my $classId = $args{classId};
+	my $objects = $args{objects}->{$classId};
+
+	$self->_check_args() or return;
+
+	if (ref($objects) eq "ARRAY") {
+		for my $object (@{$objects}) {
+			push @objs, Cisco::UCS::Object->new(hash    => $object,
+			                                    ucs     => $self,
+			                                    classId => $classId);
+		}
+	}
+	else {
+		push @objs, Cisco::UCS::Object->new(hash    => $objects,
+		                                    ucs     => $self,
+		                                    classId => $classId);
+	}
+
+	return @objs;
+}
+
+sub get_ethernets {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	my $children = $self->resolve_children(dn      => "org-root/org-Alterway/ls-MasterKanopya1",
+	                                       classId => "vnicEther");
+
+	return $self->map_objects(objects => $children->{outConfigs},
+	                          classId => "vnicEther");
+}
+
+sub get_vlans {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	my $children = $self->resolve_children(dn      => "sys/chassis-1/blade-5/adaptor-1/host-eth-1",
+	                                       classId => "adaptorVlan");
+
+	return $self->map_objects(objects => $children->{outConfigs},
+	                          classId => "adaptorVlan");
+}
+
+sub get_interfaces {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	my $children = $self->resolve_children(dn      => "sys/chassis-1/blade-5/adaptor-1",
+	                                       classId => "adaptorHostEthIf");
+
+	return $self->map_objects(objects => $children->{outConfigs},
+	                          classId => "adaptorHostEthIf");
+}
+
+sub get_adaptors {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	my $children = $self->resolve_children(dn      => "sys/chassis-1/blade-5",
+	                                       classId => "adaptorUnit");
+
+	return $self->map_objects(objects => $children->{outConfigs},
+	                          classId => "adaptorUnit");
+}
+
+sub instantiate_template {
+	my ($self, %args) = @_;
+
+	$self->_check_args() or return;
+
+	my $param = "";
+	if (defined $args{count} and
+	    defined $args{prefix}) {
+		$param = "inNumberOf=$args{count} " .
+	             "inServerNamePrefixOrEmpty=$args{prefix} ";
+	}
+
+	my $xml	= $self->_ucsm_request('<lsInstantiateTemplate '.
+	          'cookie="' . $self->{cookie} . '" ' .
+	          'dn="' . $args{dn} . '" ' .
+	          'inTargetOrg="' . $args{targetOrg} . '" ' .
+	          'inServerName="' . $args{name} . '" ' .
+	          'inHierarchical="yes"' .
+	          $param .
+	          '>' .
+	          '</lsInstantiateTemplate>', 'classId') or return;
+}
+
+sub set_service_profile_template {
+	my ($self, %args) = @_;
 
 	$self->_check_args() or return;
 
 	my $xml = $self->_ucsm_request('<configConfMo cookie="' . $self->{cookie} . '" inHierarchical="false">' .
 	                               '<inConfig>' .
                                    '<lsServer ' .
-                                   'dn="' . $args{dn} . '" >' .
-	                               '<lsPower childAction="deleteNonPresent"  rn="power" state="' . $args{state} . '" /> ' .
+                                   'dn="' . $args{dn} . '" ' .
+	                               'srcTemplName="' . $args{template} . '">' .
                                    '</lsServer>' .
 	                               '</inConfig>' .
                                    '</configConfMo>');
 }
 
-sub start_service_profile {
-	my ($self, %args) = @_; 
+sub dissociate_service_profile_template {
+	my ($self, %args) = @_;
 
 	$self->_check_args() or return;
 
-	$self->set_service_profile_power_state(%args,
-                                           state => "up");
+    $self->set_service_profile_template(dn       => $args{dn},
+                                        template => "");
 }
 
-sub reboot_service_profile {
-	my ($self, %args) = @_; 
+sub put {
+	my ($self, %args) = @_;
 
 	$self->_check_args() or return;
 
-	$self->set_service_profile_power_state(%args,
-                                           state => "cycle-wait");
-}
+	my $classId = $args{classId};
+	delete $args{classId};
+	delete $args{ucs};
 
-sub shutdown_service_profile {
-	my ($self, %args) = @_; 
+	my $request = '<configConfMo cookie="' . $self->{cookie} . '" inHierarchical="false">' .
+	              '<inConfig>' .
+	              '<' . $classId;
 
-	$self->_check_args() or return;
-
-	$self->set_service_profile_power_state(%args,
-                                           state => "soft-shut-down");
-}
-
-sub instantiate_template {
-	my ($self, %args) = @_; 
-
-	$self->_check_args() or return;
-
-    my $param = "";
-	if (defined $args{count} and
-        defined $args{prefix}) {
-		$param = "inNumberOf=$args{count} " .
-                 "inServerNamePrefixOrEmpty=$args{prefix} ";
+	my ($key, $value);
+	while (($key, $value) = each %args) {
+		if (not ($key =~ /^oper/)) {
+			$request .= ' ' . $key . '="' . $value . '"';
+        }
     }
 
-	my $xml	= $self->_ucsm_request('<lsInstantiateTemplate '.
-	          'cookie="' . $self->{cookie} . '" ' .
-	          'dn="' . $args{dn} . '" ' .
-	          'inTargetOrg="' . $args{targetOrg} . '" ' .
-	          'inServerName="' . $args{name} . '" ' .
-	          'inHierarchical="yes"' .
-              $param .
-	          '>' .
-	          '</lsInstantiateTemplate>', 'classId') or return;
+	$request .= '></' . $classId . '>' .
+	            '</inConfig>' .
+	            '</configConfMo>';
+
+	my @objs = $self->map_objects(objects => $self->_ucsm_request($request)->{outConfig},
+	                              classId => $classId);
+
+	return $objs[0];
+}
+
+sub update {
+	my ($self, %args) = @_;
+
+    $self->create(%args);
+}
+
+sub create {
+	my ($self, %args) = @_;
+
+    $self->put(%args);
+}
+
+sub get {
+	my ($self, %args) = @_;
+
+    my $xml = $self->resolve_dn(dn => $args{dn});
+    my @keys = keys %{$xml->{outConfig}};
+    my $classId = $keys[0];
+
+    return Cisco::UCS::Object->new(hash    => $xml->{outConfig}->{$classId},
+                                   classId => $classId,
+                                   ucs     => $self);
 }
 
 =head3 get_interconnects
@@ -1028,7 +1200,8 @@ sub get_blades {
 
 	undef $args{classId};
 
-	return (defined $xml->{outConfigs}->{computeBlade} ? @{$xml->{outConfigs}->{computeBlade}} : undef)
+	return $self->map_objects(objects => $xml->{outConfigs},
+	                          classId => "computeBlade");
 }
 
 =head3 get_blade
