@@ -859,8 +859,8 @@ get '/clusters/:clusterid/components/add' => sub {
     my $components = [];
     eval {
         $ecluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
-        $esystemimage = Entity::Systemimage->get(id => $ecluster->getAttr(name => 'systemimage_id'));
-        $systemimage_components = $esystemimage->getInstalledComponents();
+        $esystemimage = Entity::Systemimage->get(id => $ecluster->getAttr(name => 'masterimage_id'));
+        $systemimage_components = $esystemimage->getProvidedComponents();
         
         $cluster_components = $ecluster->getComponents(administrator => $adm, category => 'all');
     };
