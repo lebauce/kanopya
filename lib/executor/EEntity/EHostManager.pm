@@ -21,6 +21,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use DecisionMaker::HostSelector;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -107,6 +108,27 @@ sub postStart {
 
 sub scaleHost {
     $log->Debug("Scaling is not implemented by this host manager, doing nothing");
+}
+
+=head2 getFreeHost
+
+    Desc : Return one free host that match the criterias
+    args : ram, cpu
+
+=cut
+
+sub getFreeHost {
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{ram_unit}) {
+        $args{ram} .= $args{ram_unit};
+        delete $args{ram_unit};
+    }
+
+    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
+
+    return DecisionMaker::HostSelector->getHost(%args);
 }
 
 1;

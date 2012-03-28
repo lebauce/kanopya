@@ -123,25 +123,6 @@ sub stopHost {
     }
 }
 
-=head2 getFreeHost
-
-=cut
-
-sub getFreeHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "ram", "cpu" ]);
-
-    if ($args{ram_unit}) {
-        $args{ram} .= $args{ram_unit};
-        delete $args{ram_unit};
-    }
-    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'component_id');
-
-    return DecisionMaker::HostSelector->getHost(%args);
-}
-
 =head2 postStart
 
 =cut
