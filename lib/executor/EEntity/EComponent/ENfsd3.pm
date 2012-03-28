@@ -93,13 +93,13 @@ sub removeExport {
               );
     }
 
-    my $device     = $args{container_access}->getContainer->getAttr(name => 'container_device');
-    my $mountdir   = $self->_getEntity()->getMountDir(device => $device);
+    my $device   = $args{container_access}->getContainer->getAttr(name => 'container_device');
+    my $mountdir = $self->_getEntity()->getMountDir(device => $device);
 
     my $elocal_access = EEntity::EContainerAccess::ELocalContainerAccess->new(
                             econtainer => EFactory::newEEntity(
                                              data => $args{container_access}->getContainer
-                                         )
+                                          )
                         );
 
     my $retry = 5;
