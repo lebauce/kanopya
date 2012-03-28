@@ -381,8 +381,9 @@ INSERT INTO `connector_type` VALUES
 (2,'Scom','1','MonitoringService'),
 (3,'UcsManager','1','Cloudmanager'),
 (4,'NetappLunManager','1','Storage'),
-(5,'NetappVolumeManager','1','Storage');
-
+(5,'NetappVolumeManager','1','Storage'),
+(6,'NetappLunManager','1','Export'),
+(7,'NetappVolumeManager','1','Export');
 
 --
 -- initial vlan
