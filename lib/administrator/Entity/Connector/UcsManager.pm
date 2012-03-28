@@ -100,8 +100,10 @@ sub synchronize {
         passwd   => "Infidis2011"
     );
 
-    $ucs->login();    
-### Begin of Blades synchronisation :    
+    $ucs->login();
+    
+### Begin of Blades synchronisation :   
+ 
     # Get list of blade existing on ucs :
     my @blades = $ucs->get_blades();   
     # Get a "random" kernel for his id :
@@ -142,8 +144,23 @@ sub synchronize {
 ### Begin of VLANs synchronisation :
 
     # Synchronize VLANs from UCS to Kanopya :
-    # TODO ->
-    
+    my @ucsvlans = $ucs->get_vlans();
+    foreach my $ucsvlan (@ucsvlans) {
+        my $ucsvlan_name = $ucsvlan->{name};
+        my $ucsvlan_nb = $ucsvlan->{id};
+        %parameters = (
+            vlan_name   => $ucsvlan_name,
+            vlan_desc   => "",
+            vlan_number => $ucsvlan_nb,
+        );
+        # Get Vlans existing in Kanopya :
+        my $existingvlans = Entity::Vlan->search(hash => { vlan_name => $ucsvlan_name });
+        my $existingvlan = scalar($existingvlans);
+        # If the vlan not exist in Kanopya, create it :
+        if ($existingvlan eq "0") {
+            Entity::Vlan->new(%parameters);
+        }
+    }
     
     # Synchronize VLANs from Kanopya to UCS :
     # Get all VLANs on Kanopya :
