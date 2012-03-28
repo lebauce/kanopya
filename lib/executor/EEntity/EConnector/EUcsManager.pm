@@ -27,24 +27,67 @@ my $log = get_logger("executor");
 my $errmsg;
 
 sub startHost {
-	my $self = shift;
-	my %args = @_;
+    my $self = shift;
+    my %args = @_;
 
-	General::checkParams(args => \%args, required => ['cluster', 'host']);
+    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
 
-    $self->_getEntity()->startHost(%args);
+    my $ucs = $self->_getEntity();
+    my $sn = $args{host}->getAttr(name => "host_serial_number");
+    $ucs->start_service_profile(dn => $ucs->{ou} . "/" . $sn);
 }
 
 sub stopHost {
-	my $self = shift;
-	my %args = @_;
+    my $self = shift;
+    my %args = @_;
 
-	General::checkParams(args => \%args, required => ['cluster', 'host']);
+    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
 
-    $self->_getEntity()->stopHost(%args);
+    my $ucs = $self->_getEntity();
+    my $sn = $args{host}->getAttr(name => "host_serial_number");
+    $ucs->stop_service_profile(dn => $ucs->{ou} . "/" . $sn);
 }
 
 sub postStart {
+}
+
+=head2 getFreeHost
+
+    Desc : Return one free host that match the criterias
+    args : ram, cpu
+
+=cut
+
+sub getFreeHost {
+    my $self = shift;
+    my %args = @_;
+
+    if ($args{ram_unit}) {
+        $args{ram} .= $args{ram_unit};
+        delete $args{ram_unit};
+    }
+
+    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
+
+    my $ucs = $self->_getEntity();
+    $ucs->init();
+    my $ou = $ucs->{ucs}->getAttr(name => "ucs_ou");
+
+    # Get all free hosts of the specified host manager
+    my @hosts = $self->_getEntity()->getFreeHosts();
+    my $free_hosts = ();
+
+    for my $host (@hosts) {
+        my $blade = $ucs->{api}->get(dn      => $host->getAttr(name => "host_serial_number"),
+                                     classId => "computeBlade");
+        my $sp = $blade->{assignedToDn};
+
+        if ($blade->{dn} ne "sys/chassis-1/blade-5") {
+            push @{$free_hosts}, $host;
+        }
+    }
+
+    return DecisionMaker::HostSelector->getHost(%args);
 }
 
 1;
