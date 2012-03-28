@@ -286,10 +286,15 @@ sub synchronize {
     # Get list of volumes exists on NetApp :
     my @volumesList = $self->volumes;
     foreach my $vol (@volumesList) {
-        my $volname = $self->addContainer(
-                        name    => $vol->name,
-                        size    => $vol->size_used,
-                     );
+        # Get list of volumes exists on Kanopya :
+        my $existing_volumes = Entity::Container::NetappVolume->search(hash => { name => $vol->name });
+        my $existing_volume = scalar($existing_volumes);
+        if ($existing_volume eq "0") {
+            my $volname = $self->addContainer(
+                              name    => $vol->name,
+                              size    => $vol->size_used,
+                          );
+        }
     }
 }
 

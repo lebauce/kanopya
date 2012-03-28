@@ -342,14 +342,19 @@ sub synchronize {
         my $lun_volume_id = $lun_volume_obj->getAttr(
                                 name => "volume_id"
                             );
-        my $lunname = $self->addContainer(
-                        name        => $lun_name,
-                        size        => $lun->size_used,
-                        filesystem  => "ext3",
-                        volume_id   => $lun_volume_id,
-                        service_provider_id => $self->getAttr(name => 'service_provider_id'),
-                        disk_manager_id     => $self->getAttr(name => 'connector_id'),
-                     );
+        # Search in Kanopya to see if LUN already exist :
+        my $existingluns = Entity::Container::NetappLun->search(hash => { name => $lun_name });
+        my $existinglun = scalar($existingluns);
+        if ($existinglun eq "0") {
+            my $lunname = $self->addContainer(
+                          name                  => $lun_name,
+                          size                  => $lun->size_used,
+                          filesystem            => "ext3",
+                          volume_id             => $lun_volume_id,
+                          service_provider_id   => $self->getAttr(name => 'service_provider_id'),
+                          disk_manager_id       => $self->getAttr(name => 'connector_id'),
+                      );
+        }
     }
 }
 
