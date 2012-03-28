@@ -42,7 +42,7 @@ sub createExport {
               );
     }
 
-    my $default_client = $args{container}->getServiceProvider->getMasterNodeIp();
+    my $default_client = '10.0.0.0/24'; #$args{container}->getServiceProvider->getMasterNodeIp();
 
     my $client_name = General::checkParam(args    => \%args,
                                           name    => 'client_name',

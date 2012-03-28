@@ -86,11 +86,11 @@ sub generate {
     General::checkParams(args => \%args, required => ['econtext']);
 
     my $config = {
-    INCLUDE_PATH => $self->_getEntity()->getTemplateDirectory(),
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace 
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-    RELATIVE => 1,                   # desactive par defaut
+        INCLUDE_PATH => $self->_getEntity()->getTemplateDirectory(),
+        INTERPOLATE  => 1,               # expand "$var" in plain text
+        POST_CHOMP   => 0,               # cleanup whitespace 
+        EVAL_PERL    => 1,               # evaluate Perl code blocks
+        RELATIVE     => 1,               # desactive par defaut
     };
     
     my $rand = new String::Random;
