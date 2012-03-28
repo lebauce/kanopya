@@ -30,6 +30,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getReadOnlyParameter {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'readonly' ]);
+    
+    return undef;
+}
+
 =head2 createDisk
 
     Desc : Implement createDisk from DiskManager interface.

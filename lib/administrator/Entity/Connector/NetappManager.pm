@@ -18,6 +18,8 @@ package Entity::Connector::NetappManager;
 use lib "/opt/kanopya/lib/external/NetApp";
 use base "Entity::Connector";
 
+use Entity::ServiceProvider::Outside::Netapp;
+
 use warnings;
 use NetApp::API;
 

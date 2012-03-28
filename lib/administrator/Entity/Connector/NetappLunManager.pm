@@ -64,6 +64,21 @@ sub getConf {
     return $conf;
 }
 
+sub getReadOnlyParameter {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'readonly' ]);
+    
+    my $value;
+    if ($args{readonly}) { $value = 'ro'; }
+    else                 { $value = 'wb'; }
+    return { 
+        name  => 'iomode',
+        value => $value,
+    }
+}
+
 =head2 createDisk
 
     Desc : Implement createDisk from DiskManager interface.
