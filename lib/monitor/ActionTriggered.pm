@@ -45,7 +45,7 @@ sub new {
     $args{action_triggered_timestamp} = time();
     my $self = $class->SUPER::new(%args);
     
-    $self -> trigger();
+#    $self -> trigger();
     return $self;
 };
 
@@ -96,7 +96,6 @@ sub createXMLFile {
     my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','filePath']);
-
     my $fileDirPath = $args{filePath};
     #print Dumper $params;
     my $fileCompletePath = $fileDirPath.'/file.xml';
@@ -107,6 +106,6 @@ sub createXMLFile {
     print FILE $args{ou_to}."\n";
     print FILE $args{id}."\n";
     close FILE;
-   
+    return $fileCompletePath;
 };
 1;
