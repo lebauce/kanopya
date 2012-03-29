@@ -23,10 +23,6 @@
         <td><input type="password" name="passwd" size="16" /></td>
     </tr>
     <tr>
-        <td class="label">Data Provider :</td>
-        <td><input type="text" name="dataprovider" size="50" /></td>
-    </tr>
-    <tr>
         <td class="label">OU :</td>
         <td><input type="text" name="ou" size="50" /></td>
     </tr>
