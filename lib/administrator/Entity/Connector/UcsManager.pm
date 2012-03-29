@@ -131,12 +131,13 @@ sub synchronize {
                 host_mac_address    => $mac,
                 kernel_id           => $kernelid,
                 host_serial_number  => $blade->{dn},
-                host_ram            => $blade->{totalMemory},
+                host_ram            => $blade->{totalMemory} * 1024 * 1024,
                 host_core           => $blade->{numOfCores},
                 hostmodel_id        => $hostmodelid,
                 processormodel_id   => $processormodelid,
                 host_desc           => "",
                 service_provider_id => "1",
+                active              => "1",
                 host_manager_id     => $hostmanagerid,
         );
         # Check if an entry with the same serial number exist in table
