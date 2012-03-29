@@ -51,21 +51,23 @@ sub new {
 
 sub trigger{
     my ($self,%args) = @_;
+    
+    # Get db params (path and ou_dest)
     my $params = $self->getParams();
-    my $cluster_id = $self->{_dbix}->action_triggered_action->get_column('action_service_provider_id');
-    #print '**'.$cluster_id."\n";
-    my $connector =  Entity::Connector->find(hash => { #TODO : multiple
-        service_provider_id => $cluster_id,
-        connector_type_id   => '1', #TODO : UN HARDCODE
-    });
     
-    #print '++'.$connector->getAttr(name => 'connector_id')."\n";
+    # Get current ou
+    my $cluster_id = $self->{_dbix}
+                          ->action_triggered_action
+                          ->get_column('action_service_provider_id');
+    my $outside    = Entity::ServiceProvider::Outside
+                          ->get('id' => $cluster_id);
+    my $directoryServiceConnector = $outside->getConnector(
+                                                  'category' => 'DirectoryService'
+                                              );
+    my $ou_from    = $directoryServiceConnector->getAttr(
+                                                     'name' => 'ad_nodes_base_dn'
+                                                 );
     
-    my $active_directory =  Entity::Connector::ActiveDirectory->get(
-        id => $connector->getAttr(name => 'connector_id'),
-    );
-    my $ou_from = $active_directory->getAttr('name' => 'ad_nodes_base_dn');
-    #sprint $ou_from;
     $self->createXMLFile(
             hostname => $self->getAttr(name => 'action_triggered_hostname'),
             ou_from  => $ou_from,
