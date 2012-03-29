@@ -33,8 +33,15 @@ get '/connectors/:instanceid/configure' => sub {
 
     my $connector_type = $connector->getConnectorType();
     my $template = 'connectors/' . lc($connector_type->{connector_name});
-        
-    my $config = $connector->getConf();
+
+    my $config;
+    #...
+    if ($connector->isa('Entity::Connector::NetappLunManager')) {
+        $config = $connector->getConf2;
+    }
+    else {
+        $config = $connector->getConf;
+    }
     _deepEscapeHtml( $config );
     
     my $template_params = $config;
