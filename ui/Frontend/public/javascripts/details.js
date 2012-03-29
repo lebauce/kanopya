@@ -4,4 +4,12 @@
  		$('#X'+this.id).toggle();
  	}).addClass('clickable');
 
+ //
+    $('.node_action').click(function() {
+        $.getJSON(
+            '/architectures/extclusters/'+$('#cluster_id').attr('value')+'/actions',
+            {action_id:$('#action_id').attr('value'), hostname:$('.node_action').attr('value')},
+            function(data){alert(data.message);}
+        );
+    });
 });

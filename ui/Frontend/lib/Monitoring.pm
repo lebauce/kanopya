@@ -1744,6 +1744,22 @@ post '/indicators/new' => sub {
 # ------------------------------ ACTIONS   -----------------------------------#
 #----------- -----------------------------------------------------------------#
 
+ajax '/extclusters/:extclusterid/actions' => sub {
+    
+    my $action = ActionTriggered->new(
+        action_triggered_action_id => param('action_id'),
+        action_triggered_hostname  => param('hostname'), 
+    );
+    my $message;
+    eval{
+        my $path = $action->trigger();
+        $message = 'Action '.param('action_id').' triggered on node '.param('hostname')."\n file $path created";
+        1;
+    } or do {
+        $message = 'Error triggering action '.param('action_id').' on node '.param('hostname')."\n $@";
+    };
+    return to_json {message => $message};
+};
 
 post '/extclusters/:extclusterid/actions' => sub {
     
