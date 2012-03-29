@@ -75,10 +75,9 @@ post '/netapp/add' => sub {
 get '/netapp/:netappid/remove' => sub {
     my $adm = Administrator->new;
     my $netapp_id = param('netappid');
-    my $enetapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
-
     eval {
-        $enetapp->remove();
+        my $enetapp = Entity::ServiceProvider::Outside::Netapp->get(id => $netapp_id);
+        $enetapp->delete();
     };
     if ($@) {
         my $exception = $@;

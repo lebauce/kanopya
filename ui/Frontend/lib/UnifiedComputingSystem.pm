@@ -79,10 +79,9 @@ post '/ucs/add' => sub {
 get '/ucs/:ucsid/remove' => sub {
     my $adm = Administrator->new;
     my $ucs_id = param('ucsid');
-    my $eucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(id => $ucs_id);
-
     eval {
-        $eucs->remove();
+        my $eucs = Entity::ServiceProvider::Outside::UnifiedComputingSystem->get(id => $ucs_id);
+        $eucs->delete();
     };
     if ($@) {
         my $exception = $@;

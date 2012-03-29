@@ -34,7 +34,7 @@
     </td>
     
     <td class="actions" rowspan="2">
-        <a class="imgStart" href="/networks/ucs/<% ucs_id %>/remove">delete</a><br />
+        <a class="imgStart" href="/equipments/ucs/<% ucs_id %>/remove">remove</a><br />
         <span class="desc">Delete this ucs.</span>
     </td>
 
