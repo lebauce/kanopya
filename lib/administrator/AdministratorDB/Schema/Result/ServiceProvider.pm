@@ -41,6 +41,24 @@ __PACKAGE__->set_primary_key("service_provider_id");
 
 =head1 RELATIONS
 
+=head2 actions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Action>
+
+=cut
+
+__PACKAGE__->has_many(
+  "actions",
+  "AdministratorDB::Schema::Result::Action",
+  {
+    "foreign.action_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
 =head2 aggregate_combinations
 
 Type: has_many

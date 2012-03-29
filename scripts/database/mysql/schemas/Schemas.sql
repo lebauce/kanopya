@@ -1242,6 +1242,9 @@ CREATE TABLE `action` (
   `action_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `action_service_provider_id` int(8) unsigned NOT NULL,
   `action_name` char(64) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`action_id`),
   KEY (`action_service_provider_id`),
   FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
@@ -1270,6 +1273,9 @@ CREATE TABLE `action_triggered` (
   `action_triggered_hostname` char(255) NOT NULL,
   `action_triggered_timestamp` char(255) NOT NULL,
   `action_triggered_action_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`action_triggered_id`),
   KEY (`action_triggered_action_id`),
   FOREIGN KEY (`action_triggered_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION

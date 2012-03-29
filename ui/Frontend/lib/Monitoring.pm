@@ -11,6 +11,7 @@ use AggregateRule;
 use AggregateCombination;
 use AggregateCondition;
 use Aggregator;
+use ActionTriggered;
 use Clustermetric;
 use NodemetricCombination;
 use NodemetricRule;
@@ -1739,7 +1740,25 @@ post '/indicators/new' => sub {
     redirect '/architectures/indicators';
 };
 
+# ----------------------------------------------------------------------------#
+# ------------------------------ ACTIONS   -----------------------------------#
+#----------- -----------------------------------------------------------------#
 
+
+post '/extclusters/:extclusterid/actions' => sub {
+    
+    ActionTriggered->new(
+        action_triggered_action_id => param('action_id'),
+        action_triggered_hostname  => param('hostname') 
+    );
+    
+    redirect '/architectures/extclusters/'.param('extclusterid') 
+};
+
+get '/extclusters/:extclusterid/actions/:actionid' => sub {
+    my $action = ActionTriggered->get('id' => param('actionid'));
+    $action->delete();
+};
 ########################################
 #######INNER FUNCTION DECLARATION#######
 ########################################

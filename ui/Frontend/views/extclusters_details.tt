@@ -116,10 +116,16 @@
 		<a class="clickable action" onclick="alert('To update node list:\n - Add a DirectoryService connector to the cluster\n - Provide required configuration\n - click on \'Get computers\' button')">update</a><br />
 		<span class="desc">Use a DirectoryService connector to retrieve nodes</span><br /><br />
 	<% END %>
-	</td></tr>
-	<% FOREACH node IN nodes_list %>
-		<tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
-		<td class="label2">
+    </td></tr>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>
+
+    </td>
+    <% FOREACH node IN nodes_list %>
+        <tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
+        <td class="label2">
             <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
                 <% SWITCH node.state %>
                     <% CASE 'up' %>
@@ -147,11 +153,26 @@
                 <% END %>
             </a>
 		</td>
+
 		<td class="action">
 		<% IF node.link_remove %>
 			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
-		<% END %></td></tr>
-	<% END %>
+		<% END %></td>
+		      <td class="action">
+		          <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/actions">
+        
+                    <select name="action_id">
+                        <% FOREACH action IN actions %>
+                            <option value="<% action.id %>"><% action.name %>(<% action.id %>)</option>
+                        <%END%>
+                    </select>
+                    <input type="hidden" name="hostname" value="<%node.hostname%>">
+                    <input type="submit" value="Launch action"/>
+                </form>
+            </td>
+        </tr>
+    <% END %>
+    
 <% ELSE %>
 	<tr><td>This cluster has no nodes</td></tr>
 <% END %>

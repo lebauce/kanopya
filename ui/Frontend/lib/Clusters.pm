@@ -12,6 +12,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NodemetricRule;
 use Orchestrator;
+use Action;
 
 my $log = get_logger("webui");
 
@@ -590,6 +591,21 @@ get '/extclusters/:clusterid' => sub {
 #        } 
 #    }
    
+    my @actions = Action->search(
+        hash => {
+            'action_service_provider_id' => $cluster_id
+        }
+    );
+    
+    my @action_hashs;
+    foreach my $action (@actions){
+        my $hash = {
+            'id'   => $action->getAttr('name' => 'action_id'),
+            'name' => $action->getAttr('name' => 'action_name'),
+        };
+        push @action_hashs, $hash;
+    }
+    #print Dumper \@action_hashs;
     my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nm_rule_nodes}};
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
@@ -612,7 +628,7 @@ get '/extclusters/:clusterid' => sub {
         cm_rule_undef          => $cluster_eval->{cm_rule_undef},
         num_cluster_rule_total => $cluster_eval->{cm_rule_total},
         num_clusterrule_verif  => $cluster_eval->{cm_rule_nok},
-        
+        actions                => \@action_hashs,
         
     }, { layout => 'main' };
 };

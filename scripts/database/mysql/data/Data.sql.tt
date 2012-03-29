@@ -70,7 +70,10 @@ INSERT INTO `class_type` VALUES
 (54, 'NodemetricCombination'),
 (55, 'NodemetricCondition'),
 (56, 'NodemetricRule'),
-(57, 'Entity::Connector::NetappManager');
+(57, 'Entity::Connector::NetappManager'),
+(58, 'Action'),
+(59, 'ActionTriggered');
+
 
 
 --
