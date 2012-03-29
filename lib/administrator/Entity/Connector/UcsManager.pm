@@ -30,7 +30,9 @@ my ($schema, $config, $oneinstance);
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getBootPolicies { return ('BootOnSan');  }
+sub getBootPolicies { return ('BootOnSan',
+                              'PXE Boot via ISCSI',
+                              'PXE Boot via NFS'); }
 
 sub getHostType {
     return "UCS blade";
