@@ -184,7 +184,10 @@ sub synchronize {
                 status      => "created",
             );
             # Create VLANs on UCS :
-            Cisco::UCS::VLAN->create(%parameters);
+            # Creation is encapsulated in an eval for avoid "already created" errors :
+            eval {
+                Cisco::UCS::VLAN->create(%parameters);
+            };
         }
     }
 
