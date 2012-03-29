@@ -6,7 +6,7 @@ label linux
   append xen-4.0-amd64.gz noreboot --- [% kernelfile %] rw root=/dev/nfs ip=::::diskless:eth0:dhcp nfsroot=[% nfsexport %] --- [% initrdfile %]
 [% ELSE %]
   kernel  [% kernelfile %]
-  append initrd=[% initrdfile %] root=/dev/nfs rw ip=::::diskless:eth0:dhcp nfsroot=[% nfsexport %]
+  append initrd=[% initrdfile %] root=nfs rw ip=::::diskless:eth0:dhcp nfsroot=[% nfsexport %]
 [% END %]
 [% ELSIF iscsiroot %]
 [% IF xenkernel %]
