@@ -11,6 +11,8 @@ use AggregateRule;
 use AggregateCombination;
 use AggregateCondition;
 use Aggregator;
+use Action;
+use ActionParameter;
 use ActionTriggered;
 use Clustermetric;
 use NodemetricCombination;
@@ -1771,10 +1773,71 @@ post '/extclusters/:extclusterid/actions' => sub {
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
 
-get '/extclusters/:extclusterid/actions/:actionid' => sub {
+get '/extclusters/:extclusterid/actions/:actionid/close' => sub {
     my $action = ActionTriggered->get('id' => param('actionid'));
     $action->delete();
 };
+
+get '/extclusters/:extclusterid/actions/add' => sub {
+    template 'form_action', {
+        title_page => "Action creation",
+        cluster_id => param('extclusterid'),
+    }, { layout => '' };
+};
+
+post '/extclusters/:extclusterid/actions/add' => sub {
+    my $action = Action->new(
+        action_service_provider_id => param('extclusterid'),
+        action_name                => param('action_name'),
+    );
+    
+    ActionParameter->new(
+        action_parameter_name      => 'ou_to',
+        action_parameter_value     => param('action_ou_to'),
+        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
+    );
+    
+    ActionParameter->new(
+        action_parameter_name  => 'file_path',
+        action_parameter_value => param('action_file_path'),
+        action_parameter_action_id => $action->getAttr(name => 'action_id'),
+    );
+    
+    redirect '/architectures/extclusters/'.param('extclusterid') 
+};
+
+get '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
+    my $action_inst = Action->get('id' => param('actionid'));
+    my $param       = $action_inst->getParams();
+    my $action = {
+        id        => param('actionid'),
+        name      => $action_inst->getAttr(name => 'action_name'),
+        ou_to     => $param->{ou_to},
+        file_path => $param->{file_path},
+    };
+    
+    template 'form_action', {
+        title_page   => "Action creation",
+        cluster_id   => param('extclusterid'),
+        action       => $action,
+    }, { layout => '' };
+}; 
+
+post '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
+    my $action = Action->get('id' => param('actionid'));
+    $action->setAttr(
+        name  => 'action_name', 
+        value => param('action_name'),
+    );
+    $action->save();
+    $action->setParams(
+        'ou_to'     => param('action_ou_to'),
+        'file_path' => param('action_file_path'),
+    );
+    redirect '/architectures/extclusters/'.param('extclusterid') 
+
+};
+
 ########################################
 #######INNER FUNCTION DECLARATION#######
 ########################################

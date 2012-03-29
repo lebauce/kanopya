@@ -72,7 +72,7 @@ sub trigger{
             hostname => $self->getAttr(name => 'action_triggered_hostname'),
             ou_from  => $ou_from,
             ou_to    => $params->{ou_to},
-            filePath => $params->{filePath},
+            file_path => $params->{file_path},
             id       => $self->getAttr(name => 'action_triggered_id'),
     );
 }
@@ -95,10 +95,10 @@ sub getParams {
 sub createXMLFile {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','filePath']);
-    my $fileDirPath = $args{filePath};
+    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','file_path']);
+    my $fileDirPath = $args{file_path};
     #print Dumper $params;
-    my $fileCompletePath = $fileDirPath.'/file.xml';
+    my $fileCompletePath = $fileDirPath.time().'file.xml';
     #print $fileCompletePath;
     open FILE, ">", $fileCompletePath or die $!;
     print FILE $args{hostname}."\n";

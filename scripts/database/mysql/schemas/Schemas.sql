@@ -1259,6 +1259,9 @@ CREATE TABLE `action_parameter` (
   `action_parameter_name` char(64) NOT NULL,
   `action_parameter_value` char(255),
   `action_parameter_action_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`action_parameter_id`),
   KEY (`action_parameter_action_id`),
   FOREIGN KEY (`action_parameter_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION

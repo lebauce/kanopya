@@ -110,6 +110,27 @@
 </table>
 
 <hr/>
+<span id="actions" class="title simpleexpand">Actions</span>
+<table id="Xnodes" class="detailspart list">
+<% IF actions_list %>
+    <tr><td colspan="3">&nbsp;</td>
+        <td class="actions" rowspan="<% nbactions %>">
+                <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a action</a><br />
+                <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+        </td></tr>
+
+    <% FOREACH action IN actions_list %>
+        <tr><td class="label2"><span class="bold"><% action.name %></span></td>
+        <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
+        <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/delete">delete (not yet)</a>
+        
+        </td></tr>
+    <% END %>
+<%END%>
+</table>
+
+
+<hr/>
 <span id="nodes" class="title simpleexpand">Nodes</span>
 <table id="Xnodes" class="detailspart list">
 <% IF nodes_list %>
@@ -119,14 +140,15 @@
 		<a class="clickable action" onclick="alert('To update node list:\n - Add a DirectoryService connector to the cluster\n - Provide required configuration\n - click on \'Get computers\' button')">update</a><br />
 		<span class="desc">Use a DirectoryService connector to retrieve nodes</span><br /><br />
 	<% END %>
+	
     </td></tr>
     <td></td>
     <td></td>
     <td></td>
     <td>
         <select id="action_id">
-            <% FOREACH action IN actions %>
-                <option value="<% action.id %>"><% action.name %>(<% action.id %>)</option>
+            <% FOREACH action IN actions_list %>
+                <option value="<% action.id %>"><% action.name %></option>
             <%END%>
         </select>
     </td>
@@ -166,7 +188,7 @@
 			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
 		<% END %></td>
             <td class="action">
-                <a class="node_action clickable" id="action_<%node.id%>" value="<%node.hostname%>"> ttest </a>
+                <a class="node_action clickable" id="action_<%node.id%>" value="<%node.hostname%>"> trigger action </a>
             </td>
         </tr>
     <% END %>
