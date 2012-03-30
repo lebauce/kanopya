@@ -1,4 +1,4 @@
-<% js_head.push('components.js') %>
+<% js_head.push('components.js', 'kanopyaui-tools.js') %>
 <h2><% serviceprovider_tostring %> - Active Directory connector configuration</h2>
 <hr />
 <form class="elem_root" name="conf">
