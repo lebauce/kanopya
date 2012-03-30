@@ -69,7 +69,7 @@ sub connect {
 
     my $device = '/dev/disk/by-path/ip-' . $ip . ':' . $port . '-iscsi-' . $target . '-' . $lun;
 
-    my $retry = 10;
+    my $retry = 20;
     while (! -e $device) {
         if ($retry <= 0) {
             my $errmsg = "IsciContainer->mount: unable to find waited device<$device>";
