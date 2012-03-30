@@ -87,9 +87,6 @@ sub prepare {
     $params->{node_number} = $self->{_objs}->{cluster}->getNewNodeNumber();
     $log->debug("Node number for this new node: $params->{node_number} ");
 
-    # - If node number == 1: always create a system image for the new node.
-    # - If node number > 1 : - if not cluster_si_shared: create a system image for the new node.
-    #                        - else: get the master node systemimage id for the new node.
     my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '_' .
                            $params->{node_number};
 
@@ -99,13 +96,17 @@ sub prepare {
         $existing_image = Entity::Systemimage->find(hash => {systemimage_name => $systemimage_name});
     };
 
-    if ($existing_image) {
+    # If systemimage_id defined, force to use it.
+    if (defined $params->{systemimage_id}) {
+        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
+    }
+    # If systemimage already exist for this node, use it.
+    elsif ($existing_image) {
         $log->info("Using existing systemimage instance <$systemimage_name>");
-        $params->{systemimage_id} = $existing_image->getAttr(name => 'systemimage_id');
         $self->{_objs}->{systemimage} = $existing_image;
     }
+    # Else if it is the firest node, or the cluster si policy is dedicated, create a new one.
     elsif (($params->{node_number} == 1) or (not $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared'))) {
-        # Create new systemimage instance
         $log->info("Create new systemimage instance <$systemimage_name>");
 
         my $systemimage_desc = 'System image for node ' . $params->{node_number}  .' in cluster ' .
@@ -120,9 +121,11 @@ sub prepare {
         if($@) {
             throw Kanopya::Exception::Internal::WrongValue(error => $@);
         }
+        $params->{create_systemimage} = 1;
     }
-    elsif (not defined $params->{systemimage_id}) {
-        $params->{systemimage_id} = $self->{_objs}->{cluster}->getMasterNodeSystemimageId;
+    # Else if it is the firest node, or the cluster si policy is dedicated, create a new one.
+    else {
+        $self->{_objs}->{systemimage} = $self->{_objs}->{cluster}->getMasterNodeSystemimage;
     }
 
     # Get contexts
@@ -130,7 +133,6 @@ sub prepare {
         = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
     $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
                                                           ip_destination => $exec_cluster->getMasterNodeIp());
-    
     $self->{params} = $params;
 }
 
@@ -145,9 +147,10 @@ sub execute {
     }
     $self->{_objs}->{host}->setState(state => "locked");
 
-    if (not defined $self->{params}->{systemimage_id}) {
-        # Create system image for node
-        my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+
+    # Create system image for node if required.
+    if ($self->{params}->{create_systemimage}) {
         $esystemimage->createFromMasterimage(
             masterimage    => $self->{_objs}->{masterimage},
             edisk_manager  => $self->{_objs}->{edisk_manager},
@@ -155,8 +158,10 @@ sub execute {
             econtext       => $self->{executor}->{econtext},
             erollback      => $self->{erollback},
         );
+    }
 
-        # Export system image for node
+    # Export system image for node if required.
+    if (not $self->{_objs}->{systemimage}->getAttr(name => 'active')) {
         $esystemimage->activate(
             eexport_manager => $self->{_objs}->{eexport_manager},
             manager_params  => $self->{_objs}->{cluster}->getManagerParameters(manager_type => 'export_manager'),
@@ -173,7 +178,7 @@ sub execute {
         params   => {
             cluster_id     => $self->{_objs}->{cluster}->getAttr(name => 'cluster_id'),
             host_id        => $self->{_objs}->{host}->getAttr(name => 'host_id'),
-            systemimage_id => $self->{params}->{systemimage_id},
+            systemimage_id => $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id'),
             node_number    => $self->{params}->{node_number},
         }
     );
