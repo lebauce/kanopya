@@ -56,7 +56,7 @@ sub checkOp{
 
     # check if cluster is active
     $log->debug("Checking cluster active value <$args{params}->{cluster_id}>");
-    if(! $self->{_objs}->{cluster}->getAttr(name => 'active')) {
+    if (! $self->{_objs}->{cluster}->getAttr(name => 'active')) {
         $errmsg = "EOperation::EDeactivateCluster->new : cluster $args{params}->{cluster_id} is already active";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -65,7 +65,7 @@ sub checkOp{
     $log->debug("Checking cluster state value <$args{params}->{cluster_id}>");
     my ($cluster_state, $timestamp) = split ':', $self->{_objs}->{cluster}->getAttr(name => 'cluster_state');
 
-    if($cluster_state ne 'down') {
+    if ($cluster_state eq 'up') {
         $errmsg = "EOperation::EDeactivateCluster->new : cluster $args{params}->{cluster_id} is not down";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
