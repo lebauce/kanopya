@@ -146,11 +146,13 @@
     <td></td>
     <td></td>
     <td>
-        <select id="action_id">
-            <% FOREACH action IN actions_list %>
-                <option value="<% action.id %>"><% action.name %></option>
-            <%END%>
-        </select>
+        <% IF actions_list.size > 0 %>
+            <select id="action_id">
+                <% FOREACH action IN actions_list %>
+                    <option value="<% action.id %>"><% action.name %></option>
+	        <%END%>
+	    </select>
+        <% END %>
     </td>
     <% FOREACH node IN nodes_list %>
         <tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
@@ -198,6 +200,9 @@
 <% END %>
 </table>
 
+
+
+
 <hr/>
 <span id="connectors" class="title simpleexpand">Connectors</span>
 <table id="Xconnectors" class="detailspart list">
@@ -219,6 +224,8 @@
     <% END %>
 <% END %>
 </table>
+
+
 
 <hr/>
 <span id="monitor" class="title simpleexpand">Monitoring</span>
