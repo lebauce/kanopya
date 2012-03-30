@@ -412,11 +412,17 @@ sub _generateBootConf {
 
             $log->info("Generate Initiator Conf");
 
-            # Here we compute an iscsi initiator name for the node from the target name.
-            my $initiatorname = $targetname;
-            $initiatorname =~ s/\:.*$//g;   # Remove string after the last ':'
-            $initiatorname =~ s/[^\.]+$//g; # Remove string after the last '.'
-            $initiatorname .= $self->{_objs}->{host}->getAttr(name => 'host_hostname');
+            # Here we compute an iscsi initiator name for the node
+            my $date = today();
+            my $year = $date->year;
+            my $month = $date->month;
+            if(length($month) == 1) {
+                $month = '0'.$month;
+            }
+            my $initiatorname = 'iqn.'.$year.'-'.$month.'.';
+            $initiatorname .= $self->{_objs}->{cluster}->getAttr(name => 'cluster_name');
+            $initiatorname .= '.'.$self->{_objs}->{host}->getAttr(name => 'host_hostname');
+            $initiatorname .= ':'.time();
 
             # Set initiatorName
             $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
