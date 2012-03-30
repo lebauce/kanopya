@@ -42,4 +42,3 @@
 	<tr><td>This host has no poolip</td></tr>
 <% END %>
 </table>
-
