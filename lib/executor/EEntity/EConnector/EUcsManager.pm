@@ -33,8 +33,11 @@ sub startHost {
     General::checkParams(args => \%args, required => [ "cluster", "host" ]);
 
     my $ucs = $self->_getEntity();
-    my $sn = $args{host}->getAttr(name => "host_serial_number");
-    $ucs->start_service_profile(dn => $ucs->{ou} . "/" . $sn);
+    $ucs->init();
+    my $blade = $ucs->{api}->get(dn      => $args{host}->getAttr(name => "host_serial_number"),
+                                 classId => "computeBlade");
+    my $sp = $blade->{assignedToDn};
+    $ucs->start_service_profile(dn => $sp);
 }
 
 sub stopHost {
@@ -44,8 +47,11 @@ sub stopHost {
     General::checkParams(args => \%args, required => [ "cluster", "host" ]);
 
     my $ucs = $self->_getEntity();
-    my $sn = $args{host}->getAttr(name => "host_serial_number");
-    $ucs->stop_service_profile(dn => $ucs->{ou} . "/" . $sn);
+    $ucs->init();
+    my $blade = $ucs->{api}->get(dn      => $args{host}->getAttr(name => "host_serial_number"),
+                                 classId => "computeBlade");
+    my $sp = $blade->{assignedToDn};
+    $ucs->stop_service_profile(dn => $sp);
 }
 
 sub postStart {
