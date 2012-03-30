@@ -6,7 +6,7 @@
 <hr/>
 <span id="state" class="title simpleexpand">State</span>
 <table id="Xstate" class="detailspart">
-<tr><% IF active %><td>Active, <% systemimage_usage %></td><% ELSE %><td>Deactivated</td><% END %>
+<tr>
 <td class="actions">
 <% IF can_activate %>
 	<a class="imgActivate" href="/systems/images/<% systemimage_id %>/activate">activate</a><br />

@@ -23,11 +23,6 @@ sub _systemimages {
         $tmp->{systemimage_name} = $s->getAttr(name => 'systemimage_name');
         $tmp->{systemimage_desc} = $s->getAttr(name => 'systemimage_desc');
         $tmp->{active} = $s->getAttr(name => 'active');
-        if($tmp->{active}) {
-            $tmp->{systemimage_usage} = $s->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared';
-        } else {
-            $tmp->{systemimage_usage} = '';
-        }
         push (@$systemimages, $tmp);
     }
 
@@ -169,7 +164,9 @@ post '/images/add' => sub {
             else { $exception->rethrow(); }
         }
         else {    
-            $adm->addMessage(from => 'Administrator', level => 'info', content => 'new system image clone adding to execution queue'); 
+            $adm->addMessage(from    => 'Administrator',
+                             level   => 'info',
+                             content => 'new system image clone adding to execution queue'); 
             redirect '/systems/images';
         }         
          
@@ -236,7 +233,9 @@ get '/images/:imageid/activate' => sub {
         else { $exception->rethrow(); }
         }
     else {    
-        $adm->addMessage(from => 'Administrator', level => 'info', content => 'system image activation adding to execution queue'); 
+        $adm->addMessage(from    => 'Administrator',
+                         level   => 'info',
+                         content => 'system image activation adding to execution queue'); 
         redirect '/systems/images/'.params->{imageid};
     } 
 
@@ -331,12 +330,6 @@ get '/images/:imageid' => sub {
     my $methods = $esystemimage->getPerms();
 
     $active = $esystemimage->getAttr(name => 'active');
-       
-    if($active) {
-        $systemimage_usage = $esystemimage->getAttr(name => 'systemimage_dedicated') ? 'dedicated' : 'shared';
-    } else {
-        $systemimage_usage = '';
-    }
     
     my $components_list = $esystemimage->getInstalledComponents();
     my $nb = scalar(@$components_list);
@@ -396,9 +389,9 @@ get '/images/diskmanagers/:storageid/subform/:diskmanagerid' => sub {
             my $connectordetail = $diskmanager->getConnectorType();
             $template = 'connectors/'.lc($connectordetail->{connector_name}).'_subform_addimage.tt';
         }
-        
+
         my $template_params = {};
-            
+
         my $config = $diskmanager->getConf();
         content_type('text/html');
         template "$template", $config, {layout => undef};
