@@ -40,6 +40,7 @@ use warnings;
 
 use Entity;
 use Entity::Gp;
+use EFactory;
 use EEntity::EContainer::ELocalContainer;
 
 use Log::Log4perl "get_logger";
@@ -109,7 +110,7 @@ sub create {
     my $storage_provider = Entity->get(id => $edisk_manager->_getEntity->getAttr(name => 'service_provider_id'));
     my $disk_manager_econtext
         = EFactory::newEContext(ip_source      => $econtext->getLocalIp,
-                                ip_destination => $storage_provider->getMasterNodeIp());
+                                ip_destination => $storage_provider->getMasterNodeIp);
 
     # Creation of the device based on distribution device
     my $container = $edisk_manager->createDisk(
@@ -220,6 +221,74 @@ sub activate {
 
     $log->info("System image <" . $self->_getEntity()->getAttr(name => "systemimage_name") .
                "> is now active");
+}
+
+sub deactivate {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "econtext" ]);
+
+    # Get instances of container accesses from systemimages root container
+    $log->info("Remove all container accesses");
+    eval {
+        for my $container_access (@{ $self->_getEntity->getDevice->getAccesses }) {
+            my $eexport_manager  = EFactory::newEEntity(data => $container_access->getExportManager);
+            my $storage_provider = $container_access->getServiceProvider;
+            my $econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
+                                                 ip_destination => $storage_provider->getMasterNodeIp);
+
+            $eexport_manager->removeExport(container_access => $container_access,
+                                           econtext         => $econtext,
+                                           erollback        => $self->{erollback});
+        }
+    };
+    if($@) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
+            
+    # Set system image active in db
+    $self->_getEntity->setAttr(name => 'active', value => 0);
+    $self->_getEntity->save();
+
+    $log->info("System image <" . $self->_getEntity()->getAttr(name => "systemimage_name") .
+               "> is now unactive");
+}
+
+sub remove {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "econtext" ]);
+
+    if ($self->_getEntity->getAttr(name => 'active')) {
+        $self->deactivate(econtext  => $args{econtext},
+                          erollback => $args{erollback});
+    }
+    
+    my $container;
+    eval {
+        $container = $self->_getEntity->getDevice;
+
+        # Remove system image container.
+        $log->info("Systemimage container deletion");
+
+        # Get the disk manager of the current container
+        my $edisk_manager = EFactory::newEEntity(data => $container->getDiskManager);
+        my $econtext = EFactory::newEContext(
+                           ip_source      => $args{econtext}->getLocalIp(),
+                           ip_destination => $container->getServiceProvider->getMasterNodeIp()
+                       );
+
+        $edisk_manager->removeDisk(container => $container, econtext => $econtext);
+    };
+    if($@) {
+        $log->info("Unable to remove container while removing cluster:\n" . $@);
+    }
+
+    $self->_getEntity->delete();
 }
 
 1;

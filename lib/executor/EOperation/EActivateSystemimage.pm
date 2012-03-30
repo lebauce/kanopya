@@ -121,6 +121,8 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "systemimage_id" ]);
+
     # Get instance of Systemimage Entity
     eval {
        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
@@ -198,7 +200,7 @@ sub execute {
     my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
     $esystemimage->activate(eexport_manager => $self->{_objs}->{eexport_manager},
                             # TODO: get export manager params form ?
-                            manager_params  => {};
+                            manager_params  => {}
                             econtext        => $self->{executor}->{econtext},
                             erollback       => $self->{erollback});
 }

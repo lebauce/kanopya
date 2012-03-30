@@ -125,6 +125,8 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "systemimage_id" ]);
+
     # Get instance of Systemimage Entity
     $log->info("Load systemimage instance");
     eval {
@@ -138,59 +140,22 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # Get instances of container accesses from systemimages root container
-    $log->info("Load root container accesses");
-    eval {
-        $log->info("Load container accesses within eval");
-        my @access_hashs = ();
-        for my $container_access (@{ $self->{_objs}->{systemimage}->getDevice->getAccesses }) {
-            my $eexport_manager = EFactory::newEEntity(data => $container_access->getExportManager);
-            push @access_hashs, { container_access => $container_access,
-                                  eexport_manager  => $eexport_manager };
-        }
-        $self->{_objs}->{accesses} = \@access_hashs;
-    };
-    if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EDeactivateSystemimage->prepare : " . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
     # Check Parameters and context
     $self->checkOp(params => $params);
 
     # Get contexts
     my $exec_cluster
-        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
-
-    for my $access_hash (@{ $self->{_objs}->{accesses} }) {
-        my $storage_provider = $access_hash->{container_access}->getServiceProvider;
-        $access_hash->{eexport_manager}->{econtext}
-            = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
-                                    ip_destination => $storage_provider->getMasterNodeIp());
-    }
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
     my $self = shift;
 
-    # Remove all exports of the systemimage root container
-    for my $access_hash (@{ $self->{_objs}->{accesses} }) {
-        my $container_access = $access_hash->{container_access};
-        my $eexport_manager  = $access_hash->{eexport_manager};
-
-        $log->info('Removing export ' . $container_access);
-        $eexport_manager->removeExport(container_access => $container_access,
-                                       econtext         => $eexport_manager->{econtext},
-                                       erollback        => $self->{erollback});
-    }
-
-    # Set system image active in db
-    $self->{_objs}->{systemimage}->setAttr(name => 'active', value => 0);
-    $self->{_objs}->{systemimage}->save();
-
-    $log->info("System Image <" . $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_name') . "> deactivated");
+    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    $esystemimage->deactivate(econtext  => $self->{executor}->{econtext},
+                              erollback => $self->{erollback});
 }
 
 1;

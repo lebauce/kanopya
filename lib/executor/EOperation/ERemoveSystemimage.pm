@@ -58,7 +58,8 @@ sub checkOp{
     # check if systemimage is not active
     $log->debug("checking systemimage active value <" .
                 $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') . ">");
-    if($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
+
+    if ($self->{_objs}->{systemimage}->getAttr(name => 'active')) {
         $errmsg = "EOperation::ERemoveSystemiamge->new : systemimage <" .
                   $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id') .
                   "> is already active";
@@ -107,37 +108,21 @@ sub prepare {
         $self->checkOp(params => $params);
     };
     if ($@) {
-        my $error = $@;
-        $errmsg = "Operation ActivateSystemimage failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
 
-    # Instanciate executor Cluster
-    $self->{executor}->{obj} = Entity::ServiceProvider::Inside::Cluster->get(
-                                   id => $args{internal_cluster}->{executor}
-                               );
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{'executor'});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute{
     my $self = shift;
     $self->SUPER::execute();
 
-    my $container = $self->{_objs}->{systemimage}->getDevice;
-
-    # Remove system image container.
-    $log->info("Systemimage container deletion");
-
-    # Get the disk manager of the current container
-    my $edisk_manager = EFactory::newEEntity(data => $container->getDiskManager);
-    my $econtext = EFactory::newEContext(
-                       ip_source      => $self->{executor}->{obj}->getMasterNodeIp(),
-                       ip_destination => $container->getServiceProvider->getMasterNodeIp()
-                   );
-
-    $edisk_manager->removeDisk(container => $container, econtext => $econtext);
-
-    $self->{_objs}->{systemimage}->delete();
+    $self->{_objs}->{systemimage}->remove(econtext => $self->{executor}->{econtext});
 }
 
 =head1 DIAGNOSTICS
