@@ -96,8 +96,11 @@ sub prepare {
     $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});
     $log->debug("get Host self->{_objs}->{host} of type : " . ref($self->{_objs}->{host}));
 
-    # Get instance of Context
-    #$self->loadContext(internal_cluster => $args{internal_cluster}, service => "nas");
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
@@ -113,8 +116,9 @@ sub execute {
     foreach my $i (keys %$components) {
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->postStartNode(host    => $self->{_objs}->{host}, 
-                            cluster => $self->{_objs}->{cluster});
+        $tmp->postStartNode(host     => $self->{_objs}->{host},
+                            cluster  => $self->{_objs}->{cluster},
+                            econtext => $self->{executor}->{econtext});
     }
 
     my $nodes = $self->{_objs}->{cluster}->getHosts();
@@ -124,7 +128,7 @@ sub execute {
     foreach my $i (keys %$nodes) {
 	    my $node = $nodes->{$i};
         my $node_ip = $nodes->{$i}->getInternalIP()->{ipv4_internal_address};
-        my $node_econtext = EFactory::newEContext(ip_source      => "127.0.0.1",
+        my $node_econtext = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
                                                   ip_destination => $node_ip);
         $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
     }    

@@ -136,15 +136,21 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-    
+
+    # Get context for executor
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute{
     my $self = shift;
     # 
-    $self->{_objs}->{'cloudmanager_ecomp'}->migrateHost(host                => $self->{_objs}->{'host'},
-                                                        hypervisor_dst      => $self->{_objs}->{'hypervisor_dst'},
-                                                        hypervisor_cluster  => $self->{_objs}->{'hypervisor_cluster'});
+    $self->{_objs}->{'cloudmanager_ecomp'}->migrateHost(host               => $self->{_objs}->{'host'},
+                                                        hypervisor_dst     => $self->{_objs}->{'hypervisor_dst'},
+                                                        hypervisor_cluster => $self->{_objs}->{'hypervisor_cluster'},
+                                                        econtext           => $self->{executor}->{econtext});
 
     $log->info(" Host <$self->{params}->{host_id}> from <$self->{params}->{hypervisor_src}> to <$self->{params}->{hypervisor_dst}>");
 }

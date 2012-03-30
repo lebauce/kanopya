@@ -76,10 +76,14 @@ sub prepare {
     $self->{_objs}->{components} = $self->{_objs}->{cluster}->getComponents(category => "all");
     
     # Get context for executor
-    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-    $log->debug("Get econtext for executor with ref ". ref($self->{econtext}));
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+
+    $log->debug("Get econtext for executor with ref ". ref($self->{executor}->{econtext}));
     # Get node context
-    $self->{node_econtext} = EFactory::newEContext(ip_source => "127.0.0.1",
+    $self->{node_econtext} = EFactory::newEContext(ip_source      => $self->{executor}->{econtext}->getLocalIp,
                                                    ip_destination => $self->{_objs}->{host}->getInternalIP()->{ipv4_internal_address});
     $log->debug("Get econtext for host with ref ". ref($self->{node_econtext}));
 
@@ -94,12 +98,12 @@ sub execute {
     foreach my $i (keys %$components) {
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is ".ref($tmp));
-        $tmp->stopNode(host => $self->{_objs}->{host}, 
-                        cluster => $self->{_objs}->{cluster} );
+        $tmp->stopNode(host    => $self->{_objs}->{host},
+                       cluster => $self->{_objs}->{cluster} );
     }
     # finaly we halt the node
     my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-    $ehost->halt(node_econtext =>$self->{node_econtext});
+    $ehost->halt(node_econtext => $self->{node_econtext});
 
     $self->{_objs}->{host}->setNodeState(state => "goingout");
     $self->{_objs}->{host}->save();
@@ -116,14 +120,3 @@ Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All right
 This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
 
 =cut
-
-
-
-
-
-
-
-
-
-
-

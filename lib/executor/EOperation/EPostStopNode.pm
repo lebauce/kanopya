@@ -157,6 +157,12 @@ sub prepare {
           );
 
     $log->info("Load dhcp component (Dhcpd version 3, it ref is " . ref($self->{_objs}->{component_tftpd}));
+
+    # Get context for executor
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
@@ -212,7 +218,7 @@ sub execute {
     foreach my $i (keys %$nodes) {
 	    my $node = $nodes->{$i};
         my $node_econtext = EFactory::newEContext(
-                                ip_source      => "127.0.0.1",
+                                ip_source      => $self->{executor}->{econtext}->getLocalIp,
                                 ip_destination => $nodes->{$i}->getInternalIP()->{ipv4_internal_address}
                             );
         $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");

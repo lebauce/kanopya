@@ -51,41 +51,6 @@ my $log = get_logger("executor");
 my $errmsg;
 our $VERSION = '1.00';
 
-
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-    
-    my $self = $class->SUPER::new(%args);
-    $self->_init();
-    
-    return $self;
-}
-
-=head2 _init
-
-    $op->_init();
-    # This private method is used to define some hash in Operation
-
-=cut
-
-sub _init {
-    my $self = shift;
-    $self->{_objs} = {};
-    return;
-}
-
-sub checkOp{
-    my $self = shift;
-    my %args = @_;
-    
-
-}
-
 =head2 prepare
 
     $op->prepare(internal_cluster => \%internal_clust);
@@ -98,13 +63,10 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    # Check if internal_cluster exists
-    if (! exists $args{internal_cluster} or ! defined $args{internal_cluster}) { 
-        $errmsg = "EDeployComponent->prepare need an internal_cluster named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+    General::checkParams(args => \%args, required => ["internal_cluster"]);
+
+    $self->{_objs} = {};
+
     # Get Operation parameters
     my $params = $self->_getOperation()->getParams();
     
@@ -139,12 +101,13 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-
     # Get contexts
-    $self->{executor}->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-    $self->loadContext( internal_cluster => $args{internal_cluster}, service => 'nas' );
-    
-    
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
+
+    $self->loadContext(internal_cluster => $args{internal_cluster}, service => 'nas');
 }
 
 sub execute{

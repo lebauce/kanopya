@@ -129,15 +129,19 @@ sub prepare {
                                                        name         => $readonly_param->{name},
                                                        value        => $readonly_param->{value});
     }
-    $self->{econtext} = EFactory::newEContext(ip_source      => "127.0.0.1",
-                                              ip_destination => "127.0.0.1");
+    # Get context for executor
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
     my $self = shift;
 
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
-    $ecluster->create(econtext => $self->{econtext}, erollback => $self->{erollback});
+    $ecluster->create(econtext  => $self->{executor}->{econtext},
+                      erollback => $self->{erollback});
 
     $log->info("Cluster <" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name") . "> is now added");
 }

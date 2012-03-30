@@ -79,13 +79,10 @@ sub start {
 
     General::checkParams(args => \%args, required => [ "econtext" ]);
 
-    my $host_manager_econtext
-        = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                ip_destination => $self->{sp}->getMasterNodeIp());
-
     $self->{host_manager}->startHost(cluster  => $self->{sp},
                                      host     => $self->{host},
-                                     econtext => $host_manager_econtext);
+                                     econtext => $args{econtext});
+
     $self->{host}->setState(state => 'starting');
 }
 

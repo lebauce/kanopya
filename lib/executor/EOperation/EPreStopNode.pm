@@ -107,6 +107,12 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg, hidden => 1);
     }
+
+    # Get context for executor
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
@@ -119,8 +125,9 @@ sub execute {
     foreach my $i (keys %$components) {        
         my $tmp = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is " . ref($tmp));
-        $tmp->preStopNode(host    => $self->{_objs}->{host}, 
-                          cluster => $self->{_objs}->{cluster});
+        $tmp->preStopNode(host     => $self->{_objs}->{host},
+                          cluster  => $self->{_objs}->{cluster},
+                          econtext => $self->{executor}->{econtext});
     }
     $self->{_objs}->{host}->setNodeState(state => "pregoingout");
 }
