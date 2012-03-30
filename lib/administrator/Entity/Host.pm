@@ -104,7 +104,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     host_desc => {
-        pattern      => '^[\w\s]*$',
+        pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
     },
