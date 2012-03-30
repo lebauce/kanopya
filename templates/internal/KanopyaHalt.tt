@@ -8,5 +8,8 @@
 [% FOREACH data_export=data_exports %]
 iscsiadm -m node -T [% data_export.target %] -p [% nas_ip %]:[% nas_port %] --logout
 [% END %]
+[% IF etc_target %]
 iscsiadm -m node -T [% etc_target %] -p [% nas_ip %]:[% nas_port %] --logout
+[% END %]
 halt -d -f -p
+

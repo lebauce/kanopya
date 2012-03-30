@@ -111,22 +111,18 @@ sub prepare {
 
 sub execute {
     my $self = shift;
-    $log->debug("Before EOperation exec");
     $self->SUPER::execute();
-    $log->debug("After EOperation exec and before new Adm");
-    my $adm = Administrator->new();
-    
 
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
     $self->{cluster_need_wait} = 0;
     foreach my $i (keys %$components) {        
         my $tmp = EFactory::newEEntity(data => $components->{$i});
-        $log->debug("component is ".ref($tmp));
-        $tmp->preStopNode(host => $self->{_objs}->{host}, 
-                            cluster => $self->{_objs}->{cluster});
+        $log->debug("component is " . ref($tmp));
+        $tmp->preStopNode(host    => $self->{_objs}->{host}, 
+                          cluster => $self->{_objs}->{cluster});
     }
-    $self->{_objs}->{host}->setNodeState(state=>"pregoingout");
+    $self->{_objs}->{host}->setNodeState(state => "pregoingout");
 }
 
 

@@ -87,11 +87,8 @@ sub prepare {
 
 sub execute {
     my $self = shift;
-    $log->debug("Before EOperation exec");
     $self->SUPER::execute();
-    $log->debug("After EOperation exec and before new Adm");
-    my $adm = Administrator->new();
-    
+
     my $components = $self->{_objs}->{components};
     $log->info('Processing cluster components configuration for this node');
     foreach my $i (keys %$components) {

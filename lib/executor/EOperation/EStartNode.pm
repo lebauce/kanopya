@@ -249,7 +249,7 @@ sub execute {
     $log->info("Generate Boot Conf");
 
     # Apply node boot configuration
-    $self->_generateBootConf(etc_path      => $mountpoint . '/etc',,
+    $self->_generateBootConf(mountpoint    => $mountpoint,,
                              filesystem    => $self->{_objs}->{container}->getAttr(
                                                   name => 'container_filesystem'
                                               ),
@@ -387,7 +387,9 @@ sub _generateBootConf {
     my %args = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ "etc_path", "filesystem", "options" ]);
+                         required => [ "mountpoint", "filesystem", "options" ]);
+
+    my $etc_path = $args{mountpoint} . '/etc';
 
     # Firstly create pxe config file if needed
     my $boot_policy = $self->{_objs}->{cluster}->getAttr(name => 'cluster_boot_policy');
@@ -401,8 +403,12 @@ sub _generateBootConf {
 
             $log->info("Generate Kanopya Halt script Conf");
 
-            $self->_generateKanopyaHalt(etc_path   => $args{etc_path},
+            $self->_generateKanopyaHalt(etc_path   => $etc_path,
                                         targetname => $targetname);
+
+            $self->{executor}->{econtext}->execute(
+                command => "touch $etc_path/iscsi/iscsi.initramfs"
+            );
 
             $log->info("Generate Initiator Conf");
 
@@ -418,7 +424,7 @@ sub _generateBootConf {
 
             $self->{executor}->{econtext}->execute(
                 command => "echo \"InitiatorName=$initiatorname\" > " .
-                           "$args{etc_path}/iscsi/initiatorname.iscsi"
+                           "$etc_path/iscsi/initiatorname.iscsi"
             );
 
             my $rand = new String::Random;
@@ -464,7 +470,22 @@ sub _generateBootConf {
             $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
             unlink "/tmp/$tmpfile";
         }
+
+        my $grep_result = $self->{executor}->{econtext}->execute(
+                              command => "grep \"NETDOWN=no\" $etc_path/default/halt"
+                          );
+
+        if (not $grep_result->{stdout}) {
+            $self->{executor}->{econtext}->execute(
+                command => "echo \"NETDOWN=no\" >> $etc_path/default/halt"
+            );
+        }
     }
+    
+    # Set up fastboot
+    $self->{executor}->{econtext}->execute(
+        command => "touch $args{mountpoint}/fastboot"
+    );
 }
 
 sub _generatePXEConf {
@@ -497,7 +518,7 @@ sub _generatePXEConf {
     my $vars = {
         nfsroot    => ($boot_policy =~ m/NFS/) ? 1 : 0,
         iscsiroot  => ($boot_policy =~ m/ISCSI/) ? 1 : 0,
-        xenkernel  => 0, #($kernel_version =~ m/xen/) ? 1 : 0,
+        xenkernel  => 0,#($kernel_version =~ m/xen/) ? 1 : 0,
         kernelfile => "vmlinuz-$kernel_version",
         initrdfile => "initrd_$kernel_version",
         nfsexport  => $nfsexport,
