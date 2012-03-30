@@ -412,6 +412,10 @@ INSERT INTO `kernel` VALUES (@eid,'2.6.39.3','2.6.39.3','generic kernel with lot
 SET @kernel := @eid;
 SET @eid := @eid +1;
 
+INSERT INTO `entity` VALUES (@eid, 6);
+INSERT INTO `kernel` VALUES (@eid,'2.6.32-5-xen-amd64','2.6.32-5-xen-amd64','Xen kernel for opennebula cluster');
+SET @eid := @eid +1;
+
 --
 -- kanopya cluster
 --
