@@ -21,4 +21,7 @@
         <td><input type="text" cols="32" name="action_file_path" value="<%action.file_path%>"/></td>
     </tr>
 </table>
+<a class ="action" href="/architectures/extclusters/<%cluster_id%>/actions/<%action.id%>/delete">Delete this action</a>
+<br/>
+Warning : Please check that all triggers have been closed before deleting this action
 </form>

@@ -113,18 +113,19 @@
 <span id="actions" class="title simpleexpand">Actions</span>
 <table id="Xnodes" class="detailspart list">
 <% IF actions_list %>
-    <tr><td colspan="3">&nbsp;</td>
-        <td class="actions" rowspan="<% nbactions %>">
-                <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a action</a><br />
-                <span class="desc">Add a new migration action to this cluster.</span><br /><br />
-        </td></tr>
-
+    <tr>
+    <% count = 0 %>
     <% FOREACH action IN actions_list %>
-        <tr><td class="label2"><span class="bold"><% action.name %></span></td>
+        <td class="label2"><span class="bold"><% action.name %></span></td>
         <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
-        <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/delete">delete (not yet)</a>
-        
-        </td></tr>
+        <% IF count == 0 %>
+            <% count = count +1 %>
+            <td class="actions" rowspan="2">
+                    <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a action</a><br />
+                    <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+            </td>
+        <% END %>
+        </tr>
     <% END %>
 <%END%>
 </table>

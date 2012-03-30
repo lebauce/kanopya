@@ -1806,6 +1806,12 @@ post '/extclusters/:extclusterid/actions/add' => sub {
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
 
+get '/extclusters/:extclusterid/actions/:actionid/delete' => sub{
+    my $action_inst = Action->get('id' => param('actionid'));
+    $action_inst->delete();
+    redirect '/architectures/extclusters/'.param('extclusterid')
+};
+
 get '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
     my $action_inst = Action->get('id' => param('actionid'));
     my $param       = $action_inst->getParams();
