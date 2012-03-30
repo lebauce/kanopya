@@ -571,12 +571,11 @@ sub getMasterNodeId {
     }
 }
 
-sub getMasterNodeSystemimageId {
+sub getMasterNodeSystemimage {
     my $self = shift;
     my $node_instance_rs = $self->{_dbix}->parent->search_related("nodes", { master_node => 1 })->single;
     if(defined $node_instance_rs) {
-        my $id = $node_instance_rs->host->get_column('systemimage_id');
-        return $id;
+        return Entity::Systemimage->get(id => $node_instance_rs->host->get_column('systemimage_id'));
     } else {
         return;
     }
