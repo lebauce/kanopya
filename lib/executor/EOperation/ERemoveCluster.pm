@@ -88,10 +88,7 @@ sub prepare {
         $self->{_objs}->{cluster} = Entity::ServiceProvider::Inside::Cluster->get(id => $params->{cluster_id});
     };
     if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EActivateCluster->prepare : cluster_id $params->{cluster_id} does not find\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
 
     # Check Parameters and context
@@ -99,24 +96,48 @@ sub prepare {
         $self->checkOp(params => $params);
     };
     if ($@) {
-        my $error = $@;
-        $errmsg = "Operation ActivateCluster failed an error occured :\n$error";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
 
-    # Get context for nas
-    $self->{econtext} = EFactory::newEContext(ip_source => "127.0.0.1", ip_destination => "127.0.0.1");
-    
+    # Get systemimage if removal required.
+    if (not $params->{keep_systemimage}) {
+        # All node systemimages should be removed at StopNode step excepted
+        # the master node one, so find it from its name.
+        my $systemimage_name = $self->{_objs}->{cluster}->getAttr(name => 'cluster_name') . '_1';
+
+        eval {
+            $self->{_objs}->{systemimage} = Entity::Systemimage->find(
+                                                hash => { systemimage_name => $systemimage_name }
+                                            );
+        };
+        if ($@) {
+            $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
+        }
+    }
+
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
+    if ($self->{_objs}->{systemimage}) {
+        my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+        $esystemimage->deactivate(econtext  => $self->{executor}->{econtext},
+                                  erollback => $self->{erollback});
+
+        $esystemimage->remove(econtext  => $self->{executor}->{econtext},
+                              erollback => $self->{erollback});
+    }
+
     # Remove cluster directory
     my $command = "rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name");
-    $self->{econtext}->execute(command => $command);
+    $self->{executor}->{econtext}->execute(command => $command);
 
     $log->debug("Execution : rm -rf /clusters/" . $self->{_objs}->{cluster}->getAttr(name => "cluster_name"));
 
