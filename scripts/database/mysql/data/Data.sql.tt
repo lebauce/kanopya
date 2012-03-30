@@ -72,7 +72,8 @@ INSERT INTO `class_type` VALUES
 (56, 'NodemetricRule'),
 (57, 'Entity::Connector::NetappManager'),
 (58, 'Action'),
-(59, 'ActionTriggered');
+(59, 'ActionTriggered'),
+(60, 'ActionParameter');
 
 
 

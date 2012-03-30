@@ -1,0 +1,24 @@
+<h2>Create a migration action <%action.id%> </h2>
+
+<%IF action.id%>
+    <form id="target" method="POST" action="/architectures/extclusters/<%cluster_id%>/actions/<%action.id%>/edit">
+<%ELSE%>
+    <form id="target" method="POST" action="/architectures/extclusters/<%cluster_id%>/actions/add">
+<%END%>
+
+<table class="form">
+    <tr>
+        <td class="label">Name :</td>
+        <td><input type="text" name="action_name" maxlength="32" size="32" value = "<%action.name%>"/>
+        <span style="color: red"><% err_name %></span></td>
+    </tr>
+    <tr>
+        <td class="label">ou destination:</td>
+        <td><input type="text" cols="32" name="action_ou_to" value="<%action.ou_to%>"/></td>
+    </tr>
+    <tr>
+        <td class="label">File path:</td>
+        <td><input type="text" cols="32" name="action_file_path" value="<%action.file_path%>"/></td>
+    </tr>
+</table>
+</form>

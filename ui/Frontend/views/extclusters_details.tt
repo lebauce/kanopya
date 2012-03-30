@@ -1,4 +1,7 @@
 <% js_head.push('details.js') %>
+
+<input type="hidden" id="cluster_id" value="<%cluster_id%>"/>
+
 <h2>Cluster : <% cluster_name %></h2>
 <hr/>
 <span id="state" class="title simpleexpand">State</span>
@@ -107,6 +110,27 @@
 </table>
 
 <hr/>
+<span id="actions" class="title simpleexpand">Actions</span>
+<table id="Xnodes" class="detailspart list">
+<% IF actions_list %>
+    <tr><td colspan="3">&nbsp;</td>
+        <td class="actions" rowspan="<% nbactions %>">
+                <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a action</a><br />
+                <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+        </td></tr>
+
+    <% FOREACH action IN actions_list %>
+        <tr><td class="label2"><span class="bold"><% action.name %></span></td>
+        <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
+        <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/delete">delete (not yet)</a>
+        
+        </td></tr>
+    <% END %>
+<%END%>
+</table>
+
+
+<hr/>
 <span id="nodes" class="title simpleexpand">Nodes</span>
 <table id="Xnodes" class="detailspart list">
 <% IF nodes_list %>
@@ -116,12 +140,19 @@
 		<a class="clickable action" onclick="alert('To update node list:\n - Add a DirectoryService connector to the cluster\n - Provide required configuration\n - click on \'Get computers\' button')">update</a><br />
 		<span class="desc">Use a DirectoryService connector to retrieve nodes</span><br /><br />
 	<% END %>
+	
     </td></tr>
     <td></td>
     <td></td>
     <td></td>
     <td>
-
+        <% IF actions_list.size > 0 %>
+            <select id="action_id">
+                <% FOREACH action IN actions_list %>
+                    <option value="<% action.id %>"><% action.name %></option>
+	        <%END%>
+	    </select>
+        <% END %>
     </td>
     <% FOREACH node IN nodes_list %>
         <tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
@@ -158,17 +189,8 @@
 		<% IF node.link_remove %>
 			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
 		<% END %></td>
-		      <td class="action">
-		          <form METHOD="POST" ACTION="/architectures/extclusters/<%cluster_id%>/actions">
-        
-                    <select name="action_id">
-                        <% FOREACH action IN actions %>
-                            <option value="<% action.id %>"><% action.name %>(<% action.id %>)</option>
-                        <%END%>
-                    </select>
-                    <input type="hidden" name="hostname" value="<%node.hostname%>">
-                    <input type="submit" value="Launch action"/>
-                </form>
+            <td class="action">
+                <a class="node_action clickable" id="action_<%node.id%>" value="<%node.hostname%>"> trigger action </a>
             </td>
         </tr>
     <% END %>
@@ -177,6 +199,9 @@
 	<tr><td>This cluster has no nodes</td></tr>
 <% END %>
 </table>
+
+
+
 
 <hr/>
 <span id="connectors" class="title simpleexpand">Connectors</span>
@@ -199,6 +224,8 @@
     <% END %>
 <% END %>
 </table>
+
+
 
 <hr/>
 <span id="monitor" class="title simpleexpand">Monitoring</span>

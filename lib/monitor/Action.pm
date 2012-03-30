@@ -14,7 +14,8 @@
 package Action;
 use strict;
 use warnings;
-
+use ActionParameter;
+use Data::Dumper;
 use base 'BaseDB';
 
 # logger
@@ -35,4 +36,46 @@ use constant ATTR_DEF => {
 
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getParams {
+    my ($self) = @_;
+    my %params;
+    my @params_insts = ActionParameter->search(
+        hash => {
+            action_parameter_action_id => $self->getAttr('name' => 'action_id')
+        }
+    );
+    foreach my $param_inst (@params_insts){
+        $params{$param_inst->getAttr(name => 'action_parameter_name')} = $param_inst->getAttr(name => 'action_parameter_value');
+    }
+     
+    return \%params;
+};
+
+sub setParams {
+    my ($self,%args) = @_;
+    if(defined $args{ou_to}){
+        my $action_parameter = ActionParameter->find(
+            hash => {
+                action_parameter_action_id => $self->getAttr('name' => 'action_id'),
+                action_parameter_name => 'ou_to',
+            }
+        );
+        $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{ou_to});
+        $action_parameter->save();
+    }
+
+    if(defined $args{file_path}){
+        my $action_parameter = ActionParameter->find(
+            hash => {
+                action_parameter_action_id => $self->getAttr('name' => 'action_id'),
+                action_parameter_name => 'file_path',
+            }
+        );
+        $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{file_path});
+        $action_parameter->save();
+    }
+    
+};
+
 1;

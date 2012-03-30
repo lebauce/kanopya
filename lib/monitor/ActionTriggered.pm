@@ -45,32 +45,34 @@ sub new {
     $args{action_triggered_timestamp} = time();
     my $self = $class->SUPER::new(%args);
     
-    $self -> trigger();
+#    $self -> trigger();
     return $self;
 };
 
 sub trigger{
     my ($self,%args) = @_;
+    
+    # Get db params (path and ou_dest)
     my $params = $self->getParams();
-    my $cluster_id = $self->{_dbix}->action_triggered_action->get_column('action_service_provider_id');
-    #print '**'.$cluster_id."\n";
-    my $connector =  Entity::Connector->find(hash => { #TODO : multiple
-        service_provider_id => $cluster_id,
-        connector_type_id   => '1', #TODO : UN HARDCODE
-    });
     
-    #print '++'.$connector->getAttr(name => 'connector_id')."\n";
+    # Get current ou
+    my $cluster_id = $self->{_dbix}
+                          ->action_triggered_action
+                          ->get_column('action_service_provider_id');
+    my $outside    = Entity::ServiceProvider::Outside
+                          ->get('id' => $cluster_id);
+    my $directoryServiceConnector = $outside->getConnector(
+                                                  'category' => 'DirectoryService'
+                                              );
+    my $ou_from    = $directoryServiceConnector->getAttr(
+                                                     'name' => 'ad_nodes_base_dn'
+                                                 );
     
-    my $active_directory =  Entity::Connector::ActiveDirectory->get(
-        id => $connector->getAttr(name => 'connector_id'),
-    );
-    my $ou_from = $active_directory->getAttr('name' => 'ad_nodes_base_dn');
-    #sprint $ou_from;
     $self->createXMLFile(
             hostname => $self->getAttr(name => 'action_triggered_hostname'),
             ou_from  => $ou_from,
             ou_to    => $params->{ou_to},
-            filePath => $params->{filePath},
+            file_path => $params->{file_path},
             id       => $self->getAttr(name => 'action_triggered_id'),
     );
 }
@@ -93,11 +95,10 @@ sub getParams {
 sub createXMLFile {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','filePath']);
-
-    my $fileDirPath = $args{filePath};
+    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','file_path']);
+    my $fileDirPath = $args{file_path};
     #print Dumper $params;
-    my $fileCompletePath = $fileDirPath.'/file.xml';
+    my $fileCompletePath = $fileDirPath.time().'file.xml';
     #print $fileCompletePath;
     open FILE, ">", $fileCompletePath or die $!;
     print FILE $args{hostname}."\n";
@@ -105,6 +106,6 @@ sub createXMLFile {
     print FILE $args{ou_to}."\n";
     print FILE $args{id}."\n";
     close FILE;
-   
+    return $fileCompletePath;
 };
 1;
