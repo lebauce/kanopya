@@ -444,7 +444,7 @@ CREATE TABLE `host` (
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
   `host_hostname` char(32) DEFAULT NULL,
-  `host_state` char(32) NOT NULL DEFAULT 'down',
+  `host_state` char(32) NOT NULL DEFAULT 'down:0',
   `host_prev_state` char(32),
   PRIMARY KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
