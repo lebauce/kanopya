@@ -1,7 +1,7 @@
 <td class="label">Service Profile Template:</td>
 <td><select name="host_manager_param_service_profile_template_id">
-        <option>retrieve service profile template list</option>
+        <option>sptmpl_kanopya01-A</option>
+        <option>sptmpl_kanopya01-B</option>
     </select>
 </td>
-
 
