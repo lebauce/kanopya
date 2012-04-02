@@ -18,6 +18,7 @@ use Clustermetric;
 use NodemetricCombination;
 use NodemetricRule;
 use General;
+use List::MoreUtils qw{firstidx};
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
  
@@ -1494,7 +1495,6 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
                 push @unkownRules,[$rule, $isVerified];
         }
     }
-    
     my @rules;
     
     foreach my $rule_and_verif (@nokRules, @okRules, @unkownRules){
@@ -1508,7 +1508,6 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
         
         push @rules, $hash;
     } 
-
     my $extclu = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$externalcluster_id);
     my $node = $extclu->getNode(externalnode_id=>$externalnode_id);
     template 'nodemetric_rules', {
@@ -1748,12 +1747,16 @@ post '/indicators/new' => sub {
 
 ajax '/extclusters/:extclusterid/actions' => sub {
     
+    
     my $action = ActionTriggered->new(
         action_triggered_action_id => param('action_id'),
         action_triggered_hostname  => param('hostname'), 
-    );
+    );    
     my $message;
     eval{
+        my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => param('extclusterid'));
+        $extcluster->updateNodeState(hostname => param('hostname'), state => 'disabled');
+
         my $path = $action->trigger();
         $message = 'Action '.param('action_id').' triggered on node '.param('hostname')."\n file $path created";
         1;
@@ -1776,6 +1779,8 @@ post '/extclusters/:extclusterid/actions' => sub {
 get '/extclusters/:extclusterid/actions/:actionid/close' => sub {
     my $action = ActionTriggered->get('id' => param('actionid'));
     $action->delete();
+    redirect '/architectures/extclusters/'.param('extclusterid') 
+    
 };
 
 get '/extclusters/:extclusterid/actions/add' => sub {
@@ -1805,6 +1810,42 @@ post '/extclusters/:extclusterid/actions/add' => sub {
     
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
+
+get '/extclusters/:extclusterid/actions/list' => sub {
+    my @triggered_actions;
+    
+    my @action_insts = Action->searchLight(
+        hash => {
+            action_service_provider_id => param('extclusterid'),
+        }
+    );
+    
+    my @action_ids = map {$_->getAttr(name => 'action_id')} @action_insts;
+
+    my @triggered_action_insts = ActionTriggered->search(hash => {});
+    
+    foreach my $triggered_action_inst (@triggered_action_insts) {
+         my $id    = $triggered_action_inst->getAttr('name' => 'action_triggered_id');
+         my $index = List::MoreUtils::firstidx {$_ == $id} @action_ids;
+         if($index > -1){
+            my $hash = {
+                id        => $id,
+                name      => $action_insts[$index]->getAttr('name' => 'action_name'),
+                hostname  => $triggered_action_inst->getAttr('name' => 'action_triggered_hostname'),
+                timestamp => $triggered_action_inst->getAttr('name' => 'action_triggered_timestamp'),
+            };
+            push @triggered_actions, $hash;
+         }
+    }
+    
+    
+    template 'triggered_actions', {
+        title_page        => "Triggered actions",
+        cluster_id        => param('extclusterid'),
+        triggered_actions => \@triggered_actions,
+    }, { layout => 'main' };
+};
+
 
 get '/extclusters/:extclusterid/actions/:actionid/delete' => sub{
     my $action_inst = Action->get('id' => param('actionid'));
@@ -1841,8 +1882,31 @@ post '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
         'file_path' => param('action_file_path'),
     );
     redirect '/architectures/extclusters/'.param('extclusterid') 
+};
+
+
+# ----------------------------------------------------------------------------#
+# -------------------------------- NODES--+------------------------------------#
+#----------- -----------------------------------------------------------------#
+
+get '/extclusters/:extclusterid/externalnodes/:nodeid/enable' => sub {
+    my $cluster_id = param('extclusterid');
+    my $node_id    = param('nodeid');
+    
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+    my $node       = $extcluster->getNode(
+        externalnode_id => $node_id,
+    );
+    
+    $extcluster->updateNodeState(hostname => $node->{hostname}, state => 'undef');
+    NodemetricRule::setAllRulesUndefForANode(
+        cluster_id => $cluster_id,
+        node_id   => $node_id,
+    );
+    redirect '/architectures/extclusters/'.$cluster_id;
 
 };
+
 
 ########################################
 #######INNER FUNCTION DECLARATION#######
