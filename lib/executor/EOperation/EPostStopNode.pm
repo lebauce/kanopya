@@ -85,7 +85,9 @@ sub prepare {
     General::checkParams(args => \%args, required => ["internal_cluster"]);
 
     my $params = $self->_getOperation()->getParams();
-    
+
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
     # Instantiate host and so check if exists
     $log->debug("checking host existence with id <$params->{host_id}>");
     eval {
@@ -229,7 +231,7 @@ sub generateHosts {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args);
+    General::checkParams(args => \%args, required => [ "nodes" ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");

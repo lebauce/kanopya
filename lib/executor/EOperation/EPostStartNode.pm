@@ -78,6 +78,8 @@ sub prepare {
     
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
     #$self->{nas}   = {};
     $self->{_objs} = {};
     
@@ -140,7 +142,7 @@ sub generateHosts {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args);
+    General::checkParams(args => \%args, required => [ "nodes" ]);
 
     my $rand = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");

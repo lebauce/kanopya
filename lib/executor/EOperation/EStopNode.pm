@@ -65,6 +65,8 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
+
     # Get instance of Host Entity
     $log->info("Load Host instance");
     $self->{_objs}->{host} = Entity::Host->get(id => $params->{host_id});

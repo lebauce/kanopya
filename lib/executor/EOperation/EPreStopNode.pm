@@ -79,9 +79,11 @@ sub prepare {
 
     $log->info("EPreStopNode Operation preparation");
 
-    General::checkParams(args => \%args, required => ["internal_cluster"]);
+    General::checkParams(args => \%args, required => [ "internal_cluster" ]);
 
     my $params = $self->_getOperation()->getParams();
+
+    General::checkParams(args => $params, required => [ "cluster_id", "host_id" ]);
 
     $self->{_objs} = {};
     
