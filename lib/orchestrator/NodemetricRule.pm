@@ -178,10 +178,11 @@ sub isVerifiedForANode{
         ->find({
             verified_noderule_externalnode_id    => $externalnode_id,
         });
+        
     if(defined $row){
         my $state = $row->verified_noderule_state;
         switch ($state){
-            case 'verfied'{
+            case 'verified'{
                 return 1;
             }
             case 'undef'{
@@ -328,6 +329,9 @@ sub enable {
 
 sub setAllRulesUndefForANode{
     my (%args) = @_;
+    
+    General::checkParams(args => \%args, required => ['cluster_id', 'node_id']);
+    
     my $cluster_id     = $args{cluster_id};
     my $node_id        = $args{node_id};
     
