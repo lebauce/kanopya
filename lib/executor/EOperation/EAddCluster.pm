@@ -86,6 +86,7 @@ sub prepare {
         cluster_domainname   => General::checkParam(args => $params, name => 'cluster_domainname'),
         cluster_nameserver1  => General::checkParam(args => $params, name => 'cluster_nameserver1'),
         cluster_nameserver2  => General::checkParam(args => $params, name => 'cluster_nameserver2'),
+        kernel_id            => General::checkParam(args => $params, name => 'kernel_id'),
         user_id              => General::checkParam(args => $params, name => 'user_id'),
         masterimage_id       => General::checkParam(args => $params, name => 'masterimage_id'),
         host_manager_id      => General::checkParam(args => $params, name => 'host_manager_id'),
