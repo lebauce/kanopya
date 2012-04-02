@@ -606,7 +606,31 @@ get '/extclusters/:clusterid' => sub {
         push @actions, $hash;
     }
     #print Dumper \@action_hashs;
-    my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nm_rule_nodes}};
+    
+    my $order = {
+        'up'        => 0,
+        'warning'   => 1,
+        'undef'     => 2,
+        'down'      => 3,
+        'disabled'  => 4,
+    };
+    
+    
+    my $disabled_nodes = $extcluster->getDisabledNodes();
+    
+    my @nodes = (@$disabled_nodes,@{$cluster_eval->{nm_rule_nodes}});
+    my @nodes_sort = sort {
+        
+        $order->{$a->{state}} cmp $order->{$b->{state}} 
+        
+    } @nodes;
+    
+    
+    #my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nm_rule_nodes}}; 
+    
+    #print Dumper \@nodes_sort;
+    
+    
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
         active                => 1,
