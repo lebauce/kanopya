@@ -89,19 +89,35 @@ sub retrieveData {
         time_zone   => $time_zone,
     );
     
-    _addUndefNodes( data => $res, nodes => $args{nodes});
+    _consolidateName( data => $res, nodes => $args{nodes});
     
     return $res;
 }
 
-# Add a key for each nodes without data, with empty hash ref as value
-# So all nodes are listed even if no data are retrieved
-sub _addUndefNodes {
+# 1. Transform node name from SCOM format (COMPUTER.domain) to requested name (case sensitive)
+# 2. Add a key for each nodes without data, with empty hash ref as value
+#    So all nodes are listed even if no data are retrieved
+sub _consolidateName {
     my %args = @_;
 
     foreach my $node (@{$args{nodes}}) {
+        # Retrieve computer name (without domain)
+        my $shortname = $node;
+        $shortname =~ s/\..*//;
+        # Retrieve domain name
+        $node =~/[^.]+\.(.*)/;
+        my $domain_name = $1;
+        # Build SCOM format name (as in response)
+        my $name_scom_format = (uc $shortname) . '.' . $domain_name;
         if (not exists $args{data}{$node}) {
-            $args{data}{$node} = {};
+            # Replace name from SCOM format to wanted name
+            if (exists $args{data}{$name_scom_format}) {
+                $args{data}{$node} = $args{data}{$name_scom_format};
+                delete $args{data}{$name_scom_format};
+            } else {
+                # Add a key for node without data
+                $args{data}{$node} = {};
+            }
         }
     }
 }
