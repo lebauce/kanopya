@@ -644,7 +644,6 @@ sub removeComponent {
 
     my $component_instance = Entity::Component->get(id => $args{component_instance_id});
     $component_instance->delete;
-
 }
 
 =head2 getHosts
@@ -659,15 +658,22 @@ sub removeComponent {
 sub getHosts {
     my $self = shift;
 
-    my $host_rs = $self->{_dbix}->parent->nodes;
     my %hosts;
-    while ( my $node_row = $host_rs->next ) {
-        my $host_row = $node_row->host;
-        $log->debug("Nodes found");
-        my $host_id = $host_row->get_column('host_id');
-        eval { $hosts{$host_id} = Entity::Host->get (
-                        id => $host_id,
-                        type => "Host") };
+    eval {
+        my $host_rs = $self->{_dbix}->parent->nodes;
+        while (my $node_row = $host_rs->next) {
+            my $host_row = $node_row->host;
+            $log->debug("Nodes found");
+            my $host_id = $host_row->get_column('host_id');
+            eval {
+                $hosts{$host_id} = Entity::Host->get(id => $host_id);
+            };
+        }
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal(
+                  error => "Could not get cluster nodes:\n$@"
+              );
     }
     return \%hosts;
 }
@@ -688,8 +694,6 @@ sub getCurrentNodesCount {
         return 0;
     }
 }
-
-
 
 sub getPublicIps {
     my $self = shift;
