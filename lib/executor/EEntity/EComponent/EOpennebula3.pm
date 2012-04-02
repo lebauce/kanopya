@@ -392,18 +392,18 @@ sub getFreeHost {
         delete $args{ram_unit};
     }
 
-    $log->info( "Looking for a virtual host" );
+    $log->info("Looking for a virtual host");
     my $host = eval{ 
         return $self->_getEntity->createVirtualHost(
-                   core => $args{core},
+                   core => $args{cpu},
                    ram  => $args{ram},
                );
     };
     if ($@) {
         my $error =$@;
         # We can't create virtual host for some reasons (e.g can't meet constraints)
-        $log->debug("Component OpenNebula3 <" . $self->getAttr(name => 'component_id') .
-                    "> No capabilities to host this vm core <$args{core}> and ram <$args{ram}>" . $error);
+        $log->debug("Component OpenNebula3 <" . $self->_getEntity->getAttr(name => 'component_id') .
+                    "> No capabilities to host this vm core <$args{cpu}> and ram <$args{ram}>:\n" . $error);
     }
     return $host;
 }
