@@ -127,6 +127,7 @@ sub addNode {
         externalnode_state      => 'down',
     });
 }
+
 sub getNode {
     my $self = shift;
     my %args = @_;
@@ -150,32 +151,65 @@ sub updateNodeState {
             });
 }
 
-sub getNodes {
-    my $self = shift;
-    my %args = @_;
 
+sub getDisabledNodes {
+    my ($self, %args) = @_;
+    
     my $shortname = defined $args{shortname};
-
+    
     my $node_rs = $self->{_dbix}->parent->externalnodes;
-
+    
     my $domain_name;
     my @nodes;
     while (my $node_row = $node_rs->next) {
-        my $hostname = $node_row->get_column('externalnode_hostname');
-        $hostname =~ s/\..*// if ($shortname);
-        push @nodes, {
-            hostname           => $hostname,
-            state              => $node_row->get_column('externalnode_state'),
-            id                 => $node_row->get_column('externalnode_id'),
-            num_verified_rules => $node_row->verified_noderules
-                                           ->search({
-                                             verified_noderule_state => 'verified'})
-                                           ->count(),
-            num_undef_rules    => $node_row->verified_noderules
-                                           ->search({
-                                             verified_noderule_state => 'undef'})
-                                           ->count(),
-        };
+        if($node_row->get_column('externalnode_state') eq 'disabled'){
+            my $hostname = $node_row->get_column('externalnode_hostname');
+            $hostname =~ s/\..*// if ($shortname);
+            push @nodes, {
+                hostname           => $hostname,
+                state              => $node_row->get_column('externalnode_state'),
+                id                 => $node_row->get_column('externalnode_id'),
+                num_verified_rules => $node_row->verified_noderules
+                                               ->search({
+                                                 verified_noderule_state => 'verified'})
+                                               ->count(),
+                num_undef_rules    => $node_row->verified_noderules
+                                               ->search({
+                                                 verified_noderule_state => 'undef'})
+                                               ->count(),
+            };
+        }
+    }
+
+    return \@nodes;
+}
+sub getNodes {
+    my ($self, %args) = @_;
+    
+    my $shortname = defined $args{shortname};
+    
+    my $node_rs = $self->{_dbix}->parent->externalnodes;
+    
+    my $domain_name;
+    my @nodes;
+    while (my $node_row = $node_rs->next) {
+        if($node_row->get_column('externalnode_state') ne 'disabled'){
+            my $hostname = $node_row->get_column('externalnode_hostname');
+            $hostname =~ s/\..*// if ($shortname);
+            push @nodes, {
+                hostname           => $hostname,
+                state              => $node_row->get_column('externalnode_state'),
+                id                 => $node_row->get_column('externalnode_id'),
+                num_verified_rules => $node_row->verified_noderules
+                                               ->search({
+                                                 verified_noderule_state => 'verified'})
+                                               ->count(),
+                num_undef_rules    => $node_row->verified_noderules
+                                               ->search({
+                                                 verified_noderule_state => 'undef'})
+                                               ->count(),
+            };
+        }
     }
 
     return \@nodes;
