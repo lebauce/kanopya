@@ -1754,11 +1754,13 @@ ajax '/extclusters/:extclusterid/actions' => sub {
     );    
     my $message;
     eval{
+        my $path = $action->trigger();
         my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => param('extclusterid'));
         $extcluster->updateNodeState(hostname => param('hostname'), state => 'disabled');
-
-        my $path = $action->trigger();
-        $message = 'Action '.param('action_id').' triggered on node '.param('hostname')."\n file $path created";
+        $message = 'Action '.param('action_id').' triggered on node '.param('hostname')
+        ."\n file $path created"
+        ."\n node ".param('hostname')."disabled"
+        ;
         1;
     } or do {
         $message = 'Error triggering action '.param('action_id').' on node '.param('hostname')."\n $@";
