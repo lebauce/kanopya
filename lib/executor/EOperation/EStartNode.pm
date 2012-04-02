@@ -430,7 +430,7 @@ sub _generateBootConf {
 
             $self->{executor}->{econtext}->execute(
                 command => "echo \"InitiatorName=$initiatorname\" > " .
-                           "$etc_path/iscsi/initiatorname.iscsi"
+                           "$etc_path/initiatorname.iscsi"
             );
 
             my $rand = new String::Random;
