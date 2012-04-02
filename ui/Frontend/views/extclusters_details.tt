@@ -121,8 +121,10 @@
         <% IF count == 0 %>
             <% count = count +1 %>
             <td class="actions" rowspan="2">
-                    <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a action</a><br />
-                    <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+                <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add an action</a><br />
+                <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+                <a class="imgAdding action" href="/architectures/extclusters/<% cluster_id %>/actions/list">Currently triggered actions</a><br />
+                <span class="desc">List all currently triggered actions from this cluster </span><br /><br />
             </td>
         <% END %>
         </tr>
@@ -145,7 +147,7 @@
     </td></tr>
     <td></td>
     <td></td>
-    <td></td>
+    
     <td>
         <% IF actions_list.size > 0 %>
             <select id="action_id">
@@ -158,41 +160,60 @@
     <% FOREACH node IN nodes_list %>
         <tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
         <td class="label2">
-            <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
                 <% SWITCH node.state %>
-                    <% CASE 'up' %>
-                        <span class="state imgUp">
-                            <%IF nm_rule_enabled == 0%> 
-                                no rule enabled
-                            <%ELSE%>
-                                ok
-                            <% END %>
-                        </span>
-                    <% CASE 'warning' %>
-                        <span class="state imgBroken">
-                            <%IF node.num_verified_rules > 0%>
-                               <%node.num_verified_rules%> rule(s) not ok
-                            <%END%>
-                            <%IF node.num_verified_rules > 0 &&  node.num_undef_rules > 0 %> ; <%END%>
-                            <%IF node.num_undef_rules > 0%>
-                                <%node.num_undef_rules%> rule(s) unkown
-                            <%END%>
-                        </span>
-                    <% CASE 'down' %>
-                        <span class="state imgDown">
-                            <%node.num_undef_rules%>/<%nm_rule_enabled%> rule(s) unkown
-                        </span>
+                <% CASE 'up' %>
+                    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+                    <span class="state imgUp">
+                        <%IF nm_rule_enabled == 0%> 
+                            no rule enabled
+                        <%ELSE%>
+                            ok
+                        <% END %>
+                    </span></a>
+                    <td class="action">
+                        <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                    </td>
+                <% CASE 'warning' %>
+                    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+                    <span class="state imgBroken">
+                        <%IF node.num_verified_rules > 0%>
+                           <%node.num_verified_rules%> rule(s) not ok
+                        <%END%>
+                        <%IF node.num_verified_rules > 0 &&  node.num_undef_rules > 0 %> ; <%END%>
+                        <%IF node.num_undef_rules > 0%>
+                            <%node.num_undef_rules%> rule(s) unkown
+                        <%END%>
+                    </span></a>
+                    <td class="action">
+                        <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                    </td>
+                <% CASE 'down' %>
+                    <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
+                    <span class="state imgDown">
+                        <%node.num_undef_rules%>/<%nm_rule_enabled%> rule(s) unkown
+                    </span></a>
+                    <td class="action">
+                        <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                    </td>
+                <% CASE 'disabled' %>
+                    disabled
+                <td class="action">
+                 <a href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/enable"> Enable node </a>
+                </td>
                 <% END %>
-            </a>
-		</td>
+            
+        </td>
 
-		<td class="action">
-		<% IF node.link_remove %>
-			<a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
-		<% END %></td>
-            <td class="action">
-                <a class="node_action clickable" id="action_<%node.id%>" value="<%node.hostname%>"> trigger action </a>
-            </td>
+        
+        <% IF node.link_remove %>
+        <td class="action">
+        <a class="imgRemove" href="/architectures/clusters/<% cluster_id %>/nodes/<% node.host_id %>/remove">remove</a>
+        </td>
+        <% END %>
+
+
+            
+            
         </tr>
     <% END %>
     
