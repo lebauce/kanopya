@@ -407,7 +407,7 @@ sub _generateBootConf {
                                         targetname => $targetname);
 
             $self->{executor}->{econtext}->execute(
-                command => "touch $etc_path/iscsi/iscsi.initramfs"
+                command => "touch $etc_path/iscsi.initramfs"
             );
 
             $log->info("Generate Initiator Conf");
