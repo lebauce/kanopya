@@ -109,28 +109,6 @@
 </tr>
 </table>
 
-<hr/>
-<span id="actions" class="title simpleexpand">Actions</span>
-<table id="Xnodes" class="detailspart list">
-<% IF actions_list %>
-    <tr>
-    <% count = 0 %>
-    <% FOREACH action IN actions_list %>
-        <td class="label2"><span class="bold"><% action.name %></span></td>
-        <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
-        <% IF count == 0 %>
-            <% count = count +1 %>
-            <td class="actions" rowspan="2">
-                <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add an action</a><br />
-                <span class="desc">Add a new migration action to this cluster.</span><br /><br />
-                <a class="imgAdding action" href="/architectures/extclusters/<% cluster_id %>/actions/list">Currently triggered actions</a><br />
-                <span class="desc">List all currently triggered actions from this cluster </span><br /><br />
-            </td>
-        <% END %>
-        </tr>
-    <% END %>
-<%END%>
-</table>
 
 
 <hr/>
@@ -224,6 +202,29 @@
 
 
 
+<hr/>
+<span id="actions" class="title simpleexpand">Actions</span>
+<table id="Xnodes" class="detailspart list">
+<% IF actions_list %>
+    <tr>
+        <td></td>
+        <td></td>
+        <td class="actions">
+            <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add an action</a><br />
+            <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+            <a class="imgAdding action" href="/architectures/extclusters/<% cluster_id %>/actions/list">Currently triggered actions</a><br />
+            <span class="desc">List all currently triggered actions from this cluster </span><br /><br />
+        </td>
+    </tr>
+    <% FOREACH action IN actions_list %>
+        <tr>
+            <td class="label2"><span class="bold"><% action.name %></span></td>
+            <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
+            <td></td>
+        </tr>
+    <% END %>
+<%END%>
+</table>
 
 <hr/>
 <span id="connectors" class="title simpleexpand">Connectors</span>
