@@ -361,7 +361,7 @@ sub getContainerAccess {
 
     my $container = {
         container_access_export => $args{container_access}->getAttr(name => 'target_name'),
-        container_access_ip     => '10.0.0.1',
+        container_access_ip     => $self->getServiceProvider->getMasterNodeIp(),
         container_access_port   => 3260,
         container_lun_name      => "lun-0"
     };
