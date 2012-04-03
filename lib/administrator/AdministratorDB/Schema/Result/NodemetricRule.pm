@@ -98,7 +98,7 @@ __PACKAGE__->add_columns(
   "nodemetric_rule_state",
   { data_type => "char", is_nullable => 0, size => 32 },
   "nodemetric_rule_action_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "nodemetric_rule_description",
   { data_type => "text", is_nullable => 0 },
   "class_type_id",
