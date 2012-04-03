@@ -475,7 +475,9 @@ sub _evalRule {
                     cluster_id => $cluster_id,
                     state      => 'verified'
                 );
-                $rule->triggerAction();
+                $rule->triggerAction(
+                    node_hostname => $host_name
+                );
                 
             }
         }else{
