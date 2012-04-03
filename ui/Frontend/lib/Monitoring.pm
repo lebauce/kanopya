@@ -1840,15 +1840,18 @@ post '/extclusters/:extclusterid/actions' => sub {
 };
 
 get '/extclusters/:extclusterid/actions/:actionid/close' => sub {
-    my $action       = ActionTriggered->get('id' => param('actionid'));
-    my $hostname     = $action->getAttr('name' => 'action_triggered_hostname');
-    my $cluster_id = param('extclusterid');
-    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-    my $node_id = $extcluster->getNodeId(hostname => $hostname);
-    $action->delete();
-    redirect '/architectures/extclusters/'.$cluster_id.'/externalnodes/'.$node_id.'/enable';
-    
-    #redirect '/architectures/extclusters/'.param('extclusterid') 
+    eval{
+        my $action       = ActionTriggered->get('id' => param('actionid'));
+        my $hostname     = $action->getAttr('name' => 'action_triggered_hostname');
+        my $cluster_id = param('extclusterid');
+        my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+        my $node_id = $extcluster->getNodeId(hostname => $hostname);
+        $action->delete();
+        redirect '/architectures/extclusters/'.$cluster_id.'/externalnodes/'.$node_id.'/enable';
+        1;
+    }or do{
+        redirect '/architectures/extclusters/'.param('extclusterid') 
+    }
     
 };
 
@@ -1898,13 +1901,16 @@ get '/extclusters/:extclusterid/actions/list' => sub {
          my $action_id    = $triggered_action_inst->getAttr('name' => 'action_triggered_action_id');
          my $index = List::MoreUtils::firstidx {$_ == $action_id} @action_ids;
          #print "$id in @action_ids * $index\n";
+         
+         my $time_human = localtime($triggered_action_inst->getAttr('name' => 'action_triggered_timestamp'));
+         
          if($index > -1){
             my $hash = {
                 id        => $triggered_action_id,
                 action_id => $action_id,
                 name      => $action_insts[$index]->getAttr('name' => 'action_name'),
                 hostname  => $triggered_action_inst->getAttr('name' => 'action_triggered_hostname'),
-                timestamp => $triggered_action_inst->getAttr('name' => 'action_triggered_timestamp'),
+                timestamp => $time_human,
             };
             push @triggered_actions, $hash;
          }
