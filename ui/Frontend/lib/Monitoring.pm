@@ -1267,7 +1267,7 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
             nodemetric_rule_service_provider_id => param('extclusterid'),
             nodemetric_rule_formula   => 'id'.($nodemetric_condition->getAttr(name => 'nodemetric_condition_id')),
             nodemetric_rule_state     => 'disabled',
-            nodemetric_rule_action_id => undef,
+#            nodemetric_rule_action_id => undef,
         };
         my $nodemetric_rule = NodemetricRule->new(%$params_rule);
         redirect("/architectures/extclusters/$var/nodemetrics/rules");
@@ -1711,9 +1711,12 @@ post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
     
     if($checker->{value} == 1) {
         $rule->setAttr(name => 'nodemetric_rule_formula',   value => param('formula'));
-        $rule->setAttr(name => 'nodemetric_rule_action_id', value => $action);
-        $rule->setAttr(name => 'nodemetric_rule_label',     value => $label);
-        
+        if(defined $label){
+            $rule->setAttr(name => 'nodemetric_rule_label',     value => $label);
+        }
+        if(defined $action){
+            $rule->setAttr(name => 'nodemetric_rule_action_id', value => $action);
+        }
         if(param('state') eq 'disabled'){
             $rule->disable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
         }elsif(param('state') eq 'enabled'){
