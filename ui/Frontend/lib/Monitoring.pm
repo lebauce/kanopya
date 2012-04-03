@@ -1779,9 +1779,15 @@ post '/extclusters/:extclusterid/actions' => sub {
 };
 
 get '/extclusters/:extclusterid/actions/:actionid/close' => sub {
-    my $action = ActionTriggered->get('id' => param('actionid'));
+    my $action       = ActionTriggered->get('id' => param('actionid'));
+    my $hostname     = $action->getAttr('name' => 'action_triggered_hostname');
+    my $cluster_id = param('extclusterid');
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+    my $node_id = $extcluster->getNodeId(hostname => $hostname);
     $action->delete();
-    redirect '/architectures/extclusters/'.param('extclusterid') 
+    redirect '/architectures/extclusters/'.$cluster_id.'/externalnodes/'.$node_id.'/enable';
+    
+    #redirect '/architectures/extclusters/'.param('extclusterid') 
     
 };
 
@@ -1827,11 +1833,14 @@ get '/extclusters/:extclusterid/actions/list' => sub {
     my @triggered_action_insts = ActionTriggered->search(hash => {});
     
     foreach my $triggered_action_inst (@triggered_action_insts) {
-         my $id    = $triggered_action_inst->getAttr('name' => 'action_triggered_id');
-         my $index = List::MoreUtils::firstidx {$_ == $id} @action_ids;
+         my $triggered_action_id    = $triggered_action_inst->getAttr('name' => 'action_triggered_id');
+         my $action_id    = $triggered_action_inst->getAttr('name' => 'action_triggered_action_id');
+         my $index = List::MoreUtils::firstidx {$_ == $action_id} @action_ids;
+         #print "$id in @action_ids * $index\n";
          if($index > -1){
             my $hash = {
-                id        => $id,
+                id        => $triggered_action_id,
+                action_id => $action_id,
                 name      => $action_insts[$index]->getAttr('name' => 'action_name'),
                 hostname  => $triggered_action_inst->getAttr('name' => 'action_triggered_hostname'),
                 timestamp => $triggered_action_inst->getAttr('name' => 'action_triggered_timestamp'),
@@ -1840,7 +1849,7 @@ get '/extclusters/:extclusterid/actions/list' => sub {
          }
     }
     
-    
+    #print Dumper \@triggered_actions;
     template 'triggered_actions', {
         title_page        => "Triggered actions",
         cluster_id        => param('extclusterid'),

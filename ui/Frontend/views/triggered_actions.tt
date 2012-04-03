@@ -1,7 +1,7 @@
 <table class="simplelisting">
 
     <caption>
-        Combinations related  from nodes of cluster <% cluster_id %> 
+        Action triggered from nodes of cluster <% cluster_id %> 
     </caption>
 
         <tr><td>
