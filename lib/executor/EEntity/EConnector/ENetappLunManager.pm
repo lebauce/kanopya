@@ -182,9 +182,11 @@ sub createExport {
     my $api = $self->_getEntity();
     my $volume = Entity::Container::NetappVolume->get(id => $args{container}->getAttr(name => "volume_id"));
 
-    $api->lun_map(path            => '/vol/' . $volume->getAttr(name => "name") .
-                                     '/' . $args{export_name},
-                  initiator_group => 'igroup_testcluster_testblockpool');
+    eval {
+        $api->lun_map(path            => '/vol/' . $volume->getAttr(name => "name") .
+                                         '/' . $args{container}->getAttr(name => "name"),
+                      initiator_group => 'igroup_testcluster_testblockpool');
+    };
 
     $log->info("Added iSCSI export for lun " .
                $args{container}->getAttr(name => "container_name"));
