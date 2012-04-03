@@ -72,11 +72,12 @@
         </td></tr>
         <tr><td>        
             Action: </td><td>
-            
             <select name="action">
-                <option value="0">No action available</option>
+                <option value="" <%IF !rule.action_id%> SELECTED <%END%> >No action</option>
+                <% FOR action IN actions %>
+                    <option value="<%action.id%>" <%IF rule.action_id && rule.action_id == action.id%> SELECTED <%END%>><%action.label%></option>
+                <% END %>
             </select>
-            <%IF 0%> <input type=test name="action" value="<%rule.action_id%>"/> <%END%>
         </td></tr>
         <tr><td>        
             State : </td><td> 
