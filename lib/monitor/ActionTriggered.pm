@@ -95,7 +95,7 @@ sub getParams {
 sub createXMLFile {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','file_path']);
+    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','file_path','user_message','logout_time']);
     my $fileDirPath = $args{file_path};
     #print Dumper $params;
     my $fileCompletePath = $fileDirPath.time().'file.xml';
@@ -105,6 +105,8 @@ sub createXMLFile {
     print FILE $args{ou_from}."\n";
     print FILE $args{ou_to}."\n";
     print FILE $args{id}."\n";
+	print FILE $args{user_message}."\n";
+	print FILE $args{logout_time}."\n";
     close FILE;
     return $fileCompletePath;
 };

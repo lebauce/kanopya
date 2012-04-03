@@ -20,6 +20,14 @@
         <td class="label">File path:</td>
         <td><input type="text" cols="32" name="action_file_path" value="<%action.file_path%>"/></td>
     </tr>
+	<tr>
+        <td class="label">User message:</td>
+        <td><input type="text" cols="32" name="action_user_message" value="<%action.user_message%>"/></td>
+    </tr>
+	<tr>
+        <td class="label">Logout time:<td>
+        <td><input type="text" cols="32" name="action_logout_time" value="<%action.logout_time%>"/></td>
+    </tr>
 </table>
 <a class ="action" href="/architectures/extclusters/<%cluster_id%>/actions/<%action.id%>/delete">Delete this action</a>
 <br/>

@@ -54,27 +54,38 @@ sub getParams {
 
 sub setParams {
     my ($self,%args) = @_;
-    if(defined $args{ou_to}){
-        my $action_parameter = ActionParameter->find(
-            hash => {
-                action_parameter_action_id => $self->getAttr('name' => 'action_id'),
-                action_parameter_name => 'ou_to',
-            }
+	
+	while (my ($action_name, $action_value) = each(%args)) {
+		my $action_parameter = ActionParameter->find(
+			hash => {
+				action_parameter_action_id => $self->getAttr('name' => 'action_id'),
+				action_parameter_name => $action_name,
+			}
         );
-        $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{ou_to});
+        $action_parameter->setAttr(name => 'action_parameter_value', value=>$action_value);
         $action_parameter->save();
-    }
+	}
+    # if(defined $args{ou_to}){
+        # my $action_parameter = ActionParameter->find(
+            # hash => {
+                # action_parameter_action_id => $self->getAttr('name' => 'action_id'),
+                # action_parameter_name => 'ou_to',
+            # }
+        # );
+        # $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{ou_to});
+        # $action_parameter->save();
+    # }
 
-    if(defined $args{file_path}){
-        my $action_parameter = ActionParameter->find(
-            hash => {
-                action_parameter_action_id => $self->getAttr('name' => 'action_id'),
-                action_parameter_name => 'file_path',
-            }
-        );
-        $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{file_path});
-        $action_parameter->save();
-    }
+    # if(defined $args{file_path}){
+        # my $action_parameter = ActionParameter->find(
+            # hash => {
+                # action_parameter_action_id => $self->getAttr('name' => 'action_id'),
+                # action_parameter_name => 'file_path',
+            # }
+        # );
+        # $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{file_path});
+        # $action_parameter->save();
+    # }
     
 };
 

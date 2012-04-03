@@ -1873,6 +1873,7 @@ post '/extclusters/:extclusterid/actions/add' => sub {
         action_parameter_value     => param('action_ou_to'),
         action_parameter_action_id => $action->getAttr(name => 'action_id'), 
     );
+	
     
     ActionParameter->new(
         action_parameter_name  => 'file_path',
@@ -1880,6 +1881,18 @@ post '/extclusters/:extclusterid/actions/add' => sub {
         action_parameter_action_id => $action->getAttr(name => 'action_id'),
     );
     
+	ActionParameter->new(
+        action_parameter_name      => 'user_message',
+        action_parameter_value     => param('action_user_message'),
+        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
+    );
+	
+	ActionParameter->new(
+		action_parameter_name      => 'logout_time',
+		action_parameter_value     => param('action_logout_time'),
+		action_parameter_action_id => $action->getAttr(name => 'action_id'), 
+	);
+	
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
 
@@ -1935,10 +1948,12 @@ get '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
     my $action_inst = Action->get('id' => param('actionid'));
     my $param       = $action_inst->getParams();
     my $action = {
-        id        => param('actionid'),
-        name      => $action_inst->getAttr(name => 'action_name'),
-        ou_to     => $param->{ou_to},
-        file_path => $param->{file_path},
+        id				=> param('actionid'),
+        name			=> $action_inst->getAttr(name => 'action_name'),
+        ou_to			=> $param->{ou_to},
+        file_path		=> $param->{file_path},
+		user_message	=> $param->{user_message},
+		logout_time		=> $param->{logout_time},
     };
     
     template 'form_action', {
@@ -1956,8 +1971,10 @@ post '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
     );
     $action->save();
     $action->setParams(
-        'ou_to'     => param('action_ou_to'),
-        'file_path' => param('action_file_path'),
+        'ou_to'     	=> param('action_ou_to'),
+        'file_path' 	=> param('action_file_path'),
+		'user_message'	=> param->{'user_message'},
+		'logout_time'	=> param->{'logout_time'},
     );
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
