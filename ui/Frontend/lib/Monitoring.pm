@@ -1973,8 +1973,8 @@ post '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
     $action->setParams(
         'ou_to'     	=> param('action_ou_to'),
         'file_path' 	=> param('action_file_path'),
-		'user_message'	=> param->{'user_message'},
-		'logout_time'	=> param->{'logout_time'},
+		'user_message'	=> param('action_user_message'),
+		'logout_time'	=> param('action_logout_time'),
     );
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
