@@ -313,38 +313,47 @@ sub _generateNetConf {
     my $template = Template->new($config);
     my $input = "network_interfaces.tt";
 
-    # TODO: Get ALL network interface !
-    # TODO: Manage virtual IP for master node
+    my @cluster_interfaces = ();
+    my @host_ifaces = $self->{_objs}->{host}->getIfaces();
     my @interfaces = ();
-    my $ip = $self->{_objs}->{host}->getInternalIP();
-    my %model = $self->{_objs}->{host}->getModel();
-
-    my $need_bridge = 0;
-    my $components = $self->{_objs}->{components};
-    while (my ($id, $component) = each %$components) {
-        $log->debug(ref($component) . " need_bridge: " . $component->needBridge());
-        if ($component->needBridge()) {
-            $need_bridge = 1;
-            last;
-        }
+    
+    foreach my $iface (@host_ifaces) {
+        next if $iface->{iface_pxe} eq "1";
+        #~ my $iface = {
+            #~ name    => $iface->{iface_name},
+            #~ address => $ip->{ipv4_internal_address},
+            #~ netmask => $ip->{ipv4_internal_mask}
+        #~ }; 
+        #~ push(@interfaces, $iface);
     }
+    
+    #my $ip = $self->{_objs}->{host}->getInternalIP();
+    #my %model = $self->{_objs}->{host}->getModel();
 
-    my $iface = {
-        name    => 'eth0',
-        address => $ip->{ipv4_internal_address},
-        netmask => $ip->{ipv4_internal_mask}
-    };
+    #~ my $need_bridge = 0;
+    #~ my $components = $self->{_objs}->{components};
+    #~ while (my ($id, $component) = each %$components) {
+        #~ $log->debug(ref($component) . " need_bridge: " . $component->needBridge());
+        #~ if ($component->needBridge()) {
+            #~ $need_bridge = 1;
+            #~ last;
+        #~ }
+    #~ }
 
-    if($need_bridge) {
-        $iface->{name}           = 'br0';
-        $iface->{bridge_ports}   = 'eth0';
-        $iface->{bridge_stp}     = 'off';
-        $iface->{bridge}         = 1;
-        $iface->{bridge_fd}      = 2;
-        $iface->{bridge_maxwait} = 0;
-    }
+    
 
-    push(@interfaces, $iface);
+
+
+    #~ if($need_bridge) {
+        #~ $iface->{name}           = 'br0';
+        #~ $iface->{bridge_ports}   = 'eth0';
+        #~ $iface->{bridge_stp}     = 'off';
+        #~ $iface->{bridge}         = 1;
+        #~ $iface->{bridge_fd}      = 2;
+        #~ $iface->{bridge_maxwait} = 0;
+    #~ }
+
+    
 
     if (not $self->{_objs}->{cluster}->getMasterNodeId()) {
         my $i = 1;
