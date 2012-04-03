@@ -1223,7 +1223,7 @@ CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `nodemetric_rule_state` char(32) NOT NULL ,
-  `nodemetric_rule_action_id` int(8) unsigned NOT NULL,
+  `nodemetric_rule_action_id` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_description` TEXT,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
