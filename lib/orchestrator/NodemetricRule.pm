@@ -123,12 +123,12 @@ sub triggerAction{
             #TODO : add the disabling in trigger() function
             $extcluster->updateNodeState(hostname => param('hostname'), state => 'disabled');
             
-            print 'Action '.param('action_id').' triggered on node '.param('hostname')
+            print 'Action '.$action_id.' triggered on node '.$node_hostname
             ."\n file $path created"
-            ."\n node ".param('hostname')."disabled";
+            ."\n node ".$node_hostname." disabled";
         1;
         } or do {
-            print 'Error triggering action '.param('action_id').' on node '.param('hostname')."\n $@";
+            print 'Error triggering action '.$action_id.' on node '.$node_hostname."\n $@";
         }
     }
 }
