@@ -19,9 +19,11 @@ use base "EEntity::EHostManager";
 
 use strict;
 use warnings;
+
 use General;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use DecisionMaker::HostSelector;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -36,8 +38,8 @@ sub startHost {
     $ucs->init();
     my $blade = $ucs->{api}->get(dn      => $args{host}->getAttr(name => "host_serial_number"),
                                  classId => "computeBlade");
-    my $sp = $blade->{assignedToDn};
-    $ucs->start_service_profile(dn => $sp);
+    my $sp = $ucs->{api}->get(dn => $blade->{assignedToDn});
+    $sp->start();
 }
 
 sub stopHost {
@@ -50,8 +52,8 @@ sub stopHost {
     $ucs->init();
     my $blade = $ucs->{api}->get(dn      => $args{host}->getAttr(name => "host_serial_number"),
                                  classId => "computeBlade");
-    my $sp = $blade->{assignedToDn};
-    $ucs->stop_service_profile(dn => $sp);
+    my $sp = $ucs->{api}->get(dn => $blade->{assignedToDn});
+    $sp->stop();
 }
 
 sub postStart {
@@ -73,27 +75,57 @@ sub getFreeHost {
         delete $args{ram_unit};
     }
 
-    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
-
     my $ucs = $self->_getEntity();
     $ucs->init();
+
     my $ou = $ucs->{ucs}->getAttr(name => "ucs_ou");
 
     # Get all free hosts of the specified host manager
-    my @hosts = $self->_getEntity()->getFreeHosts();
-    my $free_hosts = ();
+    my @free_hosts = $self->_getEntity()->getFreeHosts();
+
+    # Filter the one that match the contraints
+    my @hosts = grep {
+                    DecisionMaker::HostSelector->_matchHostConstraints(host => $_, %args)
+                } @free_hosts;
 
     for my $host (@hosts) {
         my $blade = $ucs->{api}->get(dn      => $host->getAttr(name => "host_serial_number"),
                                      classId => "computeBlade");
-        my $sp = $blade->{assignedToDn};
 
-        if ($blade->{dn} ne "sys/chassis-1/blade-5") {
-            push @{$free_hosts}, $host;
+        # Get a blade with no service profile assigned to it
+        if (defined ($blade->{assignedToDn}) and $blade->{assignedToDn} eq "") {
+            # Create a new service for the blade
+            my @splitted = split(/\//, $blade->{dn});
+            my $name = $splitted[-1];
+            my $tmpl = $ucs->{api}->get(dn => $ou . "/ls-" . $args{service_profile_template_id});
+            my $sp = $tmpl->instantiate_service_profile(name      => "kanopya-" . $name,
+                                                        targetOrg => $ou);
+
+            $sp->unbind();
+
+            # Associate the new service profile to the blade
+            $sp->associate(blade => $blade->{dn});
+
+            $log->info("Waiting for blade to be associated");
+            do {
+                sleep 5;
+                $sp = $ucs->{api}->get(dn => $sp->{dn});
+                $log->info($sp->{dn} . " " . $sp->{assocState});
+            } while ($sp->{assocState} ne "associated");
+
+            my @ethernets = $sp->children("vnicEther");
+            my $ethernet = $ethernets[0];
+
+            $log->info("Filling host MAC field with " . $ethernet->{addr});
+            $host->setAttr(name  => "host_mac_address",
+                           value => $ethernet->{addr});
+            $host->save();
+
+            return $host;
         }
     }
 
-    return DecisionMaker::HostSelector->getHost(%args);
+    throw Kanopya::Exception::Internal(error => "No blade without a service profile attached were found");
 }
 
 1;
