@@ -49,26 +49,30 @@ B<throws>  :
 =cut
 
 use constant ATTR_DEF => {
-	cluster_id        =>  { pattern        => '^\d*$',
-                            is_mandatory   => 0,
-                            is_extended    => 0,
-                            is_editable    => 0
-                          },
-    component_type_id => { pattern        => '^\d*$',
-                           is_mandatory   => 1,
-                           is_extended    => 0,
-                           is_editable    => 0
-                         },
-    tier_id           => { pattern        => '^\d*$',
-                           is_mandatory   => 0,
-                           is_extended    => 0,
-                           is_editable    => 0
-                         },
-    component_template_id => { pattern        => '^\d*$',
-                               is_mandatory   => 0,
-                               is_extended    => 0,
-                               is_editable    => 0
-                             },
+    service_provider_id => {
+        pattern        => '^\d*$',
+        is_mandatory   => 0,
+        is_extended    => 0,
+        is_editable    => 0
+    },
+    component_type_id => {
+        pattern        => '^\d*$',
+        is_mandatory   => 1,
+        is_extended    => 0,
+        is_editable    => 0
+    },
+    tier_id => {
+        pattern        => '^\d*$',
+        is_mandatory   => 0,
+        is_extended    => 0,
+        is_editable    => 0
+    },
+    component_template_id => {
+        pattern        => '^\d*$',
+        is_mandatory   => 0,
+        is_extended    => 0,
+        is_editable    => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -77,64 +81,38 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-	# avoid abstract Entity::Component instanciation
-	if($class !~ /Entity::Component::(.+)(\d+)/) {
-		$errmsg = "Entity::Component->new : Entity::Component must not be instanciated without a concret component class";
+    # avoid abstract Entity::Component instanciation
+    if ($class !~ /Entity::Component::(.+)(\d+)/) {
+        $errmsg = "Entity::Component->new : Entity::Component must not " .
+                  "be instanciated without a concret component class";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
-	}
-	my $component_name    = $1;
-	my $component_version = $2;
+    }
 
-	# set base configuration if not passed to this constructor
-	my $config;
-	if(not %args) {
-		$config = $class->getBaseConfiguration();
-	} else {
-		$config = \%args;
-	}
+    my $component_name    = $1;
+    my $component_version = $2;
 
-	
-	
+    # set base configuration if not passed to this constructor
+    my $config = (%args) ? \%args : $class->getBaseConfiguration();
     my $template_id = undef;
-    if(exists $args{component_template_id} and defined $args{component_template_id}) {
+    if (exists $args{component_template_id} and defined $args{component_template_id}) {
         $template_id = $args{component_template_id};
     }
 
-	# we set the corresponding component_type
-	my $admin = Administrator->new();
-	my $component_type_id = $admin->{db}->resultset('ComponentType')->search(
-		{ component_name    => $component_name,
-		  component_version => $component_version
-		}
-	)->single->id;
-		               
-	$config->{component_type_id} = $component_type_id;
-	
-		
-#~ 
-    #~ # Check if component_template_id correspond to component_id
-    #~ if(defined $template_id) {
-        #~ my $row = $admin->{db}->resultset('ComponentTemplate')->find($template_id);
-        #~ if(not defined $row) {
-            #~ $errmsg = "Entity::Component->new : component_template_id does not exist";
-            #~ $log->error($errmsg);
-            #~ throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        #~ }
-        #~ elsif($row->get_column('component_id') != $args{component_id}) {
-            #~ $errmsg = "Entity::Component->new : component_template_id does not belongs to component specified by component_id";
-            #~ $log->error($errmsg);
-            #~ throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        #~ }
-    #~ }
+    # we set the corresponding component_type
+    my $admin = Administrator->new();
+    my $component_type_id = $admin->{db}->resultset('ComponentType')->search( {
+                                component_name    => $component_name,
+		                component_version => $component_version
+                            })->single->id;
 
+    $config->{component_type_id} = $component_type_id;
     my $self = $class->SUPER::new(%$config);
-
     bless $self, $class;
     return $self;
 }
 
-sub getComponentId{
+sub getComponentId {
     my $class = shift;
     my %args = @_;
 
@@ -160,23 +138,23 @@ sub getInstance {
 
     my $adm = Administrator->new();
 
-    # Retreive the component type.
+    # Retrieve the component type.
     my $component = $adm->{db}->resultset('Component')->find($args{id});
     my $comp_name = $component->component_type->get_column('component_name');
     my $comp_version = $component->component_type->get_column('component_version'); 
     my $comp_class = $class .'::'. $comp_name.$comp_version;
-	my $location = General::getLocFromClass(entityclass => $comp_class);
-	eval { require $location; };
+    my $location = General::getLocFromClass(entityclass => $comp_class);
+    eval { require $location; };
+
     return $comp_class->get(id => $args{id});
 }
 
 sub getComponents {
     my $class = shift;
-
     my $adm = Administrator->new();
-
     my $components = $adm->{db}->resultset('ComponentType')->search();
     my $list = [];
+
     while(my $c = $components->next) {
         my $tmp = {};
         $tmp->{component_type_id}  = $c->get_column('component_type_id');
@@ -185,30 +163,34 @@ sub getComponents {
         $tmp->{component_category} = $c->get_column('component_category');
         push(@$list, $tmp);
     }
+
     return $list;
 }
 
 sub getComponentsByCategory {
     my $class = shift;
-
     my $adm = Administrator->new();
-
-    my $components = $adm->{db}->resultset('ComponentType')->search({}, 
-        { order_by => { -asc => [qw/component_category component_name component_version/]}});
-
     my $list = [];
     my $currentindex = -1;
     my $currentcategory = '';
+    my $components = $adm->{db}->resultset('ComponentType')->search({ }, {
+                         order_by => {
+                                 -asc => [qw/component_category component_name component_version/]
+                         } });
+
     while(my $c = $components->next) {
         my $category = $c->get_column('component_category');
-        my $tmp = { name => $c->get_column('component_name'), version => $c->get_column('component_version')};
-        if($currentcategory ne $category) {
+        my $tmp = { name => $c->get_column('component_name'),
+                    version => $c->get_column('component_version') };
+        if ($currentcategory ne $category) {
             $currentcategory = $category;
             $currentindex++;
-            $list->[$currentindex] = {category => "$category", components => []};
+            $list->[$currentindex] = { category => "$category",
+                                       components => [] };
         }
         push @{$list->[$currentindex]->{components}}, $tmp;
     }
+
     return $list;
 }
 
@@ -225,11 +207,10 @@ B<throws>  : None
 
 sub getTemplateDirectory {
     my $self = shift;
-	my $template_id = $self->getAttr(name => 'component_template_id'); 
-    if( defined $template_id ) {
+    my $template_id = $self->getAttr(name => 'component_template_id'); 
+
+    if (defined $template_id) {
         return $self->{_dbix}->parent->component_template->get_column('component_template_directory');
-    } else {
-        return;
     }
 }
 

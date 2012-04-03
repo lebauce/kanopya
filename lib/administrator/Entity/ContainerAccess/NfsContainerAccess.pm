@@ -48,17 +48,6 @@ sub getContainerAccess {
                          );
 
     return $export_manager->getContainerAccess(container_access => $self);
-
-=comment
-    # return $nfsd3->getContainerAccess(container_access_export  => $self->{_dbix}->get_column('export_path'),
-
-    return {
-        # container_access_export  => $self->{_dbix}->get_column('export_path'),
-        container_access_export  => $nfsd3->getMountDir(device => $export_rs->get_column('nfsd3_export_path'));
-        container_access_ip      => '10.0.0.1',
-        container_access_port    => 2049
-    };
-=cut
 }
 
 sub getClients {
