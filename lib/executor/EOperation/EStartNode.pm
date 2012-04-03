@@ -395,8 +395,9 @@ sub _generateBootConf {
     my $boot_policy = $self->{_objs}->{cluster}->getAttr(name => 'cluster_boot_policy');
 
     if ($boot_policy =~ m/PXE/) {
-        $self->_generatePXEConf(cluster => $self->{_objs}->{cluster},
-                                host    => $self->{_objs}->{host});
+        $self->_generatePXEConf(cluster    => $self->{_objs}->{cluster},
+                                host       => $self->{_objs}->{host},
+                                mountpoint => $args{mountpoint});
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{_objs}->{container_access}->getAttr(name => 'container_access_export');
@@ -499,14 +500,19 @@ sub _generatePXEConf {
     my %args = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ "cluster", "host" ]);
+                         required => ['cluster', 'host', 'mountpoint']);
 
     my $cluster_kernel_id = $args{cluster}->getAttr(name => "kernel_id");
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->getAttr(name => "kernel_id");
 
+    my $clustername = $args{cluster}->getAttr(name => 'cluster_name');
+    my $hostname = $args{host}->getAttr(name => 'host_hostname'); 
+
     my $kernel_version   = Entity::Kernel->get(id => $kernel_id)->getAttr(name => 'kernel_version');
     my $container_access = $self->{_objs}->{container_access};
     my $boot_policy      = $args{cluster}->getAttr(name => 'cluster_boot_policy');
+    
+    my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {
@@ -514,6 +520,32 @@ sub _generatePXEConf {
                      $container_access->getAttr(name => 'container_access_export');
     }
 
+    ## Here we create a dedicated initramfs for the node
+    # create the storing directory
+    my $path = $tftp_conf->{'repository'}."/$clustername/$hostname";
+    my $cmd = "mkdir -p $path";
+    $self->{executor}->{econtext}->execute(command => $cmd);
+    
+    # make a decompressed copy of the initrd to this directory
+    my $initrd = $tftp_conf->{'repository'}."/initrd_$kernel_version";
+    my $newinitrd = $path."/initrd_$kernel_version";
+    $cmd = "bzcat $initrd > $newinitrd";
+    $self->{executor}->{econtext}->execute(command => $cmd);
+    
+    # append files to the cpio archive
+    $cmd = 'cd '.$args{mountpoint};
+    $cmd .= ' && find . -name 70-persistent-net.rules';
+    $cmd .= " | cpio -o -O $newinitrd -A -H newc";
+    $cmd .= ' && cd -';
+    $self->{executor}->{econtext}->execute(command => $cmd);
+    
+    # recompress the initrd in bz2
+    $cmd = "bzip2 $newinitrd && mv $newinitrd.bz2 $newinitrd";
+    $self->{executor}->{econtext}->execute(command => $cmd);
+    
+    
+    ## here we generate pxelinux.cfg for the host
+    
     my $rand    = new String::Random;
     my $tmpfile = $rand->randpattern("cccccccc");
 
@@ -524,9 +556,9 @@ sub _generatePXEConf {
     my $vars = {
         nfsroot    => ($boot_policy =~ m/NFS/) ? 1 : 0,
         iscsiroot  => ($boot_policy =~ m/ISCSI/) ? 1 : 0,
-        xenkernel  => 0,#($kernel_version =~ m/xen/) ? 1 : 0,
+        xenkernel  => ($kernel_version =~ m/xen/) ? 1 : 0,
         kernelfile => "vmlinuz-$kernel_version",
-        initrdfile => "initrd_$kernel_version",
+        initrdfile => "$clustername/$hostname/initrd_$kernel_version",
         nfsexport  => $nfsexport,
     };
 
@@ -537,12 +569,12 @@ sub _generatePXEConf {
     
     my $node_mac_addr = $args{host}->getAttr(name => 'host_mac_address');
     $node_mac_addr =~ s/:/-/g;
-
-    my $tftp_conf = $self->{_objs}->{component_tftpd}->_getEntity()->getConf();
+    
     my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . $node_mac_addr;
 
     $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
+   
 }
 
 sub _generateKanopyaHalt{
