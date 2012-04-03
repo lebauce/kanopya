@@ -459,9 +459,10 @@ sub _evalRule {
             print "Node $host_name has just been disabled, rule not evaluated\n"; 
             next NODE;
         } else {
-            my $nodeEval = $rule->evalOnOneNode(
+            $nodeEval = $rule->evalOnOneNode(
                 monitored_values_for_one_node => $monitored_values_for_one_node
             );
+            
         }
         
         if(defined $nodeEval){
