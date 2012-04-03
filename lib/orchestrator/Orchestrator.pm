@@ -475,6 +475,8 @@ sub _evalRule {
                     cluster_id => $cluster_id,
                     state      => 'verified'
                 );
+                $rule->triggerAction();
+                
             }
         }else{
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name.' UNDEF'."\n";
