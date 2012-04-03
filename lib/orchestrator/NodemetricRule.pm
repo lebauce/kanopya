@@ -20,6 +20,7 @@ use Data::Dumper;
 use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use List::MoreUtils qw {any} ;
+use Action;
 use Switch;
 # logger
 use Log::Log4perl "get_logger";
@@ -98,7 +99,39 @@ sub setUndefForEachNode{
     }
 }
 
-
+sub triggerAction{
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['node_hostname']);
+    
+    my $node_hostname = $args{node_hostname};
+    
+    my $action_id = $self->getAttr('nodemetric_rule_action_id');
+    #IF the rule has a configured action to trigger
+    if($action_id){
+        eval{
+            #get the action
+            my $action = Action->get('id' => $action_id);
+            #trigger it
+            my $action_triggered = ActionTriggered->new(
+                action_triggered_action_id => $action_id,
+                action_triggered_hostname  => $node_hostname, 
+            );
+            my $path = $action->trigger();
+            
+            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => param('extclusterid'));
+            #disable corresponding node
+            #TODO : add the disabling in trigger() function
+            $extcluster->updateNodeState(hostname => param('hostname'), state => 'disabled');
+            
+            print 'Action '.param('action_id').' triggered on node '.param('hostname')
+            ."\n file $path created"
+            ."\n node ".param('hostname')."disabled";
+        1;
+        } or do {
+            print 'Error triggering action '.param('action_id').' on node '.param('hostname')."\n $@";
+        }
+    }
+}
 
 sub toString{
     my $self = shift;
