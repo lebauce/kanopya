@@ -21,6 +21,7 @@ use NodemetricCondition;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use List::MoreUtils qw {any} ;
 use Action;
+use ActionTriggered;
 use Switch;
 # logger
 use Log::Log4perl "get_logger";
