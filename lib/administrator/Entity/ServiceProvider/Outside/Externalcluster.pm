@@ -817,7 +817,7 @@ sub generateNodeMetricRules{
             nodemetric_rule_label               => $creation_conf->{$indicator_oid}->{rule_label},
             nodemetric_rule_description         => $creation_conf->{$indicator_oid}->{rule_description},
             nodemetric_rule_state               => 'enabled',
-            nodemetric_rule_action_id           => undef,
+#            nodemetric_rule_action_id           => undef,
             nodemetric_rule_service_provider_id => $extcluster_id,
         };
         my $rule = NodemetricRule->new(%$prule);
