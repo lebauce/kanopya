@@ -252,11 +252,25 @@ B<throws>  : None
 sub getComponentAttr {
     my $self = shift;
     my $componentAttr = {};
+
     $componentAttr->{component_name}     = $self->{_dbix}->parent->component_type->get_column('component_name');
     $componentAttr->{component_type_id}  = $self->{_dbix}->parent->component_type->get_column('component_type_id');
     $componentAttr->{component_version}  = $self->{_dbix}->parent->component_type->get_column('component_version');
     $componentAttr->{component_category} = $self->{_dbix}->parent->component_type->get_column('component_category');
+
     return $componentAttr;
+}
+
+=head2 getServiceProvider
+
+    Desc: Returns the service provider the component is on
+
+=cut
+
+sub getServiceProvider {
+    my $self = shift;
+
+    return Entity->get(id => $self->getAttr(name => "service_provider_id"));
 }
 
 =head2 toString
