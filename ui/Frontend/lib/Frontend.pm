@@ -3,7 +3,6 @@ package Frontend;
 use Dancer;
 use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
-
 use Login;
 use Dashboard;
 use Components;
@@ -27,6 +26,7 @@ use Poolip;
 use UnifiedComputingSystem;
 use Connectors;
 use Netapp;
+
 use Log::Log4perl;
 
 our $VERSION = '0.1';
@@ -76,16 +76,9 @@ get '/permission_denied' => sub {
     template 'permission_denied';
 };
 
-get '/error_500' => sub {
-    set log => "debug";
-    set show_errors => 1;
-    my $trace = Devel::StackTrace->new;
-    my $message = $trace->as_string;
-    template 'error_500',{
-        message => $message
-    };
+hook 'before_error_init' => sub {  
+    set error_template => '/error_500.tt';   
 };
-
 
 any qr{.*} => sub {
     status 'not_found';
@@ -93,3 +86,4 @@ any qr{.*} => sub {
 };
 
 true;
+

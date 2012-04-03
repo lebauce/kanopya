@@ -1,4 +1,7 @@
 <p><b>"Ooops, an error has occured"</b></p>
-<p>Error 500</p>
-<p>Internal Server Error</p>
-<textarea cols="145" rows="39" readonly="true" id="log_container" ><% message %> </textarea>
+<p>TITLE: <% title %><p>
+<p>EXCEPTION: <% exception %><p>
+<p>MESSAGE:</p>
+<div style="width:100%;text-align:center;"><textarea style="width:98%;height:80%;" id="log_container"><% message %></textarea></div>
+
+
