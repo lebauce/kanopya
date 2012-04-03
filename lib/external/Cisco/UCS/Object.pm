@@ -14,7 +14,8 @@
 
 package Cisco::UCS::Object;
 
-use Cisco::UCS;
+use warnings;
+use strict;
 
 sub new {
     my $class = shift;
@@ -22,11 +23,27 @@ sub new {
 
     my $hash = $args{hash};
     my %old = %{$args{hash}};
+    my $classId = $args{classId};
+
     $hash->{old} = \%old;
     $hash->{ucs} = $args{ucs};
-    $hash->{classId} = $args{classId};
+    $hash->{classId} = $classId;
 
-    bless $hash;
+    if ($classId eq "lsServer") {
+        if ($hash->{type} eq "updating-template") {
+            bless $hash, "Cisco::UCS::ServiceProfileTemplate";
+        }
+        else {
+            bless $hash, "Cisco::UCS::ServiceProfile";
+        }
+    }
+    elsif ($classId eq "fabricVlan") {
+        bless $hash, "Cisco::UCS::VLAN";
+    }
+    else {
+        bless $hash;
+    }
+
     return $hash;
 }
 
@@ -49,13 +66,15 @@ sub delete {
 }
 
 sub update {
-	my ($self, %args) = @_; 
+    my ($self, %args) = @_; 
 
     my %old = %{$self->{old}};
     my %updated = ();
 
-    foreach my $key (keys %old) {
-        if (not ($self->{$key} eq $self->{old}{$key})) {
+    foreach my $key (keys %{$self}) {
+        if (($key ne "old") and
+            (not defined $self->{old}{$key}) or
+            (not ($self->{$key} eq $self->{old}{$key}))) {
             $updated{$key} = $self->{$key};
         }
     }

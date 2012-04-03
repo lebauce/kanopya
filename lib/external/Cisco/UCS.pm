@@ -9,13 +9,15 @@ use Carp qw(croak carp);
 use Exporter;
 
 use Cisco::UCS::Object;
+use Cisco::UCS::ServiceProfile;
+use Cisco::UCS::ServiceProfileTemplate;
 
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 @ISA               	= qw(Exporter);
 our $VERSION		= '0.031';
 
-my $debug_xmlrpc = 0;
+my $debug_xmlrpc = 1;
 
 =head1 NAME
 
@@ -791,11 +793,22 @@ sub get_service_profile_templates {
 
 	my @templates = ();
 
-	if (defined $xml->{outConfigs}->{pair}) {
+	if (ref($xml->{outConfigs}->{pair}) eq "ARRAY") {
 		my @pairs = @{$xml->{outConfigs}->{pair}};
 		for my $pair (@pairs) {
-			push @templates, $pair->{lsServer};
+			push @templates, Cisco::UCS::ServiceProfileTemplate->new(
+		                             hash    => $pair->{lsServer},
+		                             classId => "lsServer",
+		                             ucs     => $self
+		                         );
 		}
+	}
+	else {
+		push @templates, Cisco::UCS::ServiceProfileTemplate->new(
+		                     hash    => $xml->{outConfigs}->{pair}->{lsServer},
+		                     classId => "lsServer",
+		                     ucs     => $self
+		                 );
 	}
 
 	return @templates;
@@ -939,7 +952,7 @@ sub instantiate_template {
 	if (defined $args{count} and
 	    defined $args{prefix}) {
 		$param = "inNumberOf=$args{count} " .
-	             "inServerNamePrefixOrEmpty=$args{prefix} ";
+		         "inServerNamePrefixOrEmpty=$args{prefix} ";
 	}
 
 	my $xml	= $self->_ucsm_request('<lsInstantiateTemplate '.
@@ -950,7 +963,12 @@ sub instantiate_template {
 	          'inHierarchical="yes"' .
 	          $param .
 	          '>' .
-	          '</lsInstantiateTemplate>', 'classId') or return;
+	          '</lsInstantiateTemplate>', 'classId');
+
+	my @objs = $self->map_objects(objects => $xml->{outConfig},
+	                              classId => "lsServer");
+	bless $objs[0], "Cisco::UCS::ServiceProfile";
+	return $objs[0];
 }
 
 sub set_service_profile_template {
@@ -985,20 +1003,23 @@ sub put {
 	my $classId = $args{classId};
 	delete $args{classId};
 	delete $args{ucs};
+        delete $args{old};
 
-	my $request = '<configConfMo cookie="' . $self->{cookie} . '" inHierarchical="false">' .
-	              '<inConfig>' .
-	              '<' . $classId;
+	my $request = '<configConfMo cookie="' . $self->{cookie} .
+                      '" inHierarchical="false">' . '<inConfig>';
 
-	my ($key, $value);
-	while (($key, $value) = each %args) {
-		if (not ($key =~ /^oper/)) {
-			$request .= ' ' . $key . '="' . $value . '"';
-        }
-    }
+	# $request .= '<' . $classId;
+	# my ($key, $value);
+	# while (($key, $value) = each %args) {
+	# 	if (not ($key =~ /^oper/)) {
+	# 		$request .= ' ' . $key . '="' . $value . '"';
+	# 	}
+	# }
+	# $request .= '></' . $classId . '>';
 
-	$request .= '></' . $classId . '>' .
-	            '</inConfig>' .
+	$request .= XMLout(\%args, RootName => $classId);
+
+	$request .= '</inConfig>' .
 	            '</configConfMo>';
 
 	my @objs = $self->map_objects(objects => $self->_ucsm_request($request)->{outConfig},
@@ -1010,25 +1031,25 @@ sub put {
 sub update {
 	my ($self, %args) = @_;
 
-    $self->create(%args);
+	$self->create(%args);
 }
 
 sub create {
 	my ($self, %args) = @_;
 
-    $self->put(%args);
+	$self->put(%args);
 }
 
 sub get {
 	my ($self, %args) = @_;
 
-    my $xml = $self->resolve_dn(dn => $args{dn});
-    my @keys = keys %{$xml->{outConfig}};
-    my $classId = $keys[0];
+	my $xml = $self->resolve_dn(dn => $args{dn});
+	my @keys = keys %{$xml->{outConfig}};
+	my $classId = $keys[0];
 
-    return Cisco::UCS::Object->new(hash    => $xml->{outConfig}->{$classId},
-                                   classId => $classId,
-                                   ucs     => $self);
+	return Cisco::UCS::Object->new(hash    => $xml->{outConfig}->{$classId},
+	                               classId => $classId,
+	                               ucs     => $self);
 }
 
 =head3 get_interconnects
