@@ -419,9 +419,9 @@ sub _evalAllRules {
    foreach my $rule (@$rules){
        eval{
            $rep += $self->_evalRule(
-               'rule'              =>$rule,
+               'rule'             =>$rule,
                'monitored_values' => $monitored_values,
-               'cluster'       => $cluster,
+               'cluster'          => $cluster,
            );
            1;
        } or do {
@@ -453,10 +453,16 @@ sub _evalRule {
 #            next NODE;
 #        }
 #        $cluster->updateNodeState( hostname => $host_name, state => 'up' );
-
-        my $nodeEval = $rule->evalOnOneNode(
-            monitored_values_for_one_node => $monitored_values_for_one_node
-        );
+        my $node_state = $cluster->getNodeState(hostname => $host_name);
+        my $nodeEval;
+        if($node_state eq 'disabled'){
+            print "Node $host_name has just been disabled, rule not evaluated\n"; 
+            next NODE;
+        } else {
+            my $nodeEval = $rule->evalOnOneNode(
+                monitored_values_for_one_node => $monitored_values_for_one_node
+            );
+        }
         
         if(defined $nodeEval){
             #print 'RULE '.$rule->getAttr(name => 'nodemetric_rule_id').' ON HOST '.$host_name;
