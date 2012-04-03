@@ -105,7 +105,7 @@ sub triggerAction{
     
     my $node_hostname = $args{node_hostname};
     
-    my $action_id = $self->getAttr('nodemetric_rule_action_id');
+    my $action_id = $self->getAttr(name => 'nodemetric_rule_action_id');
     #IF the rule has a configured action to trigger
     if($action_id){
         eval{
