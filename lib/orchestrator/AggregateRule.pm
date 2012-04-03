@@ -275,12 +275,10 @@ sub checkFormula {
     
     my $formula = (\%args)->{formula};
     
-    
     my @array = split(/(id\d+)/,$formula);;
 
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if( $element =~ m/id\d+/){
             if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
                 return {
                     value     => '0',

@@ -117,12 +117,13 @@ sub triggerAction{
                 action_triggered_action_id => $action_id,
                 action_triggered_hostname  => $node_hostname, 
             );
-            my $path = $action->trigger();
+            my $path = $action_triggered->trigger();
             
-            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => param('extclusterid'));
+            my $cluster_id = $self->getAttr('name' => 'nodemetric_rule_service_provider_id');
+            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
             #disable corresponding node
             #TODO : add the disabling in trigger() function
-            $extcluster->updateNodeState(hostname => param('hostname'), state => 'disabled');
+            $extcluster->updateNodeState(hostname => $node_hostname, state => 'disabled');
             
             print 'Action '.$action_id.' triggered on node '.$node_hostname
             ."\n file $path created"
