@@ -141,6 +141,19 @@ sub getNode {
     return $repNode;
 }
 
+sub getNodeId {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['hostname']);
+    my $repNode;
+    my $node = $self->{_dbix}->parent->externalnodes->find({
+        externalnode_hostname   => $args{hostname},
+    });
+    
+    return $node->get_column('externalnode_id');
+}
+
 sub updateNodeState {
     my $self = shift;
     my %args = @_;
