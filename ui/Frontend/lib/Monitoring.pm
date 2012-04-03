@@ -1523,11 +1523,13 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules' => sub {
 
 get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
     
-    my $cluster_id   = params->{extclusterid} || 0;
+    my $cluster_id   = params->{extclusterid};
     my $cluster      = Entity::ServiceProvider::Outside::Externalcluster->get('id'=>$cluster_id);
     my $cluster_name = $cluster->getAttr(name => 'externalcluster_name');
     
-    my @conditions = NodemetricCondition->search(hash=>{});
+    my @conditions = NodemetricCondition->search(hash=>{
+        nodemetric_condition_service_provider_id => $cluster_id
+    });
     my @condition_params;
     foreach my $condition (@conditions){
         my $hash = {
@@ -1537,11 +1539,25 @@ get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
             push @condition_params, $hash;
     }
     
+    my @action_insts = Action->search(hash=>{
+        action_service_provider_id => $cluster_id
+    });
+    my @actions;
+    foreach my $action_inst (@action_insts){
+        my $hash = {
+            id           => $action_inst->getAttr(name => 'action_id'),
+            label        => $action_inst->getAttr(name => 'action_name'),
+        };
+            push @actions, $hash;
+    }
+
+    
     template 'clustermetric_rules_details', {
         title_page    => "Rule creation",
         cluster_id    => $cluster_id,
-        cluster_name  => $cluster_name,    
+        cluster_name  => $cluster_name,
         conditions    => \@condition_params,
+        actions       => \@actions,
     }, { layout => 'main' };
 };
 
@@ -1577,7 +1593,9 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/details' 
     
     my @conditions;
 
-    my @condition_insts = NodemetricCondition->search(hash => {});
+    my @condition_insts = NodemetricCondition->search(hash => {
+        nodemetric_condition_service_provider_id => $cluster_id
+    });
     
     foreach my $condition_inst (@condition_insts){
         my $hash = {
@@ -1586,6 +1604,20 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/details' 
         };
         
         push @conditions, $hash;
+    }
+    
+
+    
+    my @action_insts = Action->search(hash=>{
+        action_service_provider_id => $cluster_id
+    });
+    my @actions;
+    foreach my $action_inst (@action_insts){
+        my $hash = {
+            id           => $action_inst->getAttr(name => 'action_id'),
+            label        => $action_inst->getAttr(name => 'action_name'),
+        };
+            push @actions, $hash;
     }
     
     my $rule_param = {
@@ -1605,6 +1637,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/details' 
         cluster_name  => $cluster_name,
         rule          => $rule_param,
         conditions    => \@conditions,
+        actions       => \@actions,
     }, { layout => 'main' };
 };
 
@@ -1618,7 +1651,9 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
     
     my @conditions;
 
-    my @condition_insts = NodemetricCondition->search(hash => {});
+    my @condition_insts = NodemetricCondition->search(hash => {
+        nodemetric_condition_service_provider_id => $cluster_id
+    });
     
     foreach my $condition_inst (@condition_insts){
         my $hash = {
@@ -1638,24 +1673,46 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
         action_id   => $rule->getAttr('name' => 'nodemetric_rule_action_id'),
         description => $rule->getAttr('name' => 'nodemetric_rule_description'),
     };
-    
+
+    my @action_insts = Action->search(hash=>{
+        action_service_provider_id => $cluster_id
+    });
+    my @actions;
+    foreach my $action_inst (@action_insts){
+        my $hash = {
+            id           => $action_inst->getAttr(name => 'action_id'),
+            label        => $action_inst->getAttr(name => 'action_name'),
+        };
+            push @actions, $hash;
+    }
+
     template 'clustermetric_rules_details', {
         title_page    => "Rule details",
         cluster_id    => $cluster_id,
         cluster_name  => $cluster_name,
         rule          => $rule_param,
         conditions    => \@conditions,
-    }, { layout => 'main' };
+        actions       => \@actions,
+            }, { layout => 'main' };
 };
 
 post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
     my $rule    = NodemetricRule->get('id' => param('ruleid'));
     my $checker = $rule->checkFormula(formula => param('formula'));
     
+    
+    
+    my $action  = param('action');
+    if ($action eq '') {$action = undef;}
+    
+    my $label  = param('label');
+    if ($label eq '') {$label = undef;}
+
+    
     if($checker->{value} == 1) {
         $rule->setAttr(name => 'nodemetric_rule_formula',   value => param('formula'));
-        $rule->setAttr(name => 'nodemetric_rule_action_id', value => param('action'));
-        $rule->setAttr(name => 'nodemetric_rule_label',     value => param('label'));
+        $rule->setAttr(name => 'nodemetric_rule_action_id', value => $action);
+        $rule->setAttr(name => 'nodemetric_rule_label',     value => $label);
         
         if(param('state') eq 'disabled'){
             $rule->disable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
