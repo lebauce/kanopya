@@ -1267,7 +1267,7 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
             nodemetric_rule_service_provider_id => param('extclusterid'),
             nodemetric_rule_formula   => 'id'.($nodemetric_condition->getAttr(name => 'nodemetric_condition_id')),
             nodemetric_rule_state     => 'disabled',
-            nodemetric_rule_action_id => $nodemetric_condition->getAttr(name => 'nodemetric_condition_id'),
+            nodemetric_rule_action_id => undef,
         };
         my $nodemetric_rule = NodemetricRule->new(%$params_rule);
         redirect("/architectures/extclusters/$var/nodemetrics/rules");
@@ -1813,6 +1813,7 @@ ajax '/extclusters/:extclusterid/actions' => sub {
     eval{
         my $path = $action->trigger();
         my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => param('extclusterid'));
+        # TODO : add the disabling in trigger() function
         $extcluster->updateNodeState(hostname => param('hostname'), state => 'disabled');
         $message = 'Action '.param('action_id').' triggered on node '.param('hostname')
         ."\n file $path created"
