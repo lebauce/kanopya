@@ -1260,9 +1260,9 @@ CREATE TABLE `action` (
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`action_id`),
   KEY (`action_service_provider_id`),
-  FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`action_action_type_id`),
-  FOREIGN KEY (`action_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`action_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1279,7 +1279,7 @@ CREATE TABLE `action_type_parameter` (
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`action_type_parameter_id`),
   KEY (`action_type_parameter_action_type_id`),
-  FOREIGN KEY (`action_type_parameter_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`action_type_parameter_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
