@@ -629,9 +629,9 @@ sub _generateKanopyaHalt{
     $self->{executor}->{econtext}->execute(
         command => "chmod 755 $args{etc_path}/init.d/Kanopya_halt"
     );
-    $self->{executor}->{econtext}->execute(
-        command => "ln -sf ../init.d/Kanopya_halt $args{etc_path}/rc0.d/S89Kanopya_halt"
-    );
+    #$self->{executor}->{econtext}->execute(
+    #    command => "ln -sf ../init.d/Kanopya_halt $args{etc_path}/rc0.d/S89Kanopya_halt"
+    #);
 
     $log->debug("Generate omitted file <$omitted_file>");
     $self->{executor}->{econtext}->execute(
@@ -646,10 +646,10 @@ sub _generateKanopyaHalt{
     $self->{executor}->{econtext}->execute(
         command => "chmod 755 $args{etc_path}/init.d/Kanopya_omitted_iscsid"
     );
-    $self->{executor}->{econtext}->execute(
-        command => "ln -sf ../init.d/Kanopya_omitted_iscsid " .
-                   "$args{etc_path}/rc0.d/S19Kanopya_omitted_iscsid"
-    );
+    #$self->{executor}->{econtext}->execute(
+    #    command => "ln -sf ../init.d/Kanopya_omitted_iscsid " .
+    #               "$args{etc_path}/rc0.d/S19Kanopya_omitted_iscsid"
+    #);
 }
 
 sub _generateNtpdateConf {

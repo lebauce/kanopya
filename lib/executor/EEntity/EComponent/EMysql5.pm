@@ -28,21 +28,19 @@ sub addNode {
     
     General::checkParams(args => \%args, required => ['econtext','host','mount_point']);
 
-    $args{mount_point} .= '/etc';
-
     my $data = $self->_getEntity()->getConf();    
         
     # generation of /etc/mysql/my.cnf
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
                          template_dir => "/templates/components/mysql5",
                          input_file => "my.cnf.tt", output => "/mysql/my.cnf", data => $data);
 
-    $self->addInitScripts(etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'mysql', 
-                                startvalue => '18', 
-                                stopvalue => '02');
-    
+    $self->addInitScripts(
+        mountpoint => $args{mount_point}, 
+          econtext => $args{econtext}, 
+        scriptname => 'mysql'
+    );
+        
 }
 
 sub removeNode {}

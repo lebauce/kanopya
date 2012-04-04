@@ -17,25 +17,33 @@ sub addNode {
     
     General::checkParams(args => \%args, required => ['econtext','host','mount_point']);
 
-    $args{mount_point} .= '/etc';
-
     my $apache2_conf = $self->_getEntity()->getGeneralConf();    
     my $data = {};
     
     # generation of /etc/apache2/apache2.conf 
     $data->{serverroot} = $apache2_conf->{'apache2_serverroot'};
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/apache2",
-                         input_file => "apache2.conf.tt", output => "/apache2/apache2.conf", data => $data);
+    $self->generateFile( 
+            econtext => $args{econtext},
+         mount_point => $args{mount_point}.'/etc',
+        template_dir => "/templates/components/apache2",
+          input_file => "apache2.conf.tt",
+              output => "/apache2/apache2.conf",
+                data => $data
+    );
 
     # generation of /etc/apache2/ports.conf
     $data = {};
     $data->{ports} = $apache2_conf->{apache2_ports};
     $data->{sslports} = $apache2_conf->{apache2_sslports};
     
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/apache2",
-                         input_file => "ports.conf.tt", output => '/apache2/ports.conf', data => $data);
+    $self->generateFile(
+            econtext => $args{econtext},
+         mount_point => $args{mount_point}.'/etc',
+        template_dir => "/templates/components/apache2",
+          input_file => "ports.conf.tt",
+              output => '/apache2/ports.conf',
+                data => $data
+    );
         
     # generation of /etc/apache2/sites-available/default
     $data = {};
@@ -43,23 +51,33 @@ sub addNode {
     $data->{ports} =  $apache2_conf->{apache2_ports};
     $data->{sslports} = $apache2_conf->{apache2_sslports};
     
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/apache2",
-                         input_file => "virtualhost.tt", output => '/apache2/sites-available/default', data => $data);
+    $self->generateFile(
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point}.'/etc',
+        template_dir => "/templates/components/apache2",
+          input_file => "virtualhost.tt", 
+              output => '/apache2/sites-available/default', 
+                data => $data
+    );
 
     # generation of /etc/apache2/mods-available/status.conf
     $data = {};
     $data->{monitor_server_ip} = 'all';
     
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/apache2",
-                         input_file => "status.conf.tt", output => '/apache2/mods-enabled/status.conf', data => $data);
+    $self->generateFile(
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point}.'/etc',
+        template_dir => "/templates/components/apache2",
+          input_file => "status.conf.tt", 
+              output => '/apache2/mods-enabled/status.conf', 
+                data => $data
+    );
 
-    $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'apache2', 
-                                startvalue => '91', 
-                                stopvalue => '09');
+    $self->addInitScripts(   
+        mountpoint => $args{mount_point}, 
+          econtext => $args{econtext}, 
+        scriptname => 'apache2', 
+    );
     
 }
 

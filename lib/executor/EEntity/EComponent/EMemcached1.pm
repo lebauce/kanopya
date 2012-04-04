@@ -45,21 +45,23 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
 
-    $args{mount_point} .= '/etc';
-
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
     # Memcached run only on master node
     if(not defined $masternodeip) {
         # no masternode defined, this host becomes the masternode
             
-        $self->configureNode(%args);
+        $self->configureNode(
+               econtext => $args{econtext},
+            mount_point => $args{mount_point}.'/etc',
+                   host => $args{host}
+        );
         
-        $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'memcached', 
-                                startvalue => 20, 
-                                stopvalue => 20);
+        $self->addInitScripts(    
+            mountpoint => $args{mount_point}, 
+              econtext => $args{econtext}, 
+            scriptname => 'memcached', 
+        );
     }
 
 }

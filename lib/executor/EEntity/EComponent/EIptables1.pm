@@ -76,11 +76,11 @@ sub configureNode {
             $data->{$element} = $$iptables_secure{$element};     
         }
      }
-     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
              template_dir => "/templates/components/iptables",
              input_file => "Iptables.tt", output => '/init.d/firewall', data => $data);             
-     my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/firewall';
-      my $result = $args{econtext}->execute(command => $command);        
+     my $command = '/bin/chmod +x '.$args{mount_point}.'/etc/init.d/firewall';
+     my $result = $args{econtext}->execute(command => $command);        
      $log->debug(Dumper $result);
      
 #    my $a=$self->_getEntity()->getClusterIp();
@@ -96,17 +96,20 @@ sub addNode {
     my %args = @_;    
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point','cluster']);
 
-    $args{mount_point} .= '/etc';
-
-    $self->configureNode(%args);
+    $self->configureNode(
+           econtext => $args{econtext},
+               host => $args{host},
+        mount_point => $args{mount_point}.'/etc',
+            cluster => $args{cluster}
+    );
     
     #TODO addInitScript(..) if there is a daemon associated to this component
     # status iptables 
-    $self->addInitScripts(      etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'firewall', 
-                                startvalue => '15', 
-                                stopvalue => '09');
+    $self->addInitScripts(      
+        mountpoint => $args{mount_point}, 
+          econtext => $args{econtext}, 
+        scriptname => 'firewall', 
+    );
 }
 
 

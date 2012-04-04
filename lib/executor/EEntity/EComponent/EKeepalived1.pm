@@ -32,8 +32,6 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
 
-    $args{mount_point} .= '/etc';
-
     my $keepalived = $self->_getEntity();
     my $masternodeip = $args{cluster}->getMasterNodeIp();
         
@@ -80,21 +78,21 @@ sub addNode {
         }
     
         $log->debug("generate /etc/default/ipvsadm file");
-        $self->generateIpvsadm(econtext => $args{econtext}, mount_point => $args{mount_point});
+        $self->generateIpvsadm(econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc');
         $log->debug("generate /etc/keepalived/keepalived.conf file");
-        $self->generateKeepalived(econtext => $args{econtext}, mount_point => $args{mount_point});
+        $self->generateKeepalived(econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc');
         
-        $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'ipvsadm', 
-                                startvalue => 19, 
-                                stopvalue => 21);
-        
-        $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'keepalived', 
-                                startvalue => 20, 
-                                stopvalue => 20);
+        $self->addInitScripts(
+            mountpoint => $args{mount_point}, 
+              econtext => $args{econtext}, 
+            scriptname => 'ipvsadm'
+        );
+            
+        $self->addInitScripts(
+            mountpoint => $args{mount_point}, 
+              econtext => $args{econtext}, 
+            scriptname => 'keepalived'
+        );
                                 
         # activating ipv4 forwarding to sysctl
         $log->debug('activating ipv4 forwarding to sysctl.conf');
@@ -122,16 +120,16 @@ sub addNode {
         }
         
         $log->debug('Generation of network_routes script');
-        $self->addnetwork_routes(mount_point => $args{mount_point},
+        $self->addnetwork_routes(mount_point => $args{mount_point}.'/etc',
                                 econtext => $args{econtext},
                                 loadbalancer_internal_ip => $masternodeip);
         
         $log->debug('init script generation for network_routes script');
-        $self->addInitScripts(    etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'network_routes', 
-                                startvalue => 17, 
-                                stopvalue => 20);
+        $self->addInitScripts(
+            mountpoint => $args{mount_point}, 
+              econtext => $args{econtext}, 
+            scriptname => 'network_routes'
+        );
         
 #        $self->generateKeepalived(mount_point => '/etc', econtext => $masternode_econtext);
 #        $self->reload(econtext => $masternode_econtext);

@@ -59,20 +59,22 @@ sub addNode {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
-
-    $args{mount_point} .= '/etc';
-
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
     # Run only on master node
     if(not defined $masternodeip) {
-	    $self->configureNode(%args);
+	    $self->configureNode(
+            econtext => $args{econtext},
+                host => $args{host},
+         mount_point => $args{mount_point}.'/etc',
+             cluster => $args{cluster}
+        );
 	    
-	    $self->addInitScripts(  etc_mountpoint => $args{mount_point}, 
-	                            econtext => $args{econtext}, 
-	                            scriptname => 'haproxy', 
-	                            startvalue => '20', 
-	                            stopvalue => '20');
+	    $self->addInitScripts(
+            mountpoint => $args{mount_point}, 
+	          econtext => $args{econtext}, 
+	        scriptname => 'haproxy', 
+        );
     }
 }
 

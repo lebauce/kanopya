@@ -30,8 +30,6 @@ sub addNode {
     General::checkParams(args     => \%args,
                          required => [ "econtext", "host", "mount_point" ]);
 
-    $args{mount_point} .= '/etc';
-
     my $conf = $self->_getEntity()->getConf();
 
     # generation of /etc/default/snmpd 
@@ -40,7 +38,7 @@ sub addNode {
     $data->{options} = $conf->{snmpd_options};       
     
     $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => $args{mount_point},
+                        mount_point  => $args{mount_point}.'/etc',
                         template_dir => "/templates/components/snmpd",
                         input_file   => "default_snmpd.tt",
                         output       => "/default/snmpd",
@@ -51,20 +49,17 @@ sub addNode {
     $data->{monitor_server_ip} = $conf->{monitor_server_ip};
 
     $self->generateFile(econtext     => $args{econtext},
-                        mount_point  => $args{mount_point},
+                        mount_point  => $args{mount_point}.'/etc',
                         template_dir => "/templates/components/snmpd",
                         input_file   => "snmpd.conf.tt",
                         output       => "/snmp/snmpd.conf",
                         data         => $data);
 
-    
     # add snmpd init scripts
     $self->addInitScripts(
-        etc_mountpoint => $args{mount_point},
-        econtext       => $args{econtext},
-        scriptname     => 'snmpd',
-        startvalue     => 20,
-        stopvalue      => 20
+        mountpoint => $args{mount_point},
+        econtext   => $args{econtext},
+        scriptname => 'snmpd',
     );
           
 }

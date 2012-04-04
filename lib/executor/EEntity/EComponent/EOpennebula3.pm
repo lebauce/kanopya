@@ -56,61 +56,53 @@ sub configureNode {
      
     $log->info("Opennebula cluster's node configuration");
     $log->debug('generate /etc/default/libvirt-bin');    
-    $self->generateLibvirtbin(econtext => $args{econtext}, mount_point => $args{mount_point});
+    $self->generateLibvirtbin( econtext    => $args{econtext}, 
+                               mount_point => $args{mount_point}.'/etc');
     
     $log->debug('generate /etc/libvirt/libvirtd.conf');    
     $self->generateLibvirtdconf(
         econtext    => $args{econtext}, 
-        mount_point => $args{mount_point}, 
+        mount_point => $args{mount_point}.'/etc', 
         host => $args{host}
     );
 
     $log->debug('generate /etc/libvirt/qemu.conf');    
     $self->generateQemuconf(
-        econtext    => $args{econtext}, 
-        mount_point => $args{mount_point}, 
-        host => $args{host}
+           econtext => $args{econtext}, 
+        mount_point => $args{mount_point}.'/etc', 
+               host => $args{host}
     );
 
     $self->generateXenconf(
-        econtext    => $args{econtext}, 
-        mount_point => $args{mount_point}, 
-        host => $args{host}
+           econtext => $args{econtext}, 
+        mount_point => $args{mount_point}.'/etc', 
+               host => $args{host}
     );
 
     $self->addInitScripts(
-      etc_mountpoint => $args{mount_point}, 
+          mountpoint => $args{mount_point}, 
             econtext => $args{econtext}, 
           scriptname => 'xend', 
-          startvalue => 17, 
-           stopvalue => 2
-   );
+    );
    
    $self->addInitScripts(
-      etc_mountpoint => $args{mount_point}, 
+          mountpoint => $args{mount_point}, 
             econtext => $args{econtext}, 
           scriptname => 'xendomains', 
-          startvalue => 18, 
-           stopvalue => 1
    );
     
     $self->addInitScripts(
-      etc_mountpoint => $args{mount_point}, 
+          mountpoint => $args{mount_point}, 
             econtext => $args{econtext}, 
           scriptname => 'libvirt-bin', 
-          startvalue => 20, 
-           stopvalue => 20
    );
    
    $self->addInitScripts(
-      etc_mountpoint => $args{mount_point}, 
+          mountpoint => $args{mount_point}, 
             econtext => $args{econtext}, 
           scriptname => 'qemu-kvm', 
-          startvalue => 1, 
-           stopvalue => 1
    );
        
-
 }
 
 # Execute host migration to a new hypervisor
@@ -292,9 +284,6 @@ sub addNode {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
-
-    $args{mount_point} .= '/etc';
-
     $self->configureNode(%args);    
 }
 

@@ -57,32 +57,14 @@ add start and stop rc init scripts
 =cut
 
 sub addInitScripts {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+    
+    General::checkParams(args => \%args, required => [ 'mountpoint',
+                                                       'econtext',
+                                                       'scriptname' ]);
 
-    if ((! exists $args{etc_mountpoint} or ! defined $args{etc_mountpoint}) ||
-        (! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{scriptname} or ! defined $args{scriptname}) ||
-        (! exists $args{startvalue} or ! defined $args{startvalue}) ||
-        (! exists $args{stopvalue} or ! defined $args{stopvalue})) {
-            $errmsg = "EEntity::EComponent->addInitScripts needs a etc_mountpoint, econtext,scriptname, startvalue, stopvalue  named argument!";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-
-    foreach my $startlevel ((2, 3, 4, 5)) {
-              my $command = "ln -fs ../init.d/$args{scriptname} $args{etc_mountpoint}/rc$startlevel.d/S$args{startvalue}$args{scriptname}";
-              $log->debug($command);
-              my $result = $args{econtext}->execute(command => $command);
-              #TODO gere les erreurs d'execution
-      }
-
-      foreach my $stoplevel ((0, 1, 6)) {
-              my $command = "ln -fs ../init.d/$args{scriptname} $args{etc_mountpoint}/rc$stoplevel.d/K$args{stopvalue}$args{scriptname}";
-              $log->debug($command);
-              my $result = $args{econtext}->execute(command => $command);
-              #TODO gere les erreurs d'execution
-    }
+    my $cmd = "chroot $args{mountpoint} /sbin/insserv $args{scriptname}";
+    $args{econtext}->execute(command => $cmd);
 }
 
 =head2 generateFile

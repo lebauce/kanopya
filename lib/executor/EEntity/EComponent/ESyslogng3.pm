@@ -50,15 +50,15 @@ sub addNode {
 
     $args{mount_point} .= '/etc';
 
-    $self->configureNode(%args);
+    $self->configureNode(econtext    => $args{econtext}, 
+                         host        => $args{host},
+                         mount_point => $args{mount_point}.'/etc');
 
     # add init scripts
     $self->addInitScripts(
-        etc_mountpoint => $args{mount_point},
-        econtext       => $args{econtext},
-        scriptname     => 'syslog-ng',
-        startvalue     => 10,
-        stopvalue      => 90
+        mountpoint => $args{mount_point},
+        econtext   => $args{econtext},
+        scriptname => 'syslog-ng',
     );
           
 }

@@ -40,8 +40,6 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
 
-    $args{mount_point} .= '/etc';
-
     $self->configureNode(%args);
     #TODO addInitScript(..) if there is a daemon associated to this component
     my $data = $self->_getEntity()->getConf();    
@@ -58,29 +56,26 @@ sub addNode {
     
     
     # generation of /etc/ldap/slapd.conf
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
                          template_dir => "/templates/components/openldap",
                          input_file => "slapd.conf.tt", output => "/ldap/slapd.conf", data => $data1);
                          
      # generation of /etc/ldap/ldap.conf
-     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
                          template_dir => "/templates/components/openldap",
                          input_file => "ldap.conf.tt", output => "/ldap/ldap.conf", data => $data2);
     
     
      # generation of /etc/default/slapd
-     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point}.'/etc',
                          template_dir => "/templates/components/openldap",
                          input_file => "default.slapd.conf.tt", output => "/default/slapd", data => $data3);
     
-    
-    
-   
-    $self->addInitScripts(etc_mountpoint => $args{mount_point}, 
-                                econtext => $args{econtext}, 
-                                scriptname => 'slapd', 
-                                startvalue => '18', 
-                                stopvalue => '02'); 
+    $self->addInitScripts(
+        mountpoint => $args{mount_point}, 
+          econtext => $args{econtext}, 
+        scriptname => 'slapd'
+    );
                                 
 
 
