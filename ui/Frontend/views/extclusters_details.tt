@@ -114,7 +114,8 @@
 <hr/>
 <span id="nodes" class="title simpleexpand">Nodes</span>
 <table id="Xnodes" class="detailspart list">
-<% IF nodes_list %>
+
+
 	<tr><td colspan="4">&nbsp;</td>
 	<td class="actions" rowspan="<% nbnodesup %>">
 	<% IF link_updatenodes %>
@@ -123,6 +124,7 @@
 	<% END %>
 	
     </td></tr>
+<% IF nodes_list.size > 0 %>
     <td></td>
     <td></td>
     
