@@ -36,6 +36,10 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
+	action_triggered_callback      =>  {pattern       => '^.*$',
+								 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -70,6 +74,7 @@ sub trigger{
     
     $self->createXMLFile(
             hostname => $self->getAttr(name => 'action_triggered_hostname'),
+			callback_route => $self->getAttr(name => 'action_triggered_callback'),
             ou_from  => $ou_from,
             ou_to    => $params->{ou_to},
             file_path => $params->{file_path},
@@ -95,13 +100,16 @@ sub getParams {
 sub createXMLFile {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','file_path','user_message','logout_time']);
+    General::checkParams(args => \%args, required => ['hostname','callback_route','ou_from','ou_to','file_path','user_message','logout_time']);
     my $fileDirPath = $args{file_path};
+	#remove the domain name from the hostname
+	my @hostname = split ('.', $args{hostname});
     #print Dumper $params;
     my $fileCompletePath = $fileDirPath.time().'file.xml';
     #print $fileCompletePath;
     open FILE, ">", $fileCompletePath or die $!;
-    print FILE $args{hostname}."\n";
+    print FILE $hostname[0]."\n";
+	print FILE $args{callback_route}."\n";
     print FILE $args{ou_from}."\n";
     print FILE $args{ou_to}."\n";
     print FILE $args{id}."\n";
