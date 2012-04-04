@@ -212,20 +212,33 @@
         <td></td>
         <td class="actions">
             <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a node action</a><br />
-            <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+            <span class="desc">Add a new action to this cluster.</span><br /><br />
 			<a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/clusteractions/add">add a cluster action</a><br />
-            <span class="desc">Add a new migration cluster action to this cluster.</span><br /><br />
+            <span class="desc">Add a new cluster action to this cluster.</span><br /><br />
             <a class="imgAdding action" href="/architectures/extclusters/<% cluster_id %>/actions/list">Currently triggered actions</a><br />
             <span class="desc">List all currently triggered actions from this cluster </span><br /><br />
         </td>
     </tr>
-    <% FOREACH action IN actions_list %>
+	<% IF node_actions_list %>
+		<th> Node actions: </th>
+		<% FOREACH action IN node_actions_list %>
         <tr>
             <td class="label2"><span class="bold"><% action.name %></span></td>
             <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
             <td></td>
         </tr>
-    <% END %>
+		<% END %>
+	<% END %>
+	<% IF cluster_actions_list %>
+		<th> Cluster actions: </th>
+		<% FOREACH action IN cluster_actions_list %>
+        <tr>
+            <td class="label2"><span class="bold"><% action.name %></span></td>
+            <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
+            <td></td>
+        </tr>
+		<% END %>
+	<% END %>	
 <%END%>
 </table>
 
