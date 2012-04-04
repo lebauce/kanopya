@@ -1807,7 +1807,7 @@ post '/indicators/new' => sub {
 
 ajax '/extclusters/:extclusterid/actions' => sub {
     
-    
+	
     my $action = ActionTriggered->new(
         action_triggered_action_id => param('action_id'),
         action_triggered_hostname  => param('hostname'), 
@@ -1820,7 +1820,7 @@ ajax '/extclusters/:extclusterid/actions' => sub {
         $extcluster->updateNodeState(hostname => param('hostname'), state => 'disabled');
         $message = 'Action '.param('action_id').' triggered on node '.param('hostname')
         ."\n file $path created"
-        ."\n node ".param('hostname')."disabled"
+        ."\n node ".param('hostname')." disabled"
         ;
         1;
     } or do {

@@ -17,6 +17,7 @@ use warnings;
 use General;
 use Entity::Connector::ActiveDirectory;
 use Entity::Connector;
+use Sys::Hostname::FQDN qw(fqdn);
 use base 'BaseDB';
 use Data::Dumper;
 # logger
@@ -69,14 +70,22 @@ sub trigger{
                                                          'name' => 'ad_nodes_base_dn'
                                                  );
                                                  
+        #remove the domain name from the hostname
+        my $complete_host_name = $self->getAttr(name => 'action_triggered_hostname');
+        my @hostname = split '\.', $complete_host_name;
+        
+        my $action_id =  $self->getAttr(name => 'action_triggered_id');
+        my $kanopya_fqdn = fqdn(); 
+        my $route_callback = 'http://'.$kanopya_fqdn.':5000/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/delete';
+        
         
         $body = {
-            ou_from      => $ou_from,
-            ou_to        => $params->{ou_to},
-            user_message => $params->{user_message},
-            logout_time  => $params->{logout_time},
-            id           => $self->getAttr(name => 'action_triggered_id'),
-            hostname     => $self->getAttr(name => 'action_triggered_hostname'),
+            ou_from        => $ou_from,
+            ou_to          => $params->{ou_to},
+            user_message   => $params->{user_message},
+            logout_time    => $params->{logout_time},
+            hostname       => $hostname[0],
+            route_callback => $route_callback,
         }
     }elsif($params->{trigger_rule_type} eq 'clusterrule'){
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
@@ -91,6 +100,7 @@ sub trigger{
     $self->createXMLFile(
             file_path => $params->{file_path},
             body      => $body,
+
     );
 }
 sub getParams {
@@ -114,9 +124,10 @@ sub createXMLFile {
     
     General::checkParams(args => \%args, required => ['file_path','body']);
     
-    my @params_order = ('hostname','clustername','ou_from','ou_to', 'id', 'user_message','logout_time');
+    my @params_order = ('route_callback','hostname','clustername','ou_from','ou_to', 'id', 'user_message','logout_time');
     
     my $fileDirPath = $args{file_path};
+
     #print Dumper $params;
     my $fileCompletePath = $fileDirPath.time().'file.xml';
     #print $fileCompletePath;
@@ -124,6 +135,7 @@ sub createXMLFile {
     foreach my $param (@params_order){
        if(defined $args{body}->{$param}){print FILE $args{body}->{$param}."\n"};
     }
+
     close FILE;
     return $fileCompletePath;
 };
