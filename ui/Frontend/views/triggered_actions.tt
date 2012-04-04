@@ -1,13 +1,13 @@
 <table class="simplelisting">
 
     <caption>
-        Action triggered from nodes of cluster <% cluster_id %> 
+        Action triggered cluster <% cluster_id %> 
     </caption>
 
         <tr><td>
         <span class="bold"> Action Name</span>
         </td><td>
-        <span class="italic"> Node source
+        <span class="italic"> Source
         </td><td> 
         <span class="italic"> Timestamp
         </tr>
