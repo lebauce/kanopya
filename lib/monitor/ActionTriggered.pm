@@ -17,6 +17,7 @@ use warnings;
 use General;
 use Entity::Connector::ActiveDirectory;
 use Entity::Connector;
+use Sys::Hostname::FQDN qw(fqdn);
 use base 'BaseDB';
 use Data::Dumper;
 # logger
@@ -34,10 +35,6 @@ use constant ATTR_DEF => {
                                  is_editable    => 1},
     action_triggered_timestamp     =>  {pattern       => '^.*$',
                                  is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-	action_triggered_callback      =>  {pattern       => '^.*$',
-								 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
 };
@@ -71,14 +68,19 @@ sub trigger{
     my $ou_from    = $directoryServiceConnector->getAttr(
                                                      'name' => 'ad_nodes_base_dn'
                                                  );
-    
+    my $action_id =  $self->getAttr(name => 'action_triggered_id');
+	my $kanopya_fqdn = fqdn(); 
+	my $route_callback = 'http://'.$kanopya_fqdn.':5000/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/delete';
+	
     $self->createXMLFile(
-            hostname => $self->getAttr(name => 'action_triggered_hostname'),
-			callback_route => $self->getAttr(name => 'action_triggered_callback'),
-            ou_from  => $ou_from,
-            ou_to    => $params->{ou_to},
-            file_path => $params->{file_path},
-            id       => $self->getAttr(name => 'action_triggered_id'),
+            hostname		=> $self->getAttr(name => 'action_triggered_hostname'),
+			callback_route 	=> $route_callback,
+            ou_from  		=> $ou_from,
+            ou_to    		=> $params->{ou_to},
+            file_path 		=> $params->{file_path},
+			user_message	=> $params->{user_message},
+			logout_time		=> $params->{logout_time},
+            id      		=> $action_id,
     );
 }
 sub getParams {
