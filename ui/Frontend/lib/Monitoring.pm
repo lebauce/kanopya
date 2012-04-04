@@ -514,7 +514,9 @@ get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
      
     my $clustermetric = Clustermetric->get('id' => $clustermetric_id);
     
-    my @combinations = AggregateCombination->search(hash=>{});
+    my @combinations = AggregateCombination->search(hash=>{
+        aggregate_combination_service_provider_id => $cluster_id
+    });
     
     my @combinationsUsingCM;
     foreach my $combination (@combinations) {
@@ -547,7 +549,9 @@ get '/extclusters/:extclusterid/clustermetrics/:clustermetricid/delete' => sub {
 get '/extclusters/:extclusterid/clustermetrics/combinations' => sub {
     
     #my @clustermetric_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId(param('extclusterid'));
-    my @clustermetric_combinations = AggregateCombination->search(hash=>{'aggregate_combination_service_provider_id' => (params->{extclusterid})});
+    my @clustermetric_combinations = AggregateCombination->search(hash=>{
+        'aggregate_combination_service_provider_id' => (params->{extclusterid})
+    });
     
     my @clustermetric_combinations_param;
     foreach my $clustermetric_combination (@clustermetric_combinations){
@@ -573,7 +577,8 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/:combinationid/delet
      
     my $combination = AggregateCombination->get('id' => $combination_id);
     
-    my @conditions = AggregateCondition->search(hash=>{});
+    my @conditions = AggregateCondition->search(hash=>{
+    });
     
     my @conditionsUsingCombination;
     foreach my $condition (@conditions) {
@@ -964,7 +969,9 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
 
     my @conditions;
 
-    my @condition_insts = AggregateCondition->search(hash => {});
+    my @condition_insts = AggregateCondition->search(hash => {
+        'aggregate_condition_service_provider_id' => $cluster_id,
+    });
     
     foreach my $condition_inst (@condition_insts){
         my $hash = {
@@ -1160,7 +1167,7 @@ get '/extclusters/:extclusterid/nodemetrics/combinations/:combinationid/delete' 
     #When destroying a combination
     #Check if it is not used in combinations
     my @conditions  = NodemetricCondition->search(hash=>{
-        'nodemetric_combination_service_provider_id' => param('extclusterid')
+        'nodemetric_condition_service_provider_id' => param('extclusterid')
     });
     
     my @conditionsUsingCombination;
@@ -1269,7 +1276,7 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/delete' => s
     my $condition = NodemetricCondition->get('id' => $condition_id);
     
     my @rules = NodemetricRule->search(hash=>{
-        'nodemetric_condition_service_provider_id' => param('extclusterid')
+        'nodemetric_rule_service_provider_id' => param('extclusterid')
     });
     
     my @rulesUsingCondition;
@@ -1332,7 +1339,9 @@ post '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
 get '/extclusters/:extclusterid/nodemetrics/conditions/new' => sub {
    my $cluster_id    = params->{extclusterid};
     
-    my @combinations = NodemetricCombination->search(hash => {});
+    my @combinations = NodemetricCombination->search(hash => {
+        'nodemetric_combination_service_provider_id' => $cluster_id,
+    });
     
     my @combinationsInput;
     
@@ -1356,7 +1365,9 @@ get '/extclusters/:extclusterid/nodemetrics/conditions/:conditionid/edit' => sub
 
    my $cluster_id    = params->{extclusterid};
     
-    my @combinations = NodemetricCombination->search(hash => {});
+    my @combinations = NodemetricCombination->search(hash => {
+        'nodemetric_combination_service_provider_id' => $cluster_id
+    });
     
     my @combinationsInput;
     
@@ -1453,11 +1464,11 @@ get '/extclusters/:extclusterid/nodemetrics/rules' => sub {
 };
 
 get '/extclusters/:extclusterid/nodemetrics/rules/disabled' => sub {
-    print "lol\n";
     my $externalcluster_id = param('extclusterid');
     my @nodemetric_rules = NodemetricRule->search(
                                 hash => {
                                     nodemetric_rule_state => 'disabled',
+                                    nodemetric_rule_service_provider_id => $externalcluster_id,
                                 }
                            );
                            
@@ -1489,6 +1500,7 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/disabled' => sub 
     my @nodemetric_rules = NodemetricRule->search(
                                 hash => {
                                     nodemetric_rule_state => 'disabled',
+                                    nodemetric_rule_service_provider_id => $externalcluster_id,
                                 }
                            );
                            
@@ -2185,7 +2197,8 @@ sub _getCombinations(){
 	
 	eval {
 		#@aggregate_combinations = AggregateCombination->getAllTheCombinationsRelativeToAClusterId($cluster_id);
-        @clustermetric_combinations = AggregateCombination->searchLight(hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
+        @clustermetric_combinations = AggregateCombination->searchLight(
+        hash=>{'aggregate_combination_service_provider_id' => $cluster_id});
 
 	};
 	if ($@) {
