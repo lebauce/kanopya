@@ -76,7 +76,7 @@ sub trigger{
         
         my $action_id =  $self->getAttr(name => 'action_triggered_id');
         my $kanopya_fqdn = fqdn(); 
-        my $route_callback = 'http://'.$kanopya_fqdn.':5000/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/delete';
+        my $route_callback = 'http://'.$kanopya_fqdn.':5000/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/close';
         
         
         $body = {
