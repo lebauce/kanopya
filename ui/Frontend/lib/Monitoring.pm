@@ -718,7 +718,7 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/new' => 
             aggregate_rule_service_provider_id => param('extclusterid'),
             aggregate_rule_formula   => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
             aggregate_rule_state     => 'disabled',
-            aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+            #aggregate_rule_action_id => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         };
         my $aggregate_rule = AggregateRule->new(%$params_rule);
         redirect("/architectures/extclusters/$var/clustermetrics/combinations/conditions/rules");
