@@ -1233,6 +1233,18 @@ CREATE TABLE `nodemetric_rule` (
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
+--
+-- Table structure for table `action_type`
+-- 
+
+CREATE TABLE `action_type` (
+  `action_type_id`    int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_type_name` char(64) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`action_type_id`),
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `action`
@@ -1242,12 +1254,32 @@ CREATE TABLE `action` (
   `action_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `action_service_provider_id` int(8) unsigned NOT NULL,
   `action_name` char(64) NOT NULL,
+  `action_action_type_id` int(8) unsigned NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   PRIMARY KEY (`action_id`),
   KEY (`action_service_provider_id`),
-  FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`action_action_type_id`),
+  FOREIGN KEY (`action_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `action_type_parameter`
+-- 
+
+CREATE TABLE `action_type_parameter` (
+  `action_type_parameter_id`    int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_type_parameter_action_type_id`  int(8) unsigned NOT NULL,
+  `action_type_parameter_name`  char(64) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  PRIMARY KEY (`action_type_parameter_id`),
+  KEY (`action_type_parameter_action_type_id`),
+  FOREIGN KEY (`action_type_parameter_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
