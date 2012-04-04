@@ -54,23 +54,23 @@ sub mount {
     General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
 
     my $target = $self->_getEntity->getAttr(name => 'container_access_export');
-    my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
-    my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
+    #my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
+    #my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
 
     my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
 
-    my $mount_cmd = "mount.nfs $ip:$target $args{mountpoint} -o vers=3,noac";
+    my $mount_cmd = "mount.nfs $target $args{mountpoint} -o vers=3,noac";
     my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
 
     # exitcode 8192: mount.nfs: mountpoint is busy or already mounted
     if ($cmd_res->{'stderr'}) { #and ($cmd_res->{'exitcode'} != 8192)){
         throw Kanopya::Exception::Execution(
-                  error => "Unable to mount $ip:$target on $args{mountpoint}: " .
+                  error => "Unable to mount $target on $args{mountpoint}: " .
                            $cmd_res->{'stderr'}
               );
     }
-    $log->info("NFS export $ip:$target mounted on <$args{mountpoint}>.");
+    $log->info("NFS export $target mounted on <$args{mountpoint}>.");
 
     # TODO: insert an erollback to umount nfs volume
 }

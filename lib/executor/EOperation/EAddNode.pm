@@ -171,6 +171,9 @@ sub execute {
         $self->{params}->{systemimage_id} = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id');
     }
 
+    $self->{_objs}->{cluster}->setState(state => 'starting');
+    $self->{_objs}->{cluster}->save();
+
     $log->debug("New Operation PreStartNode");
     Operation->enqueue(
         priority => 200,

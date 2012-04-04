@@ -82,8 +82,6 @@ sub execute {
 
     # Just call Master node addition, other node will be add by the state manager
     $self->{_objs}->{cluster}->addNode();
-    $self->{_objs}->{cluster}->setState(state => 'starting');
-    $self->{_objs}->{cluster}->save();
 }
 
 1;

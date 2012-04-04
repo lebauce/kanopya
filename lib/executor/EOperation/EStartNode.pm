@@ -261,7 +261,7 @@ sub execute {
         my $ecomponent = EFactory::newEEntity(data => $components->{$i});
         $log->debug("component is " . ref($ecomponent));
         $ecomponent->addNode(host        => $self->{_objs}->{host},
-                             mount_point => $mountpoint . '/etc',
+                             mount_point => $mountpoint,
                              cluster     => $self->{_objs}->{cluster},
                              econtext    => $self->{executor}->{econtext},
                              erollback   => $self->{erollback});
@@ -375,7 +375,7 @@ sub _generateNetConf {
         @interfaces = (@interfaces, @{$self->{_objs}->{cluster}->getPublicIps()});
     }
 
-    $log->debug(Dumper(@interfaces));
+    #$log->debug(Dumper(@interfaces));
     $template->process($input, { interfaces => \@interfaces }, "/tmp/$tmpfile")
         or throw Kanopya::Exception::Internal::IncorrectParam(
                      error => "Error when generate net conf ". $template->error() . "\n"
@@ -525,8 +525,7 @@ sub _generatePXEConf {
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {
-        $nfsexport = $container_access->getAttr(name => 'container_access_ip') . ':' .
-                     $container_access->getAttr(name => 'container_access_export');
+        $nfsexport = $container_access->getAttr(name => 'container_access_export');
     }
 
     ## Here we create a dedicated initramfs for the node

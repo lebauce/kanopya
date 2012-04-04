@@ -91,8 +91,15 @@ sub prepare {
         masterimage_id       => General::checkParam(args => $params, name => 'masterimage_id'),
         host_manager_id      => General::checkParam(args => $params, name => 'host_manager_id'),
         disk_manager_id      => General::checkParam(args => $params, name => 'disk_manager_id'),
-        export_manager_id    => General::checkParam(args => $params, name => 'export_manager_id'),
     };
+
+    $cluster_params->{export_manager_id} = General::checkParam(args    => $params,
+                                                               name    => 'export_manager_id',
+                                                               default => $cluster_params->{disk_manager_id});
+
+    if (not $cluster_params->{kernel_id}) {
+        delete $cluster_params->{kernel_id};
+    }
 
     # Cluster instantiation
     eval {
