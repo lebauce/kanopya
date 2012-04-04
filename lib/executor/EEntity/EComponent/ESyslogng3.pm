@@ -27,13 +27,9 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{host} or ! defined $args{host}) ||
-        (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::EMonitoragent::ESyslogng3->configureNode needs a host, mount_point and econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args     => \%args,
+                         required => [ "econtext", "host", "mount_point" ]);
+
     my $template_path = $args{template_path} || "/templates/components/syslogng";
     
     my $data = $self->_getEntity()->getConf();
@@ -49,22 +45,20 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::EMonitoragent::ESyslogng3->addNode needs a host, mount_point and econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+    General::checkParams(args     => \%args,
+                         required => [ "econtext", "host", "mount_point" ]);
+
+    $args{mount_point} .= '/etc';
+
     $self->configureNode(%args);
-        
+
     # add init scripts
     $self->addInitScripts(
         etc_mountpoint => $args{mount_point},
-        econtext => $args{econtext},
-        scriptname => 'syslog-ng',
-        startvalue => 10,
-        stopvalue => 90
+        econtext       => $args{econtext},
+        scriptname     => 'syslog-ng',
+        startvalue     => 10,
+        stopvalue      => 90
     );
           
 }
@@ -74,11 +68,8 @@ sub reload {
     my $self = shift;
     my %args = @_;
     
-    if(! exists $args{econtext} or ! defined $args{econtext}) {
-        $errmsg = "EComponent::ELooger::ESyslogng3->reload needs an econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ "econtext" ]);
+
     my $command = "invoke-rc.d syslog-ng restart";
     my $result = $args{econtext}->execute(command => $command);
     return undef;

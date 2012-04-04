@@ -43,6 +43,10 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+
+    $args{mount_point} .= '/etc';
+
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
     # Memcached run only on master node

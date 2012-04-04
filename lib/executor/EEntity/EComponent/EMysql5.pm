@@ -28,6 +28,8 @@ sub addNode {
     
     General::checkParams(args => \%args, required => ['econtext','host','mount_point']);
 
+    $args{mount_point} .= '/etc';
+
     my $data = $self->_getEntity()->getConf();    
         
     # generation of /etc/mysql/my.cnf

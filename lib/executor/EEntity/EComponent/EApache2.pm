@@ -17,6 +17,8 @@ sub addNode {
     
     General::checkParams(args => \%args, required => ['econtext','host','mount_point']);
 
+    $args{mount_point} .= '/etc';
+
     my $apache2_conf = $self->_getEntity()->getGeneralConf();    
     my $data = {};
     

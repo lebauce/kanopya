@@ -36,9 +36,13 @@ sub configureNode {
 
 sub addNode {
     my $self = shift;
-    my %args = @_;    
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);   
-    $self->configureNode(%args);   
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
+
+    $args{mount_point} .= '/etc';
+
+    $self->configureNode(%args);
     #TODO addInitScript(..) if there is a daemon associated to this component
     my $data = $self->_getEntity()->getConf();    
  
@@ -80,8 +84,8 @@ sub addNode {
                                 
 
 
-  print Dumper $data1;
-  print Dumper $data2;	
+  #print Dumper $data1;
+  #print Dumper $data2;	
 }
 
 sub removeNode {}

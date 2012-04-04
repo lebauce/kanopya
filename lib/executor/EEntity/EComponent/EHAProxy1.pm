@@ -59,7 +59,9 @@ sub addNode {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
-    
+
+    $args{mount_point} .= '/etc';
+
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     
     # Run only on master node

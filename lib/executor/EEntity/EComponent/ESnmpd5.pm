@@ -27,43 +27,44 @@ sub addNode {
     my $self = shift;
     my %args = @_;
     
-    if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{host} or ! defined $args{host}) ||
-        (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::ESnmpd5->configureNode needs a host, mount_point and econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+    General::checkParams(args     => \%args,
+                         required => [ "econtext", "host", "mount_point" ]);
+
+    $args{mount_point} .= '/etc';
+
     my $conf = $self->_getEntity()->getConf();
-    
+
     # generation of /etc/default/snmpd 
     my $data = {};
     $data->{node_ip_address} = $args{host}->getInternalIP()->{ipv4_internal_address};
     $data->{options} = $conf->{snmpd_options};       
     
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/snmpd",
-                         input_file => "default_snmpd.tt", output => "/default/snmpd",
-                          data => $data);
+    $self->generateFile(econtext     => $args{econtext},
+                        mount_point  => $args{mount_point},
+                        template_dir => "/templates/components/snmpd",
+                        input_file   => "default_snmpd.tt",
+                        output       => "/default/snmpd",
+                        data         => $data);
                          
     # generation of /etc/snmpd/snmpd.conf 
     $data = {};
     $data->{monitor_server_ip} = $conf->{monitor_server_ip};
 
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/snmpd",
-                         input_file => "snmpd.conf.tt", output => "/snmp/snmpd.conf",
-                          data => $data);
+    $self->generateFile(econtext     => $args{econtext},
+                        mount_point  => $args{mount_point},
+                        template_dir => "/templates/components/snmpd",
+                        input_file   => "snmpd.conf.tt",
+                        output       => "/snmp/snmpd.conf",
+                        data         => $data);
 
     
     # add snmpd init scripts
     $self->addInitScripts(
         etc_mountpoint => $args{mount_point},
-        econtext => $args{econtext},
-        scriptname => 'snmpd',
-        startvalue => 20,
-        stopvalue => 20
+        econtext       => $args{econtext},
+        scriptname     => 'snmpd',
+        startvalue     => 20,
+        stopvalue      => 20
     );
           
 }
@@ -73,11 +74,8 @@ sub reload {
     my $self = shift;
     my %args = @_;
     
-    if(! exists $args{econtext} or ! defined $args{econtext}) {
-        $errmsg = "EComponent::ESnmpd5->reload needs an econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
+    General::checkParams(args => \%args, required => [ "econtext" ]);
+
     my $command = "invoke-rc.d snmpd restart";
     my $result = $args{econtext}->execute(command => $command);
     return undef;

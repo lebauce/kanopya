@@ -30,6 +30,7 @@ sub configureNode {
     my %args = @_;
         
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point','cluster']);
+
      #TODO insert configuration files generation
     my $cluster = $args{cluster};
     my $data = {};
@@ -94,6 +95,9 @@ sub addNode {
     my $self = shift;
     my %args = @_;    
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point','cluster']);
+
+    $args{mount_point} .= '/etc';
+
     $self->configureNode(%args);
     
     #TODO addInitScript(..) if there is a daemon associated to this component

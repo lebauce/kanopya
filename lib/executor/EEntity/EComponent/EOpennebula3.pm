@@ -292,7 +292,9 @@ sub addNode {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
-    
+
+    $args{mount_point} .= '/etc';
+
     $self->configureNode(%args);    
 }
 
