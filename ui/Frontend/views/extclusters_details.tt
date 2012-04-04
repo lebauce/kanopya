@@ -212,6 +212,7 @@
     <tr>
         <td></td>
         <td></td>
+        <td></td>
         <td class="actions">
             <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add a node action</a><br />
             <span class="desc">Add a new action to this cluster.</span><br /><br />
@@ -223,7 +224,7 @@
     </tr>
     <% FOREACH action IN actions_list %>
         <tr>
-            <td class="label2"><span class="bold"><% action.name %><% IF action.type == "noderule" %> (Node action)<% END %><% IF action.type == "clusterrule" %> (Cluster action)<% END %></span></td>
+            <td class="label2"><span class="bold"><% action.name %><% IF action.type == "noderule" %> </td><td class="label2 bold">(Node action)<% END %><% IF action.type == "clusterrule" %> </td><td class="label2 bold">(Cluster action)<% END %></span></td>
             <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>			
 			<td></td>
         </tr>
