@@ -314,10 +314,10 @@ sub postStartNode {
     my $masternodeip = $args{cluster}->getMasterNodeIp();
     my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
 
-    if(not $masternodeip eq $nodeip) {
+    #if(not $masternodeip eq $nodeip) {
         # this host is a new hypervisor node so we declare it to opennebula
         my $hostname = $args{host}->getAttr(name => 'host_hostname');
-        my $command = $self->_oneadmin_command(command => "onehost create $hostname im_kvm vmm_kvm tm_shared");
+        my $command = $self->_oneadmin_command(command => "onehost create $hostname im_xen vmm_xen tm_shared dummy");
         use EFactory;
         my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
                                                         ip_destination => $masternodeip);
@@ -331,7 +331,7 @@ sub postStartNode {
             host_id => $args{host}->getAttr(name => 'host_id'),
             id		=> $id,
         );
-    }
+    #}
 }
 
 sub preStopNode {
@@ -540,10 +540,10 @@ sub _oneadmin_command {
 	
 	my $config = $self->_getEntity()->getConf();
 	my $command = "su oneadmin -c '";
-    $command .= "export ONE_XMLRPC=http://localhost:$config->{port}/RPC2 ; ";
-	$command .= "export ONE_LOCATION=$config->{install_dir} ; ";
-	$command .= "export ONE_AUTH=\$ONE_LOCATION/one_auth ; ";
-	$command .= "PATH=\$ONE_LOCATION/bin:\$PATH ; ";
+    #$command .= "export ONE_XMLRPC=http://localhost:$config->{port}/RPC2 ; ";
+	#$command .= "export ONE_LOCATION=$config->{install_dir} ; ";
+	#$command .= "export ONE_AUTH=\$ONE_LOCATION/one_auth ; ";
+	#$command .= "PATH=\$ONE_LOCATION/bin:\$PATH ; ";
 	$command .= $args{command} ."'";
 	return $command;
 }
