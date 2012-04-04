@@ -38,74 +38,83 @@ sub configureNode {
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
      
-    if($masternodeip) {
-        # this is an opennebula cluster node
-        $log->info("Opennebula cluster's node configuration");
-        $log->debug('generate /etc/default/libvirt-bin');    
-        $self->generateLibvirtbin(econtext => $args{econtext}, mount_point => $args{mount_point});
-        
-        $log->debug('generate /etc/libvirt/libvirtd.conf');    
-        $self->generateLibvirtdconf(
-            econtext    => $args{econtext}, 
-            mount_point => $args{mount_point}, 
-            host => $args{host}
-        );
-
-		$log->debug('generate /etc/libvirt/qemu.conf');    
-        $self->generateQemuconf(
-            econtext    => $args{econtext}, 
-            mount_point => $args{mount_point}, 
-            host => $args{host}
-        );
-
-		$self->addInitScripts(
-          etc_mountpoint => $args{mount_point}, 
-                econtext => $args{econtext}, 
-              scriptname => 'kvm', 
-              startvalue => 20, 
-               stopvalue => 20
-       );
-        
+    if(not $masternodeip) {
+        # we start the first node so we start opennebula services
+        $log->info('opennebula frontend configuration');
+        $log->debug('generate /etc/one/oned.conf');    
+       
+        $self->generateOnedConf(econtext => $args{econtext}, mount_point => $args{mount_point});
+              
         $self->addInitScripts(
-          etc_mountpoint => $args{mount_point}, 
-                econtext => $args{econtext}, 
-              scriptname => 'libvirt-bin', 
-              startvalue => 20, 
-               stopvalue => 20
-       );
+            etc_mountpoint => $args{mount_point}, 
+                  econtext => $args{econtext}, 
+                scriptname => 'opennebula', 
+                startvalue => 17, 
+                 stopvalue => 1
+        );
+    } 
+     
+    $log->info("Opennebula cluster's node configuration");
+    $log->debug('generate /etc/default/libvirt-bin');    
+    $self->generateLibvirtbin(econtext => $args{econtext}, mount_point => $args{mount_point});
+    
+    $log->debug('generate /etc/libvirt/libvirtd.conf');    
+    $self->generateLibvirtdconf(
+        econtext    => $args{econtext}, 
+        mount_point => $args{mount_point}, 
+        host => $args{host}
+    );
+
+    $log->debug('generate /etc/libvirt/qemu.conf');    
+    $self->generateQemuconf(
+        econtext    => $args{econtext}, 
+        mount_point => $args{mount_point}, 
+        host => $args{host}
+    );
+
+    $self->generateXenconf(
+        econtext    => $args{econtext}, 
+        mount_point => $args{mount_point}, 
+        host => $args{host}
+    );
+
+    $self->addInitScripts(
+      etc_mountpoint => $args{mount_point}, 
+            econtext => $args{econtext}, 
+          scriptname => 'xend', 
+          startvalue => 17, 
+           stopvalue => 2
+   );
+   
+   $self->addInitScripts(
+      etc_mountpoint => $args{mount_point}, 
+            econtext => $args{econtext}, 
+          scriptname => 'xendomains', 
+          startvalue => 18, 
+           stopvalue => 1
+   );
+    
+    $self->addInitScripts(
+      etc_mountpoint => $args{mount_point}, 
+            econtext => $args{econtext}, 
+          scriptname => 'libvirt-bin', 
+          startvalue => 20, 
+           stopvalue => 20
+   );
+   
+   $self->addInitScripts(
+      etc_mountpoint => $args{mount_point}, 
+            econtext => $args{econtext}, 
+          scriptname => 'qemu-kvm', 
+          startvalue => 1, 
+           stopvalue => 1
+   );
        
-       $self->addInitScripts(
-          etc_mountpoint => $args{mount_point}, 
-                econtext => $args{econtext}, 
-              scriptname => 'dnsmasq', 
-              startvalue => 40, 
-               stopvalue => 1
-       );
-       
-       
-    } else {
-       # this is the opennebula frontend 
-       $log->info('opennebula frontend configuration');
-       $log->debug('generate etc/oned.conf');       
-       
-       # mount_point must stay empty since oned.conf dis copied to nfsexports directory 
-       $self->generateOnedConf(econtext => $args{econtext}, mount_point => '');
-       
-       $log->debug('init script generation for oned script');
-       $self->generateOnedinitscript(econtext => $args{econtext}, mount_point => $args{mount_point});
-       
-       $self->addInitScripts(
-          etc_mountpoint => $args{mount_point}, 
-                econtext => $args{econtext}, 
-              scriptname => 'oned', 
-              startvalue => 40, 
-              stopvalue => 1
-       );
-    }
+
 }
 
 # Execute host migration to a new hypervisor
-sub migrateHost{
+sub migrateHost {
     my $self = shift;
     my %args = @_;
 
@@ -132,7 +141,7 @@ sub migrateHost{
 }
 
 # execute memory scale in
-sub scale_memory{
+sub scale_memory {
     my $self = shift;
     my %args = @_;
 
@@ -147,8 +156,9 @@ sub scale_memory{
     return $self->_getEntity()->scale_memory(%args);
        
 }
+
 #execute cpu scale in
-sub scale_cpu{
+sub scale_cpu {
     my $self = shift;
     my %args = @_;
 
@@ -162,9 +172,8 @@ sub scale_cpu{
     my $result = $masternode_econtext->execute(command => $command);
     
     return $self->_getEntity()->scale_cpu(%args);
-    
-    
 }
+
 # generate $ONE_LOCATION/etc/oned.conf configuration file
 sub generateOnedConf {
      my $self = shift;
@@ -175,7 +184,8 @@ sub generateOnedConf {
     my $data = $self->_getEntity()->getTemplateDataOned();
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => "/templates/components/opennebula",
-                         input_file => "oned.conf.tt", output => "/nfsexports/one3/etc/oned.conf", data => $data);          
+                         input_file => "oned.conf.tt", output => "/one/oned.conf", data => $data);          
+
  
 }
 
@@ -220,6 +230,7 @@ sub generateQemuconf {
                          template_dir => "/templates/components/opennebula",
                          input_file => "qemu.conf.tt", output => "/libvirt/qemu.conf", data => $data); 
 }
+
 # generate /etc/xen/xend-config.sxp configuration file
 sub generateXenconf {
     my $self = shift;
@@ -227,10 +238,12 @@ sub generateXenconf {
     
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
-    my $data = {};
+    # TODO recup de l'interface pour les vms
+    my $data = {vmiface => 'eth1'};
+    
     $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
                          template_dir => "/templates/components/opennebula",
-                         input_file => "xend-config.sxp.tt", output => "/etc/xen/xend-config.sxp", data => $data); 
+                         input_file => "xend-config.sxp.tt", output => "/xen/xend-config.sxp", data => $data); 
 }
 
 sub generatemultivlanconf {
@@ -244,6 +257,7 @@ sub generatemultivlanconf {
                          template_dir => "/templates/components/opennebula",
                          input_file => "network-multi-vlan.tt", output => "/etc/xen/scripts/network-multi-vlan", data => $data); 
 }
+
 sub generatevlanconf {
     my $self = shift;
     my %args = @_;
@@ -255,21 +269,22 @@ sub generatevlanconf {
                          template_dir => "/templates/components/opennebula",
                          input_file => "network-bridge-vlan.tt", output => "/etc/xen/scripts/network-bridge-vlan", data => $data); 
 }
+
 # generate /etc/init.d/oned init script
-sub generateOnedinitscript {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
-    
-    my $data = $self->_getEntity()->getTemplateDataOnedInitScript();
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "oned_initscript.tt", output => "/init.d/oned", data => $data);            
-    my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/oned';
-    $log->debug($command);
-    my $result = $args{econtext}->execute(command => $command);
-} 
+#~ sub generateOnedinitscript {
+    #~ my $self = shift;
+    #~ my %args = @_;
+    #~ 
+    #~ General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
+    #~ 
+    #~ my $data = $self->_getEntity()->getTemplateDataOnedInitScript();
+    #~ $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
+                         #~ template_dir => "/templates/components/opennebula",
+                         #~ input_file => "oned_initscript.tt", output => "/init.d/oned", data => $data);            
+    #~ my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/oned';
+    #~ $log->debug($command);
+    #~ my $result = $args{econtext}->execute(command => $command);
+#~ } 
 
 
 sub addNode {
