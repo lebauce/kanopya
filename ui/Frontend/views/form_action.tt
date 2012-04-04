@@ -5,6 +5,8 @@
 <%ELSE%>
     <form id="target" method="POST" action="/architectures/extclusters/<%cluster_id%>/actions/add">
 <%END%>
+<input type ="hidden" name="trigger_rule_type" value="noderule">
+<input type ="hidden" name="action_type_id" value="1">
 
 <table class="form">
     <tr>
