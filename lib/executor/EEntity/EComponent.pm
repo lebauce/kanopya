@@ -63,7 +63,7 @@ sub addInitScripts {
                                                        'econtext',
                                                        'scriptname' ]);
 
-    my $cmd = "chroot $args{mountpoint} /sbin/insserv $args{scriptname}";
+    my $cmd = "chroot $args{mountpoint} /sbin/insserv -d $args{scriptname}";
     $args{econtext}->execute(command => $cmd);
 }
 
