@@ -26,6 +26,20 @@ __PACKAGE__->table("action");
   is_auto_increment: 1
   is_nullable: 0
 
+ =head2 action_action_type_id
+
+   data_type: 'integer'
+   extra: {unsigned => 1}
+   is_foreign_key: 1
+   is_nullable: 0
+
+ =head2 class_type_id
+
+   data_type: 'integer'
+   extra: {unsigned => 1}
+   is_foreign_key: 1
+   is_nullable: 0
+
 =head2 action_service_provider_id
 
   data_type: 'integer'
@@ -47,6 +61,13 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_auto_increment => 1,
+    is_nullable => 0,
+  },
+  "action_action_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "action_service_provider_id",
@@ -130,6 +151,19 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 action_action_type
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ActionType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "action_action_type",
+  "AdministratorDB::Schema::Result::ActionType",
+  { action_type_id => "action_action_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 # Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-28 12:37:04
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zAFN5jTmwBpvOiuNCgpziA

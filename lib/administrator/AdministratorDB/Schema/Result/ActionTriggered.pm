@@ -45,6 +45,13 @@ __PACKAGE__->table("action_triggered");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 class_type_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
