@@ -556,31 +556,51 @@ INSERT INTO `indicatorset` VALUES
 (4,'apache_workers','ApacheProvider','GAUGE', 'Apache', null, null),
 (5,'scom','External','GAUGE',null,null,null);
 
+SET @cid = (SELECT class_type_id FROM `class_type` WHERE class_type = "Indicator"); 
+
 INSERT INTO `indicator` VALUES
-(1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, null,43),
-(2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1, null,43),
-(3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1, null,43),
-(4,'Cached','.1.3.6.1.4.1.2021.4.15.0',null,null,'FF000066', 1, null,43),
-(5,'User','.1.3.6.1.4.1.2021.11.50.0',null,null,'0000FF66', 2, null,43),
-(6,'Wait','.1.3.6.1.4.1.2021.11.54.0',null,null,'FF000066', 2, null,43),
-(7,'Nice','.1.3.6.1.4.1.2021.11.51.0',null,null,'FFFF0066', 2, null,43),
-(8,'Syst','.1.3.6.1.4.1.2021.11.52.0',null,null,'00FFFF66', 2, null,43),
-(9,'Kernel','.1.3.6.1.4.1.2021.11.55.0',null,null,'FF00FF66', 2, null,43),
-(10,'Interrupt','.1.3.6.1.4.1.2021.11.56.0',null,null,'66666666', 2, null,43),
-(11,'Idle','.1.3.6.1.4.1.2021.11.53.0',null,null,'00FF0066', 2, null,43),
-(12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3, null,43),
-(13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4, null,43),
-(14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4, null,43),
-(15,'RAM free','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes', 43),
-(16,'RAM pool paged','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'Bytes',43),
-(17,'RAM used','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%',43),
-(18,'CPU used','Processor/% Processor Time',null,null,'FF000099', 5, '%',43),
-(19,'CPU Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process',43),
-(20,'Disk idle time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%',43),
-(21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%',43),
-(22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%',43),
-(23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions',43),
-(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec',43);
+(1,'Total','.1.3.6.1.4.1.2021.4.5.0',null,null,'FFFF0066', 1, null,@cid),
+(2,'Avail','.1.3.6.1.4.1.2021.4.6.0',null,null,'00FF0066', 1, null,@cid),
+(3,'Buffered','.1.3.6.1.4.1.2021.4.14.0',null,null,'0000FF66', 1, null,@cid),
+(4,'Cached','.1.3.6.1.4.1.2021.4.15.0',null,null,'FF000066', 1, null,@cid),
+(5,'User','.1.3.6.1.4.1.2021.11.50.0',null,null,'0000FF66', 2, null,@cid),
+(6,'Wait','.1.3.6.1.4.1.2021.11.54.0',null,null,'FF000066', 2, null,@cid),
+(7,'Nice','.1.3.6.1.4.1.2021.11.51.0',null,null,'FFFF0066', 2, null,@cid),
+(8,'Syst','.1.3.6.1.4.1.2021.11.52.0',null,null,'00FFFF66', 2, null,@cid),
+(9,'Kernel','.1.3.6.1.4.1.2021.11.55.0',null,null,'FF00FF66', 2, null,@cid),
+(10,'Interrupt','.1.3.6.1.4.1.2021.11.56.0',null,null,'66666666', 2, null,@cid),
+(11,'Idle','.1.3.6.1.4.1.2021.11.53.0',null,null,'00FF0066', 2, null,@cid),
+(12,'ReqPerSec','Total Accesses',0,null,'0000FF99', 3, null,@cid),
+(13,'IdleWorkers','IdleWorkers',null,null,'00FF0099', 4, null,@cid),
+(14,'BusyWorkers','BusyWorkers',null,null,'FF000099', 4, null,@cid),
+(15,'RAM free','Memory/Available MBytes',null,null,'FF000099', 5, 'MBytes', @cid),
+(16,'RAM pool paged','Memory/Pool Paged Bytes',null,null,'FF000099', 5, 'Bytes',@cid),
+(17,'RAM used','Memory/PercentMemoryUsed',null,null,'FF000099', 5, '%',@cid),
+(18,'CPU used','Processor/% Processor Time',null,null,'FF000099', 5, '%',@cid),
+(19,'CPU Queue Length','System/Processor Queue Length',null,null,'FF000099', 5, 'process',@cid),
+(20,'Disk idle time','LogicalDisk/% Idle Time',null,null,'FF000099', 5, '%',@cid),
+(21,'Disk free space','LogicalDisk/% Free Space',null,null,'FF000099', 5, '%',@cid),
+(22,'Network used','Network Adapter/PercentBandwidthUsedTotal',null,null,'FF000099', 5, '%',@cid),
+(23,'Active Sessions','Terminal Services/Active Sessions',null,null,'FF000099', 5, 'sessions',@cid),
+(24,'RAM I/O','Memory/Pages/sec',null,null,'FF000099', 5, 'pages/sec',@cid);
+
+SET @cid = (SELECT class_type_id FROM `class_type` WHERE class_type = "ActionType"); 
+INSERT INTO `action_type` VALUES 
+(1,'WorkflowMigration',@cid),
+(2,'WorkflowAlert',@cid);
+
+SET @cid = (SELECT class_type_id FROM `class_type` WHERE class_type = "ActionTypeParameter"); 
+INSERT INTO `action_type_parameter` VALUES 
+(1,1,'trigger_rule_type',@cid),
+(2,1,'file_path',@cid),
+(3,1,'ou_to',@cid),
+(4,1,'user_message',@cid),
+(5,1,'logout_time',@cid),
+(6,2,'trigger_rule_type',@cid),
+(7,2,'file_path',@cid),
+(8,2,'user_message',@cid);
+
+        
 
 
 --
