@@ -127,14 +127,15 @@
     <td></td>
     
     <td>
-        <% IF actions_list.size > 0 %>
+        <% IF node_actions_list.size > 0 %>
             <select id="action_id">
-                <% FOREACH action IN actions_list %>
+                <% FOREACH action IN node_actions_list %>
                     <option value="<% action.id %>"><% action.name %></option>
 	        <%END%>
 	    </select>
         <% END %>
     </td>
+
     <% FOREACH node IN nodes_list %>
         <tr><td class="label2"><span class="bold"><% node.hostname %></span></td>
         <td class="label2">
