@@ -1,8 +1,8 @@
-<h2>Create a migration action <%action.id%> </h2>
-
 <%IF action.id%>
+    <h2>Edit cluster action <%action.id%></h2>
     <form id="target" method="POST" action="/architectures/extclusters/<%cluster_id%>/actions/<%action.id%>/edit">
 <%ELSE%>
+    <h2>Create cluster action</h2>
     <form id="target" method="POST" action="/architectures/extclusters/<%cluster_id%>/actions/add">
 <%END%>
 <input type ="hidden" name="trigger_rule_type" value="clusterrule">
@@ -15,15 +15,26 @@
         <span style="color: red"><% err_name %></span></td>
     </tr>
     <tr>
+        <td class="label">Type :</td>
+        <td><select><option value='sco_workflow'>SCO workflow - Recommendation</select></td>
+    </tr>
+    <tr>
         <td class="label">File path:</td>
         <td><input type="text" cols="32" name="action_file_path" value="<%action.file_path%>"/></td>
     </tr>
+    <tr><td></td><td>Parameters</td></tr>
 	<tr>
         <td class="label">User message:</td>
         <td><input type="text" cols="32" name="action_user_message" value="<%action.user_message%>"/></td>
     </tr>
+    <tr>
+        <td class="label">Description:</td>
+        <td><input type="text" cols="32" name="action_detail" value="associated rule description" disabled="disabled"/></td>
+    </tr>
 </table>
+<%IF action.id%>
 <a class ="action" href="/architectures/extclusters/<%cluster_id%>/actions/<%action.id%>/delete">Delete this action</a>
 <br/>
 Warning : Please check that all triggers have been closed before deleting this action
+<%END%>
 </form>
