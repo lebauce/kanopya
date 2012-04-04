@@ -95,7 +95,7 @@ sub trigger{
         my $route_callback = 'http://'.$kanopya_fqdn.':5000/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/close';
         
         my $trigger_rule_id = $self->getAttr(name => 'action_triggered_hostname');
-        my $trigger_rule = AggregateRule('id' => $trigger_rule_id);
+        my $trigger_rule = AggregateRule->get('id' => $trigger_rule_id);
         my $formula = $trigger_rule->toString();
         
         $body = { 
