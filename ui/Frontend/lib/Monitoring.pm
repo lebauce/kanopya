@@ -943,7 +943,8 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
 #};
 
 get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/details' => sub {
-
+    # RULE WICH OPEN DETAILS OF A CLUSTERRULE IN ORDER TO SEE DETAIL OR TO EDIT IT
+     
     my $rule_id      = param('ruleid');
     my $rule         = AggregateRule->get('id' => $rule_id);
     my $cluster_id   = params->{extclusterid} || 0;
@@ -974,6 +975,23 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
         push @conditions, $hash;
     }
     
+    my @action_insts = Action->search(hash=>{
+        action_service_provider_id => $cluster_id
+    });
+    my @actions;
+    
+    
+    
+    foreach my $action_inst (@action_insts){
+        if($action_inst->getParams()->{'trigger_rule_type'} eq 'clusterrule'){
+            my $hash = {
+                id           => $action_inst->getAttr(name => 'action_id'),
+                label        => $action_inst->getAttr(name => 'action_name'),
+            };
+            push @actions, $hash;
+        }
+    }
+    
     my $rule_param = {
         id          => $rule_id,
         formula     => $rule->getAttr('name' => 'aggregate_rule_formula'),
@@ -991,6 +1009,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
         cluster_name   => $cluster_name,
         rule           => $rule_param,
         conditions     => \@conditions,
+        actions         => \@actions,
         clustermetric  => 1,
     }, { layout => 'main' };
 };
@@ -1000,11 +1019,18 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
 post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ruleid/edit' => sub {
     my $rule    = AggregateRule->get('id' => param('ruleid'));
     my $checker = $rule->checkFormula(formula => param('formula'));
+    
+    my $action  = param('action');
+    if ($action eq '') {$action = undef;}
+
+    my $label  = param('label');
+    if ($label eq '') {$label = undef;}
+
     if($checker->{value} == 1) {
         $rule->setAttr(name => 'aggregate_rule_formula',   value => param('formula'));
-        $rule->setAttr(name => 'aggregate_rule_action_id', value => param('action'));
+        $rule->setAttr(name => 'aggregate_rule_action_id', value => $action);
         $rule->setAttr(name => 'aggregate_rule_state',     value => param('state'));
-        $rule->setAttr(name => 'aggregate_rule_label',     value => param('label'));
+        $rule->setAttr(name => 'aggregate_rule_label',     value => $label);
         $rule->save();
         redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');        
     }else {
@@ -1029,27 +1055,54 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/new
         };
             push @condition_params, $hash;
     }
-    
+
+    my @action_insts = Action->search(hash=>{
+        action_service_provider_id => $cluster_id
+    });
+    my @actions;
+    foreach my $action_inst (@action_insts){
+        if($action_inst->getParams()->{'trigger_rule_type'} eq 'clusterrule'){
+            my $hash = {
+                id           => $action_inst->getAttr(name => 'action_id'),
+                label        => $action_inst->getAttr(name => 'action_name'),
+            };
+            push @actions, $hash;
+        }
+    }
+
     template 'clustermetric_rules_details', {
         title_page    => "Rule creation",
         cluster_id    => $cluster_id,
         cluster_name  => $cluster_name,    
         conditions    => \@condition_params,
+        actions        => \@actions,
         clustermetric => 1,
     }, { layout => 'main' };
 };
 
 post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/new' => sub {
 
+    my $action  = param('action');
+    if ($action eq '') {$action = undef;}
+    
+    my $label  = param('label');
+    if ($label eq '') {$label = undef;}
+    
     my $checker = AggregateRule->checkFormula(formula => param('formula'));
     if($checker->{value} == 1) {
         my $params = {
             aggregate_rule_service_provider_id => param('extclusterid'),
             aggregate_rule_formula             => param('formula'),
-            aggregate_rule_action_id           => param('action'),
             aggregate_rule_state               => param('state'),
-            aggregate_rule_label               => param('label'),
+
         };
+
+        if(defined $label){
+            $params->{aggregate_rule_label}    = $label;
+        }
+        if(defined $action){
+            $params->{aggregate_rule_action_id} = $action;
+        }
         my $cm = AggregateRule->new(%$params);
         redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');
     }else {
@@ -1536,7 +1589,7 @@ get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
             id           => $condition->getAttr(name => 'nodemetric_condition_id'),
             label        => $condition->getAttr(name => 'nodemetric_condition_label'),
         };
-            push @condition_params, $hash;
+        push @condition_params, $hash;
     }
     
     my @action_insts = Action->search(hash=>{
@@ -1544,11 +1597,13 @@ get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
     });
     my @actions;
     foreach my $action_inst (@action_insts){
-        my $hash = {
-            id           => $action_inst->getAttr(name => 'action_id'),
-            label        => $action_inst->getAttr(name => 'action_name'),
-        };
+        if($action_inst->getParams()->{'trigger_rule_type'} eq 'noderule'){
+            my $hash = {
+                id           => $action_inst->getAttr(name => 'action_id'),
+                label        => $action_inst->getAttr(name => 'action_name'),
+            };
             push @actions, $hash;
+        }
     }
 
     
@@ -1565,14 +1620,28 @@ get '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
 post '/extclusters/:extclusterid/nodemetrics/rules/new' => sub {
  
     my $checker = NodemetricRule->checkFormula(formula => param('formula'));
+    
+    my $action  = param('action');
+    if ($action eq '') {$action = undef;}
+    
+    my $label  = param('label');
+    if ($label eq '') {$label = undef;}
+    
     if($checker->{value} == 1) {
         my $params = {
             nodemetric_rule_service_provider_id => param('extclusterid'),
             nodemetric_rule_formula             => param('formula'),
-            nodemetric_rule_action_id           => param('action'),
             nodemetric_rule_state               => param('state'),
-            nodemetric_rule_label               => param('label'),
         };
+
+        if(defined $label){
+            $params->{nodemetric_rule_label}    = $label;
+        }
+        if(defined $action){
+            $params->{nodemetric_rule_action_id} = $action;
+        }
+        
+        
         my $cm = NodemetricRule->new(%$params);
         redirect('/architectures/extclusters/'.param('extclusterid').'/nodemetrics/rules');
     }else {
@@ -1611,13 +1680,16 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/details' 
     my @action_insts = Action->search(hash=>{
         action_service_provider_id => $cluster_id
     });
+    
     my @actions;
     foreach my $action_inst (@action_insts){
-        my $hash = {
-            id           => $action_inst->getAttr(name => 'action_id'),
-            label        => $action_inst->getAttr(name => 'action_name'),
-        };
-            push @actions, $hash;
+        if($action_inst->getParams()->{'trigger_rule_type'} eq 'noderule'){
+            my $hash = {
+                id           => $action_inst->getAttr(name => 'action_id'),
+                label        => $action_inst->getAttr(name => 'action_name'),
+            };
+                push @actions, $hash;
+        }
     }
     
     my $rule_param = {
@@ -1679,11 +1751,13 @@ get '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/details' => sub {
     });
     my @actions;
     foreach my $action_inst (@action_insts){
-        my $hash = {
-            id           => $action_inst->getAttr(name => 'action_id'),
-            label        => $action_inst->getAttr(name => 'action_name'),
-        };
+        if($action_inst->getParams()->{'trigger_rule_type'} eq 'noderule'){
+            my $hash = {
+                id           => $action_inst->getAttr(name => 'action_id'),
+                label        => $action_inst->getAttr(name => 'action_name'),
+            };
             push @actions, $hash;
+        }
     }
 
     template 'clustermetric_rules_details', {
@@ -1711,12 +1785,9 @@ post '/extclusters/:extclusterid/nodemetrics/rules/:ruleid/edit' => sub {
     
     if($checker->{value} == 1) {
         $rule->setAttr(name => 'nodemetric_rule_formula',   value => param('formula'));
-        if(defined $label){
-            $rule->setAttr(name => 'nodemetric_rule_label',     value => $label);
-        }
-        if(defined $action){
-            $rule->setAttr(name => 'nodemetric_rule_action_id', value => $action);
-        }
+        $rule->setAttr(name => 'nodemetric_rule_label',     value => $label);
+        $rule->setAttr(name => 'nodemetric_rule_action_id', value => $action);
+        
         if(param('state') eq 'disabled'){
             $rule->disable(); #NEED TO DELETE ALL VERIFIED_RULE ENTRIES
         }elsif(param('state') eq 'enabled'){
