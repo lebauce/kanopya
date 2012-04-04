@@ -588,7 +588,7 @@ sub _generatePXEConf {
     my $node_mac_addr = $args{host}->getAttr(name => 'host_mac_address');
     $node_mac_addr =~ s/:/-/g;
     
-    my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . $node_mac_addr;
+    my $dest = $tftp_conf->{'repository'} . '/pxelinux.cfg/01-' . lc $node_mac_addr;
 
     $self->{executor}->{econtext}->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
