@@ -562,15 +562,6 @@ INSERT INTO `component` VALUES(@physical_hoster, @admin_cluster, 15, NULL, NULL)
 INSERT INTO `physicalhoster0` VALUES(@physical_hoster);
 
 --
--- Fileimagemanager
---
-
-INSERT INTO `entity` VALUES (@eid, 53);
-INSERT INTO `component` VALUES(@eid, @admin_cluster, 16, NULL, NULL);
-INSERT INTO `fileimagemanager0` VALUES(@eid);
-SET @eid := @eid +1;
-
---
 -- Monitoring data
 --
 

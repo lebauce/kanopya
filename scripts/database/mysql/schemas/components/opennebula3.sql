@@ -45,7 +45,7 @@ CREATE TABLE `opennebula3_vm` (
   `opennebula3_id` int(8) unsigned NOT NULL,  
   `vm_host_id` int(8) unsigned NOT NULL,
   `opennebula3_hypervisor_id` int(8) unsigned NULL DEFAULT NULL,  
-  `vm_id` int(8) unsigned NULL DEFAULT NULL,  
+  `vm_id` int(8) unsigned NULL DEFAULT NULL,
   `vnc_port` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`opennebula3_vm_id`),
   KEY `fk_opennebula3vm_1` (`opennebula3_id`),
@@ -54,6 +54,22 @@ CREATE TABLE `opennebula3_vm` (
   CONSTRAINT `fk_opennebula3vm_1` FOREIGN KEY (`opennebula3_id`) REFERENCES `opennebula3` (`opennebula3_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_opennebula3vm_2` FOREIGN KEY (`vm_host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   CONSTRAINT `fk_opennebula3vm_3` FOREIGN KEY (`opennebula3_hypervisor_id`) REFERENCES `opennebula3_hypervisor` (`opennebula3_hypervisor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `opennebula3_repository`
+--
+
+CREATE TABLE `opennebula3_repository` (
+  `opennebula3_repository_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `opennebula3_id` int(8) unsigned NOT NULL,
+  `repository_name` char(255) NOT NULL,
+  `container_access_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`opennebula3_repository_id`),
+  KEY `fk_opennebula3repository_1` (`opennebula3_id`),
+  KEY `fk_opennebula3repository_2` (`container_access_id`),
+  CONSTRAINT `fk_opennebula3repository_1` FOREIGN KEY (`opennebula3_id`) REFERENCES `opennebula3` (`opennebula3_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_opennebula3repository_2` FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

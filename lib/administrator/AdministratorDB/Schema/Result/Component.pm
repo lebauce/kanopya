@@ -139,10 +139,10 @@ __PACKAGE__->belongs_to(
   "component",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 inside
+=head2 service_provider
 
 Type: belongs_to
 
@@ -151,15 +151,10 @@ Related object: L<AdministratorDB::Schema::Result::Inside>
 =cut
 
 __PACKAGE__->belongs_to(
-  "inside",
+  "service_provider",
   "AdministratorDB::Schema::Result::Inside",
   { inside_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 component_template
@@ -174,12 +169,7 @@ __PACKAGE__->belongs_to(
   "component_template",
   "AdministratorDB::Schema::Result::ComponentTemplate",
   { component_template_id => "component_template_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 component_type
@@ -194,7 +184,7 @@ __PACKAGE__->belongs_to(
   "component_type",
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 tier
@@ -209,12 +199,7 @@ __PACKAGE__->belongs_to(
   "tier",
   "AdministratorDB::Schema::Result::Tier",
   { tier_id => "tier_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 dhcpd3
@@ -229,6 +214,21 @@ __PACKAGE__->might_have(
   "dhcpd3",
   "AdministratorDB::Schema::Result::Dhcpd3",
   { "foreign.dhcpd3_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 fileimagemanager0
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Fileimagemanager0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "fileimagemanager0",
+  "AdministratorDB::Schema::Result::Fileimagemanager0",
+  { "foreign.fileimagemanager0_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -412,6 +412,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 physicalhoster0
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Physicalhoster0>
+
+=cut
+
+__PACKAGE__->might_have(
+  "physicalhoster0",
+  "AdministratorDB::Schema::Result::Physicalhoster0",
+  { "foreign.physicalhoster0_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 snmpd5
 
 Type: might_have
@@ -443,16 +458,15 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:h+qBpMEUcTbIOgnrOZoM7g
-
-
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-03 12:59:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6rbNwlQoEfc1M6go3Aa/zQ
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
     { "foreign.entity_id" => "self.component_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+    { cascade_copy => 0, cascade_delete => 1 }
+);
 
 
 #########################################
@@ -468,6 +482,5 @@ __PACKAGE__->belongs_to(
 #        __PACKAGE__->load_components("+AdministratorDB::ComponentRelationship::$1");
 #    }
 #}
-
 
 1;

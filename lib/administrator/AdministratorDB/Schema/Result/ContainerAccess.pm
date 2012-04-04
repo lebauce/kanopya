@@ -192,9 +192,25 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 opennebula3_repositories
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-20 12:39:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fjzafSG/6HmZUxPQ71pbzg
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3Repository>
+
+=cut
+
+__PACKAGE__->has_many(
+  "opennebula3_repositories",
+  "AdministratorDB::Schema::Result::Opennebula3Repository",
+  { "foreign.container_access_id" => "self.container_access_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-03 12:59:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MgiXNV7hcjQvqRzU1aH4lg
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

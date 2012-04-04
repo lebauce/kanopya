@@ -165,7 +165,7 @@ __PACKAGE__->belongs_to(
   "opennebula3",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "opennebula3_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 opennebula3_hypervisors
@@ -179,6 +179,21 @@ Related object: L<AdministratorDB::Schema::Result::Opennebula3Hypervisor>
 __PACKAGE__->has_many(
   "opennebula3_hypervisors",
   "AdministratorDB::Schema::Result::Opennebula3Hypervisor",
+  { "foreign.opennebula3_id" => "self.opennebula3_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 opennebula3_repositories
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3Repository>
+
+=cut
+
+__PACKAGE__->has_many(
+  "opennebula3_repositories",
+  "AdministratorDB::Schema::Result::Opennebula3Repository",
   { "foreign.opennebula3_id" => "self.opennebula3_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -199,14 +214,15 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ByQxU6qSaL5Q4RcysvnJqQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-03 13:46:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rA2zyvgfenNBO41JrSkFYQ
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.opennebula3_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+    { cascade_copy => 0, cascade_delete => 1 }
+);
+
 1;
