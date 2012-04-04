@@ -49,9 +49,26 @@ sub configureNode {
                         output       => "/fstab",
                         data         => $data);
 
+    my $automountnfs = 0;
     for my $mountdef (@{$data->{mountdefs}}) {
         my $mountpoint = $mountdef->{mounttable1_mount_point};
         $args{econtext}->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
+        
+        if ($mountdef->{mounttable1_mount_filesystem} eq 'nfs') {
+            $automountnfs = 1;
+        }
+    }
+    
+    if ($automountnfs) {
+        my $grep_result = $args{econtext}->execute(
+                              command => "grep \"ASYNCMOUNTNFS=no\" $args{mount_point}/etc/default/rcS"
+                          );
+
+        if (not $grep_result->{stdout}) {
+            $args{econtext}->execute(
+                command => "echo \"ASYNCMOUNTNFS=no\" >> $args{mount_point}/etc/default/rcS"
+            );
+        }
     }
 }
 
