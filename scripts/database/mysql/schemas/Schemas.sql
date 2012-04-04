@@ -1139,7 +1139,7 @@ CREATE TABLE `aggregate_rule` (
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_state` char(32) NOT NULL ,
-  `aggregate_rule_action_id` int(8) unsigned NOT NULL,
+  `aggregate_rule_action_id` int(8) unsigned,
   `aggregate_rule_description` TEXT,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`aggregate_rule_service_provider_id`),
