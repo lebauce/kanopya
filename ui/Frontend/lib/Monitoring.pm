@@ -577,7 +577,8 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/:combinationid/delet
      
     my $combination = AggregateCombination->get('id' => $combination_id);
     
-    my @conditions = AggregateCondition->search(hash=>{});
+    my @conditions = AggregateCondition->search(hash=>{
+    });
     
     my @conditionsUsingCombination;
     foreach my $condition (@conditions) {
@@ -968,7 +969,9 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
 
     my @conditions;
 
-    my @condition_insts = AggregateCondition->search(hash => {});
+    my @condition_insts = AggregateCondition->search(hash => {
+        'aggregate_condition_service_provider_id' => $cluster_id,
+    });
     
     foreach my $condition_inst (@condition_insts){
         my $hash = {
