@@ -1002,7 +1002,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     my $rule_param = {
         id          => $rule_id,
         formula     => $rule->getAttr('name' => 'aggregate_rule_formula'),
-        string      => $rule->getAttr('name' => 'aggregate_rule_label'),
+        string      => $rule->toString(),
         state       => $rule->getAttr('name' => 'aggregate_rule_state'),
         label       => $rule->getAttr('name' => 'aggregate_rule_label'),
         action_id   => $rule->getAttr('name' => 'aggregate_rule_action_id'),
