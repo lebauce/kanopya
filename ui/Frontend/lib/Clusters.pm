@@ -598,13 +598,24 @@ get '/extclusters/:clusterid' => sub {
     );
     
     my @actions;
+    my @node_actions;
+    my @cluster_actions;
+    
     foreach my $action_inst (@action_insts){
         my $hash = {
             'id'   => $action_inst->getAttr('name' => 'action_id'),
             'name' => $action_inst->getAttr('name' => 'action_name'),
         };
         push @actions, $hash;
+        
+        if($action_inst->getParams()->{trigger_rule_type} eq 'noderule'){
+            push @node_actions, $hash;
+        }elsif($action_inst->getParams()->{trigger_rule_type} eq 'clusterrule'){
+            push @cluster_actions, $hash;
+        }
+        
     }
+    
     #print Dumper \@action_hashs;
     
     my $order = {
@@ -640,6 +651,8 @@ get '/extclusters/:clusterid' => sub {
         nodes_list            => \@nodes_sort,#$nodes,
         connectors_list       => \@connectors,
         actions_list          => \@actions,
+        node_actions_list     => \@node_actions,
+        cluster_actions_list  => \@cluster_actions,
         link_updatenodes      => 1,
         link_addconnector     => 1,
         link_delete           => 1,
