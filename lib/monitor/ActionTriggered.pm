@@ -105,7 +105,7 @@ sub createXMLFile {
     General::checkParams(args => \%args, required => ['hostname','callback_route','ou_from','ou_to','file_path','user_message','logout_time']);
     my $fileDirPath = $args{file_path};
 	#remove the domain name from the hostname
-	my @hostname = split ('.', $args{hostname});
+	my @hostname = split '\.', $args{hostname};
     #print Dumper $params;
     my $fileCompletePath = $fileDirPath.time().'file.xml';
     #print $fileCompletePath;
