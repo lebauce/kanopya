@@ -1958,11 +1958,17 @@ get '/extclusters/:extclusterid/actions/:actionid/mclose' => sub {
 	my $fqdnhostname = $action->getAttr('name' => 'action_triggered_hostname');
 	my @hostname 	 = split '\.', $fqdnhostname;
 	
-	open FILE, ">", $file_path or die $!;
-	print FILE $hostname[0]."\n";
-	close FILE;
-	
-	redirect '/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/close';
+	eval {
+		open FILE, ">", $file_path or die $!;
+	};
+	if ($@) {
+		$log->error($@);
+		redirect 'architectures/extclusters/:extclusterid/actions/list'
+	} else {
+		print FILE $hostname[0]."\n";
+		close FILE;
+		redirect '/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/close';
+	}
 };
 
 get '/extclusters/:extclusterid/actions/add' => sub {
