@@ -127,4 +127,14 @@ sub buildMountpoint {
 
     return $file_mountpoint . "_on_" . $underlying;
 }
+
+sub getPreferredBlockSize {
+    my $self = shift;
+    my %args = @_;
+
+    # bs=1M raise an operating system freeze when output device is
+    # a loopback of a file on a nfs mount point.
+    return '1k';
+}
+
 1;
