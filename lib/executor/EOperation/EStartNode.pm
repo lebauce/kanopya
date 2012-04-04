@@ -410,10 +410,10 @@ sub _generateBootConf {
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{_objs}->{container_access}->getAttr(name => 'container_access_export');
 
-            $log->info("Generate Kanopya Halt script Conf");
+            #$log->info("Generate Kanopya Halt script Conf");
 
-            $self->_generateKanopyaHalt(etc_path   => $etc_path,
-                                        targetname => $targetname);
+            #$self->_generateKanopyaHalt(etc_path   => $etc_path,
+            #                            targetname => $targetname);
 
             $self->{executor}->{econtext}->execute(
                 command => "touch $etc_path/iscsi.initramfs"
