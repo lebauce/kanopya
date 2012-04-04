@@ -27,53 +27,42 @@ my $errmsg;
 sub configureNode {
     my $self = shift;
     my %args = @_;
-    
-    if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{host} or ! defined $args{host}) ||
-        (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::EMonitoragent::EMounttable1->configureNode needs a host, mount_point and econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+
+    General::checkParams(args     => \%args,
+                         required => [ "econtext", "host", "mount_point" ]);
+
     my $data = $self->_getEntity()->getConf();
-    
-    $log->debug(Dumper($args{econtext}));
-    $log->debug(Dumper($args{mount_point}));
-    
-    
+
+    #$log->debug(Dumper($args{econtext}));
+    #$log->debug(Dumper($args{mount_point}));
+
     foreach my $row (@{$data->{mountdefs}}) {
         delete $row->{mounttable1_id};
     }
-    
-    $log->debug(Dumper($data));
-                             
-    $self->generateFile(    econtext => $args{econtext}, 
-                            mount_point => $args{mount_point},
-                             template_dir => "/templates/components/mounttable",
-                             input_file => "fstab.tt", 
-                             output => "/fstab", 
-                             data => $data);
-    
-    
+
+    #$log->debug(Dumper($data));
+
+    $self->generateFile(econtext     => $args{econtext},
+                        mount_point  => $args{mount_point} . "/etc",
+                        template_dir => "/templates/components/mounttable",
+                        input_file   => "fstab.tt",
+                        output       => "/fstab",
+                        data         => $data);
+
+    for my $mountdef (@{$data->{mountdefs}}) {
+        my $mountpoint = $mountdef->{mounttable1_mount_point};
+        $args{econtext}->execute(command => "mkdir -p $args{mount_point}/$mountpoint");
+    }
 }
 
 sub addNode {
     my $self = shift;
     my %args = @_;
     
-    if((! exists $args{econtext} or ! defined $args{econtext}) ||
-        (! exists $args{mount_point} or ! defined $args{mount_point})) {
-        $errmsg = "EComponent::EMounttable1->addNode needs a host, mount_point and econtext named argument!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    
+    General::checkParams(args     => \%args,
+                         required => [ "econtext", "host", "mount_point" ]);
+
     $self->configureNode(%args);
 }
-
-
-
-
 
 1;
