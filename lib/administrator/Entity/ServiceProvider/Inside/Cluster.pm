@@ -156,7 +156,7 @@ use constant ATTR_DEF => {
     },
     export_manager_id => {
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0,
         is_editable  => 0
     },

@@ -234,7 +234,8 @@ sub getContainerAccess {
     my $netapp = Entity::ServiceProvider->get(id => $self->getAttr(name => "service_provider_id"));
 
     my $container = {
-        container_access_export => '/vol/' . $args{container_access}->getAttr(name => "export_path"),
+        container_access_export => $netapp->getMasterNodeIp() . ':/vol/' .
+                                   $args{container_access}->getAttr(name => "export_path"),
         container_access_ip     => $netapp->getMasterNodeIp(),
         container_access_port   => 3260,
     };

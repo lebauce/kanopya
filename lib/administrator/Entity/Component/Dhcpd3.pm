@@ -120,7 +120,7 @@ B<throws>  : None
 # return a data structure to pass to the template processor 
 sub getConf {
     my $self = shift;
-    my $cluster = $self->{_dbix}->parent->inside->cluster;
+    my $cluster = $self->{_dbix}->parent->service_provider->cluster;
     my $dhcpd3 =  $self->{_dbix};
     my $data = {};
     my $adm = Administrator->new();

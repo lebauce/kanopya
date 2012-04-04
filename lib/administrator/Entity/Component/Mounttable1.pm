@@ -93,7 +93,6 @@ sub getConf {
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
-    $log->debug("la conf récupérée depuis le component mountab : ".Dumper ($conf));
     my $mountdefs_conf = $conf->{mounttable_mountdefs};
     
     # for each mount definition , we search it in db for update or deletion

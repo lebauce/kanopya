@@ -172,15 +172,18 @@ sub getConf {
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
+
     # TODO input validation
     for my $vg ( @{ $conf->{vgs} }) {
         for my $new_lv ( @{ $vg->{lvs} }) {
-            $self->createDisk(
-                name       => $new_lv->{lvm2_lv_name},
-                size       => $new_lv->{lvm2_lv_size},
-                filesystem => $new_lv->{lvm2_lv_filesystem},
-                vg_id      => $vg->{vg_id}
-            );
+            if (keys %$new_lv) {
+                $self->createDisk(
+                    name       => $new_lv->{lvm2_lv_name},
+                    size       => $new_lv->{lvm2_lv_size},
+                    filesystem => $new_lv->{lvm2_lv_filesystem},
+                    vg_id      => $vg->{vg_id}
+                );
+            }
         }
     }
 }

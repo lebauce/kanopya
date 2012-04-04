@@ -24,6 +24,7 @@ use warnings;
 use Entity::Container::FileContainer;
 use Entity::ContainerAccess::FileContainerAccess;
 use Entity::ContainerAccess;
+use Entity::ServiceProvider;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -35,17 +36,42 @@ my $errmsg;
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
-
+    
 sub getConf {
     my $self = shift;
     my $conf = {};
+    my @access_hashes = ();
 
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+    my $opennebula = $cluster->getComponent(name => "Opennebula", version => "3");
+    
+    my $repo_rs = $opennebula->{_dbix}->opennebula3_repositories;
+    while (my $repo_row = $repo_rs->next) {
+        my $container_access = Entity::ContainerAccess->get(
+                                   id => $repo_row->get_column('container_access_id')
+                               );
+        push @access_hashes, {
+            container_access_id   => $container_access->getAttr(name => 'container_access_id'),
+            container_access_name => $container_access->getAttr(name => 'container_access_export'),
+        }
+    }
+
+    $conf->{container_accesses} = \@access_hashes;
     return $conf;
 }
 
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
+}
+
+sub getReadOnlyParameter {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'readonly' ]);
+    
+    return undef;
 }
 
 =head2 createDisk

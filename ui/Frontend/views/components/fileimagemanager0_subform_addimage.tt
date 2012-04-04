@@ -1,3 +1,8 @@
-
-
-
+<td class="label">Export use:</td>
+<td>
+<select id="container_access_id" name="disk_manager_param_container_access_id">
+<% FOREACH access IN container_accesses %>
+    <option value="<% access.container_access_id %>"><% access.container_access_name %></option>
+<% END %>
+</select>
+</td>

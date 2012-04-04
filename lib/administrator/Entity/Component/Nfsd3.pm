@@ -337,7 +337,7 @@ sub getContainerAccess {
     my $options = "ro";
 
     return {
-        container_access_export  => $mountdir,
+        container_access_export  => '10.0.0.1:' . $mountdir,
         container_access_options => $options,
         container_access_ip      => '10.0.0.1',
         container_access_port    => 2049

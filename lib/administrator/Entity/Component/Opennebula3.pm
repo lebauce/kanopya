@@ -59,11 +59,15 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Entity::ContainerAccess;
+use Entity::ContainerAccess::NfsContainerAccess;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Administrator;
 use NetworkManager;
 use General;
+use Entity::Kernel;
 
 my $log = get_logger("administrator");
 my $errmsg;
@@ -95,12 +99,39 @@ sub getConf {
         %conf = $confindb->get_columns();
 
     }
+
+    my @repositories = ();
+    my @available_accesses = ();
+    my $repo_rs = $confindb->opennebula3_repositories;
+    while (my $repo_row = $repo_rs->next) {
+        my $container_access = Entity::ContainerAccess->get(
+                                   id => $repo_row->get_column('container_access_id')
+                               );
+        push @repositories, {
+            repository_name         => $repo_row->get_column('repository_name'),
+            container_access_export => $container_access->getAttr(name => 'container_access_export'),
+        }
+    }
+
+    my @container_accesses = Entity::ContainerAccess::NfsContainerAccess->search(hash => {});
+    for my $access (@container_accesses) {
+        push @available_accesses, {
+            container_access_id   => $access->getAttr(name => 'container_access_id'),
+            container_access_name => $access->getAttr(name => 'container_access_export'),
+        }
+    }
+
+    $conf{container_accesses} = \@available_accesses;
+    $conf{opennebula3_repositories} = \@repositories;
     return \%conf;
 }
 
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
+
+    my $repos = $conf->{opennebula3_repositories};
+    delete $conf->{opennebula3_repositories};
 
     if(not $conf->{opennebula3_id}) {
         # new configuration -> create
@@ -109,6 +140,34 @@ sub setConf {
         # old configuration -> update
         $self->{_dbix}->update($conf);
     }
+
+    # Update the configuration of the component Mounttable of the cluster,
+    # to automatically mount the images repositories.
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+    my $mounttable = $cluster->getComponent(name => "Mounttable", version => "1");
+
+    my $oldconf = $mounttable->getConf();
+    my @mountentries = @{$oldconf->{mountdefs}};
+    for my $repo (@{$repos}) {
+        if ($repo->{container_access_id}) {
+            $self->{_dbix}->opennebula3_repositories->create($repo);
+
+            my $container_access = Entity::ContainerAccess->get(
+                                       id => $repo->{container_access_id}
+                                   );
+
+            my $mounttable_entry = {
+                mounttable1_mount_dumpfreq   => 0,
+                mounttable1_mount_filesystem => 'nfs',
+                mounttable1_mount_point      => $conf->{image_repository_path} . '/' . $repo->{repository_name},
+                mounttable1_mount_device     => $container_access->getAttr(name => 'container_access_export'),
+                mounttable1_mount_options    => $container_access->getAttr(name => 'container_access_options'),
+                mounttable1_mount_passnum    => 0,
+            };
+            push @mountentries, $mounttable_entry
+        }
+    }
+    $mounttable->setConf({ mounttable_mountdefs => \@mountentries});
 }
 
 sub getNetConf {
@@ -155,13 +214,18 @@ sub createVirtualHost {
     my $adm =  Administrator->new();
     my $new_mac_address = $adm->{manager}->{network}->generateMacAddress();
 
+    # Use the first kernel found...
+    my $kernel = Entity::Kernel->find(hash => {});
+
     my $vm = Entity::Host->new(
-                 host_mac_address   => $new_mac_address,
-                 kernel_id          => 1,
-                 host_serial_number => "Virtual Host with mac $new_mac_address",
-                 host_ram           => $args{ram},
-                 host_core          => $args{core},
-                 active             => 1,
+                 service_provider_id => $self->getAttr(name => 'service_provider_id'),
+                 host_manager_id     => $self->getAttr(name => 'entity_id'),
+                 host_mac_address    => $new_mac_address,
+                 host_serial_number  => "Virtual Host with mac $new_mac_address",
+                 kernel_id           => $kernel->getAttr(name => 'entity_id'),
+                 host_ram            => $args{ram},
+                 host_core           => $args{core},
+                 active              => 1,
              );
 
     $vm->save();

@@ -21,14 +21,46 @@
 </select></td>
 </table>
 
+<hr />
+<h3>Images repositories:</h3>
+	<table class="conf_array_value" id="opennebula3_repositories">
+        <tr><th>Name</th><th>Export</th></tr>
+		<% FOREACH repo IN opennebula3_repositories %>
+			<tr class="elem_opennebula3_repositories" name="opennebula3_repositories">
+			     <td><input type="text" class="opennebula3_repositories_simple_value" name="repository_name" value="<% repo.repository_name %>" disabled /></td>
+			     <td><input type="text" class="opennebula3_repositories_simple_value" name="container_access_export" value="<% repo.container_access_export %>" disabled /></td>
+			</tr>
+		<% END %>
+	</table>
+<hr />
+<a class="add_opennebula3_repositories imgAdding iconAction">Add repositories</a>
+<hr />
+
 <div class="right">
 <input id="save_button" type="button" value="ok"/>
 <input type="button" value="cancel" onclick="javascript:document.location='/architectures/clusters/<% cluster_id %>'"/>
 </div>
 </form>
 
-<div class="hidden" id="models"></div>
 
 <script type="text/javascript">
 document.getElementById('<% debug_level %>').selected=1;
 </script>
+
+<div class="hidden" id="models">
+	<table class="conf_array_value" id="opennebula3_repositories">
+        <tr><th>Name</th><th>Export</th></tr>
+			<tr class="elem_opennebula3_repositories" name="opennebula3_repositories">
+			     <td><input type="text" class="opennebula3_repositories_simple_value" name="repository_name" value=""/></td>
+                 <td><select class="opennebula3_repositories_simple_value" name="container_access_id">
+                     <% FOREACH access IN container_accesses %>
+                         <option value="<% access.container_access_id %>"><% access.container_access_name %></option>
+                     <% END %>
+                 </select></td>
+			</tr>
+	</table>
+</div>
+
+
+
+
