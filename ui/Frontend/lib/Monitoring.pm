@@ -1864,7 +1864,7 @@ get '/extclusters/:extclusterid/actions/add' => sub {
 
 get '/extclusters/:extclusterid/clusteractions/add' => sub {
     template 'form_clusteraction', {
-        title_page => "Action creation",
+        title_page => "Cluster action creation",
         cluster_id => param('extclusterid'),
     }, { layout => '' };
 };
@@ -1955,20 +1955,39 @@ get '/extclusters/:extclusterid/actions/:actionid/delete' => sub{
 get '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
     my $action_inst = Action->get('id' => param('actionid'));
     my $param       = $action_inst->getParams();
-    my $action = {
-        id				=> param('actionid'),
-        name			=> $action_inst->getAttr(name => 'action_name'),
-        ou_to			=> $param->{ou_to},
-        file_path		=> $param->{file_path},
-		user_message	=> $param->{user_message},
-		logout_time		=> $param->{logout_time},
-    };
-    
-    template 'form_action', {
-        title_page   => "Action creation",
-        cluster_id   => param('extclusterid'),
-        action       => $action,
-    }, { layout => '' };
+	my $action;
+	my $action_type = $action_inst->getAttr(name => 'action_action_type_id');
+	
+	print Dumper $action_type;
+	
+	if ($action_type == 1) {
+		$action = {
+			id				=> param('actionid'),
+			name			=> $action_inst->getAttr(name => 'action_name'),
+			ou_to			=> $param->{ou_to},
+			file_path		=> $param->{file_path},
+			user_message	=> $param->{user_message},
+			logout_time		=> $param->{logout_time},
+		};
+		template 'form_action', {
+			title_page   => "Action creation",
+			cluster_id   => param('extclusterid'),
+			action       => $action,
+		}, { layout => '' };
+	} elsif ($action_type == 2) {
+		$action = {
+			id				=> param('actionid'),
+			name			=> $action_inst->getAttr(name => 'action_name'),
+			user_message	=> $param->{user_message},
+			file_path		=> $param->{file_path},
+		};
+		template 'form_clusteraction', {
+			title_page   => "Action creation",
+			cluster_id   => param('extclusterid'),
+			action       => $action,
+		}, { layout => '' };
+	}
+   
 }; 
 
 post '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
@@ -1978,12 +1997,22 @@ post '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
         value => param('action_name'),
     );
     $action->save();
-    $action->setParams(
-        'ou_to'     	=> param('action_ou_to'),
-        'file_path' 	=> param('action_file_path'),
-		'user_message'	=> param('action_user_message'),
-		'logout_time'	=> param('action_logout_time'),
-    );
+	my $action_type = param('action_type_id');
+	
+	if ($action_type == 1) {	
+		$action->setParams(
+			'ou_to'     	=> param('action_ou_to'),
+			'file_path' 	=> param('action_file_path'),
+			'user_message'	=> param('action_user_message'),
+			'logout_time'	=> param('action_logout_time'),
+		);
+	} elsif ($action_type == 2) {
+		$action->setParams(
+			'file_path' 	=> param('action_file_path'),
+			'user_message'	=> param('action_user_message'),
+		);
+	}
+
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
 
