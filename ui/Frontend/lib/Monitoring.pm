@@ -1864,7 +1864,7 @@ get '/extclusters/:extclusterid/actions/add' => sub {
 
 get '/extclusters/:extclusterid/clusteractions/add' => sub {
     template 'form_clusteraction', {
-        title_page => "Action creation",
+        title_page => "Cluster action creation",
         cluster_id => param('extclusterid'),
     }, { layout => '' };
 };
