@@ -60,8 +60,11 @@ sub copy {
 
     # If devices exists, copy contents with 'dd'
     if (defined $source_device and defined $dest_device) {
-        # Copy the device
-        $command = "dd conv=notrunc if=$source_device of=$dest_device bs=1M";
+        # bs=1M raise an operating system freeze when output device is
+        # a loopback of a file on a nfs mount point.
+        #$command = "dd conv=notrunc if=$source_device of=$dest_device bs=1M";
+        
+        $command = "dd conv=notrunc if=$source_device of=$dest_device bs=1k";
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
