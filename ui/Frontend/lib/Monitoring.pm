@@ -1911,14 +1911,24 @@ post '/extclusters/:extclusterid/actions' => sub {
 };
 
 get '/extclusters/:extclusterid/actions/:actionid/close' => sub {
-    eval{
+    eval{        
         my $action       = ActionTriggered->get('id' => param('actionid'));
-        my $hostname     = $action->getAttr('name' => 'action_triggered_hostname');
-        my $cluster_id = param('extclusterid');
-        my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-        my $node_id = $extcluster->getNodeId(hostname => $hostname);
-        $action->delete();
-        redirect '/architectures/extclusters/'.$cluster_id.'/externalnodes/'.$node_id.'/enable';
+        
+        if (action->getParams()->{trigger_rule_type} eq 'noderule'){
+            my $hostname     = $action->getAttr('name' => 'action_triggered_hostname');
+            my $cluster_id = param('extclusterid');
+            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+            my $node_id = $extcluster->getNodeId(hostname => $hostname);
+            $action->delete();
+            redirect '/architectures/extclusters/'.$cluster_id.'/externalnodes/'.$node_id.'/enable';
+        }elsif(action->getParams()->{trigger_rule_type} eq 'clusterrule'){
+            my $trigger_aggregate_rule_id = $action->getAttr('name' => 'action_triggered_hostname');
+            my $cluster_id = param('extclusterid');
+            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+            
+            $action->delete();
+            redirect '/architectures/extclusters/'.$cluster_id.'/clustermetrics/combinations/conditions/rules/'.$trigger_aggregate_rule_id.'/enable';
+        }
         1;
     }or do{
         redirect '/architectures/extclusters/'.param('extclusterid') 
