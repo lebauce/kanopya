@@ -55,6 +55,7 @@ sub trigger{
     
     # Get db params (path and ou_dest)
     my $params = $self->getParams();    # Get current ou
+    
     my $body;
     my $cluster_id = $self->{_dbix}
                           ->action_triggered_action
@@ -124,7 +125,7 @@ sub createXMLFile {
     
     General::checkParams(args => \%args, required => ['file_path','body']);
     
-    my @params_order = ('route_callback','hostname','clustername','ou_from','ou_to', 'id', 'user_message','logout_time');
+    my @params_order = ('hostname','clustername','ou_from','ou_to','route_callback', 'id', 'user_message','logout_time');
     
     my $fileDirPath = $args{file_path};
 
