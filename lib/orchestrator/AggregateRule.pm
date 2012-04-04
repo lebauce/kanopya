@@ -56,7 +56,7 @@ use constant ATTR_DEF => {
                                  is_extended    => 0,
                                  is_editable    => 1},
     aggregate_rule_action_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
+                                 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
     aggregate_rule_description =>  {pattern       => '^.*$',
@@ -301,6 +301,34 @@ sub setAttr {
     my $self = $class->SUPER::setAttr(%args);
 };
 
+sub triggerAction{
+    my ($self,%args) = @_;
 
+    General::checkParams(args => \%args, required => []);
+    
+    my $action_id = $self->getAttr(name => 'aggregate_rule_action_id');
+    #IF the rule has a configured action to trigger
+    if($action_id){
+        eval{
+            #get the action
+            my $action = Action->get('id' => $action_id);
+            #trigger it
+            my $action_triggered = ActionTriggered->new(
+                action_triggered_action_id => $action_id,
+            );
+            my $path = $action_triggered->trigger();
+            
+            my $cluster_id = $self->getAttr('name' => 'aggregate_rule_service_provider_id');
+            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+            #disable corresponding node
+            
+            
+            print 'Action '.$action_id." triggered \n file $path created";
+        1;
+        } or do {
+            print 'Error triggering action '.$action_id."\n $@";
+        }
+    }
+}
 1;
 
