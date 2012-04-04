@@ -605,7 +605,7 @@ get '/extclusters/:clusterid' => sub {
         my $hash = {
             'id'   => $action_inst->getAttr('name' => 'action_id'),
             'name' => $action_inst->getAttr('name' => 'action_name'),
-			'type' => $action_inst->getAttr('name' => 'action_action_type_id'),
+			'type' => $action_inst->getParams()->{trigger_rule_type},
         };
         push @actions, $hash;
         

@@ -221,14 +221,9 @@
     </tr>
     <% FOREACH action IN actions_list %>
         <tr>
-            <td class="label2"><span class="bold"><% action.name %></span></td>
-            <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
-            <% IF action.type == 1 %>
-				<td> Node action</td>
-			<% END %>
-			<% IF action.type == 2 %>
-				<td> Cluster action</td>
-			<% END %>				
+            <td class="label2"><span class="bold"><% action.name %><% IF action.type == "noderule" %> (Node action)<% END %><% IF action.type == "clusterrule" %> (Cluster action)<% END %></span></td>
+            <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>			
+			<td></td>
         </tr>
     <% END %>
 <%END%>
