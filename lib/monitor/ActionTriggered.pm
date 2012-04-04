@@ -93,12 +93,17 @@ sub trigger{
         my $action_id =  $self->getAttr(name => 'action_triggered_id');
         my $kanopya_fqdn = fqdn(); 
         my $route_callback = 'http://'.$kanopya_fqdn.':5000/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/close';
-
+        
+        my $trigger_rule_id = $self->getAttr(name => 'action_triggered_hostname');
+        my $trigger_rule = AggregateRule('id' => $trigger_rule_id);
+        my $formula = $trigger_rule->toString();
+        
         $body = { 
-            id          => $self->getAttr(name => 'action_triggered_id'),
+            #id          => $self->getAttr(name => 'action_triggered_id'),
             clustername => $cluster->getAttr('name' =>'externalcluster_name'),
             user_message => $params->{user_message},
             route_callback => $route_callback,
+            formula        => $formula,
         }
     }
     
@@ -129,7 +134,7 @@ sub createXMLFile {
     
     General::checkParams(args => \%args, required => ['file_path','body']);
     
-    my @params_order = ('hostname','clustername','ou_from','ou_to','route_callback', 'id', 'user_message','logout_time');
+    my @params_order = ('hostname','clustername','ou_from','ou_to','route_callback', 'id', 'formula', 'user_message','logout_time');
     
     my $fileDirPath = $args{file_path};
 
