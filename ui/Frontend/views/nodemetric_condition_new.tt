@@ -53,7 +53,7 @@
         </div>
     <%ELSE%>
         <input type="checkbox" name="rule" value="1"/> Create the corresponding rule at the same time 
-        <br/>(Warning : A rule will be created but will be disabled. You will have to add a specific action to enable it) 
+        <br/>(Warning : The rule will be created but will be disabled, please enable it manually)
         <br/>
         <br/>
         <div class="left">
