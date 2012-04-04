@@ -73,7 +73,10 @@ INSERT INTO `class_type` VALUES
 (57, 'Entity::Connector::NetappManager'),
 (58, 'Action'),
 (59, 'ActionTriggered'),
-(60, 'ActionParameter');
+(60, 'ActionParameter'),
+(61, 'ActionType'),
+(62, 'ActionTypeParameter');
+
 
 
 
