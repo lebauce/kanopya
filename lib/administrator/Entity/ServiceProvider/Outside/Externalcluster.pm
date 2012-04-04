@@ -409,7 +409,7 @@ sub monitoringDefaultInit {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => 0,
+#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => 'Cluster load',
         aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
     };
@@ -508,7 +508,7 @@ sub ruleGeneration{
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$coef_cond_id.' && '.'id'.$std_cond_id,
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => 0,
+#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => 'Cluster '.$label.' homogeneity',
         aggregate_rule_description          => $label.' is not well balanced across the cluster',
     };
@@ -518,7 +518,7 @@ sub ruleGeneration{
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$out_cond_id,
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => 0,
+#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => 'Cluster '.$label.' consistency',
         aggregate_rule_description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
     };
@@ -538,7 +538,7 @@ sub ruleGeneration{
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.$mean_cond_id,
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => 0,
+#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => 'Cluster '.$label.' overload',
         aggregate_rule_description          => 'Average '.$label.' is too high, your cluster may be undersized',
     };
@@ -637,7 +637,7 @@ sub generateAOutOfRangeRule {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => 0,
+#        aggregate_rule_action_id            => 0,
         aggregate_rule_label                => $label,
         aggregate_rule_description          => 'Check the indicators of the nodes generating isolated datas',
     };
@@ -664,7 +664,7 @@ sub generateOverRules {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => 0,
+#        aggregate_rule_action_id            => 0,
     };
     
     $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' overloaded';
@@ -694,7 +694,7 @@ sub generateUnderRules {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => 0,
+#        aggregate_rule_action_id            => 0,
     };
     
     $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->getCombination()->toString().' underloaded';
@@ -731,7 +731,7 @@ sub generateCoefficientOfVariationRules {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+#        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         aggregate_rule_label                => 'Heterogeneity detected with '.$aggregate_combination->toString(),
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
@@ -765,7 +765,7 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
         aggregate_rule_service_provider_id  => $extcluster_id,
         aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
         aggregate_rule_state                => 'enabled',
-        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
+#        aggregate_rule_action_id            => $aggregate_condition->getAttr(name => 'aggregate_condition_id'),
         aggregate_rule_label                => 'Data homogeneity',
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
