@@ -21,7 +21,7 @@
         </td><td> 
         <span class="italic"> <% triggered_action.timestamp %>
         </td><td> 
-         <a class="" href="/architectures/extclusters/<% cluster_id %>/actions/<% triggered_action.id %>/close"> Manually close this action </a>
+         <a class="" href="/architectures/extclusters/<% cluster_id %>/actions/<% triggered_action.id %>/mclose"> Manually close this action </a>
         </td>
         </tr>
     <% END %>

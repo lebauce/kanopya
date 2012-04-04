@@ -1936,6 +1936,23 @@ get '/extclusters/:extclusterid/actions/:actionid/close' => sub {
     
 };
 
+get '/extclusters/:extclusterid/actions/:actionid/mclose' => sub {
+
+	my $cluster_id 	 = param('extclusterid');
+	my $action_id 	 = param('actionid');
+
+	my $action       = ActionTriggered->get('id' => param('actionid'));
+	my $file_path	 = $action->getParams()->{file_path}.'\close\\'.$action->getAttr('name' => 'action_triggered_timestamp').'.txt';
+	my $fqdnhostname = $action->getAttr('name' => 'action_triggered_hostname');
+	my @hostname 	 = split '\.', $fqdnhostname;
+	
+	open FILE, ">", $file_path or die $!;
+	print FILE $hostname[0]."\n";
+	close FILE;
+	
+	redirect '/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/close';
+};
+
 get '/extclusters/:extclusterid/actions/add' => sub {
     template 'form_action', {
         title_page => "Action creation",
