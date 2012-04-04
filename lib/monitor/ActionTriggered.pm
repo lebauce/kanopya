@@ -139,7 +139,7 @@ sub createXMLFile {
     my $fileDirPath = $args{file_path};
 
     #print Dumper $params;
-    my $fileCompletePath = $self->getAttr('name' => 'action_triggered_timestamp').'.txt';
+    my $fileCompletePath = $fileDirPath.$self->getAttr('name' => 'action_triggered_timestamp').'.txt';
     #print $fileCompletePath;
     open FILE, ">", $fileCompletePath or die $!;
     foreach my $param (@params_order){
