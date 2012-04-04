@@ -163,19 +163,29 @@ sub fileCreate{
               );
     }
 
+    my ($command, $result);
     eval {
+        # Can't get errors when built-in function fails, so use dd.
+
         # Open the file in write mode
-        open(FILEIMAGE, '>', $file_image_path);
-
+        #open(FILEIMAGE, '>', $file_image_path);
         # Seek the file until wanted size
-        seek(FILEIMAGE, $args{file_size} - 1, 0);
-
+        #seek(FILEIMAGE, $args{file_size} - 1, 0);
         # Write 0 at the end of file
-        print FILEIMAGE 0;
+        #print FILEIMAGE 0;
+        #close(FILEIMAGE);
 
-        close(FILEIMAGE);
+        $command = "dd if=/dev/zero of=$file_image_path bs=1 count=1 seek=$args{file_size}";
+        $result  = $args{econtext}->execute(command => $command);
+
+        if ($result->{stderr} and ($result->{exitcode} != 0)) {
+            throw Kanopya::Exception::Execution(error => $result->{stderr});
+        }
+
+        $command = "sync";
+        $args{econtext}->execute(command => $command);
     };
-    if ($@) {
+    if ($@ or (not -e $file_image_path)) {
         throw Kanopya::Exception::Execution(
                   error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
               );
