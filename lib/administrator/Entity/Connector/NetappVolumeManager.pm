@@ -15,10 +15,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Entity::Connector::NetappVolumeManager;
-use base "Entity::Connector";
 use base "Entity::Connector::NetappManager";
 
 use warnings;
+
+use Entity::HostManager;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::NfsContainerAccess;
 
@@ -31,6 +32,21 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getExportManagerFromBootPolicy {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "boot_policy" ]);
+
+    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_nfs}) {
+        return $self;
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported boot policy: $args{boot_policy}"
+          );
+}
 
 sub getReadOnlyParameter {
     my $self = shift;

@@ -75,17 +75,17 @@ sub getConf {
     my $conf_rs = $self->{_dbix}->mounttable1s_mount;
     my @mountdefs = ();
     while (my $conf_row = $conf_rs->next) {
-        push @mountdefs, 
-        {  mounttable1_mount_id         => $conf_row->get_column('mounttable1_mount_id'),
-           mounttable1_mount_device     => $conf_row->get_column('mounttable1_mount_device'),
-           mounttable1_mount_point      => $conf_row->get_column('mounttable1_mount_point'),
-           mounttable1_mount_filesystem => $conf_row->get_column('mounttable1_mount_filesystem'),
-           mounttable1_mount_options    => $conf_row->get_column('mounttable1_mount_options'),
-           mounttable1_mount_dumpfreq   => $conf_row->get_column('mounttable1_mount_dumpfreq'),
-           mounttable1_mount_passnum    => $conf_row->get_column('mounttable1_mount_passnum'),
+        push @mountdefs, {
+            mounttable1_mount_id         => $conf_row->get_column('mounttable1_mount_id'),
+            mounttable1_mount_device     => $conf_row->get_column('mounttable1_mount_device'),
+            mounttable1_mount_point      => $conf_row->get_column('mounttable1_mount_point'),
+            mounttable1_mount_filesystem => $conf_row->get_column('mounttable1_mount_filesystem'),
+            mounttable1_mount_options    => $conf_row->get_column('mounttable1_mount_options'),
+            mounttable1_mount_dumpfreq   => $conf_row->get_column('mounttable1_mount_dumpfreq'),
+            mounttable1_mount_passnum    => $conf_row->get_column('mounttable1_mount_passnum'),
         };
     }
-    
+
     $conf->{mountdefs} = \@mountdefs;
     return $conf;
 }

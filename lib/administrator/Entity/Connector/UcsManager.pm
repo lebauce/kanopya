@@ -16,7 +16,9 @@
 package Entity::Connector::UcsManager;
 use base "Entity::Connector";
 use base "Entity::HostManager";
+
 use Administrator;
+use Entity::HostManager;
 use Data::Dumper;
 
 use warnings;
@@ -30,9 +32,11 @@ my ($schema, $config, $oneinstance);
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getBootPolicies { return ('BootOnSan',
-                              'PXE Boot via ISCSI',
-                              'PXE Boot via NFS'); }
+sub getBootPolicies {
+    return (Entity::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Entity::HostManager->BOOT_POLICIES->{pxe_nfs},
+            Entity::HostManager->BOOT_POLICIES->{boot_on_san});
+}
 
 sub getHostType {
     return "UCS blade";

@@ -58,6 +58,8 @@ use warnings;
 
 use General;
 use Kanopya::Exceptions;
+use Entity::HostManager;
+use Entity::ServiceProvider;
 use Entity::Container::LvmContainer;
 
 use Log::Log4perl "get_logger";
@@ -186,6 +188,26 @@ sub setConf {
             }
         }
     }
+}
+
+sub getExportManagerFromBootPolicy {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "boot_policy" ]);
+
+    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+
+    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
+        return $cluster->getComponent(name => "Iscsitarget", version => "1");
+    }
+    elsif ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_nfs}) {
+        return $cluster->getComponent(name => "Nfsd", version => "3");
+    }
+    
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported boot policy: $args{boot_policy}"
+          );
 }
 
 =head2 createDisk

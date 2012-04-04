@@ -23,6 +23,7 @@ use strict;
 use warnings;
 
 use Entity::Powersupplycard;
+use Entity::HostManager;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -36,10 +37,9 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getBootPolicies { 
-    return ('PXE Boot via ISCSI',
-            'PXE Boot via NFS'
-    );
+sub getBootPolicies {
+    return (Entity::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Entity::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
 sub getHostType {

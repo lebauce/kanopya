@@ -223,7 +223,6 @@ sub execute {
     $log->info('Mounting the container <' . $mountpoint . '>');
     $econtainer_access->mount(mountpoint => $mountpoint, econtext => $self->{executor}->{econtext});
 
-
     # generate resolv.conf
     $ecluster->generateResolvConf(
         etc_path => $mountpoint . '/etc',

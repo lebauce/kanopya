@@ -26,6 +26,13 @@ use Data::Dumper;
 
 my $log = get_logger("administrator");
 
+use constant BOOT_POLICIES => {
+    pxe_nfs      => 'PXE Boot via NFS',
+    pxe_iscsi    => 'PXE Boot via ISCSI',
+    virtual_disk => 'BootOnVirtualDisk',
+    boot_on_san  => 'BootOnSan',
+};
+
 =head2 addHost
 
 =cut
@@ -47,7 +54,7 @@ sub addHost {
     eval {
         $host = Entity::Host->new(
                     service_provider_id => $host_provider_id,
-                    host_manager_id  => $host_manager_id,
+                    host_manager_id     => $host_manager_id,
                     %args
                 );
     };

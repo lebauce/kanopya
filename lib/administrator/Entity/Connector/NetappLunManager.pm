@@ -18,6 +18,8 @@ package Entity::Connector::NetappLunManager;
 use base 'Entity::Connector::NetappManager';
 
 use warnings;
+
+use Entity::HostManager;
 use Entity::Container::NetappLun;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::IscsiContainerAccess;
@@ -32,6 +34,21 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getExportManagerFromBootPolicy {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "boot_policy" ]);
+
+    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
+        return $self;
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported boot policy: $args{boot_policy}"
+          );
+}
 
 sub getReadOnlyParameter {
     my $self = shift;

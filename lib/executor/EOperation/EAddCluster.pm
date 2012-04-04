@@ -93,13 +93,26 @@ sub prepare {
         disk_manager_id      => General::checkParam(args => $params, name => 'disk_manager_id'),
     };
 
-    $cluster_params->{export_manager_id} = General::checkParam(args    => $params,
-                                                               name    => 'export_manager_id',
-                                                               default => $cluster_params->{disk_manager_id});
-
     if (not $cluster_params->{kernel_id}) {
         delete $cluster_params->{kernel_id};
     }
+
+    # Instiate the disk manager to get the export manager according to the boot policy.
+    my $disk_manager;
+    eval {
+        $disk_manager = Entity->get(id => $cluster_params->{disk_manager_id});
+    };
+    if($@) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
+
+    my $export_manager = $disk_manager->getExportManagerFromBootPolicy(
+                             boot_policy => $cluster_params->{cluster_boot_policy}
+                         );
+
+    $cluster_params->{export_manager_id} = General::checkParam(args    => $params,
+                                                               name    => 'export_manager_id',
+                                                               default => $export_manager->getAttr(name => 'entity_id'));
 
     # Cluster instantiation
     eval {
@@ -127,7 +140,6 @@ sub prepare {
     }
 
     # Get export manager parameter related to si shared value.
-    my $export_manager = Entity->get(id => $cluster_params->{export_manager_id});
     my $readonly_param = $export_manager->getReadOnlyParameter(
                              readonly => $cluster_params->{cluster_si_shared}
                          );

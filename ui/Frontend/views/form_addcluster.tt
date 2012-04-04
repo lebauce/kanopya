@@ -105,14 +105,14 @@
     <tr id="diskmanagerdetails"></tr>
 
 
-    <tr><td class="label">Export Manager :</td>
+    <!--<tr><td class="label">Export Manager :</td>
         <td><select id="export_manager" name="export_manager_id">
                 <% FOREACH export IN exportmanagers_list %>
                 <option value="<% export.id %>"><% export.name %></option>
                 <% END %>
             </select>
         </td>
-    </tr>
+    </tr>-->
     <tr><td><span style="color: red"><% err_systemimage_id %></span></td></td></tr>
 
      

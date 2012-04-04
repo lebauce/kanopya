@@ -25,6 +25,7 @@ use Entity::Container::FileContainer;
 use Entity::ContainerAccess::FileContainerAccess;
 use Entity::ContainerAccess;
 use Entity::ServiceProvider;
+use Entity::HostManager;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -63,6 +64,21 @@ sub getConf {
 sub setConf {
     my $self = shift;
     my ($conf) = @_;
+}
+
+sub getExportManagerFromBootPolicy {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "boot_policy" ]);
+
+    if ($args{boot_policy} eq Entity::HostManager->BOOT_POLICIES->{virtual_disk}) {
+        return $self;
+    }
+
+    throw Kanopya::Exception::Internal::UnknownCategory(
+              error => "Unsupported boot policy: $args{boot_policy}"
+          );
 }
 
 sub getReadOnlyParameter {

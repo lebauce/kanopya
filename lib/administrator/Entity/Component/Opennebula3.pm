@@ -59,6 +59,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Entity::HostManager;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 
@@ -81,10 +82,10 @@ sub getAttrDef { return ATTR_DEF; }
 
 =cut
 
-sub getBootPolicies { 
-    return ( 'PXE Boot via ISCSI',
-             'PXE Boot via NFS',
-             'BootOnVirtualDisk' );
+sub getBootPolicies {
+    return (Entity::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Entity::HostManager->BOOT_POLICIES->{pxe_nfs},
+            Entity::HostManager->BOOT_POLICIES->{virtual_disk});
 }
 
 sub getHostType {

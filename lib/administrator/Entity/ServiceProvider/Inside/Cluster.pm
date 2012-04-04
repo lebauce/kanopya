@@ -257,7 +257,7 @@ sub getDefaultManager {
         return $self->getComponent(name => "Physicalhoster", version => "0");
     }
 
-    throw Kanopya::Exception::Internal::UnknownCategory()
+    throw Kanopya::Exception::Internal::UnknownCategory();
 }
 
 =head2 create
