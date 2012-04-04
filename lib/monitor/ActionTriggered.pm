@@ -90,11 +90,15 @@ sub trigger{
         }
     }elsif($params->{trigger_rule_type} eq 'clusterrule'){
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-         
+        my $action_id =  $self->getAttr(name => 'action_triggered_id');
+        my $kanopya_fqdn = fqdn(); 
+        my $route_callback = 'http://'.$kanopya_fqdn.':5000/architectures/extclusters/'.$cluster_id.'/actions/'.$action_id.'/close';
+
         $body = { 
             id          => $self->getAttr(name => 'action_triggered_id'),
             clustername => $cluster->getAttr('name' =>'externalcluster_name'),
             user_message => $params->{user_message},
+            route_callback => $route_callback,
         }
     }
     
