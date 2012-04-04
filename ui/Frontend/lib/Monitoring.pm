@@ -1862,6 +1862,13 @@ get '/extclusters/:extclusterid/actions/add' => sub {
     }, { layout => '' };
 };
 
+get '/extclusters/:extclusterid/clusteractions/add' => sub {
+    template 'form_clusteraction', {
+        title_page => "Action creation",
+        cluster_id => param('extclusterid'),
+    }, { layout => '' };
+};
+
 post '/extclusters/:extclusterid/actions/add' => sub {
     my $action = Action->new(
         action_service_provider_id => param('extclusterid'),
@@ -1893,30 +1900,6 @@ post '/extclusters/:extclusterid/actions/add' => sub {
             action_parameter_action_id => $action->getAttr(name => 'action_id'), 
         );
     }
-#    ActionParameter->new(
-#        action_parameter_name      => 'ou_to',
-#        action_parameter_value     => param('action_ou_to'),
-#        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
-#    );
-#	
-#    
-#    ActionParameter->new(
-#        action_parameter_name  => 'file_path',
-#        action_parameter_value => param('action_file_path'),
-#        action_parameter_action_id => $action->getAttr(name => 'action_id'),
-#    );
-#    
-#	ActionParameter->new(
-#        action_parameter_name      => 'user_message',
-#        action_parameter_value     => param('action_user_message'),
-#        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
-#    );
-#	
-#	ActionParameter->new(
-#		action_parameter_name      => 'logout_time',
-#		action_parameter_value     => param('action_logout_time'),
-#		action_parameter_action_id => $action->getAttr(name => 'action_id'), 
-#	);
 	
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };

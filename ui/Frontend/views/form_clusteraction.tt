@@ -1,0 +1,24 @@
+<h2>Create a migration action <%action.id%> </h2>
+
+<%IF action.id%>
+    <form id="target" method="POST" action="/architectures/extclusters/<%cluster_id%>/actions/<%action.id%>/edit">
+<%ELSE%>
+    <form id="target" method="POST" action="/architectures/extclusters/<%cluster_id%>/actions/add">
+<%END%>
+<input type ="hidden" name="trigger_rule_type" value="clusterrule">
+<input type ="hidden" name="action_type_id" value="2">
+
+<table class="form">
+    <tr>
+        <td class="label">File path:</td>
+        <td><input type="text" cols="32" name="action_file_path" value="<%action.file_path%>"/></td>
+    </tr>
+	<tr>
+        <td class="label">User message:</td>
+        <td><input type="text" cols="32" name="action_user_message" value="<%action.user_message%>"/></td>
+    </tr>
+</table>
+<a class ="action" href="/architectures/extclusters/<%cluster_id%>/actions/<%action.id%>/delete">Delete this action</a>
+<br/>
+Warning : Please check that all triggers have been closed before deleting this action
+</form>

@@ -213,6 +213,8 @@
         <td class="actions">
             <a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/actions/add">add an action</a><br />
             <span class="desc">Add a new migration action to this cluster.</span><br /><br />
+			<a class="imgAdding modal action" href="/architectures/extclusters/<% cluster_id %>/clusteractions/add">add an action</a><br />
+            <span class="desc">Add a new migration cluster action to this cluster.</span><br /><br />
             <a class="imgAdding action" href="/architectures/extclusters/<% cluster_id %>/actions/list">Currently triggered actions</a><br />
             <span class="desc">List all currently triggered actions from this cluster </span><br /><br />
         </td>
