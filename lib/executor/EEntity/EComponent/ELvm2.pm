@@ -13,6 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::ELvm2;
+use base "EDiskManager";
 use base "EEntity::EComponent";
 
 use strict;
@@ -230,37 +231,6 @@ sub lvRemove{
     $self->vgSpaceUpdate(econtext     => $args{econtext},
                          lvm2_vg_id   => $args{lvm2_vg_id}, 
                          lvm2_vg_name => $args{lvm2_vg_name});
-}
-
-=head2 mkfs
-
-_mkfs ( device, fstype, fsoptions, econtext)
-    desc: This function create a filesystem on a device.
-    args:
-        device : string: device full path (like /dev/sda2 or /dev/vg/lv)
-        fstype : string: name of filesystem (ext2, ext3, ext4)
-        fsoptions : string: filesystem options to use during creation (optional) 
-        econtext : Econtext : execution context on the storage server
-=cut
-sub mkfs {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "device", "fstype", "econtext" ]);
-    
-    my $command = "mkfs -t $args{fstype} ";
-    if($args{fsoptions}) {
-        $command .= "$args{fsoptions} ";
-    }
-
-    $command .= " $args{device}";
-    my $ret = $args{econtext}->execute(command => $command);
-    if($ret->{exitcode} != 0) {
-        my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
-    }
 }
 
 1;

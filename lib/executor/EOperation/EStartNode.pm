@@ -140,9 +140,7 @@ sub execute {
     my $adm = Administrator->new();
 
     # Firstly compute the node configuration
-
     $log->info("Compute node configuration for host <" . $self->{_objs}->{host}->getAttr(name => "host_mac_address"));
-
     if ((exists $self->{_objs}->{powersupplycard} and defined $self->{_objs}->{powersupplycard}) and
         (exists $self->{_objs}->{powersupplyport_number} and defined $self->{_objs}->{powersupplyport_number})) {
         my $powersupply_id = $self->{_objs}->{powersupplycard}->addPowerSupplyPort(
@@ -207,8 +205,8 @@ sub execute {
         = $self->{_objs}->{host}->setInternalIP(ipv4_address => $host_ip,
                                                 ipv4_mask    => $subnet_hash{'dhcpd3_subnet_mask'});
 
-    my $options = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
-                      ? "ro,noatime,nodiratime" : "defaults";
+    my ($access_mode, $mount_options) = $self->{_objs}->{cluster}->getAttr(name => 'cluster_si_shared')
+                      ? ("ro", "ro,noatime,nodiratime") : ("rw", "defaults");
 
     # Get the ECluster and EHost
     my $ecluster = EFactory::newEEntity(data => $self->{_objs}->{cluster});
@@ -216,12 +214,14 @@ sub execute {
 
     # Get the corresponding EContainerAccess
     my $econtainer_access = EFactory::newEEntity(data => $self->{_objs}->{container_access});
+    my $eexport_manager = EFactory::newEEntity(data => $self->{_objs}->{container_access}->getExportManager);
 
     # Mount the containers on the executor.
     my $mountpoint = $self->{_objs}->{container}->getMountPoint;
 
     $log->info('Mounting the container <' . $mountpoint . '>');
-    $econtainer_access->mount(mountpoint => $mountpoint, econtext => $self->{executor}->{econtext});
+    $econtainer_access->mount(mountpoint => $mountpoint,
+                              econtext => $self->{executor}->{econtext});
 
     # generate resolv.conf
     $ecluster->generateResolvConf(
@@ -243,16 +243,16 @@ sub execute {
 
     # Apply node etc configuration
     $self->_generateNodeConf(etc_path   => $mountpoint . '/etc',
-                             options    => $options);
+                             options    => $mount_options);
 
     $log->info("Generate Boot Conf");
 
     # Apply node boot configuration
-    $self->_generateBootConf(mountpoint    => $mountpoint,,
+    $self->_generateBootConf(mountpoint    => $mountpoint,
                              filesystem    => $self->{_objs}->{container}->getAttr(
                                                   name => 'container_filesystem'
                                               ),
-                             options       => $options);
+                             options       => $mount_options);
 
     # TODO: Component migration (node, exec context?)
     my $components = $self->{_objs}->{components};
@@ -270,12 +270,19 @@ sub execute {
     $econtainer_access->umount(mountpoint => $mountpoint,
                                econtext   => $self->{executor}->{econtext});
 
+    # Give access to the system image to the node
+    $log->info('Giving access to the system image to the node');
+    $eexport_manager->addExportClient(
+        export  => $self->{_objs}->{container_access},
+        host    => $self->{_objs}->{host},
+        options => $access_mode
+    );
+
     # Create node instance
     $self->{_objs}->{host}->setNodeState(state => "goingin");
     $self->{_objs}->{host}->save();
 
     # Finally we start the node
-    
     $ehost->start(
         econtext  => $self->{executor}->{econtext},
         erollback => $self->{erollback}
@@ -433,6 +440,9 @@ sub _generateBootConf {
             $initiatorname .= '.'.$self->{_objs}->{host}->getAttr(name => 'host_hostname');
             $initiatorname .= ':'.time();
 
+            my $lun_number = $self->{_objs}->{container_access}->getAttr(name => 'container_lun_name')
+                             || "lun-0";
+
             # Set initiatorName
             $self->{_objs}->{host}->setAttr(name  => "host_initiatorname",
                                             value => $initiatorname);
@@ -455,6 +465,7 @@ sub _generateBootConf {
                 target        => $targetname,
                 ip            => $self->{_objs}->{container_access}->getAttr(name => 'container_access_ip'),
                 port          => $self->{_objs}->{container_access}->getAttr(name => 'container_access_port'),
+                lun           => $lun_number,
                 mount_opts    => $args{options},
                 mounts_iscsi  => [],
                 additional_devices => "",

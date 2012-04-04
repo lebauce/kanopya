@@ -182,10 +182,32 @@ sub createExport {
     my $api = $self->_getEntity();
     my $volume = Entity::Container::NetappVolume->get(id => $args{container}->getAttr(name => "volume_id"));
 
+    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+                             hash => {
+                                 cluster_name => 'Kanopya'
+                             }
+                         );
+
+    my $master = $kanopya_cluster->getMasterNode();
+
     eval {
-        $api->lun_map(path            => '/vol/' . $volume->getAttr(name => "name") .
-                                         '/' . $args{container}->getAttr(name => "name"),
-                      initiator_group => 'igroup_testcluster_testblockpool');
+        $self->_getEntity()->igroup_create(initiator_group_name => "igroup_kanopya_master",
+		                           initiator_group_type => "iscsi");
+    };
+
+    eval {
+        $self->_getEntity()->igroup_add(initiator            => $master->getAttr(name => "host_initiatorname"),
+                                        initiator_group_name => "igroup_kanopya_master");
+    };
+
+    eval {
+        my $lun_id = $api->lun_map(path            => '/vol/' . $volume->getAttr(name => "name") .
+                                                      '/' . $args{container}->getAttr(name => "name"),
+                                   initiator_group => 'igroup_kanopya_master');
+
+        $container_access->setAttr(name  => "number",
+                                   value => $lun_id->child_get_string("lun-id-assigned"));
+        $container_access->save();
     };
 
     $log->info("Added iSCSI export for lun " .
@@ -245,6 +267,54 @@ sub removeExport {
     }
 
     $log->debug($log_content);
+}
+
+=head2 addExportClient
+
+    Desc : Autorize client to access an export
+    args:
+        export : export to give access to
+        host : host to autorize
+
+=cut
+
+sub addExportClient {
+    my $self = shift;
+    my %args = @_;
+
+    my $host = $args{host};
+    my $lun = $args{export}->getContainer;
+    my $volume = Entity->get(id => $lun->getAttr(name => "volume_id"));
+    my $cluster = Entity->get(id => $host->getClusterId());
+    my $path = '/vol/' . $volume->getAttr(name => "name") .
+               '/' . $lun->getAttr(name => "name");
+    my $initiator_group = 'igroup_kanopya_' . $cluster->getAttr(name => "cluster_name");
+
+    eval {
+        $self->_getEntity()->igroup_create(initiator_group_name => $initiator_group,
+                                           initiator_group_type => "iscsi");
+    };
+
+    eval {
+        $log->info("Adding node " . $host->getAttr(name => "host_initiatorname") .
+                   " to initiator group " . $initiator_group);
+        $self->_getEntity()->igroup_add(initiator            => $host->getAttr(name => "host_initiatorname"),
+                                        initiator_group_name => $initiator_group);
+    };
+
+    $log->info("Mapping LUN $path to $initiator_group");
+    eval {
+        my $lun_id = $self->_getEntity()->lun_map(path            => $path,
+                                                  initiator_group => $initiator_group);
+
+        $args{export}->setAttr(name  => "number",
+                               value => $lun_id->child_get_string("lun-id-assigned"));
+        $args{export}->save();
+    };
+}
+
+sub removeExportClient {
+    # TODO: implement removeExportClient
 }
 
 1;

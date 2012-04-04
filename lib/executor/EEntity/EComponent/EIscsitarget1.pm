@@ -28,6 +28,8 @@ None for the moment
 =cut
 
 package EEntity::EComponent::EIscsitarget1;
+use base "EExportManager";
+use base "EEntity::EComponent";
 
 use strict;
 use Date::Simple (':all');
@@ -35,8 +37,6 @@ use Log::Log4perl "get_logger";
 use Template;
 use String::Random;
 use General;
-
-use base "EEntity::EComponent";
 
 my $log = get_logger("executor");
 my $errmsg;

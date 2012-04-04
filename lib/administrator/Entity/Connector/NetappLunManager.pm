@@ -264,13 +264,15 @@ sub getContainerAccess {
 
     General::checkParams(args => \%args, required => [ "container_access" ]);
 
-    my $lun = Entity::Container::NetappLun->get(id => $args{container_access}->getAttr(name => "container_id"));
+    my $lun = Entity::Container::NetappLun->get(
+                  id => $args{container_access}->getAttr(name => "container_id")
+              );
 
     my $container = {
         container_access_export => $self->iscsi_node_get_name->node_name,
         container_access_ip     => $self->{netapp}->getMasterNodeIp(),
         container_access_port   => 3260,
-        container_lun_name      => "lun-0"
+        container_lun_name      => "lun-" . $args{container_access}->getAttr(name => "number")
     };
 
     return $container;

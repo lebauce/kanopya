@@ -545,39 +545,54 @@ sub getComponentByInstanceId{
     return "$class"->get(id =>$comp_instance_id);
 }
 
-sub getMasterNodeIp {
+sub getMasterNode {
     my $self = shift;
-    my $adm = Administrator->new();
-    my $node_instance_rs = $self->{_dbix}->parent->search_related("nodes", { master_node => 1 })->single;
+    my $node_instance_rs = $self->{_dbix}->parent->search_related(
+                               "nodes", { master_node => 1 }
+                           )->single;
+
     if(defined $node_instance_rs) {
-         my $host_ipv4_internal_id = $node_instance_rs->host->get_column('host_ipv4_internal_id');
-         my $node_ip = $adm->{manager}->{network}->getInternalIP(ipv4_internal_id => $host_ipv4_internal_id)->{ipv4_internal_address};
-        $log->debug("Master node found and its ip is $node_ip");
-        return $node_ip;
+        my $host = { _dbix => $node_instance_rs->host };
+        bless $host, "Entity::Host";
+        return $host;
     } else {
         $log->debug("No Master node found for this cluster");
         return;
     }
 }
 
+sub getMasterNodeIp {
+    my $self = shift;
+    my $master = $self->getMasterNode();
+    my $adm = Administrator->new();
+
+    if ($master) {
+        my $node_ip = $adm->{manager}->{network}->getInternalIP(
+                          ipv4_internal_id => $master->getAttr(name => "host_ipv4_internal_id")
+                      )->{ipv4_internal_address};
+
+        $log->debug("Master node found and its ip is $node_ip");
+        return $node_ip;
+    }
+}
+
 sub getMasterNodeId {
     my $self = shift;
-    my $node_instance_rs = $self->{_dbix}->parent->search_related("nodes", { master_node => 1 })->single;
-    if(defined $node_instance_rs) {
-        my $id = $node_instance_rs->host->get_column('host_id');
-        return $id;
-    } else {
-        return;
+    my $host = $self->getMasterNode;
+
+    if (defined ($host)) {
+        return $host->getAttr(name => "host_id");
     }
 }
 
 sub getMasterNodeSystemimage {
     my $self = shift;
-    my $node_instance_rs = $self->{_dbix}->parent->search_related("nodes", { master_node => 1 })->single;
+    my $node_instance_rs = $self->{_dbix}->parent->search_related(
+                               "nodes", { master_node => 1 }
+                           )->single;
+
     if(defined $node_instance_rs) {
-        return Entity::Systemimage->get(id => $node_instance_rs->host->get_column('systemimage_id'));
-    } else {
-        return;
+        return Entity::Systemimage->get(id => $node_instance_rs->get_column('systemimage_id'));
     }
 }
 

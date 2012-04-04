@@ -34,6 +34,11 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended => 0
     },
+    number => {
+        pattern => '^[0-9\.]*$',
+        is_mandatory => 0,
+        is_extended => 0
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }

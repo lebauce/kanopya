@@ -60,16 +60,4 @@ sub getClients {
            );
 }
 
-=head2 getExportManager
-
-    desc: Return the component/conector that manages this container access.
-
-=cut
-
-sub getExportManager {
-    my $self = shift;
-
-    return Entity::Component::Nfsd3->get(id => $self->getAttr(name => 'export_manager_id'));
-}
-
 1;

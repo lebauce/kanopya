@@ -13,6 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::EFileimagemanager0;
+use base "EDiskManager";
 use base "EEntity::EComponent";
 
 use strict;

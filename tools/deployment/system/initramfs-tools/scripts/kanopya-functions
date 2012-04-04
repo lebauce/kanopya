@@ -18,6 +18,7 @@ do_iscsi_login ()
     DEV_TARGET_IP=$(eval echo \$${1}_target_ip)
     DEV_TARGET_PORT=$(eval echo \$${1}_target_port)
     DEV_TARGET_GROUP=$(eval echo \$${1}_target_group)
+    DEV_TARGET_LUN=$(eval echo \$${1}_target_lun)
     DEV_USERNAME=$(eval echo \$${1}_username)
     DEV_PASSWORD=$(eval echo \$${1}_password)
     DEV_IN_USERNAME=$(eval echo \$${1}_in_username)
@@ -29,6 +30,7 @@ do_iscsi_login ()
 	echo "DEV_TARGET_IP $DEV_TARGET_IP"
 	echo "DEV_TARGET_PORT $DEV_TARGET_PORT"
 	echo "DEV_TARGET_GROUP $DEV_TARGET_GROUP"
+	echo "DEV_TARGET_LUN $DEV_TARGET_LUN"
 	echo "DEV_USERNAME $DEV_USERNAME"
 	echo "DEV_PASSWORD $DEV_PASSWORD"
 	echo "DEV_IN_USERNAME $DEV_IN_USERNAME"
@@ -41,10 +43,10 @@ do_iscsi_login ()
     wait_for_udev 10
     sleep 3
 
-    DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-lun-0-part1"
+    DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-${DEV_TARGET_LUN}-part1"
 
     if [ ! -e "$DEVICE" ]; then
-        DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-lun-0-part1"
+        DEVICE="/dev/disk/by-path/ip-${DEV_TARGET_IP}:${DEV_TARGET_PORT}-iscsi-${DEV_TARGET_NAME}-${DEV_TARGET_LUN}-part1"
     fi
 
     if [ ! -e "$DEVICE" ]; then
