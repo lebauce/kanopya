@@ -219,26 +219,18 @@
             <span class="desc">List all currently triggered actions from this cluster </span><br /><br />
         </td>
     </tr>
-	<% IF node_actions_list %>
-		<th> Node actions: </th>
-		<% FOREACH action IN node_actions_list %>
+    <% FOREACH action IN actions_list %>
         <tr>
             <td class="label2"><span class="bold"><% action.name %></span></td>
             <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
-            <td></td>
+            <% IF action.type == 1 %>
+				<td> Node action</td>
+			<% END %>
+			<% IF action.type == 2 %>
+				<td> Cluster action</td>
+			<% END %>				
         </tr>
-		<% END %>
-	<% END %>
-	<% IF cluster_actions_list %>
-		<th> Cluster actions: </th>
-		<% FOREACH action IN cluster_actions_list %>
-        <tr>
-            <td class="label2"><span class="bold"><% action.name %></span></td>
-            <td class="action"><a class="modal" href="/architectures/extclusters/<% cluster_id %>/actions/<%action.id%>/edit">edit</a></td>
-            <td></td>
-        </tr>
-		<% END %>
-	<% END %>	
+    <% END %>
 <%END%>
 </table>
 
