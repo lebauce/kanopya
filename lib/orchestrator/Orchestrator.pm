@@ -483,7 +483,7 @@ sub _evalRule {
                     state      => 'verified'
                 );
                 $rule->triggerAction(
-                    node_hostname => $host_name
+                    trigger_rule_id => $host_name
                 );
                 
             }
