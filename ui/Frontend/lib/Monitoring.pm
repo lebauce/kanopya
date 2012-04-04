@@ -1963,7 +1963,7 @@ get '/extclusters/:extclusterid/actions/:actionid/mclose' => sub {
 	};
 	if ($@) {
 		$log->error($@);
-		redirect 'architectures/extclusters/:extclusterid/actions/list'
+		redirect 'architectures/extclusters/'.$cluster_id.'/actions/list'
 	} else {
 		print FILE $hostname[0]."\n";
 		close FILE;
