@@ -1960,6 +1960,7 @@ post '/extclusters/:extclusterid/actions/add' => sub {
         $params = {
             'file_path'         =>  param('action_file_path'),
             'user_message'      =>  param('action_user_message'),
+            'trigger_rule_type' =>  param('trigger_rule_type'),
         };
     }
 
@@ -2029,7 +2030,6 @@ get '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
 	my $action;
 	my $action_type = $action_inst->getAttr(name => 'action_action_type_id');
 	
-	print Dumper $action_type;
 	
 	if ($action_type == 1) {
 		$action = {
