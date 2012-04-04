@@ -1305,7 +1305,7 @@ CREATE TABLE `action_parameter` (
 
 CREATE TABLE `action_triggered` (
   `action_triggered_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `action_triggered_hostname` char(255) NOT NULL,
+  `action_triggered_hostname` char(255),
   `action_triggered_timestamp` char(255) NOT NULL,
   `action_triggered_action_id` int(8) unsigned NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
