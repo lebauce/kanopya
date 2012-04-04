@@ -577,7 +577,9 @@ sub clustermetricManagement{
             if(defined $result){
                 if($result == 1){
                     $aggregate_rule->disable();
-                    $aggregate_rule->triggerAction();
+                    $aggregate_rule->triggerAction(
+                        trigger_rule_id => $aggregate_rule->getAttr(name => 'aggregate_rule_id'),
+                    );
                 }
             }
 #                   print 'Rule false => take action '.($aggregate_rule->getAttr(name=>'aggregate_rule_action_id'))."\n";

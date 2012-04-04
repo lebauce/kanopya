@@ -304,7 +304,9 @@ sub setAttr {
 sub triggerAction{
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => []);
+    General::checkParams(args => \%args, required => ['trigger_rule_id']);
+    
+    my $trigger_rule_id = $args{trigger_rule_id};
     
     my $action_id = $self->getAttr(name => 'aggregate_rule_action_id');
     #IF the rule has a configured action to trigger
@@ -315,6 +317,7 @@ sub triggerAction{
             #trigger it
             my $action_triggered = ActionTriggered->new(
                 action_triggered_action_id => $action_id,
+                action_triggered_hostname  => $trigger_rule_id, 
             );
             my $path = $action_triggered->trigger();
             
@@ -323,7 +326,7 @@ sub triggerAction{
             #disable corresponding node
             
             
-            print 'Action '.$action_id." triggered \n file $path created";
+            print 'Action '.$action_id." triggered by rule ".$trigger_rule_id."\n file $path created";
         1;
         } or do {
             print 'Error triggering action '.$action_id."\n $@";
