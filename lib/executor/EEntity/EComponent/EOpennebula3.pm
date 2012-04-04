@@ -43,14 +43,15 @@ sub configureNode {
         $log->info('opennebula frontend configuration');
         $log->debug('generate /etc/one/oned.conf');    
        
-        $self->generateOnedConf(econtext => $args{econtext}, mount_point => $args{mount_point});
+        $self->generateOnedConf(
+               econtext => $args{econtext}, 
+            mount_point => $args{mount_point}.'/etc'
+        );
               
         $self->addInitScripts(
-            etc_mountpoint => $args{mount_point}, 
+                mountpoint => $args{mount_point}, 
                   econtext => $args{econtext}, 
                 scriptname => 'opennebula', 
-                startvalue => 17, 
-                 stopvalue => 1
         );
     } 
      
@@ -174,11 +175,14 @@ sub generateOnedConf {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
     
     my $data = $self->_getEntity()->getTemplateDataOned();
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "oned.conf.tt", output => "/one/oned.conf", data => $data);          
-
- 
+    $self->generateFile(
+            econtext => $args{econtext},
+         mount_point => $args{mount_point},
+        template_dir => "/templates/components/opennebula",
+          input_file => "oned.conf.tt",
+              output => "/one/oned.conf", 
+                data => $data
+    );          
 }
 
 # generate /etc/default/libvirt-bin configuration file
@@ -189,10 +193,14 @@ sub generateLibvirtbin {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
     
     my $data = $self->_getEntity()->getTemplateDataLibvirtbin();
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "libvirt-bin.tt", output => "/default/libvirt-bin", data => $data);            
- 
+    $self->generateFile(
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point},
+        template_dir => "/templates/components/opennebula",
+          input_file => "libvirt-bin.tt", 
+              output => "/default/libvirt-bin", 
+                data => $data
+    );            
 }
 
 # generate /etc/libvirt/libvirtd.conf configuration file
@@ -204,10 +212,14 @@ sub generateLibvirtdconf {
     
     my $data = $self->_getEntity()->getTemplateDataLibvirtd();
     $data->{listen_ip_address} = $args{host}->getInternalIP()->{ipv4_internal_address};
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "libvirtd.conf.tt", output => "/libvirt/libvirtd.conf", data => $data);            
- 
+    $self->generateFile(
+            econtext => $args{econtext},
+         mount_point => $args{mount_point},
+        template_dir => "/templates/components/opennebula",
+          input_file => "libvirtd.conf.tt", 
+              output => "/libvirt/libvirtd.conf",
+                data => $data
+    );            
 }
 
 # generate /etc/libvirt/qemu.conf configuration file
@@ -218,9 +230,14 @@ sub generateQemuconf {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     my $data = {};
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "qemu.conf.tt", output => "/libvirt/qemu.conf", data => $data); 
+    $self->generateFile(
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point},
+        template_dir => "/templates/components/opennebula",
+          input_file => "qemu.conf.tt", 
+              output => "/libvirt/qemu.conf", 
+                data => $data
+    ); 
 }
 
 # generate /etc/xen/xend-config.sxp configuration file
@@ -233,9 +250,14 @@ sub generateXenconf {
     # TODO recup de l'interface pour les vms
     my $data = {vmiface => 'eth1'};
     
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "xend-config.sxp.tt", output => "/xen/xend-config.sxp", data => $data); 
+    $self->generateFile( 
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point},
+        template_dir => "/templates/components/opennebula",
+          input_file => "xend-config.sxp.tt",
+              output => "/xen/xend-config.sxp",
+                data => $data
+    ); 
 }
 
 sub generatemultivlanconf {
@@ -245,9 +267,14 @@ sub generatemultivlanconf {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     my $data = {};
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "network-multi-vlan.tt", output => "/etc/xen/scripts/network-multi-vlan", data => $data); 
+    $self->generateFile( 
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point},
+        template_dir => "/templates/components/opennebula",
+          input_file => "network-multi-vlan.tt", 
+              output => "/etc/xen/scripts/network-multi-vlan", 
+                data => $data
+    ); 
 }
 
 sub generatevlanconf {
@@ -257,26 +284,17 @@ sub generatevlanconf {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     my $data = {};
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => "/templates/components/opennebula",
-                         input_file => "network-bridge-vlan.tt", output => "/etc/xen/scripts/network-bridge-vlan", data => $data); 
+    $self->generateFile(
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point},
+        template_dir => "/templates/components/opennebula",
+          input_file => "network-bridge-vlan.tt", 
+              output => "/etc/xen/scripts/network-bridge-vlan", 
+                data => $data
+    ); 
 }
 
-# generate /etc/init.d/oned init script
-#~ sub generateOnedinitscript {
-    #~ my $self = shift;
-    #~ my %args = @_;
-    #~ 
-    #~ General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
-    #~ 
-    #~ my $data = $self->_getEntity()->getTemplateDataOnedInitScript();
-    #~ $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         #~ template_dir => "/templates/components/opennebula",
-                         #~ input_file => "oned_initscript.tt", output => "/init.d/oned", data => $data);            
-    #~ my $command = '/bin/chmod +x '.$args{mount_point}.'/init.d/oned';
-    #~ $log->debug($command);
-    #~ my $result = $args{econtext}->execute(command => $command);
-#~ } 
+
 
 
 sub addNode {

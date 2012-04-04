@@ -34,11 +34,14 @@ sub configureNode {
     
     my $data = $self->_getEntity()->getConf();
         
-    $self->generateFile( econtext => $args{econtext}, mount_point => $args{mount_point},
-                         template_dir => $template_path,
-                         input_file => "syslog-ng.conf.tt", output => "/syslog-ng/syslog-ng.conf",
-                         data => $data);
-    
+    $self->generateFile(
+            econtext => $args{econtext}, 
+         mount_point => $args{mount_point},
+        template_dir => $template_path,
+          input_file => "syslog-ng.conf.tt", 
+              output => "/syslog-ng/syslog-ng.conf",
+                data => $data
+    );
 }
 
 sub addNode {
@@ -48,19 +51,17 @@ sub addNode {
     General::checkParams(args     => \%args,
                          required => [ "econtext", "host", "mount_point" ]);
 
-    $args{mount_point} .= '/etc';
-
-    $self->configureNode(econtext    => $args{econtext}, 
-                         host        => $args{host},
-                         mount_point => $args{mount_point}.'/etc');
+    $self->configureNode(
+           econtext => $args{econtext}, 
+               host => $args{host},
+        mount_point => $args{mount_point}.'/etc');
 
     # add init scripts
     $self->addInitScripts(
         mountpoint => $args{mount_point},
-        econtext   => $args{econtext},
+          econtext => $args{econtext},
         scriptname => 'syslog-ng',
     );
-          
 }
 
 # Reload process
