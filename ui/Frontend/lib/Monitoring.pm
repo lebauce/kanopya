@@ -1866,32 +1866,57 @@ post '/extclusters/:extclusterid/actions/add' => sub {
     my $action = Action->new(
         action_service_provider_id => param('extclusterid'),
         action_name                => param('action_name'),
+        action_action_type_id      => param('action_type_id'),
     );
     
-    ActionParameter->new(
-        action_parameter_name      => 'ou_to',
-        action_parameter_value     => param('action_ou_to'),
-        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
-    );
-	
+    my $params;
+    if(param('trigger_rule_type') eq 'noderule') {
+        $params = {
+            'ou_to'             =>  param('action_ou_to'),
+            'file_path'         =>  param('action_file_path'),
+            'user_message'      =>  param('action_user_message'),
+            'logout_time'       =>  param('action_logout_time'),
+            'trigger_rule_type' =>  param('trigger_rule_type'),
+        };
+    } elsif(param('trigger_rule_type') eq 'clusterrule') {
+        $params = {
+            'file_path'         =>  param('action_file_path'),
+            'user_message'      =>  param('action_user_message'),
+        };
+    }
+
     
-    ActionParameter->new(
-        action_parameter_name  => 'file_path',
-        action_parameter_value => param('action_file_path'),
-        action_parameter_action_id => $action->getAttr(name => 'action_id'),
-    );
-    
-	ActionParameter->new(
-        action_parameter_name      => 'user_message',
-        action_parameter_value     => param('action_user_message'),
-        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
-    );
-	
-	ActionParameter->new(
-		action_parameter_name      => 'logout_time',
-		action_parameter_value     => param('action_logout_time'),
-		action_parameter_action_id => $action->getAttr(name => 'action_id'), 
-	);
+    while( my ($key,$value) = each(%$params) ) {
+        ActionParameter->new(
+            action_parameter_name      => $key,
+            action_parameter_value     => $value,
+            action_parameter_action_id => $action->getAttr(name => 'action_id'), 
+        );
+    }
+#    ActionParameter->new(
+#        action_parameter_name      => 'ou_to',
+#        action_parameter_value     => param('action_ou_to'),
+#        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
+#    );
+#	
+#    
+#    ActionParameter->new(
+#        action_parameter_name  => 'file_path',
+#        action_parameter_value => param('action_file_path'),
+#        action_parameter_action_id => $action->getAttr(name => 'action_id'),
+#    );
+#    
+#	ActionParameter->new(
+#        action_parameter_name      => 'user_message',
+#        action_parameter_value     => param('action_user_message'),
+#        action_parameter_action_id => $action->getAttr(name => 'action_id'), 
+#    );
+#	
+#	ActionParameter->new(
+#		action_parameter_name      => 'logout_time',
+#		action_parameter_value     => param('action_logout_time'),
+#		action_parameter_action_id => $action->getAttr(name => 'action_id'), 
+#	);
 	
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
@@ -1979,7 +2004,11 @@ post '/extclusters/:extclusterid/actions/:actionid/edit' => sub {
     redirect '/architectures/extclusters/'.param('extclusterid') 
 };
 
-
+get '/extclusters/:extclusterid/clusterrules/:ruleid/trigger' => sub {
+    my $aggregate_rule = AggregateRule->get('id' => param('ruleid'));
+    $aggregate_rule->triggerAction();
+    redirect '/architectures/extclusters/'.param('extclusterid')
+};
 # ----------------------------------------------------------------------------#
 # -------------------------------- NODES--+------------------------------------#
 #----------- -----------------------------------------------------------------#

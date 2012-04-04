@@ -25,7 +25,7 @@ use Data::Dumper;
 
 use constant ATTR_DEF => {
     action_triggered_hostname      =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
+                                 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
     action_triggered_action_id     =>  {pattern       => '^.*$',
@@ -53,27 +53,44 @@ sub trigger{
     my ($self,%args) = @_;
     
     # Get db params (path and ou_dest)
-    my $params = $self->getParams();
-    
-    # Get current ou
+    my $params = $self->getParams();    # Get current ou
+    my $body;
     my $cluster_id = $self->{_dbix}
                           ->action_triggered_action
                           ->get_column('action_service_provider_id');
-    my $outside    = Entity::ServiceProvider::Outside
-                          ->get('id' => $cluster_id);
-    my $directoryServiceConnector = $outside->getConnector(
-                                                  'category' => 'DirectoryService'
-                                              );
-    my $ou_from    = $directoryServiceConnector->getAttr(
-                                                     'name' => 'ad_nodes_base_dn'
+                          
+    if($params->{trigger_rule_type} eq 'noderule'){
+        my $outside    = Entity::ServiceProvider::Outside
+                              ->get('id' => $cluster_id);
+        my $directoryServiceConnector = $outside->getConnector(
+                                                      'category' => 'DirectoryService'
+                                                  );
+        my $ou_from    = $directoryServiceConnector->getAttr(
+                                                         'name' => 'ad_nodes_base_dn'
                                                  );
+                                                 
+        
+        $body = {
+            ou_from      => $ou_from,
+            ou_to        => $params->{ou_to},
+            user_message => $params->{user_message},
+            logout_time  => $params->{logout_time},
+            id           => $self->getAttr(name => 'action_triggered_id'),
+            hostname     => $self->getAttr(name => 'action_triggered_hostname'),
+        }
+    }elsif($params->{trigger_rule_type} eq 'clusterrule'){
+        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+         
+        $body = { 
+            id          => $self->getAttr(name => 'action_triggered_id'),
+            clustername => $cluster->getAttr('name' =>'externalcluster_name'),
+            user_message => $params->{user_message},
+        }
+    }
     
     $self->createXMLFile(
-            hostname => $self->getAttr(name => 'action_triggered_hostname'),
-            ou_from  => $ou_from,
-            ou_to    => $params->{ou_to},
             file_path => $params->{file_path},
-            id       => $self->getAttr(name => 'action_triggered_id'),
+            body      => $body,
     );
 }
 sub getParams {
@@ -95,18 +112,18 @@ sub getParams {
 sub createXMLFile {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['hostname','ou_from','ou_to','file_path','user_message','logout_time']);
+    General::checkParams(args => \%args, required => ['file_path','body']);
+    
+    my @params_order = ('hostname','clustername','ou_from','ou_to', 'id', 'user_message','logout_time');
+    
     my $fileDirPath = $args{file_path};
     #print Dumper $params;
     my $fileCompletePath = $fileDirPath.time().'file.xml';
     #print $fileCompletePath;
     open FILE, ">", $fileCompletePath or die $!;
-    print FILE $args{hostname}."\n";
-    print FILE $args{ou_from}."\n";
-    print FILE $args{ou_to}."\n";
-    print FILE $args{id}."\n";
-	print FILE $args{user_message}."\n";
-	print FILE $args{logout_time}."\n";
+    foreach my $param (@params_order){
+       if(defined $args{body}->{$param}){print FILE $args{body}->{$param}."\n"};
+    }
     close FILE;
     return $fileCompletePath;
 };
