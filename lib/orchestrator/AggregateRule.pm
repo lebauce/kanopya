@@ -323,8 +323,9 @@ sub triggerAction{
             
             my $cluster_id = $self->getAttr('name' => 'aggregate_rule_service_provider_id');
             my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
-            #disable corresponding node
+            #disable corresponding rule
             
+            $self->disable();
             
             print 'Action '.$action_id." triggered by rule ".$trigger_rule_id."\n file $path created";
         1;
