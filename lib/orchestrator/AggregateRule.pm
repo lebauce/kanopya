@@ -77,13 +77,22 @@ sub new {
     _verify($formula);
     my $self = $class->SUPER::new(%args);
 
-    if(!defined $args{aggregate_rule_label} || $args{aggregate_rule_label} eq ''){
+    if((!defined $args{aggregate_rule_label}) || $args{aggregate_rule_label} eq ''){
         $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
         $self->save();
     }
     return $self;
 }
 
+sub setLabel{
+    my ($self,%args) = @_;
+    if((!defined $args{label}) || $args{label} eq ''){
+        $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
+    }else{
+        $self->setAttr(name=>'aggregate_rule_label', value => $args{label});
+    }
+    $self->save();
+}
 
 sub _verify {
 
