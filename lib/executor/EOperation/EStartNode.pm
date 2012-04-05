@@ -322,15 +322,18 @@ sub _generateNetConf {
     my @cluster_interfaces = ();
     my @host_ifaces = $self->{_objs}->{host}->getIfaces();
     my @interfaces = ();
+    my $ip = $self->{_objs}->{host}->getInternalIP();
     
     foreach my $iface (@host_ifaces) {
         next if $iface->{iface_pxe} eq "1";
-        #~ my $iface = {
-            #~ name    => $iface->{iface_name},
-            #~ address => $ip->{ipv4_internal_address},
-            #~ netmask => $ip->{ipv4_internal_mask}
-        #~ }; 
-        #~ push(@interfaces, $iface);
+        if($iface->{iface_name} eq 'eth0') { 
+            my $iface = {
+                name    => $iface->{iface_name},
+                address => $ip->{ipv4_internal_address},
+                netmask => $ip->{ipv4_internal_mask}
+            }; 
+            push(@interfaces, $iface);
+        }
     }
     
     #my $ip = $self->{_objs}->{host}->getInternalIP();

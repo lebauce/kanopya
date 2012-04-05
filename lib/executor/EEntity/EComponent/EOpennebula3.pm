@@ -19,7 +19,7 @@ use EFactory;
 
 use strict;
 use warnings;
-
+use Entity;
 use EFactory;
 use General;
 use XML::Simple;
@@ -248,7 +248,10 @@ sub generateXenconf {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     # TODO recup de l'interface pour les vms
-    my $data = {vmiface => 'eth1', min_mem_dom0 => '1024' };
+    my $data = {
+             vmiface => 'eth1', 
+        min_mem_dom0 => '1024'
+    };
     
     $self->generateFile( 
             econtext => $args{econtext}, 
@@ -481,7 +484,7 @@ sub getFreeHost {
     General::checkParams(args => \%args, required => [ "ram", "cpu" ]);
 
     if ($args{ram_unit}) {
-        $args{ram} .= $args{ram_unit};
+        $args{ram} = General::convertToBytes(value => $args{ram}, units => $args{ram_unit});
         delete $args{ram_unit};
     }
 
@@ -513,12 +516,34 @@ sub _generateVmTemplate {
 		units => 'M'
 	);
 
-	my $data = {
-		memory      => $ram,
-		cpu		    => $args{host}->getAttr(name => 'host_core'),
-		mac_address => $args{host}->getAttr(name => 'host_mac_address'),
-		
+    my $cluster = Entity->get(id => $args{host}->getClusterId());
+    my $tmp = $cluster->getManagerParameters(manager_type => 'disk_manager');
+    my %repo = $self->_getEntity()->getImageRepository(container_access_id => $tmp->{container_access_id});
+	my $repository_name = $repo{repository_name};
+    my $repository_path = $self->_getEntity()->getAttr(name => 'image_repository_path');
+    $repository_path .= '/'.$repository_name;
+    
+    my $image = $args{host}->getNodeSystemimage();
+    my $image_name = $image->getAttr(name => 'systemimage_name').'.img';
+    
+    $log->debug("IMAGE PATH FOR VM TEMPLATE:$repository_path");
+    
+    my $data = {
+              name => $args{host}->getAttr(name => 'host_hostname'),
+            memory => $ram,
+               cpu => $args{host}->getAttr(name => 'host_core'),
+		kernelpath => $repository_path.'/vmlinuz-3.2.6-xenvm',
+        initrdpath => $repository_path.'/initrd.img-3.2.6-xenvm',
+         imagepath => $repository_path.'/'.$image_name,
+        interfaces => []
 	};
+    
+    for my $iface ($args{host}->getIfaces()) {
+        my $tmp = {
+            mac => $iface->{iface_mac_addr}
+        };
+        push @{$data->{interfaces}}, $tmp;
+    }
 
 	$self->generateFile( econtext     => $args{econtext}, 
 						 mount_point  => '',

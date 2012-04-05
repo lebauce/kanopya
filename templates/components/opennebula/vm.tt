@@ -1,9 +1,37 @@
+NAME = [% name %]
 MEMORY = [% memory %]
 CPU = [% cpu %]
 
-OS = [ BOOT = "network" ]
+RAW = [ type="xen", data="maxvcpus=4" ]
+RAW = [ type="xen", data="maxmem=4096" ]
 
-NIC = [ MAC = "[% mac_address %]", BRIDGE = br0 ]
+OS = [
+	KERNEL = [% kernelpath %],
+	INITRD = [% initrdpath %],
+	ROOT = xvda1
+]
 
-GRAPHICS = [ TYPE = "vnc", LISTEN = "0.0.0.0" ]
+DISK = [
+	TYPE = disk,
+	SOURCE = [% imagepath %],
+ 	CLONE = no,
+    DRIVER = "file:",
+	BUS = scsi,
+	TARGET = xvda
+]
+
+[% FOREACH iface IN interfaces %]
+NIC = [
+	MAC = [% iface.mac %],
+	MODEL = ioemu,
+	BRIDGE = eth1
+]
+[% END %]
+
+GRAPHICS = [
+	TYPE = vnc,
+	LISTEN = 0.0.0.0
+]
+
+
 

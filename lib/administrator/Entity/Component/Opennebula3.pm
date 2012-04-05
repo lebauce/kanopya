@@ -66,7 +66,6 @@ use Entity::ContainerAccess::NfsContainerAccess;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Administrator;
-use NetworkManager;
 use General;
 use Entity::Kernel;
 
@@ -229,6 +228,23 @@ sub createVirtualHost {
              );
 
     $vm->save();
+    $vm->{_dbix}->discard_changes();
+    # TODO NETWORK REVIEW
+   
+    $vm->addIface(
+            iface_name => 'eth0',
+        iface_mac_addr => $new_mac_address,
+             iface_pxe => 0
+    );
+    
+    $vm->addIface(
+            iface_name => 'eth1',
+        iface_mac_addr => $adm->{manager}->{network}->generateMacAddress(),
+             iface_pxe => 0
+    );
+    
+    
+    
     $log->debug("return host with <" . $vm->getAttr(name => "host_id") . ">");
     return $vm;
 }
@@ -332,6 +348,16 @@ sub updateVm {
 			  vnc_port                  => $args{vnc_port},
 		}
 	);
+}
+
+
+sub getImageRepository {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['container_access_id']);
+    my $row = $self->{_dbix}->opennebula3_repositories->search(
+        { container_access_id => $args{container_access_id} }
+    )->single;
+    return $row->get_columns();
 }
 
 
