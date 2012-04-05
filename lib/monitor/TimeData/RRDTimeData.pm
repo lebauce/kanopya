@@ -234,13 +234,18 @@ sub fetchTimeDataStore {
     #print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
+    
+    if (scalar(keys %values) == 0) {
+    	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
+    }
+    
 	#we replace the '-1.#IND000000e+000' values for "undef"
 	while (my ($timestamp, $value) = each %values) {
 		if ($value eq '-1.#IND000000e+000'){
 			$values{$timestamp} = undef;
 			}
 	}	
-    $log->debug(Dumper(\%values));
+    #$log->debug(Dumper(\%values));
     return %values;   
 }
 
@@ -322,6 +327,10 @@ sub getLastUpdatedValue {
     # print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
+	
+    if (scalar(keys %values) == 0) {
+    	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
+    }
 	
 	#we replace the '-1.#IND000000e+000' values for "undef"
 	while (my ($timestamp, $value) = each %values) {
