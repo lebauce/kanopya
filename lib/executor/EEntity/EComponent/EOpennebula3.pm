@@ -248,7 +248,7 @@ sub generateXenconf {
     General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
     
     # TODO recup de l'interface pour les vms
-    my $data = {vmiface => 'eth1'};
+    my $data = {vmiface => 'eth1', min_mem_dom0 => '1024' };
     
     $self->generateFile( 
             econtext => $args{econtext}, 
@@ -341,20 +341,18 @@ sub preStopNode {
      General::checkParams(args => \%args, required => ['cluster', 'host', 'econtext']);
 
      my $masternodeip = $args{cluster}->getMasterNodeIp();
-     my $nodeip = $args{host}->getInternalIP()->{ipv4_internal_address};
-     if(not $masternodeip eq $nodeip) {
-         # this host is a hypervisor node so we remove it from opennebula
-         my $id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
-         my $command = $self->_oneadmin_command(command => "onehost delete $id");
 
-         my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
-                                                         ip_destination => $masternodeip);
+     my $id = $self->_getEntity()->getHypervisorIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));
+     my $command = $self->_oneadmin_command(command => "onehost delete $id");
 
-		 sleep(10);
-         my $result = $masternode_econtext->execute(command => $command);
-         # TODO verifier le succes de la commande
-         $self->_getEntity()->removeHypervisor(host_id => $args{host}->getAttr(name => 'host_id'));
-     }
+     my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
+                                                     ip_destination => $masternodeip);
+
+     sleep(10);
+     my $result = $masternode_econtext->execute(command => $command);
+     # TODO verifier le succes de la commande
+     $self->_getEntity()->removeHypervisor(host_id => $args{host}->getAttr(name => 'host_id'));
+     
 }
 
 sub isUp {

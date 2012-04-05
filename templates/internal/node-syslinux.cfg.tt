@@ -3,7 +3,7 @@ label linux
 [% IF nfsroot %]
 [% IF xenkernel %]
   kernel mboot.c32
-  append xen-4.0-amd64.gz noreboot --- [% kernelfile %] rw root=/dev/nfs ip=::::diskless:eth0:dhcp nfsroot=[% nfsexport %] --- [% initrdfile %]
+  append xen-4.0-amd64.gz noreboot dom0_mem=1024M --- [% kernelfile %] rw root=/dev/nfs ip=::::diskless:eth0:dhcp nfsroot=[% nfsexport %] --- [% initrdfile %]
 [% ELSE %]
   kernel  [% kernelfile %]
   append initrd=[% initrdfile %] boot=nfs rw ip=::::diskless:eth0:dhcp nfsroot=[% nfsexport %]
@@ -11,7 +11,7 @@ label linux
 [% ELSIF iscsiroot %]
 [% IF xenkernel %]
   kernel mboot.c32
-  append xen-4.0-amd64.gz noreboot --- [% kernelfile %] fastboot boot=kanopya ip=::::diskless:eth0:dhcp --- [% initrdfile %]
+  append xen-4.0-amd64.gz noreboot dom0_mem=1024M --- [% kernelfile %] fastboot boot=kanopya ip=::::diskless:eth0:dhcp --- [% initrdfile %]
 [% ELSE %]
   kernel [% kernelfile %]
   append initrd=[% initrdfile %] vga=0x317 fastboot boot=kanopya
