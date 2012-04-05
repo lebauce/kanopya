@@ -189,9 +189,18 @@ sub umount {
     $command = "sync";
     $args{econtext}->execute(command => $command);
 
-    $command = "umount $args{mountpoint}";
-    $result  = $args{econtext}->execute(command => $command);
-    if ($result->{exitcode} != 0) {
+    my $counter = 5;
+    while($counter != 0) {
+        $command = "umount $args{mountpoint}";
+        $result  = $args{econtext}->execute(command => $command);
+        if($result->{exitcode} == 0) {
+            last;
+        }
+        $counter--;
+        sleep(1);
+    }
+    
+    if ($result->{exitcode} != 0 ) {
         throw Kanopya::Exception::Execution(
                   error => "Unable to umount $args{mountpoint}: " .
                            $result->{stderr}

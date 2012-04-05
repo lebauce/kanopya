@@ -60,7 +60,7 @@ sub mount {
     my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
 
-    my $mount_cmd = "mount.nfs $target $args{mountpoint} -o vers=3,noac";
+    my $mount_cmd = "mount.nfs $target $args{mountpoint} -o vers=3,noac,sync";
     my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
 
     # exitcode 8192: mount.nfs: mountpoint is busy or already mounted

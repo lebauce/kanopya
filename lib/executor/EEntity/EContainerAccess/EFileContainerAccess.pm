@@ -94,8 +94,17 @@ sub disconnect {
 
     my $device = $self->_getEntity->getAttr(name => 'device_connected');
 
-    $command = "losetup -d $device";
-    $result = $args{econtext}->execute(command => $command);
+    my $counter = 5;
+    while($counter != 0) {
+        $command = "losetup -d $device";
+        $result  = $args{econtext}->execute(command => $command);
+        if($result->{exitcode} == 0) {
+            last;
+        }
+        $counter--;
+        sleep(1);
+    }
+
     if ($result->{exitcode} != 0) {
         throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
