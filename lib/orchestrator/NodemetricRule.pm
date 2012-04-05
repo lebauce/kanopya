@@ -76,8 +76,11 @@ sub new {
         $self->setAttr(name=>'nodemetric_rule_label', value => $self->toString());
         $self->save();
     }
-    $self->setUndefForEachNode();
-
+    # When enabled, set undef for each node (will be update next orchestrator loop) 
+    if($self->getAttr('name' => 'nodemetric_rule_state') eq 'enabled'){
+        $self->setUndefForEachNode();
+    } 
+    return $self;
 }
 
 
