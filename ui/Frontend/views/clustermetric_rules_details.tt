@@ -35,13 +35,17 @@
 
 
     
-    <%IF clustermetric == 1%>
-        <hr/>
-        <h4>Edit rule conditions:</h4>
-        <% FOREACH condition IN rule.conditions %>
+
+    <hr/>
+    <h4>Edit rule conditions:</h4>
+    <% FOREACH condition IN rule.conditions %>
+        <%IF clustermetric == 1%>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/clustermetrics/combinations/conditions/<%condition.condition_id%>/edit"><%condition.condition_label%></a><br/>
+        <%ELSE%>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions/<%condition.condition_id%>/edit"><%condition.condition_label%></a><br/>
         <%END%>
     <%END%>
+
 <%END%>
  
 

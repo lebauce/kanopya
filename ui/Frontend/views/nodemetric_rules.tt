@@ -64,11 +64,19 @@
         </td></tr>
         <tr><td>
         <%IF externalnode_id%>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules">View enabled rules</a>
+        <%ELSE%>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View enabled rules</a>
+        <%END%>
+        </td></tr>
+        <tr><td>
+        <%IF externalnode_id%>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/externalnodes/<%externalnode_id%>/rules/disabled">View disabled rules</a>
         <%ELSE%>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules/disabled">View disabled rules</a>
         <%END%>
         </td></tr>
+        
     </table>
     
     <table><tr><td>

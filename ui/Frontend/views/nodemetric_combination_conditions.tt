@@ -25,6 +25,9 @@
 <div class="actions">
 
     <table>
+         <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </td></tr>
         <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
         </td></tr>
