@@ -151,7 +151,7 @@ sub getContainer {
 
 =head2 getExportManager
 
-    desc: Abstract method. Return the component/conector that
+    desc: Return the component/conector that
           manages this container access.
 
 =cut
@@ -159,8 +159,14 @@ sub getContainer {
 sub getExportManager {
     my $self = shift;
 
-    throw Kanopya::Exception::NotImplemented();
+    return Entity->get(id => $self->getAttr(name => 'export_manager_id'));
 }
+
+=head2 getContainerAccess
+
+    desc: Return the container access as a normalized container.
+
+=cut
 
 sub getContainerAccess {
     my $self = shift;
