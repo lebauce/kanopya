@@ -87,6 +87,10 @@
                 <option value="disabled" <%IF rule.state == 'disabled'%> SELECTED <%END%> >Disabled</option>
             </select>
         </td></tr>
+        
+        <tr><td>        
+            Description: </td><td> <textarea cols="50" name="description" value="<%rule.description%>"></textarea>
+        </td></tr> 
     </table>
     
     <br/>

@@ -1037,8 +1037,9 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:r
         $rule->setAttr(name => 'aggregate_rule_formula',   value => param('formula'));
         $rule->setAttr(name => 'aggregate_rule_action_id', value => $action);
         $rule->setAttr(name => 'aggregate_rule_state',     value => param('state'));
-        $rule->setAttr(name => 'aggregate_rule_label',     value => $label);
+        #$rule->setAttr(name => 'aggregate_rule_label',     value => $label);
         $rule->save();
+        $rule->setLabel(label => $label);
         redirect('/architectures/extclusters/'.param('extclusterid').'/clustermetrics/combinations/conditions/rules');        
     }else {
         my $adm = Administrator->new();
@@ -1101,7 +1102,7 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/ne
             aggregate_rule_service_provider_id => param('extclusterid'),
             aggregate_rule_formula             => param('formula'),
             aggregate_rule_state               => param('state'),
-
+            aggregate_rule_description         => param('description'),
         };
 
         if(defined $label){
