@@ -20,6 +20,7 @@ use base 'BaseDB';
 use AggregateCondition;
 use Data::Dumper;
 use Switch;
+use List::Util qw {reduce};
 use List::MoreUtils qw {any} ;
 
 # logger
@@ -124,7 +125,8 @@ sub toString(){
             $element = AggregateCondition->get('id'=>substr($element,2))->toString();
         }
      }
-     return "@array";
+     #return "@array";
+     return List::Util::reduce {$a.$b} @array;
 }
 
 

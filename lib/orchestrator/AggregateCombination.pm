@@ -20,6 +20,7 @@ use base 'BaseDB';
 use Clustermetric;
 use TimeData::RRDTimeData;
 use Kanopya::Exceptions;
+use List::Util qw {reduce};
 use List::MoreUtils qw {any} ;
 # logger
 use Log::Log4perl "get_logger";
@@ -104,7 +105,8 @@ sub toString {
             $element = Clustermetric->get('id'=>substr($element,2))->toString();
         }
     }
-    return "@array";
+    
+    return List::Util::reduce {$a.$b} @array;
 }
 
 sub computeValues{
