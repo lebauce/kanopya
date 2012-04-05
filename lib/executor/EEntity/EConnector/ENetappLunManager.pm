@@ -186,6 +186,8 @@ sub createExport {
 
     my $api = $self->_getEntity();
     my $volume = Entity::Container::NetappVolume->get(id => $args{container}->getAttr(name => "volume_id"));
+    my $lun_path = '/vol/' . $volume->getAttr(name => "name") .
+                   '/' . $args{container}->getAttr(name => "name");
 
     my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
                              hash => {
@@ -197,7 +199,7 @@ sub createExport {
 
     eval {
         $self->_getEntity()->igroup_create(initiator_group_name => "igroup_kanopya_master",
-		                           initiator_group_type => "iscsi");
+                                           initiator_group_type => "iscsi");
     };
 
     eval {
@@ -205,15 +207,28 @@ sub createExport {
                                         initiator_group_name => "igroup_kanopya_master");
     };
 
+    my $lun_id;
     eval {
-        my $lun_id = $api->lun_map(path            => '/vol/' . $volume->getAttr(name => "name") .
-                                                      '/' . $args{container}->getAttr(name => "name"),
-                                   initiator_group => 'igroup_kanopya_master');
-
-        $container_access->setAttr(name  => "number",
-                                   value => $lun_id->child_get_string("lun-id-assigned"));
-        $container_access->save();
+        $lun_id = $api->lun_map(path            => $lun_path,
+                                initiator_group => 'igroup_kanopya_master')->child_get_string("lun-id-assigned");
     };
+    if ($@) {
+        # The LUN is already mapped, get its lun ID
+        my @mappings = $api->lun_initiator_list_map_info(
+                           initiator => $master->getAttr(name => "host_initiatorname")
+                       )->child_get("lun-maps")->children_get;
+
+        for my $mapping (@mappings) {
+            bless $mapping, "NaObject";
+            if ($mapping->path eq $lun_path) {
+                $lun_id = $mapping->lun_id;
+            }
+        }
+    }
+
+    $container_access->setAttr(name  => "number",
+                               value => $lun_id);
+    $container_access->save();
 
     $log->info("Added iSCSI export for lun " .
                $args{container}->getAttr(name => "container_name"));
