@@ -152,7 +152,9 @@
                         <% END %>
                     </span></a>
                     <td class="action">
-                        <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                        <% IF actions_list.size > 0 %>
+                            <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                        <%END%>
                     </td>
                 <% CASE 'warning' %>
                     <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
@@ -166,7 +168,9 @@
                         <%END%>
                     </span></a>
                     <td class="action">
+                    <% IF actions_list.size > 0 %>
                         <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
+                    <%END%>
                     </td>
                 <% CASE 'down' %>
                     <a class="imgManage" href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/rules">
@@ -181,6 +185,7 @@
                 <% CASE 'disabled' %>
                     disabled
                 <td class="action">
+                
                  <a href="/architectures/extclusters/<% cluster_id %>/externalnodes/<%node.id%>/enable"> Enable node </a>
                 </td>
                 <% END %>
