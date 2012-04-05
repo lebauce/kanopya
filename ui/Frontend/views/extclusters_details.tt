@@ -152,7 +152,7 @@
                         <% END %>
                     </span></a>
                     <td class="action">
-                        <% IF actions_list.size > 0 %>
+                        <% IF node_actions_list.size > 0 %>
                             <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
                         <%END%>
                     </td>
@@ -168,7 +168,7 @@
                         <%END%>
                     </span></a>
                     <td class="action">
-                    <% IF actions_list.size > 0 %>
+                    <% IF node_actions_list.size > 0 %>
                         <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
                     <%END%>
                     </td>
@@ -178,7 +178,7 @@
                         <%node.num_undef_rules%>/<%nm_rule_enabled%> rule(s) unkown
                     </span></a>
                     <td class="action">
-                    <% IF actions_list.size > 0 %>
+                    <% IF node_actions_list.size > 0 %>
                         <a class="node_action clickable" id="action_<%node.id%>" value="<%node.id%>" name="<%node.hostname%>"> trigger action </a>
                     <% END %>
                     </td>
