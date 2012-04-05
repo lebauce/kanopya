@@ -28,7 +28,7 @@
         <h4> Combination values details:</h4>
         <%IF clustermetric == 1%>
             <% FOREACH condition IN rule.conditions %>
-                <% condition.combination_label %> : <% condition.combination_value %>
+                <% condition.combination_label %> : <% condition.combination_value %><br/>
             <%END%>
         <%END%>
     <%END%>
