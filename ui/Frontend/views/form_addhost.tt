@@ -18,11 +18,11 @@
 	</tr>
 	<tr>
 		<td class="label">Ram amount :</td>
-		<td><input type="text" name="ram" size="20" /></td>
+		<td><input type="text" name="ram" size="5" /><span class="label">G</span></td>
 	</tr>
 	<tr>
 		<td class="label">Core Number :</td>
-		<td><input type="text" name="core" size="10" /></td>
+		<td><input type="text" name="core" size="3" /></td>
 	</tr>
 	<tr>
 		<td class="label">Host model :</td>

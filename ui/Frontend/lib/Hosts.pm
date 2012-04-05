@@ -160,7 +160,9 @@ post '/hosts/add' => sub {
         host_mac_address   => params->{mac_address},
         kernel_id          => params->{kernel},
         host_serial_number => params->{serial_number},
-        host_ram           => params->{ram},
+        host_ram           => General::convertToBytes(
+                                value => params->{ram},
+                                units => 'G'),
         host_core          => params->{core},
         hostmodel_id       => params->{host_model},
         processormodel_id  => params->{cpu_model},
@@ -281,20 +283,18 @@ get '/hosts/:hostid/addinterface' => sub {
         host_id => param('hostid')
     }, { layout => '' };
 };
+
 post '/hosts/:hostid/addinterface' => sub {
     my $adm = Administrator->new;
     eval {
         my $host = Entity::Host->get(id => param('hostid'));
-        my $pxe=param('iface_pxe');
-        if ($pxe eq 'checked')
-        {
-        $host->addIface(iface_name => param('iface_name'),iface_mac_addr=>param('iface_mac_addr'),host_id=>param('hostid'),iface_pxe=>1);
-	}
-	else
-	{
-		 $host->addIface(iface_name => param('iface_name'),iface_mac_addr=>param('iface_mac_addr'),host_id=>param('hostid'),iface_pxe=>0);
-	}
-    
+        my $pxe = param('iface_pxe') eq 'checked' ? 1 : 0;
+        $host->addIface(
+                iface_name => param('iface_name'),
+            iface_mac_addr => param('iface_mac_addr'),
+                   host_id => param('hostid'),
+                 iface_pxe => 1
+        );
     };
     if($@) {
         my $exception = $@;
@@ -305,6 +305,7 @@ post '/hosts/:hostid/addinterface' => sub {
         else { $exception->rethrow(); }
     } else { redirect '/infrastructures/hosts/'.param('hostid'); }
 };
+
 get '/hosts/:hostid/removeinterface/:ifaceid' => sub {
     my $adm = Administrator->new;
     eval {
