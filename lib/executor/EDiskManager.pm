@@ -17,9 +17,11 @@ package EDiskManager;
 
 use warnings;
 use strict;
-
+use Log::Log4perl 'get_logger';
 use General;
 use Kanopya::Exceptions;
+
+my $log = get_logger('executor');
 
 =head2 mkfs
 
