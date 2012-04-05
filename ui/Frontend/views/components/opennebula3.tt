@@ -9,6 +9,7 @@
 
 <table>
 
+<tr><td class="bold right darkgreen">vm image base repository path :</td><td><input type="text" size="30" class="conf_simple_value" name="image_repository_path" value="<% image_repository_path %>"/></td></tr>
 <tr><td class="bold right darkgreen">host monitoring interval :</td><td><input type="text" size="5" class="conf_simple_value" name="host_monitoring_interval" value="<% host_monitoring_interval %>"/></td></tr>
 <tr><td class="bold right darkgreen">vm polling interval :</td><td><input type="text" size="5" class="conf_simple_value" name="vm_polling_interval" value="<% vm_polling_interval %>"/></td></tr>
 <tr><td class="bold right darkgreen">port :</td><td><input type="text" size="5" class="conf_simple_value" name="port" value="<% port %>"/>

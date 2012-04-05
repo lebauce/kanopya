@@ -98,7 +98,6 @@ sub getConf {
     my $confindb = $self->{_dbix};
     if($confindb) {
         %conf = $confindb->get_columns();
-
     }
 
     my @repositories = ();
