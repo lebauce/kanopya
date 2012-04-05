@@ -187,7 +187,7 @@ sub fileCreate{
         $command = "sync";
         $args{econtext}->execute(command => $command);
     };
-    if ($@ or (not -e $file_image_path)) {
+    if ($@) {
         throw Kanopya::Exception::Execution(
                   error => "Unable to create file <$file_image_path> with size <$args{file_size}>: $@"
               );
