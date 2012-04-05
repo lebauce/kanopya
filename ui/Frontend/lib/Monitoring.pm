@@ -1034,9 +1034,10 @@ post '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:r
     if ($label eq '') {$label = undef;}
 
     if($checker->{value} == 1) {
-        $rule->setAttr(name => 'aggregate_rule_formula',   value => param('formula'));
-        $rule->setAttr(name => 'aggregate_rule_action_id', value => $action);
-        $rule->setAttr(name => 'aggregate_rule_state',     value => param('state'));
+        $rule->setAttr(name => 'aggregate_rule_formula',     value => param('formula'));
+        $rule->setAttr(name => 'aggregate_rule_action_id',   value => $action);
+        $rule->setAttr(name => 'aggregate_rule_state',       value => param('state'));
+        $rule->setAttr(name => 'aggregate_rule_description', value => param('description'));
         #$rule->setAttr(name => 'aggregate_rule_label',     value => $label);
         $rule->save();
         $rule->setLabel(label => $label);

@@ -89,7 +89,7 @@
         </td></tr>
         
         <tr><td>        
-            Description: </td><td> <textarea cols="50" name="description" value="<%rule.description%>"><%rule.description%></textarea>
+            Description: </td><td> <textarea cols="50" name="description"><%rule.description%></textarea>
         </td></tr> 
     </table>
     
