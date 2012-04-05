@@ -131,7 +131,6 @@ sub createHost {
                                        "hostmodel_id", "host_mac_address",
                                        "host_serial_number", "host_ram" ]);
 
-    my $host_provider_id = $self->getAttr(name => 'service_provider_id');
     my $host_manager_id = $self->getAttr(name => 'entity_id');
 
     $log->info("New Operation AddHost with attrs : " . Dumper(%args));
@@ -139,7 +138,6 @@ sub createHost {
         priority => 200,
         type     => 'AddHost',
         params   => {
-            host_provider_id => $host_provider_id,
             host_manager_id  => $host_manager_id,
             %args
         }

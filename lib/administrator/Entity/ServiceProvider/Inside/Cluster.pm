@@ -237,29 +237,6 @@ sub getCluster {
     return pop @clusters;
 }
 
-=head2 getDefaultManager
-
-=cut
-
-sub getDefaultManager {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['category']);
-
-    if ($args{category} eq 'DiskManager') {
-        return $self->getComponent(name => "Lvm", version => "2");
-    }
-    elsif ($args{category} eq 'ExportManager') {
-        return $self->getComponent(name => "Iscsitarget", version => "1");
-    }
-    elsif ($args{category} eq 'HostManager') {
-        return $self->getComponent(name => "Physicalhoster", version => "0");
-    }
-
-    throw Kanopya::Exception::Internal::UnknownCategory();
-}
-
 =head2 create
 
 =cut

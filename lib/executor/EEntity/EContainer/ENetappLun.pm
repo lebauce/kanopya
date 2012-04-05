@@ -26,4 +26,11 @@ use Operation;
 
 my $log = get_logger("executor");
 
+sub getDefaultExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    return $self->_getEntity->getDiskManager();
+}
+
 1;

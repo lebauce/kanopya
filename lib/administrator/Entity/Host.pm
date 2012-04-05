@@ -509,33 +509,6 @@ sub getFreeHosts {
     return @free;
 }
 
-=head2 create
-
-=cut
-
-sub create {
-    my $class = shift;
-    my %params = @_;
-
-    # Host must be created from component/connector that implements HostManager service.
-    # If created from this method, the default host provider is used within EAddHost operation.
-
-    # So add dummy values for service_provider_id and host_manager_id attrs check...
-    $params{service_provider_id} = 1;
-    $params{host_manager_id}     = 1;
-
-	$class->checkAttrs(attrs => \%params);
-
-    # ... add remove its to let the operation use the default values.
-    delete $params{service_provider_id};
-    delete $params{host_manager_id};
-
-    $log->debug("New Operation AddHost with attrs : " . Dumper(%params));
-    Operation->enqueue(priority => 200,
-                       type     => 'AddHost',
-                       params   => \%params);
-}
-
 =head2 update
 
 =cut

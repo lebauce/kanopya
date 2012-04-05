@@ -42,10 +42,6 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getDefaultManager {
-    throw Kanopya::Exception::NotImplemented();
-}
-
 sub getManager {
 	throw Kanopya::Exception::NotImplemented();
 }
@@ -78,13 +74,6 @@ sub findManager {
     $key->{service_provider_id} = $args{service_provider_id} if defined $args{service_provider_id};
     foreach my $connector (Entity::Connector->search(hash => $key)) {
         my $obj = $connector->getConnectorType();
-
-        # Sorry, but rush is rush...
-        # Actualt, within connectors, all Storage manager are Export manager too,
-        # but we can't have a connector in the connector table twice.
-        if ($args{category} eq 'Export') {
-            $args{category} = 'Storage';
-        }
 
         if ($obj->{connector_category} eq $args{category}) {
             push @managers, {

@@ -43,6 +43,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 use EFactory;
+use Entity;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Inside::Cluster;
@@ -72,6 +73,7 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
+    my $disk_manager_id  = General::checkParam(args => $params, name => 'disk_manager_id');
     my $masterimage_id   = General::checkParam(args => $params, name => 'masterimage_id');
     my $systemimage_name = General::checkParam(args => $params, name => 'systemimage_name');
     my $systemimage_desc = General::checkParam(args => $params, name => 'systemimage_desc');
@@ -103,40 +105,17 @@ sub prepare {
        $self->{_objs}->{masterimage} = Entity::Masterimage->get(id => $masterimage_id);
     };
     if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EAddSystemimage->prepare : wrong " .
-                  "masterimage_id <$params->{masterimage_id}>\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    # Check if a service provider is given in parameters, use default instead.
-    my $storage_provider_id = General::checkParam(
-                                  args    => $params,
-                                  name    => 'storage_provider_id',
-                                  default => $args{internal_cluster}->{nas}
-                              );
-
-    $self->{_objs}->{storage_provider} = Entity::ServiceProvider->get(id => $storage_provider_id);
-
-    # Check if a disk manager is given in parameters, use default instead.
-    my $disk_manager_id = General::checkParam(
-                              args    => $params,
-                              name    => 'disk_manager_id',
-                              default => 0
-                          );
-    my $disk_manager;
-    if ($disk_manager_id) {
-        $disk_manager = $self->{_objs}->{storage_provider}->getManager(id => $disk_manager_id);
-    }
-    else {
-        $disk_manager = $self->{_objs}->{storage_provider}->getDefaultManager(
-                            category => 'DiskManager'
-                        )
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
 
     # Get the edisk manager for disk creation.
-    $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $disk_manager);
+    eval {
+        $self->{_objs}->{edisk_manager}
+            = EFactory::newEEntity(data => Entity->get(id => $disk_manager_id));
+    };
+    if($@) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
 
     # Get contexts
     my $exec_cluster

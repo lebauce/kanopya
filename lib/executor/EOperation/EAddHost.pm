@@ -40,9 +40,8 @@ use warnings;
 use Kanopya::Exceptions;
 use EFactory;
 use Template;
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 
+use Entity;
 use Entity::Host;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Kernel;
@@ -51,6 +50,9 @@ use Entity::Processormodel;
 use Entity::Powersupplycard;
 use Entity::Gp;
 use ERollback;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -144,68 +146,30 @@ sub prepare {
     my $params = $self->_getOperation()->getParams();
 
     $self->{_objs} = {};
+    $self->{executor} = {};
 
-    # Check if a service provider is given in parameters, use default instead.
-    eval {
-        General::checkParams(args => $params, required => [ "host_provider_id" ]);
-
-        $self->{_objs}->{host_provider}
-            = Entity::ServiceProvider->get(id => $params->{host_provider_id});
-
-        delete $params->{host_provider_id};
-    };
-    if ($@) {
-        $log->info("Host provider id not defined, using default.");
-        $self->{_objs}->{host_provider} = Entity::ServiceProvider::Inside::Cluster->get(
-                                              id => $args{internal_cluster}->{hostprovider}
-                                          );
-    }
-
-    # Check if a host manager is given in parameters, use default instead.
-    my $host_manager;
-    eval {
-        General::checkParams(args => $params, required => [ "host_manager_id" ]);
-
-        $host_manager
-            = $self->{_objs}->{host_provider}->getManager(id => $params->{host_manager_id});
-
-        delete $params->{host_manager_id};
-    };
-    if ($@) {
-        $log->info("Host manager id not defined, using default.");
-        $host_manager
-            = $self->{_objs}->{host_provider}->getDefaultManager(category => 'HostManager');
-    }
+    my $host_manager_id = General::checkParam(args => $params, name => 'host_manager_id');
 
     # Put the MAC address in lowercase
     $params->{host_mac_address} = lc($params->{host_mac_address});
 
     # TODO: Check parameters for addHost method.
+    $self->{_objs}->{ehost_manager}
+        = EFactory::newEEntity(data => Entity->get(id => $host_manager_id));
+
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
     $self->{params} = $params;
-    $self->{_objs}->{ehost_manager} = EFactory::newEEntity(data => $host_manager);
-
-    # Instanciate executor Cluster
-    $self->{executor} = Entity::ServiceProvider->get(
-                            id => $args{internal_cluster}->{executor}
-                        );
-
-    my $exec_ip = $self->{executor}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{host_provider}->getMasterNodeIp();
-
-    eval {
-        $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
-                                                  ip_destination => $masternode_ip);
-    };
-    if ($@) {
-        $self->{econtext} = {};
-    }
 }
 
 sub execute {
     my $self = shift;
 
     my $host = $self->{_objs}->{ehost_manager}->createHost(erollback => $self->{erollback},
-                                                           econtext  => $self->{econtext},
+                                                           econtext  => $self->{executor}->{econtext},
                                                            %{$self->{params}});
 
     $log->info("Host <" . $host->getAttr(name => "host_mac_address") . "> is now created");

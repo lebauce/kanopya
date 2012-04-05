@@ -144,9 +144,7 @@ sub getDefaultExportManager {
     my $self = shift;
     my %args = @_;
 
-    return $self->_getEntity->getServiceProvider->getDefaultManager(
-               category => 'ExportManager'
-           );
+    throw Kanopya::Exception::NotImplemented();
 }
 
 1;

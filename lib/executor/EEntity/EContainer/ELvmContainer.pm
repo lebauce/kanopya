@@ -21,9 +21,21 @@ use base "EEntity::EContainer";
 use strict;
 use warnings;
 
+use Entity;
+
 use Log::Log4perl "get_logger";
 use Operation;
 
 my $log = get_logger("executor");
+
+sub getDefaultExportManager {
+    my $self = shift;
+    my %args = @_;
+
+    $manager = $self->_getEntity->getDiskManager();
+    $cluster = Entity->get(id => $manager->getAttr(name => 'service_provicer_id'));
+
+    return $cluster->getComponent(name => "Iscsitarget", version => "1");
+}
 
 1;

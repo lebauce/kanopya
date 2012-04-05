@@ -46,21 +46,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getDefaultManager {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['category']);
-
-    if ($args{category} eq 'DiskManager') {
-        return $self->getConnector(category => "Storage", version => "1");
-    }
-
-    elsif ($args{category} eq 'ExportManager') {
-        return $self->getConnector(category => "Export", version => "1");
-    }
-}
-
 sub getNetapp {
     my $class = shift;
     my %args = @_;
