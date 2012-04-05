@@ -82,6 +82,11 @@ sub createDisk {
         $self->mkfs(device   => $newdevice,
                     fstype   => $args{filesystem},
                     econtext => $local_context);
+
+        $container_access->disconnect(econtext => $local_context);
+
+        $self->removeExport(container_access => $export,
+                            econtext         => $local_context);
     }
 
     if (exists $args{erollback} and defined $args{erollback}){
