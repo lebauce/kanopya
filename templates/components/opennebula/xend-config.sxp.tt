@@ -141,12 +141,12 @@
 #
 # use
 #
-(network-script 'network-multi-vlan netdev=[% vmiface %]')
+# (network-script 'network-multi-vlan netdev=[% vmiface %]')
 #
 # Your default ethernet device is used as the outgoing interface, by default. 
 # To use a different one (e.g. eth1) use
 #
-# (network-script 'network-bridge netdev=eth1')
+(network-script 'network-bridge netdev=[% vmiface %]')
 #
 # The bridge is named xenbr0, by default.  To rename the bridge, use
 #
