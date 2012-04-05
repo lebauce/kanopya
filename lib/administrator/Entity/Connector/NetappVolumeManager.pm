@@ -250,10 +250,11 @@ sub getContainerAccess {
     my $netapp = Entity::ServiceProvider->get(id => $self->getAttr(name => "service_provider_id"));
 
     my $container = {
-        container_access_export => $netapp->getMasterNodeIp() . ':/vol/' .
+        container_access_export  => $netapp->getMasterNodeIp() . ':/vol/' .
                                    $args{container_access}->getAttr(name => "export_path"),
-        container_access_ip     => $netapp->getMasterNodeIp(),
-        container_access_port   => 3260,
+        container_access_ip      => $netapp->getMasterNodeIp(),
+        container_access_port    => 3260,
+        container_access_options => 'rw,no_root_squash,sync'
     };
 
     return $container;
@@ -318,10 +319,15 @@ sub synchronize {
         my $existing_volumes = Entity::Container::NetappVolume->search(hash => { name => $vol->name });
         my $existing_volume = scalar($existing_volumes);
         if ($existing_volume eq "0") {
-            my $volname = $self->addContainer(
-                              name    => $vol->name,
-                              size    => $vol->size_used,
-                          );
+            my $volume = $self->addContainer(
+                             name    => $vol->name,
+                             size    => $vol->size_used,
+                         );
+
+            $self->addContainerAccess(
+                container   => $volume,
+                export_name => $vol->name
+            );
         }
     }
 }
