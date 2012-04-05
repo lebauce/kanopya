@@ -958,21 +958,32 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
     my $cluster_name = $cluster->getAttr(name => 'externalcluster_name');
     
     my @depConditionIds = $rule->getDependantConditionIds();
-    my @combinationValues;
+    
+    
+    my @rule_conditions;
     foreach my $depConditionId (@depConditionIds){
         my $condition      = AggregateCondition->get('id'   => $depConditionId);
         my $combination_id = $condition->getAttr('name'     => 'aggregate_combination_id');
         my $combination    = AggregateCombination->get('id' => $combination_id);
-        push @combinationValues, [$combination->toString(),$combination->computeLastValue()];
+        my $value          = $combination->computeLastValue();
+        
+        
+        push @rule_conditions,{
+                combination_label => $combination->toString(),
+                combination_value => $value,
+                condition_id      => $depConditionId,
+                condition_label   => $condition->getAttr('name' => 'aggregate_condition_label'),
+        };
+        
     }
     
 
-    my @conditions;
-
+    
+  
     my @condition_insts = AggregateCondition->search(hash => {
         'aggregate_condition_service_provider_id' => $cluster_id,
     });
-    
+    my @conditions;  
     foreach my $condition_inst (@condition_insts){
         my $hash = {
             label => $condition_inst->getAttr('name' => 'aggregate_condition_label'),
@@ -1007,7 +1018,7 @@ get '/extclusters/:extclusterid/clustermetrics/combinations/conditions/rules/:ru
         label       => $rule->getAttr('name' => 'aggregate_rule_label'),
         action_id   => $rule->getAttr('name' => 'aggregate_rule_action_id'),
         description => $rule->getAttr('name' => 'aggregate_rule_description'),
-        combination => \@combinationValues,
+        conditions => \@rule_conditions,
     };
     
     template 'clustermetric_rules_details', {
