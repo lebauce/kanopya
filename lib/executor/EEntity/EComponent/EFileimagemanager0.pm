@@ -13,6 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::EFileimagemanager0;
+use base 'EExportManager';
 use base "EDiskManager";
 use base "EExportManager";
 use base "EEntity::EComponent";
@@ -157,25 +158,8 @@ sub fileCreate{
 
     $log->debug("Container access mounted, trying to create $file_image_path, size $args{file_size}.");
 
-    if (-e $file_image_path) {
-        throw Kanopya::Exception::Execution(
-                  error => "FileContainer with name <" . $args{file_name} . "> " .
-                           "already exists on container access <" .
-                           $args{container_access}->getAttr(name => 'container_name') . ">"
-              );
-    }
-
     my ($command, $result);
     eval {
-        # Can't get errors when built-in function fails, so use dd.
-
-        # Open the file in write mode
-        #open(FILEIMAGE, '>', $file_image_path);
-        # Seek the file until wanted size
-        #seek(FILEIMAGE, $args{file_size} - 1, 0);
-        # Write 0 at the end of file
-        #print FILEIMAGE 0;
-        #close(FILEIMAGE);
 
         $command = "dd if=/dev/zero of=$file_image_path bs=1 count=1 seek=$args{file_size}";
         $result  = $args{econtext}->execute(command => $command);
@@ -185,6 +169,9 @@ sub fileCreate{
         }
 
         $command = "sync";
+        $args{econtext}->execute(command => $command);
+        
+        $command = "chmod 777 $file_image_path";
         $args{econtext}->execute(command => $command);
     };
     if ($@) {
