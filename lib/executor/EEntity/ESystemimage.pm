@@ -170,7 +170,7 @@ sub generateAuthorizedKeys {
     my $mount_point = $container->getMountPoint;
     $econtainer_access->mount(mountpoint => $mount_point, econtext => $args{econtext});
 
-    my $rsapubkey_cmd = "cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
+    my $rsapubkey_cmd = "mkdir -p $mount_point/root/.ssh ; cat /root/.ssh/kanopya_rsa.pub > $mount_point/root/.ssh/authorized_keys";
     $args{econtext}->execute(command => $rsapubkey_cmd);
 
     my $sync_cmd = "sync";
