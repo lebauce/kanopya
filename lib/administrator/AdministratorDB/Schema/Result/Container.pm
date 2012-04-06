@@ -26,13 +26,6 @@ __PACKAGE__->table("container");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 service_provider_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 disk_manager_id
 
   data_type: 'integer'
@@ -43,13 +36,6 @@ __PACKAGE__->table("container");
 
 __PACKAGE__->add_columns(
   "container_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -75,21 +61,6 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "container_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -184,9 +155,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-12 11:00:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dLybpiYWFkKChclPS/E3WQ
-
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-05 20:08:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xH9LaTzOYpfUNQdDvkFRRw
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

@@ -51,16 +51,4 @@ sub getContainer {
     return $manager->getContainer(volume_id => $self->{_dbix}->get_column('volume_id'));
 }
 
-=head2 getDiskManager
-    
-    desc:
-
-=cut
-
-sub getDiskManager {
-    my $self = shift;
-
-    return Entity::Connector::NetApp->get(id => $self->getAttr(name => 'disk_manager_id'));
-}
-
 1;

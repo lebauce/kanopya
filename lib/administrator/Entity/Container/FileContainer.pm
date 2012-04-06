@@ -66,18 +66,4 @@ sub getContainer {
     };
 }
 
-=head2 getDiskManager
-
-    desc: Return the component/conector that manage this container.
-
-=cut
-
-sub getDiskManager {
-    my $self = shift;
-
-    return Entity::Component::Fileimagemanager0->get(
-               id => $self->getAttr(name => 'disk_manager_id')
-           );
-}
-
 1;

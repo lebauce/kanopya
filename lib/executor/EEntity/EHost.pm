@@ -35,12 +35,13 @@ EHost is the execution class of host entities
 package EEntity::EHost;
 use base "EEntity";
 
-use Entity::Powersupplycard;
-
 use strict;
 use warnings;
 
 use Entity;
+use EFactory;
+use Entity::Powersupplycard;
+
 use String::Random;
 use Template;
 use IO::Socket;
@@ -57,17 +58,8 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    $self->{sp} = Entity::ServiceProvider->get(
-                      id => $self->_getEntity->getAttr(name => "service_provider_id")
-                  );
-
-    $self->{host_manager} = EFactory::newEEntity(
-                                data => $self->{sp}->getManager(
-                                   id => $self->_getEntity->getAttr(name => "host_manager_id")
-                                )
-                            );
-
-    $self->{host} = $self->_getEntity();
+    $self->{host}         = $self->_getEntity();
+    $self->{host_manager} = EFactory::newEEntity(data => $self->{host}->getHostManager);
 
     $log->debug("Created a EHost");
     return $self;
@@ -79,8 +71,7 @@ sub start {
 
     General::checkParams(args => \%args, required => [ "econtext" ]);
 
-    $self->{host_manager}->startHost(cluster  => $self->{sp},
-                                     host     => $self->{host},
+    $self->{host_manager}->startHost(host     => $self->{host},
                                      econtext => $args{econtext});
 
     $self->{host}->setState(state => 'starting');
@@ -100,16 +91,20 @@ sub stop {
     my $self = shift;
     my %args = @_;
 
-    $self->{host_manager}->stopHost(cluster => $self->{sp},
-                                    host    => $self->{host});
+    General::checkParams(args => \%args, required => [ "econtext" ]);
+
+    $self->{host_manager}->stopHost(host     => $self->{host},
+                                    econtext => $args{econtext});
 }
 
 sub postStart {
     my $self = shift;
     my %args = @_;
 
-    $self->{host_manager}->postStart(cluster => $self->{sp},
-                                     host    => $self->{host});
+    General::checkParams(args => \%args, required => [ "econtext" ]);
+
+    $self->{host_manager}->postStart(host     => $self->{host},
+                                     econtext => $args{econtext});
 }
 
 sub checkUp {

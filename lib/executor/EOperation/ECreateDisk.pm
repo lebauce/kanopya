@@ -71,46 +71,33 @@ sub prepare {
     my $params = $self->_getOperation()->getParams();
 
     General::checkParams(args     => $params,
-                         required => [ "storage_provider_id", "disk_manager_id",
-                                       "name", "size", "filesystem" ]);
+                         required => [ "disk_manager_id", "name", "size", "filesystem" ]);
 
-    $self->{params} = $params;
-
-    # Instanciate the storage provider from params
-    $self->{_objs}->{storage_provider}
-        = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
-
-    # Instanciate the disk manager for disk creation from params
-    my $disk_manager = $self->{_objs}->{storage_provider}->getManager(
-                           id => $params->{disk_manager_id}
-                       );
-
-    $self->{_objs}->{edisk_manager} = EFactory::newEEntity(data => $disk_manager);
+    # Get the edisk manager for disk creation.
+    eval {
+        $self->{_objs}->{edisk_manager}
+            = EFactory::newEEntity(data => Entity->get(id => $params->{disk_manager_id}));
+    };
+    if($@) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
 
     # Check service provider state
-    my ($state, $timestamp) = $self->{_objs}->{storage_provider}->getState();
+    my $storage_provider = $self->{_objs}->{edisk_manager}->_getEntity->getServiceProvider;
+    my ($state, $timestamp) = $storage_provider->getState();
     if ($state ne 'up'){
         $errmsg = "Service provider has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
-    # Instanciate executor Cluster
-    $self->{executor} = Entity::ServiceProvider->get(
-                            id => $args{internal_cluster}->{executor}
-                        );
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                              ip_destination => $storage_provider->getMasterNodeIp());
 
-    my $exec_ip = $self->{executor}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
-
-    eval {
-        $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
-                                                  ip_destination => $masternode_ip);
-    };
-    if($@) {
-        $log->info("$@");
-        $self->{econtext} = {};
-    }
+    $self->{params} = $params;
 }
 
 sub execute {

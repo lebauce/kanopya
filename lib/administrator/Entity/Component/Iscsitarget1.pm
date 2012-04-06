@@ -130,10 +130,7 @@ sub setConf {
     for my $target ( @{ $conf->{targets} } ) {
         LUN:
         for my $lun ( @{ $target->{luns} } ) {
-            my @containers
-                = Entity::Container->search(
-                      hash => { service_provider_id => $self->getAttr(name => 'service_provider_id') }
-                  );
+            my @containers = Entity::Container->search(hash => {});
 
             # Check if specified device match to a registred container.
             my $container;
@@ -310,7 +307,6 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             export_manager_id   => $self->getAttr(name => 'component_id'),
             container_id        => $args{container}->getAttr(name => 'container_id'),
             export_name         => $args{export_name},

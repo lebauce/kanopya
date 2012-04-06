@@ -26,13 +26,6 @@ __PACKAGE__->table("host");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 service_provider_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 host_manager_id
 
   data_type: 'integer'
@@ -125,7 +118,7 @@ __PACKAGE__->table("host");
 =head2 host_state
 
   data_type: 'char'
-  default_value: 'down'
+  default_value: 'down:0'
   is_nullable: 0
   size: 32
 
@@ -139,13 +132,6 @@ __PACKAGE__->table("host");
 
 __PACKAGE__->add_columns(
   "host_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -206,7 +192,12 @@ __PACKAGE__->add_columns(
   "host_hostname",
   { data_type => "char", is_nullable => 1, size => 32 },
   "host_state",
-  { data_type => "char", default_value => "down", is_nullable => 0, size => 32 },
+  {
+    data_type => "char",
+    default_value => "down:0",
+    is_nullable => 0,
+    size => 32,
+  },
   "host_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
 );
@@ -242,21 +233,6 @@ __PACKAGE__->belongs_to(
   "host",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "host_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
   { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -396,8 +372,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-06 11:12:13
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XAN4ruPHxHLVfMzK5nAfCw
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-05 20:08:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2QRYGyGbzm5vxml4P8B00w
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

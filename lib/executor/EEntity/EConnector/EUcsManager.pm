@@ -32,7 +32,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
+    General::checkParams(args => \%args, required => [ "host", "econtext" ]);
 
     my $ucs = $self->_getEntity();
     $ucs->init();
@@ -46,7 +46,7 @@ sub stopHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     my $ucs = $self->_getEntity();
     $ucs->init();
@@ -54,9 +54,6 @@ sub stopHost {
                                  classId => "computeBlade");
     my $sp = $ucs->{api}->get(dn => $blade->{assignedToDn});
     $sp->stop();
-}
-
-sub postStart {
 }
 
 =head2 getFreeHost

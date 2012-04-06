@@ -29,7 +29,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
         
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point','cluster']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
 
      #TODO insert configuration files generation
     my $cluster = $args{cluster};
@@ -94,7 +94,7 @@ sub configureNode {
 sub addNode {
     my $self = shift;
     my %args = @_;    
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point','cluster']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster']);
 
     $self->configureNode(
            econtext => $args{econtext},

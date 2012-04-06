@@ -32,11 +32,6 @@ use Kanopya::Exceptions;
 use Entity::ContainerAccess;
 
 use constant ATTR_DEF => {
-    service_provider_id => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
     disk_manager_id => {
         pattern => '^[0-9\.]*$',
         is_mandatory => 1,
@@ -109,11 +104,9 @@ sub toString {
     my $self = shift;
 
     my $container_id = $self->getAttr(name => 'container_id');
-    my $servicep_id  = $self->getAttr(name => 'service_provider_id');
     my $mananger_id  = $self->getAttr(name => 'disk_manager_id');
 
     my $string = "Container, id = $container_id, " .
-                 "service_provider_id = $servicep_id" .
                  "disk_manager_id = $mananger_id";
 
     return $string;
@@ -152,15 +145,14 @@ sub getServiceProvider {
 
 =head2 getDiskManager
 
-    desc: Abstract method. Return the component/conector that
-          manage this container.
+    desc: Return the component/conector that manage this container.
 
 =cut
 
 sub getDiskManager {
     my $self = shift;
 
-    throw Kanopya::Exception::NotImplemented();
+    return Entity->get(id => $self->getAttr(name => 'disk_manager_id'));
 }
 
 sub getMountPoint {

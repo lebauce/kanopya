@@ -109,36 +109,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 containers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Container>
-
-=cut
-
-__PACKAGE__->has_many(
-  "containers",
-  "AdministratorDB::Schema::Result::Container",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 hosts
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Host>
-
-=cut
-
-__PACKAGE__->has_many(
-  "hosts",
-  "AdministratorDB::Schema::Result::Host",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 inside
 
 Type: might_have
@@ -213,12 +183,12 @@ __PACKAGE__->belongs_to(
   "service_provider",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "service_provider_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-03-08 10:27:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7s7lniNHssg0gwBFvlObBQ
+# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-05 20:08:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jmeQMTUC0LG2/ymZYpgUtw
 
 __PACKAGE__->belongs_to(
   "parent",

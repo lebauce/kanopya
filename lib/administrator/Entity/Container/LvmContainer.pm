@@ -50,16 +50,4 @@ sub getContainer {
     return $lvm2->getContainer(lv_id => $self->{_dbix}->get_column('lv_id'));
 }
 
-=head2 getDiskManager
-
-    desc: Return the component/conector that manage this container.
-
-=cut
-
-sub getDiskManager {
-    my $self = shift;
-
-    return Entity::Component::Lvm2->get(id => $self->getAttr(name => 'disk_manager_id'));
-}
-
 1;

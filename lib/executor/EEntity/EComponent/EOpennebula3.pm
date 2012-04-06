@@ -15,13 +15,12 @@ package EEntity::EComponent::EOpennebula3;
 use base "EEntity::EComponent";
 use base "EEntity::EHostManager";
 
-use EFactory;
-
 use strict;
 use warnings;
 use Entity;
 use EFactory;
 use General;
+
 use XML::Simple;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -34,7 +33,7 @@ sub configureNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
+    General::checkParams(args => \%args, required => [ 'econtext', 'host', 'mount_point', 'cluster' ]);
 
     my $masternodeip = $args{cluster}->getMasterNodeIp();
      
@@ -138,8 +137,9 @@ sub scale_memory {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['host', 'memory_quantity']);
-     my $memory_quantity=$args{memory_quantity};
+    General::checkParams(args => \%args, required => [ 'host', 'memory_quantity', 'hypervisor_cluster' ]);
+
+    my $memory_quantity = $args{memory_quantity};
     # instanciate opennebula master node econtext 
     my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
     my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
@@ -155,7 +155,7 @@ sub scale_cpu {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['host','cpu_number']);
+    General::checkParams(args => \%args, required => [ 'host', 'cpu_number', 'hypervisor_cluster' ]);
     my $cpu_number= $args{cpu_number};
     # instanciate opennebula master node econtext 
     my $masternodeip = $args{hypervisor_cluster}->getMasterNodeIp();
@@ -172,7 +172,7 @@ sub generateOnedConf {
      my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point']);
+    General::checkParams(args => \%args, required => [ 'econtext', 'mount_point' ]);
     
     my $data = $self->_getEntity()->getTemplateDataOned();
     $self->generateFile(
@@ -284,7 +284,7 @@ sub generatevlanconf {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host']);
+    General::checkParams(args => \%args, required => ['econtext', 'mount_point', 'host' ]);
     
     my $data = {};
     $self->generateFile(
@@ -297,14 +297,11 @@ sub generatevlanconf {
     ); 
 }
 
-
-
-
 sub addNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point']);
+    General::checkParams(args => \%args, required => ['econtext', 'host', 'mount_point', 'cluster' ]);
     $self->configureNode(%args);    
 }
 
@@ -321,7 +318,6 @@ sub postStartNode {
         # this host is a new hypervisor node so we declare it to opennebula
         my $hostname = $args{host}->getAttr(name => 'host_hostname');
         my $command = $self->_oneadmin_command(command => "onehost create $hostname im_xen vmm_xen tm_shared dummy");
-        use EFactory;
         my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
                                                         ip_destination => $masternodeip);
 
@@ -398,10 +394,11 @@ sub isUp {
 sub startHost {
 	my $self = shift;
 	my %args = @_;
-	General::checkParams(args => \%args, required => ['cluster', 'host', 'econtext']);
+
+	General::checkParams(args => \%args, required => [ 'host', 'econtext' ]);
 
 	# instanciate opennebula master node econtext 
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
+    my $masternodeip = $args{host}->getServiceProvider->getMasterNodeIp();
     my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
                                                     ip_destination => $masternodeip);
 
@@ -428,11 +425,12 @@ sub startHost {
 sub stopHost {
 	my $self = shift;
 	my %args = @_;
-	General::checkParams(args => \%args, required => ['cluster', 'host']);
+
+	General::checkParams(args => \%args, required => [ 'host', 'econtext' ]);
 	
 	# instanciate opennebula master node econtext 
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
-    my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1',
+    my $masternodeip = $args{host}->getServiceProvider->getMasterNodeIp();
+    my $masternode_econtext = EFactory::newEContext(ip_source => $args{econtext}->getLocalIp,
                                                     ip_destination => $masternodeip);
 	
 	# retrieve vm info from opennebula
@@ -449,12 +447,14 @@ sub stopHost {
 sub postStart {
 	my $self = shift;
 	my %args = @_;
-	General::checkParams(args => \%args, required => ['cluster', 'host']);
-	
+
+	General::checkParams(args => \%args, required => [ 'host', 'econtext' ]);
+
 	# instanciate opennebula master node econtext 
-	my $masternodeip = $args{cluster}->getMasterNodeIp();
-	use EFactory;
-	my $masternode_econtext = EFactory::newEContext(ip_source => '127.0.0.1', ip_destination => $masternodeip);
+	my $masternodeip = $args{host}->getServiceProvider->getMasterNodeIp();
+
+	my $masternode_econtext = EFactory::newEContext(ip_source      => $args{econtext}->getLocalIp,
+                                                    ip_destination => $masternodeip);
 	
 	# retrieve hypervisor hostname for the vm from opennebula
 	my $id = $self->_getEntity()->getVmIdFromHostId(host_id => $args{host}->getAttr(name => 'host_id'));

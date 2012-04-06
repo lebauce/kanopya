@@ -61,16 +61,4 @@ sub getContainer {
     return $manager->getContainer(lun => $self);
 }
 
-=head2 getDiskManager
-    
-    desc:
-
-=cut
-
-sub getDiskManager {
-    my $self = shift;
-
-    return Entity->get(id => $self->getAttr(name => 'disk_manager_id'));
-}
-
 1;

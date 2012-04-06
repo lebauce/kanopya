@@ -58,8 +58,7 @@ sub removeHost {
     my $self = shift;
     my %args  = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ "host" ]);
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     my $host = $self->_getEntity()->delHost(%args);
 
@@ -74,6 +73,11 @@ sub removeHost {
 =cut
 
 sub startHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+
     throw Kanopya::Exception::NotImplemented();
 }
 
@@ -85,6 +89,11 @@ sub startHost {
 =cut
 
 sub stopHost {
+    my $self = shift;
+    my %args = @_;
+
+	General::checkParams(args => \%args, required => [ "host", "econtext" ]);
+
     throw Kanopya::Exception::NotImplemented();
 }
 
@@ -96,7 +105,10 @@ sub stopHost {
 =cut
 
 sub postStart {
-    throw Kanopya::Exception::NotImplemented();
+    my $self = shift;
+    my %args = @_;
+
+	General::checkParams(args => \%args, required => [ "host", "econtext" ]);
 }
 
 =head2 scaleHost

@@ -73,9 +73,7 @@ sub prepare {
     # Test operation paramaters
     eval {
         General::checkParams(args     => $params,
-                             required => [ "storage_provider_id",
-                                           "export_manager_id",
-                                           "container_id" ]);
+                             required => [ "export_manager_id", "container_id" ]);
     };
     if($@) {
         $errmsg = "Operation::ECreateExport needs storage_provider_id, ".
@@ -84,40 +82,34 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    # Instanciate the storage provider from params
-    $self->{_objs}->{storage_provider}
-        = Entity::ServiceProvider->get(id => $params->{storage_provider_id});
-
     # Instanciate the export manager for export creation from params
-    my $export_manager = $self->{_objs}->{storage_provider}->getManager(
-                           id => $params->{export_manager_id}
-                       );
+    eval {
+        $self->{_objs}->{eexport_manager}
+            = EFactory::newEEntity(data => Entity->get(id => $params->{export_manager_id}));
+    };
+    if($@) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
 
     # Check state of the storage_provider
-    my ($state, $timestamp) = $self->{_objs}->{storage_provider}->getState();
+    my $storage_provider = $self->{_objs}->{eexport_manager}->_getEntity->getServiceProvider;
+    my ($state, $timestamp) = $storage_provider->getState();
     if ($state ne 'up'){
         $errmsg = "ServiceProvider has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
 
-    # TODO: Check parameters for createExport method.
-    $self->{params} = $params;
-    $self->{_objs}->{eexport_manager} = EFactory::newEEntity(data => $export_manager);
-
     # Instanciate container
     $self->{_objs}->{container} = Entity::Container->get(id => $params->{container_id});
 
-    # Compute econtext
-    $self->{executor}->{obj} = Entity::ServiceProvider->get(
-                                   id => $args{internal_cluster}->{executor}
-                               );
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                              ip_destination => $storage_provider->getMasterNodeIp());
 
-    my $exec_ip = $self->{executor}->{obj}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{storage_provider}->getMasterNodeIp();
-
-    $self->{cluster_econtext} = EFactory::newEContext(ip_source      => $exec_ip,
-                                                      ip_destination => $masternode_ip);
+    $self->{params} = $params;
 }
 
 sub execute{
@@ -126,7 +118,7 @@ sub execute{
     $self->{_objs}->{eexport_manager}->createExport(container   => $self->{_objs}->{container},
                                                     export_name => $self->{params}->{export_name},
                                                     erollback   => $self->{erollback},
-                                                    econtext    => $self->{cluster_econtext},
+                                                    econtext    => $self->{econtext},
                                                     %{$self->{params}});
 }
 

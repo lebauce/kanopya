@@ -37,7 +37,7 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster", "host", "econtext" ]);
+    General::checkParams(args => \%args, required => [ "host", "econtext" ]);
 
     my $host = $args{host};
     my $powersupplycard_id = $host->getPowerSupplyCardId();
@@ -96,7 +96,7 @@ sub stopHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     my $host = $args{host};
     my $powersupply_id = $host->getAttr(name => "host_powersupply_id");
@@ -121,13 +121,6 @@ sub stopHost {
         printf $sock $s;
         close($sock);
     }
-}
-
-=head2 postStart
-
-=cut
-
-sub postStart {
 }
 
 1;

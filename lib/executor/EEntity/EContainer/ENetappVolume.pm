@@ -15,13 +15,11 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EContainer::ELvmContainer;
+package EEntity::EContainer::ENetappVolume;
 use base "EEntity::EContainer";
 
 use strict;
 use warnings;
-
-use Entity;
 
 use Log::Log4perl "get_logger";
 use Operation;
@@ -32,10 +30,7 @@ sub getDefaultExportManager {
     my $self = shift;
     my %args = @_;
 
-    my $manager = $self->_getEntity->getDiskManager();
-    my $cluster = Entity->get(id => $manager->getAttr(name => 'service_provider_id'));
-
-    return $cluster->getComponent(name => "Iscsitarget", version => "1");
+    return $self->_getEntity->getDiskManager();
 }
 
 1;

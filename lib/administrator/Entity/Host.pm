@@ -68,11 +68,6 @@ It could be :
 =cut
 
 use constant ATTR_DEF => {
-    service_provider_id => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
     host_manager_id => {
         pattern => '^[0-9\.]*$',
         is_mandatory => 1,
@@ -197,6 +192,32 @@ sub methods {
                         'perm_holder' => 'entity',
         },
     };
+}
+
+=head2 getServiceProvider
+
+    desc: Return the service provider that provides the host.
+
+=cut
+
+sub getServiceProvider {
+    my $self = shift;
+
+    my $service_provider_id = $self->getHostManager->getAttr(name => 'service_provider_id');
+
+    return Entity::ServiceProvider->get(id => $service_provider_id);
+}
+
+=head2 getHostManager
+
+    desc: Return the component/conector that manage this host.
+
+=cut
+
+sub getHostManager {
+    my $self = shift;
+
+    return Entity->get(id => $self->getAttr(name => 'host_manager_id'));
 }
 
 =head2 getState

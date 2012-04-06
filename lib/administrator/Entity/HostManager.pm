@@ -46,14 +46,12 @@ sub addHost {
                                        "hostmodel_id", "host_mac_address",
                                        "host_serial_number", "host_ram" ]);
 
-    my $host_provider_id = $self->getAttr(name => 'service_provider_id');
     my $host_manager_id = $self->getAttr(name => 'entity_id');
 
     # Instanciate new Host Entity
     my $host;
     eval {
         $host = Entity::Host->new(
-                    service_provider_id => $host_provider_id,
                     host_manager_id     => $host_manager_id,
                     %args
                 );

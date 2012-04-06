@@ -217,7 +217,6 @@ sub createVirtualHost {
     my $kernel = Entity::Kernel->find(hash => {});
 
     my $vm = Entity::Host->new(
-                 service_provider_id => $self->getAttr(name => 'service_provider_id'),
                  host_manager_id     => $self->getAttr(name => 'entity_id'),
                  host_mac_address    => $new_mac_address,
                  host_serial_number  => "Virtual Host with mac $new_mac_address",

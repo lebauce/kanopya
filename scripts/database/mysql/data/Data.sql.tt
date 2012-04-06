@@ -436,7 +436,7 @@ INSERT INTO `ipv4_internal` VALUES (1,'[% ipv4_internal_ip %]','[% ipv4_internal
 --
 
 INSERT INTO `entity` VALUES (@eid, 3);
-INSERT INTO `host` VALUES (@eid, @admin_cluster, @physical_hoster, NULL, NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
+INSERT INTO `host` VALUES (@eid, @physical_hoster, NULL, NULL,@kernel,'',NULL,1,'Admin host',1,'[% mb_hw_address %]','node1.[% admin_domainname %]','4294967296', '4','node001', 'up:[% tmstp %]',NULL);
 SET @admin_host := @eid;
 SET @eid := @eid +1;
 

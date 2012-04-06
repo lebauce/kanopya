@@ -75,6 +75,8 @@ sub prepare {
 
     my $params = $self->_getOperation()->getParams();
 
+    General::checkParams(args => $params, required => [ "host_id" ]);
+
     $self->{_objs} = {};
     $self->{executor} = {};
 
@@ -99,35 +101,28 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 
-    $self->{_objs}->{host_provider}
-        = Entity::ServiceProvider->get(
-              id => $self->{_objs}->{host}->getAttr(name => 'service_provider_id')
-          );
+    eval {
+        $self->{_objs}->{ehost_manager} = EFactory::newEEntity(
+                                              data => $self->{_objs}->{host}->getHostManager
+                                          );
+    };
+    if($@) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
 
-    my $host_manager = $self->{_objs}->{host_provider}->getManager(
-                        id => $self->{_objs}->{host}->getAttr(name => 'host_manager_id')
-                    );
-
-    $self->{_objs}->{ehost_manager} = EFactory::newEEntity(data => $host_manager);
-
-    # Instanciate executor Cluster
-    $self->{executor} = Entity::ServiceProvider->get(
-                            id => $args{internal_cluster}->{executor}
-                        );
-
-    my $exec_ip = $self->{executor}->getMasterNodeIp();
-    my $masternode_ip = $self->{_objs}->{host_provider}->getMasterNodeIp();
-
-    $self->{econtext} = EFactory::newEContext(ip_source      => $exec_ip,
-                                              ip_destination => $masternode_ip);
+    # Get contexts
+    my $exec_cluster
+        = Entity::ServiceProvider::Inside::Cluster->get(id => $args{internal_cluster}->{executor});
+    $self->{executor}->{econtext} = EFactory::newEContext(ip_source      => $exec_cluster->getMasterNodeIp(),
+                                                          ip_destination => $exec_cluster->getMasterNodeIp());
 }
 
 sub execute{
     my $self = shift;
 
-    $self->{_objs}->{ehost_manager}->removeHost(host => $self->{_objs}->{host},
+    $self->{_objs}->{ehost_manager}->removeHost(host      => $self->{_objs}->{host},
                                                 erollback => $self->{erollback},
-                                                econtext  => $self->{econtext});
+                                                econtext  => $self->{executor}->{econtext});
 }
 
 __END__

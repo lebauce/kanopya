@@ -85,7 +85,6 @@ sub createDisk {
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             disk_manager_id     => $self->getAttr(name => 'connector_id'),
             disk_name           => $args{disk_name},
             size                => $args{size},
@@ -164,7 +163,6 @@ sub addContainer {
                                                        "size", "filesystem" ]);
 
     my $container = Entity::Container::NetappLun->new(
-                        service_provider_id => $self->getAttr(name => 'service_provider_id'),
                         disk_manager_id     => $self->getAttr(name => 'connector_id'),
                         name                => $args{name},
                         size                => $args{size},
@@ -215,7 +213,6 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             export_manager_id   => $self->getAttr(name => 'connector_id'),
             container_id => $args{container}->getAttr(name => 'container_id'),
             export_name  => $args{export_name},
@@ -354,7 +351,6 @@ sub synchronize {
                           size                  => $lun->size_used,
                           filesystem            => "ext3",
                           volume_id             => $lun_volume_id,
-                          service_provider_id   => $self->getAttr(name => 'service_provider_id'),
                           disk_manager_id       => $self->getAttr(name => 'connector_id'),
                       );
         }

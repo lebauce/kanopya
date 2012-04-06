@@ -173,7 +173,7 @@ sub execute {
 
     # We stop host (to update powersupply)
     my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-    $ehost->stop();
+    $ehost->stop(econtext => $self->{executor}->{econtext});
 
     $self->{_objs}->{host}->stopToBeNode();
 

@@ -140,7 +140,6 @@ sub synchronize {
                 hostmodel_id        => $hostmodelid,
                 processormodel_id   => $processormodelid,
                 host_desc           => "",
-                service_provider_id => "1",
                 active              => "1",
                 host_manager_id     => $hostmanagerid,
         );

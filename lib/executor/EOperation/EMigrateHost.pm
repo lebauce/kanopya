@@ -15,6 +15,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 
 =head1 NAME
@@ -126,7 +127,8 @@ sub prepare {
         $self->{_objs}->{'cloudmanager_ecomp'} = EFactory::newEEntity(data => $self->{_objs}->{'cloudmanager_comp'});
         
         # Check if host is on the hypervisors cluster
-        if ($self->{_objs}->{'hypervisor_dst'}->getClusterId() != $self->{_objs}->{'host'}->getAttr(name => "service_provider_id")){
+        if ($self->{_objs}->{'hypervisor_dst'}->getClusterId() !=
+            $self->{_objs}->{'host'}->getServiceProvider->getAttr(name => "entity_id")){
             throw Kanopya::Exception::Internal::WrongValue(error => "Host is not on the hypervisor cluster");
         }
     };

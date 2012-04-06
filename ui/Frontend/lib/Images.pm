@@ -338,8 +338,8 @@ get '/images/:imageid' => sub {
     }
     
     my $container = $esystemimage->getDevice();
-    my $storage = Entity::ServiceProvider->get(id => $container->getAttr(name => 'service_provider_id'));
-    my $manager = $storage->getManager(id => $container->getAttr(name => 'disk_manager_id'));
+    my $storage = $container->getServiceProvider;
+    my $manager = $container->getDiskManager;
 
     template 'images_details', {
         title_page            => "Systems - System image's overview",

@@ -77,7 +77,6 @@ sub createDisk {
         priority => 200,
         type     => 'CreateDisk',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             disk_manager_id     => $self->getAttr(name => 'connector_id'),
             name                => $args{name},
             size                => $args{size},
@@ -151,7 +150,6 @@ sub addContainer {
     General::checkParams(args => \%args, required => [ "name", "size" ]);
 
     my $container = Entity::Container::NetappVolume->new(
-                        service_provider_id => $self->getAttr(name => 'service_provider_id'),
                         disk_manager_id     => $self->getAttr(name => 'connector_id'),
                         name                => $args{name},
                         size                => $args{size}
@@ -200,7 +198,6 @@ sub createExport {
         priority => 200,
         type     => 'CreateExport',
         params   => {
-            storage_provider_id => $self->getAttr(name => 'service_provider_id'),
             export_manager_id   => $self->getAttr(name => 'connector_id'),
             container_id        => $args{container}->getAttr(name => 'container_id'),
             export_name         => $args{export_name},
