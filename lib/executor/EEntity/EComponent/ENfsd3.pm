@@ -69,11 +69,11 @@ sub createExport {
                                export_path => $mountpoint
                            );
 
-    my $client = $self->addExportClient(export_id      => $container_access->getAttr(name => "container_access_id"),
+    my $client = $self->addExportClient(export         => $container_access,
                                         client_name    => $client_name,
                                         client_options => $client_options);
 
-    $self->update_exports(econtext => $args{econtext});
+    $self->updateExports(econtext => $args{econtext});
 
     $log->info("Added NFS Export of device <$args{export_name}>");
 
@@ -106,7 +106,7 @@ sub removeExport {
     my $retry = 5;
     while ($retry > 0) {
         eval {
-            $self->update_exports(econtext => $args{econtext});
+            $self->updateExports(econtext => $args{econtext});
             $elocal_access->umount(mountpoint => $mountdir,
                                    econtext   => $args{econtext});
         };
@@ -137,26 +137,26 @@ sub addExportClient {
     my %args = @_;
     
     General::checkParams(args     => \%args,
-                         required => [ 'export_id', 'client_name', 'client_options' ]);
+                         required => [ 'export', 'client_name', 'client_options' ]);
 
     return $self->_getEntity()->addExportClient(
-               export_id      => $args{export_id},
+               export_id      => $args{export}->getAttr(name => "container_access_id"),
                client_name    => $args{client_name},
                client_options => $args{client_options}
            );
 }
 
-sub update_exports {
+sub updateExports {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['econtext']);
 
-    $self->generate_exports(econtext => $args{econtext});
+    $self->generateExports(econtext => $args{econtext});
     $args{econtext}->execute(command => "/usr/sbin/exportfs -rf");
 }
 
-sub generate_conf_file {
+sub generateConfFile {
     my $self = shift;
     my %args = @_;
 
@@ -187,13 +187,13 @@ sub generate_conf_file {
 }
 
 # generate /etc/default/nfs-common file
-sub generate_nfs_common {
+sub generateNfsCommon {
     my $self = shift;
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['econtext']);
 
-    $self->generate_conf_file(
+    $self->generateConfFile(
         template => "nfs-common.tt",
         dest     => "/etc/default/nfs-common",
         data     => $self->_getEntity()->getTemplateDataNfsCommon(),
@@ -202,13 +202,13 @@ sub generate_nfs_common {
 }
 
 # generate /etc/default/nfs-kernel-server file
-sub generate_nfs_kernel_server {
+sub generateNfsKernelServer {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['econtext']);
 
-    $self->generate_conf_file(
+    $self->generateConfFile(
         template => "nfs-kernel-server.tt",
         dest     => "/etc/default/nfs-kernel-server",
         data     => $self->_getEntity()->getTemplateDataNfsKernelServer(),
@@ -217,13 +217,13 @@ sub generate_nfs_kernel_server {
 }
 
 # generate /etc/exports file
-sub generate_exports {
+sub generateExports {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['econtext']);
 
-    $self->generate_conf_file(
+    $self->generateConfFile(
         template => "exports.tt",
         dest     => "/etc/exports",
         data     => $self->_getEntity()->getTemplateDataExports(),

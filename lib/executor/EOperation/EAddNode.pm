@@ -75,7 +75,7 @@ sub prepare {
         my $host_manager_id = $self->{_objs}->{host}->getAttr(name => 'host_manager_id');
         my $cluster_host_manager_id = $self->{_objs}->{cluster}->getAttr(name => "host_manager_id");
 
-        # Check if the specified host is manager by the cluster host manager
+        # Check if the specified host is managed by the cluster host manager
         if ($host_manager_id != $cluster_host_manager_id) {
             $errmsg = "Specified host <$args{host_id}>, is not managed by the same " .
                       "host manager than the cluster one (<$host_manager_id>)" .
@@ -166,7 +166,7 @@ sub execute {
             eexport_manager => $self->{_objs}->{eexport_manager},
             manager_params  => $self->{_objs}->{cluster}->getManagerParameters(manager_type => 'export_manager'),
             econtext        => $self->{executor}->{econtext},
-            erollback       => $self->{erollback},
+            erollback       => $self->{erollback}
         );
         $self->{params}->{systemimage_id} = $self->{_objs}->{systemimage}->getAttr(name => 'systemimage_id');
     }

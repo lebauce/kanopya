@@ -49,7 +49,7 @@ my $errmsg;
 
 sub createExport {
     my $self = shift;
-    my %args  = @_;
+    my %args = @_;
 
     General::checkParams(args     => \%args,
                          required => [ 'container', 'export_name', 'econtext' ]);
@@ -115,7 +115,7 @@ sub createExport {
 
 sub removeExport {
     my $self = shift;
-    my %args  = @_;
+    my %args = @_;
     my ($lun, $log_content, $container);
 
     General::checkParams(args     => \%args,
@@ -152,7 +152,7 @@ sub removeExport {
     $self->generate(econtext => $args{econtext});
 
     $log_content = "Remove Export with targetname <" . $target_name . ">";
-    if(exists $args{erollback} and defined $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         my $export_name = $self->generateNameFromTarget(target_name => $target_name);
         $args{erollback}->add(
             function   => $self->can('createExport'),
@@ -239,7 +239,7 @@ sub gettid {
     General::checkParams(args => \%args, required => [ 'target_name', "econtext" ]);
 
     my $result = $args{econtext}->execute(
-                     command =>"grep \"$args{target_name}\" /proc/net/iet/volume"
+                     command => "grep \"$args{target_name}\" /proc/net/iet/volume"
                  );
 
     if ($result->{stdout} eq "") {
@@ -294,12 +294,13 @@ sub removeTarget {
     my $tid = $self->cleanTargetSession(targetname => $args{target_name},
                                         econtext   => $args{econtext});
 
-	if(defined $tid) {
-		my $result = $args{econtext}->execute(command =>"ietadm --op delete --tid=$tid");
+    if (defined $tid) {
+        my $result = $args{econtext}->execute(command => "ietadm --op delete --tid=$tid");
     }
 }
 
 =head2 _getIetdSessions
+
     argument : econtext
     return an arrayref contening /proc/net/iet/session content
 
@@ -322,19 +323,19 @@ sub _getIetdSessions {
     my $ietdsessions = [];
 
     foreach my $line (@output) {
-        if($line =~ $target_regexp) {
+        if ($line =~ $target_regexp) {
             push @$ietdsessions, {
                 tid        => $1,
                 targetname => $2,
                 sessions   => []
             };
-        } elsif($line =~ $session_regexp) {
+        } elsif ($line =~ $session_regexp) {
             push @{$ietdsessions->[-1]->{sessions}}, {
                 sid         => $1,
                 initiator   => $2,
                 connections => []
             };
-        } elsif($line =~ $connection_regexp) {
+        } elsif ($line =~ $connection_regexp) {
             push @{$ietdsessions->[-1]->{sessions}->[-1]->{connections}}, {
                 cid   => $1,
                 ip    => $2,
@@ -358,6 +359,7 @@ sub _getIetdSessions {
 sub cleanTargetSession {
     my $self = shift;
     my %args  = @_;
+
     General::checkParams(args => \%args, required => [ 'targetname', 'econtext' ]);
 
     # first, we get actual sessions
@@ -389,7 +391,7 @@ sub cleanTargetSession {
 
 sub cleanInitiatorSession {
     my $self = shift;
-    my %args  = @_;
+    my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'initiator', 'econtext' ]);
 
@@ -398,8 +400,8 @@ sub cleanInitiatorSession {
 
     # next we clean existing sessions for the given initiatorname
     foreach my $target (@$ietdsessions) {
-        foreach my $session(@{$target->{sessions}}) {
-            if(($session->{initiator} eq $args{initiator}) || !$session->{initiator}){
+        foreach my $session (@{$target->{sessions}}) {
+            if(($session->{initiator} eq $args{initiator}) || !$session->{initiator}) {
                 for my $connection (@{$session->{connections}}) {
                     my $command = "ietadm --op delete --tid=$target->{tid} " .
                                   "--sid=$session->{sid} --cid=$connection->{cid}";
@@ -427,7 +429,7 @@ sub generate {
                         output       => "/iet/ietd.conf",
                         data         => $data);
 
-    if(exists $args{erollback}) {
+    if (exists $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('generate'),
             parameters => [$self, "econtext", $args{econtext}]

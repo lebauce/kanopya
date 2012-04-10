@@ -73,23 +73,24 @@ sub DESTROY {
 }
 
 sub login {
-	my $self = shift;
+    my $self = shift;
 
-	my $response = $self->{server}->set_style(LOGIN);
-	if (ref ($response) eq "NaElement" && $response->results_errno != 0) {
-		my $r = $response->results_reason();
-		print "Unable to set authentication style $r\n";
-		exit 2;
-	}
-	$self->{server}->set_admin_user($self->{username}, $self->{passwd});
-	$response = $self->{server}->set_transport_type(HTTP);
+    my $response = $self->{server}->set_style(LOGIN);
+    if (ref ($response) eq "NaElement" && $response->results_errno != 0) {
+        my $r = $response->results_reason();
+        print "Unable to set authentication style $r\n";
+        exit 2;
+    }
+
+    $self->{server}->set_admin_user($self->{username}, $self->{passwd});
+    $self->{server}->set_transport_type(HTTP);
 }
 
 sub logout {
 }
 
 sub aggregates {
-	my $self = shift;
+    my $self = shift;
 
     my @objs = ();
     my @aggregates = $self->aggr_list_info()->child_get("aggregates")->children_get();
@@ -111,7 +112,7 @@ sub luns {
 }
 
 sub volumes {
-	my $self = shift;
+    my $self = shift;
 
     my @objs = ();
     my @volumes = $self->volume_list_info()->child_get("volumes")->children_get();
@@ -122,7 +123,7 @@ sub volumes {
 }
 
 sub disks {
-	my $self = shift;
+    my $self = shift;
 
     my @objs = ();
     my @volumes = $self->disk_list_info()->child_get("disk-details")->children_get();

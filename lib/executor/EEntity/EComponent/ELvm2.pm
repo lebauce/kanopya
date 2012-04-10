@@ -137,8 +137,10 @@ sub lvCreate{
     }
 
     my $newdevice = "/dev/$vg_name/$args{lvm2_lv_name}";
-    if (! defined $args{"noformat"}){
-        $self->mkfs(device => $newdevice, fstype => $args{lvm2_lv_filesystem}, econtext => $args{econtext});
+    if (! defined $args{"noformat"}) {
+        $self->mkfs(device => $newdevice,
+                    fstype => $args{lvm2_lv_filesystem},
+                    econtext => $args{econtext});
     }
     delete $args{noformat};
     

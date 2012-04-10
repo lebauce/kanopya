@@ -120,7 +120,7 @@ sub setConf {
 
         for my $client ( @{ $export->{clients} } ) {
             $self->createExport(export_name    => $export->{nfsd3_export_path},
-								container      => $container,
+                                container      => $container,
                                 client_name    => $client->{nfsd3_exportclient_name},
                                 client_options => $client->{nfsd3_exportclient_options});
             last;

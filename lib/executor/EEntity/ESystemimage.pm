@@ -83,7 +83,6 @@ sub createFromMasterimage {
     }
 }
 
-
 sub create {
     my $self = shift;
     my %args = @_;
@@ -143,7 +142,7 @@ sub create {
     return $self->_getEntity()->getAttr(name => "systemimage_id");
 }
 
-sub generateAuthorizedKeys{
+sub generateAuthorizedKeys {
     my $self = shift;
     my %args = @_;
 
@@ -163,7 +162,7 @@ sub generateAuthorizedKeys{
                                export_name => $container->getAttr(name => 'container_name'),
                                econtext    => $export_manager_econtext,
                                erollback   => $args{erollback}
-                            );
+                           );
 
     # Get the corresponding EContainerAccess
     my $econtainer_access = EFactory::newEEntity(data => $container_access);
@@ -206,14 +205,14 @@ sub activate {
                                   econtext        => $args{econtext},
                                   erollback       => $args{erollback});
 
-    # Get acontainer export information
+    # Get container export information
     my $export_name = $self->_getEntity()->getAttr(name => 'systemimage_name');
 
-    $args{eexport_manager}->createExport(container   => $container,
-                                         export_name => $export_name,
-                                         econtext    => $export_manager_econtext,
-                                         erollback   => $args{erollback},
-                                         %{$args{manager_params}});
+    my $export = $args{eexport_manager}->createExport(container   => $container,
+                                                      export_name => $export_name,
+                                                      econtext    => $export_manager_econtext,
+                                                      erollback   => $args{erollback},
+                                                      %{$args{manager_params}});
 
     # Set system image active in db
     $self->_getEntity()->setAttr(name => 'active', value => 1);

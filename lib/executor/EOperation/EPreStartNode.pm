@@ -129,7 +129,7 @@ sub execute {
     }
 
     $self->{_objs}->{host}->becomeNode(
-		inside_id      => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
+        inside_id      => $self->{_objs}->{cluster}->getAttr(name => "cluster_id"),
         master_node    => 0,
         systemimage_id => $self->{params}->{systemimage_id},
         node_number    => $self->{params}->{node_number},
@@ -139,7 +139,7 @@ sub execute {
     my $hostname = $self->{_objs}->{host}->getAttr(name => "host_hostname");
     if (not $hostname) {
         $hostname = $self->{_objs}->{cluster}->getAttr(name => 'cluster_basehostname');
-        if($self->{_objs}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {    
+        if ($self->{_objs}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
             $hostname .=  $self->{_objs}->{host}->getNodeNumber();
         }
         $self->{_objs}->{host}->setAttr(

@@ -324,35 +324,37 @@ sub delContainerAccess {
 
     Desc: synchronize netapp lun information with kanopya database
 
-=cut 
+=cut
 
 sub synchronize {
     my $self = shift;
     my %args = @_;
+
     # Get list of luns exists on NetApp :
     foreach my $lun ($self->luns) {
-        # Get the path where is stocked the lun :
+        # Get the path where is stocked the lun
         my $lun_volume_path = $lun->path;
-        # Split the path to grab volume name :
+
+        # Split the path to grab volume name
         my @array_lun_volume_name = split(/\//, $lun_volume_path);
         my $lun_volume_name = $array_lun_volume_name[2];
         my $lun_name = $array_lun_volume_name[3];
-        # Search in database if the volume is stored :        
+
+        # Search in database if the volume is stored
         my $lun_volume_obj = Entity::Container::NetappVolume->find( hash=>{name=>$lun_volume_name});
-        my $lun_volume_id = $lun_volume_obj->getAttr(
-                                name => "volume_id"
-                            );
-        # Search in Kanopya to see if LUN already exist :
+        my $lun_volume_id = $lun_volume_obj->getAttr(name => "volume_id");
+
+        # Search in Kanopya to see if LUN already exists
         my $existingluns = Entity::Container::NetappLun->search(hash => { name => $lun_name });
         my $existinglun = scalar($existingluns);
         if ($existinglun eq "0") {
-            my $lunname = $self->addContainer(
-                          name                  => $lun_name,
-                          size                  => $lun->size_used,
-                          filesystem            => "ext3",
-                          volume_id             => $lun_volume_id,
-                          disk_manager_id       => $self->getAttr(name => 'connector_id'),
-                      );
+            my $container = $self->addContainer(
+                                name                  => $lun_name,
+                                size                  => $lun->size_used,
+                                filesystem            => "ext3",
+                                volume_id             => $lun_volume_id,
+                                disk_manager_id       => $self->getAttr(name => 'connector_id'),
+                            );
         }
     }
 }

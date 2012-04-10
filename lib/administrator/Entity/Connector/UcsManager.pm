@@ -97,37 +97,29 @@ sub DESTROY {
 =cut
 
 sub synchronize {
-    
     my $self = shift;
     my %args = @_;
-      
-    eval {
-    my $ucs = Cisco::UCS->new(
-        cluster  => "89.31.149.80",
-        port     => 80,
-        proto    => "http",
-        username => "admin",
-        passwd   => "Infidis2011"
-    );
 
-    $ucs->login();
+    $self->login();
     
-### Begin of Blades synchronisation :   
- 
-    # Get list of blade existing on ucs :
-    my @blades = $ucs->get_blades();   
+    my @blades = $self->get_blades();   
+
     # Get a "random" kernel for his id :
     my $kernelhash =  Entity::Kernel->find(hash => {});
     my $kernelid = $kernelhash->getAttr('name' => 'kernel_id');
+
     # Get a "random" host model for his id :
     my $hostmodelhash = Entity::Host->find(hash => {});
     my $hostmodelid = $hostmodelhash->getAttr('name' => 'hostmodel_id');
+
     # Get a "random" processor model for his id :
     my $processormodelhash = Entity::Processormodel->find(hash => {});
     my $processormodelid = $processormodelhash->getAttr('name' => 'processormodel_id');
+
     # Get the hostmanager for his id :
     my $hostmanagerid = $self->getAttr('name' => 'entity_id');
     my $adm = Administrator->new;   
+
     foreach my $blade (@blades) {
         # Add the blade to the host table :
         my $mac = $adm->{manager}->{network}->generateMacAddress();
@@ -143,6 +135,7 @@ sub synchronize {
                 active              => "1",
                 host_manager_id     => $hostmanagerid,
         );
+
         # Check if an entry with the same serial number exist in table
         my $serial_number_exist = Entity::Host->search( hash => { host_serial_number => $blade->{dn} } );
         my $nb_sn_occurences = scalar($serial_number_exist);
@@ -151,10 +144,9 @@ sub synchronize {
         }
     }
     
-### Begin of VLANs synchronisation :
-
     # Synchronize VLANs from UCS to Kanopya :
-    my @ucsvlans = $ucs->get_vlans();
+    my @ucsvlans = $self->get_vlans();
+
     foreach my $ucsvlan (@ucsvlans) {
         my $ucsvlan_name = $ucsvlan->{name};
         my $ucsvlan_nb = $ucsvlan->{id};
@@ -163,9 +155,11 @@ sub synchronize {
             vlan_desc   => "",
             vlan_number => $ucsvlan_nb,
         );
+
         # Get Vlans existing in Kanopya :
         my $existingvlans = Entity::Vlan->search(hash => { vlan_name => $ucsvlan_name });
         my $existingvlan = scalar($existingvlans);
+
         # If the vlan not exist in Kanopya, create it :
         if ($existingvlan eq "0") {
             Entity::Vlan->new(%parameters);
@@ -178,10 +172,11 @@ sub synchronize {
     foreach my $vlan (@vlans) {
         my $vlan_nb = $vlan->getAttr('name' => 'vlan_number');
         my $vlan_name = $vlan->getAttr('name' => 'vlan_name');
+
         # We must ignore the VLAN 0 on Kanopya side, this is the default UCS Vlan too
         if ($vlan_nb ne "0") {
             %parameters = (
-                ucs         => $ucs,
+                ucs         => $self,
                 defaultNet  => "no",
                 id          => $vlan_nb,
                 name        => $vlan_name,
@@ -189,6 +184,7 @@ sub synchronize {
                 sharing     => "none",
                 status      => "created",
             );
+
             # Create VLANs on UCS :
             # Creation is encapsulated in an eval for avoid "already created" errors :
             eval {
@@ -197,12 +193,11 @@ sub synchronize {
         }
     }
 
-    $ucs->logout();
-    };
+    $self->logout();
+
     if($@) {
         print $@;
     }
-   
 }
 
 1;
