@@ -629,6 +629,7 @@ get '/extclusters/:clusterid' => sub {
     
     
     my $disabled_nodes = $extcluster->getDisabledNodes();
+    my $num_nodes_disabled = scalar @$disabled_nodes;
     
     my @nodes = (@$disabled_nodes,@{$cluster_eval->{nm_rule_nodes}});
     my @nodes_sort = sort {
@@ -667,6 +668,7 @@ get '/extclusters/:clusterid' => sub {
         cm_rule_undef          => $cluster_eval->{cm_rule_undef},
         num_cluster_rule_total => $cluster_eval->{cm_rule_total},
         num_clusterrule_verif  => $cluster_eval->{cm_rule_nok},
+        num_nodes_disabled     => $num_nodes_disabled,
 
         
     }, { layout => 'main' };
