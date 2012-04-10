@@ -1717,6 +1717,25 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/details' 
         }
     }
     
+    my @depConditionIds = $rule->getDependantConditionIds();
+#    print Dumper \@depConditionIds;
+    my @rule_conditions;
+    foreach my $depConditionId (@depConditionIds){
+        my $condition      = NodemetricCondition->get('id'   => $depConditionId);
+        my $combination_id = $condition->getAttr('name'     => 'nodemetric_condition_combination_id');
+#        my $combination    = NodemetricCombination->get('id' => $combination_id);
+#        my $value          = $combination->computeLastValue();
+        
+        
+        push @rule_conditions,{
+#                combination_label => $combination->toString(),
+#                combination_value => $value,
+                condition_id      => $depConditionId,
+                condition_label   => $condition->getAttr('name' => 'nodemetric_condition_label'),
+        };
+        
+    }
+    
     my $rule_param = {
         id          => $rule_id,
         formula     => $rule->getAttr('name' => 'nodemetric_rule_formula'),
@@ -1726,6 +1745,8 @@ get '/extclusters/:extclusterid/externalnodes/:extnodeid/rules/:ruleid/details' 
         action_id   => $rule->getAttr('name' => 'nodemetric_rule_action_id'),
         description => $rule->getAttr('name' => 'nodemetric_rule_description'),
         extnodeid   => param('extnodeid'), 
+        conditions  => \@rule_conditions,
+        
     };
     
     template 'clustermetric_rules_details', {

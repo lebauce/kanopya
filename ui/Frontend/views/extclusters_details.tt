@@ -58,7 +58,7 @@
             <tr><td><span class="state imgUp"></td><td><%nodes_list.size%> node(s) monitored</td></tr>
             <tr><td></td><td>No node rule enabled</span></td></tr>
         <% ELSIF num_noderule_verif == 0 && nm_rule_undef == 0%>
-            <tr><td><span class="state imgUp"></td><td><%nodes_list.size - num_nodes_disabled%> node(s) monitored (<%num_nodes_disabled%> nodes disabled)</span></td></tr>
+            <tr><td><span class="state imgUp"></td><td><%nodes_list.size - num_nodes_disabled%> node(s) monitored (<%num_nodes_disabled%> node(s) disabled)</span></td></tr>
             <tr><td></td><td>All the enabled rules are ok</span></td></tr>
         <%ELSE%>
             <% IF nm_rule_undef == 0 %>
