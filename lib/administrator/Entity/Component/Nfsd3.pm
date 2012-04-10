@@ -330,12 +330,12 @@ sub getContainerAccess {
     # my @clients = $export->getClients();
     # my $options = $clients[0]->getAttr(name => "options");
 
-    my $options = "ro";
+    my $ip = $self->getServiceProvider->getMasterNodeIp();
 
     return {
-        container_access_export  => '10.0.0.1:' . $mountdir,
-        container_access_options => $options,
-        container_access_ip      => '10.0.0.1',
+        container_access_export  => $ip . ':' . $mountdir,
+        container_access_options => "rw,sync,vers=3",
+        container_access_ip      => $ip,
         container_access_port    => 2049
     };
 }
