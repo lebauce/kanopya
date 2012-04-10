@@ -14,11 +14,11 @@
         <tr>
             <td>
                 <%IF host_name%>
-                    <% IF rule.isVerified == 0%><span class="state imgUp">  </span> 
-                    <% ELSIF rule.isVerified == 1%><span class="state imgBroken">  </span> 
-                    <% ELSE %><span class="state imgDown">  </span> <% END %>
+                    <% IF rule.isVerified == 0%><span class="bold state imgUp">  Rule <% rule.id %> </span> 
+                    <% ELSIF rule.isVerified == 1%><span class="bold state imgBroken">  Rule <% rule.id %> </span> 
+                    <% ELSE %><span class="bold state imgDown"> Rule <% rule.id %> </span> <% END %>
                 <% END %>
-               <span class="bold"> Rule <% rule.id %></span><span class="italic"> <% rule.label %></span>
+                <span class="italic"> <% rule.label %></span>
             </td>
             <td>
                 <%IF host_name%>
