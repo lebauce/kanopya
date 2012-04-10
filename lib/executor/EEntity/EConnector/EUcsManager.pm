@@ -89,18 +89,31 @@ sub getFreeHost {
         my $blade = $ucs->{api}->get(dn      => $host->getAttr(name => "host_serial_number"),
                                      classId => "computeBlade");
 
-        # Get a blade with no service profile assigned to it
-        if (defined ($blade->{assignedToDn}) and $blade->{assignedToDn} eq "") {
-            # Create a new service for the blade
-            my @splitted = split(/\//, $blade->{dn});
-            my $name = $splitted[-1];
-            my $tmpl = $ucs->{api}->get(dn => $ou . "/ls-" . $args{service_profile_template_id});
-            my $sp = $tmpl->instantiate_service_profile(name      => "kanopya-" . $name,
-                                                        targetOrg => $ou);
+        my @splitted = split(/\//, $blade->{dn});
+        my $name = $splitted[-1];
+        my $sp_name = "kanopya-" . $name;
 
+        # Get a blade with no service profile assigned to it
+        if (defined ($blade->{assignedToDn}) and
+            (($blade->{assignedToDn} eq ($ou . "/ls-" . $sp_name)) or ($blade->{assignedToDn} eq ""))) {
+
+            my $sp;
+            if ($blade->{assignedToDn} eq "") {
+                # Create a new service for the blade
+                my $tmpl = $ucs->{api}->get(dn => $ou . "/ls-" . $args{service_profile_template_id});
+                $sp = $tmpl->instantiate_service_profile(name      => $sp_name,
+                                                         targetOrg => $ou);
+
+            }
+            else {
+                $sp = $ucs->{api}->get(dn => $blade->{assignedToDn});
+            }
+
+            $log->info("Unbinding");
             $sp->unbind();
 
             # Associate the new service profile to the blade
+            $log->info("Associating to blade");
             $sp->associate(blade => $blade->{dn});
 
             $log->info("Waiting for blade to be associated");
@@ -110,13 +123,34 @@ sub getFreeHost {
                 $log->info($sp->{dn} . " " . $sp->{assocState});
             } while ($sp->{assocState} ne "associated");
 
-            my @ethernets = $sp->children("vnicEther");
-            my $ethernet = $ethernets[0];
+            eval {
+                for my $iface (@{$host->getIfaces()}) {
+                    $host->removeInterface(iface_id => $iface->{iface_id});
+                }
+            };
 
-            $log->info("Filling host MAC field with " . $ethernet->{addr});
-            $host->setAttr(name  => "host_mac_address",
-                           value => $ethernet->{addr});
-            $host->save();
+            my @ethernets = $sp->children("vnicEther");
+            for my $ethernet (@ethernets) {
+                my $pxe = 0;
+                my $ifname = $ethernet->{name};
+                $ifname =~ s/^v//g;
+
+                if ($ifname eq "eth0") {
+                    $log->info("Filling host MAC field with " . $ethernet->{addr});
+                    $host->setAttr(name  => "host_mac_address",
+                                   value => $ethernet->{addr});
+                    $host->save();
+                    $pxe = 1;
+                }
+
+                $host->addIface(
+                    iface_name     => $ifname,
+                    iface_mac_addr => $ethernet->{addr},
+                    iface_pxe      => $pxe
+                );
+            }
+                                     
+            $sp->stop();
 
             return $host;
         }
