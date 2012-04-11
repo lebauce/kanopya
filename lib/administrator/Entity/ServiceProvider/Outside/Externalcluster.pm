@@ -25,7 +25,6 @@ use Kanopya::Exceptions;
 use Administrator;
 use General;
 
-use Clustermetric;
 use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
