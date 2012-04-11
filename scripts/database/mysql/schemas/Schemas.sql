@@ -270,6 +270,11 @@ CREATE TABLE `hostmodel` (
 
 CREATE TABLE `container` (
   `container_id` int(8) unsigned NOT NULL,
+  `container_name` char(128) NOT NULL,
+  `container_size` int(8) unsigned NOT NULL,
+  `container_device` char(255) NOT NULL,
+  `container_filesystem` char(32) NOT NULL,
+  `container_freespace` int(8) unsigned NOT NULL,
   `disk_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`container_id`),
   FOREIGN KEY (`container_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -293,9 +298,6 @@ CREATE TABLE `lvm_container` (
 CREATE TABLE `file_container` (
   `file_container_id` int(8) unsigned NOT NULL,
   `container_access_id` int(8) unsigned NOT NULL,
-  `file_name` char(255) NOT NULL,
-  `file_size` int(8) unsigned NOT NULL,
-  `file_filesystem` char(32) NOT NULL,
   PRIMARY KEY (`file_container_id`),
   FOREIGN KEY (`file_container_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`container_access_id`),
@@ -309,8 +311,6 @@ CREATE TABLE `file_container` (
 CREATE TABLE `netapp_volume` (
   `volume_id` int(8) unsigned NOT NULL,
   `aggregate_id` int(8) unsigned NOT NULL,
-  `name` char(255) NOT NULL,
-  `size` int(8) unsigned NOT NULL,
   PRIMARY KEY (`volume_id`),
   FOREIGN KEY (`volume_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -322,9 +322,6 @@ CREATE TABLE `netapp_volume` (
 CREATE TABLE `netapp_lun` (
   `lun_id` int(8) unsigned NOT NULL,
   `volume_id` int(8) unsigned NOT NULL,
-  `name` char(255) NOT NULL,
-  `size` int(8) unsigned NOT NULL,
-  `filesystem` char(32) NOT NULL,
   PRIMARY KEY (`lun_id`),
   FOREIGN KEY (`lun_id`) REFERENCES `container` (`container_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`volume_id`),
@@ -337,10 +334,13 @@ CREATE TABLE `netapp_lun` (
 
 CREATE TABLE `container_access` (
   `container_access_id` int(8) unsigned NOT NULL,
-  `container_id` int(8) unsigned NOT  NULL,
-  `export_manager_id` int(8) unsigned NOT NULL,
+  `container_id` int(8) unsigned NOT NULL,
+  `container_access_export` char(255) NOT NULL,
+  `container_access_ip` char(15) NOT NULL,
+  `container_access_port` int(8) NOT NULL,
   `device_connected` char(255) NOT NULL DEFAULT '',
   `partition_connected` char(255) NOT NULL DEFAULT '',
+  `export_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`container_access_id`),
   FOREIGN KEY (`container_access_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`container_id`),
@@ -348,18 +348,7 @@ CREATE TABLE `container_access` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `local_container_access`
--- Entity::ContainerAccess::LocalContainerAccess class
-
-CREATE TABLE `local_container_access` (
-  `local_container_access_id` int(8) unsigned NOT NULL,
-  `file_path` char(255) NOT NULL,
-  PRIMARY KEY (`local_container_access_id`),
-  FOREIGN KEY (`local_container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `lfile_container_access`
+-- Table structure for table `file_container_access`
 -- Entity::ContainerAccess::FileContainerAccess class
 
 CREATE TABLE `file_container_access` (
@@ -374,25 +363,11 @@ CREATE TABLE `file_container_access` (
 
 CREATE TABLE `iscsi_container_access` (
   `iscsi_container_access_id` int(8) unsigned NOT NULL,
-  `target_name` char(255) NOT NULL,
-  `number` int(8) unsigned NOT NULL,
   `typeio` char(32) NOT NULL,
   `iomode` char(16) NOT NULL,
+  `lun_name` char(255) NOT NULL,
   PRIMARY KEY (`iscsi_container_access_id`),
   FOREIGN KEY (`iscsi_container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `iscsi_target`
---
-
-CREATE TABLE `iscsi_target` (
-  `iscsi_target_id` int(8) unsigned NOT NULL,
-  `name` char(128) NOT NULL,
-  PRIMARY KEY (`iscsi_target_id`),
-  FOREIGN KEY (`iscsi_target_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-  -- KEY `fk_iscsitarget1_1` (`iscsitarget1_id`),
-  -- CONSTRAINT `fk_iscsitarget1_1` FOREIGN KEY (`iscsitarget1_id`) REFERENCES `iscsitarget1` (`iscsitarget1_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -401,7 +376,7 @@ CREATE TABLE `iscsi_target` (
 
 CREATE TABLE `nfs_container_access` (
   `nfs_container_access_id` int(8) unsigned NOT NULL,
-  `export_path` char(255) NOT NULL,
+  `options` char(255) NOT NULL,
   PRIMARY KEY (`nfs_container_access_id`),
   FOREIGN KEY (`nfs_container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

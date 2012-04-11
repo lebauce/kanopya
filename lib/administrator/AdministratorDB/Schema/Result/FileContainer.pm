@@ -33,24 +33,6 @@ __PACKAGE__->table("file_container");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 file_name
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
-=head2 file_size
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
-=head2 file_filesystem
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -68,12 +50,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "file_name",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "file_size",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "file_filesystem",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("file_container_id");
 
@@ -91,7 +67,7 @@ __PACKAGE__->belongs_to(
   "file_container",
   "AdministratorDB::Schema::Result::Container",
   { container_id => "file_container_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container_access
@@ -106,12 +82,12 @@ __PACKAGE__->belongs_to(
   "container_access",
   "AdministratorDB::Schema::Result::ContainerAccess",
   { container_access_id => "container_access_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-12 13:50:11
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Y5PnVovqeQCHIDo1SvXHKw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OjQujCghuBLOKD9pI+AfRw
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Container",

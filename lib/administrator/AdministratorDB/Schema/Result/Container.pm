@@ -26,6 +26,36 @@ __PACKAGE__->table("container");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 container_name
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 128
+
+=head2 container_size
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
+=head2 container_device
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 255
+
+=head2 container_filesystem
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
+
+=head2 container_freespace
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 disk_manager_id
 
   data_type: 'integer'
@@ -42,6 +72,16 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "container_name",
+  { data_type => "char", is_nullable => 0, size => 128 },
+  "container_size",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "container_device",
+  { data_type => "char", is_nullable => 0, size => 255 },
+  "container_filesystem",
+  { data_type => "char", is_nullable => 0, size => 32 },
+  "container_freespace",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "disk_manager_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
@@ -61,7 +101,7 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "container_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container_accesses
@@ -155,8 +195,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-05 20:08:58
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xH9LaTzOYpfUNQdDvkFRRw
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KS39qSimQufQ8fNbGo2LUg
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

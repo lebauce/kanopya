@@ -32,18 +32,6 @@ __PACKAGE__->table("netapp_volume");
   extra: {unsigned => 1}
   is_nullable: 0
 
-=head2 name
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 255
-
-=head2 size
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -55,10 +43,6 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "aggregate_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "name",
-  { data_type => "char", is_nullable => 0, size => 255 },
-  "size",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("volume_id");
@@ -92,20 +76,17 @@ __PACKAGE__->belongs_to(
   "volume",
   "AdministratorDB::Schema::Result::Container",
   { container_id => "volume_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-03-12 03:38:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6xcyHeM2yVzvywNceyY7IA
-
-
-# You can replace this text with custom content, and it will be preserved on regeneration
-
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ebw8O5eDZcK0S1oIpkp2bg
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Container",
     { "foreign.container_id" => "self.volume_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+    { cascade_copy => 0, cascade_delete => 1 }
+);
 
 1;

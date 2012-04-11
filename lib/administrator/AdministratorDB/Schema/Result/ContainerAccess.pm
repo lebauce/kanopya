@@ -33,10 +33,21 @@ __PACKAGE__->table("container_access");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 export_manager_id
+=head2 container_access_export
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 255
+
+=head2 container_access_ip
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
+=head2 container_access_port
 
   data_type: 'integer'
-  extra: {unsigned => 1}
   is_nullable: 0
 
 =head2 device_connected
@@ -52,6 +63,12 @@ __PACKAGE__->table("container_access");
   default_value: (empty string)
   is_nullable: 0
   size: 255
+
+=head2 export_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
 
 =cut
 
@@ -70,12 +87,18 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "export_manager_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "container_access_export",
+  { data_type => "char", is_nullable => 0, size => 255 },
+  "container_access_ip",
+  { data_type => "char", is_nullable => 0, size => 15 },
+  "container_access_port",
+  { data_type => "integer", is_nullable => 0 },
   "device_connected",
   { data_type => "char", default_value => "", is_nullable => 0, size => 255 },
   "partition_connected",
   { data_type => "char", default_value => "", is_nullable => 0, size => 255 },
+  "export_manager_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("container_access_id");
 
@@ -93,7 +116,7 @@ __PACKAGE__->belongs_to(
   "container_access",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "container_access_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 container
@@ -108,7 +131,7 @@ __PACKAGE__->belongs_to(
   "container",
   "AdministratorDB::Schema::Result::Container",
   { container_id => "container_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 file_containers
@@ -160,23 +183,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 local_container_access
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::LocalContainerAccess>
-
-=cut
-
-__PACKAGE__->might_have(
-  "local_container_access",
-  "AdministratorDB::Schema::Result::LocalContainerAccess",
-  {
-    "foreign.local_container_access_id" => "self.container_access_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 nfs_container_access
 
 Type: might_have
@@ -208,9 +214,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-04-03 12:59:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MgiXNV7hcjQvqRzU1aH4lg
-
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-10 14:42:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:S23VmZWz/gww5DZCelXTXA
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
