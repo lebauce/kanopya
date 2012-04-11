@@ -135,7 +135,7 @@ sub execute {
         $node_econtext->send(src => $etc_hosts_file, dest => "/etc/hosts");
     }    
 	my $ehost = EFactory::newEEntity(data => $self->{_objs}->{host});
-    $ehost->postStart();
+    $ehost->postStart(econtext => $self->{executor}->{econtext});
 }
  
 sub generateHosts {
