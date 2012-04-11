@@ -165,7 +165,7 @@
                             height: 500,
                             resizable: true,
                             buttons: {
-                                Send: function() {
+                                Ok: function() {
                                     $(this).find('#target').submit();
                                     loading_start();
                                     $(this).dialog('close');
@@ -193,13 +193,13 @@
             <img id="logo" src="/images/kanopya_medium_logo.png" />
             <div id="menu">
                 <ul>
-                    <li <% menu_selection('dashboard') %>><a href="/dashboard/status">Dashboard</a></li>
-                    <li <% menu_selection('rights') %>><a href="/rights/users">Rights</a></li>
-                    <li <% menu_selection('infrastructures') %>><a href="/infrastructures/hosts">Infrastructures</a></li>
-                    <li <% menu_selection('networks') %>><a href="/networks/poolip">Networks</a></li>
-                    <li <% menu_selection('systems') %>><a href="/systems/masterimages">Systems</a></li>
-                    <li <% menu_selection('architectures') %>><a href="/architectures/clusters">Architectures</a></li>
-                    <li <% menu_selection('equipments') %>><a href="/equipments/ucs">Equipments</a></li>
+                    <% IF is_menu_visible('dashboard') %><li <% menu_selection('dashboard') %>><a href="/dashboard/status">Dashboard</a></li><% END %>
+                    <% IF is_menu_visible('rights') %><li <% menu_selection('rights') %>><a href="/rights/users">Rights</a></li><% END %>
+                    <% IF is_menu_visible('infrastructures') %><li <% menu_selection('infrastructures') %>><a href="/infrastructures/hosts">Infrastructures</a></li><% END %>
+                    <% IF is_menu_visible('networks') %><li <% menu_selection('networks') %>><a href="/networks/poolip">Networks</a></li><% END %>
+                    <% IF is_menu_visible('systems') %><li <% menu_selection('systems') %>><a href="/systems/masterimages">Systems</a></li><% END %>
+                    <% IF is_menu_visible('architectures') %><li <% menu_selection('architectures') %>><a href="/architectures/clusters">Architectures</a></li><% END %>
+                    <% IF is_menu_visible('equipments') %><li <% menu_selection('equipments') %>><a href="/equipments/ucs">Equipments</a></li><% END %>
                 </ul>
             
             </div>

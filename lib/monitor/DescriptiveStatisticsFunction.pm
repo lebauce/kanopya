@@ -47,4 +47,33 @@ sub firstValue {
     return $data->[0];
 }
 
+sub dataOut{
+    my $self        = shift;
+    my $data        = $self->_data();
+
+    my $coef        = 4;
+
+    my $std         = $self->standard_deviation();
+    my $mean        = $self->mean();
+
+    my $outOfRange  = 0;
+
+    foreach my $element (@{$data}) {
+        if (
+           ($element > $mean + $coef*$std)
+        || ($element < $mean - $coef*$std)
+        ){
+            $outOfRange++;
+        }
+    }
+    if($self->count() == 0){
+        return 0;
+    }
+    return $outOfRange/($self->count());
+};
+
+sub std{
+    my $self = shift;
+    return $self->standard_deviation();
+}
 1;

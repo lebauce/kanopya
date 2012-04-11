@@ -13,10 +13,14 @@
     <table>
         <tr><td>Function: </td><td><select name="function">
         <option value="mean">Mean</option>
-        <option value="standard_deviation">Standard deviation</option>
-        <option value="max">Max</option>
-        <option value="min">Min</option>
-        </select></td></tr>
+        <option value="std">Standard deviation</option>
+        <option value="max">Maximum</option>
+        <option value="min">Minimum</option>
+        <option value="sum">Somme</option>
+        <option value="kurtosis">Peakedness (Kurtosis)</option>
+        <option value="skewness">Asymmetry (Skewness)</option>
+        <option value="dataOut">Data out of range</option>
+         </select></td></tr>
         
         <tr><td>
         

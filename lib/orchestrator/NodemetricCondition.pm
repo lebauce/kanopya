@@ -27,6 +27,14 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    nodemetric_condition_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    nodemetric_condition_service_provider_id =>  {pattern       => '^.*$',
+                                 is_mandatory   => 1,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
     nodemetric_condition_combination_id     =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -42,6 +50,20 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+    my $self = $class->SUPER::new(%args);
+    
+    if(!defined $args{nodemetric_condition_label} || $args{nodemetric_condition_label} eq ''){
+        $self->setAttr(name=>'nodemetric_condition_label', value => $self->toString());
+        $self->save();
+    }
+
+    return $self;
+}
 
 =head2 toString
 
@@ -78,7 +100,7 @@ sub evalOnOneNode{
     } else {
         my $evalString = $value.$comparator.$threshold;
         
-        print $evalString."\n";
+        #print $evalString."\n";
         
         if(eval $evalString){
             return 1;

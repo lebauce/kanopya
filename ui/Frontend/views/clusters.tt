@@ -12,6 +12,7 @@
 		<% IF cluster.state_starting %><span class="state imgDown">Starting...</span><% END %>
 		<% IF cluster.state_stopping %><span class="state imgDown">Stopping...</span><% END %>
 		<% IF cluster.state_broken %><span class="state imgWarning">Broken</span><% END %>
+		<% IF cluster.state_warning %><span class="state imgBroken">Warning</span><% END %>
 		</td>
 	<% END %>
 	<td class="toright">

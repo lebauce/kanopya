@@ -72,11 +72,7 @@ sub _contructRetrieverOutput {
     my @indicators_array       = undef;
     my $clustermetric_time_span    = undef;
     my $time_span              = undef;
-    
-#    # HARCODE hosts name
-#    my $hosts_names = $self->_getHostNamesFromIDs();
-#    $rep->{nodes} = $hosts_names;
-    
+
     
     
         
@@ -116,9 +112,7 @@ sub _contructRetrieverOutput {
     return $rep;
 };
 
-sub _getHostNamesFromIDs{
-    return ['WKANOPYA.hedera.forest', 'WIN-09DSUKS61DT.hedera.forest'];
-}
+
 
 
 
@@ -128,36 +122,44 @@ sub update() {
     
     my @externalClusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {});
     
+    CLUSTER:
     for my $externalCluster (@externalClusters){
-        my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
-        
-        #FILTER CLUSTERS WITH MONITORING PROVIDER
         eval{
-            $externalCluster->getConnector(category => 'MonitoringService');
-        };
-        if($@){
-            print '*** Aggregator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
-        }else{
-            print '*** Aggregator collecting for cluster '.$cluster_id.' ***'."\n";
             my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
             
-            # Construct input of the SCOM retriever
-            my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
-            print Dumper $host_indicator_for_retriever;
-            
-            # Call the retriever to get SCOM data
-            my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
-            print Dumper $monitored_values; 
+            #FILTER CLUSTERS WITH MONITORING PROVIDER
+            eval{
+                $externalCluster->getConnector(category => 'MonitoringService');
+            };
+            if($@){
+                print '*** Aggregator skip cluster '.$cluster_id.' because it has no MonitoringService Connector ***'."\n";
+            }else{
+                print '*** Aggregator collecting for cluster '.$cluster_id.' ***'."\n";
+                my $cluster_id = $externalCluster->getAttr(name => 'externalcluster_id');
                 
-            # Verify answers received from SCOM to detect metrics anomalies
-            $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
-            
-            # Parse retriever return, compute clustermetric values and store in DB 
-            $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
-            
-            print Dumper $monitored_values;
+                # Construct input of the SCOM retriever
+                my $host_indicator_for_retriever = $self->_contructRetrieverOutput(cluster_id => $cluster_id );
+                print Dumper $host_indicator_for_retriever;
+                
+                # Call the retriever to get SCOM data
+                my $monitored_values = $externalCluster->getNodesMetrics(%$host_indicator_for_retriever);
+                print Dumper $monitored_values; 
+                    
+                # Verify answers received from SCOM to detect metrics anomalies
+                my $checker = $self->_checkNodesMetrics(asked_indicators=>$host_indicator_for_retriever->{indicators}, received=>$monitored_values);
+                
+                # Parse retriever return, compute clustermetric values and store in DB
+                if($checker == 1){
+                    $self->_computeAggregateValuesAndUpdateTimeDB(values=>$monitored_values, cluster_id => $cluster_id);
+                } 
+            } #END EVAL
+        1;
+        } or do{
+            print "Skip to next cluster due to error $@\n";
+            $log->error($@);
+            next CLUSTER;
         }
-    }
+    } #end for $externalCluster
 }
 
 sub _checkNodesMetrics{
@@ -183,9 +185,13 @@ sub _checkNodesMetrics{
             }
         }
         if($count eq 0){
+            return 0;
             $log->info("*** [WARNING] $indicator_name given by no node !");
         } elsif(($count / $num_of_nodes) le 0.75) {
             $log->info("*** [WARNING] $indicator_name given by less than 75% of nodes ($count / $num_of_nodes)!");
+            return 1;
+        } else {
+            return 1;
         }
     }
 }
@@ -220,7 +226,6 @@ sub _computeAggregateValuesAndUpdateTimeDB{
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics){
         
-        #my $host_names = $self->_getHostNamesFromIDs(); #get all hosts name
         #TODO : To be modified when using ServerSets
         
         # Array that will store all the values needed to compute $clustermetric val
@@ -246,21 +251,24 @@ sub _computeAggregateValuesAndUpdateTimeDB{
         }
         
         #Compute the $clustermetric value from all @dataStored values
-        
-        my $statValue = $clustermetric->compute(values => \@dataStored);
-        
-        if(defined $statValue){
-            #Store in DB and time stamp
-            my $time = time();
-            RRDTimeData::updateTimeDataStore(
-                aggregator_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
-                time          => $time, 
-                value         => $statValue,
-                );
-        } else {
+        if(0 < (scalar @dataStored)){
+            my $statValue = $clustermetric->compute(values => \@dataStored);
             
-            $log->info("*** [WARNING] No statvalue computed for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
-                    }
+            if(defined $statValue){
+                #Store in DB and time stamp
+                my $time = time();
+                RRDTimeData::updateTimeDataStore(
+                    clustermetric_id => $clustermetric->getAttr(name=>'clustermetric_id'), 
+                    time          => $time, 
+                    value         => $statValue,
+                    );
+            } else {
+                
+                $log->info("*** [WARNING] No statvalue computed for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
+            }
+        } else {
+             $log->info("*** [WARNING] No datas received for clustermetric ".($clustermetric->getAttr(name=>'clustermetric_id')));
+        }
     }
 }
 

@@ -171,9 +171,10 @@ sub new {
     my $dbixroot = $adm->_newDbix(table => _rootTable($class), row => $attrs);
     $dbixroot->insert;
     my $id = $dbixroot->id;
-    if($id) {
-        #$log->debug("$class successully inserted in database");
-    }
+
+#    if($id) {
+#        $log->debug("$class successully inserted in database");
+#    }
     
     my $self = {
         _dbix => $adm->getRow(table => _buildClassNameFromString($class),
@@ -181,7 +182,8 @@ sub new {
         _entity_id => $id
     };
 
-    #$log->debug('dbix object type retrieve : '.ref($self->{_dbix}));
+#    $log->debug('dbix object type retrieve : '.ref($self->{_dbix}));
+
     bless $self, $class;
     return $self;
 }
@@ -297,7 +299,7 @@ sub get {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    #$log->debug('id <' . $args{id} . '>, class <' . $class . '>');
+#    $log->debug('id <' . $args{id} . '>, class <' . $class . '>');
 
     my $adm = Administrator->new();
     eval {
@@ -309,7 +311,7 @@ sub get {
     }
     my $table = _buildClassNameFromString($class);
 
-    #$log->debug('id <' . $args{id} . '>, concrete_class <' . $class . '>');
+#    $log->debug('id <' . $args{id} . '>, concrete_class <' . $class . '>');
 
     my $location = General::getLocFromClass(entityclass => $class);
     eval { require $location; };
@@ -358,6 +360,36 @@ sub search {
     }
     
     return  @objs;
+}
+
+# Quick fix for perf optim (TODO refacto)
+# Don't manage concrete class type
+# See search and get
+sub searchLight {
+    my $class = shift;
+    my %args = @_;
+    my @objs = ();
+
+    General::checkParams(args => \%args, required => ['hash']);
+
+    my $table = _buildClassNameFromString($class);
+    my $adm = Administrator->new();
+  
+    my $rs = $adm->_getDbixFromHash( table => $table, hash => $args{hash} );
+
+    while ( my $row = $rs->next ) {
+        #my %data = $row->get_columns();
+        
+        my $self = {
+            _dbix => $row,
+        };
+
+        bless $self, $class;
+    
+        push @objs, $self;
+    }
+    
+    return @objs;
 }
 
 sub find {

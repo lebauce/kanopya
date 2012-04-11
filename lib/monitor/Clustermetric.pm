@@ -27,15 +27,19 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("aggregator");
 
 use constant ATTR_DEF => {
-    clustermetric_service_provider_id               =>  {pattern       => '^.*$',
+    clustermetric_service_provider_id          =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    clustermetric_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
     clustermetric_indicator_id             =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
-    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|standard_deviation|max|min|coefficientOfVariation|kurtosis|firstValue)$',
+    clustermetric_statistics_function_name =>  {pattern       => '^(mean|variance|std|max|min|kurtosis|skewness|dataOut|sum)$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 0},
@@ -76,14 +80,14 @@ sub getValuesFromDB{
     my %rep = RRDTimeData::fetchTimeDataStore(
                                             name         => $id, 
                                             start        => $args{start_time},
-                                            stop         => $args{stop_time}
+                                            end          => $args{stop_time}
                                           );
     return \%rep;
 }
 sub getLastValueFromDB{
     my $self = shift;
 	my $id = $self->getAttr(name=>'clustermetric_id');
-    my %last_value = RRDTimeData::getLastUpdatedValue(aggregate_id => $id); 
+    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $id); 
     my @indicator = (values %last_value);
     return $indicator[0];
 }
@@ -103,6 +107,11 @@ sub new {
     #Create RRD DB
     my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
     RRDTimeData::createTimeDataStore(name => $clustermetric_id);
+    
+    if(!defined $args{clustermetric_label} || $args{clustermetric_label} eq ''){
+        $self->setAttr(name=>'clustermetric_label', value=>$self->toString());
+        $self->save();
+    }
     return $self;
 }
 

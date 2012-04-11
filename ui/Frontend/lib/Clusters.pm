@@ -13,6 +13,9 @@ use Entity::Masterimage;
 use Entity::Kernel;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use NodemetricRule;
+use Orchestrator;
+use Action;
 
 my $log = get_logger("webui");
 
@@ -100,12 +103,15 @@ sub _externalclusters {
         my $nodes = $cluster->getNodes();
         my $nbnodes = scalar(@$nodes);
         
+        my $clusterstate = $cluster->getAttr('name' => 'externalcluster_state');
+        
+        
         push @clusters, {
             route_base      => 'extclusters',
             link_activity   => 1,
             type            => 'External cluster',
             active          => 1,
-            state_up        => 1,
+            "state_$clusterstate"        => 1,
             cluster_id      => $cluster->getAttr(name => 'externalcluster_id'),
             cluster_name    => $cluster->getAttr(name => 'externalcluster_name'),
             cluster_desc    => $cluster->getAttr(name => 'externalcluster_desc'),
@@ -447,7 +453,7 @@ get '/clusters' => sub {
         clusters_list => [ @{_clusters()}, @{_externalclusters()} ],
         can_create => $can_create,
         
-    };
+    }, { layout => 'main' };
 };
 
 # external clusters list display
@@ -458,7 +464,7 @@ get '/extclusters' => sub {
     template 'clusters', {
         title_page         => 'Clusters - External Clusters',
         clusters_list => _externalclusters(),
-    };
+    }, { layout => 'main' };
 };
 
 # cluster detail display
@@ -634,25 +640,19 @@ get '/clusters/:clusterid' => sub {
         link_addcomponent  => $methods->{'addComponent'}->{'granted'} && ! $active,
         can_setperm        => $methods->{'setperm'}->{'granted'},        
                        
-     };
+     }, { layout => 'main' };
 };
 
 # external cluster detail display
 
 get '/extclusters/:clusterid' => sub {
     my $cluster_id = params->{clusterid};
-    
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => $cluster_id);
+
+    my $cluster_eval = Orchestrator::evalExtCluster(extcluster_id => $cluster_id,extcluster => $extcluster);
     
-    # Nodes list
-    my $num_noderule_verif    = 0;
-    
-    my $nodes = $extcluster->getNodes();
-    foreach my $node (@$nodes) {
-        $node->{"state_" . $node->{state}} = 1;
-        $num_noderule_verif += $node->{num_verified_rules};
-    }
-    
+    #print Dumper $cluster_eval; 
+
     # Connectors
     my @connectors = map { 
         {
@@ -662,37 +662,125 @@ get '/extclusters/:clusterid' => sub {
             %{$_->getConnectorType()},
         }
     } $extcluster->getConnectors();
-
-
-  
-
-
     
-    my $num_clusterrule_verif = 0;
-    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
     
-    foreach my $rule (@enabled_aggregaterules){
-        my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
-        if( defined $last_eval and $last_eval == 1){
-            $num_clusterrule_verif++;
-        } 
-    }
+    # Nodes list
+#    my $num_noderule_verif    = 0;
+#    
+#    my $nodes = $extcluster->getNodes(shortname => 1);
+#    
+#    my $num_node_nok = 0; 
+#    foreach my $node (@$nodes) {
+#        $node->{"state_" . $node->{state}} = 1;
+#        $num_noderule_verif += $node->{num_verified_rules};
+#        
+#        if($node->{num_verified_rules} > 0){
+#            $num_node_nok++;
+#        }
+#    }
+#    
+#    my $num_node_rule_total = scalar NodemetricRule->searchLight(
+#                                    hash=>{
+#                                        'nodemetric_rule_service_provider_id' => $cluster_id,
+#                                        'nodemetric_rule_state' => 'enabled',
+#                                    }
+#                                 );
+#
+#
+#    
+#    my $num_clusterrule_verif   = 0;
+#    my @enabled_aggregaterules = AggregateRule->getRules(state => 'enabled', service_provider_id=>$cluster_id);
+#
+#    my $num_cluster_rule_total = scalar @enabled_aggregaterules;
+#    
+#    foreach my $rule (@enabled_aggregaterules){        
+#        my $last_eval = $rule->getAttr(name => 'aggregate_rule_last_eval');
+#        if( defined $last_eval and $last_eval == 1){
+#            $num_clusterrule_verif++;
+#        } 
+#    }
+   
+    my @action_insts = Action->search(
+        hash => {
+            'action_service_provider_id' => $cluster_id
+        }
+    );
+    
+    my @actions;
+    my @node_actions;
+    my @cluster_actions;
+    
+    foreach my $action_inst (@action_insts){
+        my $hash = {
+            'id'   => $action_inst->getAttr('name' => 'action_id'),
+            'name' => $action_inst->getAttr('name' => 'action_name'),
+			'type' => $action_inst->getParams()->{trigger_rule_type},
+        };
+        push @actions, $hash;
         
+        if($action_inst->getParams()->{trigger_rule_type} eq 'noderule'){
+            push @node_actions, $hash;
+        }elsif($action_inst->getParams()->{trigger_rule_type} eq 'clusterrule'){
+            push @cluster_actions, $hash;
+        }
+        
+    }
+    
+    #print Dumper \@action_hashs;
+    
+    my $order = {
+        'up'        => 0,
+        'warning'   => 1,
+        'undef'     => 2,
+        'down'      => 3,
+        'disabled'  => 4,
+    };
+    
+    
+    my $disabled_nodes = $extcluster->getDisabledNodes();
+    my $num_nodes_disabled = scalar @$disabled_nodes;
+    
+    my @nodes = (@$disabled_nodes,@{$cluster_eval->{nm_rule_nodes}});
+    my @nodes_sort = sort {
+        
+        $order->{$a->{state}} cmp $order->{$b->{state}} 
+        
+    } @nodes;
+    
+    
+    #my @nodes_sort = sort {$b->{num_verified_rules} cmp $a->{num_verified_rules}} @{$cluster_eval->{nm_rule_nodes}}; 
+    
+    #print Dumper \@nodes_sort;
+    
+    
     template 'extclusters_details', {
         title_page            => "External Clusters - Cluster's overview",
         active                => 1,
-        cluster_state         => 'up',
+        cluster_state         => $extcluster->getAttr(name => 'externalcluster_state'),
         cluster_id            => $cluster_id,
         cluster_name          => $extcluster->getAttr(name => 'externalcluster_name'),
-        nodes_list            => $nodes,
+        nodes_list            => \@nodes_sort,#$nodes,
         connectors_list       => \@connectors,
+        actions_list          => \@actions,
+        node_actions_list     => \@node_actions,
+        cluster_actions_list  => \@cluster_actions,
         link_updatenodes      => 1,
         link_addconnector     => 1,
         link_delete           => 1,
         can_configure         => 1,
-        num_noderule_verif    => $num_noderule_verif,
-        num_clusterrule_verif => $num_clusterrule_verif,
-    };
+        nm_rule_enabled        => $cluster_eval->{nm_rule_enabled},
+        nm_rule_undef          => $cluster_eval->{nm_rule_undef},
+        num_noderule_verif     => $cluster_eval->{nm_rule_nok},
+        num_nodes_nok          => $cluster_eval->{nm_rule_nodes_nok},
+        cm_rule_ok             => $cluster_eval->{cm_rule_ok},
+        cm_rule_enabled        => $cluster_eval->{cm_rule_enabled},
+        cm_rule_undef          => $cluster_eval->{cm_rule_undef},
+        num_cluster_rule_total => $cluster_eval->{cm_rule_total},
+        num_clusterrule_verif  => $cluster_eval->{cm_rule_nok},
+        num_nodes_disabled     => $num_nodes_disabled,
+
+        
+    }, { layout => 'main' };
 };
 
 # external cluster deletion processing
@@ -1162,30 +1250,40 @@ get '/clusters/:clusterid/nodes/:nodeid/remove' => sub {
 };
 
 
-# 'Prototype' method for error management
-# (instead of throw exception or redirect, return a json with error or redirect key which is handled on client side)
-# handled by js method catchError
-
 get '/extclusters/:clusterid/nodes/update' => sub {
     my $adm = Administrator->new;
     my %res;
+    my $node_count;
 
     eval {
         my $cluster = Entity::ServiceProvider::Outside::Externalcluster->get(id => param('clusterid'));
-        $cluster->updateNodes();
+        
+        my $rep = $cluster->updateNodes( password => param('password') );
+        
+        $node_count       = $rep->{node_count};
+        my $created_nodes = $rep->{created_nodes};
+        
+        foreach my $node (@$created_nodes){
+            NodemetricRule::setAllRulesUndefForANode(
+                cluster_id     => param('clusterid'),
+                node_id        => $node->{id},
+            );
+        } 
+        
     };
-       if($@) {
+    if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
             $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
             $res{redirect} = '/permission_denied';
         }
-        else { $res{error} = "$exception"; }
+        else { $res{msg} = "$exception"; }
     }
     else {
         $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');
-        $res{redirect} = '/architectures/extclusters/'.param('clusterid');
+        $res{msg} = "$node_count node" . ( $node_count > 1 ? 's' : '') . " retrieved.";
     }
+    
     to_json \%res;
 };
 

@@ -50,6 +50,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "verified_noderule_state",
+  { data_type => "char", is_nullable => 0, size => 8 },
 );
 __PACKAGE__->set_primary_key(
   "verified_noderule_externalnode_id",

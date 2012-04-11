@@ -1,0 +1,39 @@
+<table class="simplelisting">
+
+    <caption>
+        Action triggered cluster <% cluster_id %> 
+    </caption>
+
+        <tr><td>
+        <span class="bold"> Action Name</span>
+        </td><td>
+        <span class="italic"> Source
+        </td><td> 
+        <span class="italic"> Timestamp
+        </tr>
+
+
+    <% FOREACH triggered_action IN triggered_actions %>
+        <tr><td>
+        <span class="bold">  <% triggered_action.id %> - <% triggered_action.name %></span>
+        </td><td>
+        <span class="italic"> <% triggered_action.hostname %>
+        </td><td> 
+        <span class="italic"> <% triggered_action.timestamp %>
+        </td><td> 
+         <a class="" href="/architectures/extclusters/<% cluster_id %>/actions/<% triggered_action.id %>/mclose"> Manually close this action </a>
+        </td>
+        </tr>
+    <% END %>
+</table>     
+
+<div class="actions">
+
+    <table>
+        <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </tr></td>
+        </td></tr>
+    </table>
+
+</div> 
