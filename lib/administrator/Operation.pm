@@ -52,15 +52,9 @@ sub enqueue {
     
     General::checkParams(args => \%args, required => ['priority','type','params']);
     
+    # check for an identical operation in the queue
     my $params = $args{params};
     my @hash_keys = keys %$params;
-    #foreach my $key (@hash_keys) {
-    #    if (! defined $params->{$key}){
-    #        $errmsg = "Operation->enqueue needs defined params ($key is undef)";
-    #        $log->error($errmsg); 
-    #        throw Kanopya::Exception::Internal(error => $errmsg);
-    #    }
-    #}
     my $adm = Administrator->new();
     my $nbparams = scalar(@hash_keys);
     my $whereclause = [];
@@ -84,11 +78,8 @@ sub enqueue {
         $errmsg = "An operation with exactly same parameters already enqueued !";
         throw Kanopya::Exception::OperationAlreadyEnqueued(error => $errmsg);
     }
-    
-    #$log->debug("-------------------> total count : ".(scalar(@rows)));
-       
+
     my $operation = Operation->new(%args);
-    $operation->save();
 }
 
 sub new {
@@ -104,22 +95,26 @@ sub new {
     my $execution_rank = $adm->_get_lastRank() + 1;
     my $user_id = $adm->{_rightchecker}->{user_id};
     
-    $self->{_dbix} = $adm->_newDbix( 
-		table => 'Operation', 
-		row => {
-			type                 => $args{type},
-			execution_rank       => $execution_rank,
-			user_id              => $user_id,
-			priority             => $args{priority},
-			creation_date        => \"CURRENT_DATE()",
-			creation_time        => \"CURRENT_TIME()",
-			hoped_execution_time => $hoped_execution_time
-		}
-	);
+    my $op_params = [];
+    while(my ($key, $value) = each %{$args{params}}) {
+        push @$op_params, { name => $key, value => $value };
+    }
     
+    my $row = {
+        type                 => $args{type},
+        execution_rank       => $execution_rank,
+        user_id              => $user_id,
+        priority             => $args{priority},
+        creation_date        => \"CURRENT_DATE()",
+        creation_time        => \"CURRENT_TIME()",
+        hoped_execution_time => $hoped_execution_time,
+        operation_parameters => $op_params
+    };
+    
+    $self->{_dbix} = $adm->{db}->resultset('Operation')->create($row);
+    $log->info(ref($self)." saved to database (added in execution list)");
     $self->{_params} = $args{params};
     bless $self, $class;
-
     return $self;
 }
 
@@ -286,27 +281,6 @@ sub getParams {
         $params{$param->name} = $param->value;
     }
     return \%params;
-}
-
-=head2 save
-
-    Class : Public
-    
-    Desc : Save operation and its params
-    args : 
-        op : Entity::Operation::OperationType : 
-            concrete Entity::Operation type (Real Operation type (AddHost, MigrateNode, ...))
-
-=cut
-
-sub save {
-    my $self = shift;
-    my $newentity = $self->{_dbix}->insert;
-    my $params = $self->{_params};
-    
-    foreach my $k (keys %$params) {
-        $self->{_dbix}->create_related( 'operation_parameters', { name => $k, value => $params->{$k} } );}
-    $log->info(ref($self)." saved to database (added in execution list)");
 }
 
 =head setHopedExecutionTime
