@@ -77,7 +77,7 @@ get '/permission_denied' => sub {
 };
 
 hook 'before_error_init' => sub {  
-    set error_template => '/error_500.tt';   
+    set error_template => '/layouts/main.tt';
 };
 
 any qr{.*} => sub {
