@@ -317,7 +317,6 @@ $(function() {
 var url = window.location.href;
 var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
-var nodes_view_2 = path + '/nodesview_2';
 var clusters_view = path  + '/clustersview';
 var nodes_bar_graph;
 var cluster_timed_graph;
@@ -343,49 +342,13 @@ function showCombinationGraph(curobj,combi_id,label,start,stop) {
     });
 }
 
-//function triggered on node_combination selection
-function showMetricGraph(curobj,metric_oid,metric_unit) {
-	if (metric_oid == 'default') { return }
-	loading_start();
-	var params = {oid:metric_oid,unit:metric_unit};
-	document.getElementById('nodes_charts').innerHTML='';
-	$.getJSON(nodes_view, params, function(data) {
-        if (data.error){ alert (data.error); }
-		else {
-			document.getElementById('nodes_charts').style.display='block';
-            var min = data.values[0];
-            var max = data.values[(data.values.length-1)];
-            // alert('min: '+min+ ' max: '+max); 
-			var max_nodes_per_graph = 50;
-			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
-			var nodes_per_graph = data.nodelist.length/graph_number;
-			for (var i = 0; i<graph_number; i++) {
-				var div_id = 'nodechart_'+i;
-				var div = '<div id=\"'+div_id+'\"></div>';
-				//create the graph div container
-				$("#nodes_charts").append(div);
-				//slice the array
-				var indexOffset = nodes_per_graph*i;
-				var toElementNumber = nodes_per_graph*(i+1);
-				var sliced_values = data.values.slice(indexOffset,toElementNumber);
-				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
-				//we generate the graph
-				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, metric_oid);
-			}
-			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
-			$("#nodes_charts").append(button);
-		}
-        loading_stop();
-    });
-}
-
-//function triggered on node_combination selection
+//function triggered on nodemetrics combination selection
 function showNodemetricCombinationGraph(curobj,metric_id) {
 	if (metric_id == 'default') { return }
 	loading_start();
 	var params = {id:metric_id};
 	document.getElementById('nodes_charts').innerHTML='';
-	$.getJSON(nodes_view_2, params, function(data) {
+	$.getJSON(nodes_view, params, function(data) {
         if (data.error){ alert (data.error); }
 		else {
 			document.getElementById('nodes_charts').style.display='block';
