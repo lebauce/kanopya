@@ -16,11 +16,10 @@
 </table>     
 
 <div class="actions">
-
     <table>
-        <tr><td>
-            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics">View the clustermetrics</a>
-        </tr></td>
+         <tr><td>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>">Back to cluster interface</a>
+        </td></tr>
         <tr><td>
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations">View the combinations</a>
         </td></tr>
@@ -28,7 +27,7 @@
             <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/conditions">View the conditions</a>
         </td></tr>
         <tr><td>
-            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/combinations/conditions/rules">View the rules</a>
+            <a class="action" href="/architectures/extclusters/<%cluster_id%>/nodemetrics/rules">View the rules</a>
         </td></tr>
     </table>
 

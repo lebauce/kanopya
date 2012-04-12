@@ -35,7 +35,17 @@ my $dir = 'C:\\tmp\\monitor\\TimeData\\';
 #########################################RRD MANIPULATION FUNCTIONS#################################################
 ####################################################################################################################
 
-#create RRD file. Standard is 1 RRA, and 1 DS.
+=head2 createTimeDataStore
+
+B<Class>   : Public
+B<Desc>    : This method create a RRD file.
+B<args>    : name, options, RRA, DS
+B<Return>  : None
+B<Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). Standard is 1 RRA and 1 DS per RRD
+B<throws>  : 'RRD creation failed' if the creation is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+
+=cut
+
 sub createTimeDataStore{
 	#rrd creation example: system ('rrdtool.exe create target.rrd --start 1328190055 --step 300 DS:mem:GAUGE:600:0:671744 RRA:AVERAGE:0.5:12:24');
     my %args = @_;
@@ -49,7 +59,7 @@ sub createTimeDataStore{
     my $DS_chain;
     my $opts = '';
 	
-    #definition of the options. If unset, default rrd start is (now -10s), and step is (300s)
+    #definition of the options. If unset, default rrd start time is (now -10s)
     if (defined $args{'options'}){
         my $options = $args{'options'};
 
@@ -76,7 +86,7 @@ sub createTimeDataStore{
         }
 	
     #default parameter for Round Robin Archive
-    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '60');
+    my %RRA_params = (function => 'LAST', XFF => '0', PDPnb => '1', CDPnb => '7200');
 
     if (defined $args{'RRA'}){
         my $RRA = $args{'RRA'};
@@ -129,7 +139,17 @@ sub createTimeDataStore{
     }		
 }
 
-#delete a RRD file.
+=head2 deleteTimeDataStore
+
+B<Class>   : Public
+B<Desc>    : This method delete a RRD file.
+B<args>    : name
+B<Return>  : None
+B<Comment>  : None
+B<throws>  : None
+
+=cut
+
 sub deleteTimeDataStore{
     my %args = @_;
 
@@ -141,7 +161,17 @@ sub deleteTimeDataStore{
     system ($cmd);
 }
 
-#get info about a RRD file.
+=head2 getTimeDataStoreInfo
+
+B<Class>   : Public
+B<Desc>    : This method get info a RRD file.
+B<args>    : name
+B<Return>  : None
+B<Comment>  : None
+B<throws>  : None
+
+=cut
+
 sub getTimeDataStoreInfo {
     my %args = @_;
 
@@ -153,7 +183,17 @@ sub getTimeDataStoreInfo {
     system ($cmd);	
 }
 
-#fetch values from a RRD file.
+=head2 fetchTimeDataStore
+
+B<Class>   : Public
+B<Desc>    : This method retrieve values from a RRD file.
+B<args>    : name, start, end
+B<Return>  : %values
+B<Comment> : if start and end are not specified, rrd fetch use start = now - 1 day and stop = now
+B<throws>  : 'RRD fetch failed' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+
+=cut
+
 sub fetchTimeDataStore {
     my %args = @_;
     General::checkParams(args => \%args, required => ['name']); 
@@ -195,15 +235,36 @@ sub fetchTimeDataStore {
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
     
-    $log->debug(Dumper(\%values));
+    if (scalar(keys %values) == 0) {
+    	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
+    }
+    
+	#we replace the '-1.#IND000000e+000' values for "undef"
+	while (my ($timestamp, $value) = each %values) {
+		if ($value eq '-1.#IND000000e+000'){
+			$values{$timestamp} = undef;
+			}
+	}	
+    #$log->debug(Dumper(\%values));
     return %values;   
 }
 
+=head2 updateTimeDataStore
+
+B<Class>   : Public
+B<Desc>    : This method update values into a RRD file.
+B<args>    : clustermetric_id, time, value
+B<Return>  : None
+B<Comment> : None
+B<throws>  : 'RRD update failed' if the update is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+
+=cut
+
 sub updateTimeDataStore {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['aggregator_id', 'time', 'value']);
+    General::checkParams(args => \%args, required => ['clustermetric_id', 'time', 'value']);
 
-    my $name = _formatName(name => $args{'aggregator_id'});
+    my $name = _formatName(name => $args{'clustermetric_id'});
     my $datasource;
     if (defined $args{'datasource'}){
         $datasource = $args{'datasource'};
@@ -215,10 +276,10 @@ sub updateTimeDataStore {
 
     my $cmd = 'rrdtool.exe updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
     $log->debug($cmd);
-    print $cmd."\n";
+    #print $cmd."\n";
 
     my $exec =`$cmd 2>&1`;
-    print $exec."\n";
+    #print $exec."\n";
     $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/){
@@ -226,11 +287,23 @@ sub updateTimeDataStore {
     }	
 }
 
-sub getLastUpdatedValue{
-    my %args = @_;
-    General::checkParams(args => \%args, required => ['aggregate_id']);
+=head2 getLastUpdatedValue
 
-    my $name = _formatName(name => $args{'aggregate_id'});
+B<Class>   : Public
+B<Desc>    : This method get the last updated value into a RRD file.
+B<args>    : clustermetric_id
+B<Return>  : %values
+B<Comment> : None
+B<throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+
+=cut
+
+
+sub getLastUpdatedValue {
+    my %args = @_;
+    General::checkParams(args => \%args, required => ['clustermetric_id']);
+
+    my $name = _formatName(name => $args{'clustermetric_id'});
     
     my $cmd = 'rrdtool.exe lastupdate '.$dir.$name;
     $log->info($cmd);
@@ -238,12 +311,14 @@ sub getLastUpdatedValue{
     my $exec =`$cmd 2>&1`;
     #print $exec."\n";
 
-    if ($exec =~ m/^ERROR.*/){
+    if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed for last updated value: '.$exec);
     }	  
     
     #clean the string of unwanted ":"
     $exec =~ s/://g;
+	#replace the ',' by '.'
+	$exec =~ s/,/./g;
     #we split the string into an array
     my @values = split(' ', $exec);
     #print Dumper(\@values);
@@ -252,12 +327,35 @@ sub getLastUpdatedValue{
     # print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
+	
+    if (scalar(keys %values) == 0) {
+    	throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
+    }
+	
+	#we replace the '-1.#IND000000e+000' values for "undef"
+	while (my ($timestamp, $value) = each %values) {
+		if ($value eq '-1.#IND000000e+000'){
+			$values{$timestamp} = undef;
+			}
+	}
+	
     #print Dumper(\%values);
     $log->debug(Dumper(\%values));
     return %values;
 }
 
-sub _formatName{
+=head2 _formatName
+
+B<Class>   : Public
+B<Desc>    : This method format a name argument for RRD
+B<args>    : None
+B<Return>  : $name
+B<Comment> : None
+B<throws>  : None
+
+=cut
+
+sub _formatName {
 	my %args = @_;
 	my $name = 'timeDB_'.$args{'name'}.'.rrd';
 	return $name;

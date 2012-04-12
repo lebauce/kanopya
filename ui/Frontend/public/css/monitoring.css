@@ -1,25 +1,68 @@
-.list_label{
+/*cluster overview zone */
 
+#combination_list {
+	width:25%;
 }
 
-#node_charts{
+#clusterCombinationView {
 	display:none;
-    height:500px;
-    width:100%;
+    position:relative;
+    bottom:170px;
+    left: 290px;
+    width:70%;
 }
-#timedCombinationView{
+
+#cb_button {
+	position:absolute;
+	top:-25px;
+	left:15px;
+}
+
+.cluster_combination_tooltip {
+    background-color:#D4D4D4;
+    border:dotted;
+}
+
+.field {
+    margin-bottom:5px;
+}
+
+.field label {
+    float:left;
+    width:120px;
+}
+
+.error {
+    width:300px;
+    color:red;
+}
+
+/*nodes overview zone */
+.indicator_dropdown {
+    margin-bottom:5px;
+}
+
+.indicator_dropdown label {
+    float:left;
+    width:120px;
+}
+
+#nodes_charts {
 	display:none;
-    height:500px;
-    width:100%;
+    position:relative;
+    bottom:50px;
+    left: 290px;
+    width:70%;
 }
 
-#single_node_overview{
-   	height:800px;
-	width:1600px;  
+#ncb_button {
+	position:absolute;
+	top:-25px;
+	left:45px;
 }
 
-.jqplot-yaxis jqplot-yaxis-label{
-    bottom: -10px;
+.jqplot-yaxis {
+    margin-right: 15px;
 }
 
 /*CSS fix for the Time Picker addon */

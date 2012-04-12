@@ -318,36 +318,47 @@ var url = window.location.href;
 var path = url.replace(/^[^\/]+\/\/[^\/]+/g,'');
 var nodes_view = path + '/nodesview';
 var clusters_view = path  + '/clustersview';
+var nodes_bar_graph;
+var cluster_timed_graph;
 
-function showCombinationGraph(curobj,combi_id,start,stop){
-	if(combi_id == 'default'){return}
+//function triggered on cluster_combination selection
+function showCombinationGraph(curobj,combi_id,label,start,stop) {
+	if (combi_id == 'default'){return}
 	loading_start();
 	var params = {id:combi_id,start:start,stop:stop};
-	document.getElementById('timedCombinationView').innerHTML='';
-	 $.getJSON(clusters_view, params, function(data) {
-		if (data.error){ alert (data.error); }
-		else{
-			document.getElementById('timedCombinationView').style.display='block';
-			timedGraph(data.first_histovalues, data.min, data.max);
+	document.getElementById('clusterCombinationView').innerHTML='';
+	$.getJSON(clusters_view, params, function(data) {
+		if (data.error) { alert (data.error); }
+		else {
+			var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
+			var div_id = 'cluster_combination_graph';
+			var div = '<div id=\"'+div_id+'\"></div>';
+			document.getElementById('clusterCombinationView').style.display='block';
+			$("#clusterCombinationView").append(div);
+			timedGraph(data.first_histovalues, data.min, data.max, label, div_id);
+			$("#clusterCombinationView").append(button);
 		}
         loading_stop();
     });
 }
 
-function showMetricGraph(curobj,metric_oid,metric_unit){
-	if(metric_oid == 'default'){return}
+//function triggered on nodemetrics combination selection
+function showNodemetricCombinationGraph(curobj,metric_id) {
+	if (metric_id == 'default') { return }
 	loading_start();
-	var params = {oid:metric_oid,unit:metric_unit};
+	var params = {id:metric_id};
 	document.getElementById('nodes_charts').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
-		alert('toto');
-		if (data.error){ alert (data.error); }
-		else{
+        if (data.error){ alert (data.error); }
+		else {
 			document.getElementById('nodes_charts').style.display='block';
-			var max_nodes_per_graph = 100;
+            var min = data.values[0];
+            var max = data.values[(data.values.length-1)];
+            // alert('min: '+min+ ' max: '+max); 
+			var max_nodes_per_graph = 50;
 			var graph_number = Math.round((data.nodelist.length/max_nodes_per_graph)+0.5);
 			var nodes_per_graph = data.nodelist.length/graph_number;
-			for (var i = 0; i<graph_number; i++){
+			for (var i = 0; i<graph_number; i++) {
 				var div_id = 'nodechart_'+i;
 				var div = '<div id=\"'+div_id+'\"></div>';
 				//create the graph div container
@@ -358,51 +369,74 @@ function showMetricGraph(curobj,metric_oid,metric_unit){
 				var sliced_values = data.values.slice(indexOffset,toElementNumber);
 				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
 				//we generate the graph
-				barGraph(sliced_values, sliced_nodelist, data.unit, div_id);
+				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, metric_id);
 			}
+			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
+			$("#nodes_charts").append(button);
 		}
         loading_stop();
     });
 }
 
-function barGraph(values, nodelist, unit, div_id){
+
+//Jqplot bar graph
+function barGraph(values, nodelist, unit, div_id, min, max, title) {
 	$.jqplot.config.enablePlugins = true;
-    plot1 = $.jqplot(div_id, [values], {
-	title:'Indicator Distributed Graph (in '+unit+' )',
+    nodes_bar_graph = $.jqplot(div_id, [values], {
+	title: title+' (in '+unit+' )',
         animate: !$.jqplot.use_excanvas,
         seriesDefaults:{
             renderer:$.jqplot.BarRenderer,
-            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 5 },
-            pointLabels: { show: true }
+            rendererOptions:{ varyBarColor : true, shadowOffset: 0, barWidth: 30 },
+            pointLabels: { show: true },
+			trendline: {
+				show: false, 
+            },
         },
         axes: {
             xaxis: {
                 renderer: $.jqplot.CategoryAxisRenderer,
-                showGridline: false,
                 ticks: nodelist,
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
-                    angle: -60,
+                    showMark: false,
+                    showGridline: false,
+                    angle: -40,
                 }
-            }
+            },
+            yaxis:{
+                min:0,
+                max:max,
+            },
         },
         seriesColors: ["#D4D4D4" ,"#999999"],
-        highlighter: { show: false }
-    });
- 
-    // $('#nodechart').bind('jqplotDataClick',
+        highlighter: { 
+            show: true,
+            showMarker:false,
+        }
+    }); 
+    // $('#nodechart').bind('jqplotDataHighlight',
         // function (ev, seriesIndex, pointIndex, data) {
             // $('#info1').html('series: '+seriesIndex+', point: '+pointIndex+', data: '+data);
         // }
     // );
 }
- 
- function timedGraph(first_graph_line, min, max){
+
+ //Jqplot basic curve graph
+ function timedGraph(first_graph_line, min, max, label, div_id) {
 	$.jqplot.config.enablePlugins = true;
-    alert ('data for selected combination: '+first_graph_line);
-	// var line1=[['03-30-2012 16:10',1], ['03-30-2012 16:13',3], ['03-30-2012 16:22',5], ['03-30-2012 16:23',7], ['03-30-2012 16:27',8]];
-	var plot1 = $.jqplot('timedCombinationView', [first_graph_line], {
-        title:'Combination Historical Graph',
+    // var first_graph_line=[['03-14-2012 16:23', 0], ['03-14-2012 16:17', 0], ['03-14-2012 16:12', 0],['03-14-2012 16:15',null], ['03-14-2012 16:19', 0], ['03-14-2012 16:26', null]];
+    // alert ('min: '+min+' max: '+max);
+    // alert ('data for selected combination: '+first_graph_line);
+    cluster_timed_graph = $.jqplot(div_id, [first_graph_line], {
+        title:label,
+        seriesDefaults: {
+            breakOnNull:true,
+            trendline: {
+				color : '#555555',
+				show  : $('#trendlineinput').attr('checked') ? true : false, 
+            }
+        },
         axes:{
             xaxis:{
                 renderer:$.jqplot.DateAxisRenderer,
@@ -411,48 +445,45 @@ function barGraph(values, nodelist, unit, div_id){
                 },
                 tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
-                  angle: -60,
-                  formatString: '%y-%m-%d %H:%M'
+                    mark: 'inside',
+                    markSize: 10,
+                    showGridline: false,
+                    angle: -60,
+                    formatString: '%m-%d-%Y %H:%M'
                 },
-        min:min,
-        max:max,
-		// min: '03-30-2012 16:00',
-		// max: '03-30-2012 16:30'
-            }      
+                min:min,
+                max:max,
+            },
+            yaxis:{
+                tickOptions: {
+                    showMark: false,
+                },
+            },
         },
-        series:[{lineWidth:4, markerOptions:{style:'square'}}]
+        highlighter: {
+            show: true,
+            // formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %f</p>',
+        }
+        
     });
 }
 
-// function testBar(){
-//var ticks = ['plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet','plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere', 'plusdetroiscaractere','n24', 'n25', 'n17', 'n18', 'n19', 'n20', 'n21', 'n22', 'n23', 'n24', 'n25', 'n17', 'n18', 'n19', 'pouet', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'tortue', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'DOC', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'GOD', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'POMME', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'TOMATE', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU', 'DOUDOU' ];
-	//var s1 = [ 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 1800, 3600, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500,2300, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3500, 3600, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 6000,6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 9000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000, 12000];	
-	// $.jqplot.config.enablePlugins = true;
-	// plot1 = $.jqplot('testchart', [s1], {
-	// title:'Indicator Distributed Graph',
-        // animate: !$.jqplot.use_excanvas,
-        // seriesDefaults:{
-            // renderer:$.jqplot.BarRenderer,
-            // rendererOptions:{ varyBarColor : true },
-            // pointLabels: { show: true }
-        // },
-        // axes: {
-            // xaxis: {
-                // renderer: $.jqplot.CategoryAxisRenderer,
-                // ticks: ticks,
-                // tickRenderer: $.jqplot.CanvasAxisTickRenderer,
-                // tickOptions: {
-                    // angle: -80,
-                // }
-            // }
-        // },
-        // seriesColors: ["#D4D4D4" ,"#999999"],
-        // highlighter: { show: false }
-    // });
-    
-    // $('#testchart').bind('jqplotDataClick', 
-    // function (ev, seriesIndex, pointIndex, data) {
-        // $('#info1').html('series: '+seriesIndex+', point: '+pointIndex+', data: '+data);
-    // }
-    // );
-// }
+function toggleTrendLine() {
+    if (cluster_timed_graph) {
+        cluster_timed_graph.series[0].trendline.show = ! cluster_timed_graph.series[0].trendline.show;
+        cluster_timed_graph.replot();
+    }
+}
+
+// TODO: make one generic refresh functions for every case.
+
+//replot cluster combination timed graph. 
+function c_replot(){
+	var combination_dropdown_list = document.getElementById('combination_list');
+	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
+}
+//replot  node combination bar graph
+function nc_replot(){
+	var ncombination_dropdown_list = document.getElementById('indicator_list');
+	showMetricGraph(this,ncombination_dropdown_list.options[ncombination_dropdown_list.selectedIndex].id,ncombination_dropdown_list.options[ncombination_dropdown_list.selectedIndex].value)	
+}

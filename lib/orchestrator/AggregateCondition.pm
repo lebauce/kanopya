@@ -28,6 +28,10 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    aggregate_condition_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
     aggregate_condition_service_provider_id =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -60,6 +64,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub new {
+    my $class = shift;
+    my %args = @_;
+    my $self = $class->SUPER::new(%args);
+    
+    if(!defined $args{aggregate_condition_label} || $args{aggregate_condition_label} eq ''){
+        $self->setAttr(name=>'aggregate_condition_label', value => $self->toString());
+        $self->save();
+    }
+    return $self;
+}
 
 =head2 toString
 
@@ -85,25 +100,31 @@ sub eval{
 
     my $agg_combination = AggregateCombination->get('id' => $aggregate_combination_id);
     my $value = $agg_combination->computeLastValue(); 
-    
-    my $evalString = $value.$comparator.$threshold;
-    
-    
-    if(eval $evalString){        
-        print $evalString."=> true\n";
-        $log->info($evalString."=> true");        
-        $self->setAttr(name => 'last_eval', value => 1);
-        $self->save();
-        return 1;
+    if(defined $value){
+        my $evalString = $value.$comparator.$threshold;
+        if(eval $evalString){        
+            #print $evalString."=> true\n";
+            $log->info($evalString."=> true");        
+            $self->setAttr(name => 'last_eval', value => 1);
+            $self->save();
+            return 1;
+        }else{
+            #print $evalString."=> false\n";
+            $log->info($evalString."=> false");        
+            $self->setAttr(name => 'last_eval', value => 0);
+            $self->save();
+            return 0;
+        }
     }else{
-        print $evalString."=> false\n";
-        $log->info($evalString."=> false");        
-        $self->setAttr(name => 'last_eval', value => 0);
+        $log->warn("No data received from DB for $aggregate_combination_id");
+        $self->setAttr(name => 'last_eval', value => undef);
         $self->save();
-        return 0;
+        return undef;
     }
-    
 }
 
-
+sub getCombination{
+    my ($self) = @_;
+    return AggregateCombination->get('id' => $self->getAttr(name => 'aggregate_combination_id'));
+}
 1;

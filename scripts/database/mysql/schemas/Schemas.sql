@@ -1170,6 +1170,7 @@ CREATE TABLE `graph` (
 
 CREATE TABLE `clustermetric` (
   `clustermetric_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `clustermetric_label` char(255),
   `clustermetric_service_provider_id` int(8) unsigned NOT NULL,
   `clustermetric_indicator_id` int(8) unsigned NOT NULL,
   `clustermetric_statistics_function_name` char(32) NOT NULL,
@@ -1190,6 +1191,7 @@ CREATE TABLE `clustermetric` (
 
 CREATE TABLE `aggregate_combination` (
   `aggregate_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `aggregate_combination_label` char(255),
   `aggregate_combination_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_combination_formula` char(32) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
@@ -1206,13 +1208,14 @@ CREATE TABLE `aggregate_combination` (
 
 CREATE TABLE `aggregate_rule` (
   `aggregate_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-  `aggregate_rule_label` char(32),
+  `aggregate_rule_label` char(255),
   `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(32) NOT NULL ,
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `aggregate_rule_state` char(32) NOT NULL ,
-  `aggregate_rule_action_id` int(8) unsigned NOT NULL,
+  `aggregate_rule_action_id` int(8) unsigned,
+  `aggregate_rule_description` TEXT,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`aggregate_rule_service_provider_id`),
   FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -1227,6 +1230,7 @@ CREATE TABLE `aggregate_rule` (
 
 CREATE TABLE `aggregate_condition` (
   `aggregate_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `aggregate_condition_label` char(255),
   `aggregate_condition_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_combination_id` int(8) unsigned NOT NULL,
   `comparator` char(32) NOT NULL,
@@ -1251,10 +1255,14 @@ CREATE TABLE `aggregate_condition` (
 
 CREATE TABLE `nodemetric_combination` (
   `nodemetric_combination_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nodemetric_combination_label` char(255),
+  `nodemetric_combination_service_provider_id`  int(8) unsigned NOT NULL,
   `nodemetric_combination_formula` char(32) NOT NULL,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`nodemetric_combination_service_provider_id`),
+  FOREIGN KEY (`nodemetric_combination_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1264,6 +1272,8 @@ CREATE TABLE `nodemetric_combination` (
 
 CREATE TABLE `nodemetric_condition` (
   `nodemetric_condition_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `nodemetric_condition_label` char(255),
+  `nodemetric_condition_service_provider_id`  int(8) unsigned NOT NULL,
   `nodemetric_condition_combination_id` int(8) unsigned NOT NULL,
   `nodemetric_condition_comparator` char(32) NOT NULL,
   `nodemetric_condition_threshold` double NOT NULL,
@@ -1282,22 +1292,104 @@ CREATE TABLE `nodemetric_condition` (
 
 CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `nodemetric_rule_label` char(32),
+  `nodemetric_rule_label` char(255),
   `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(32) NOT NULL ,
   `nodemetric_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
   `nodemetric_rule_state` char(32) NOT NULL ,
-  `nodemetric_rule_action_id` int(8) unsigned NOT NULL,
+  `nodemetric_rule_action_id` int(8) unsigned NULL DEFAULT NULL,
+  `nodemetric_rule_description` TEXT,
   `class_type_id` int(8) unsigned NOT NULL,
   KEY (`class_type_id`),
   FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`nodemetric_rule_service_provider_id`),
-  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
+--
+-- Table structure for table `action_type`
+-- 
 
+CREATE TABLE `action_type` (
+  `action_type_id`    int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_type_name` char(64) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`action_type_id`),
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `action`
+-- 
+
+CREATE TABLE `action` (
+  `action_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_service_provider_id` int(8) unsigned NOT NULL,
+  `action_name` char(64) NOT NULL,
+  `action_action_type_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  PRIMARY KEY (`action_id`),
+  KEY (`action_service_provider_id`),
+  FOREIGN KEY (`action_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`action_action_type_id`),
+  FOREIGN KEY (`action_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `action_type_parameter`
+-- 
+
+CREATE TABLE `action_type_parameter` (
+  `action_type_parameter_id`    int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_type_parameter_action_type_id`  int(8) unsigned NOT NULL,
+  `action_type_parameter_name`  char(64) NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  PRIMARY KEY (`action_type_parameter_id`),
+  KEY (`action_type_parameter_action_type_id`),
+  FOREIGN KEY (`action_type_parameter_action_type_id`) REFERENCES `action_type` (`action_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `action_parameter`
+-- 
+
+CREATE TABLE `action_parameter` (
+  `action_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_parameter_name` char(64) NOT NULL,
+  `action_parameter_value` char(255),
+  `action_parameter_action_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  PRIMARY KEY (`action_parameter_id`),
+  KEY (`action_parameter_action_id`),
+  FOREIGN KEY (`action_parameter_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `action_triggered`
+-- 
+
+CREATE TABLE `action_triggered` (
+  `action_triggered_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `action_triggered_hostname` char(255),
+  `action_triggered_timestamp` char(255) NOT NULL,
+  `action_triggered_action_id` int(8) unsigned NOT NULL,
+  `class_type_id` int(8) unsigned NOT NULL,
+  KEY (`class_type_id`),
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  PRIMARY KEY (`action_triggered_id`),
+  KEY (`action_triggered_action_id`),
+  FOREIGN KEY (`action_triggered_action_id`) REFERENCES `action` (`action_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `verified_noderule`
@@ -1306,11 +1398,12 @@ CREATE TABLE `nodemetric_rule` (
 CREATE TABLE `verified_noderule` (
   `verified_noderule_externalnode_id` int(8) unsigned NOT NULL,
   `verified_noderule_nodemetric_rule_id` int(8) unsigned NOT NULL,
+  `verified_noderule_state` char(8) NOT NULL,
   PRIMARY KEY (`verified_noderule_externalnode_id`,`verified_noderule_nodemetric_rule_id`),
   KEY (`verified_noderule_nodemetric_rule_id`),
-  FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`verified_noderule_externalnode_id`),
-  FOREIGN KEY (`verified_noderule_externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`verified_noderule_externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1387,6 +1480,7 @@ CREATE TABLE `active_directory` (
   `ad_user` char(255),
   `ad_pwd` char(32),
   `ad_nodes_base_dn` text(512),
+  `ad_usessl` int(1) DEFAULT 1,
   PRIMARY KEY (`ad_id`),
   FOREIGN KEY (`ad_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

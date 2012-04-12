@@ -81,7 +81,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
     "aggregate_rule_label",
-  { data_type => "char", is_nullable => 1, size => 32 },
+  { data_type => "char", is_nullable => 1, size => 255 },
   "aggregate_rule_service_provider_id",
   {
     data_type => "integer",
@@ -98,7 +98,9 @@ __PACKAGE__->add_columns(
   "aggregate_rule_state",
   { data_type => "char", is_nullable => 0, size => 32 },
   "aggregate_rule_action_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "aggregate_rule_description",
+  { data_type => "text", is_nullable => 0 },
   "class_type_id",
   {
     data_type => "integer",

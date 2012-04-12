@@ -20,6 +20,7 @@ use base 'BaseDB';
 use Clustermetric;
 use TimeData::RRDTimeData;
 use Kanopya::Exceptions;
+use List::Util qw {reduce};
 use List::MoreUtils qw {any} ;
 # logger
 use Log::Log4perl "get_logger";
@@ -30,6 +31,10 @@ use constant ATTR_DEF => {
                                  is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 0},
+    aggregate_combination_label     =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
     aggregate_combination_service_provider_id => {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
@@ -51,6 +56,10 @@ sub new {
     
     _verify($formula);
     my $self = $class->SUPER::new(%args);
+    if(!defined $args{aggregate_combination_label} || $args{aggregate_combination_label} eq ''){
+        $self->setAttr(name=>'aggregate_combination_label', value => $self->toString());
+        $self->save();
+    }
     return $self;
 }
 
@@ -96,7 +105,8 @@ sub toString {
             $element = Clustermetric->get('id'=>substr($element,2))->toString();
         }
     }
-    return "@array";
+    
+    return List::Util::reduce {$a.$b} @array;
 }
 
 sub computeValues{
@@ -127,10 +137,13 @@ sub computeLastValue{
         {
             #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
             $element = Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
+            if(not defined $element){
+                return undef;
+            }
         }
      }
      
-    my $res = -1;
+    my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
     
@@ -168,10 +181,13 @@ sub compute{
         if( $element =~ m/id\d+/)
         {
             $element = $args{substr($element,2)};
+            if (!defined $element){
+                return undef;
+            }
         }
      }
      
-    my $res = -1;
+    my $res = undef;
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula

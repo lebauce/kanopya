@@ -41,6 +41,24 @@ __PACKAGE__->set_primary_key("service_provider_id");
 
 =head1 RELATIONS
 
+=head2 actions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Action>
+
+=cut
+
+__PACKAGE__->has_many(
+  "actions",
+  "AdministratorDB::Schema::Result::Action",
+  {
+    "foreign.action_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
 =head2 aggregate_combinations
 
 Type: has_many
@@ -152,6 +170,24 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::NodemetricRule",
   {
     "foreign.nodemetric_rule_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->has_many(
+  "nodemetric_conditions",
+  "AdministratorDB::Schema::Result::NodemetricCondition",
+  {
+    "foreign.nodemetric_condition_service_provider_id" => "self.service_provider_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->has_many(
+  "nodemetric_combinations",
+  "AdministratorDB::Schema::Result::NodemetricCombination",
+  {
+    "foreign.nodemetric_combination_service_provider_id" => "self.service_provider_id",
   },
   { cascade_copy => 0, cascade_delete => 0 },
 );

@@ -20,6 +20,7 @@ use base 'BaseDB';
 use AggregateCondition;
 use Data::Dumper;
 use Switch;
+use List::Util qw {reduce};
 use List::MoreUtils qw {any} ;
 
 # logger
@@ -56,7 +57,11 @@ use constant ATTR_DEF => {
                                  is_extended    => 0,
                                  is_editable    => 1},
     aggregate_rule_action_id =>  {pattern       => '^.*$',
-                                 is_mandatory   => 1,
+                                 is_mandatory   => 0,
+                                 is_extended    => 0,
+                                 is_editable    => 1},
+    aggregate_rule_description =>  {pattern       => '^.*$',
+                                 is_mandatory   => 0,
                                  is_extended    => 0,
                                  is_editable    => 1},
 };
@@ -72,7 +77,22 @@ sub new {
     
     _verify($formula);
     my $self = $class->SUPER::new(%args);
+
+    if((!defined $args{aggregate_rule_label}) || $args{aggregate_rule_label} eq ''){
+        $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
+        $self->save();
+    }
     return $self;
+}
+
+sub setLabel{
+    my ($self,%args) = @_;
+    if((!defined $args{label}) || $args{label} eq ''){
+        $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
+    }else{
+        $self->setAttr(name=>'aggregate_rule_label', value => $args{label});
+    }
+    $self->save();
 }
 
 sub _verify {
@@ -105,7 +125,8 @@ sub toString(){
             $element = AggregateCondition->get('id'=>substr($element,2))->toString();
         }
      }
-     return "@array";
+     #return "@array";
+     return List::Util::reduce {$a.$b} @array;
 }
 
 
@@ -123,37 +144,49 @@ sub eval {
         if( $element =~ m/id(\d+)/)
         {
             $element = AggregateCondition->get('id'=>substr($element,2))->eval();
+            if( !defined $element) {
+                return undef;
+            }
         }
      }
-     
+    
+    
+    
     my $res = -1;
     my $arrayString = '$res = '."@array"; 
     
     #Evaluate the logic formula
     eval $arrayString;
-    my $store = ($res)?1:0;
+    
+    if (defined $res){
+        my $store = ($res)?1:0;    
+        $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
+        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
+        $self->save();
+        return $store;
+    } else {
+        $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
+        $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
+        $self->save();
+        return undef;
+    }
 
-    #print "Evaluated Rule : $arrayString => $store ($res)\n";
-    #$log->info("Evaluated Rule : $arrayString => $store ($res)");
-     
-    $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
-    $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
-    $self->save();
-    return $res;
+    
 }
 
 
 sub enable(){
     my $self = shift;
     $self->setAttr(name => 'aggregate_rule_state', value => 'enabled');
-    $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    #$self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    $self->setAttr(name => 'aggregate_rule_last_eval', value => undef);
     $self->save();
 }
 
 sub disable(){
     my $self = shift;
     $self->setAttr(name => 'aggregate_rule_state', value => 'disabled');
-    $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    #$self->setAttr(name => 'aggregate_rule_timestamp', value => time());
     $self->save();
 }
 
@@ -171,7 +204,7 @@ sub disableTemporarily(){
 
 sub isEnabled(){
     my $self = shift;
-    $self->updateState();
+    #$self->updateState();
     return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled'); 
 }
 
@@ -198,7 +231,7 @@ sub getRules() {
             my @rep;
             foreach my $rule (@rules){
                 #update state and return $rule only if state is corresponding
-                $rule->updateState();
+                #$rule->updateState();
                 
                 if($rule->getAttr(name=>'aggregate_rule_state') eq $state){
                     push @rep, $rule;
@@ -253,12 +286,10 @@ sub checkFormula {
     
     my $formula = (\%args)->{formula};
     
-    
     my @array = split(/(id\d+)/,$formula);;
 
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if( $element =~ m/id\d+/){
             if (!(AggregateCondition->search(hash => {'aggregate_condition_id'=>substr($element,2)}))){
                 return {
                     value     => '0',
@@ -281,6 +312,38 @@ sub setAttr {
     my $self = $class->SUPER::setAttr(%args);
 };
 
+sub triggerAction{
+    my ($self,%args) = @_;
 
+    General::checkParams(args => \%args, required => ['trigger_rule_id']);
+    
+    my $trigger_rule_id = $args{trigger_rule_id};
+    
+    my $action_id = $self->getAttr(name => 'aggregate_rule_action_id');
+    #IF the rule has a configured action to trigger
+    if($action_id){
+        eval{
+            #get the action
+            my $action = Action->get('id' => $action_id);
+            #trigger it
+            my $action_triggered = ActionTriggered->new(
+                action_triggered_action_id => $action_id,
+                action_triggered_hostname  => $trigger_rule_id, 
+            );
+            my $path = $action_triggered->trigger();
+            
+            my $cluster_id = $self->getAttr('name' => 'aggregate_rule_service_provider_id');
+            my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get('id' => $cluster_id);
+            #disable corresponding rule
+            
+            $self->disable();
+            
+            print 'Action '.$action_id." triggered by rule ".$trigger_rule_id."\n file $path created";
+        1;
+        } or do {
+            print 'Error triggering action '.$action_id."\n $@";
+        }
+    }
+}
 1;
 
