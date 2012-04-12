@@ -261,6 +261,8 @@ get '/extclusters/:extclusterid/monitoring' => sub {
 	_getIndicators(\%template_config);		
 	#we retrieve the combination list for this external cluster
 	_getCombinations(\%template_config);
+    #we retrieve the combination list for this external cluster
+    _getNodeMetricCombinations(\%template_config);
 
 	# $log->error('get combinations: '.Dumper\%template_config);
 
@@ -418,6 +420,93 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview' => sub {
         
 		# to_json {values => \@test1, nodelist => \@test2, unit => "unit"};
 	}
+};
+
+=head2 ajax '/extclusters/:extclusterid/monitoring/nodesview_2'
+
+    Desc: Get the values corresponding to the selected nodes combination for the currently monitored cluster, 
+    return to the monitor.js an array containing the nodes names for the combination, and another one containing the values for the nodes, plus the label of the node combination unit
+
+=cut  
+
+ajax '/extclusters/:extclusterid/monitoring/nodesview_2' => sub {
+    my $cluster_id    = params->{extclusterid} || 0;   
+    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
+    my $nodemetric_combination_ids = params->{'id'};
+    
+    my $nodes_metrics; 
+    my $error;
+    my %nodeEvals;
+    
+    # we retrieve the nodemetric values
+    eval {
+        my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_ids);        
+        my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
+        
+        $nodes_metrics = $extcluster->getNodesMetrics(
+            indicators => \@indicator_ids,
+            time_span => 3600,
+            shortname => 1
+        );
+        
+        while(my ($host_name,$monitored_values_for_one_node) = each %$nodes_metrics){
+            my $nodeEval;
+            $nodeEval = $nodemetric_combination->computeValueFromMonitoredValues(
+                monitored_values_for_one_node => $monitored_values_for_one_node
+            );
+            $nodeEvals{$host_name} = $nodeEval;
+        }
+        # $log->info('get nodes metric result: '. Dumper \%$nodes_metrics);
+    };
+    # error catching
+    if ($@) {
+        $error="$@";
+        $log->error($error);
+        return to_json {error => $error};
+    # we catch the fact that there is no value available for the selected nodemetric
+    } elsif (scalar(keys %nodeEvals) == 0) {
+        $error='Error : No indicator values returned by monitored nodes';
+        $log->error($error);
+        return to_json {error => $error};   
+    } else {
+        #we create an array containing the values, to be sorted
+        my @nodes_values_to_sort;
+        my @nodes_values_undef;
+        while (my ($node, $metric) = each %nodeEvals) {
+            if (defined $metric) {
+            push @nodes_values_to_sort, { node => $node, value => $metric };
+            } else {
+                push @nodes_values_undef, $node;
+            }
+        }
+        if (scalar(@nodes_values_to_sort) == 0){
+            $error="no value could be retrieve for this metric";
+            $log->error($error);
+            return to_json {error => $error};   
+        }   
+        #we now sort this array
+        my @sorted_nodes_values =  sort { $a->{value} <=> $b->{value} } @nodes_values_to_sort;
+        # we split the array into 2 distincts one, that will be returned to the monitor.js
+        my @nodes = map { $_->{node} } @sorted_nodes_values;
+        my @values = map { $_->{value} } @sorted_nodes_values;  
+        #we add nodes without values at the end of nodes list
+        @nodes = (@nodes, @nodes_values_undef);
+        
+        return to_json {values => \@values, nodelist => \@nodes};  
+        # my (@test1, @test2);
+        
+        # for (my $i = 1; $i<51; $i++){
+            # my $nde = 'node'.$i;
+            # push @test2, $nde;
+        # }
+        # for (my $y = 1; $y<1500; $y+=37){
+            # push @test1, $y;
+        # }
+        # $log->error('node list: '.Dumper @test2);
+        # $log->error('values: '.Dumper @test1);
+        
+        # to_json {values => \@test1, nodelist => \@test2, unit => "unit"};
+    }
 };
 
 get '/clustermetrics' => sub {
@@ -2248,6 +2337,38 @@ sub _getIndicators(){
 	}
 }
 
+sub _getNodeMetricCombinations(){
+    my $template_config = shift;
+    my $cluster_id = $template_config->{'cluster_id'};
+    my %errors;
+    my @nodemetric_combinations;
+    my @nodemetric_combination_insts;
+    eval {
+        @nodemetric_combination_insts = NodemetricCombination->searchLight(
+        hash=>{'nodemetric_combination_service_provider_id' => $cluster_id});
+    };
+    if ($@) {
+        my $error = "$@";
+        $log->error($error);
+        $template_config->{'errors'}{'nodemetric_combinations'} = $error;
+        return %$template_config;
+    }elsif (scalar(@nodemetric_combination_insts) == 0){
+        my $error = 'No nodemetric combination could be found for this external cluster';
+        $log->error($error);
+        $template_config->{'errors'}{'nodemetric_combinations'} = $error;
+        return %$template_config;
+    }else{
+         for my $nodemetric_combination_inst (@nodemetric_combination_insts){
+            my %combination;
+            $combination{'id'}    = $nodemetric_combination_inst->getAttr(name => 'nodemetric_combination_id');
+            $combination{'label'} = $nodemetric_combination_inst->getAttr(name => 'nodemetric_combination_label');
+            push @nodemetric_combinations, \%combination;
+        }
+        $template_config->{'nodemetric_combinations'} = \@nodemetric_combinations;
+        # $log->info('combination list for external cluster '.$template_config->{'cluster_id'}.' '.Dumper($template_config->{'combinations'}));
+        return %$template_config;
+    }
+}
 sub _getCombinations(){
 	my $template_config = shift;
 	my $cluster_id = $template_config->{'cluster_id'};

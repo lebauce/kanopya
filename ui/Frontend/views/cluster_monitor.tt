@@ -57,6 +57,19 @@
 			<% END %>
 		</select>
 	<% END %>
+<br/><br/>
+	<% IF errors.nodemetric_combinations %>
+		<p class="error"> ERROR: <% errors.nodemetric_combinations %> </p><br />
+		<p>no nodemetric_combinations could be retrieved for this external cluster</p>
+	<% ELSE %>
+		<label for="indicator_list" class="list_label">Available nodemetric combinations for external cluster </label>
+		<select id="indicator_list" onchange="showNodemetricCombinationGraph(this,this.options[this.selectedIndex].id);" >
+			<option selected="selected" id="default">Select an indicator</option>
+			<% FOREACH nodemetric_combination IN nodemetric_combinations %>
+				<option id ="<% nodemetric_combination.id %>"><% nodemetric_combination.label %></option>
+			<% END %>
+		</select>
+	<% END %>
 	</div>
 	<br />
 	<div id="nodes_charts"></div><br />

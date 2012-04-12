@@ -100,6 +100,12 @@ sub getDependantIndicatorIds{
 }
 
 
+
+=head2 computeValueFromMonitoredValues
+
+    desc: Compute Node Combination Value with the formula from given Indicator values 
+
+=cut
 sub computeValueFromMonitoredValues {
     my $self = shift;
     my %args = @_;
