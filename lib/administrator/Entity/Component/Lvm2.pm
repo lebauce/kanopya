@@ -111,13 +111,24 @@ sub lvCreate{
                 "lvm2_lv_filesystem is $args{lvm2_lv_filesystem}, " .
                 "lvm2_vg_id is $args{lvm2_vg_id}");
 
-    my $lv_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{lvm2_vg_id} })->lvm2_lvs;
-    my $res = $lv_rs->create(\%args);
+    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{lvm2_vg_id} });
+    my $res   = $vg_rs->lvm2_lvs->create(\%args);
 
     $log->info("lvm2 logical volume $args{lvm2_lv_name} saved to database");
 
     $res->discard_changes;
-    return $res->get_column("lvm2_lv_id");
+    my $container = Entity::Container::LvmContainer->new(
+                        disk_manager_id      => $self->getAttr(name => 'entity_id'),
+                        container_name       => $res->get_column('lvm2_lv_name'),
+                        container_size       => $res->get_column('lvm2_lv_size'),
+                        container_filesystem => $res->get_column('lvm2_lv_filesystem'),
+                        container_freespace  => $res->get_column('lvm2_lv_freespace'),
+                        container_device     => '/dev/' . $vg_rs->get_column('lvm2_vg_name') .
+                                                '/' . $res->get_column('lvm2_lv_name'),
+                        lv_id                => $res->get_column("lvm2_lv_id"),
+                    );
+
+    return $container;
 }
 
 sub vgSizeUpdate{
@@ -283,82 +294,6 @@ sub getFreeSpace {
 
     return $vg_rs->get_column('lvm2_vg_freespace');
 }
-
-=head2 getContainer
-
-    Desc : Implement getContainer from DiskManager interface.
-           This function return the container hash that match
-           identifiers given in paramters.
-    args : lv_id
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    my $main  = $self->getMainVg;
-    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $main->{vgid} });
-    my $lv_rs = $vg_rs->lvm2_lvs->single({ lvm2_lv_id => $args{lv_id} });
-
-    my $lvm_container = Entity::Container::LvmContainer->find(
-                            hash => { lv_id => $lv_rs->get_column('lvm2_lv_id') }
-                        );
-    my $container = {
-        container_id         => $lvm_container->{_dbix}->get_column('lvm_container_id'),
-        container_name       => $lv_rs->get_column('lvm2_lv_name'),
-        container_size       => $lv_rs->get_column('lvm2_lv_size'),
-        container_filesystem => $lv_rs->get_column('lvm2_lv_filesystem'),
-        container_freespace  => $lv_rs->get_column('lvm2_lv_freespace'),
-        container_device     => '/dev/' . $vg_rs->get_column('lvm2_vg_name') .
-                                '/' . $lv_rs->get_column('lvm2_lv_name'),
-    };
-
-    return $container;
-}
-
-=head2 addContainer
-
-    Desc : Implement addContainer from DiskManager interface.
-           This function create a new LvmContainer into database.
-    args : lv_id
-
-=cut
-
-sub addContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "lv_id" ]);
-
-    my $container = Entity::Container::LvmContainer->new(
-                        disk_manager_id     => $self->getAttr(name => 'lvm2_id'),
-                        lv_id               => $args{lv_id},
-                    );
-
-    my $container_id = $container->getAttr(name => 'container_id');
-    $log->info("Lvm container <$container_id> saved to database");
-
-    return $container;
-}
-
-=head2 delContainer
-
-    Desc : Implement delContainer from DiskManager interface.
-           This function delete a LvmContainer from database.
-    args : container
-
-=cut
-
-sub delContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $args{container}->delete();
-}
-
 
 =head1 DIAGNOSTICS
 

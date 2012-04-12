@@ -18,8 +18,6 @@ use base "Entity::Container";
 use strict;
 use warnings;
 
-use Entity::Component::Lvm2;
-
 use constant ATTR_DEF => {
     lv_id => {
         pattern => '^[0-9\.]*$',
@@ -29,25 +27,5 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getContainer
-
-    desc: Return a hash that match container virtual attributes with
-          Lvm2 specific container attributes values.
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    # Cannot use getAttr here, to avoid infinite recursion as
-    # getContainer method is called from getAttr parent class.
-    my $lvm2 = Entity::Component::Lvm2->get(
-                   id => $self->{_dbix}->parent->get_column('disk_manager_id')
-               );
-
-    return $lvm2->getContainer(lv_id => $self->{_dbix}->get_column('lv_id'));
-}
 
 1;

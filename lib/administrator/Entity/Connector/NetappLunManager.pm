@@ -18,6 +18,7 @@ package Entity::Connector::NetappLunManager;
 use base 'Entity::Connector::NetappManager';
 
 use warnings;
+use strict;
 
 use Entity::HostManager;
 use Entity::Container::NetappLun;
@@ -25,9 +26,8 @@ use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::IscsiContainerAccess;
 
 use Data::Dumper;
-
-
 use Log::Log4perl "get_logger";
+
 my $log = get_logger("administrator");
 
 use constant ATTR_DEF => {
@@ -119,80 +119,6 @@ sub removeDisk {
     );
 }
 
-=head2 getContainer
-
-    Desc : Implement getContainer from DiskManager interface.
-           This function return the container hash that match
-           identifiers given in paramters.
-    args : lv_id
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "lun" ]);
-
-    my $lun = $args{lun};
-
-    my $container = {
-        container_name       => $lun->getAttr(name => 'name'),
-        container_size       => $lun->{_dbix}->get_column('size'),
-        container_filesystem => $lun->{_dbix}->get_column('filesystem'),
-        container_device     => $lun->{_dbix}->get_column('name'),
-        container_freespace  => $self->getFreeSpace(),
-    };
-
-    return $container;
-}
-
-=head2 addContainer
-
-    Desc : Implement addContainer from DiskManager interface.
-           This function create a new NetAppContainer into database.
-    args : lv_id
-
-=cut
-
-sub addContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "volume_id", "name",
-                                                       "size", "filesystem" ]);
-
-    my $container = Entity::Container::NetappLun->new(
-                        disk_manager_id     => $self->getAttr(name => 'connector_id'),
-                        name                => $args{name},
-                        size                => $args{size},
-                        filesystem          => $args{filesystem},
-                        volume_id           => $args{volume_id}
-                    );
-
-    my $container_id = $container->getAttr(name => 'container_id');
-    $log->info("LUN container <$container_id> saved to database");
-
-    return $container;
-}
-
-=head2 delContainer
-
-    Desc : Implement delContainer from DiskManager interface.
-           This function delete a LvmContainer from database.
-    args : container
-
-=cut
-
-sub delContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $args{container}->delete();
-}
-
 =head2 createExport
 
     Desc : Implement createExport from ExportManager interface.
@@ -246,80 +172,6 @@ sub removeExport {
     );
 }
 
-=head2 getContainerAccess
-
-    Desc : Implement getContainerAccess from ExportManager interface.
-           This function return the container access hash that match
-           identifiers given in paramters.
-    args : lun_id, target_id
-
-=cut
-
-sub getContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    my $lun = Entity::Container::NetappLun->get(
-                  id => $args{container_access}->getAttr(name => "container_id")
-              );
-
-    my $container = {
-        container_access_export => $self->iscsi_node_get_name->node_name,
-        container_access_ip     => $self->{netapp}->getMasterNodeIp(),
-        container_access_port   => 3260,
-        container_lun_name      => "lun-" . $args{container_access}->getAttr(name => "number")
-    };
-
-    return $container;
-}
-
-=head2 addContainerAccess
-
-    Desc : Implement addContainerAccess from ExportManager interface.
-           This function create a new IscsiContainerAccess into database.
-    args : container, target_id, lun_id
-
-=cut
-
-sub addContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container", "name", "typeio", "iomode" ]);
-
-    my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
-                     container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getAttr(name => "connector_id"),
-                     target_name       => $args{name},
-                     typeio            => $args{typeio},
-                     iomode            => $args{iomode}
-                 );
-
-    my $access_id = $access->getAttr(name => 'container_access_id');
-    $log->info("NetApp iSCSI container access <$access_id> saved to database");
-
-    return $access;
-}
-
-=head2 delContainerAccess
-
-    Desc : Implement delContainerAccess from ExportManager interface.
-           This function delete a IscsiContainerAccess from database.
-    args : container_access
-
-=cut
-
-sub delContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $args{container_access}->delete();
-}
-
 =head2 synchronize 
 
     Desc: synchronize netapp lun information with kanopya database
@@ -348,13 +200,15 @@ sub synchronize {
         my $existingluns = Entity::Container::NetappLun->search(hash => { name => $lun_name });
         my $existinglun = scalar($existingluns);
         if ($existinglun eq "0") {
-            my $container = $self->addContainer(
-                                name                  => $lun_name,
-                                size                  => $lun->size_used,
-                                filesystem            => "ext3",
-                                volume_id             => $lun_volume_id,
-                                disk_manager_id       => $self->getAttr(name => 'connector_id'),
-                            );
+            Entity::Container::NetappLun->new(
+                disk_manager_id      => $self->getAttr(name => 'entity_id'),
+                container_name       => $lun_name,
+                container_size       => $lun->size_used,
+                container_filesystem => "ext3",
+                container_freespace  => 0,
+                container_device     => $lun_name,
+                volume_id            => $lun_volume_id,
+            );
         }
     }
 }

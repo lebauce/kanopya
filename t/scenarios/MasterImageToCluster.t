@@ -6,6 +6,7 @@ use Kanopya::Exceptions;
 use Operation;
 use EContext::Local;
 use EFactory;
+use Entity::Component::Fileimagemanager0;
 
 use Data::Dumper;
 use Log::Log4perl qw(:easy);
@@ -36,6 +37,7 @@ use_ok ('EContext');
 use_ok ('Entity::Masterimage');
 use_ok ('Entity::Systemimage');
 use_ok ('Entity::ServiceProvider::Inside::Cluster');
+use_ok ('Entity::Component::Fileimagemanager0');
 
 # Test the existance of the master image test file.
 if(! -e $master_archive) {
@@ -129,6 +131,12 @@ eval {
                            );
     } 'Get KPC cluster, disk manager ans export manager instances';
 
+    lives_ok {
+        my $comp = Entity::Component::Fileimagemanager0->new();
+        $comp->insertDefaultConfiguration();
+        $kpc_cluster->addComponent(component => $comp);
+    } 'Install requiered components on the kpc cluster';
+
     my $econtext;
     lives_ok {
         $econtext = EContext::Local->new(local => '127.0.0.1');
@@ -172,7 +180,6 @@ eval {
 
         lives_ok {
             Entity::Systemimage->create(
-                storage_provider_id => $storage_provider_id,
                 disk_manager_id     => $disk_manager_id,
                 systemimage_name    => $systemimage_name,
                 systemimage_desc    => 'System image for test scenario MasterImageToCluster.',
@@ -200,7 +207,6 @@ eval {
                 priority => 200,
                 type     => 'CloneSystemimage',
                 params   => {
-                    storage_provider_id => $storage_provider_id,
                     disk_manager_id     => $disk_manager_id,
                     systemimage_id      => $systemimage_id,
                     systemimage_name    => $clone_name,

@@ -94,11 +94,7 @@ sub prepare {
        $self->{_objs}->{systemimage} = Entity::Systemimage->get(id => $params->{systemimage_id});
     };
     if($@) {
-        my $err = $@;
-        $errmsg = "EOperation::EActivateSystemimage->prepare : systemimage_id " .
-                  "$params->{systemimage_id} does not find\n" . $err;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+        throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
     $log->debug("get systemimage self->{_objs}->{systemimage} of type : " .
                 ref($self->{_objs}->{systemimage}));
@@ -122,7 +118,8 @@ sub execute{
     my $self = shift;
     $self->SUPER::execute();
 
-    $self->{_objs}->{systemimage}->remove(econtext => $self->{executor}->{econtext});
+    my $esystemimage = EFactory::newEEntity(data => $self->{_objs}->{systemimage});
+    $esystemimage->remove(econtext => $self->{executor}->{econtext});
 }
 
 =head1 DIAGNOSTICS

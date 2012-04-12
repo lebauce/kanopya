@@ -18,6 +18,7 @@ package Entity::Connector::NetappVolumeManager;
 use base "Entity::Connector::NetappManager";
 
 use warnings;
+use strict;
 
 use Entity::HostManager;
 use Entity::Container::NetappVolume;
@@ -110,74 +111,6 @@ sub removeDisk {
     );
 }
 
-=head2 getContainer
-
-    Desc : Implement getContainer from DiskManager interface.
-           This function return the container hash that match
-           identifiers given in paramters.
-    args : lv_id
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    my $vol = Entity::Container::NetappVolume->find(hash => \%args);
-
-    my $container = {
-        container_id         => $vol->{_dbix}->get_column('volume_id'),
-        container_name       => $vol->{_dbix}->get_column('name'),
-        container_size       => $vol->{_dbix}->get_column('size'),
-        container_freespace  => $self->getFreeSpace()
-    };
-
-    return $container;
-}
-
-=head2 addContainer
-
-    Desc : Implement addContainer from DiskManager interface.
-           This function create a new NetAppContainer into database.
-    args : lv_id
-
-=cut
-
-sub addContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "name", "size" ]);
-
-    my $container = Entity::Container::NetappVolume->new(
-                        disk_manager_id     => $self->getAttr(name => 'connector_id'),
-                        name                => $args{name},
-                        size                => $args{size}
-                    );
-
-    my $container_id = $container->getAttr(name => 'container_id');
-    $log->info("Volume container <$container_id> saved to database");
-
-    return $container;
-}
-
-=head2 delContainer
-
-    Desc : Implement delContainer from DiskManager interface.
-           This function delete a LvmContainer from database.
-    args : container
-
-=cut
-
-sub delContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $args{container}->delete();
-}
-
 =head2 createExport
 
     Desc : Implement createExport from ExportManager interface.
@@ -229,77 +162,6 @@ sub removeExport {
     );
 }
 
-=head2 getContainerAccess
-
-    Desc : Implement getContainerAccess from ExportManager interface.
-           This function return the container access hash that match
-           identifiers given in paramters.
-    args : lun_id, target_id
-
-=cut
-
-sub getContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    my $netapp = Entity::ServiceProvider->get(id => $self->getAttr(name => "service_provider_id"));
-
-    my $container = {
-        container_access_export  => $netapp->getMasterNodeIp() . ':/vol/' .
-                                   $args{container_access}->getAttr(name => "export_path"),
-        container_access_ip      => $netapp->getMasterNodeIp(),
-        container_access_port    => 3260,
-        container_access_options => 'rw,no_root_squash,sync'
-    };
-
-    return $container;
-}
-
-=head2 addContainerAccess
-
-    Desc : Implement addContainerAccess from ExportManager interface.
-           This function create a new NfsContainerAccess into database.
-    args : container, target_id, lun_id
-
-=cut
-
-sub addContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container", "export_name" ]);
-
-    my $access = Entity::ContainerAccess::NfsContainerAccess->new(
-                     container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getAttr(name => "connector_id"),
-                     export_path       => $args{export_name}
-                 );
-
-    my $access_id = $access->getAttr(name => 'container_access_id');
-    $log->info("NetApp iSCSI container access <$access_id> saved to database");
-
-    return $access;
-}
-
-=head2 delContainerAccess
-
-    Desc : Implement delContainerAccess from ExportManager interface.
-           This function delete a IscsiContainerAccess from database.
-    args : container_access
-
-=cut
-
-sub delContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $args{container_access}->delete();
-}
-
 =head2 synchronize 
 
     Desc: synchronize netapp volumes information with kanopya database
@@ -311,20 +173,31 @@ sub synchronize {
     my %args = @_;
     # Get list of volumes exists on NetApp :
     my @volumesList = $self->volumes;
+    my $manager_ip  = $self->getServiceProvider->getMasterNodeIp;
+
     foreach my $vol (@volumesList) {
         # Get list of volumes exists on Kanopya :
         my $existing_volumes = Entity::Container::NetappVolume->search(hash => { name => $vol->name });
         my $existing_volume = scalar($existing_volumes);
         if ($existing_volume eq "0") {
-            my $volume = $self->addContainer(
-                             name    => $vol->name,
-                             size    => $vol->size_used,
-                         );
+            my $container = Entity::Container::NetappVolume->new(
+                                disk_manager_id      => $self->getAttr(name => 'entity_id'),
+                                container_name       => $vol->name,
+                                container_size       => $vol->size_used,
+                                container_filesystem => "ext3",
+                                container_freespace  => 0,
+                                container_device     => $vol->name,
+                                aggregate_id         => "aggr0"
+                            );
 
-            $self->addContainerAccess(
-                container   => $volume,
-                export_name => $vol->name
-            );
+            my $container_access = Entity::ContainerAccess::NfsContainerAccess->new(
+                               container_id            => $container->getAttr(name => 'container_id'),
+                               export_manager_id       => $self->getAttr(name => 'entity_id'),
+                               container_access_export => $manager_ip . ':/vol/' . $vol->name,
+                               container_access_ip     => $manager_ip,
+                               container_access_port   => 2049,
+                               options                 => 'rw,sync,no_root_squash',
+                           );
         }
     }
 }

@@ -19,36 +19,14 @@ use strict;
 use warnings;
 
 use constant ATTR_DEF => {
-    name => {
-        pattern      => '^\w*$',
+    aggregate_id => {
+        pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0
-    },
-    size =>  {
-        pattern => '^[0-9]*$',
-        is_mandatory => 1,
-        is_extended => 0,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 getContainer
-
-    desc :
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    my $manager = Entity::Connector::NetappVolumeManager->get(
-        id => $self->{_dbix}->parent->get_column('disk_manager_id')
-    );
-
-    return $manager->getContainer(volume_id => $self->{_dbix}->get_column('volume_id'));
-}
 
 1;

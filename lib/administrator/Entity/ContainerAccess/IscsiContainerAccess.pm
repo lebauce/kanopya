@@ -19,60 +19,23 @@ use strict;
 use warnings;
 
 use constant ATTR_DEF => {
-    target_name => {
-        pattern => '^.*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
     iomode => {
-        pattern => '^.*$',
+        pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended => 0
+        is_extended  => 0
     },
     typeio => {
-        pattern => '^.*$',
+        pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended => 0
+        is_extended  => 0
     },
-    number => {
-        pattern => '^[0-9\.]*$',
+    lun_name => {
+        pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended => 0
+        is_extended  => 0
     }
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getContainerAccess
-
-    desc: Return a hash that match container virtual attributes with
-          Iscsitarget1 specific container attributes values.
-
-=cut
-
-sub getContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    # Cannot use getAttr here, to avoid infinite recursion as
-    # getContainer method is called from getAttr parent class.
-    my $export_manager = Entity->get(
-                             id => $self->getAttr(name => "export_manager_id"),
-                         );
-
-    return $export_manager->getContainerAccess(container_access => $self);
-}
-
-=head2 getExportManager
-
-    desc: Return the component/conector that manages this container access.
-
-=cut
-
-sub getExportManager {
-    my $self = shift;
-
-    return Entity->get(id => $self->getAttr(name => 'export_manager_id'));
-}
 
 1;

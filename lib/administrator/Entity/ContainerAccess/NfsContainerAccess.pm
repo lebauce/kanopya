@@ -18,10 +18,10 @@ use base "Entity::ContainerAccess";
 use strict;
 use warnings;
 
-use Entity::Component::Nfsd3;
+use Entity::NfsContainerAccessClient;
 
 use constant ATTR_DEF => {
-    export_path => {
+    options => {
         pattern => '^.*$',
         is_mandatory => 1,
         is_extended => 0
@@ -29,26 +29,6 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getContainerAccess
-
-    desc: Return a hash that match container virtual attributes with
-          Nfsd3 specific container attributes values.
-
-=cut
-
-sub getContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    # Cannot use getAttr here, to avoid infinite recursion as
-    # getContainer method is called from getAttr parent class.
-    my $export_manager = Entity::Component->get(
-                             id => $self->{_dbix}->parent->get_column('export_manager_id')
-                         );
-
-    return $export_manager->getContainerAccess(container_access => $self);
-}
 
 sub getClients {
     my $self = shift;

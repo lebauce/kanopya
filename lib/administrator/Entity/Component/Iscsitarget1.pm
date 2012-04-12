@@ -230,7 +230,7 @@ sub getTemplateData {
 
     for my $export (@exports) {
         my $target;
-        my $target_name = $export->getAttr(name => "target_name");
+        my $target_name = $export->getAttr(name => "container_access_export");
         my $luns;
 
         if (defined $targets->{$target_name}) {
@@ -259,21 +259,6 @@ sub getTemplateData {
     return { targets => \@values };
 }
 
-sub getReadOnlyParameter {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'readonly' ]);
-    
-    my $value;
-    if ($args{readonly}) { $value = 'ro'; }
-    else                 { $value = 'wb'; }
-    return { 
-        name  => 'iomode',
-        value => $value,
-    }
-}
-
 =head2 getNetConf
 B<Class>   : Public
 B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port
@@ -294,6 +279,21 @@ sub getNetConf {
     args : export_name, device, typeio, iomode
 
 =cut
+
+sub getReadOnlyParameter {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'readonly' ]);
+
+    my $value;
+    if ($args{readonly}) { $value = 'ro'; }
+    else                 { $value = 'wb'; }
+    return {
+        name  => 'iomode',
+        value => $value,
+    }
+}
 
 sub createExport {
     my $self = shift;
@@ -338,76 +338,6 @@ sub removeExport {
             container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
         },
     );
-}
-
-=head2 getContainerAcess
-
-    Desc : Implement getContainerAccess from ExportManager interface.
-           This function return the container access hash that match
-           identifiers given in paramters.
-    args : lun_id, target_id
-
-=cut
-
-sub getContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    my $container = {
-        container_access_export => $args{container_access}->getAttr(name => 'target_name'),
-        container_access_ip     => $self->getServiceProvider->getMasterNodeIp(),
-        container_access_port   => 3260,
-        container_lun_name      => "lun-0"
-    };
-
-    return $container;
-}
-
-=head2 addContainerAccess
-
-    Desc : Implement addContainerAccess from ExportManager interface.
-           This function create a new IscsiContainerAccess into database.
-    args : container, target_id, lun_id
-
-=cut
-
-sub addContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container", "target_name", "typeio", "iomode" ]);
-
-    my $access = Entity::ContainerAccess::IscsiContainerAccess->new(
-                     container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getAttr(name => 'component_id'),
-                     target_name       => $args{target_name},
-                     typeio            => $args{typeio},
-                     iomode            => $args{iomode},
-                 );
-
-    my $access_id = $access->getAttr(name => 'container_access_id');
-    $log->info("Iscsitarget1 container access <$access_id> saved to database");
-
-    return $access;
-}
-
-=head2 delContainerAccess
-
-    Desc : Implement delContainerAccess from ExportManager interface.
-           This function delete a IscsiContainerAccess from database.
-    args : container_access
-
-=cut
-
-sub delContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $args{container_access}->delete();
 }
 
 =head1 DIAGNOSTICS

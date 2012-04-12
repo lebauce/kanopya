@@ -107,7 +107,7 @@ sub checkAttrs {
         foreach my $module (keys %$attributes_def) {
             if (exists $attributes_def->{$module}->{$attr}){
                 my $value = $attrs->{$attr};
-                if($value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/) {
+                if(not defined $value or $value !~ m/($attributes_def->{$module}->{$attr}->{pattern})/) {
                     $errmsg = "$class"."->checkAttrs detect a wrong value ($value) for param : $attr on class $module";
                     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
                 }

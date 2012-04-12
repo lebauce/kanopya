@@ -29,70 +29,44 @@ use base "Entity";
 
 use Kanopya::Exceptions;
 
+use Entity;
 use Entity::ContainerAccess;
 
 use constant ATTR_DEF => {
     disk_manager_id => {
-        pattern => '^[0-9\.]*$',
+        pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
-        is_extended => 0
+        is_extended  => 0
     },
     container_name => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
     },
     container_size => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
     },
     container_device => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
     },
     container_filesystem => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
     },
     container_freespace => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 getAttr
-
-    desc: Overide basedb mathod to have virtuals attributes,
-          Mandatory attributes can be found in the current table,
-          others are provided by sub classes by matching virtual
-          attributes names to specifics ones.
-
-=cut
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'name' ]);
-
-    if (!defined $self->{recursion}) {
-        $self->{recursion} = 1;
-        $value = $self->getContainer->{$args{name}};
-        delete $self->{recursion};
-    }
-
-    if (!defined $value) {
-        $value = $self->SUPER::getAttr(name => $args{name});
-    }
-
-    return $value;
-}
 
 =head2 toString
 
@@ -159,12 +133,6 @@ sub getMountPoint {
     my $self = shift;
 
     return "/mnt/" . $self->getAttr(name => 'container_id');
-}
-
-sub getContainer {
-    my $self = shift;
-
-    return {};
 }
 
 1;

@@ -26,44 +26,8 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended => 0
     },
-    file_name => {
-        pattern => '^.*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
-    file_size => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
-    file_filesystem => {
-        pattern => '^.*$',
-        is_mandatory => 1,
-        is_extended => 0
-    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getContainer
-
-    desc: Return a hash that match container virtual attributes with
-          Fileimagemanager specific container attributes values.
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    my $container = {
-        container_name       => $self->{_dbix}->get_column('file_name'),
-        container_size       => $self->{_dbix}->get_column('file_size'),
-        container_filesystem => $self->{_dbix}->get_column('file_filesystem'),
-        # Freespace on a container has no sens for instance.
-        container_freespace  => 0,
-        container_device     => $self->{_dbix}->get_column('file_name') . '.img',
-    };
-}
 
 1;

@@ -20,6 +20,8 @@ use strict;
 
 use General;
 use Kanopya::Exceptions;
+use Entity::Container::NetappVolume;
+use Entity::ContainerAccess::NfsContainerAccess;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -56,7 +58,15 @@ sub createDisk {
     delete $args{noformat};
     delete $args{econtext};
 
-    my $container = $self->_getEntity()->addContainer(%args);
+    my $container = Entity::Container::NetappVolume->new(
+                        disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
+                        container_name       => $args{name},
+                        container_size       => $args{size},
+                        container_filesystem => $args{filesystem},
+                        container_freespace  => 0,
+                        container_device     => $args{name},
+                        aggregate_id         => "aggr0"
+                    );
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -90,7 +100,7 @@ sub removeDisk {
     $self->_getEntity()->volume_destroy(name  => $container_name,
                                         force => "true");
 
-    $self->_getEntity()->delContainer(container => $args{container});
+    $args{container}->delete();
 
     #TODO: insert erollback ?
 }
@@ -108,9 +118,18 @@ sub createExport {
     General::checkParams(args     => \%args,
                          required => [ 'container', 'export_name', 'econtext' ]);
 
-    my $container_access = $self->_getEntity()->addContainerAccess(
-                               container   => $args{container},
-                               export_name => $args{export_name}
+    my $client_options = General::checkParam(args    => \%args,
+                                             name    => 'client_options',
+                                             default => 'rw,sync,no_root_squash');
+
+    my $manager_ip = $self->_getEntity->getServiceProvider->getMasterNodeIp;
+    my $container_access = Entity::ContainerAccess::NfsContainerAccess->new(
+                               container_id            => $args{container}->getAttr(name => 'container_id'),
+                               export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                               container_access_export => $manager_ip . ':/vol/' . $args{export_name},
+                               container_access_ip     => $manager_ip,
+                               container_access_port   => 2049,
+                               options                 => $client_options,
                            );
 
     $log->info("Added NFS export for volume " . $args{container}->getAttr(name => "container_name"));
@@ -139,10 +158,6 @@ sub createExport {
 sub removeExport {
     my $self = shift;
     my %args = @_;
-    my $log_content = "";
-    my $container_access = $args{container_access};
-    my $container = $container_access->getContainer();
-    my $export_name = $container_access->getAttr(name => "container_access_id");
 
     General::checkParams(args     => \%args,
                          required => [ 'container_access', 'econtext' ]);
@@ -153,7 +168,12 @@ sub removeExport {
               );
     }
 
-    $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
+    my $log_content = "";
+    my $container_access = $args{container_access};
+    my $container = $container_access->getContainer();
+    my $export_name = $container_access->getAttr(name => "container_access_id");
+
+    $args{container_access}->delete();
 
     $log_content = "Remove Export with export name <" . $export_name . ">";
     if(exists $args{erollback} and defined $args{erollback}) {

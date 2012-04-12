@@ -21,6 +21,7 @@ use strict;
 use General;
 use EContext::Local;
 use Kanopya::Exceptions;
+use Entity::Container::NetappLun;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -64,7 +65,15 @@ sub createDisk {
     delete $args{econtext};
 
     # Insert the container into the database
-    my $container = $self->_getEntity()->addContainer(%args);
+    my $container = Entity::Container::NetappLun->new(
+                        disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
+                        container_name       => $args{name},
+                        container_size       => $args{size},
+                        container_filesystem => $args{filesystem},
+                        container_freespace  => 0,
+                        container_device     => $args{name},
+                        volume_id            => $args{volume_id}
+                    );
 
     if (! defined $noformat) {
         # Connect to the iSCSI target and format it locally
@@ -124,7 +133,7 @@ sub removeDisk {
                    "/" . $container->getAttr(name => "name");
     $self->_getEntity()->lun_destroy(path => $lun_path);
 
-    $self->_getEntity()->delContainer(container => $args{container});
+    $args{container}->delete();
 
     #TODO: insert erollback ?
 }
@@ -177,13 +186,6 @@ sub createExport {
     my $typeio = General::checkParam(args => \%args, name => 'typeio', default => 'fileio');
     my $iomode = General::checkParam(args => \%args, name => 'iomode', default => 'wb');
 
-    my $container_access = $self->_getEntity()->addContainerAccess(
-                               container   => $args{container},
-                               name        => $args{export_name},
-                               typeio      => $typeio,
-                               iomode      => $iomode,
-                           );
-
     my $api = $self->_getEntity();
     my $volume = Entity::Container::NetappVolume->get(id => $args{container}->getAttr(name => "volume_id"));
     my $lun_path = '/vol/' . $volume->getAttr(name => "name") .
@@ -226,9 +228,16 @@ sub createExport {
         }
     }
 
-    $container_access->setAttr(name  => "number",
-                               value => $lun_id);
-    $container_access->save();
+    my $container_access = Entity::ContainerAccess::IscsiContainerAccess->new(
+                               container_id            => $args{container}->getAttr(name => 'container_id'),
+                               export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                               container_access_export => $args{export_name},
+                               container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
+                               container_access_port   => 3260,
+                               typeio                  => $typeio,
+                               iomode                  => $iomode,
+                               lun_name                => "lun-" . $lun_id
+                           );
 
     $log->info("Added iSCSI export for lun " .
                $args{container}->getAttr(name => "container_name"));
@@ -257,10 +266,6 @@ sub createExport {
 sub removeExport {
     my $self = shift;
     my %args = @_;
-    my $log_content = "";
-    my $container_access = $args{container_access};
-    my $container = $container_access->getContainer();
-    my $export_name = $container_access->getAttr(name => "container_access_id");
 
     General::checkParams(args     => \%args,
                          required => [ 'container_access', 'econtext' ]);
@@ -271,7 +276,12 @@ sub removeExport {
               );
     }
 
-    $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
+    my $log_content      = "";
+    my $container_access = $args{container_access};
+    my $container        = $container_access->getContainer();
+    my $export_name      = $container_access->getAttr(name => "container_access_id");
+
+    $args{container_access}->delete();
 
     $log_content = "Remove export with export name <" . $export_name . ">";
     if(exists $args{erollback} and defined $args{erollback}) {

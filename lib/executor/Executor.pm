@@ -169,7 +169,8 @@ sub oneRun {
                 eval {
                     $adm->{db}->txn_begin;
                     $op->cancel();
-                    $adm->{db}->txn_commit;};
+                    $adm->{db}->txn_commit;
+                };
                 if ($@){
                     my $err_rollback = $@;
                     $log->error("Error during operation cancel :\n$err_rollback");

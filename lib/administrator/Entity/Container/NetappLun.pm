@@ -20,45 +20,12 @@ use warnings;
 
 use constant ATTR_DEF => {
     volume_id => {
-        pattern => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended => 0,
-    },
-    name => {
-        pattern      => '^.*$',
+        pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0
-    },
-    filesystem => {
-        pattern      => '^\w*$',
-        is_mandatory => 1,
-        is_extended  => 0,
-    },
-    size => {
-        pattern => '^[0-9]*$',
-        is_mandatory => 1,
-        is_extended => 0,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getContainer
-
-    desc :
-
-=cut
-
-sub getContainer {
-    my $self = shift;
-    my %args = @_;
-
-    my $manager = Entity::Connector::NetappLunManager->get(
-        id => $self->{_dbix}->parent->get_column('disk_manager_id')
-    );
-
-    return $manager->getContainer(lun => $self);
-}
 
 1;

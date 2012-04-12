@@ -17,12 +17,17 @@ use base "EExportManager";
 use base "EEntity::EComponent";
 
 use strict;
-use Log::Log4perl "get_logger";
+use warnings;
+
 use General;
-use String::Random;
 use Template;
 use EFactory;
+use Entity::ContainerAccess::NfsContainerAccess;
 use EEntity::EContainerAccess::ELocalContainerAccess;
+
+use String::Random;
+
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -64,9 +69,16 @@ sub createExport {
     $elocal_access->mount(mountpoint => $mountpoint,
                           econtext   => $args{econtext});
 
-    my $container_access = $self->_getEntity()->addContainerAccess(
-                               container   => $args{container},
-                               export_path => $mountpoint
+    my $manager_ip = $self->_getEntity->getServiceProvider->getMasterNodeIp;
+    my $mount_dir  = $self->_getEntity->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
+
+    my $container_access = Entity::ContainerAccess::NfsContainerAccess->new(
+                               container_id            => $args{container}->getAttr(name => 'container_id'),
+                               export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                               container_access_export => $manager_ip . ':' . $mount_dir,
+                               container_access_ip     => $manager_ip,
+                               container_access_port   => 2049,
+                               options                 =>  $client_options,
                            );
 
     my $client = $self->addExportClient(export         => $container_access,
@@ -124,7 +136,7 @@ sub removeExport {
         last;
     }
 
-    $self->_getEntity->delContainerAccess(container_access => $args{container_access});
+    $args{container_access}->delete();
 }
 
 sub reload {

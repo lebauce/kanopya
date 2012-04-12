@@ -52,13 +52,11 @@ sub createDisk {
                                     name    => 'vg_id',
                                     default => $self->_getEntity->getMainVg->{vgid});
 
-    my $lv_id = $self->lvCreate(lvm2_vg_id         => $vg_id,
-                                lvm2_lv_name       => $args{name},
-                                lvm2_lv_filesystem => $args{filesystem},
-                                lvm2_lv_size       => $args{size},
-                                econtext           => $args{econtext});
-
-    my $container = $self->_getEntity()->addContainer(lv_id => $lv_id);
+    my $container = $self->lvCreate(lvm2_vg_id         => $vg_id,
+                                    lvm2_lv_name       => $args{name},
+                                    lvm2_lv_filesystem => $args{filesystem},
+                                    lvm2_lv_size       => $args{size},
+                                    econtext           => $args{econtext});
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -92,7 +90,7 @@ sub removeDisk{
                     lvm2_vg_name => $vg->{vgname},
                     econtext     => $args{econtext});
 
-    $self->_getEntity()->delContainer(container => $args{container});
+    $args{container}->delete();
 
     #TODO: insert erollback ?
 }

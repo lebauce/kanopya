@@ -55,7 +55,7 @@ sub connect {
     my $target = $self->_getEntity->getAttr(name => 'container_access_export');
     my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
     my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
-    my $lun    = $self->_getEntity->getAttr(name => 'container_lun_name');
+    my $lun    = $self->_getEntity->getAttr(name => 'lun_name');
 
     $log->info("Creating open iscsi node <$target> from <$ip:$port>.");
 

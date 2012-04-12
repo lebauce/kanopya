@@ -29,6 +29,7 @@ use base "Entity";
 
 use Kanopya::Exceptions;
 
+use Entity;
 use Entity::Container;
 use Entity::ServiceProvider;
 
@@ -37,72 +38,43 @@ my $log = get_logger("executor");
 
 use constant ATTR_DEF => {
     container_id => {
-        pattern => '^[0-9\.]*$',
+        pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
-        is_extended => 0
+        is_extended  => 0
     },
     export_manager_id => {
-        pattern => '^[0-9\.]*$',
+        pattern      => '^[0-9\.]*$',
         is_mandatory => 1,
-        is_extended => 0
-    },
-    device_connected => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
-    },
-    partition_connected => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        is_extended  => 0
     },
     container_access_export => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
     },
     container_access_ip => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
     },
     container_access_port => {
-        pattern => '^.*$',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    device_connected => {
+        pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended => 0
+        is_extended  => 0
+    },
+    partition_connected => {
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getAttr
-
-    desc: Overide basedb mathod to have virtuals attributes,
-          Mandatory attributes can be found in the current table,
-          others are provided by sub classes by matching virtual
-          attributes names to specifics ones.
-
-=cut
-
-sub getAttr {
-    my $self = shift;
-    my %args = @_;
-    my $value;
-
-    General::checkParams(args => \%args, required => [ 'name' ]);
-
-    if (!defined $self->{recursion}) {
-        $self->{recursion} = 1;
-        $value = $self->getContainerAccess->{$args{name}};
-        delete $self->{recursion};
-    }
-
-    if (!defined $value) {
-        $value = $self->SUPER::getAttr(name => $args{name});
-    }
-
-    return $value;
-}
 
 =head2 toString
 
@@ -160,18 +132,6 @@ sub getExportManager {
     my $self = shift;
 
     return Entity->get(id => $self->getAttr(name => 'export_manager_id'));
-}
-
-=head2 getContainerAccess
-
-    desc: Return the container access as a normalized container.
-
-=cut
-
-sub getContainerAccess {
-    my $self = shift;
-
-    return {};
 }
 
 1;

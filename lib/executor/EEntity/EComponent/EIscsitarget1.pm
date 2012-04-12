@@ -31,12 +31,17 @@ package EEntity::EComponent::EIscsitarget1;
 use base "EExportManager";
 use base "EEntity::EComponent";
 
+use warnings;
 use strict;
-use Date::Simple (':all');
-use Log::Log4perl "get_logger";
+
+use General;
+use Entity::ContainerAccess::IscsiContainerAccess;
+
 use Template;
 use String::Random;
-use General;
+
+use Date::Simple (':all');
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 my $errmsg;
@@ -77,13 +82,15 @@ sub createExport {
                      econtext    => $args{econtext},
                  );
 
-    my $container_access = $self->_getEntity()->addContainerAccess(
-                               container   => $args{container},
-                               target_name => $disk_targetname,
-                               device      => $device,
-                               number      => 0,
-                               typeio      => $typeio,
-                               iomode      => $iomode,
+    my $container_access = Entity::ContainerAccess::IscsiContainerAccess->new(
+		                       container_id            => $args{container}->getAttr(name => 'container_id'),
+		                       export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+		                       container_access_export => $disk_targetname,
+		                       container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
+		                       container_access_port   => 3260,
+		                       typeio                  => $typeio,
+		                       iomode                  => $iomode,
+		                       lun_name                => "lun-0"
                            );
 
     $self->generate(econtext => $args{econtext});
@@ -146,7 +153,7 @@ sub removeExport {
                                      econtext  => $args{econtext});
     }
 
-    $self->_getEntity()->delContainerAccess(container_access => $args{container_access});
+    $args{container_access}->delete();
 
     # Regenerate configuration
     $self->generate(econtext => $args{econtext});

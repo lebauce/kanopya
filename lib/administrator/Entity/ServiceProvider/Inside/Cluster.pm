@@ -467,16 +467,16 @@ sub getComponent{
         $log->debug("Name is $args{name}, version is $args{version}");
 
         $component_row = $components_rs->next;
-
-        $log->debug("Comp name is " . $component_row->get_column('component_name'));
-        $log->debug("Component found with " . ref($component_row));
     };
-    if ($@) {
+    if (not defined $component_row or $@) {
         throw Kanopya::Exception::Internal(
                   error => "Component with name <$args{name}>, version <$args{version}> " .
                            "not installed on this cluster:\n$@"
               );
     }
+
+    $log->debug("Comp name is " . $component_row->get_column('component_name'));
+    $log->debug("Component found with " . ref($component_row));
 
     my $comp_category = $component_row->get_column('component_category');
     my $comp_id       = $component_row->id;

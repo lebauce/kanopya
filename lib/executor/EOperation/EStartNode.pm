@@ -443,7 +443,7 @@ sub _generateBootConf {
             $initiatorname .= '.'.$self->{_objs}->{host}->getAttr(name => 'host_hostname');
             $initiatorname .= ':'.time();
 
-            my $lun_number = $self->{_objs}->{container_access}->getAttr(name => 'container_lun_name')
+            my $lun_number = $self->{_objs}->{container_access}->getAttr(name => 'lun_name')
                              || "lun-0";
 
             # Set initiatorName

@@ -27,7 +27,6 @@ use Data::Dumper;
 use Administrator;
 
 use Entity::Container;
-use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::NfsContainerAccessClient;
 
 my $log = get_logger("administrator");
@@ -186,7 +185,7 @@ sub getTemplateDataExports {
 
     for my $export (@exports) {
         my $clients = [];
-        my $mountpoint = $self->getMountDir(device => $export->getAttr(name => 'export_path'));
+        my $mountpoint = $self->getMountDir(device => $export->getContainer->getAttr(name => 'container_device'));
         my @clients = Entity::NfsContainerAccessClient->search(
                           hash => { nfs_container_access_id => $export->getAttr(name => "nfs_container_access_id") }
                       );
@@ -306,82 +305,6 @@ sub removeExport {
             container_access_id => $args{container_access}->getAttr(name => 'container_id'),
         },
     );
-}
-
-=head2 getContainer
-
-    Desc : Implement getContainerAccess from ExportManager interface.
-           This function return the container access hash that match
-           identifiers given in paramters.
-    args : export_id
-
-=cut
-
-sub getContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    my $export = $args{container_access};
-    my $mountdir = $self->getMountDir(device => $export->getAttr(name => 'export_path'));
-
-    # TODO: do not do this...
-    # my @clients = $export->getClients();
-    # my $options = $clients[0]->getAttr(name => "options");
-
-    my $ip = $self->getServiceProvider->getMasterNodeIp();
-
-    return {
-        container_access_export  => $ip . ':' . $mountdir,
-        container_access_options => "rw,sync,vers=3",
-        container_access_ip      => $ip,
-        container_access_port    => 2049
-    };
-}
-
-=head2 addContainerAccess
-
-    Desc : Implement addContainerAccess from ExportManager interface.
-           This function create a new NfsContainerAccess into database.
-    args : container, export_id
-
-=cut
-
-sub addContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "container" ]);
-
-    my $access = Entity::ContainerAccess::NfsContainerAccess->new(
-                     container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getAttr(name => 'nfsd3_id'),
-                     export_path       => $args{container}->getAttr(name => 'container_device')
-                 );
-
-    my $access_id = $access->getAttr(name => 'container_access_id');
-    $log->info("Nfs container access <$access_id> saved to database");
-
-    return $access;
-}
-
-=head2 delContainerAccess
-
-    Desc : Implement delContainerAccess from ExportManager interface.
-           This function delete a NfsContainerAccess from database.
-    args : container_access
-
-=cut
-
-sub delContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $args{container_access}->delete();
 }
 
 1;

@@ -165,52 +165,6 @@ sub getFreeSpace {
     return $container_access->getContainer->getAttr(name => 'container_freespace');
 }
 
-=head2 addContainer
-
-    Desc : Implement addContainer from DiskManager interface.
-           This function create a new LvmContainer into database.
-    args : lv_id
-
-=cut
-
-sub addContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "container_access_id", "file_name",
-                                       "file_size", "file_filesystem" ]);
-
-    my $container = Entity::Container::FileContainer->new(
-                        disk_manager_id     => $self->getAttr(name => 'fileimagemanager0_id'),
-                        container_access_id => $args{container_access_id},
-                        file_name           => $args{file_name},
-                        file_size           => $args{file_size},
-                        file_filesystem     => $args{file_filesystem},
-                    );
-
-    my $container_id = $container->getAttr(name => 'container_id');
-    $log->info("File container <$container_id> saved to database");
-
-    return $container;
-}
-
-=head2 delContainer
-
-    Desc : Implement delContainer from DiskManager interface.
-           This function delete a FileContainer from database.
-    args : container
-
-=cut
-
-sub delContainer {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    $args{container}->delete();
-}
 
 =head2 createExport
 
@@ -261,32 +215,6 @@ sub removeExport {
             container_access_id => $args{container_access}->getAttr(name => 'container_access_id'),
         },
     );
-}
-
-sub addContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container" ]);
-
-    my $access = Entity::ContainerAccess::FileContainerAccess->new(
-                     container_id      => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id => $self->getAttr(name => 'fileimagemanager0_id'),
-                 );
-
-    my $access_id = $access->getAttr(name => 'container_access_id');
-    $log->info("File container access <$access_id> saved to database");
-
-    return $access;
-}
-
-sub delContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "container_access" ]);
-
-    $args{container_access}->delete();
 }
 
 1;

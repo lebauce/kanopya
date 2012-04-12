@@ -1,4 +1,5 @@
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,17 +14,19 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::EFileimagemanager0;
+use base "EEntity::EComponent";
 use base 'EExportManager';
 use base "EDiskManager";
-use base "EExportManager";
-use base "EEntity::EComponent";
 
 use strict;
+use warnings;
 
 use General;
 use EFactory;
-use Entity::ContainerAccess;
 use Kanopya::Exceptions;
+use Entity::ContainerAccess;
+use Entity::Container::FileContainer;
+use Entity::ContainerAccess::FileContainerAccess;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -51,13 +54,14 @@ sub createDisk {
                       file_filesystem  => $args{filesystem},
                       econtext         => $args{econtext});
 
-    my $container = $self->_getEntity()->addContainer(
-                        container_access_id => $container_access->getAttr(
-                                                   name => 'container_access_id'
-                                               ),
-                        file_name           => $args{name},
-                        file_size           => $args{size},
-                        file_filesystem     => $args{filesystem},
+    my $container = Entity::Container::FileContainer->new(
+                        disk_manager_id      => $self->_getEntity->getAttr(name => 'fileimagemanager0_id'),
+                        container_access_id  => $args{container_access_id},
+                        container_name       => $args{name},
+                        container_size       => $args{size},
+                        container_filesystem => $args{filesystem},
+                        container_freespace  => 0,
+                        container_device     => $args{name} . '.img',
                     );
 
     if (exists $args{erollback} and defined $args{erollback}){
@@ -89,7 +93,7 @@ sub removeDisk{
     $self->fileRemove(container => $args{container},
                       econtext  => $args{econtext});
 
-    $self->_getEntity()->delContainer(container => $args{container});
+    $args{container}->delete();
 
     #TODO: insert erollback ?
 }
@@ -105,8 +109,20 @@ sub createExport {
     # TODO: Check if the given container is provided by the same
     #       storage provider than the nfsd storage provider.
 
-    my $container_access = $self->_getEntity()->addContainerAccess(
-                               container => $args{container}
+    # Container is FileContainer.
+    my $underlying = Entity::ContainerAccess->get(
+                         id => $args{container}->getAttr(name => 'container_access_id')
+                     );
+
+    my $export_name = $underlying->getAttr(name => 'container_access_export') .
+                      '/' . $args{container}->getAttr(name => 'container_device');
+
+    my $container_access = Entity::ContainerAccess::FileContainerAccess->new(
+                               container_id            => $args{container}->getAttr(name => 'container_id'),
+                               export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                               container_access_export => $export_name,
+                               container_access_ip     => $underlying->getAttr(name => 'container_access_ip'),
+                               container_access_port   => $underlying->getAttr(name => 'container_access_port'),
                            );
 
     $log->info("Added NFS Export of device <$args{export_name}>");
@@ -128,7 +144,7 @@ sub removeExport {
               );
     }
 
-    $self->_getEntity->delContainerAccess(container_access => $args{container_access});
+    $args{container_access}->delete();
 }
 
 =head2 fileCreate

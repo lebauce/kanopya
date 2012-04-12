@@ -18,29 +18,8 @@ use base "Entity::ContainerAccess";
 use strict;
 use warnings;
 
-use Entity::Component::Nfsd3;
-
 use constant ATTR_DEF => { };
 
 sub getAttrDef { return ATTR_DEF; }
-
-sub getContainerAccess {
-    my $self = shift;
-    my %args = @_;
-
-    return {};
-}
-
-=head2 getExportManager
-
-    desc: Return the component/conector that manages this container access.
-
-=cut
-
-sub getExportManager {
-    my $self = shift;
-
-    return Entity::Component->get(id => $self->getAttr(name => 'export_manager_id'));
-}
 
 1;
