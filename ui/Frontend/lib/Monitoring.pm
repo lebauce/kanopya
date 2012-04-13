@@ -355,7 +355,7 @@ ajax '/extclusters/:extclusterid/monitoring/nodesview/bargraph' => sub {
     my $cluster_id    = params->{extclusterid} || 0;
     my $nodemetric_combination_id = params->{'id'};
 
-    my $compute_result = _computeNodemetricCombination($cluster_id, $nodemetric_combination_id);
+    my $compute_result = _computeNodemetricCombination(cluster_id => $cluster_id, combination_id => $nodemetric_combination_id);
 
     return to_json {values => $compute_result->{'values'}, nodelist => $compute_result->{'nodes'}};
 };
@@ -2244,7 +2244,10 @@ sub _getCombinations() {
 	}
 }
 
-sub _computeNodemetricCombination ($cluster_id, $nodemetric_combination_id) {
+sub _computeNodemetricCombination () {
+    my %args = @_;
+    my $cluster_id = $args{cluster_id};
+    my $nodemetric_combination_id = $args{combination_id}
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
     my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
     my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
