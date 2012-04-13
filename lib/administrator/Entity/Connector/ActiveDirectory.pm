@@ -87,26 +87,74 @@ sub retrieveNodes {
     my $ldap = $ldap_class->new( $ad_host ) or throw Kanopya::Exception::Internal(error => "LDAP connection error: $@");
     my $mesg = $ldap->bind($ad_user, password => $ad_pwd);
     
-    
     $mesg = $ldap->search(
         base => $ad_nodes_base_dn,
+        scope => 'base',
         filter => "cn=*",
     );
     
     $mesg->code && die $mesg->error;
     
-    my @nodes;
-    for my $entry ($mesg->entries) {
-        if (defined $entry->get_value('dNSHostName')) {
-            push @nodes, {hostname => $entry->get_value('dNSHostName')};
-        }
+    my $computers;
+    my @entries = $mesg->entries;
+    my $entry = shift @entries;
+    #$entry->dump;
+    my $objectCategory = $entry->get_value('objectCategory');
+    if ($objectCategory =~ 'CN=Group,.*') { 
+        # Group
+        $computers = $self->_getComputersFromGroup(group_entry => $entry, ldap => $ldap);
+    } else {
+        # OU or Container
+        $computers = $self->_getComputersFromContainer(cont_entry => $entry, ldap => $ldap);
     }
-    
+
+    my @nodes;
+    foreach my $computer (@$computers) {
+        push @nodes, {hostname => $computer->get_value('dNSHostName')};
+    }
+        
     $mesg = $ldap->unbind;   # take down session
     
     return \@nodes;
 }
 
+sub _getComputersFromGroup {
+    my ($self, %args) = @_;
+
+    my $entry = $args{group_entry};
+    my $ldap = $args{ldap}; 
+
+    my @computers;
+    my @members = $entry->get_value('member');
+    foreach my $member_dn (@members) {
+        my $resp = $ldap->search(
+                base => $member_dn,
+                filter => "objectCategory=Computer",
+        );
+        for my $member ($resp->entries) {
+            push @computers, $member;
+        }
+    }
+    return \@computers;
+}
+
+sub _getComputersFromContainer {
+    my ($self, %args) = @_;
+
+    my $entry = $args{cont_entry};
+    my $ldap = $args{ldap};
+    
+    my @computers;  
+    my $resp = $ldap->search(
+        base => $entry,
+        scope => 'sub',
+        filter => "objectCategory=Computer",
+    );
+    for my $member ($resp->entries) {
+        push @computers, $member;
+    }
+    return \@computers; 
+}
 
 sub checkConf {
     my $self = shift;
