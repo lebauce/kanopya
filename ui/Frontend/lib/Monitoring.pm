@@ -2317,9 +2317,9 @@ sub _computeNodemetricCombination () {
         @nodes = (@nodes, @nodes_values_undef);
         
         my %rep;
-        $rep{'nodes'} = @nodes;
-        $rep{'values'} = @values;
-        return %rep;
+        $rep{'nodes'} = \@nodes;
+        $rep{'values'} = \@values;
+        return \%rep;
     }
 }
 1;
