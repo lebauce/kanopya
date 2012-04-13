@@ -39,6 +39,8 @@ SCOM::Query - get performance counters values from a remote management server
 Retrieve in one request all wanted counters (only one remote connection).
 Output hash is fashionable.
 
+Powershell script execution must be allowed (> set-executionPolicy unrestricted)
+
 =head1 METHODS
 
 =cut
@@ -58,12 +60,20 @@ sub new {
     bless $self, $class;
     
     $self->{_management_server_name} = $args{server_name};
-    #$self->{_set_execution_policy_cmd} = 'set-executionPolicy unrestricted'; ## WARNING to study
-    $self->{_scom_modules} = [
-        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.dll',
-        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.Functions.ps1',
+
+    # Connection to scom shell using import module
+#    $self->{_scom_modules} = [
+#        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.dll',
+#        'C:\Program Files\System Center Operations Manager 2007\Microsoft.EnterpriseManagement.OperationsManager.ClientShell.Functions.ps1',
+#    ];
+#    $self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_management_server_name} . ' -persistConnection: $false -interactive: $false';
+    
+    # Connection to scom shell using pssnapin
+    $self->{_scom_shell_init} = [
+        'Add-PSSnapin Microsoft.EnterpriseManagement.OperationsManager.Client',
+        'New-ManagementGroupConnection -ConnectionString:localhost',
+        'Set-Location \'OperationsManagerMonitoring::\'',
     ];
-    $self->{_scom_shell_cmd} = 'Start-OperationsManagerClientShell -managementServerName: ' . $self->{_management_server_name} . ' -persistConnection: $false -interactive: $false';
     
     $self->{_remote_invocation_options} = $args{use_ssl} ? "-UseSSL" : "";
     
@@ -119,9 +129,9 @@ sub _execCmd {
     my %args = @_;
     
     my @cmd_list = (
-        #$self->{_set_execution_policy_cmd},                                            # allow script execution
-        map({ "import-module '$_' -DisableNameChecking" } @{$self->{_scom_modules}}),   # import modules without verb warning
-        $self->{_scom_shell_cmd},                                                       # connect to scom shell on management server
+        #map({ "import-module '$_' -DisableNameChecking" } @{$self->{_scom_modules}}),   # import modules without verb warning
+        #$self->{_scom_shell_cmd},                                                       # connect to scom shell on management server
+        @{ $self->{_scom_shell_init} },                                                 # connect to scom shell
         $args{cmd},                                                                     # SCOM cmd to execute (double quote must be escaped)
     );
     
