@@ -15,6 +15,7 @@ package Action;
 use strict;
 use warnings;
 use ActionParameter;
+use ActionType;
 use Data::Dumper;
 use base 'BaseDB';
 
@@ -68,29 +69,25 @@ sub setParams {
         );
         $action_parameter->setAttr(name => 'action_parameter_value', value=>$action_value);
         $action_parameter->save();
-	}
-    # if(defined $args{ou_to}){
-        # my $action_parameter = ActionParameter->find(
-            # hash => {
-                # action_parameter_action_id => $self->getAttr('name' => 'action_id'),
-                # action_parameter_name => 'ou_to',
-            # }
-        # );
-        # $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{ou_to});
-        # $action_parameter->save();
-    # }
-
-    # if(defined $args{file_path}){
-        # my $action_parameter = ActionParameter->find(
-            # hash => {
-                # action_parameter_action_id => $self->getAttr('name' => 'action_id'),
-                # action_parameter_name => 'file_path',
-            # }
-        # );
-        # $action_parameter->setAttr(name => 'action_parameter_value', value=>$args{file_path});
-        # $action_parameter->save();
-    # }
-    
+	}    
 };
 
+sub createNewActionType{
+    my (%args) = @_;
+    
+    General::checkParams(args => \%args, required => ['action_type_name','action_type_parameter_names']);
+    
+    my $action_type = ActionType->new(
+        action_type_name             => $args{action_type_name},
+        action_type_parameter_names => $args{action_type_parameter_names},
+    );
+    return $action_type;
+}
+
+sub removeActionType{
+    my (%args) = @_;
+    General::checkParams(args => \%args, required => ['action_type_id']);
+    my $action_type = ActionType->get('id' => $args{action_type_id});
+    $action_type->delete();
+}
 1;
