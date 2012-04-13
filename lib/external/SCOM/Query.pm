@@ -88,35 +88,59 @@ sub getPerformance {
                                                  : ['$pc.MonitoringObjectPath','$pc.ObjectName','$pc.CounterName','$pv.TimeSampled','$pv.SampleValue'];
     my ($line_sep, $item_sep) = ('DATARAW', '###');
     
-    my $cmd = $self->_buildGetPerformanceCmd(
-                counters            => $args{counters},
-                monitoring_object   => $args{monitoring_object}, # optional
-                start_time          => $args{start_time},
-                end_time            => $args{end_time},
-                want_attrs          => $wanted_attrs,
-                line_sep            => $line_sep,
-                item_sep            => $item_sep,
-    );
+    my @monit_object_slice = ($args{monitoring_object });
+    my @res_slice;
+    my %h_res;
 
-    # Execute command
-    my $cmd_res = $self->_execCmd(cmd => $cmd);
+    # We loop over slice to handle command is too long issue
+    # If can't exec a slice we split it in sub-slice
+    # Split only monitoring object list and not counters (TODO)
+    OBJECT_SLICE:
+    foreach my $monit_objects (@monit_object_slice) {
+        my $cmd = $self->_buildGetPerformanceCmd(
+                    counters            => $args{counters},
+                    monitoring_object   => $monit_objects, # optional
+                    start_time          => $args{start_time},
+                    end_time            => $args{end_time},
+                    want_attrs          => $wanted_attrs,
+                    line_sep            => $line_sep,
+                    item_sep            => $item_sep,
+        );
 
-    # remove all \n (end of line and inserted \n due to console output)
-    $cmd_res =~ s/\n//g; 
+        # Execute command
+        my $cmd_res = $self->_execCmd(cmd => $cmd);
+        
+        
+        # remove all \n (end of line and inserted \n due to console output)
+        $cmd_res =~ s/\n//g; 
 
-    # Die if something wrong
-    die $cmd_res if ($cmd_res !~ 'DATASTART');
+        # If can't execute command (too long) we split it
+        if ($cmd_res eq '') {
+            #$log->debug("command too long, we split it");
+            my @objects = @{$monit_objects};
+            my $last_idx = $#objects;
+            my @left  = @objects[0..int($last_idx/2)];
+            my @right = @objects[(int($last_idx/2)+1)..$last_idx];
+            push @monit_object_slice, (\@left, \@right);
+            next OBJECT_SLICE;
+        }
+        
+        # Die if something wrong
+        die $cmd_res if ($cmd_res !~ 'DATASTART');
 
-    # Build resulting data hash from cmd output
-    my $h_res    = $self->_formatToHash( 
-                                input           => $cmd_res,
-                                line_sep        => $line_sep,
-                                item_sep        => $item_sep,
-                                items_per_line  => scalar(@$wanted_attrs),
-                                #index_order    => [0,1,2,3,4],
-    );
-    
-    return $h_res;
+        # Build resulting data hash from cmd output
+        my $h_res_slice    = $self->_formatToHash( 
+                                    input           => $cmd_res,
+                                    line_sep        => $line_sep,
+                                    item_sep        => $item_sep,
+                                    items_per_line  => scalar(@$wanted_attrs),
+                                    #index_order    => [0,1,2,3,4],
+        );
+        
+        %h_res = (%h_res, %$h_res_slice);
+    }
+
+    return \%h_res;
 }
 
 sub getcounters {
