@@ -2247,7 +2247,7 @@ sub _getCombinations() {
 sub _computeNodemetricCombination () {
     my %args = @_;
     my $cluster_id = $args{cluster_id};
-    my $nodemetric_combination_id = $args{combination_id}
+    my $nodemetric_combination_id = $args{combination_id};
     my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(id=>$cluster_id);
     my $nodemetric_combination = NodemetricCombination->get('id' => $nodemetric_combination_id);
     my @indicator_ids = $nodemetric_combination->getDependantIndicatorIds();
