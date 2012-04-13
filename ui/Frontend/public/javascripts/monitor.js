@@ -343,10 +343,10 @@ function showCombinationGraph(curobj,combi_id,label,start,stop) {
 }
 
 //function triggered on nodemetrics combination selection
-function showNodemetricCombinationGraph(curobj,nodemetric_combination_id,nodemetric_combination_indicator_oids) {
+function showNodemetricCombinationGraph(curobj,nodemetric_combination_id) {
 	if (nodemetric_combination_id == 'default') { return }
 	loading_start();
-	var params = {id:nodemetric_combination_id,oids:nodemetric_combination_indicator_oids};
+	var params = {id:nodemetric_combination_id};
 	document.getElementById('nodes_charts').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
         if (data.error){ alert (data.error); }
