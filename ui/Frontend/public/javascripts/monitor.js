@@ -343,10 +343,10 @@ function showCombinationGraph(curobj,combi_id,label,start,stop) {
 }
 
 //function triggered on nodemetrics combination selection
-function showNodemetricCombinationGraph(curobj,metric_id) {
-	if (metric_id == 'default') { return }
+function showNodemetricCombinationGraph(curobj,nodemetric_combination_id,nodemetric_combination_indicator_oids) {
+	if (nodemetric_combination_id == 'default') { return }
 	loading_start();
-	var params = {id:metric_id};
+	var params = {id:nodemetric_combination_id,oids:nodemetric_combination_indicator_oids};
 	document.getElementById('nodes_charts').innerHTML='';
 	$.getJSON(nodes_view, params, function(data) {
         if (data.error){ alert (data.error); }
@@ -369,7 +369,7 @@ function showNodemetricCombinationGraph(curobj,metric_id) {
 				var sliced_values = data.values.slice(indexOffset,toElementNumber);
 				var sliced_nodelist = data.nodelist.slice(indexOffset,toElementNumber);
 				//we generate the graph
-				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, metric_id);
+				barGraph(sliced_values, sliced_nodelist, data.unit, div_id, min, max, nodemetric_combination_id);
 			}
 			var button = '<input type=\"button\" value=\"refresh\" id=\"ncb_button\" onclick=\"nc_replot()\"/>';
 			$("#nodes_charts").append(button);
@@ -482,8 +482,8 @@ function c_replot(){
 	var combination_dropdown_list = document.getElementById('combination_list');
 	showCombinationGraph(this,combination_dropdown_list.options[combination_dropdown_list.selectedIndex].id, combination_dropdown_list.options[combination_dropdown_list.selectedIndex].value, document.getElementById('combination_start_time').value, document.getElementById('combination_end_time').value);
 }
-//replot  node combination bar graph
+//replot  nodemetric combination bar graph
 function nc_replot(){
-	var ncombination_dropdown_list = document.getElementById('indicator_list');
-	showMetricGraph(this,ncombination_dropdown_list.options[ncombination_dropdown_list.selectedIndex].id,ncombination_dropdown_list.options[ncombination_dropdown_list.selectedIndex].value)	
+	var nmcombination_dropdown_list = document.getElementById('indicator_list');
+	showMetricGraph(this,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].id,nmcombination_dropdown_list.options[nmcombination_dropdown_list.selectedIndex].value)	
 }
